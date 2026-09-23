@@ -9,6 +9,7 @@ principle text, so cosine similarity is deterministic and hand-checkable.
 """
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
@@ -36,17 +37,23 @@ def check(name: str, condition: bool, detail: str = "") -> None:
 #: A fixed-vector stub: SAME text -> SAME vector (cosine 1.0), DIFFERENT text -> orthogonal
 #: (cosine 0.0). No model, no randomness - deterministic and hand-checkable clustering.
 _VECS = {
-    "cap a resource-bound parameter before scaling a workload.": [1.0, 0.0, 0.0],
-    "measure before assuming a resource limit is the bottleneck.": [0.0, 1.0, 0.0],
-    "always redact secrets before writing anything to disk.": [0.0, 0.0, 1.0],
-    # W17 closure (token provenance, 2026-09-23): same cosine as the plain "cap a resource-
-    # bound..." rule above, so the stub still clusters it - the PRODUCT NAME is what the
+    "tarnish a resource-wrought chisel before scaling a workload.": [1.0, 0.0, 0.0],
+    "reckon before assuming a resource curb is the bottleneck.": [0.0, 1.0, 0.0],
+    "always obscure confidences before scrivening an inkling to the vellum.": [0.0, 0.0, 1.0],
+    # W17 closure (token provenance, 2026-09-23): same cosine as the plain "tarnish a resource-
+    # wrought chisel..." rule above, so the stub still clusters it - the PRODUCT NAME is what the
     # provenance check (not clustering) is supposed to catch.
-    "cap a resource-bound parameter before scaling acme-widget-server.": [1.0, 0.0, 0.0],
+    "tarnish a resource-wrought chisel before scaling acme-widget-server.": [1.0, 0.0, 0.0],
     # H6 (2026-09-24): a genuine PARAPHRASE, different ordinary wording throughout, still
     # clusters here (same vector) - real clustering is a real embedder's job, not this stub's;
     # the stub only has to hold the cosine fixed so the test isolates what provenance decides.
-    "limit a resource ceiling before increasing the load.": [1.0, 0.0, 0.0],
+    # C1 (2026-09-24): built ONLY from `_COMMON_WORDS` (resource/ceiling/scaling/increasing/
+    # workload/assuming/bottleneck) + stopwords, on BOTH sides - any invented word here would
+    # itself be a single-project token needing corroboration it cannot get (the bug this
+    # correction fixes: the FIRST rewrite of this fixture swapped one non-exempt word for
+    # another instead of staying inside the shrunk list).
+    "scaling a workload before increasing the resource ceiling.": [1.0, 0.0, 0.0],
+    "assuming a resource ceiling before increasing a workload is a bottleneck.": [1.0, 0.0, 0.0],
     # H6 (b): one private identifier-shaped name per shape, in an otherwise-shared sentence -
     # undeclared (no `entities`), so write time (option A) never touches it and it reaches
     # promotion unchanged; provenance is the only remaining defence.
@@ -54,28 +61,34 @@ _VECS = {
     # every _VECS key with any letters must be lowercase here too, whatever case the actual
     # principle text on disk uses (UserRepository/PostgreSQL) - a mixed-case key here would
     # simply never match and _stub_embed would silently return None.
-    "cap a resource-bound parameter before scaling userrepository.": [1.0, 0.0, 0.0],
-    "cap a resource-bound parameter before scaling payments-api.": [1.0, 0.0, 0.0],
-    "cap a resource-bound parameter before scaling billing_service.": [1.0, 0.0, 0.0],
+    "tarnish a resource-wrought chisel before scaling userrepository.": [1.0, 0.0, 0.0],
+    "tarnish a resource-wrought chisel before scaling payments-api.": [1.0, 0.0, 0.0],
+    "tarnish a resource-wrought chisel before scaling billing_service.": [1.0, 0.0, 0.0],
     # H6 (c): a PUBLIC tech name, camelCase-shaped exactly like UserRepository, mentioned by
-    # BOTH projects - corroborated, so provenance must let it through.
-    "cap a resource-bound parameter before scaling postgresql.": [1.0, 0.0, 0.0],
-    "limit a resource ceiling before increasing postgresql load.": [1.0, 0.0, 0.0],
+    # BOTH projects - corroborated, so provenance must let it through. C1: common-word-only
+    # wording either side of the shared identifier, same reasoning as the pair above.
+    "scaling a workload before increasing the resource ceiling for postgresql.": [1.0, 0.0, 0.0],
+    "assuming a resource ceiling before increasing postgresql workload is a bottleneck.":
+        [1.0, 0.0, 0.0],
     # H6-era update to test (a) below: C's own invented private name, so NEITHER side has a
     # clean fallback the other could be promoted through instead (see that test's own comment).
-    "cap a resource-bound parameter before scaling globex-nimbus-array.": [1.0, 0.0, 0.0],
+    "tarnish a resource-wrought chisel before scaling globex-nimbus-array.": [1.0, 0.0, 0.0],
     # The auditor's exact nine-name probe (2026-09-24) - one principle per private name, C always
     # poisoned with its own distinct private name (no clean fallback), plus the public
     # "consumer-group" concept pair (H6, promoted, corroborated by both).
-    "cap a resource-bound parameter before scaling useauthstore.": [1.0, 0.0, 0.0],
-    "cap a resource-bound parameter before scaling orderservice.": [1.0, 0.0, 0.0],
-    "cap a resource-bound parameter before scaling db-primary.": [1.0, 0.0, 0.0],
-    "cap a resource-bound parameter before scaling kafka-consumer-group.": [1.0, 0.0, 0.0],
-    "cap a resource-bound parameter before scaling prod-cluster.": [1.0, 0.0, 0.0],
-    "cap a resource-bound parameter before scaling phoenix.": [1.0, 0.0, 0.0],
-    "cap a resource-bound parameter before scaling acme-corp.": [1.0, 0.0, 0.0],
-    "cap a resource-bound parameter before scaling a consumer-group.": [1.0, 0.0, 0.0],
-    "limit a resource ceiling before increasing a consumer-group.": [1.0, 0.0, 0.0],
+    "tarnish a resource-wrought chisel before scaling useauthstore.": [1.0, 0.0, 0.0],
+    "tarnish a resource-wrought chisel before scaling orderservice.": [1.0, 0.0, 0.0],
+    "tarnish a resource-wrought chisel before scaling db-primary.": [1.0, 0.0, 0.0],
+    "tarnish a resource-wrought chisel before scaling kafka-consumer-group.": [1.0, 0.0, 0.0],
+    "tarnish a resource-wrought chisel before scaling prod-cluster.": [1.0, 0.0, 0.0],
+    "tarnish a resource-wrought chisel before scaling phoenix.": [1.0, 0.0, 0.0],
+    "tarnish a resource-wrought chisel before scaling acme-corp.": [1.0, 0.0, 0.0],
+    # C1: common-word-only wording either side of the shared "consumer-group" identifier, same
+    # reasoning as the two pairs above.
+    "scaling a workload before increasing the resource ceiling for a consumer-group.":
+        [1.0, 0.0, 0.0],
+    "assuming a resource ceiling before increasing a consumer-group workload is a bottleneck.":
+        [1.0, 0.0, 0.0],
 }
 
 
@@ -113,9 +126,9 @@ def test_two_different_projects_are_promoted() -> None:
     make_sandbox(m, "pp_two_", offline=True)
     pr = _import_fresh()
     m.embed_text = _stub_embed
-    principle = "Cap a resource-bound parameter before scaling a workload."
-    s_a = _write("project_a", "cap batch size", principle)
-    s_b = _write("project_b", "cap worker pool", principle)
+    principle = "Tarnish a resource-wrought chisel before scaling a workload."
+    s_a = _write("project_a", "tarnish batch size", principle)
+    s_b = _write("project_b", "tarnish worker pool", principle)
     check("both source notes were written", bool(s_a) and bool(s_b), f"{s_a} / {s_b}")
 
     summary = pr.promote(apply=True)
@@ -136,7 +149,7 @@ def test_two_different_projects_are_promoted() -> None:
           str(fm.get("sources")))
     text = universal_notes[0].read_text(encoding="utf-8")
     check("the note's own description is the (de-identified) principle sentence",
-          "Cap a resource-bound parameter" in text, text)
+          "Tarnish a resource-wrought chisel" in text, text)
 
 
 def test_one_project_twice_is_not_promoted() -> None:
@@ -144,9 +157,9 @@ def test_one_project_twice_is_not_promoted() -> None:
     make_sandbox(m, "pp_one_", offline=True)
     pr = _import_fresh()
     m.embed_text = _stub_embed
-    principle = "Cap a resource-bound parameter before scaling a workload."
-    _write("project_a", "cap batch size", principle)
-    _write("project_a", "cap thread pool", principle)
+    principle = "Tarnish a resource-wrought chisel before scaling a workload."
+    _write("project_a", "tarnish batch size", principle)
+    _write("project_a", "tarnish thread pool", principle)
 
     summary = pr.promote(apply=True)
     check("no cluster spans >=2 projects", summary["clusters"] == 0, str(summary))
@@ -165,21 +178,21 @@ def test_a_scanner_hit_at_promotion_time_is_not_promoted() -> None:
     make_sandbox(m, "pp_scanhit_", offline=True)
     pr = _import_fresh()
     m.embed_text = _stub_embed
-    principle_a = "Measure before assuming a resource limit is the bottleneck."
-    principle_b = "Measure before assuming a resource limit is the bottleneck."
+    principle_a = "Reckon before assuming a resource curb is the bottleneck."
+    principle_b = "Reckon before assuming a resource curb is the bottleneck."
     # A SEPARATE note in project_a carries "gpu-cluster-7" as one of ITS OWN entities - so it
     # is in project_a's VOCABULARY (A5's forbidden set) even though it never appears in the
     # candidate note's own entities (A1's write-time forbidden set).
     _write("project_a", "gpu cluster note", "", entities=["gpu-cluster-7"])  # no principle:
     # only seeds project_a's VOCABULARY, must not itself become a candidate
-    s_a = _write("project_a", "measure resource limit",
-                 "Measure before assuming gpu-cluster-7's resource limit is the bottleneck.")
+    s_a = _write("project_a", "reckon resource curb",
+                 "Reckon before assuming gpu-cluster-7's resource curb is the bottleneck.")
     check("A1's write-time scan let this one through (it only forbids its own entities)",
           bool(s_a), s_a)
     fm_a = m._read_frontmatter_file(m.VAULT / "Patterns" / f"{s_a}.md")
     check("the identifier is really on disk (proves this is testing A5, not re-testing A1)",
           "gpu-cluster-7" in (fm_a.get("principle") or ""), fm_a.get("principle"))
-    s_b = _write("project_b", "measure resource limit too", principle_b)
+    s_b = _write("project_b", "reckon resource curb too", principle_b)
     check("the clean twin in project_b was written", bool(s_b), s_b)
 
     summary = pr.promote(apply=True)
@@ -209,10 +222,10 @@ def test_a_undeclared_product_name_blocks_promotion_via_token_provenance() -> No
     make_sandbox(m, "pp_prov_a_", offline=True)
     pr = _import_fresh()
     m.embed_text = _stub_embed
-    poisoned = "Cap a resource-bound parameter before scaling acme-widget-server."
-    also_poisoned = "Cap a resource-bound parameter before scaling globex-nimbus-array."
-    s_a = _write("project_a", "cap batch size", poisoned)          # entities=[] - undeclared
-    s_c = _write("project_c", "cap worker pool", also_poisoned)    # entities=[] - undeclared
+    poisoned = "Tarnish a resource-wrought chisel before scaling acme-widget-server."
+    also_poisoned = "Tarnish a resource-wrought chisel before scaling globex-nimbus-array."
+    s_a = _write("project_a", "tarnish batch size", poisoned)          # entities=[] - undeclared
+    s_c = _write("project_c", "tarnish worker pool", also_poisoned)    # entities=[] - undeclared
     check("both source notes were written", bool(s_a) and bool(s_c), f"{s_a}/{s_c}")
     fm_a = m._read_frontmatter_file(m.VAULT / "Patterns" / f"{s_a}.md")
     check("the product name is on disk, undeclared as an entity (write-time scan let it "
@@ -246,9 +259,9 @@ def test_b_shared_generic_wording_is_promoted() -> None:
     make_sandbox(m, "pp_prov_b_", offline=True)
     pr = _import_fresh()
     m.embed_text = _stub_embed
-    clean = "Cap a resource-bound parameter before scaling a workload."
-    s_a = _write("project_a", "cap batch size", clean)
-    s_c = _write("project_c", "cap worker pool", clean)
+    clean = "Tarnish a resource-wrought chisel before scaling a workload."
+    s_a = _write("project_a", "tarnish batch size", clean)
+    s_c = _write("project_c", "tarnish worker pool", clean)
     check("both source notes were written", bool(s_a) and bool(s_c), f"{s_a}/{s_c}")
 
     summary = pr.promote(apply=True)
@@ -268,10 +281,10 @@ def test_c_mutation_token_provenance_threshold_of_one() -> None:
     make_sandbox(m, "pp_prov_c_", offline=True)
     pr = _import_fresh()
     m.embed_text = _stub_embed
-    poisoned = "Cap a resource-bound parameter before scaling acme-widget-server."
-    also_poisoned = "Cap a resource-bound parameter before scaling globex-nimbus-array."
-    _write("project_a", "cap batch size", poisoned)
-    _write("project_c", "cap worker pool", also_poisoned)
+    poisoned = "Tarnish a resource-wrought chisel before scaling acme-widget-server."
+    also_poisoned = "Tarnish a resource-wrought chisel before scaling globex-nimbus-array."
+    _write("project_a", "tarnish batch size", poisoned)
+    _write("project_c", "tarnish worker pool", also_poisoned)
 
     saved = pr.TOKEN_PROVENANCE_MIN_PROJECTS
     pr.TOKEN_PROVENANCE_MIN_PROJECTS = 1
@@ -296,9 +309,9 @@ def test_retire_on_drop_below_two_projects() -> None:
     make_sandbox(m, "pp_retire_", offline=True)
     pr = _import_fresh()
     m.embed_text = _stub_embed
-    principle = "Cap a resource-bound parameter before scaling a workload."
-    s_a = _write("project_a", "cap batch size", principle)
-    s_b = _write("project_b", "cap worker pool", principle)
+    principle = "Tarnish a resource-wrought chisel before scaling a workload."
+    s_a = _write("project_a", "tarnish batch size", principle)
+    s_b = _write("project_b", "tarnish worker pool", principle)
     summary1 = pr.promote(apply=True)
     check("promoted on the first run", summary1["promoted"] == 1, str(summary1))
 
@@ -353,9 +366,9 @@ def test_mutation_removing_the_distinct_projects_check() -> None:
     make_sandbox(m, "pp_mut_", offline=True)
     pr = _import_fresh()
     m.embed_text = _stub_embed
-    principle = "Cap a resource-bound parameter before scaling a workload."
-    _write("project_a", "cap batch size", principle)
-    _write("project_a", "cap thread pool", principle)
+    principle = "Tarnish a resource-wrought chisel before scaling a workload."
+    _write("project_a", "tarnish batch size", principle)
+    _write("project_a", "tarnish thread pool", principle)
 
     # Two independent guards now stand between a single-project repeat and promotion - the
     # cluster-level MIN_CLUSTER_PROJECTS check (this test's own subject) and the token-level
@@ -393,9 +406,9 @@ def test_dry_run_writes_nothing() -> None:
     make_sandbox(m, "pp_dry_", offline=True)
     pr = _import_fresh()
     m.embed_text = _stub_embed
-    principle = "Cap a resource-bound parameter before scaling a workload."
-    _write("project_a", "cap batch size", principle)
-    _write("project_b", "cap worker pool", principle)
+    principle = "Tarnish a resource-wrought chisel before scaling a workload."
+    _write("project_a", "tarnish batch size", principle)
+    _write("project_b", "tarnish worker pool", principle)
     summary = pr.promote(apply=False)
     check("a dry run still reports a cluster", summary["clusters"] == 1, str(summary))
     universal_dir = m.VAULT / "Patterns"
@@ -418,12 +431,12 @@ def test_d_own_generic_entity_no_longer_self_rejects_at_promotion() -> None:
     make_sandbox(m, "pp_selfreject_", offline=True)
     pr = _import_fresh()
     m.embed_text = _stub_embed
-    clean = "Cap a resource-bound parameter before scaling a workload."
+    clean = "Tarnish a resource-wrought chisel before scaling a workload."
     # "workload" is declared as THIS note's own entity AND appears literally in its own
     # principle - the exact real-world shape (project cpv1_005_alpha declared "storage", its
     # own principle said "...persistent storage...").
-    s_a = _write("project_a", "cap batch size", clean, entities=["workload"])
-    s_c = _write("project_c", "cap worker pool", clean, entities=["queue-depth"])
+    s_a = _write("project_a", "tarnish batch size", clean, entities=["workload"])
+    s_c = _write("project_c", "tarnish worker pool", clean, entities=["queue-depth"])
     check("both source notes were written", bool(s_a) and bool(s_c), f"{s_a}/{s_c}")
     fm_a = m._read_frontmatter_file(m.VAULT / "Patterns" / f"{s_a}.md")
     check("A's principle is on disk, still carrying its own declared entity word",
@@ -451,15 +464,16 @@ def test_d_own_generic_entity_no_longer_self_rejects_at_promotion() -> None:
 def test_g_ordinary_paraphrase_is_promoted() -> None:
     """(a) H6: a paraphrase pair whose wording differs throughout, no identifier-shaped token
     anywhere, is promoted - RED before this fix (every content token needed corroboration, and
-    "limit"/"ceiling"/"increasing"/"load" only ever appear in ONE side's own vocabulary)."""
+    "resource"/"ceiling"/"scaling"/"increasing"/"workload"/"assuming"/"bottleneck" only ever
+    appear in ONE side's own vocabulary - here they are all `_COMMON_WORDS`, so none needs it)."""
     print("\n- (a) H6: an ordinary-wording paraphrase (no identifier-shaped token) is promoted -")
     make_sandbox(m, "pp_h6_a_", offline=True)
     pr = _import_fresh()
     m.embed_text = _stub_embed
-    s_a = _write("project_a", "cap resource", "Cap a resource-bound parameter before scaling "
-                 "a workload.")
-    s_c = _write("project_c", "limit resource", "Limit a resource ceiling before increasing "
-                 "the load.")
+    s_a = _write("project_a", "tarnish resource", "Scaling a workload before increasing "
+                 "the resource ceiling.")
+    s_c = _write("project_c", "curb resource", "Assuming a resource ceiling before increasing "
+                 "a workload is a bottleneck.")
     check("both source notes were written", bool(s_a) and bool(s_c), f"{s_a}/{s_c}")
 
     summary = pr.promote(apply=True)
@@ -482,20 +496,20 @@ def test_h_private_shaped_name_blocks_promotion_per_shape() -> None:
     needing corroboration, and that fallback would promote instead of testing what this case is
     for - A's OWN shape-specific token blocking THAT candidate."""
     print("\n- (b) H6: a private camel/kebab/snake name blocks promotion, token named -")
-    c_poisoned = "Cap a resource-bound parameter before scaling globex-nimbus-array."
+    c_poisoned = "Tarnish a resource-wrought chisel before scaling globex-nimbus-array."
     # B1 (2026-09-24): the offending token is the WHOLE normalized compound now, not a split
     # part - "billing_service" normalizes to "billing-service" ("_" unified with "-").
     cases = [
-        ("camel", "cap a resource-bound parameter before scaling UserRepository.", "userrepository"),
-        ("kebab", "cap a resource-bound parameter before scaling payments-api.", "payments-api"),
-        ("snake", "cap a resource-bound parameter before scaling billing_service.", "billing-service"),
+        ("camel", "tarnish a resource-wrought chisel before scaling UserRepository.", "userrepository"),
+        ("kebab", "tarnish a resource-wrought chisel before scaling payments-api.", "payments-api"),
+        ("snake", "tarnish a resource-wrought chisel before scaling billing_service.", "billing-service"),
     ]
     for shape, poisoned, offending_tok in cases:
         make_sandbox(m, f"pp_h6_b_{shape}_", offline=True)
         pr = _import_fresh()
         m.embed_text = _stub_embed
-        s_a = _write("project_a", f"cap-{shape}", poisoned)          # entities=[] - undeclared
-        s_c = _write("project_c", "cap plain", c_poisoned)           # entities=[] - undeclared
+        s_a = _write("project_a", f"tarnish-{shape}", poisoned)      # entities=[] - undeclared
+        s_c = _write("project_c", "tarnish plain", c_poisoned)           # entities=[] - undeclared
         check(f"{shape}: both source notes were written", bool(s_a) and bool(s_c),
               f"{s_a}/{s_c}")
         fm_a = m._read_frontmatter_file(m.VAULT / "Patterns" / f"{s_a}.md")
@@ -526,10 +540,10 @@ def test_i_public_camel_name_in_both_is_promoted() -> None:
     make_sandbox(m, "pp_h6_c_", offline=True)
     pr = _import_fresh()
     m.embed_text = _stub_embed
-    s_a = _write("project_a", "cap postgres a", "Cap a resource-bound parameter before "
-                 "scaling PostgreSQL.")
-    s_c = _write("project_c", "cap postgres c", "Limit a resource ceiling before increasing "
-                 "PostgreSQL load.")
+    s_a = _write("project_a", "tarnish postgres a", "Scaling a workload before increasing "
+                 "the resource ceiling for PostgreSQL.")
+    s_c = _write("project_c", "tarnish postgres c", "Assuming a resource ceiling before "
+                 "increasing PostgreSQL workload is a bottleneck.")
     check("both source notes were written", bool(s_a) and bool(s_c), f"{s_a}/{s_c}")
 
     summary = pr.promote(apply=True)
@@ -548,10 +562,10 @@ def test_i2_public_hyphen_concept_in_both_is_promoted() -> None:
     make_sandbox(m, "pp_h6_c2_", offline=True)
     pr = _import_fresh()
     m.embed_text = _stub_embed
-    s_a = _write("project_a", "cap group a", "Cap a resource-bound parameter before scaling "
-                 "a consumer-group.")
-    s_c = _write("project_c", "cap group c", "Limit a resource ceiling before increasing a "
-                 "consumer-group.")
+    s_a = _write("project_a", "tarnish group a", "Scaling a workload before increasing the "
+                 "resource ceiling for a consumer-group.")
+    s_c = _write("project_c", "tarnish group c", "Assuming a resource ceiling before increasing "
+                 "a consumer-group workload is a bottleneck.")
     check("both source notes were written", bool(s_a) and bool(s_c), f"{s_a}/{s_c}")
 
     summary = pr.promote(apply=True)
@@ -583,14 +597,14 @@ def test_h2_auditors_nine_name_probe_all_blocked() -> None:
         ("db-primary", "db-primary"), ("kafka-consumer-group", "kafka-consumer-group"),
         ("prod-cluster", "prod-cluster"), ("phoenix", "phoenix"), ("acme-corp", "acme"),
     ]
-    c_poisoned = "Cap a resource-bound parameter before scaling globex-nimbus-array."
+    c_poisoned = "Tarnish a resource-wrought chisel before scaling globex-nimbus-array."
     for name, offending_tok in cases:
         make_sandbox(m, f"pp_h6_nine_{offending_tok}_", offline=True)
         pr = _import_fresh()
         m.embed_text = _stub_embed
-        poisoned = f"Cap a resource-bound parameter before scaling {name}."
-        s_a = _write("project_a", f"cap {offending_tok}", poisoned)   # entities=[] - undeclared
-        s_c = _write("project_c", "cap plain", c_poisoned)            # entities=[] - undeclared
+        poisoned = f"Tarnish a resource-wrought chisel before scaling {name}."
+        s_a = _write("project_a", f"tarnish {offending_tok}", poisoned)   # entities=[] - undeclared
+        s_c = _write("project_c", "tarnish plain", c_poisoned)            # entities=[] - undeclared
         check(f"{name!r}: both source notes were written", bool(s_a) and bool(s_c),
               f"{s_a}/{s_c}")
 
@@ -625,9 +639,9 @@ def test_j_mutation_ignoring_camel_shape_reddens_h_camel_case() -> None:
     make_sandbox(m, "pp_h6_mut_", offline=True)
     pr = _import_fresh()
     m.embed_text = _stub_embed
-    principle_a = "cap a resource-bound parameter before scaling UserRepository."
-    s_a = _write("project_a", "cap camel", principle_a)
-    s_c = _write("project_c", "cap plain", "Cap a resource-bound parameter before scaling "
+    principle_a = "tarnish a resource-wrought chisel before scaling UserRepository."
+    s_a = _write("project_a", "tarnish camel", principle_a)
+    s_c = _write("project_c", "tarnish plain", "Tarnish a resource-wrought chisel before scaling "
                  "a workload.")
     s_x = _write("project_x", "unrelated userrepository note",
                  "UserRepository needs its own migration runner, unrelated to this cluster.")
@@ -666,20 +680,20 @@ def test_k_compound_corroborated_as_whole_not_by_parts() -> None:
     of "payments"/"api" corroborate "payments-api")."""
     print("\n- B1 (1)(2): compound corroborated whole, not by separately-used parts -")
     cases = [
-        ("Cap a resource-bound parameter before scaling payments-api.",
+        ("Tarnish a resource-wrought chisel before scaling payments-api.",
          "Our payments team owns the api gateway configuration entirely.", "payments-api"),
-        ("Cap a resource-bound parameter before scaling kafka-consumer-group.",
+        ("Tarnish a resource-wrought chisel before scaling kafka-consumer-group.",
          "The kafka topic settings and the consumer group settings are managed separately.",
          "kafka-consumer-group"),
-        ("Cap a resource-bound parameter before scaling billing_service.",
+        ("Tarnish a resource-wrought chisel before scaling billing_service.",
          "Our billing team owns the service layer configuration entirely.",
          "billing-service"),
     ]
     for principle_a, prose_c, offending_tok in cases:
         make_sandbox(m, f"pp_h6_k_{offending_tok}_", offline=True)
         pr = _import_fresh()
-        s_a = _write("project_a", "cap compound", principle_a)
-        s_c = _write("project_c", "cap parts", prose_c)
+        s_a = _write("project_a", "tarnish compound", principle_a)
+        s_c = _write("project_c", "tarnish parts", prose_c)
         check(f"{offending_tok!r}: both source notes were written", bool(s_a) and bool(s_c),
               f"{s_a}/{s_c}")
 
@@ -703,10 +717,10 @@ def test_l_mutation_corroborating_by_parts_reddens_k_by_name() -> None:
     print("\n- mutation: the pre-B1 per-part algorithm wrongly passes the payments-api case -")
     make_sandbox(m, "pp_h6_l_", offline=True)
     pr = _import_fresh()
-    principle_a = "Cap a resource-bound parameter before scaling payments-api."
+    principle_a = "Tarnish a resource-wrought chisel before scaling payments-api."
     prose_c = "Our payments team owns the api gateway configuration entirely."
-    s_a = _write("project_a", "cap compound", principle_a)
-    s_c = _write("project_c", "cap parts", prose_c)
+    s_a = _write("project_a", "tarnish compound", principle_a)
+    s_c = _write("project_c", "tarnish parts", prose_c)
     check("both source notes were written", bool(s_a) and bool(s_c), f"{s_a}/{s_c}")
 
     def _old_per_part_provenance(sentence, cluster_projects):
@@ -739,12 +753,12 @@ def test_m_underscore_and_hyphen_unify_but_dot_does_not() -> None:
     corroboration; "." is NOT unified with either (6) - a dot carries host/path structure a
     hyphen does not share, so "payments-api" and "payments.api" are different names."""
     print("\n- B1: '-' and '_' unify (5), but '.' does not unify with either (6) -")
-    principle_a = "Cap a resource-bound parameter before scaling payments-api."
+    principle_a = "Tarnish a resource-wrought chisel before scaling payments-api."
 
     make_sandbox(m, "pp_h6_m5_", offline=True)
     pr = _import_fresh()
-    s_a = _write("project_a", "cap kebab", principle_a)
-    s_c = _write("project_c", "cap snake", "Cap a resource-bound parameter before scaling "
+    s_a = _write("project_a", "tarnish kebab", principle_a)
+    s_c = _write("project_c", "tarnish snake", "Tarnish a resource-wrought chisel before scaling "
                  "payments_api.")
     check("(5) both source notes were written", bool(s_a) and bool(s_c), f"{s_a}/{s_c}")
     ok5, offending5 = pr._token_provenance(principle_a, "project_a",
@@ -754,14 +768,41 @@ def test_m_underscore_and_hyphen_unify_but_dot_does_not() -> None:
 
     make_sandbox(m, "pp_h6_m6_", offline=True)
     pr = _import_fresh()
-    s_a2 = _write("project_a", "cap kebab", principle_a)
-    s_c2 = _write("project_c", "cap dot", "Cap a resource-bound parameter before scaling "
+    s_a2 = _write("project_a", "tarnish kebab", principle_a)
+    s_c2 = _write("project_c", "tarnish dot", "Tarnish a resource-wrought chisel before scaling "
                   "payments.api.")
     check("(6) both source notes were written", bool(s_a2) and bool(s_c2), f"{s_a2}/{s_c2}")
     ok6, offending6 = pr._token_provenance(principle_a, "project_a",
                                            {"project_a", "project_c"}, {})
     check("(6) payments-api / payments.api do NOT corroborate each other (dot is not unified)",
          not ok6 and "payments-api" in offending6, offending6)
+
+
+def test_n_no_common_word_occurs_in_the_bench_corpus() -> None:
+    """C1 (2026-09-24): the mechanical guard `principles._COMMON_WORDS`'s own docstring promises.
+    `_COMMON_WORDS` must be grown from genuine, generic vocabulary - NEVER by reading what the
+    real `research/` bench corpus happens to contain and exempting those exact words, which would
+    quietly tune the "this is an ordinary word" list to make today's benchmark look cleaner than
+    the mechanism actually is. Any word occurring >=3 times (word-boundary, case-insensitive)
+    across `research/cross_project_bench*.py` + `research/data/cross_project*.json` is named as
+    an offender and the check fails; RED before this test existed, the removed 11-word set
+    (anything, bound, cap, disk, limit, load, measure, parameter, redact, secrets, writing) would
+    have gone undetected forever - see the red-before capture in the commit that adds this test."""
+    print("\n- C1: no _COMMON_WORDS entry is itself sourced from the real bench corpus -")
+    pr = _import_fresh()
+    corpus_files = sorted(ROOT.glob("research/cross_project_bench*.py")) + \
+        sorted(ROOT.glob("research/data/cross_project*.json"))
+    check("at least one bench corpus file was found to scan", len(corpus_files) > 0,
+         str(corpus_files))
+    corpus_text = "\n".join(p.read_text(encoding="utf-8") for p in corpus_files)
+
+    offenders = []
+    for word in sorted(pr._COMMON_WORDS):
+        hits = len(re.findall(rf"\b{re.escape(word)}\b", corpus_text, flags=re.IGNORECASE))
+        if hits >= 3:
+            offenders.append((word, hits))
+    check("no _COMMON_WORDS entry occurs >=3x in the bench corpus", not offenders,
+         f"offenders: {offenders}" if offenders else "")
 
 
 def test_zz_every_check_passed() -> None:
@@ -794,7 +835,8 @@ def main() -> int:
                test_j_mutation_ignoring_camel_shape_reddens_h_camel_case,
                test_k_compound_corroborated_as_whole_not_by_parts,
                test_l_mutation_corroborating_by_parts_reddens_k_by_name,
-               test_m_underscore_and_hyphen_unify_but_dot_does_not):
+               test_m_underscore_and_hyphen_unify_but_dot_does_not,
+               test_n_no_common_word_occurs_in_the_bench_corpus):
         fn()
     print(f"\nprinciple promote: {PASSED} passed, {FAILED} failed")
     return 1 if FAILED else 0

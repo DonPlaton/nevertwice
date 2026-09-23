@@ -252,19 +252,31 @@ def _project_shaped_word_vocabulary(project: str) -> set[str]:
 #: the same discipline `_STOPWORDS` and `_INFRA_HYPHEN_TOKENS` follow, EXCEPT the source: this
 #: list is grown ONLY from this project's own unit-test fixtures (`tests/
 #: _test_principle_promote.py`'s `_VECS`) or from generic vocabulary NOT taken from any
-#: `research/` bench corpus (2026-09-24 correction - the auditor independently confirmed the
-#: first cut was tuned on the evaluation population itself: 100 of its ~140 words occurred >=3
-#: times in `research/cross_project_bench.py`'s own generated cases and artifacts, which
-#: inflates exactly the promotion numbers the G5 gates read). NEVER grown from any `research/`
-#: bench corpus; grow only from a false positive on a REAL store. KNOWN LIMITATION, stated
-#: plainly rather than covered silently (the coordinator's instruction, 2026-09-24): a
-#: genuinely ordinary word missing from this list, unique to one project's corpus, is still
-#: flagged and asked for corroboration it may not have - the SAME over-cautious failure mode H6
-#: already accepts for identifier-shaped tokens, now also possible for an ordinary word this
-#: list does not contain.
+#: `research/` bench corpus. NEVER grown from any `research/` bench corpus; grow only from a
+#: false positive on a REAL store - `tests/_test_principle_promote.py`'s own
+#: `test_no_common_word_occurs_in_the_bench_corpus` enforces this mechanically, not just by
+#: convention.
+#:
+#: SECOND correction (2026-09-24, C1 - the H6 trigger recount, `.loop/explore/h6_recount.json`
+#: / `.loop/DECISION-Q5-H6-TRIGGER-2026-09-23.md`): the FIRST correction already removed 122
+#: words tuned on the bench corpus, but 11 of the 18 survivors were STILL bench words by the
+#: same test - the auditor counted them >=3x across `research/cross_project_bench.py` AND
+#: `research/data/cross_project*.json` together (the .py can template case text, so both count):
+#: anything, bound, cap, disk, limit, load, measure, parameter, redact, secrets, writing. The
+#: fixture that needed them ("Cap a resource-bound parameter before scaling a workload.", "always
+#: redact secrets before writing anything to disk.") is rewritten in `tests/
+#: _test_principle_promote.py` with invented wording that occurs NOWHERE in `research/`
+#: (grep-verified, and the new mechanical test above checks it on every run) - not by adding a
+#: replacement word to this list. KNOWN LIMITATION, stated plainly rather than covered silently
+#: (the coordinator's instruction, 2026-09-24): a genuinely ordinary word missing from this
+#: list, unique to one project's corpus, is still flagged and asked for corroboration it may not
+#: have - the SAME over-cautious failure mode H6 already accepts for identifier-shaped tokens,
+#: now also possible for an ordinary word this list does not contain. This is DELIBERATE
+#: (`.loop/DECISION-Q5-H6-TRIGGER-2026-09-23.md`, "U ships (fail closed)"): the cost of an
+#: unpromoted ordinary principle is a mild, local loss; the cost of a leaked private name cannot
+#: be undone once it crosses into another project's sessions.
 _COMMON_WORDS = frozenset("""
-cap limit bound parameter resource ceiling scaling increasing workload load measure assuming
-bottleneck redact secrets writing anything disk
+resource ceiling scaling increasing workload assuming bottleneck
 """.split())
 
 
