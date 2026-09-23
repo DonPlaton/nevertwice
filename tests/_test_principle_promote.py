@@ -359,6 +359,41 @@ def test_dry_run_writes_nothing() -> None:
     check("nothing was written to disk", not universal_notes, str(universal_notes))
 
 
+def test_d_own_generic_entity_no_longer_self_rejects_at_promotion() -> None:
+    """(d) 2026-09-24: the v2 100-case real run's actual dominant defect. A note's own declared
+    entity is routinely a GENERIC word its own principle also uses ("workload" declared, "...
+    scaling a workload." in the text) - `_rescan`'s promotion-time forbidden set used to include
+    EVERY declared entity verbatim, so `principle_scan` rejected the candidate against its OWN
+    vocabulary before clustering ever got a chance to run. Found on 53 of 57 cosine>=0.75 pairs
+    in the real run: one or both sides self-rejected, leaving only the (always entity-free)
+    distractor to pad `candidates`, so `clusters` read 0 despite a cosine well above T_PRINCIPLE
+    - a divergence between what research/cross_project_bench.py's own principle_cosine measured
+    and what promote() ever got the chance to compare."""
+    print("\n- (d) a generic self-declared entity no longer self-rejects a candidate -")
+    make_sandbox(m, "pp_selfreject_", offline=True)
+    pr = _import_fresh()
+    m.embed_text = _stub_embed
+    clean = "Cap a resource-bound parameter before scaling a workload."
+    # "workload" is declared as THIS note's own entity AND appears literally in its own
+    # principle - the exact real-world shape (project cpv1_005_alpha declared "storage", its
+    # own principle said "...persistent storage...").
+    s_a = _write("project_a", "cap batch size", clean, entities=["workload"])
+    s_c = _write("project_c", "cap worker pool", clean, entities=["queue-depth"])
+    check("both source notes were written", bool(s_a) and bool(s_c), f"{s_a}/{s_c}")
+    fm_a = m._read_frontmatter_file(m.VAULT / "Patterns" / f"{s_a}.md")
+    check("A's principle is on disk, still carrying its own declared entity word",
+          "workload" in (fm_a.get("principle") or "").lower(), fm_a.get("principle"))
+
+    candidates = pr._rescan(pr._live_principle_candidates())
+    check("BOTH candidates survive the promotion-time rescan (neither self-rejects)",
+          len(candidates) == 2, [c["principle"] for c in candidates])
+
+    summary = pr.promote(apply=True)
+    check("a cluster formed", summary["clusters"] == 1, str(summary))
+    check("it was promoted (a shared generic word, no identifier-shaped token anywhere)",
+          summary["promoted"] == 1, str(summary))
+
+
 def test_zz_every_check_passed() -> None:
     """Bare pytest must reach the same verdict as this suite's exit code.
 
@@ -379,7 +414,8 @@ def main() -> int:
                test_retire_on_drop_below_two_projects,
                test_a_cache_stamp_mismatch_is_refused,
                test_mutation_removing_the_distinct_projects_check,
-               test_dry_run_writes_nothing):
+               test_dry_run_writes_nothing,
+               test_d_own_generic_entity_no_longer_self_rejects_at_promotion):
         fn()
     print(f"\nprinciple promote: {PASSED} passed, {FAILED} failed")
     return 1 if FAILED else 0

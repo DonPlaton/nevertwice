@@ -229,9 +229,21 @@ def _live_principle_candidates() -> list[dict]:
 
 
 def _project_vocabulary(project: str) -> set[str]:
-    """Every entity and tag on `project`'s own live typed notes (all three folders) - the
-    project-wide forbidden set A5's re-scan uses, stronger than the write-time scan (which only
-    forbade the ONE note's own entities)."""
+    """Every IDENTIFIER-SHAPED entity and tag on `project`'s own live typed notes (all three
+    folders) - the project-wide forbidden set A5's re-scan uses, stronger than the write-time
+    scan (which only forbade the ONE note's own entities).
+
+    FILTERED through `m._looks_like_identifier` (2026-09-24) - this used to forbid every
+    declared entity/tag VERBATIM, the SAME defect finding 1 fixed at write time, silently
+    reintroduced here because this promotion-time rescan never got the same filter. A note's
+    own principle routinely USES one of its own generic entity words ("storage" declared as an
+    entity, then used in the principle text: "...persistent storage..."), so the unfiltered
+    version self-rejected almost every real candidate before clustering ever got a chance to
+    run - found on the v2 100-case real run (--extract, T=0.75): 53 of 57 cosine >= 0.75 pairs
+    never became CANDIDATES together at all, because one side (sometimes both) rejected its OWN
+    principle against its OWN vocabulary. `candidates` still read 1 or 2 in those cases only
+    because `build_distractor` never declares entities, so the always-vocabulary-free
+    distractor silently padded the count."""
     vocab: set[str] = set()
     for ntype in m.TYPED_TYPES:
         folder = m.VAULT / m.TYPE_FOLDER[ntype]
@@ -244,24 +256,34 @@ def _project_vocabulary(project: str) -> set[str]:
             fm = m._read_frontmatter_file(p)
             ents = fm.get("entities")
             if isinstance(ents, list):
-                vocab.update(str(e) for e in ents if e)
+                vocab.update(str(e) for e in ents
+                            if e and m._looks_like_identifier(str(e), project))
             tags = fm.get("tags")
             if isinstance(tags, list):
-                vocab.update(str(t) for t in tags if t)
+                vocab.update(str(t) for t in tags
+                            if t and m._looks_like_identifier(str(t), project))
     return vocab
 
 
 def _rescan(candidates: list[dict]) -> list[dict]:
     """Re-run `principle_scan` per candidate against that candidate's project vocabulary - a
     second, stronger de-identification pass at promotion time (the plan's own description of
-    A5). A candidate the scanner now rejects is dropped, never silently kept."""
+    A5). A candidate the scanner now rejects is dropped, never silently kept.
+
+    The per-candidate `entities` contribution is ALSO filtered through `m._looks_like_identifier`
+    (2026-09-24, same fix as `_project_vocabulary` above) - a candidate's own declared entities
+    are exactly the vocabulary `_project_vocabulary` would find for it one call later anyway
+    (once it is itself a live note), so leaving this one unfiltered would just move the same
+    self-rejection to the FIRST promotion run instead of the second."""
     vocab_cache: dict[str, set[str]] = {}
     kept = []
     for c in candidates:
         proj = c["project"]
         if proj not in vocab_cache:
             vocab_cache[proj] = _project_vocabulary(proj)
-        forbidden = {proj} | vocab_cache[proj] | set(c.get("entities") or ())
+        own_entities = {e for e in (c.get("entities") or ())
+                        if e and m._looks_like_identifier(str(e), proj)}
+        forbidden = {proj} | vocab_cache[proj] | own_entities
         cleaned = m.principle_scan(c["principle"], forbidden)
         if not cleaned:
             continue
