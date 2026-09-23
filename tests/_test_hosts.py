@@ -603,6 +603,20 @@ def test_install_py_uninstall_is_reachable_and_takes_only_ours() -> None:
               not any("nevertwice" in c for c in commands), str(commands))
         check("the user's own hook stays", commands == [theirs["command"]], str(commands))
 
+        #: The installer and the adapter must find settings.json the same way - the incident's
+        #: root was install.py reading only Path.home() while the adapter honoured the override.
+        #: Above, HOME and the override share one temp dir, so a Path.home()-only installer passed
+        #: (the auditor's E2 mutation, a617af2). Here they differ; --print writes nothing.
+        home = Path(tmp) / "home"
+        home.mkdir()
+        split = dict(env, HOME=str(home), USERPROFILE=str(home))
+        plan = subprocess.run([sys.executable, str(root / "install.py"), "--print"],
+                              capture_output=True, text=True, env=split, timeout=120)
+        check("the installer wires the settings file the adapter reads, not one under HOME",
+              plan.returncode == 0 and f"[hooks] {settings}" in plan.stdout
+              and not (home / ".claude").exists(),
+              (plan.stdout + plan.stderr)[-300:])
+
 
 def test_zz_every_check_passed() -> None:
     """Bare pytest must reach the same verdict as this suite's exit code.
