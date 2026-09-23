@@ -724,7 +724,7 @@ def write_typed_note(folder: str, item, project: str, date: str,
     if principle and _looks_unsafe(principle):
         principle = ""
     if principle:
-        # 2026-09-24: forbidding every declared ENTITY verbatim rejected principles that named
+        # 2026-09-23: forbidding every declared ENTITY verbatim rejected principles that named
         # nothing identifying at all - a model's own "2-5 key entities" list routinely includes
         # an ordinary technical word, and any principle that merely USED one was dropped. The
         # project slug itself stays forbidden unconditionally either way; only the entity list
