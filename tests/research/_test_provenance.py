@@ -14,6 +14,7 @@ block is this branch's stand-level check instead, against the stand this task ac
 """
 from __future__ import annotations
 
+import json
 import re
 import sys
 import tempfile
@@ -98,9 +99,21 @@ def test_is_dirty_excludes_campaign_outputs() -> None:
          "path (C4b) -")
     saved = prov.subprocess.run
     try:
+        # K5 (2026-09-24, the auditor's finding on 0328eab): case (a) used to be a path that
+        # ALSO happens to be a registered claim's `raw` pointer (research/results/
+        # guards_pack.json) - so it was covered by the RAW-PATH rule and never actually
+        # exercised the DIRECTORY-PREFIX rule at all; a mutation of _EXCLUDED_DIR_PREFIXES
+        # alone left this whole suite green. An unregistered campaign output - a new stand's
+        # result file BEFORE it is added to the manifest - is exactly the case that matters and
+        # the one the prefix rule alone has to cover.
+        unregistered = "research/results/_unregistered_probe.json"
+        check("setup: the unregistered-probe path is NOT a registered claim's raw path (so "
+             "case (a) below exercises the DIRECTORY-PREFIX rule, not the raw-path rule)",
+             unregistered not in prov._excluded_raw_paths(), unregistered)
         prov.subprocess.run = lambda *a, **k: _FakeCompleted(
-            returncode=0, stdout="research/results/guards_pack.json\n")
-        check("(a) only a results JSON modified -> dirty is False", prov.is_dirty() is False)
+            returncode=0, stdout=f"{unregistered}\n")
+        check("(a) only an UNREGISTERED results JSON modified -> dirty is False",
+             prov.is_dirty() is False)
 
         prov.subprocess.run = lambda *a, **k: _FakeCompleted(
             returncode=0, stdout="research/some_chart.svg\n")
@@ -120,7 +133,12 @@ def test_is_dirty_excludes_campaign_outputs() -> None:
         check("(c) a nevertwice/*.py engine file modified -> dirty is True",
              prov.is_dirty() is True)
 
-        some_raw = sorted(prov._excluded_raw_paths())[0]
+        # K5: named BEFORE indexing into it, so a mutation that empties the set entirely goes
+        # red by NAME (this check) rather than by an IndexError from `sorted(...)[0]` below.
+        excluded_raw = prov._excluded_raw_paths()
+        check("the manifest yields at least one raw path to exclude (a non-empty set)",
+             len(excluded_raw) > 0, str(len(excluded_raw)))
+        some_raw = sorted(excluded_raw)[0]
         prov.subprocess.run = lambda *a, **k: _FakeCompleted(
             returncode=0, stdout=f"{some_raw}\n")
         check(f"a claim's own committed raw path ({some_raw!r}) modified alone -> dirty is False",
@@ -139,6 +157,33 @@ def test_is_dirty_excludes_campaign_outputs() -> None:
              "- the wildcard is a single level, not recursive", prov.is_dirty() is True)
     finally:
         prov.subprocess.run = saved
+
+
+def test_excluded_raw_paths_only_covers_json_or_jsonl_data_files() -> None:
+    """K5 (2026-09-24, the auditor's finding on 0328eab): a `raw` path is excluded only when it
+    is a .json/.jsonl DATA file - a future claim whose `raw` happens to point at a `.py` (a
+    generator script committed for some other reason) must never let a real SOURCE change hide
+    behind the raw-path exclusion. Manifest content is faked via a monkeypatched
+    `Path.read_text` so this test does not depend on what research/evidence_manifest.json
+    currently contains (checked separately elsewhere: all 52 of its real raw paths are .json
+    today, so this only matters for what the manifest could contain later)."""
+    print("\n- _excluded_raw_paths() only ever excludes .json/.jsonl data files (K5) -")
+    fake_manifest = json.dumps({"claims": [
+        {"id": "a", "raw": "research/results/probe.json"},
+        {"id": "b", "raw": "research/results/probe.jsonl"},
+        {"id": "c", "raw": "research/some_generator.py"},
+    ]})
+    saved_read_text = Path.read_text
+    Path.read_text = lambda self, *a, **k: fake_manifest
+    try:
+        excluded = prov._excluded_raw_paths()
+    finally:
+        Path.read_text = saved_read_text
+    check(".json raw path IS excluded", "research/results/probe.json" in excluded, str(excluded))
+    check(".jsonl raw path IS excluded", "research/results/probe.jsonl" in excluded,
+         str(excluded))
+    check(".py raw path is NEVER excluded, even though it is a claim's own raw pointer",
+         "research/some_generator.py" not in excluded, str(excluded))
 
 
 def test_mutation_removing_the_output_exclusion_reddens_by_name() -> None:
@@ -238,6 +283,7 @@ def main() -> int:
                test_git_commit_degrades_on_a_git_failure_without_raising,
                test_is_dirty_reflects_the_git_diff_returncode,
                test_is_dirty_excludes_campaign_outputs,
+               test_excluded_raw_paths_only_covers_json_or_jsonl_data_files,
                test_mutation_removing_the_output_exclusion_reddens_by_name,
                test_measured_at_shape,
                test_stamp_mutates_in_place_and_returns_the_same_object,

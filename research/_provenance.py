@@ -44,18 +44,28 @@ _EXCLUDED_TOP_LEVEL_SUFFIXES = (".svg", ".png")   # research/*.svg, research/*.p
                                                    # children of research/ only, not recursive
 
 
+#: K5 (2026-09-24, the auditor's finding on 0328eab): a `raw` path is excluded only when it
+#: is a DATA file - a future claim's `raw` pointing at a `.py` (a generator script committed as
+#: its own "raw" for some other reason) must never let a source-file CHANGE hide behind this
+#: exclusion. `raw` paths in this manifest are always result data, never source, but the check
+#: does not trust that by convention alone.
+_RAW_DATA_SUFFIXES = (".json", ".jsonl")
+
+
 def _excluded_raw_paths() -> frozenset[str]:
-    """Every claim's own `raw` path in research/evidence_manifest.json - the committed result
-    file a claim's number was read from, which is itself a campaign OUTPUT, not source. Failing
-    to read the manifest (missing, unparsable) excludes nothing, the conservative direction: an
-    empty exclusion set can only make `is_dirty` MORE likely to (correctly) report dirty, never
-    silently hide a real change."""
+    """Every claim's own `raw` path in research/evidence_manifest.json, restricted to `.json`/
+    `.jsonl` data files (`_RAW_DATA_SUFFIXES`) - the committed result file a claim's number was
+    read from, which is itself a campaign OUTPUT, not source. Failing to read the manifest
+    (missing, unparsable) excludes nothing, the conservative direction: an empty exclusion set
+    can only make `is_dirty` MORE likely to (correctly) report dirty, never silently hide a real
+    change."""
     try:
         manifest = json.loads((ROOT / "research" / "evidence_manifest.json")
                               .read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return frozenset()
-    return frozenset(c["raw"] for c in manifest.get("claims", []) if c.get("raw"))
+    return frozenset(c["raw"] for c in manifest.get("claims", [])
+                     if c.get("raw") and str(c["raw"]).endswith(_RAW_DATA_SUFFIXES))
 
 
 def _is_output_path(rel_path: str, excluded_raw: frozenset[str]) -> bool:
