@@ -31,6 +31,7 @@ import argparse
 import json
 import os
 import random
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -46,6 +47,20 @@ sandbox_guard.isolate(prefix="nevertwice_abstention_")
 DATASET = HERE / "data" / "supersession_v1.json"
 
 THRESHOLDS = [0.0, 0.10, 0.20, 0.30, 0.35, 0.40, 0.50, 0.60, 0.75, 0.90]
+
+
+def _git_head() -> str | None:
+    """The commit this run's code is checked out at.
+
+    Not `supersession_bench._code_sha()`'s whole-package hash: that stand repeats through the
+    extractor and every deferred engine module its arms touch, so an edit anywhere in the
+    package can change what a repeat measures. This stand's `recall`/`inject` parts replay one
+    captured hit list through `sweep()`, a pure function of this file and the fixed corpus; a
+    commit pin is enough to say which version of both produced a number.
+    """
+    r = subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(ROOT),
+                       capture_output=True, text=True)
+    return r.stdout.strip() or None
 
 
 # ── part 1: delta re-mining ───────────────────────────────────────────────────────────────
@@ -257,6 +272,81 @@ def _print_sweep(title: str, rows: list[dict]) -> None:
               f"{r['char_reduction_vs_off']:>8.3f} {r['current_delta_vs_off']:>9.3f}")
 
 
+# ── pooling N runs (research/supersession_bench.py's convention, reused) ─────────────────
+
+def _pool_leaf(key: str, vals: list, out: dict) -> None:
+    """Write one leaf's pooled value at `key`, exactly as a single run would have.
+
+    A registered claim points at a key by name - `out["remine"]["byte_reduction"]`,
+    `out["recall_sweep"][i]["current_rate"]` - and `--runs N` must not move it. So the pooled
+    MEAN lands at that same key, and what a single run never had - the per-run values and
+    their spread - goes to a sibling that cannot collide with an existing key, because it is
+    that key's own name with a suffix nothing here already uses.
+    """
+    if isinstance(vals[0], bool) or vals[0] is None:
+        out[key] = vals[0]                             # not a measurement; keep run 1's
+        return
+    if isinstance(vals[0], (int, float)):
+        out[key] = round(sum(vals) / len(vals), 4)
+        out[f"{key}_per_run"] = {"values": vals, "min": min(vals), "max": max(vals)}
+        return
+    out[key] = vals[0]                                  # opaque (str, list of str): keep run 1's
+
+
+def _pool_dict(dicts: list[dict]) -> dict:
+    """Pool N structurally-identical dicts (one per run) into one, key by key.
+
+    A list of rows (`recall_sweep`, `remine.per_stage`) is pooled row-by-row, matched by the
+    row's own identifying field - `threshold`, `stage`, whichever key the row was built with
+    first - rather than by position. `sweep()` always emits one row per entry of `THRESHOLDS`
+    in the same order, so position would agree with the id today; matching by id is what keeps
+    that agreement a proof rather than an assumption, the same reason `pool_other_arm` in
+    `supersession_bench.py` keys its rows by `id` rather than zipping two lists.
+    """
+    first = dicts[0]
+    out: dict = {}
+    for key, v0 in first.items():
+        vals = [d[key] for d in dicts]
+        if isinstance(v0, dict):
+            out[key] = _pool_dict(vals)
+        elif isinstance(v0, list) and v0 and isinstance(v0[0], dict):
+            id_field = next(iter(v0[0]))
+            by_id: dict = {}
+            for run_rows in vals:
+                for row in run_rows:
+                    by_id.setdefault(row[id_field], []).append(row)
+            out[key] = [_pool_dict(rows) for rows in by_id.values()]
+        else:
+            _pool_leaf(key, vals, out)
+    return out
+
+
+def _pool_runs(runs: list[dict]) -> dict:
+    """Pool N single-run artifacts into one, `runs` recording how many were folded in.
+
+    Each run came from its own subprocess (`main`'s `--runs N` branch below), for the reason
+    `supersession_bench.py` spawns one per run too: `sandbox_guard.isolate()` binds one store
+    to the process that imports it, and `build_store()` skips a session id it has already
+    ingested - so an in-process second pass over `recall`/`inject` would read the FIRST pass's
+    already-built store and already-spent `.prompt_recall` state, which is not a second
+    measurement of the same commit, it is the first one read twice.
+
+    Refuses to pool runs that were not the same program: the loop re-executes this file once
+    per run, so an edit landing between two runs (`supersession_bench.py`'s "two runs of one
+    commit must be one program", 2026-09-22) would otherwise pool silently. `code_sha` is
+    `None` for a run that could not resolve `git rev-parse HEAD` (a source checkout, not a
+    repository) - that case pools as before, the same exemption `supersession_bench.py` grants
+    an artifact written before the field existed.
+    """
+    shas = {r.get("code_sha") for r in runs if r.get("code_sha")}
+    if len(shas) > 1:
+        raise ValueError(f"runs came from different source revisions {sorted(shas)}: "
+                         "not a repeat of one program")
+    pooled = _pool_dict(runs)
+    pooled["runs"] = len(runs)
+    return pooled
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--part", default="all", choices=["all", "remine", "recall", "inject"])
@@ -265,10 +355,52 @@ def main() -> int:
                     help="the SessionStart character cap the injection path applies")
     ap.add_argument("--stages", type=int, default=8)
     ap.add_argument("--per-stage", type=int, default=400)
+    ap.add_argument("--runs", type=int, default=1, metavar="N",
+                    help="repeat the whole run N times, each a fresh process (see `_pool_runs`"
+                         " for why), and pool them into --out: the pooled mean lands at every"
+                         " existing key, the per-run values and their spread beside it at"
+                         " f'{key}_per_run'. N=1 (the default) takes none of this path and"
+                         " writes exactly what this stand always wrote.")
     ap.add_argument("--out", default="")
     args = ap.parse_args()
 
-    out: dict = {"store": str(sandbox_guard.store())}
+    if args.runs < 1:
+        print(f"--runs {args.runs}: a run count below 1 measures nothing")
+        return 2
+
+    if args.runs > 1:
+        if not args.out:
+            print("--runs N needs --out: the per-run artifacts are written beside the pooled one")
+            return 2
+        stem = Path(args.out)
+        stem.parent.mkdir(parents=True, exist_ok=True)
+        base = [sys.executable, str(Path(__file__).resolve()),
+                "--part", args.part, "--k", str(args.k),
+                "--inject-budget", str(args.inject_budget),
+                "--stages", str(args.stages), "--per-stage", str(args.per_stage)]
+        paths = []
+        for i in range(1, args.runs + 1):
+            q = stem.with_name(f"{stem.stem}.run{i}{stem.suffix or '.json'}")
+            print(f"=== run {i} of {args.runs}, fresh process ===", flush=True)
+            rc = subprocess.run(base + ["--out", str(q)], cwd=str(ROOT)).returncode
+            if rc != 0 or not q.exists():
+                print(f"run {i} failed (exit {rc}); nothing pooled")
+                return 2
+            paths.append(q)
+        run_outs = [json.loads(p.read_text(encoding="utf-8")) for p in paths]
+        try:
+            pooled = _pool_runs(run_outs)
+        except ValueError as e:
+            print(f"pool: {e}")
+            return 2
+        print(f"\npooled {pooled['runs']} runs of {args.part}")
+        Path(args.out).write_text(json.dumps(pooled, indent=1, ensure_ascii=False),
+                                  encoding="utf-8", newline="\n")
+        print("wrote", args.out)
+        return 0
+
+    out: dict = {"store": str(sandbox_guard.store()),
+                "code_sha": _git_head(), "measured_at": time.strftime("%Y-%m-%dT%H:%M:%S")}
 
     if args.part in ("all", "remine"):
         print("- C3  delta re-mining")

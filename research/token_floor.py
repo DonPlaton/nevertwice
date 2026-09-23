@@ -32,11 +32,52 @@ at N=1 and at N=50 differ by nearly N. Reporting the curve is the only form that
 every N, and it is also the only form a competitor cannot accuse of picking its N.
 
     python research/token_floor.py --limit 50            # smoke, Nevertwice arm only
+    python research/token_floor.py --dry                  # stub path, no model, no store beyond
+                                                            # a throwaway sandbox - proves the
+                                                            # STAND's own plumbing (fixes 1/3/4/5/7)
     python research/token_floor.py --save                # full, writes the artifact
     MEM0_TELEMETRY=False <mem0 venv python> research/token_floor.py --only mem0 --save
 
 An arm that cannot run here records a blocker string with the reason. It never records a
 number it did not measure.
+
+## v2 (2026-09-23 review): nine fixes, block A re-run
+
+The first cut's zeros were a property of the STAND, not the product (`.loop/TF-ANALYSIS.md`,
+verified independently). Nine fixes, listed here so the CHANGE from v1 is legible in one place
+rather than scattered across nine docstrings:
+
+  1. `session_id` is now `f"tokenfloor-{question_id}"` (was one shared id for every question,
+     which let the injection cap - PROMPT_RECALL_MAX_PER_SESSION - silently exhaust itself on
+     the first six questions and read 0 for the rest); AND each CORPUS gets a fresh, empty
+     sandbox store (`_rebase_vault`), so the second corpus's cap state and notes cannot be the
+     first corpus's leftovers.
+  2. The curve is labelled EXPLICITLY, per `curve_model` in the artifact: "N independent
+     single-turn sessions" - total = N * (session_start + mean_per_turn) - is what fix 1's
+     methodology actually measures (every row is turn 1 of its OWN fresh session_id), so that
+     is what is reported; the old `start + N*mean` formula matched neither that model nor a
+     single N-turn session capped at 6 (see the module docstring below `curve()`).
+  3. Every row now carries `reason` (cap/trivial/untracked/no_hits/injected), `hit_stems` (+
+     `hit_scores` where the SQLite index path is live), `semantic_ran`, and
+     `raw_additional_context` (the actual injected text, not just its length).
+  4. ONE reachability definition for both arms and both corpora: a marker's TEXT as a whole
+     word in the per-TURN injected text only (never session-start + turn combined, and never a
+     session id). On the oracle the marker is LongMemEval's own `answer` field.
+  5. `code_sessions_v1`'s 30 projects are ingested and queried EACH FROM ITS OWN tracked
+     directory (a `.git` marker per project) instead of one shared "tokenfloor" project; Mem0
+     gets a `user_id` per project too.
+  6. Mem0's `infer=False` is named in the same printed line as its cost.
+  7. Every char/token count is of the PARSED `additionalContext` string, never the JSON
+     envelope (whose keys/quoting/escapes inflated the old count 5-8%).
+  8. `fallback: "lexical-only"` is logged per row whenever the embedder was not reachable for
+     that turn (`semantic_ran: false`).
+  9. `marker_freq_in_session_start` is reported per marker per row - a marker that is already a
+     common word in the session-start card would read as "reachable" regardless of whether the
+     relevant note actually injected, so its background frequency has to be visible.
+
+Existing registered claims' pointers may not resolve after this rewrite - block A is re-run in
+v2 and the claims get re-registered; the pointers that changed shape are listed in the
+implementing session's report, not repeated here.
 """
 
 from __future__ import annotations
@@ -47,8 +88,10 @@ import contextlib
 import io
 import json
 import os
+import re
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -113,9 +156,17 @@ CONSUMER_PROMPT_OVERHEAD_TOKENS = 125
 #: settings, and a number measured at ours would be ours wearing their name.
 MEM0_TOP_K = 20
 
+#: Fix 3: the exhaustive set of reasons a per-turn row can have. `injected` and `no_hits` are
+#: read off the actual output (nothing upstream can tell them apart without running retrieval);
+#: the other three are read BEFORE the real emission, by replicating emit_prompt_recall's own
+#: early-exit gates read-only (`_classify_pre_reason`) - so the reason is KNOWN, not inferred
+#: from an empty string that could mean four different things.
+REASONS = ("cap", "trivial", "untracked", "no_hits", "injected")
 
-def load_corpus(name: str) -> tuple[list, dict]:
-    """(questions, session pool) in one shape for both corpora, verified before it is read.
+
+def load_corpus(name: str) -> tuple[list, dict, dict | None]:
+    """(questions, session pool, project groups) in one shape for both corpora, verified
+    before it is read.
 
     The two corpora are pinned differently and that difference is worth stating rather than
     hiding behind a common loader: `longmemeval_oracle` is third-party, so `corpus_pin` carries
@@ -123,22 +174,38 @@ def load_corpus(name: str) -> tuple[list, dict]:
     so its provenance is a commit -- stronger than a digest in a file, because the digest proves
     the bytes and the commit proves where they came from. It also records `generator_model` and
     `seed`, so it is reproducible rather than merely identified.
+
+    `groups` (fix 5): None for the oracle (one implicit project - LongMemEval has no project
+    structure); for code_sessions, {project_slug: {"session_ids": [...], "question_ids": [...]}}
+    - the corpus's own 30-project structure, preserved instead of flattened into one pool the
+    way v1 did (F6/F7: all 30 projects landed in ONE tracked project, which is why identical
+    questions with different answers could not be told apart and same-slug retirement acted
+    across projects that share nothing).
     """
     if name == "longmemeval_oracle":
         corpus_pin.verify(name)                      # before reading a byte
         data, pool = le.load()
         rows = [{"question_id": e.get("question_id"), "question": e["question"],
+                 #: fix 4 (auditor's addition): the oracle's reachability marker is the TEXT of
+                 #: LongMemEval's own `answer` field, not the gold session id - a note never
+                 #: quotes the id of the session it came from, so asking for one is asking a
+                 #: question retrieval cannot answer by construction (F3, TF-ANALYSIS.md).
+                 "answer": e.get("answer"),
                  "gold": {str(s) for s in (e.get("answer_session_ids") or [])}} for e in data]
-        return rows, pool
+        return rows, pool, None
     if name == "code_sessions_v1":
         path = HERE / "data" / "code_sessions_v1.json"
         if not path.exists():
             raise FileNotFoundError(f"{path} is missing - it is tracked in git; check the tree")
         raw = json.loads(path.read_text(encoding="utf-8"))
-        pool, rows = {}, []
+        pool, rows, groups = {}, [], {}
         for proj in raw["projects"]:
+            pslug = m.slug_project(proj.get("slug") or proj.get("id") or "project")
+            sess_ids: list = []
+            q_ids: list = []
             for s in proj["sessions"]:
                 pool[s["id"]] = s["text"]
+                sess_ids.append(s["id"])
             for q in proj["questions"]:
                 gold = q.get("gold_sessions")
                 if isinstance(gold, str):            # the corpus stores these as repr'd lists
@@ -160,8 +227,11 @@ def load_corpus(name: str) -> tuple[list, dict]:
                         markers = []
                 rows.append({"question_id": q["id"], "question": q["question"],
                              "gold": {str(g) for g in (gold or [])},
-                             "markers": [str(x) for x in (markers or [])]})
-        return rows, pool
+                             "markers": [str(x) for x in (markers or [])],
+                             "project": pslug})
+                q_ids.append(q["id"])
+            groups[pslug] = {"session_ids": sess_ids, "question_ids": q_ids}
+        return rows, pool, groups
     raise KeyError(f"unknown corpus {name!r}; have {', '.join(CORPORA)}")
 
 
@@ -199,6 +269,136 @@ def _count(text: str, toks: dict) -> dict:
             row[f"tokens[{name}]"] = None
             row.setdefault("_errors", {})[name] = f"{type(exc).__name__}: {exc}"
     return row
+
+
+# ── fix 7: parse the envelope, count the payload ────────────────────────────────────────────
+
+def _parse_additional_context(raw: str) -> str:
+    """The engine's stdout is a JSON envelope
+    (`{"hookSpecificOutput": {"hookEventName": ..., "additionalContext": <text>}}`) - fix 7:
+    every char/token count in this stand is of the PARSED `additionalContext` string, never
+    the envelope. The envelope's own keys, quoting and `\\uXXXX` escapes (emoji: `\U0001f9e0`)
+    inflated the count 5-8% (measured, TF-ANALYSIS.md F10) - a real cost difference wearing a
+    parsing bug's clothes.
+
+    "" for an envelope with no payload (nothing was injected - the emitter printed nothing at
+    all, which is valid and not an error) or one this stand cannot parse - recorded as a
+    visible parse failure, never silently substituted with the raw text, which would
+    reintroduce exactly the defect this fix removes."""
+    raw = (raw or "").strip()
+    if not raw:
+        return ""
+    if raw.startswith("__ERROR__"):
+        return raw
+    try:
+        payload = json.loads(raw)
+    except (ValueError, TypeError):
+        return f"__PARSE_ERROR__ could not parse as JSON: {raw[:120]!r}"
+    return str((payload.get("hookSpecificOutput") or {}).get("additionalContext") or "")
+
+
+# ── fix 4/9: one whole-word marker definition, and its background frequency ────────────────
+
+def _whole_word_present(marker: str, text: str) -> bool:
+    """Fix 4: a marker counts only as a WHOLE WORD - "60" must not match inside "1960", and a
+    multi-word marker ("60 seconds") is bounded at its own start and end, not internally."""
+    marker = (marker or "").strip()
+    if not marker or not text:
+        return False
+    try:
+        return re.search(r"\b" + re.escape(marker) + r"\b", text, re.IGNORECASE) is not None
+    except re.error:
+        return marker.lower() in text.lower()          # a marker with no word chars at all
+
+
+def _marker_freq(marker: str, text: str) -> int:
+    """Fix 9: how often a marker already occurs in `text` as a whole word - printed per row so
+    a marker that is already a common word in the session-start card cannot pass for evidence
+    that the SPECIFIC relevant note was the thing that made it reachable."""
+    marker = (marker or "").strip()
+    if not marker or not text:
+        return 0
+    try:
+        return len(re.findall(r"\b" + re.escape(marker) + r"\b", text, re.IGNORECASE))
+    except re.error:
+        return text.lower().count(marker.lower())
+
+
+def _row_markers(corpus_name: str, e: dict) -> list[str]:
+    """The SAME kind of value for both corpora (fix 4): a list of ANSWER-TEXT strings to look
+    for as whole words in the injected text, never a session id. On the oracle this is
+    LongMemEval's own `answer` field (auditor's addition, 2026-09-23); code_sessions already
+    carries its own `markers` list, unchanged in source, only in how they are matched."""
+    if corpus_name == "longmemeval_oracle":
+        ans = e.get("answer")
+        return [str(ans)] if ans else []
+    return [x for x in (e.get("markers") or []) if x]
+
+
+# ── fix 3: the reason a row did or did not inject ───────────────────────────────────────────
+
+def _classify_pre_reason(cwd: str, prompt: str, session_id: str) -> str | None:
+    """Read-only replication of `emit_prompt_recall`'s own early-exit gates (`_engine_hooks.py`),
+    called BEFORE the real emission - so a row's reason is KNOWN, not guessed from an empty
+    string afterwards. `None` means none of the early gates applied; the caller then reads
+    `injected` vs `no_hits` off the actual output, which is the only way to tell those two
+    apart (they both depend on what retrieval found, which this function does not run).
+
+    Every check here calls the ENGINE's own function (`m.is_tracked_project`,
+    `m._is_trivial_prompt`, `m._load_prompt_recall_state`) rather than re-deriving the
+    condition - a stand that reimplements the gate can drift from the gate it is reporting on,
+    which is the defect class the auditing session spent a night cataloguing."""
+    if not (m.PROMPT_RECALL_ENABLED and m.INJECT_CONTEXT) or not m.is_tracked_project(cwd):
+        return "untracked"
+    if m._is_trivial_prompt(prompt):
+        return "trivial"
+    state = m._load_prompt_recall_state(session_id)
+    if m.PROMPT_RECALL_MODE == "once" and state.get("count", 0) >= 1:
+        return "cap"
+    if state.get("count", 0) >= m.PROMPT_RECALL_MAX_PER_SESSION:
+        return "cap"
+    return None
+
+
+def _diagnose(project: str, prompt: str, cache) -> tuple[list, dict, bool]:
+    """Read-only probe alongside the real emission: hit STEMS (fix 3), a fused SCORE where
+    available (fix 3), and whether the semantic arm ran (fix 3/8). Never called when a pre-
+    reason already fully explains an empty row (untracked/trivial/cap) - it would only cost a
+    call the real gate already skipped, for a reason that is already known.
+
+    `retrieve_relevant`'s own public hits carry no score field (`_hit()`, `_engine_recall.py`
+    - `{ntype, title, stem, recurrence}`), so a fused score is genuinely not always available;
+    `index_sqlite.search` (a SEPARATE, also read-only path) is consulted for one, and when the
+    scale index is not live this stays empty - the honest "not available" reading fix 3 asks
+    for, not a fabricated number."""
+    hits = m.retrieve_relevant(project, prompt, m.PROMPT_RECALL_K,
+                               embed_timeout=m.PROMPT_RECALL_EMBED_TIMEOUT,
+                               alive_timeout=m.PROMPT_RECALL_ALIVE_TIMEOUT, cache=cache,
+                               recency_fallback=False)
+    stems = [h.get("stem") for h in hits if h.get("stem")]
+    scores: dict = {}
+    try:
+        idx = m._sibling("index_sqlite")
+        results, mode = idx.search(prompt, project=project, k=m.PROMPT_RECALL_K)
+        if mode != "no-index":
+            scores = {r["stem"]: r.get("score") for r in results if r.get("stem")}
+    except Exception:                                                # noqa: BLE001
+        pass
+    semantic_ran = bool(m.embedder_available(m.PROMPT_RECALL_ALIVE_TIMEOUT))
+    return stems, {s: scores.get(s) for s in stems}, semantic_ran
+
+
+def _make_cwd(name: str) -> str:
+    """A dedicated, TRACKED directory for one project (fix 5): a bare `.git` marker - an empty
+    directory is enough, `_find_repo_root` only checks existence, and `NEVERTWICE_TRACK_ANY_
+    PROJECT` defaults on - directly INSIDE this project's own directory, never shared with a
+    sibling. Two projects sharing an ancestor `.git` would both derive to the FIRST repo root
+    found, which is exactly the F6/F7 bug ("all 30 projects went into ONE project") this fix
+    removes; a `.git` at each project's OWN level means `_find_repo_root` stops there every
+    time, regardless of what a shared parent directory does or does not have."""
+    cwd_dir = ROOT / ".loop" / "token_floor_cwd" / name
+    (cwd_dir / ".git").mkdir(parents=True, exist_ok=True)
+    return str(cwd_dir)
 
 
 def _ingest(pool: dict, cap: int | None, project: str) -> dict:
@@ -296,6 +496,35 @@ def _ingest(pool: dict, cap: int | None, project: str) -> dict:
             "seconds": round(time.time() - t0, 1)}
 
 
+def _ingest_stub(pool: dict, cap: int | None, project: str) -> dict:
+    """`--dry`'s stand-in for `_ingest`: writes one pattern note per session directly via
+    `write_typed_note`, no model, no extractor. Exists ONLY to prove this STAND's own plumbing
+    (fixes 1/3/4/5/7) end to end without an LLM - never used for a real measurement, whose
+    whole point is what the REAL extractor does to real dialogue (the write-cost numbers this
+    function reports are all zero/empty on purpose, so nobody mistakes them for a measurement)."""
+    items = list(pool.items())
+    if cap:
+        items = items[:cap]
+    if not items:
+        return {"blocked": "empty session pool - refusing to measure over nothing"}
+    written = 0
+    for sid, text in items:
+        title = f"note for {sid}"
+        desc = (text or "")[:200] or f"a session about {sid}"
+        stem = m.write_typed_note("Patterns", {"title": title, "description": desc},
+                                  project, "2026-09-23", [], "pattern")
+        if stem:
+            m.update_embeddings([(stem, "pattern", project, title, desc, "")])
+            written += 1
+    typed = written
+    zero3 = {"pattern": 0, "mistake": 0, "decision": 0}
+    return {"written": written, "typed_notes": typed,
+            "proposed": {"pattern": written, "mistake": 0, "decision": 0},
+            "refused": dict(zero3), "quarantined": dict(zero3), "skipped": dict(zero3),
+            "off_topic": dict(zero3), "off_topic_sessions": 0, "not_stored": 0,
+            "write_cost_tokens": {}, "seconds": 0.0, "stub": True}
+
+
 def _injection_text(cwd: str) -> str:
     """The SessionStart payload the engine would actually emit, captured rather than rebuilt.
 
@@ -323,85 +552,149 @@ def _per_turn_text(cwd: str, prompt: str, session_id: str) -> str:
     return buf.getvalue()
 
 
-def run_nevertwice(data, pool, toks, cap) -> dict:
-    """Session-start cost once, per-turn cost per question, and whether the answer is reachable."""
-    #: The cwd is chosen BEFORE the ingest, and the project name is DERIVED from it rather than
-    #: chosen beside it. Written the other way first -- notes under a project called
-    #: "tokenfloor", injection asked from a directory named `tokenfloor` -- and the payload came
-    #: back empty because `derive_project_from_cwd` walks up to the repository root and answers
-    #: "nevertwice", not the leaf. Two names that agreed in my head and never in the engine.
-    #: Asking the engine which project this directory is, instead of telling it, removes the
-    #: possibility: there is one name now, and it comes from the thing that will use it.
-    cwd_dir = ROOT / ".loop" / "token_floor_cwd" / "tokenfloor"
-    cwd_dir.mkdir(parents=True, exist_ok=True)
-    cwd = str(cwd_dir)
-    if not m.is_tracked_project(cwd):
-        return {"blocked": (
-            f"is_tracked_project({cwd!r}) is False, so the session-start emitter returns before "
-            f"assembling anything and any payload this arm reports would be a property of the "
-            f"harness, not of the system. Configure a project root the engine tracks.")}
-    project = m.derive_project_from_cwd(cwd)
-    ing = _ingest(pool, cap, project)
-    if "blocked" in ing:
-        return ing
-    start = _injection_text(cwd)
-    if start.startswith("__ERROR__"):
-        return {"blocked": f"session-start injection did not run: {start[9:]}"}
-    #: The zero this stand could still print wrongly, and the rule that catches it.
-    #: "A zero cost may only be printed beside `answer_reachable` and `proposed`" is necessary
-    #: and NOT sufficient: measured 2026-09-22, the code-sessions corpus wrote 10 typed notes
-    #: and the session-start payload was still 0 characters, with both explaining numbers
-    #: present. The cause was this stand, not the cost -- `is_tracked_project()` excludes
-    #: transient paths by design, and the sandbox store lives in Temp, so the emitter returned
-    #: before assembling anything. A store with notes and an empty payload is a contradiction:
-    #: it says the READING path did not run, which is not a fact about price.
-    if ing.get("typed_notes", 0) > 0 and not start.strip():
-        #: Every clause here is MEASURED at the moment of refusing, not asserted. The first
-        #: version of this message named `is_tracked_project` as the cause in fixed text, and
-        #: kept naming it after that cause was fixed and a different one took over - a refusal
-        #: that lies about its reason is worse than a number, because it sends the next reader
-        #: to the wrong place with confidence. Same defect class as everything else tonight,
-        #: found in the refusal written to catch it (auditing session, 2026-09-22).
-        probe = {
-            "is_tracked_project": bool(m.is_tracked_project(cwd)),
-            "derived_project": m.derive_project_from_cwd(cwd),
-            "project_written_as": project,
-            "context_file_exists": (Path(sandbox_guard.store()) / "Context" /
-                                    f"{m.derive_project_from_cwd(cwd)}.md").exists(),
-            "inject_context_on": bool(getattr(m, "INJECT_CONTEXT", False)),
-        }
-        return {"blocked": (
-            f"{ing['typed_notes']} typed note(s) in the store and a 0-character session-start "
-            f"payload: the reading path produced nothing, so this is not a cost of zero. "
-            f"Measured at the point of refusal: {probe}"), "ingest": ing, "probe": probe}
-    rows = []
-    for e in data:
-        turn = _per_turn_text(cwd, e["question"], "tokenfloor-session")
-        if turn.startswith("__ERROR__"):
-            return {"blocked": f"per-turn injection did not run: {turn[9:]}"}
-        row = _count(turn, toks)
-        row["question_id"] = e.get("question_id")
-        #: "found" asks of the TEXT INJECTED, not of a ranker: the claim is about what the
-        #: model can see, and a hit that never reached the prompt did not help the answer.
-        #: Reachability asks of the TEXT INJECTED, and it asks for the ANSWER, not for the id
-        #: of the session the answer came from. Where the corpus gives answer markers, they are
-        #: the question; where it gives only session ids, the column says so rather than
-        #: reporting a zero it cannot justify - a reachability of 0 that comes from asking the
-        #: wrong string is indistinguishable from a system that delivers nothing.
-        mk = e.get("markers") or []
-        both = start + "\n" + turn
-        if mk:
-            row["answer_reachable"] = any(x and x.lower() in both.lower() for x in mk)
-        elif e["gold"]:
-            row["answer_reachable"] = any(g in both for g in e["gold"])
-        else:
-            row["answer_reachable"] = None      # nothing to ask with; not a zero
-        rows.append(row)
+def run_nevertwice(data, pool, toks, cap, *, groups: dict | None = None,
+                   dry: bool = False, corpus_name: str = "") -> dict:
+    """Session-start cost once per project, per-turn cost per question, and whether the
+    answer is reachable - now per project (fix 5) when `groups` is given.
+
+    Fix 1: a FRESH, EMPTY sandbox store for this call - `_rebase_vault` to a new temp dir, so
+    the injection cap's state (`.prompt_recall`) and the notes from a PRIOR corpus can never
+    be this corpus's leftovers (measured 2026-09-22: code_sessions started with the cap
+    already spent by the oracle corpus's first six rows, reading 0/420 for a reason that had
+    nothing to do with code_sessions).
+    """
+    m._rebase_vault(Path(tempfile.mkdtemp(
+        prefix=f"nevertwice_tokenfloor_{corpus_name or 'run'}_")))
+
+    if groups is None:
+        # The oracle: one implicit project, same shape everywhere else in this function.
+        groups = {"tokenfloor": {"session_ids": list(pool.keys()),
+                                 "question_ids": [e["question_id"] for e in data]}}
+
+    zero3 = {"pattern": 0, "mistake": 0, "decision": 0}
+    ing_total = {"written": 0, "typed_notes": 0, "proposed": dict(zero3), "refused": dict(zero3),
+                "quarantined": dict(zero3), "skipped": dict(zero3), "off_topic": dict(zero3),
+                "off_topic_sessions": 0, "not_stored": 0,
+                "write_cost_tokens": {"prompt_tokens": 0, "eval_tokens": 0, "ollama": 0,
+                                      "cloud": 0, "fail": 0},
+                "seconds": 0.0, "projects": 0}
+    rows: list = []
+    session_start_rows: dict = {}   # project -> _count(...) of its own session-start payload
+
+    by_qid = {e["question_id"]: e for e in data}
+    for gname, g in groups.items():
+        cwd = _make_cwd(gname)
+        if not m.is_tracked_project(cwd):
+            return {"blocked": (
+                f"is_tracked_project({cwd!r}) is False for project {gname!r}, so the "
+                f"session-start emitter returns before assembling anything and any payload "
+                f"this arm reports would be a property of the harness, not of the system.")}
+        project = m.derive_project_from_cwd(cwd)
+        sub_pool = {sid: pool[sid] for sid in g["session_ids"] if sid in pool}
+        ing = (_ingest_stub if dry else _ingest)(sub_pool, cap, project)
+        if "blocked" in ing:
+            ing["blocked"] = f"[{gname}] {ing['blocked']}"
+            return ing
+        ing_total["written"] += ing.get("written", 0)
+        ing_total["typed_notes"] += ing.get("typed_notes", 0)
+        ing_total["off_topic_sessions"] += ing.get("off_topic_sessions", 0)
+        ing_total["not_stored"] += ing.get("not_stored", 0)
+        ing_total["seconds"] += ing.get("seconds", 0.0)
+        ing_total["projects"] += 1
+        for key in ("proposed", "refused", "quarantined", "skipped", "off_topic"):
+            for kind, val in (ing.get(key) or {}).items():
+                ing_total[key][kind] = ing_total[key].get(kind, 0) + int(val or 0)
+        for kind, val in (ing.get("write_cost_tokens") or {}).items():
+            ing_total["write_cost_tokens"][kind] = ing_total["write_cost_tokens"].get(kind, 0) + int(val or 0)
+
+        start_raw = _injection_text(cwd)
+        if start_raw.startswith("__ERROR__"):
+            return {"blocked": f"[{gname}] session-start injection did not run: {start_raw[9:]}"}
+        start_text = _parse_additional_context(start_raw)          # fix 7
+        if ing.get("typed_notes", 0) > 0 and not start_text.strip():
+            #: Every clause here is MEASURED at the moment of refusing, not asserted. A refusal
+            #: that names the wrong cause is worse than a number, because it sends the next
+            #: reader to the wrong place with confidence (auditing session, 2026-09-22).
+            probe = {
+                "is_tracked_project": bool(m.is_tracked_project(cwd)),
+                "derived_project": m.derive_project_from_cwd(cwd),
+                "project_written_as": project,
+                "context_file_exists": (Path(sandbox_guard.store()) / "Context" /
+                                        f"{m.derive_project_from_cwd(cwd)}.md").exists(),
+                "inject_context_on": bool(getattr(m, "INJECT_CONTEXT", False)),
+            }
+            return {"blocked": (
+                f"[{gname}] {ing['typed_notes']} typed note(s) in the store and a 0-character "
+                f"session-start payload: the reading path produced nothing, so this is not a "
+                f"cost of zero. Measured at the point of refusal: {probe}"),
+                "ingest": ing, "probe": probe}
+        session_start_rows[gname] = _count(start_text, toks)
+
+        cache = None if m.scale_index_ready() else m.load_embed_cache()
+        for qid in g["question_ids"]:
+            e = by_qid.get(qid)
+            if e is None:
+                continue
+            sid = f"tokenfloor-{qid}"                                # fix 1
+            prompt = e["question"]
+            pre_reason = _classify_pre_reason(cwd, prompt, sid)
+            raw_turn = _per_turn_text(cwd, prompt, sid)
+            if raw_turn.startswith("__ERROR__"):
+                return {"blocked": f"[{gname}] per-turn injection did not run: {raw_turn[9:]}"}
+            turn_text = _parse_additional_context(raw_turn)          # fix 7
+            if pre_reason:
+                reason = pre_reason
+                stems, scores, semantic_ran = [], {}, False
+            elif turn_text.strip():
+                reason = "injected"
+                stems, scores, semantic_ran = _diagnose(project, prompt, cache)
+            else:
+                reason = "no_hits"
+                stems, scores, semantic_ran = _diagnose(project, prompt, cache)
+
+            markers = _row_markers(corpus_name, e)
+            reachable = None
+            if markers:
+                #: fix 4: the PER-TURN text only, never session-start + turn - reachability is
+                #: about whether THIS query's injection delivered the answer, and folding the
+                #: session-start card in credited the system for content it may not have
+                #: chosen to show this turn at all.
+                reachable = any(_whole_word_present(mk, turn_text) for mk in markers)
+            elif e["gold"]:
+                reachable = None            # fix 4: a gold SESSION id is not an answer string;
+                                             # this corpus/row gives nothing reachability can use
+
+            row = {
+                "question_id": qid, "project": gname,
+                "reason": reason,                                    # fix 3
+                "hit_stems": stems,                                  # fix 3
+                "hit_scores": scores,                                # fix 3
+                "semantic_ran": semantic_ran,                        # fix 3
+                "fallback": None if semantic_ran else "lexical-only",  # fix 8
+                "raw_additional_context": turn_text,                 # fix 3
+                "marker_freq_in_session_start":                      # fix 9
+                    {mk: _marker_freq(mk, start_text) for mk in markers},
+                "answer_reachable": reachable,
+                **_count(turn_text, toks),
+            }
+            rows.append(row)
+
     if not rows:
         return {"blocked": "no questions - refusing to report over an empty set"}
+    #: One session-start figure for the whole corpus result: the MEAN across projects when
+    #: there is more than one (code_sessions), or the single project's own count (the oracle).
+    #: `curve()` needs one `session_start` per arm; per-project figures are still in `rows` via
+    #: whichever project each row belongs to for a reader who wants the split.
+    ss_counts = list(session_start_rows.values())
+    session_start = {"chars": round(sum(r["chars"] for r in ss_counts) / len(ss_counts))}
+    for name in toks:
+        key = f"tokens[{name}]"
+        vals = [r.get(key) for r in ss_counts if r.get(key) is not None]
+        session_start[key] = round(sum(vals) / len(vals)) if vals else None
     return {
-        "ingest": ing,
-        "session_start": _count(start, toks),
+        "ingest": ing_total,
+        "session_start": session_start,
+        "session_start_by_project": session_start_rows,
         "per_turn": {
             "n": len(rows),
             "median_chars": sorted(r["chars"] for r in rows)[len(rows) // 2],
@@ -409,17 +702,27 @@ def run_nevertwice(data, pool, toks, cap) -> dict:
             "answer_reachable": sum(1 for r in rows if r["answer_reachable"]),
             "reachability_unanswerable": sum(1 for r in rows
                                              if r["answer_reachable"] is None),
+            "by_reason": {reason: sum(1 for r in rows if r["reason"] == reason)
+                         for reason in REASONS},
+            "lexical_fallback": sum(1 for r in rows if r["fallback"] == "lexical-only"),
         },
         "rows": rows,
     }
 
 
-def run_mem0(data, pool, toks, cap) -> dict:
+def run_mem0(data, pool, toks, cap, *, groups: dict | None = None, corpus_name: str = "") -> dict:
     """What Mem0 would put in the prompt for each query: its search payload, serialised.
 
     Runs only in the competitor venv. The serialisation is Mem0's own `memory` strings joined
     by newlines - what an integration passes to the model - and not the full JSON envelope,
     which would count transport rather than payload and overstate its cost.
+
+    Fix 5: `user_id` is per PROJECT for code_sessions (`groups`), matching the ingest boundary
+    the Nevertwice arm now respects, instead of one shared id ("tf") that let a query on
+    project A's questions search across every project's sessions. Fix 4: reachability is the
+    SAME whole-word marker-text definition the Nevertwice arm now uses, never a session id
+    among the hits - the id/text asymmetry (F9, TF-ANALYSIS.md) made the two arms incomparable
+    even where both delivered something.
     """
     try:
         from mem0 import Memory  # noqa: PLC0415
@@ -441,43 +744,48 @@ def run_mem0(data, pool, toks, cap) -> dict:
         })
     except Exception as exc:                                        # noqa: BLE001
         return {"blocked": f"Mem0 init failed ({type(exc).__name__}: {exc})"}
-    items = list(pool.items())[:cap] if cap else list(pool.items())
-    if not items:
-        return {"blocked": "empty session pool - refusing to measure over nothing"}
+
+    by_qid = {e["question_id"]: e for e in data}
+    if groups is None:
+        groups = {"tf": {"session_ids": list(pool.keys()),
+                         "question_ids": [e["question_id"] for e in data]}}
+
+    rows: list = []
     t0 = time.time()
-    for sid, text in items:
-        try:
-            mem.add(text, user_id="tf", metadata={"session_id": sid}, infer=False)
-        except Exception as exc:                                    # noqa: BLE001
-            return {"blocked": f"mem0.add failed on {sid}: {type(exc).__name__}: {exc}"}
-    ingest_s = round(time.time() - t0, 1)
-    rows = []
-    for e in data:
-        try:
-            #: `top_k`, not `limit`. Mem0 2.0.19 takes `top_k=20` and swallows `limit`
-            #: into `**kwargs` without a word: measured, `limit=1` and `limit=10` both return
-            #: 20 rows, `top_k=1` returns 1. Three stands in this repository pass `limit` and
-            #: have been getting 20 all along. Left at Mem0's OWN default and printed beside
-            #: the cost as a condition, so the number belongs to (Mem0, its settings) rather
-            #: than to (Mem0, our choice) - a cost measured at a limit we imposed would be our
-            #: number wearing their name.
-            res = mem.search(e["question"], filters={"user_id": "tf"}, top_k=MEM0_TOP_K)
-        except Exception as exc:                                    # noqa: BLE001
-            return {"blocked": f"mem0.search failed: {type(exc).__name__}: {exc}"}
-        hits = res.get("results", res) if isinstance(res, dict) else res
-        payload = "\n".join(str(h.get("memory", "")) for h in hits)
-        row = _count(payload, toks)
-        row["question_id"] = e.get("question_id")
-        row["hits"] = len(hits)
-        row["top_k"] = MEM0_TOP_K
-        gold = e["gold"]
-        row["answer_reachable"] = bool(gold) and any(
-            g == str((h.get("metadata") or {}).get("session_id")) for h in hits for g in gold)
-        rows.append(row)
+    written_total = 0
+    for gname, g in groups.items():
+        user_id = m.slug_project(f"tf-{gname}")                     # fix 5: one user_id/project
+        items = [(sid, pool[sid]) for sid in g["session_ids"] if sid in pool]
+        if cap:
+            items = items[:cap]
+        if not items:
+            continue
+        for sid, text in items:
+            try:
+                mem.add(text, user_id=user_id, metadata={"session_id": sid}, infer=False)
+            except Exception as exc:                                # noqa: BLE001
+                return {"blocked": f"[{gname}] mem0.add failed on {sid}: {type(exc).__name__}: {exc}"}
+            written_total += 1
+        for qid in g["question_ids"]:
+            e = by_qid.get(qid)
+            if e is None:
+                continue
+            try:
+                res = mem.search(e["question"], filters={"user_id": user_id}, top_k=MEM0_TOP_K)
+            except Exception as exc:                                # noqa: BLE001
+                return {"blocked": f"[{gname}] mem0.search failed: {type(exc).__name__}: {exc}"}
+            hits = res.get("results", res) if isinstance(res, dict) else res
+            payload = "\n".join(str(h.get("memory", "")) for h in hits)
+            markers = _row_markers(corpus_name, e)
+            reachable = any(_whole_word_present(mk, payload) for mk in markers) if markers else None
+            row = {"question_id": qid, "project": gname, "hits": len(hits), "top_k": MEM0_TOP_K,
+                  "infer": False, "answer_reachable": reachable, **_count(payload, toks)}
+            rows.append(row)
     if not rows:
         return {"blocked": "no questions - refusing to report over an empty set"}
     return {
-        "ingest": {"written": len(items), "seconds": ingest_s},
+        "ingest": {"written": written_total, "seconds": round(time.time() - t0, 1),
+                  "projects": len(groups)},
         "session_start": _count("", toks),          # Mem0 injects nothing at session start
         "per_turn": {
             "n": len(rows),
@@ -491,14 +799,20 @@ def run_mem0(data, pool, toks, cap) -> dict:
     }
 
 
-def curve(arms: dict, toks: dict) -> dict:
-    """Total cost for a session of N turns, per arm, per unit. The point of the whole stand.
+#: Fix 2: EXPLICIT curve model. Fix 1's methodology (a fresh session_id per question) makes
+#: every row genuinely "turn 1 of its own independent single-turn session" - which is what is
+#: reported, and named as such, rather than the v1 formula (`start + N*mean`) that matched
+#: neither this model (which pays `session_start` EVERY session, i.e. N times) nor a single
+#: N-turn session capped at PROMPT_RECALL_MAX_PER_SESSION (which would need `mean_when_firing`
+#: measured over turns 2..6 of ONE shared session - a genuinely different measurement fix 1
+#: deliberately stops making, because that is the exact shared-session-id methodology whose
+#: cap-exhaustion bug this rewrite exists to remove).
+CURVE_MODEL = "N independent single-turn sessions"
+CURVE_FORMULA = "total(N) = N * (session_start + mean_per_turn)"
 
-    `session_start + N * per_turn` is the arithmetic, and it is written out per N rather than
-    reduced to one ratio because the ratio is a function of N: a system that pays once and a
-    system that pays per query cannot be compared at an unstated N without the comparison
-    being a choice dressed as a measurement.
-    """
+
+def curve(arms: dict, toks: dict) -> dict:
+    """Total cost for N independent single-turn sessions, per arm, per unit - see CURVE_MODEL."""
     units = ["chars"] + [f"tokens[{k}]" for k in toks]
     out: dict = {}
     for unit in units:
@@ -513,17 +827,13 @@ def curve(arms: dict, toks: dict) -> dict:
                 if start is None:
                     row[arm] = None
                     continue
-                #: The MEAN, not the median, and the difference is the whole curve. Cost over N
-                #: turns is a SUM, and the statistic that predicts a sum is the mean; the median
-                #: predicts a typical turn and says nothing about the total. Measured
-                #: 2026-09-22 on 50 questions: our per-turn median is 0 because the path fires
-                #: on 6 turns of 50, while the mean is 97. Built on the median this curve read
-                #: "our cost never grows" and made us 668x cheaper at N=100; built on the mean
-                #: it is 101x. Six-fold, and in OUR favour - which is exactly the direction a
-                #: number has to be checked in hardest.
+                #: The MEAN, not the median: cost over N sessions is a SUM, and the mean is
+                #: what predicts a sum. Measured 2026-09-22 on 50 questions: the median read 0
+                #: because the path fired on 6 of 50, the mean read 97 - a median-built curve
+                #: read "cost never grows" and overstated the advantage six-fold.
                 vals = [r.get(unit) or 0 for r in res["rows"]]
                 mean = sum(vals) / len(vals) if vals else 0
-                row[arm] = round(start + n * mean)
+                row[arm] = round(n * (start + mean))
             per_n[str(n)] = row
         out[unit] = per_n
     return out
@@ -535,9 +845,26 @@ def main(argv=None) -> int:
                     help="comma list of arms to run: nevertwice,mem0")
     ap.add_argument("--limit", type=int, default=0, help="first N questions (a smoke run)")
     ap.add_argument("--sessions", type=int, default=0, help="cap ingested sessions (testing only)")
+    ap.add_argument("--dry", action="store_true",
+                    help="stub extractor, no model, no LLM at all - proves the stand's own "
+                         "plumbing (fixes 1/3/4/5/7) end to end, never a real measurement")
     ap.add_argument("--save", action="store_true", help="write the artifact")
     ap.add_argument("--out", default=str(OUT))
     a = ap.parse_args(argv)
+
+    if a.dry:
+        #: HARD RULE: --dry must never reach a real backend, on THIS machine or any other -
+        #: `embedder_available()` pings whatever Ollama the environment happens to have
+        #: running, and on a machine with one live (this one, routinely) that ping succeeds
+        #: and the retrieval path underneath _ingest_stub/_diagnose would embed for real. The
+        #: stub extractor alone (no api.capture_session call) is NOT sufficient hermeticity -
+        #: update_embeddings and retrieve_relevant both call embed_text independently of
+        #: extraction. Stubbed unconditionally, before any corpus is touched.
+        m.embed_text = lambda *a, **k: None
+        m.embedder_available = lambda *a, **k: False
+        m.embed_cache_usable = lambda: False
+        m.ollama_alive = lambda *a, **k: False
+        m.llm_available = lambda: False
 
     toks = tokenizers()
     if not toks:
@@ -552,31 +879,59 @@ def main(argv=None) -> int:
         print(f"unknown arm(s): {', '.join(unknown)}; have {', '.join(runners)}", file=sys.stderr)
         return 2
 
+    head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(ROOT),
+                          capture_output=True, text=True).stdout.strip() or None
+    measured_at = time.strftime("%Y-%m-%dT%H:%M:%S")
+
     corpora: dict = {}
     for cname in CORPORA:
         try:
-            data, pool = load_corpus(cname)
+            data, pool, groups = load_corpus(cname)
         except Exception as exc:                                    # noqa: BLE001
             corpora[cname] = {"blocked": f"{type(exc).__name__}: {exc}"}
             continue
-        if a.limit:
+        if a.dry:
+            data = data[:2]
+            if groups:
+                keep_qids = {e["question_id"] for e in data}
+                groups = {gn: g for gn, g in groups.items()
+                         if keep_qids & set(g["question_ids"])}
+                for gn in list(groups):
+                    groups[gn] = {"session_ids": groups[gn]["session_ids"][:1],
+                                 "question_ids": [q for q in groups[gn]["question_ids"]
+                                                  if q in keep_qids]}
+        elif a.limit:
             data = data[:a.limit]
         if not data:
             corpora[cname] = {"blocked": "no questions after --limit - nothing to measure over"}
             continue
-        arms = {name: runners[name](data, pool, toks, a.sessions or None) for name in wanted}
+        cap = 1 if a.dry else (a.sessions or None)
+        arms = {}
+        for name in wanted:
+            if name == "nevertwice":
+                arms[name] = run_nevertwice(data, pool, toks, cap, groups=groups, dry=a.dry,
+                                            corpus_name=cname)
+            else:
+                arms[name] = run_mem0(data, pool, toks, cap, groups=groups, corpus_name=cname)
         corpora[cname] = {
             "questions": len(data), "pool_sessions": len(pool),
             "provenance": (corpus_pin.record(cname) if cname in corpus_pin.CORPORA
                            else {"corpus": cname, "provenance": "tracked in git; see code_sha"}),
             "arms": arms,
             "curve": curve(arms, toks),
+            "curve_model": CURVE_MODEL,                    # fix 2
+            "curve_formula": CURVE_FORMULA,                 # fix 2
+            #: A code_sha/measured_at PER CORPUS (not only the top-level, once-per-run one):
+            #: fix 1 gives each corpus its own fresh store, and a merge (--save) can bring in
+            #: an arm measured at a different moment than the one just run - so "when was THIS
+            #: corpus's number produced" needs its own answer, not the run's.
+            "code_sha": head, "measured_at": measured_at,
         }
 
-    head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(ROOT),
-                          capture_output=True, text=True).stdout.strip() or None
     result = {
         "code_sha": head,
+        "measured_at": measured_at,
+        "dry_run": bool(a.dry),
         "corpora": corpora,
         "tokenizers": {k: v["version"] for k, v in toks.items()},
         "consumer_prompt_overhead_tokens": CONSUMER_PROMPT_OVERHEAD_TOKENS,
@@ -609,20 +964,24 @@ def main(argv=None) -> int:
                       f"the zero (need both `answer_reachable` and `proposed`)")
                 continue
             #: The CONDITION travels with the number, never in a footnote. Mem0's cost is a
-            #: function of how many memories it returns, and that is `top_k` -- left at its
-            #: own default here, but a reader who sees "11,566 characters per turn" without it
-            #: cannot tell whose setting produced the figure. The same line prints the mean
-            #: beside the median, because the two answer different questions: the median says
-            #: what a typical turn costs, the mean is what accumulates over a session, and a
-            #: curve built on the median made us six times cheaper than we are.
+            #: function of how many memories it returns (`top_k`) AND whether it infers
+            #: structured facts from raw text (`infer`) - both named in the SAME line (fix 6),
+            #: because a reader who sees a character count without them cannot tell whose
+            #: setting produced the figure.
             vals = [r.get("chars") or 0 for r in res["rows"]]
             mean = sum(vals) / len(vals) if vals else 0.0
-            cond = f"   [top_k={res['rows'][0]['top_k']}, Mem0 default]" if (
-                res.get("rows") and "top_k" in res["rows"][0]) else ""
+            cond = ""
+            if res.get("rows") and "top_k" in res["rows"][0]:
+                cond = (f"   [top_k={res['rows'][0]['top_k']}, infer="
+                       f"{res['rows'][0].get('infer')}, Mem0 default top_k]")
             print(f"  {name:12s} session start {start:6d} chars   "
                   f"per turn median {pt['median_chars']:5d} mean {mean:7.1f} chars   "
                   f"injected on {pt['turns_that_injected']}/{pt['n']} turns   "
                   f"answer reachable {pt['answer_reachable']}/{pt['n']}{cond}")
+            if "by_reason" in pt:
+                print(f"  {'':12s}   reasons: " +
+                     ", ".join(f"{r}={pt['by_reason'][r]}" for r in REASONS) +
+                     f"   lexical-only fallback on {pt.get('lexical_fallback', 0)}/{pt['n']}")
             if ing:
                 wc = ing.get("write_cost_tokens") or {}
                 k_off, n_sess = ing.get("off_topic_sessions") or 0, ing.get("written", 0)
@@ -642,13 +1001,14 @@ def main(argv=None) -> int:
                 #: review, 2026-09-23: 6 failures beside 4 good sessions printed nothing)
                 if k_fail and prop:
                     verdict += f"; {k_fail} of {n_sess} session(s) stored nothing (extraction failed or skipped)"
-                print(f"  {'':12s}   write: {ing.get('written', 0)} session(s), "
+                proj_note = f", {ing.get('projects')} project(s)" if ing.get("projects") else ""
+                print(f"  {'':12s}   write: {ing.get('written', 0)} session(s){proj_note}, "
                       f"{ing.get('typed_notes', 0)} typed note(s), "
                       f"{wc.get('prompt_tokens', 0)}+{wc.get('eval_tokens', 0)} tokens "
                       f"(model's own count) - {verdict}")
         live = [k for k, v in cres["arms"].items() if "blocked" not in v]
         if len(live) >= 2:
-            print("  total chars for a session of N turns:")
+            print(f"  total chars for {cres['curve_model']}, {cres['curve_formula']}:")
             for n in TURNS:
                 row = cres["curve"]["chars"][str(n)]
                 cells = "   ".join(f"{k} {row[k]}" for k in live if row.get(k) is not None)
@@ -656,6 +1016,10 @@ def main(argv=None) -> int:
         elif live:
             print(f"  only one arm ran ({live[0]}); a curve needs two, so none is printed - "
                   f"a one-armed cost is a number, not a comparison")
+
+    if a.dry:
+        print("\n--dry: plumbing exercised, nothing written to the artifact")
+        return 0
 
     if a.save:
         out = Path(a.out)
@@ -689,7 +1053,7 @@ def main(argv=None) -> int:
             merged_from = list(prev.get("measured_by") or [])
         result["measured_by"] = merged_from + [
             {"arms": wanted, "code_sha": head, "python": sys.version.split()[0],
-             "at": time.strftime("%Y-%m-%dT%H:%M:%S")}]
+             "at": measured_at}]
         for cres in result["corpora"].values():
             if "arms" in cres:
                 cres["curve"] = curve(cres["arms"], toks)
