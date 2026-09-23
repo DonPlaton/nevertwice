@@ -157,13 +157,23 @@ crossing an MCP or hook boundary.
   notes - a product name only one project ever wrote cannot pass, whether or not the extractor
   declared it as an entity (closing W17 one layer later than write time). —
   `tests/_test_principle_promote.py::BOTH sides' private-name tokens are named as offending`
-- **Residual risk:** `all` mode is still available (`NEVERTWICE_CROSS_PROJECT=all`) and is, by
-  design, the unrestricted pre-Q5 behaviour - choosing it re-opens this boundary entirely. The
-  `_user_brief` learned user-profile injection (`build_user_model.py`) is a SEPARATE
-  cross-project channel this boundary does not cover - see `docs/WEAKNESSES.md`. The token-
-  provenance gate counts DISTINCT projects, not how independent they are of each other - a name
-  that genuinely appears in two small, otherwise-unrelated projects' own text passes, because at
-  that point it is shared vocabulary the corpus itself attests to (`docs/WEAKNESSES.md` W17).
+- **Residual risk:** by DEFAULT, this boundary is OPEN - C8 reverted
+  `NEVERTWICE_CROSS_PROJECT` to `all` (unrestricted, unrestricted-by-default transfer of every
+  project's own notes), because Q5's gates did not hold on the fresh reading
+  (`.loop/explore/G5_READING.md`: G5.1 VOID/underpowered, G5.3 not distinguishable, G5.5 not
+  measured) - `all` is not a reader's opt-in choice, it is what runs unless
+  `NEVERTWICE_CROSS_PROJECT=universal` is set explicitly, together with `NEVERTWICE_PRINCIPLE=1`.
+  F4 names the measured consequence: an identifier plants and leaks through `all` on every bench
+  population read so far - see `.loop/explore/G5_READING.md` for the numbers (this document's
+  own budget is for incident dates, thresholds and constants, not a second copy of a bench
+  result). `universal` mode closes this specific leak when explicitly chosen, but was itself
+  read as VOID/underpowered (G5.1) on the SAME reading, so it is a narrower, UNVERIFIED
+  alternative, not a proven one. The `_user_brief` learned user-profile injection
+  (`build_user_model.py`) is a SEPARATE cross-project channel neither mode covers - see
+  `docs/WEAKNESSES.md`. The token-provenance gate (when `universal` mode IS chosen) counts
+  DISTINCT projects, not how independent they are of each other - a name that genuinely appears
+  in two small, otherwise-unrelated projects' own text passes, because at that point it is
+  shared vocabulary the corpus itself attests to (`docs/WEAKNESSES.md` W17).
 
 ## Boundary: outbound network
 

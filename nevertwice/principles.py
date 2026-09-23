@@ -75,12 +75,15 @@ except ImportError:
 # no universal pool, and A4's universal mode stays silent on an empty pool by construction.
 PRINCIPLE_PROMOTE_ENABLED = m.os.environ.get("NEVERTWICE_PRINCIPLE_PROMOTE", "1") != "0"
 
-#: PLACEHOLDER - calibrated by research/principle_twins.py (A6), NOT YET MEASURED. A6 sweeps
-#: T in [0.75, 0.95] against 40 same-rule / 40 different-rule pairs and picks the lowest T with
-#: zero false merges on the negatives; until that script has been run for real (it deliberately
-#: has not - see the plan, A6 is "written and NOT run"), this is a conservative guess, not a
-#: measurement, and is named as such everywhere it is read.
-T_PRINCIPLE = m.env_float("NEVERTWICE_PRINCIPLE_T", 0.90)
+#: C8 (2026-09-24), G5.6: measured by research/principle_twins.py (A6) against 40 same-rule /
+#: 40 different-rule pairs, sweeping T over [0.75, 0.95] and picking the lowest T with zero
+#: false merges on the negatives - the floor of the range, not a value chosen from the middle
+#: of it. G5.6: 0/40 false merges, Wilson upper bound 0.088, merge recall 15/40; 0.75 is the
+#: floor of the swept range [0.75, 0.95]; the max negative cosine was not recorded. Cited from
+#: .loop/explore/principle_twins.json (chosen_T: 0.75, sweep[T=0.75]: false_merges=0/40,
+#: true_merges=15/40). At T=0.90 (the OLD default) the same sweep merges 0/40 paraphrases -
+#: no benefit was ever measured at that threshold, only at 0.75.
+T_PRINCIPLE = m.env_float("NEVERTWICE_PRINCIPLE_T", 0.75)
 
 MIN_CLUSTER_PROJECTS = 2
 PRINCIPLES_CACHE_PATH = "Universal/principles_cache.json"

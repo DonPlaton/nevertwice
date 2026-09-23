@@ -655,15 +655,20 @@ RETRIEVAL_PREFILTER_LIMIT = env_int("NEVERTWICE_PREFILTER_LIMIT", 600)
 #                 that recurred across >=2 DIFFERENT projects. A project's own notes never reach
 #                 another project this way - only what already cleared `principle_scan` twice
 #                 (write time and promotion time) and was independently corroborated elsewhere.
-# DEFAULT is "universal", not "all": C6 - an installed hook must not change behaviour under an
-# unmodified NEVERTWICE_CROSS_PROJECT=1 export until the vault has a populated universal pool,
-# and an empty pool degrades to silence (`_retrieval_candidates` on an empty project returns
-# nothing), so this default is safe on day one and only starts surfacing content once A5 has
-# run. "1"/"all" keeps the pre-Q5 unrestricted behaviour for anyone who explicitly asks for it.
+# C8 (2026-09-24): DEFAULT is "all", not "universal". The universal-pool default was C6's own
+# bet that Q5's gates would hold; they did not (.loop/explore/G5_READING.md - G5.1 is
+# VOID/underpowered, G5.3 is not distinguishable, G5.5 is not measured), so under
+# PREREG-Q3Q5:83-85 the merge default reverts to the pre-Q5 behaviour: "all" (unrestricted
+# cross-project transfer, the original I-7 behaviour) and NEVERTWICE_PRINCIPLE=0 (below) -
+# nothing this branch built runs unless explicitly turned on. "universal" is now OPT-IN,
+# together: NEVERTWICE_CROSS_PROJECT=universal AND NEVERTWICE_PRINCIPLE=1 (the promoter has
+# nothing to promote if the extractor was never asked for a `principle` field in the first
+# place - turning on the read side alone would silently degrade to an empty pool, not to the
+# de-identified transfer this mode promises).
 def _parse_cross_project_mode() -> str:
     raw = os.environ.get("NEVERTWICE_CROSS_PROJECT")
     if raw is None or not raw.strip():
-        return "universal"
+        return "all"
     v = raw.strip().lower()
     if v in ("0", "off"):
         return "off"
@@ -675,8 +680,8 @@ def _parse_cross_project_mode() -> str:
     # the first real log() call, same as _http_url's non-http(s) override refusal.
     _EARLY_WARNINGS.append(
         f"NEVERTWICE_CROSS_PROJECT={raw!r} not recognised (want off/all/universal) - "
-        f"using 'universal'")
-    return "universal"
+        f"using 'all'")
+    return "all"
 
 
 CROSS_PROJECT_MODE = _parse_cross_project_mode()
@@ -692,10 +697,13 @@ CROSS_PROJECT_SIM_FLOOR = env_float("NEVERTWICE_CROSS_SIM_FLOOR", 0.5)
 # project, so A5 and A4 both treat this as a RESERVED name rather than relying on that alone.
 UNIVERSAL_PROJECT = "universal"
 # A3: the extraction prompt asks pattern/mistake items for a de-identified, project-independent
-# `principle` sentence. Off with NEVERTWICE_PRINCIPLE=0 - the schema line AND the rubric are
-# both omitted from the prompt (see `_principle_prompt_rubric`/`_principle_schema_field` in
-# `_engine_text.py`), so the prompt is byte-for-byte what it was before this field existed.
-PRINCIPLE_FIELD = os.environ.get("NEVERTWICE_PRINCIPLE", "1") != "0"
+# `principle` sentence. C8 (2026-09-24): DEFAULT is OFF (was "1"/on) - Q5's gates did not hold
+# (.loop/explore/G5_READING.md), so under PREREG-Q3Q5:83-85 this reverts to off at merge, same
+# reasoning as CROSS_PROJECT_MODE above. On with NEVERTWICE_PRINCIPLE=1 - the schema line AND
+# the rubric are both omitted from the prompt when off (see
+# `_principle_prompt_rubric`/`_principle_schema_field` in `_engine_text.py`), so the prompt is
+# byte-for-byte what it was before this field existed.
+PRINCIPLE_FIELD = os.environ.get("NEVERTWICE_PRINCIPLE", "0") != "0"
 # Cap for the field on disk (`_engine_write.py`) - a one-sentence rule, not a paragraph.
 PRINCIPLE_MAX_CHARS = 200
 # Learned user model (I-6): inject a short cross-project working profile (built

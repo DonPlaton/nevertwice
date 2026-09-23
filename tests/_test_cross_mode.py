@@ -52,9 +52,13 @@ def _parse(raw) -> str:
 
 def test_mode_parses_every_input() -> None:
     print("\n- NEVERTWICE_CROSS_PROJECT parses to off/all/universal for every input -")
-    for raw, expect in ((None, "universal"), ("", "universal"), ("0", "off"), ("off", "off"),
+    # C8 (2026-09-24): the no-env-var and unrecognised-value defaults reverted from
+    # "universal" to "all" - PREREG-Q3Q5:83-85, Q5's gates did not hold
+    # (.loop/explore/G5_READING.md). "universal" is still a real, parseable value - only the
+    # DEFAULT changed - so it stays in this table unmoved.
+    for raw, expect in ((None, "all"), ("", "all"), ("0", "off"), ("off", "off"),
                         ("1", "all"), ("all", "all"), ("universal", "universal"),
-                        ("junk", "universal")):
+                        ("junk", "all")):
         got = _parse(raw)
         check(f"{raw!r} -> {expect!r}", got == expect, f"got {got!r}")
 
@@ -86,12 +90,21 @@ def test_universal_with_an_empty_pool_is_silent_and_makes_no_embed_call() -> Non
     check("no hits from an empty universal pool", hits == [], str(hits))
     check("no embed call was made for an empty pool", calls == [], str(len(calls)))
 
+    # C8 (2026-09-24): CROSS_PROJECT_MODE now defaults to "all", not "universal" - this test is
+    # specifically about UNIVERSAL mode's guarantee through the full emit_session_start_context /
+    # emit_prompt_recall entry points, neither of which takes an explicit mode argument (they read
+    # the live module constant, per _engine_recall.py's `mode=CROSS_PROJECT_MODE` at its own call
+    # site). Forcing the constant here - restored in `finally` alongside the other monkeypatches -
+    # keeps this check testing "universal" itself rather than silently starting to test "all"'s
+    # (expected, F4-documented) leak instead.
     _orig_fns = {n: getattr(m, n) for n in
-                ("is_tracked_project", "derive_project_from_cwd", "retrieve_relevant")}
+                ("is_tracked_project", "derive_project_from_cwd", "retrieve_relevant",
+                 "CROSS_PROJECT_MODE")}
     try:
         m.is_tracked_project = lambda cwd: True
         m.derive_project_from_cwd = lambda cwd: "project_b"
         m.retrieve_relevant = lambda *a, **k: []
+        m.CROSS_PROJECT_MODE = "universal"
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
             m.emit_session_start_context("D:\\Coding\\project_b")

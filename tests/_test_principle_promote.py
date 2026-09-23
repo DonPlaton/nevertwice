@@ -1121,6 +1121,80 @@ def test_n_common_words_is_empty_and_the_guard_still_fires_if_grown_back() -> No
          not offenders, f"offenders: {offenders}" if offenders else "")
 
 
+def test_c8_promote_is_a_true_no_op_under_full_defaults() -> None:
+    """C8's second auditor condition (2026-09-24): `PRINCIPLE_PROMOTE_ENABLED`
+    (`NEVERTWICE_PRINCIPLE_PROMOTE`, default "1") is a SEPARATE env var C8 did NOT touch, so
+    `consolidate_memory.py` still calls `principles.promote()` at sleep time under fully
+    default settings - the promotion PIPELINE is not disabled. What C8 DID change is
+    `PRINCIPLE_FIELD`'s default (now off), which starves `_live_principle_candidates()`: an
+    ordinary note written today has no `principle` field at all (what write time under
+    PRINCIPLE_FIELD=False actually produces), so `promote()`'s candidate list is empty before
+    the embed/cluster/write stages are ever reached.
+
+    Proved three ways, not just that `summary["candidates"] == 0` (a short-circuit could still
+    have side effects a caller never sees in the returned dict): no `embed_text` call, no note
+    written under the `universal` project in EITHER principle-bearing folder, no principles
+    cache file created. `apply=True` is used deliberately - `apply=False` never writes by
+    construction (see `test_dry_run_writes_nothing` above), so it would prove nothing about
+    THIS claim; the on/off pipeline gate is asserted first so a pre-disabled pipeline (which
+    would trivially pass all three) cannot make this test vacuous."""
+    print("\n- C8: promote() is a true no-op under full defaults - no embed, no write, no cache -")
+    make_sandbox(m, "pp_c8noop_", offline=True)
+    pr = _import_fresh()
+
+    check("setup: PRINCIPLE_PROMOTE_ENABLED is on (unchanged by C8) - otherwise this test "
+         "would prove nothing", pr.PRINCIPLE_PROMOTE_ENABLED is True)
+    check("setup: PRINCIPLE_FIELD is off (the C8 default)", m.PRINCIPLE_FIELD is False)
+
+    # Ordinary notes, no `principle` field anywhere - exactly what write time under
+    # PRINCIPLE_FIELD=False produces, in both folders _live_principle_candidates() scans.
+    s_a = m.write_typed_note(m.TYPE_FOLDER["pattern"],
+                             {"title": "tune the retry backoff",
+                              "description": "Retry backoff tuned for the flaky API host."},
+                             "project_a", "2026-09-23", [], "pattern")
+    s_b = m.write_typed_note(m.TYPE_FOLDER["mistake"],
+                             {"title": "forgot the timeout",
+                              "description": "A request without a timeout hung the whole batch."},
+                             "project_b", "2026-09-23", [], "mistake")
+    check("setup: both ordinary notes were written", bool(s_a) and bool(s_b), f"{s_a} / {s_b}")
+    check("setup: neither note carries a principle field",
+         not m._read_frontmatter_file(m.VAULT / m.TYPE_FOLDER["pattern"] / f"{s_a}.md")
+             .get("principle")
+         and not m._read_frontmatter_file(m.VAULT / m.TYPE_FOLDER["mistake"] / f"{s_b}.md")
+             .get("principle"))
+
+    def _universal_stems() -> list[str]:
+        out = []
+        for ntype in ("pattern", "mistake"):
+            folder = m.VAULT / m.TYPE_FOLDER[ntype]
+            if not folder.exists():
+                continue
+            for p in folder.glob("*.md"):
+                parsed = m.parse_typed_stem(p.stem)
+                if parsed and parsed["project"] == m.UNIVERSAL_PROJECT:
+                    out.append(p.stem)
+        return sorted(out)
+
+    before_universal = _universal_stems()
+    cache_path = pr._cache_path()
+    check("setup: no principles cache file exists yet", not cache_path.exists())
+
+    calls = []
+    orig_embed = m.embed_text
+    m.embed_text = lambda *a, **k: (calls.append(a), orig_embed(*a, **k))[1]
+    try:
+        summary = pr.promote(apply=True)
+    finally:
+        m.embed_text = orig_embed
+
+    check("candidates is empty (no live note carries a principle field)",
+         summary["candidates"] == 0, str(summary))
+    check("no embed_text call was made", calls == [], str(len(calls)))
+    check("no note was written under the universal project",
+         _universal_stems() == before_universal, str(_universal_stems()))
+    check("no principles cache file was created", not cache_path.exists())
+
+
 def test_zz_every_check_passed() -> None:
     """Bare pytest must reach the same verdict as this suite's exit code.
 
@@ -1161,7 +1235,8 @@ def main() -> int:
                test_p3_mutation_removing_host_extraction_reddens_by_name,
                test_p4_never_public_cidr_containment_not_intersection,
                test_p5_mutation_removing_subnet_containment_reddens_0_0_0_0_0,
-               test_n_common_words_is_empty_and_the_guard_still_fires_if_grown_back):
+               test_n_common_words_is_empty_and_the_guard_still_fires_if_grown_back,
+               test_c8_promote_is_a_true_no_op_under_full_defaults):
         fn()
     print(f"\nprinciple promote: {PASSED} passed, {FAILED} failed")
     return 1 if FAILED else 0
