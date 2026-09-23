@@ -31,10 +31,10 @@ reranker = ["torch", "transformers"]   # trained cross-encoder precision boost (
 langchain = ["langchain-core"]         # NevertwiceRetriever / NevertwiceMemory adapters
 llamaindex = ["llama-index-core"]      # NevertwiceRetriever for LlamaIndex
 dev = ["pytest>=8", "pyflakes>=3", "build>=1", "hypothesis>=6"]
-# The research tier's own dependencies, declared because they were not: four suites under
+# The research tier's own dependencies, declared because they were not: suites under
 # `tests/research/` import a lab module at module level and cannot run without these.
 # Measured 2026-09-22 by running every research suite with each candidate blocked - these
-# four names are exactly the set that fails at import, and no other research suite needs
+# names are exactly the set that fails at import, and no other research suite needs
 # one. They are NOT in `dev`: the documented contributor path stays small, and the core
 # matrix installs nothing at all, which is what makes "the core tier is stdlib-only" a
 # fact about the tree rather than a sentence in the workflow.
@@ -50,7 +50,15 @@ research = ["networkx>=3", "numpy>=1.26", "scipy>=1.11", "statsmodels>=0.14",
             # zero, so the pin is about keeping the control RUNNING, not about hiding a
             # break: widen it by teaching the parser the new line and measuring, not by
             # raising the bound.
-            "ruff>=0.15,<0.16"]  # local checks, wheel
+            "ruff>=0.15,<0.16",
+            # R-v2-ports (2026-09-24): `research/_ollama_pacer.py` patches `httpx.Client.send`
+            # / `httpx.AsyncClient.send` so a competitor's own client (ollama-python,
+            # langchain-ollama - both built on httpx) is paced and retried the same way
+            # `urllib.request.urlopen` is. `tests/research/_test_ollama_pacer.py`'s T7
+            # exercises that path through `httpx.MockTransport`; without this extra it
+            # degrades to a printed note rather than a hard failure (the suite's own guard),
+            # but CI's research job installs it so T7 actually runs somewhere.
+            "httpx>=0.27"]  # local checks, wheel
 # hypothesis is used by tests/_test_properties.py when present and never required: the
 # core CI matrix installs nothing, so every property there also has a deterministic
 # corpus. A suite that only runs for people who installed an extra stops running.
