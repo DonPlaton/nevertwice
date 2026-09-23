@@ -47,6 +47,7 @@ import sandbox_guard  # noqa: E402 - one store sandbox for the whole repo
 sandbox_guard.isolate()  # throwaway store, verified, before any project import
 import consolidate_memory as cons
 import longitudinal_bench as lb
+import _provenance as prov  # noqa: E402 - measured_at: {commit, utc, dirty} on the artifact
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -218,6 +219,7 @@ def main():
         out = {"seeds": lb.SEEDS, "kq": KQ, "sigma_q": SIGMA_Q, "keep_all": full, "budgets": BUDGETS,
                "metrics": metrics, "coverage_gain_over_salience": gain}
         p = HERE / "forgetting.json"
+        prov.stamp(out)
         p.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
         print(f"\n  saved → {p}")
         _figure(agg, full, HERE / "forgetting.png")

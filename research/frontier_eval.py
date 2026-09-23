@@ -53,6 +53,7 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(ROOT / "nevertwice"))
 import memory_hook as m  # noqa: E402
 import longmem_eval as le  # noqa: E402
+import _provenance as prov  # noqa: E402 - measured_at: {commit, utc, dirty} on the final artifact
 import qa_eval as qa  # noqa: E402 - the reader / judge prompts, the same rubric as the QA study
 
 try:
@@ -662,6 +663,7 @@ def main() -> int:
         print(f"  {b:20s}      acc {pt['accuracy']:.3f} {pt['ci']}  tokens {pt['mean_prompt_tokens']:.0f}")
     print(f"  judge agreement: {res['judge_agreement']}")
     if args.save:
+        prov.stamp(res)
         Path(args.out).write_text(json.dumps(res, indent=1), encoding="utf-8", newline="\n")
         print(f"  saved -> {args.out}")
     return 0

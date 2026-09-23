@@ -38,6 +38,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import sandbox_guard  # noqa: E402 - one store sandbox for the whole repo
 sandbox_guard.isolate()  # throwaway store, verified, before any project import
 import memory_hook as m
+import _provenance as pv  # noqa: E402 - measured_at: {commit, utc, dirty}; aliased `pv` (not
+                          # `prov`) because this file already has a local `prov` dict
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -226,6 +228,7 @@ def main():
                "blocked": blocked,
                "block_rate": round(sum(blocked.values()) / len(ATTACKS), 4)}
         p = HERE / "poisoning.json"
+        pv.stamp(out)
         p.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
         print(f"\n  saved → {p}")
     print(bar)

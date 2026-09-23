@@ -48,6 +48,7 @@ sys.path.insert(0, str(ROOT / "research"))
 import anticipate as A                                  # noqa: E402
 import memory_hook as m                                 # noqa: E402
 import matched_conditions as MC                         # noqa: E402
+import _provenance as prov                              # noqa: E402 - measured_at stamp
 
 RULES = ROOT / "research" / "cheap_baselines_rules.json"
 OUT = ROOT / "research" / "cheap_baselines.json"
@@ -283,6 +284,7 @@ def build(save: bool = False) -> dict:
         "verdict": verdict,
     }
     if save:
+        prov.stamp(payload)
         m.write_atomic(OUT, json.dumps(payload, ensure_ascii=False, indent=1))
     return payload
 

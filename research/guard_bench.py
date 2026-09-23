@@ -55,6 +55,7 @@ sys.path.insert(0, str(ROOT / "nevertwice"))
 import memory_hook as m  # noqa: E402
 import guards as G  # noqa: E402
 import matched_conditions as MC  # noqa: E402 - confusion / rates / matched-rate machinery
+import _provenance as prov  # noqa: E402 - measured_at: {commit, utc, dirty} on the artifact
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -373,6 +374,7 @@ def main() -> int:
         print(f"  tokens/call {sc['tokens_per_call']}  ms/call {sc['ms_per_call']}  "
               + (f"guards {info.get('n_guards')}" if "n_guards" in info else "") + "\n")
     if args.save:
+        prov.stamp(out)
         Path(args.out).write_text(json.dumps(out, indent=1, ensure_ascii=False), encoding="utf-8", newline="\n")
         print("wrote", args.out)
     return 0

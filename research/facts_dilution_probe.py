@@ -46,6 +46,7 @@ import sandbox_guard  # noqa: E402 - one store sandbox for the whole repo
 sandbox_guard.isolate()
 
 import supersession_bench as sb  # noqa: E402 - the corpus loader, the marker test, the hit text
+import _provenance as prov  # noqa: E402 - measured_at: {commit, utc, dirty} on the artifact
 
 DATASET = ROOT / "research" / "data" / "supersession_v1_implicit.json"
 NAMED_FROM = ROOT / "research" / "results" / "supersession_v1_implicit.json"
@@ -221,6 +222,7 @@ def main() -> int:
                "gate": {"worse_at_least": GATE_WORSE_AT_LEAST, "better_at_most": GATE_BETTER_AT_MOST,
                         "written": ".loop/GOAL-CLOSE.md item K1, before the run"},
                "named": named_summary, "all_controls": all_summary, "verdict": verdict, "rows": rows}
+        prov.stamp(out)
         Path(args.out).write_text(json.dumps(out, indent=1, ensure_ascii=False), encoding="utf-8", newline="\n")
         print("wrote", args.out)
     return 0

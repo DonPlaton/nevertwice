@@ -35,6 +35,7 @@ import sandbox_guard  # noqa: E402
 sandbox_guard.isolate()
 
 import supersession_bench as sb  # noqa: E402
+import _provenance as prov  # noqa: E402 - measured_at: {commit, utc, dirty} on the artifact
 
 ASOF = ROOT / "research" / "results" / "asof_v1.json"
 DATASET = ROOT / "research" / "data" / "supersession_v1.json"
@@ -130,6 +131,7 @@ def main() -> int:
                "dataset": {"name": data["name"], "sha256": hashlib.sha256(raw).hexdigest()},
                "llm": sb.LLM, "extract_temperature": os.environ.get("NEVERTWICE_EXTRACT_TEMP"),
                "silent_cases": len(ids), "by_kind": kinds, "rows": rows}
+        prov.stamp(out)
         Path(args.out).write_text(json.dumps(out, indent=1, ensure_ascii=False), encoding="utf-8", newline="\n")
         print("wrote", args.out)
     return 0

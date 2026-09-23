@@ -40,6 +40,7 @@ sandbox_guard.isolate(prefix="nevertwice_fusion_sweep_")
 sys.path.insert(0, str(HERE))
 import locomo_eval  # noqa: E402,F401
 import longmem_eval  # noqa: E402,F401
+import _provenance as prov  # noqa: E402 - measured_at: {commit, utc, dirty} on the artifact
 
 OUT = ROOT / "research" / "results" / "fusion_weight_sweep.json"
 DEFAULT_WEIGHTS = (0.25, 0.5, 0.75, 1.0, 1.5)
@@ -88,6 +89,7 @@ def main() -> int:
             for w, row in res["points"][s].items():
                 row["delta_recall@5_vs_0.5"] = round(row["recall@5"] - base[s]["recall@5"], 4)
     if args.save:
+        prov.stamp(res)
         Path(args.out).write_text(json.dumps(res, indent=1), encoding="utf-8", newline="\n")
         print(f"  saved -> {args.out}")
     return 0

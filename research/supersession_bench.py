@@ -60,6 +60,8 @@ sys.path.insert(0, str(ROOT))
 import sandbox_guard  # noqa: E402 - must precede any nevertwice import
 
 sandbox_guard.isolate(prefix="nevertwice_supersession_")
+sys.path.insert(0, str(HERE))
+import _provenance as prov  # noqa: E402 - measured_at: {commit, utc, dirty} on every write
 
 OLLAMA_BASE = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
 EMBED_MODEL = os.environ.get("NEVERTWICE_EMBED_MODEL", "bge-m3")
@@ -1194,6 +1196,7 @@ def main() -> int:
             return 2
         _print_pooled(res)
         if args.out:
+            prov.stamp(res)
             Path(args.out).write_text(json.dumps(res, indent=1, ensure_ascii=False),
                                       encoding="utf-8", newline="\n")
             print("wrote", args.out)
@@ -1203,6 +1206,7 @@ def main() -> int:
         res = compare([Path(f) for f in args.compare])
         print(json.dumps(res, indent=1))
         if args.out:
+            prov.stamp(res)
             Path(args.out).write_text(json.dumps(res, indent=1), encoding="utf-8", newline="\n")
             print("wrote", args.out)
         return 0
@@ -1273,6 +1277,7 @@ def main() -> int:
             print(f"pool: {e}")
             return 2
         _print_pooled(res)
+        prov.stamp(res)
         Path(args.out).write_text(json.dumps(res, indent=1, ensure_ascii=False),
                                   encoding="utf-8", newline="\n")
         print("wrote", args.out)
@@ -1281,6 +1286,7 @@ def main() -> int:
     out = _one_run(data, cases, args, arm_names)
 
     if args.out:
+        prov.stamp(out)
         Path(args.out).write_text(json.dumps(out, indent=1, ensure_ascii=False), encoding="utf-8", newline="\n")
         print("wrote", args.out)
     return 0

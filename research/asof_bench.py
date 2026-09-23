@@ -62,6 +62,7 @@ import sandbox_guard  # noqa: E402 - must precede any nevertwice import
 sandbox_guard.isolate(prefix="nevertwice_asof_")
 sys.path.insert(0, str(HERE))
 import supersession_bench as sb  # noqa: E402 - the cases, the markers, the naive floor
+import _provenance as prov  # noqa: E402 - measured_at: {commit, utc, dirty} on every write
 
 DATASET = HERE / "data" / "supersession_v1.json"
 # Shipped dating: session one 193 days before 2026-09-10, archived before session two arrives.
@@ -436,6 +437,7 @@ def main() -> int:
                                       "search has no as-of filter; facts cannot be placed in the past without "
                                       "patching the product"}
     if args.out:
+        prov.stamp(out)
         Path(args.out).write_text(json.dumps(out, indent=1, ensure_ascii=False), encoding="utf-8", newline="\n")
         print("wrote", args.out)
     return 0

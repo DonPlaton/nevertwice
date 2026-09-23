@@ -38,6 +38,7 @@ sys.path.insert(0, str(ROOT / "nevertwice"))
 import memory_hook as m  # noqa: E402
 sys.path.insert(0, str(HERE))
 from k8_skeleton import label_pairs  # noqa: E402
+import _provenance as prov  # noqa: E402 - measured_at: {commit, utc, dirty} on the artifact
 
 MODEL = os.environ.get("SUPERSESSION_LLM", "qwen3-coder:30b")
 URL = os.environ.get("OLLAMA_URL", "http://localhost:11434") + "/api/generate"
@@ -146,6 +147,7 @@ def main() -> int:
     print(json.dumps({"pooled": out["pooled"], "per_stand": {k: {kk: vv for kk, vv in v.items() if kk != "confusion"}
                                                              for k, v in per_stand.items()}}, indent=1))
     if a.out:
+        prov.stamp(out)
         Path(a.out).write_text(json.dumps(out, indent=1, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
         print("written", a.out)
     return 0
