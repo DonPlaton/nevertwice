@@ -923,6 +923,113 @@ def test_o4_is_private_would_have_missed_the_cgnat_range() -> None:
              pr._is_never_public_identifier(word), word)
 
 
+#: C6b (2026-09-24, the auditor's probe of 35b5226 through the REAL pipeline, not just the
+#: helper in isolation): "Always pin 10.0.0.5:5432 and db.internal:5432 behind 10.0.0.0/8,
+#: reach [fd00::1]:443 or https://db.internal/x and printer.local." - `_is_never_public_
+#: identifier` returned False for 5 of these 6 real-world spellings (host:port, [ipv6]:port,
+#: a bare CIDR, a full URL) - only the plain hostname (`printer.local`) was caught, because the
+#: bare-value check never extracted a HOST from any of the others first.
+_C6B_AUDITOR_SENTENCE = ("Always pin 10.0.0.5:5432 and db.internal:5432 behind 10.0.0.0/8, "
+                        "reach [fd00::1]:443 or https://db.internal/x and printer.local.")
+_C6B_REAL_WORLD_FORMS = ("10.0.0.5:5432", "db.internal:5432", "10.0.0.0/8", "fd00::1]:443",
+                        "https://db.internal/x")
+
+
+def test_p_never_public_real_world_forms_alone_and_in_the_full_sentence() -> None:
+    """C6b: the 5 forms the auditor's probe found broken, each ALONE (direct
+    `_is_never_public_identifier` call - proves the helper itself is fixed) and each through
+    the FULL auditor sentence via `_token_provenance`, corroborated by both projects (proves
+    the fix survives `_identifier_shaped_words`' own tokenization/boundary-stripping of a real
+    sentence, not just a hand-picked string)."""
+    print("\n- C6b: real-world host:port / [ipv6]:port / CIDR / URL forms never cross -")
+    pr = _import_fresh()
+    for word in _C6B_REAL_WORLD_FORMS:
+        check(f"{word!r} alone: _is_never_public_identifier flags it",
+             pr._is_never_public_identifier(word), word)
+
+    make_sandbox(m, "pp_c6b_sentence_", offline=True)
+    pr = _import_fresh()
+    _write("project_a", _C6B_AUDITOR_SENTENCE, "")
+    _write("project_c", _C6B_AUDITOR_SENTENCE, "")
+    ok, offending = pr._token_provenance(_C6B_AUDITOR_SENTENCE, "project_a",
+                                         {"project_a", "project_c"}, {})
+    check("the full sentence is rejected (not promoted) even though both projects wrote it "
+         "verbatim - every one of the 5 broken forms overrides plain corroboration",
+         not ok, f"ok={ok} offending={offending}")
+    offending_lower = [o.lower() for o in offending]
+    for word in _C6B_REAL_WORLD_FORMS:
+        check(f"{word!r}: named as offending inside the real sentence, not just standalone",
+             word.lower() in offending_lower, f"offending={offending}")
+    check("'printer.local' (already worked before C6b) is ALSO still offending - "
+         "unaffected by the host-extraction change", "printer.local" in offending_lower,
+         f"offending={offending}")
+
+
+def test_p2_never_public_public_controls_stay_false_after_c6b() -> None:
+    """C6b's own regression control: the host-extraction pipeline must not start flagging
+    ordinary public URLs, ports on loopback, a public /32, or version/protocol shapes just
+    because it now looks past a scheme, bracket or port - proven alone AND, for the loopback
+    and URL cases, through actual corroborated promotion."""
+    print("\n- C6b: public controls (loopback:port, a public URL, a public /32, HTTP/2, "
+         "version strings) stay False -")
+    pr = _import_fresh()
+    controls = ("127.0.0.1:8080", "https://github.com/x", "8.8.8.8/32", "HTTP/2", "3.12")
+    for word in controls:
+        check(f"{word!r} alone: _is_never_public_identifier does NOT flag it",
+             not pr._is_never_public_identifier(word), word)
+
+    make_sandbox(m, "pp_c6b_pub_url_", offline=True)
+    pr = _import_fresh()
+    sentence = "Reach the service at 127.0.0.1:8080 or https://github.com/x for docs."
+    _write("project_a", sentence, "")
+    _write("project_c", sentence, "")
+    ok, offending = pr._token_provenance(sentence, "project_a", {"project_a", "project_c"}, {})
+    check("corroborated by both, 127.0.0.1:8080 and https://github.com/x still pass",
+         ok, f"ok={ok} offending={offending}")
+
+    make_sandbox(m, "pp_c6b_version_sentence_", offline=True)
+    pr = _import_fresh()
+    sentence2 = "Python 3.12 speaks HTTP/2 to 8.8.8.8/32 for testing."
+    _write("project_a", sentence2, "")
+    _write("project_c", sentence2, "")
+    ok2, offending2 = pr._token_provenance(sentence2, "project_a", {"project_a", "project_c"}, {})
+    check("corroborated by both, '3.12'/'HTTP/2'/'8.8.8.8/32' (version/protocol/public-CIDR) "
+         "still pass", ok2, f"ok={ok2} offending={offending2}")
+
+
+def test_p3_mutation_removing_host_extraction_reddens_by_name() -> None:
+    """Mutation: monkeypatch `_never_public_host` to the IDENTITY function (as if C6b had
+    never extracted a host at all, the exact 35b5226 defect the auditor found) - the SAME
+    corroborated sentence from test_p now WRONGLY passes provenance for at least the plain
+    host:port and URL forms (the ones that go through `_never_public_host`; the CIDR form is
+    checked via a separate path and is unaffected by this specific mutation, which is why
+    this test checks the host-extraction forms by name rather than the whole sentence)."""
+    print("\n- C6b mutation: reverting host extraction lets host:port/URL forms through -")
+    make_sandbox(m, "pp_c6b_mut_", offline=True)
+    pr = _import_fresh()
+    _write("project_a", _C6B_AUDITOR_SENTENCE, "")
+    _write("project_c", _C6B_AUDITOR_SENTENCE, "")
+    ok_before, offending_before = pr._token_provenance(_C6B_AUDITOR_SENTENCE, "project_a",
+                                                        {"project_a", "project_c"}, {})
+    check("before the mutation: 'db.internal:5432' fails provenance in the full sentence",
+         not ok_before and "db.internal:5432" in [o.lower() for o in offending_before],
+         offending_before)
+
+    saved = pr._never_public_host
+    pr._never_public_host = lambda norm: norm
+    try:
+        ok_after, offending_after = pr._token_provenance(_C6B_AUDITOR_SENTENCE, "project_a",
+                                                          {"project_a", "project_c"}, {})
+    finally:
+        pr._never_public_host = saved
+    offending_after_lower = [o.lower() for o in offending_after]
+    check("mutation: WITHOUT host extraction, 'db.internal:5432' no longer offends (would "
+         "FAIL the check above)", "db.internal:5432" not in offending_after_lower,
+         offending_after)
+    check("mutation: WITHOUT host extraction, '10.0.0.5:5432' no longer offends either",
+         "10.0.0.5:5432" not in offending_after_lower, offending_after)
+
+
 def test_n_common_words_is_empty_and_the_guard_still_fires_if_grown_back() -> None:
     """C1b (2026-09-24, the coordinator's decision): `_COMMON_WORDS` is now EMPTY - a
     hand-curated "definitely ordinary" list kept getting partly re-contaminated by the next
@@ -989,6 +1096,9 @@ def main() -> int:
                test_o2_public_examples_still_cross_when_corroborated,
                test_o3_mutation_removing_never_public_check_reddens_by_name,
                test_o4_is_private_would_have_missed_the_cgnat_range,
+               test_p_never_public_real_world_forms_alone_and_in_the_full_sentence,
+               test_p2_never_public_public_controls_stay_false_after_c6b,
+               test_p3_mutation_removing_host_extraction_reddens_by_name,
                test_n_common_words_is_empty_and_the_guard_still_fires_if_grown_back):
         fn()
     print(f"\nprinciple promote: {PASSED} passed, {FAILED} failed")

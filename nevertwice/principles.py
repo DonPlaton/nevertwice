@@ -347,6 +347,56 @@ _NEVER_PUBLIC_NETWORKS = tuple(ipaddress.ip_network(n) for n in (
 _NEVER_PUBLIC_HOST_SUFFIXES = (".internal", ".local", ".lan", ".corp", ".intra", ".home.arpa")
 
 
+#: C6b (2026-09-24, the auditor's probe through the real pipeline): `_is_never_public_identifier`
+#: checked the BARE value only - `ip_address("10.0.0.5:5432")` and `ip_address("db.internal:5432")`
+#: both raise ValueError (a port suffix is not part of an address), `"db.internal:5432".endswith(
+#: ".internal")` is False (the suffix is BEFORE the port, not at the string's end), `ip_address(
+#: "10.0.0.0/8")` raises ValueError too (CIDR notation needs `ip_network`, not `ip_address`), and a
+#: full URL's host is buried after a scheme and before a path. On the auditor's own sentence
+#: ("...pin 10.0.0.5:5432 and db.internal:5432 behind 10.0.0.0/8, reach [fd00::1]:443 or
+#: https://db.internal/x and printer.local.") the bare check caught 1 of 6. Fixed by extracting
+#: the HOST first, in this order: strip a URL scheme (`scheme://`) and everything from the first
+#: "/" after it; resolve a bracketed IPv6 host (`[addr]:port`, or the half-stripped `addr]:port` -
+#: `_identifier_shaped_words`' own boundary strip already eats a leading "[" but has no matching
+#: "]" at the string's end to eat too) on the "]" boundary, WITHOUT a further port strip (an IPv6
+#: address's own trailing ":<hex>" must never be mistaken for ":<port>"); only once neither scheme
+#: nor bracket applies, and only after confirming the text does NOT already parse as a bare
+#: address on its own (a bare IPv6 address's trailing ":1" is not a port either), strip a trailing
+#: ":<port>"; finally drop one trailing FQDN dot. A separate CIDR path (`a.b.c.d/n`) uses
+#: `ip_network(x, strict=False)` and checks NETWORK OVERLAP, not point membership - "10.0.0.0/8"
+#: mentioned in prose IS the whole private range, not one address inside it.
+_NEVER_PUBLIC_SCHEME_RE = re.compile(r"^[a-z][a-z0-9+.-]*://", re.IGNORECASE)
+_NEVER_PUBLIC_PORT_RE = re.compile(r":\d+$")
+_NEVER_PUBLIC_CIDR_RE = re.compile(r"^(.+)/(\d{1,3})$")
+
+
+def _never_public_host(norm: str) -> str:
+    """Extract the HOST `norm` really names, before the IP/suffix checks below run - see the
+    C6b comment above `_NEVER_PUBLIC_SCHEME_RE` for the exact ordering and why each step is
+    ordered where it is."""
+    host = norm
+    scheme_match = _NEVER_PUBLIC_SCHEME_RE.match(host)
+    if scheme_match:
+        host = host[scheme_match.end():]
+        slash = host.find("/")
+        if slash != -1:
+            host = host[:slash]
+        port_match = _NEVER_PUBLIC_PORT_RE.search(host)
+        if port_match:
+            host = host[:port_match.start()]
+        return host.rstrip(".")
+    if host.startswith("["):
+        host = host[1:]
+    if "]" in host:
+        return host[:host.index("]")].rstrip(".")
+    try:
+        ipaddress.ip_address(host)
+        return host                                    # already a bare, valid address as-is
+    except ValueError:
+        pass
+    return _NEVER_PUBLIC_PORT_RE.sub("", host).rstrip(".")
+
+
 def _is_never_public_identifier(norm: str) -> bool:
     """True when `norm` (an already `_normalize_shaped_word`-normalized identifier) must be
     treated as private REGARDLESS of how many projects' vocabularies it appears in - ordinary
@@ -358,13 +408,22 @@ def _is_never_public_identifier(norm: str) -> bool:
     192.168.1.1). Called only on the shaped-word path (`_token_provenance`), only after the
     ordinary corroboration check already ran - this is an override that can turn a PASS into a
     FAIL, never the reverse."""
+    cidr_match = _NEVER_PUBLIC_CIDR_RE.match(norm)
+    if cidr_match:
+        try:
+            candidate_net = ipaddress.ip_network(norm, strict=False)
+        except ValueError:
+            candidate_net = None
+        if candidate_net is not None:
+            return any(candidate_net.overlaps(net) for net in _NEVER_PUBLIC_NETWORKS)
+    host = _never_public_host(norm)
     try:
-        addr = ipaddress.ip_address(norm)
+        addr = ipaddress.ip_address(host)
     except ValueError:
         addr = None
     if addr is not None:
         return any(addr in net for net in _NEVER_PUBLIC_NETWORKS)
-    return norm.endswith(_NEVER_PUBLIC_HOST_SUFFIXES)
+    return host.endswith(_NEVER_PUBLIC_HOST_SUFFIXES)
 
 
 def _token_provenance(sentence: str, source_project: str, cluster_projects: set,
