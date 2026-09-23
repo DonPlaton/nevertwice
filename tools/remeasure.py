@@ -234,6 +234,12 @@ def reformat(old: str, value) -> str | None:
 #: A number as a statement prints it: digits with optional thousands commas and decimals, an
 #: optional percent sign. Used to find the numbers a rewrite INTRODUCED.
 _NUMBER = re.compile(r"\d+(?:,\d{3})*(?:\.\d+)?%?")
+#: A match must be a WHOLE number: no digit or decimal point before it, and after it no digit and
+#: no point or comma that continues it with a digit - "45" is not the start of "45.6%" or of
+#: "19,206" and "2.0" is not the start of the version "2.0.19" (the auditing session's (в)1).
+#: Module constants so the suite can take them away and prove the post-check below still holds.
+_BEFORE = r"(?<![\d.])"
+_AFTER = r"(?!\d|[.,]\d)"
 
 
 def _rewrite_statement(stmt: str, old_printed: list[str], new_printed: list[str]
@@ -253,10 +259,14 @@ def _rewrite_statement(stmt: str, old_printed: list[str], new_printed: list[str]
     if not mapping:
         return stmt, []
     alts = sorted(mapping, key=len, reverse=True)
-    pattern = re.compile(r"(?<![\d.])(?:" + "|".join(re.escape(o) for o in alts) + r")(?!\d)")
+    pattern = re.compile(_BEFORE + "(?:" + "|".join(re.escape(o) for o in alts) + ")" + _AFTER)
     out = pattern.sub(lambda mt: mapping[mt.group(0)], stmt)
     before = set(_NUMBER.findall(stmt))
+    #: a printed form can be several numbers ("3.4 x 10^-9"): the numbers INSIDE each new form are
+    #: vouched for too, or the check would refuse every p-value rewrite it exists to allow
     allowed = {p.strip() for p in new_printed}
+    for p in new_printed:
+        allowed.update(_NUMBER.findall(p))
     unvouched = sorted({n for n in _NUMBER.findall(out) if n not in before and n not in allowed})
     return out, unvouched
 

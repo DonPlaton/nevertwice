@@ -323,6 +323,36 @@ try:
     c, *_ = _restore_one(["0.02"], "a budget of 10.02 ms and 0.02 ms per check", 0.03)
     check("a number is matched whole, never inside a larger one",
           c["statement"] == "a budget of 10.02 ms and 0.03 ms per check", repr(c["statement"]))
+    #: the anchor after a number must also refuse a decimal point or thousands comma that
+    #: continues it (the auditing session's (в)1): "45" is not the start of "45.6%", "19" is not
+    #: the start of "19,206", "2.0" is not the start of the version "2.0.19"
+    c, *_ = _restore_one(["45"], "45 notes, 45.6% of them with facts", 47)
+    check("an integer form is not matched at the front of a decimal",
+          c["statement"] == "47 notes, 45.6% of them with facts", repr(c["statement"]))
+    c, *_ = _restore_one(["19"], "19 of 19,206 sessions", 21)
+    check("an integer form is not matched at the front of a thousands-separated number",
+          c["statement"] == "21 of 19,206 sessions", repr(c["statement"]))
+    c, *_ = _restore_one(["2.0"], "Mem0 2.0.19 at a ratio of 2.0", 2.5)
+    check("a decimal form is not matched at the front of a version string",
+          c["statement"] == "Mem0 2.0.19 at a ratio of 2.5", repr(c["statement"]))
+    #: a printed form that is several numbers ("1.1 x 10^-16") is one form: the post-check must
+    #: vouch for the numbers inside it, or it refuses every p-value rewrite it exists to allow
+    c, restored, left, review = _restore_one(["1.1 x 10^-16"], "p = 1.1 x 10^-16 on 60 cases", 3.4e-9)
+    check("a multi-number printed form is rewritten, not refused by the post-check",
+          c["statement"] == "p = 3.4 x 10^-9 on 60 cases", repr(c["statement"]) + " " + str(review))
+    #: the post-check is the second line: with the anchors taken away (the mutation that let
+    #: 0.0167 become 0.0372), it must refuse the corrupted rewrite and say so, not write it
+    _anchors = (rm._BEFORE, rm._AFTER)
+    rm._BEFORE, rm._AFTER = "", ""
+    try:
+        c, restored, left, review = _restore_one(["0.02"], "a budget of 10.02 ms and 0.02 ms per check",
+                                                  0.03)
+    finally:
+        rm._BEFORE, rm._AFTER = _anchors
+    check("without the anchors the post-check keeps the old statement rather than print 10.03",
+          c["statement"] == "a budget of 10.02 ms and 0.02 ms per check", repr(c["statement"]))
+    check("and sends the claim to review, naming what it refused to print",
+          any("NOT rewritten" in r and "10.03" in r for r in review), str(review))
 finally:
     if _sraw.exists():
         _sraw.unlink()
