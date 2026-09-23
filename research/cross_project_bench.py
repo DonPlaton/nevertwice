@@ -101,6 +101,13 @@ import memory_hook as m  # noqa: E402
 import principles as pr  # noqa: E402
 
 DATA = HERE / "data" / "cross_project_v1.json"
+# The identifier-bound population (Q5 G5.1, finding 3, 2026-09-24): registered
+# .loop/PREREG-Q5-IDENTIFIER-BOUND-2026-09-23.md BEFORE any number from it. 50 cases, one
+# planted identifier PER case, and the identifier IS the lesson - the original 100-case
+# population deliberately keeps the identifier OUT of the stated rule (H5's whole finding was
+# that this leaves `all`'s positive control nothing real to leak); this population is the
+# opposite by design, kept BESIDE the original, never replacing it.
+IB_DATA = HERE / "data" / "cross_project_ib_v1.json"
 # .loop/explore/, not research/results/: an exploratory run must not write where a published,
 # cited claim's artifact lives (research/evidence_manifest.json) - promote it explicitly with
 # --out once the numbers are trusted, the same discipline research/principle_twins.py follows.
@@ -709,42 +716,36 @@ def _select_case_ids(path: Path, spec: str) -> list[dict]:
     return picked
 
 
-def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__,
-                                     formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--data", default=str(DATA), help="dataset path (default: %(default)s)")
-    parser.add_argument("--out", default=str(OUT), help="results artifact path (default: %(default)s)")
-    parser.add_argument("--cases", type=int, default=None, help="limit to the first N cases")
-    parser.add_argument("--case-ids", default="",
-                        help="comma-separated case ids (or 0-based indices, for a token that "
-                             "matches no id) - a cheap diagnostic run over exactly these cases "
-                             "instead of the first N; takes precedence over --cases, ignored "
-                             "under --dry (which always uses its own fixed 3-case fixture)")
-    parser.add_argument("--oracle-principles", action="store_true",
-                        help="control: write each case's pre-written ground-truth principle "
-                             "directly, no extraction at all")
-    parser.add_argument("--dry", action="store_true",
-                        help=f"{_DRY_N_CASES} cases, a deterministic stub extractor (poisons "
-                             "one planted identifier of each class, plus a second entity "
-                             "scenario left undeclared) + stub embedder, no model - proves "
-                             "principle_scan rejects at write time and principles.py's token-"
-                             "provenance gate rejects at promotion time, end to end")
-    args = parser.parse_args(argv)
+def _cosine_distribution(rows: list[dict]) -> dict:
+    """Finding 4 (2026-09-24): how far REAL A/C principle pairs sit from `T_PRINCIPLE`, over a
+    full run - values, not just a pass/fail count, so "no clusters" (nothing paired) can be
+    told apart from "nearly clustered" (paired, just under threshold - the one real 5-case
+    example read 0.7226 against a T of 0.75). `None` fields when no case had a principle on
+    BOTH sides to compare at all."""
+    vals = [r["principle_cosine"] for r in rows if r.get("principle_cosine") is not None]
+    if not vals:
+        return {"n": 0, "values": [], "mean": None, "median": None, "min": None, "max": None}
+    sv = sorted(vals)
+    n = len(sv)
+    median = sv[n // 2] if n % 2 else (sv[n // 2 - 1] + sv[n // 2]) / 2
+    return {"n": n, "values": vals, "mean": round(sum(vals) / n, 4), "median": round(median, 4),
+           "min": round(min(vals), 4), "max": round(max(vals), 4)}
 
-    if args.dry:
-        extractor_mode = "oracle" if args.oracle_principles else "stub"
-    else:
-        extractor_mode = "oracle" if args.oracle_principles else "extract"
 
+def _run_population(data_path: Path, label: str, args, extractor_mode: str) -> dict | None:
+    """Load + run ONE population's cases, print its summary, return the artifact dict (or
+    `None` if it has no cases to run). Finding 3 (2026-09-24): split out of `main` so
+    `--population both` can call this twice and report the two populations SEPARATELY, without
+    changing what a single-population run has always produced."""
     if args.case_ids and not args.dry:
-        cases = _select_case_ids(Path(args.data), args.case_ids)
+        cases = _select_case_ids(data_path, args.case_ids)
     else:
         n = _DRY_N_CASES if args.dry else args.cases
-        cases = load_cases(Path(args.data), n)
+        cases = load_cases(data_path, n)
     if not cases:
-        print("[cross_project_bench] no cases loaded", file=sys.stderr)
-        return 1
-    print(f"[cross_project_bench] {len(cases)} case(s), extractor={extractor_mode}, "
+        print(f"[cross_project_bench] {label}: no cases loaded", file=sys.stderr)
+        return None
+    print(f"[cross_project_bench] {label}: {len(cases)} case(s), extractor={extractor_mode}, "
          f"arms: {', '.join(ARMS)}" + (" (no model)" if args.dry else ""))
 
     result = run_bench(cases, extractor_mode=extractor_mode, dry=args.dry)
@@ -766,13 +767,79 @@ def main(argv: list[str] | None = None) -> int:
              f"promote candidates={r['promote_report']['candidates']} "
              f"clusters={r['promote_report']['clusters']} "
              f"promoted={r['promote_report']['promoted']}")
+    cd = _cosine_distribution(result["rows"])
+    print(f"  principle_cosine: n={cd['n']} mean={cd['mean']} median={cd['median']} "
+         f"min={cd['min']} max={cd['max']}")
+
+    result["population"] = label
+    result["cosine_distribution"] = cd
+    if not args.dry:
+        result.update({"dataset": str(data_path), "embed_signature": m.embed_signature(),
+                       "extraction_model": LLM, "measured_at": _measured_at()})
+    return result
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--data", default="", help="dataset path override for a SINGLE "
+                        "population (--population original or identifier_bound only; ignored "
+                        "under --population both, where each population uses its own default "
+                        "path)")
+    parser.add_argument("--out", default=str(OUT), help="results artifact path (default: %(default)s)")
+    parser.add_argument("--cases", type=int, default=None, help="limit to the first N cases")
+    parser.add_argument("--case-ids", default="",
+                        help="comma-separated case ids (or 0-based indices, for a token that "
+                             "matches no id) - a cheap diagnostic run over exactly these cases "
+                             "instead of the first N; takes precedence over --cases, ignored "
+                             "under --dry (which always uses its own fixed 3-case fixture)")
+    parser.add_argument("--population", default="original",
+                        choices=["original", "identifier_bound", "both"],
+                        help="which case population to run (default: %(default)s). "
+                             "'identifier_bound' is the 50-case population where the planted "
+                             "identifier IS the lesson (.loop/PREREG-Q5-IDENTIFIER-BOUND-"
+                             "2026-09-23.md, finding 3); 'both' runs each separately and "
+                             "reports them under a top-level 'populations' key. Ignored under "
+                             "--dry, which always uses the original population's fixed 3-case "
+                             "stub fixture.")
+    parser.add_argument("--oracle-principles", action="store_true",
+                        help="control: write each case's pre-written ground-truth principle "
+                             "directly, no extraction at all")
+    parser.add_argument("--dry", action="store_true",
+                        help=f"{_DRY_N_CASES} cases, a deterministic stub extractor (poisons "
+                             "one planted identifier of each class, plus a second entity "
+                             "scenario left undeclared) + stub embedder, no model - proves "
+                             "principle_scan rejects at write time and principles.py's token-"
+                             "provenance gate rejects at promotion time, end to end")
+    args = parser.parse_args(argv)
+
+    if args.dry:
+        extractor_mode = "oracle" if args.oracle_principles else "stub"
+    else:
+        extractor_mode = "oracle" if args.oracle_principles else "extract"
+
+    default_path = {"original": DATA, "identifier_bound": IB_DATA}
+    populations = ["original"] if args.dry else (
+        ["original", "identifier_bound"] if args.population == "both" else [args.population])
+    if args.data and args.population != "both":
+        default_path = {**default_path, populations[0]: Path(args.data)}
+
+    results: dict[str, dict] = {}
+    for label in populations:
+        res = _run_population(default_path[label], label, args, extractor_mode)
+        if res is not None:
+            results[label] = res
+    if not results:
+        return 1
 
     if args.dry:
         print("[cross_project_bench] --dry: plumbing exercised, nothing written to disk")
         return 0
 
-    artifact = {**result, "dataset": str(args.data), "embed_signature": m.embed_signature(),
-               "extraction_model": LLM, "measured_at": _measured_at()}
+    if args.population == "both":
+        artifact = {"populations": results}
+    else:
+        artifact = results[populations[0]]
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(artifact, ensure_ascii=False, indent=1) + "\n",
