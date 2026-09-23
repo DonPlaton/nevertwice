@@ -43,6 +43,39 @@ _VECS = {
     # bound..." rule above, so the stub still clusters it - the PRODUCT NAME is what the
     # provenance check (not clustering) is supposed to catch.
     "cap a resource-bound parameter before scaling acme-widget-server.": [1.0, 0.0, 0.0],
+    # H6 (2026-09-24): a genuine PARAPHRASE, different ordinary wording throughout, still
+    # clusters here (same vector) - real clustering is a real embedder's job, not this stub's;
+    # the stub only has to hold the cosine fixed so the test isolates what provenance decides.
+    "limit a resource ceiling before increasing the load.": [1.0, 0.0, 0.0],
+    # H6 (b): one private identifier-shaped name per shape, in an otherwise-shared sentence -
+    # undeclared (no `entities`), so write time (option A) never touches it and it reaches
+    # promotion unchanged; provenance is the only remaining defence.
+    # NOTE: _stub_embed's lookup lowercases the text first (`key = text.strip().lower()`), so
+    # every _VECS key with any letters must be lowercase here too, whatever case the actual
+    # principle text on disk uses (UserRepository/PostgreSQL) - a mixed-case key here would
+    # simply never match and _stub_embed would silently return None.
+    "cap a resource-bound parameter before scaling userrepository.": [1.0, 0.0, 0.0],
+    "cap a resource-bound parameter before scaling payments-api.": [1.0, 0.0, 0.0],
+    "cap a resource-bound parameter before scaling billing_service.": [1.0, 0.0, 0.0],
+    # H6 (c): a PUBLIC tech name, camelCase-shaped exactly like UserRepository, mentioned by
+    # BOTH projects - corroborated, so provenance must let it through.
+    "cap a resource-bound parameter before scaling postgresql.": [1.0, 0.0, 0.0],
+    "limit a resource ceiling before increasing postgresql load.": [1.0, 0.0, 0.0],
+    # H6-era update to test (a) below: C's own invented private name, so NEITHER side has a
+    # clean fallback the other could be promoted through instead (see that test's own comment).
+    "cap a resource-bound parameter before scaling globex-nimbus-array.": [1.0, 0.0, 0.0],
+    # The owner's exact nine-name probe (2026-09-24) - one principle per private name, C always
+    # poisoned with its own distinct private name (no clean fallback), plus the public
+    # "consumer-group" concept pair (H6, promoted, corroborated by both).
+    "cap a resource-bound parameter before scaling useauthstore.": [1.0, 0.0, 0.0],
+    "cap a resource-bound parameter before scaling orderservice.": [1.0, 0.0, 0.0],
+    "cap a resource-bound parameter before scaling db-primary.": [1.0, 0.0, 0.0],
+    "cap a resource-bound parameter before scaling kafka-consumer-group.": [1.0, 0.0, 0.0],
+    "cap a resource-bound parameter before scaling prod-cluster.": [1.0, 0.0, 0.0],
+    "cap a resource-bound parameter before scaling phoenix.": [1.0, 0.0, 0.0],
+    "cap a resource-bound parameter before scaling acme-corp.": [1.0, 0.0, 0.0],
+    "cap a resource-bound parameter before scaling a consumer-group.": [1.0, 0.0, 0.0],
+    "limit a resource ceiling before increasing a consumer-group.": [1.0, 0.0, 0.0],
 }
 
 
@@ -159,17 +192,27 @@ def test_a_scanner_hit_at_promotion_time_is_not_promoted() -> None:
 def test_a_undeclared_product_name_blocks_promotion_via_token_provenance() -> None:
     """(a) W17 closure: A's principle mentions a product name it never declared as an entity
     (so A1's write-time scan and A5's `_rescan` both let it through - see
-    test_a_scanner_hit_at_promotion_time_is_not_promoted for that boundary); A and C otherwise
-    share the exact same rule wording. The PROMOTION-time token-provenance check is the one
-    that has to catch this, because nothing upstream of it does."""
+    test_a_scanner_hit_at_promotion_time_is_not_promoted for that boundary). The PROMOTION-time
+    token-provenance check is the one that has to catch this, because nothing upstream of it
+    does.
+
+    C ALSO carries its own invented private name here (H6-era update, 2026-09-24) - not the
+    plain "before scaling a workload." this test used before H6. `_promote_cluster` tries the
+    next-most-central candidate when the medoid fails ("the clean fallback"), and once H6
+    stopped flagging every non-identical word, C's plain phrasing had NOTHING left to fail on
+    and was promoted in its place - a correct instance of that documented fallback (a cluster
+    IS legitimately shareable when one honest member's wording has no leak), just not what THIS
+    test is for. So C is given its own private name too, with NO clean escape hatch in the
+    cluster at all - the only way to test that the FIRST candidate's leak, specifically,
+    is caught."""
     print("\n- (a) an undeclared product name blocks promotion at the provenance gate -")
     make_sandbox(m, "pp_prov_a_", offline=True)
     pr = _import_fresh()
     m.embed_text = _stub_embed
     poisoned = "Cap a resource-bound parameter before scaling acme-widget-server."
-    clean = "Cap a resource-bound parameter before scaling a workload."
+    also_poisoned = "Cap a resource-bound parameter before scaling globex-nimbus-array."
     s_a = _write("project_a", "cap batch size", poisoned)          # entities=[] - undeclared
-    s_c = _write("project_c", "cap worker pool", clean)
+    s_c = _write("project_c", "cap worker pool", also_poisoned)    # entities=[] - undeclared
     check("both source notes were written", bool(s_a) and bool(s_c), f"{s_a}/{s_c}")
     fm_a = m._read_frontmatter_file(m.VAULT / "Patterns" / f"{s_a}.md")
     check("the product name is on disk, undeclared as an entity (write-time scan let it "
@@ -179,13 +222,15 @@ def test_a_undeclared_product_name_blocks_promotion_via_token_provenance() -> No
     summary = pr.promote(apply=True)
     check("a cluster formed (the stub embedder still merges the two phrasings)",
           summary["clusters"] == 1, str(summary))
-    check("nothing was promoted", summary["promoted"] == 0, str(summary))
+    check("nothing was promoted - neither side has a clean fallback", summary["promoted"] == 0,
+          str(summary))
     check("the rejection is counted as rejected_single_project_token",
           summary["rejected_single_project_token"] == 1, str(summary))
     result = summary["results"][0]
-    check("the product-name tokens are named as offending",
-          {"acme", "widget", "server"} <= set(result["offending_tokens"]),
-          str(result["offending_tokens"]))
+    check("BOTH sides' private-name tokens are named as offending (the union over every "
+         "candidate tried, not just the medoid's)",
+         {"acme", "widget", "server", "globex", "nimbus", "array"}
+         <= set(result["offending_tokens"]), str(result["offending_tokens"]))
     universal_dir = m.VAULT / "Patterns"
     universal_notes = [p for p in universal_dir.glob("*.md")
                        if (m.parse_typed_stem(p.stem) or {}).get("project") == m.UNIVERSAL_PROJECT]
@@ -224,9 +269,9 @@ def test_c_mutation_token_provenance_threshold_of_one() -> None:
     pr = _import_fresh()
     m.embed_text = _stub_embed
     poisoned = "Cap a resource-bound parameter before scaling acme-widget-server."
-    clean = "Cap a resource-bound parameter before scaling a workload."
+    also_poisoned = "Cap a resource-bound parameter before scaling globex-nimbus-array."
     _write("project_a", "cap batch size", poisoned)
-    _write("project_c", "cap worker pool", clean)
+    _write("project_c", "cap worker pool", also_poisoned)
 
     saved = pr.TOKEN_PROVENANCE_MIN_PROJECTS
     pr.TOKEN_PROVENANCE_MIN_PROJECTS = 1
@@ -394,6 +439,210 @@ def test_d_own_generic_entity_no_longer_self_rejects_at_promotion() -> None:
           summary["promoted"] == 1, str(summary))
 
 
+# ── H6 (2026-09-24): provenance for IDENTIFIER-SHAPED tokens only ──────────────────────────
+# Before this fix, `_token_provenance` required >=2-project corroboration for EVERY content
+# token, including the ordinary English words a genuine paraphrase is full of - each project's
+# own vocabulary is usually just its one note's own wording, so two honest paraphrases almost
+# never share enough exact words to pass. The fix: only IDENTIFIER-SHAPED tokens (the five
+# shapes from `_engine_text.py` - digit/dot/slash, underscore, SCREAMING, camelCase/PascalCase,
+# hyphen-infra) need corroboration; an ordinary word passes regardless of how many or few
+# projects' corpora happen to use it.
+
+def test_g_ordinary_paraphrase_is_promoted() -> None:
+    """(a) H6: a paraphrase pair whose wording differs throughout, no identifier-shaped token
+    anywhere, is promoted - RED before this fix (every content token needed corroboration, and
+    "limit"/"ceiling"/"increasing"/"load" only ever appear in ONE side's own vocabulary)."""
+    print("\n- (a) H6: an ordinary-wording paraphrase (no identifier-shaped token) is promoted -")
+    make_sandbox(m, "pp_h6_a_", offline=True)
+    pr = _import_fresh()
+    m.embed_text = _stub_embed
+    s_a = _write("project_a", "cap resource", "Cap a resource-bound parameter before scaling "
+                 "a workload.")
+    s_c = _write("project_c", "limit resource", "Limit a resource ceiling before increasing "
+                 "the load.")
+    check("both source notes were written", bool(s_a) and bool(s_c), f"{s_a}/{s_c}")
+
+    summary = pr.promote(apply=True)
+    check("one cluster formed", summary["clusters"] == 1, str(summary))
+    check("it was promoted - no identifier-shaped token needed corroboration",
+          summary["promoted"] == 1, str(summary))
+    check("nothing was rejected for single-project tokens",
+          summary["rejected_single_project_token"] == 0, str(summary))
+
+
+def test_h_private_shaped_name_blocks_promotion_per_shape() -> None:
+    """(b) H6: A's principle carries a private identifier-shaped name - one case per shape
+    option (A) moved OFF the write gate (camelCase, hyphen-infra) plus one it kept (underscore,
+    here UNDECLARED so write time never sees it either) - that only A's own vocabulary has.
+    None is promoted, and the offending token is named in every case.
+
+    C ALSO carries its own private name (its own invented one, "globex-nimbus-array" - the
+    same H6-era reasoning as test (a)'s update above): a plain "...scaling a workload." for C
+    would give the cluster a clean fallback candidate once H6 stopped flagging "workload" as
+    needing corroboration, and that fallback would promote instead of testing what this case is
+    for - A's OWN shape-specific token blocking THAT candidate."""
+    print("\n- (b) H6: a private camel/kebab/snake name blocks promotion, token named -")
+    c_poisoned = "Cap a resource-bound parameter before scaling globex-nimbus-array."
+    cases = [
+        ("camel", "cap a resource-bound parameter before scaling UserRepository.", "userrepository"),
+        ("kebab", "cap a resource-bound parameter before scaling payments-api.", "payments"),
+        ("snake", "cap a resource-bound parameter before scaling billing_service.", "billing"),
+    ]
+    for shape, poisoned, offending_tok in cases:
+        make_sandbox(m, f"pp_h6_b_{shape}_", offline=True)
+        pr = _import_fresh()
+        m.embed_text = _stub_embed
+        s_a = _write("project_a", f"cap-{shape}", poisoned)          # entities=[] - undeclared
+        s_c = _write("project_c", "cap plain", c_poisoned)           # entities=[] - undeclared
+        check(f"{shape}: both source notes were written", bool(s_a) and bool(s_c),
+              f"{s_a}/{s_c}")
+        fm_a = m._read_frontmatter_file(m.VAULT / "Patterns" / f"{s_a}.md")
+        check(f"{shape}: the private name is on disk, undeclared as an entity (write time no "
+             "longer touches this shape)", offending_tok.split()[0] in
+             (fm_a.get("principle") or "").lower() and not fm_a.get("entities"), fm_a)
+
+        summary = pr.promote(apply=True)
+        check(f"{shape}: a cluster formed (the stub still merges the two phrasings)",
+              summary["clusters"] == 1, str(summary))
+        check(f"{shape}: nothing was promoted", summary["promoted"] == 0, str(summary))
+        check(f"{shape}: rejected as rejected_single_project_token",
+              summary["rejected_single_project_token"] == 1, str(summary))
+        result = summary["results"][0]
+        check(f"{shape}: the private token is named as offending ({offending_tok!r})",
+              offending_tok in result["offending_tokens"], str(result["offending_tokens"]))
+
+
+def test_i_public_camel_name_in_both_is_promoted() -> None:
+    """(c) H6: "PostgreSQL" - the SAME camelCase shape as the private "UserRepository" test
+    above - is promoted when BOTH projects' own principles mention it: shape alone never
+    decided this (option A already removed camelCase from the write gate for exactly this
+    reason), corroboration does."""
+    print("\n- (c) H6: a public camelCase name corroborated by both projects is promoted -")
+    make_sandbox(m, "pp_h6_c_", offline=True)
+    pr = _import_fresh()
+    m.embed_text = _stub_embed
+    s_a = _write("project_a", "cap postgres a", "Cap a resource-bound parameter before "
+                 "scaling PostgreSQL.")
+    s_c = _write("project_c", "cap postgres c", "Limit a resource ceiling before increasing "
+                 "PostgreSQL load.")
+    check("both source notes were written", bool(s_a) and bool(s_c), f"{s_a}/{s_c}")
+
+    summary = pr.promote(apply=True)
+    check("one cluster formed", summary["clusters"] == 1, str(summary))
+    check("it was promoted - PostgreSQL is corroborated by BOTH projects' own vocabulary",
+          summary["promoted"] == 1, str(summary))
+    check("nothing was rejected for single-project tokens",
+          summary["rejected_single_project_token"] == 0, str(summary))
+
+
+def test_i2_public_hyphen_concept_in_both_is_promoted() -> None:
+    """(c, continued) "consumer-group" - a GENERIC hyphen concept (both parts are infra nouns,
+    `_INFRA_HYPHEN_TOKENS`) - is promoted when BOTH projects mention it, the same reasoning as
+    PostgreSQL above but for the hyphen-infra shape instead of camelCase."""
+    print("\n- (c) H6: a public hyphen-infra concept corroborated by both projects is promoted -")
+    make_sandbox(m, "pp_h6_c2_", offline=True)
+    pr = _import_fresh()
+    m.embed_text = _stub_embed
+    s_a = _write("project_a", "cap group a", "Cap a resource-bound parameter before scaling "
+                 "a consumer-group.")
+    s_c = _write("project_c", "cap group c", "Limit a resource ceiling before increasing a "
+                 "consumer-group.")
+    check("both source notes were written", bool(s_a) and bool(s_c), f"{s_a}/{s_c}")
+
+    summary = pr.promote(apply=True)
+    check("one cluster formed", summary["clusters"] == 1, str(summary))
+    check("it was promoted - consumer-group is corroborated by BOTH projects' own vocabulary",
+          summary["promoted"] == 1, str(summary))
+    check("nothing was rejected for single-project tokens",
+          summary["rejected_single_project_token"] == 0, str(summary))
+
+
+def test_h2_owners_nine_name_probe_all_blocked() -> None:
+    """The owner's exact probe (2026-09-24): nine private names, each present in ONE project's
+    vocabulary only, must ALL be NOT promoted, with the token named in the rejection - seven
+    shape-classifiable (camelCase/PascalCase, hyphen-infra) already covered per-shape above,
+    plus "phoenix" (a lone lowercase word) and "acme-corp" (a hyphenated company name, neither
+    part an infra noun) - NEITHER has any shape this layer keys on, so ONLY
+    `_is_uncorroborated_private_word`'s corpus-uniqueness rule catches them. Not covered
+    silently: if this test is red, the uniqueness rule is not doing its job for these two."""
+    print("\n- the owner's nine-name probe: all nine private names blocked, token named -")
+    cases = [
+        ("payments-api", "payments"), ("UserRepository", "userrepository"),
+        ("useAuthStore", "useauthstore"), ("OrderService", "orderservice"),
+        # "db" itself is only 2 chars, below _content_tokens' own _MIN_TOKEN_LEN (3), so it is
+        # never a trackable token at all - "primary" is what actually gets named.
+        ("db-primary", "primary"), ("kafka-consumer-group", "kafka"),
+        ("prod-cluster", "prod"), ("phoenix", "phoenix"), ("acme-corp", "acme"),
+    ]
+    c_poisoned = "Cap a resource-bound parameter before scaling globex-nimbus-array."
+    for name, offending_tok in cases:
+        make_sandbox(m, f"pp_h6_nine_{offending_tok}_", offline=True)
+        pr = _import_fresh()
+        m.embed_text = _stub_embed
+        poisoned = f"Cap a resource-bound parameter before scaling {name}."
+        s_a = _write("project_a", f"cap {offending_tok}", poisoned)   # entities=[] - undeclared
+        s_c = _write("project_c", "cap plain", c_poisoned)            # entities=[] - undeclared
+        check(f"{name!r}: both source notes were written", bool(s_a) and bool(s_c),
+              f"{s_a}/{s_c}")
+
+        summary = pr.promote(apply=True)
+        check(f"{name!r}: nothing was promoted", summary["promoted"] == 0, str(summary))
+        check(f"{name!r}: rejected as rejected_single_project_token",
+              summary["rejected_single_project_token"] >= 1, str(summary))
+        all_offending: set = set()
+        for r in summary["results"]:
+            all_offending |= set(r.get("offending_tokens") or ())
+        check(f"{name!r}: the private token is named as offending ({offending_tok!r})",
+              offending_tok in all_offending, sorted(all_offending))
+
+
+def test_j_mutation_ignoring_camel_shape_reddens_h_camel_case() -> None:
+    """(d) Mutation: `m._has_camel_transition` forced to always return False makes
+    `_identifier_shaped_tokens` blind to camelCase/PascalCase entirely.
+
+    Isolated from H6's OWN uniqueness backstop (`_is_uncorroborated_private_word`, the owner's
+    rule for "phoenix"/"acme-corp") on purpose: that backstop would ALSO flag "userrepository"
+    as long as it is absent from every OTHER live project, so a naive mutation test (just A and
+    C in the vault) would still redden nothing - it would be proving the BACKSTOP works, not
+    that the camel-shape rule specifically does. A THIRD, unrelated project (`project_x`, not a
+    cluster member) is given its OWN note that also happens to use "UserRepository" - now the
+    token is NOT vault-wide-unique (the uniqueness backstop stands down), so BEFORE the
+    mutation only the camel-SHAPE rule is what fails it against the cluster's own two
+    projects (project_x's use of it does not help project_c corroborate it). Calls
+    `_token_provenance` directly, sidestepping `promote()`'s own cluster/medoid-fallback
+    machinery, which is not what this unit-level property needs."""
+    print("\n- mutation: provenance blind to camelCase reddens (b)'s camel case, by name -")
+    make_sandbox(m, "pp_h6_mut_", offline=True)
+    pr = _import_fresh()
+    m.embed_text = _stub_embed
+    principle_a = "cap a resource-bound parameter before scaling UserRepository."
+    s_a = _write("project_a", "cap camel", principle_a)
+    s_c = _write("project_c", "cap plain", "Cap a resource-bound parameter before scaling "
+                 "a workload.")
+    s_x = _write("project_x", "unrelated userrepository note",
+                 "UserRepository needs its own migration runner, unrelated to this cluster.")
+    check("all three source notes were written", bool(s_a) and bool(s_c) and bool(s_x),
+          f"{s_a}/{s_c}/{s_x}")
+
+    cluster_projects = {"project_a", "project_c"}
+    ok_before, offending_before = pr._token_provenance(principle_a, "project_a",
+                                                        cluster_projects, {})
+    check("before the mutation: the camel-shaped private name fails provenance against the "
+         "CLUSTER's own two projects, even though a third, unrelated project also uses it",
+         not ok_before and "userrepository" in offending_before, offending_before)
+
+    saved = m._has_camel_transition
+    m._has_camel_transition = lambda t: False
+    try:
+        ok_after, offending_after = pr._token_provenance(principle_a, "project_a",
+                                                          cluster_projects, {})
+    finally:
+        m._has_camel_transition = saved
+    check("mutation: WITHOUT the camel shape, the SAME sentence now passes provenance (would "
+         "FAIL 'before the mutation' above) - the camel-shape rule specifically was what "
+         "caught it, not the uniqueness backstop", ok_after, offending_after)
+
+
 def test_zz_every_check_passed() -> None:
     """Bare pytest must reach the same verdict as this suite's exit code.
 
@@ -415,7 +664,13 @@ def main() -> int:
                test_a_cache_stamp_mismatch_is_refused,
                test_mutation_removing_the_distinct_projects_check,
                test_dry_run_writes_nothing,
-               test_d_own_generic_entity_no_longer_self_rejects_at_promotion):
+               test_d_own_generic_entity_no_longer_self_rejects_at_promotion,
+               test_g_ordinary_paraphrase_is_promoted,
+               test_h_private_shaped_name_blocks_promotion_per_shape,
+               test_h2_owners_nine_name_probe_all_blocked,
+               test_i_public_camel_name_in_both_is_promoted,
+               test_i2_public_hyphen_concept_in_both_is_promoted,
+               test_j_mutation_ignoring_camel_shape_reddens_h_camel_case):
         fn()
     print(f"\nprinciple promote: {PASSED} passed, {FAILED} failed")
     return 1 if FAILED else 0

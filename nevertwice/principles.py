@@ -161,20 +161,144 @@ def _project_token_vocabulary(project: str) -> set[str]:
     return vocab
 
 
-def _token_provenance(sentence: str, cluster_projects: set, vocab_cache: dict) -> tuple[bool, list]:
-    """Every content token of `sentence` must occur in the vocabulary of at least
-    TOKEN_PROVENANCE_MIN_PROJECTS of `cluster_projects` - "repetition proves universality" (the
-    same idea the >=2-project CLUSTER rule already applies to the whole sentence), now applied
-    per token. A client's product name that only ONE project ever wrote cannot pass this,
-    whether or not the extractor happened to declare it as an entity - unlike the write-time
-    scanner (`principle_scan`, gated on declared entities), this check asks the CORPUS, not the
-    extraction, so nothing the extractor did or did not declare can defeat it. `vocab_cache` is
-    built once per `promote()` run and shared across every cluster's checks (the plan's own
+def _identifier_shaped_words(sentence: str) -> set[str]:
+    """The whitespace-separated words of `sentence` that look identifier-shaped, by ALL FIVE
+    shapes (2026-09-24, H6) - not just the three the write/rescan gate keeps after option (A).
+    camelCase/PascalCase and hyphen-infra moved OFF the write gate specifically BECAUSE
+    provenance (corpus corroboration) is the mechanism that tells a public name (PostgreSQL,
+    corroborated by many projects' own corpus) from a private one (UserRepository, corroborated
+    by none) - so provenance has to check those two shapes too, or a private camel/kebab name
+    would cross with NO defense at all once write time stopped catching it.
+
+    Checked on the RAW WORD, before `_content_tokens`'s own lowercasing and hyphen/underscore
+    split destroy exactly the shape information these checks need (case, hyphen position,
+    underscore) - a digit survives tokenization, the other four do not."""
+    words: set[str] = set()
+    for raw in re.findall(r"\S+", sentence or ""):
+        word = raw.strip(".,;:!?()[]{}\"'")
+        if not word:
+            continue
+        if (m._has_digit_dot_or_slash(word) or m._has_underscore(word)
+                or m._is_screaming_snake(word) or m._has_camel_transition(word)
+                or m._hyphen_part_is_infra(word)):
+            words.add(word)
+    return words
+
+
+def _identifier_shaped_tokens(sentence: str) -> set[str]:
+    """`_content_tokens`-shaped tokens (lowercased, hyphen/underscore-split, stopword-filtered)
+    that came from an identifier-shaped raw word (`_identifier_shaped_words`) - the SUBSET of a
+    sentence's content tokens `_token_provenance` actually has to corroborate. An ordinary word
+    ("cap", "resource", "workload") is never in this set, however many or few projects'
+    corpora happen to use it - it needs no corroboration at all."""
+    out: set[str] = set()
+    for word in _identifier_shaped_words(sentence):
+        out |= _content_tokens(word)
+    return out
+
+
+#: NOT a dictionary - none is available without a third-party dependency, and this module is
+#: "standard library + the engine only". A short, evidence-grown list of ordinary English/
+#: technical words common enough that being unique to one project's SMALL corpus is coincidence,
+#: not a private identifier - grown from this project's own test fixtures and the vocabulary
+#: `research/cross_project_bench.py`'s real 100-case run actually produced, the same discipline
+#: `_STOPWORDS` and `_INFRA_HYPHEN_TOKENS` follow. KNOWN LIMITATION, stated plainly rather than
+#: covered silently (owner instruction, 2026-09-24): a genuinely ordinary word missing from this
+#: list, unique to one project's corpus, is still flagged and asked for corroboration it may not
+#: have - the SAME over-cautious failure mode H6 already accepts for identifier-shaped tokens,
+#: now also possible for an ordinary word this list does not contain. Widen it from a real false
+#: positive on a real store, never by guessing more words in.
+_COMMON_WORDS = frozenset("""
+cap limit bound parameter resource ceiling scaling increasing workload load measure assuming
+bottleneck redact secrets writing anything disk always never write read logs persistent
+storage avoid security related failures sanitize sensitive information data persisting shared
+acquiring lock prevent stale values critical section reading inside outside race conditions
+changes interval acquire hold connection pool queue worker service table index schema column
+config value default fallback check error handle backoff deadline test unit integration mock
+stub fixture assert verify validate boundary edge case memory leak free allocate deallocate
+buffer overflow underflow network request response latency throughput bandwidth socket
+database retry timeout cache migration client side isolation credential durable health check
+mocking mock integration tests instance real genuine ensure surface bugs migrations trace
+traced replica lags behind deploy primary catch drained requests dropped state corrupts
+migrator running silently drops messages split payloads publishing kicked kick draining
+""".split())
+
+
+def _all_live_projects() -> set[str]:
+    """Every project name with at least one live pattern/mistake note - used only by the
+    corpus-uniqueness check below, which needs to know about EVERY project in the vault, not
+    only the current cluster's members."""
+    projects: set[str] = set()
+    for ntype in _PRINCIPLE_TYPES:
+        folder = m.VAULT / m.TYPE_FOLDER[ntype]
+        if not folder.exists():
+            continue
+        for p in folder.glob("*.md"):
+            parsed = m.parse_typed_stem(p.stem)
+            if parsed:
+                projects.add(parsed["project"])
+    return projects
+
+
+def _is_uncorroborated_private_word(tok: str, source_project: str, vocab_cache: dict) -> bool:
+    """Owner's rule (2026-09-24, the second H6 residual): a plain lowercase word ("phoenix") or
+    a hyphenated one whose parts are not infra nouns ("acme-corp") has NO shape this layer can
+    key on at all - `_identifier_shaped_words` cannot flag either. So flag by CORPUS EVIDENCE
+    instead: `tok` counts as a private word when it appears in `source_project`'s OWN
+    vocabulary, appears in NO OTHER live project's vocabulary anywhere in the vault (not only
+    this cluster's members), AND is not on the `_COMMON_WORDS` list. A token failing only the
+    first two conditions but ON `_COMMON_WORDS` is treated as an ordinary word this project's
+    corpus simply happens to be the only one using yet - the same reasoning `_token_provenance`
+    already applies to every non-identifier-shaped token."""
+    if tok in _COMMON_WORDS:
+        return False
+    if source_project not in vocab_cache:
+        vocab_cache[source_project] = _project_token_vocabulary(source_project)
+    if tok not in vocab_cache[source_project]:
+        return False
+    for proj in _all_live_projects():
+        if proj == source_project or proj == m.UNIVERSAL_PROJECT:
+            continue
+        if proj not in vocab_cache:
+            vocab_cache[proj] = _project_token_vocabulary(proj)
+        if tok in vocab_cache[proj]:
+            return False
+    return True
+
+
+def _token_provenance(sentence: str, source_project: str, cluster_projects: set,
+                      vocab_cache: dict) -> tuple[bool, list]:
+    """Every token of `sentence` that is EITHER identifier-shaped (2026-09-24, H6 - see
+    `_identifier_shaped_tokens`) OR an uncorroborated private word with no shape at all
+    (`_is_uncorroborated_private_word` - the owner's rule for "phoenix"/"acme-corp", 2026-09-24)
+    must occur in the vocabulary of at least TOKEN_PROVENANCE_MIN_PROJECTS of `cluster_projects`
+    - "repetition proves universality" (the same idea the >=2-project CLUSTER rule already
+    applies to the whole sentence), now applied per flagged token. A client's product name that
+    only ONE project ever wrote cannot pass this, whether or not the extractor happened to
+    declare it as an entity - unlike the write-time scanner (`principle_scan`, gated on declared
+    entities), this check asks the CORPUS, not the extraction, so nothing the extractor did or
+    did not declare can defeat it. `vocab_cache` is built once per `promote()` run and shared
+    across every cluster's checks AND across the whole-vault uniqueness scan (the plan's own
     "build it once per promote run and cache it by project").
 
+    BEFORE this fix (H6, 2026-09-24), EVERY content token needed >=2-project corroboration,
+    including the ordinary English words a genuine cross-project PARAPHRASE is full of ("cap",
+    "resource", "workload", "scaling") - each project's own vocabulary is usually just its one
+    note's own wording, so two honest paraphrases of the same rule almost never share enough
+    exact words to pass, and the check rejected the layer's whole PURPOSE along with the
+    identifiers it was built to catch. Measured on the v2 100-case real run
+    (cross_project_v2.json, after 6409070 fixed the rescan self-rejection ahead of this): of the
+    57 cosine>=0.75 pairs, 46 would now actually reach clustering, and the OLD every-token rule
+    rejected effectively all of them - see the recount in this commit's message for the exact
+    numbers and why.
+
     Returns (passes, offending_tokens) - offending is empty exactly when it passes."""
+    id_tokens = _identifier_shaped_tokens(sentence)
     offending = []
     for tok in _content_tokens(sentence):
+        if tok not in id_tokens and not _is_uncorroborated_private_word(
+                tok, source_project, vocab_cache):
+            continue          # an ordinary, corroborated-or-common word needs nothing further
         seen_in = 0
         for proj in cluster_projects:
             if proj not in vocab_cache:
@@ -412,7 +536,8 @@ def _promote_cluster(cluster: list[dict], vecs: dict[str, list], apply: bool,
     chosen = None
     all_offending: set = set()
     for cand in ranked:
-        ok, offending = _token_provenance(cand["principle"], set(projects), vocab_cache)
+        ok, offending = _token_provenance(cand["principle"], cand["project"], set(projects),
+                                         vocab_cache)
         if ok:
             chosen = cand
             break
