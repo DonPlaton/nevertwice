@@ -17393,7 +17393,7 @@
     "high": 0.7191
    },
    "cited_in": [],
-   "commit": "55e33989f85b0be6eb4657a5d91e4cfb0ee0e263",
+   "commit": "f9592a6dd3c5d667f53f44237ad84ad4a762decc",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -17422,11 +17422,7 @@
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "needs the GPU and the extraction model: the cross-platform fix to _detach_kwargs moved nevertwice/_engine_hooks.py, which sits in these claims' closure, so every stand behind them must be re-run before the numbers are live again. CI's first matrix run in 27 days showed the Windows detach flags fell back to 0 on POSIX and the engine had to move; the artifacts are untouched and the numbers are not disputed.",
-   "withdrawn_on": "2026-09-22",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "morphology.vault.session.ru.raw.recall_at_5",
@@ -17449,7 +17445,7 @@
     "high": 0.8691
    },
    "cited_in": [],
-   "commit": "55e33989f85b0be6eb4657a5d91e4cfb0ee0e263",
+   "commit": "f9592a6dd3c5d667f53f44237ad84ad4a762decc",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -17478,18 +17474,14 @@
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "needs the GPU and the extraction model: the cross-platform fix to _detach_kwargs moved nevertwice/_engine_hooks.py, which sits in these claims' closure, so every stand behind them must be re-run before the numbers are live again. CI's first matrix run in 27 days showed the Windows detach flags fell back to 0 on POSIX and the engine had to move; the artifacts are untouched and the numbers are not disputed.",
-   "withdrawn_on": "2026-09-22",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "morphology.vault.session.ru.raw.recall_at_10",
-   "statement": "on the Russian half of the owner's store, a session summary finds a note extracted from it at RECALL@10 0.879 with raw tokens",
-   "value": 0.8793,
+   "statement": "on the Russian half of the owner's store, a session summary finds a note extracted from it at RECALL@10 0.888 with raw tokens",
+   "value": 0.8879,
    "printed": [
-    "0.879"
+    "0.888"
    ],
    "unit": "recall@10",
    "dataset": "owner_vault_snapshot",
@@ -17501,11 +17493,11 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.8335,
-    "high": 0.9138
+    "low": 0.8432,
+    "high": 0.9211
    },
    "cited_in": [],
-   "commit": "55e33989f85b0be6eb4657a5d91e4cfb0ee0e263",
+   "commit": "f9592a6dd3c5d667f53f44237ad84ad4a762decc",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -17534,18 +17526,14 @@
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "needs the GPU and the extraction model: the cross-platform fix to _detach_kwargs moved nevertwice/_engine_hooks.py, which sits in these claims' closure, so every stand behind them must be re-run before the numbers are live again. CI's first matrix run in 27 days showed the Windows detach flags fell back to 0 on POSIX and the engine had to move; the artifacts are untouched and the numbers are not disputed.",
-   "withdrawn_on": "2026-09-22",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "morphology.vault.session.ru.raw.mrr",
-   "statement": "on the Russian half of the owner's store, MRR 0.726 with raw tokens",
-   "value": 0.7395,
+   "statement": "on the Russian half of the owner's store, MRR 0.739 with raw tokens",
+   "value": 0.739,
    "printed": [
-    "0.740"
+    "0.739"
    ],
    "unit": "mrr",
    "dataset": "owner_vault_snapshot",
@@ -17556,7 +17544,7 @@
    "pointer": "protocols.session.halves.ru.raw.mrr",
    "ci": null,
    "cited_in": [],
-   "commit": "55e33989f85b0be6eb4657a5d91e4cfb0ee0e263",
+   "commit": "f9592a6dd3c5d667f53f44237ad84ad4a762decc",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -17585,18 +17573,14 @@
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "needs the GPU and the extraction model: the cross-platform fix to _detach_kwargs moved nevertwice/_engine_hooks.py, which sits in these claims' closure, so every stand behind them must be re-run before the numbers are live again. CI's first matrix run in 27 days showed the Windows detach flags fell back to 0 on POSIX and the engine had to move; the artifacts are untouched and the numbers are not disputed.",
-   "withdrawn_on": "2026-09-22",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "morphology.vault.session.ru.morph.recall_at_1",
-   "statement": "on the Russian half of the owner's store, a session summary finds a note extracted from it at RECALL@1 0.746 with stop words + stems",
-   "value": 0.7457,
+   "statement": "on the Russian half of the owner's store, a session summary finds a note extracted from it at RECALL@1 0.737 with stop words + stems",
+   "value": 0.7371,
    "printed": [
-    "0.746"
+    "0.737"
    ],
    "unit": "recall@1",
    "dataset": "owner_vault_snapshot",
@@ -17608,11 +17592,11 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.6888,
-    "high": 0.7953
+    "low": 0.6797,
+    "high": 0.7874
    },
    "cited_in": [],
-   "commit": "55e33989f85b0be6eb4657a5d91e4cfb0ee0e263",
+   "commit": "f9592a6dd3c5d667f53f44237ad84ad4a762decc",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -17641,18 +17625,14 @@
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "needs the GPU and the extraction model: the cross-platform fix to _detach_kwargs moved nevertwice/_engine_hooks.py, which sits in these claims' closure, so every stand behind them must be re-run before the numbers are live again. CI's first matrix run in 27 days showed the Windows detach flags fell back to 0 on POSIX and the engine had to move; the artifacts are untouched and the numbers are not disputed.",
-   "withdrawn_on": "2026-09-22",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "morphology.vault.session.ru.morph.recall_at_5",
-   "statement": "on the Russian half of the owner's store, a session summary finds a note extracted from it at RECALL@5 0.858 with stop words + stems",
-   "value": 0.8578,
+   "statement": "on the Russian half of the owner's store, a session summary finds a note extracted from it at RECALL@5 0.862 with stop words + stems",
+   "value": 0.8621,
    "printed": [
-    "0.858"
+    "0.862"
    ],
    "unit": "recall@5",
    "dataset": "owner_vault_snapshot",
@@ -17664,11 +17644,11 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.8095,
-    "high": 0.8954
+    "low": 0.8143,
+    "high": 0.8991
    },
    "cited_in": [],
-   "commit": "55e33989f85b0be6eb4657a5d91e4cfb0ee0e263",
+   "commit": "f9592a6dd3c5d667f53f44237ad84ad4a762decc",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -17697,18 +17677,14 @@
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "needs the GPU and the extraction model: the cross-platform fix to _detach_kwargs moved nevertwice/_engine_hooks.py, which sits in these claims' closure, so every stand behind them must be re-run before the numbers are live again. CI's first matrix run in 27 days showed the Windows detach flags fell back to 0 on POSIX and the engine had to move; the artifacts are untouched and the numbers are not disputed.",
-   "withdrawn_on": "2026-09-22",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "morphology.vault.session.ru.morph.recall_at_10",
-   "statement": "on the Russian half of the owner's store, a session summary finds a note extracted from it at RECALL@10 0.892 with stop words + stems",
-   "value": 0.8922,
+   "statement": "on the Russian half of the owner's store, a session summary finds a note extracted from it at RECALL@10 0.897 with stop words + stems",
+   "value": 0.8966,
    "printed": [
-    "0.892"
+    "0.897"
    ],
    "unit": "recall@10",
    "dataset": "owner_vault_snapshot",
@@ -17720,11 +17696,11 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.8481,
-    "high": 0.9247
+    "low": 0.8531,
+    "high": 0.9283
    },
    "cited_in": [],
-   "commit": "55e33989f85b0be6eb4657a5d91e4cfb0ee0e263",
+   "commit": "f9592a6dd3c5d667f53f44237ad84ad4a762decc",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -17753,18 +17729,14 @@
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "needs the GPU and the extraction model: the cross-platform fix to _detach_kwargs moved nevertwice/_engine_hooks.py, which sits in these claims' closure, so every stand behind them must be re-run before the numbers are live again. CI's first matrix run in 27 days showed the Windows detach flags fell back to 0 on POSIX and the engine had to move; the artifacts are untouched and the numbers are not disputed.",
-   "withdrawn_on": "2026-09-22",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "morphology.vault.session.ru.morph.mrr",
-   "statement": "on the Russian half of the owner's store, MRR 0.795 with stop words + stems",
-   "value": 0.7951,
+   "statement": "on the Russian half of the owner's store, MRR 0.791 with stop words + stems",
+   "value": 0.7915,
    "printed": [
-    "0.795"
+    "0.791"
    ],
    "unit": "mrr",
    "dataset": "owner_vault_snapshot",
@@ -17775,7 +17747,7 @@
    "pointer": "protocols.session.halves.ru.morph.mrr",
    "ci": null,
    "cited_in": [],
-   "commit": "55e33989f85b0be6eb4657a5d91e4cfb0ee0e263",
+   "commit": "f9592a6dd3c5d667f53f44237ad84ad4a762decc",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -17804,18 +17776,14 @@
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "needs the GPU and the extraction model: the cross-platform fix to _detach_kwargs moved nevertwice/_engine_hooks.py, which sits in these claims' closure, so every stand behind them must be re-run before the numbers are live again. CI's first matrix run in 27 days showed the Windows detach flags fell back to 0 on POSIX and the engine had to move; the artifacts are untouched and the numbers are not disputed.",
-   "withdrawn_on": "2026-09-22",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "morphology.vault.session.en.raw.recall_at_1",
-   "statement": "on the English half of the owner's store, a session summary finds a note extracted from it at RECALL@1 0.775 with raw tokens",
-   "value": 0.7746,
+   "statement": "on the English half of the owner's store, a session summary finds a note extracted from it at RECALL@1 0.780 with raw tokens",
+   "value": 0.7799,
    "printed": [
-    "0.775"
+    "0.780"
    ],
    "unit": "recall@1",
    "dataset": "owner_vault_snapshot",
@@ -17827,11 +17795,11 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.7417,
-    "high": 0.8045
+    "low": 0.7472,
+    "high": 0.8095
    },
    "cited_in": [],
-   "commit": "55e33989f85b0be6eb4657a5d91e4cfb0ee0e263",
+   "commit": "f9592a6dd3c5d667f53f44237ad84ad4a762decc",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -17860,18 +17828,14 @@
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "needs the GPU and the extraction model: the cross-platform fix to _detach_kwargs moved nevertwice/_engine_hooks.py, which sits in these claims' closure, so every stand behind them must be re-run before the numbers are live again. CI's first matrix run in 27 days showed the Windows detach flags fell back to 0 on POSIX and the engine had to move; the artifacts are untouched and the numbers are not disputed.",
-   "withdrawn_on": "2026-09-22",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "morphology.vault.session.en.raw.recall_at_5",
-   "statement": "on the English half of the owner's store, a session summary finds a note extracted from it at RECALL@5 0.925 with raw tokens",
-   "value": 0.9249,
+   "statement": "on the English half of the owner's store, a session summary finds a note extracted from it at RECALL@5 0.924 with raw tokens",
+   "value": 0.9241,
    "printed": [
-    "0.925"
+    "0.924"
    ],
    "unit": "recall@5",
    "dataset": "owner_vault_snapshot",
@@ -17883,11 +17847,11 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.9026,
-    "high": 0.9424
+    "low": 0.9017,
+    "high": 0.9417
    },
    "cited_in": [],
-   "commit": "55e33989f85b0be6eb4657a5d91e4cfb0ee0e263",
+   "commit": "f9592a6dd3c5d667f53f44237ad84ad4a762decc",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -17916,18 +17880,14 @@
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "needs the GPU and the extraction model: the cross-platform fix to _detach_kwargs moved nevertwice/_engine_hooks.py, which sits in these claims' closure, so every stand behind them must be re-run before the numbers are live again. CI's first matrix run in 27 days showed the Windows detach flags fell back to 0 on POSIX and the engine had to move; the artifacts are untouched and the numbers are not disputed.",
-   "withdrawn_on": "2026-09-22",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "morphology.vault.session.en.raw.recall_at_10",
-   "statement": "on the English half of the owner's store, a session summary finds a note extracted from it at RECALL@10 0.953 with raw tokens",
-   "value": 0.9525,
+   "statement": "on the English half of the owner's store, a session summary finds a note extracted from it at RECALL@10 0.951 with raw tokens",
+   "value": 0.9509,
    "printed": [
-    "0.953"
+    "0.951"
    ],
    "unit": "recall@10",
    "dataset": "owner_vault_snapshot",
@@ -17939,11 +17899,11 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.9338,
-    "high": 0.9661
+    "low": 0.9319,
+    "high": 0.9648
    },
    "cited_in": [],
-   "commit": "55e33989f85b0be6eb4657a5d91e4cfb0ee0e263",
+   "commit": "f9592a6dd3c5d667f53f44237ad84ad4a762decc",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -17972,18 +17932,14 @@
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "needs the GPU and the extraction model: the cross-platform fix to _detach_kwargs moved nevertwice/_engine_hooks.py, which sits in these claims' closure, so every stand behind them must be re-run before the numbers are live again. CI's first matrix run in 27 days showed the Windows detach flags fell back to 0 on POSIX and the engine had to move; the artifacts are untouched and the numbers are not disputed.",
-   "withdrawn_on": "2026-09-22",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "morphology.vault.session.en.raw.mrr",
-   "statement": "on the English half of the owner's store, MRR 0.840 with raw tokens",
-   "value": 0.8398,
+   "statement": "on the English half of the owner's store, MRR 0.843 with raw tokens",
+   "value": 0.8425,
    "printed": [
-    "0.840"
+    "0.843"
    ],
    "unit": "mrr",
    "dataset": "owner_vault_snapshot",
@@ -17994,7 +17950,7 @@
    "pointer": "protocols.session.halves.en.raw.mrr",
    "ci": null,
    "cited_in": [],
-   "commit": "55e33989f85b0be6eb4657a5d91e4cfb0ee0e263",
+   "commit": "f9592a6dd3c5d667f53f44237ad84ad4a762decc",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -18023,18 +17979,14 @@
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "needs the GPU and the extraction model: the cross-platform fix to _detach_kwargs moved nevertwice/_engine_hooks.py, which sits in these claims' closure, so every stand behind them must be re-run before the numbers are live again. CI's first matrix run in 27 days showed the Windows detach flags fell back to 0 on POSIX and the engine had to move; the artifacts are untouched and the numbers are not disputed.",
-   "withdrawn_on": "2026-09-22",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "morphology.vault.session.en.morph.recall_at_1",
-   "statement": "on the English half of the owner's store, a session summary finds a note extracted from it at RECALL@1 0.793 with stop words + stems",
-   "value": 0.7934,
+   "statement": "on the English half of the owner's store, a session summary finds a note extracted from it at RECALL@1 0.798 with stop words + stems",
+   "value": 0.7981,
    "printed": [
-    "0.793"
+    "0.798"
    ],
    "unit": "recall@1",
    "dataset": "owner_vault_snapshot",
@@ -18046,11 +17998,11 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.7613,
-    "high": 0.8222
+    "low": 0.7662,
+    "high": 0.8266
    },
    "cited_in": [],
-   "commit": "55e33989f85b0be6eb4657a5d91e4cfb0ee0e263",
+   "commit": "f9592a6dd3c5d667f53f44237ad84ad4a762decc",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -18079,16 +18031,12 @@
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "needs the GPU and the extraction model: the cross-platform fix to _detach_kwargs moved nevertwice/_engine_hooks.py, which sits in these claims' closure, so every stand behind them must be re-run before the numbers are live again. CI's first matrix run in 27 days showed the Windows detach flags fell back to 0 on POSIX and the engine had to move; the artifacts are untouched and the numbers are not disputed.",
-   "withdrawn_on": "2026-09-22",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "morphology.vault.session.en.morph.recall_at_5",
    "statement": "on the English half of the owner's store, a session summary finds a note extracted from it at RECALL@5 0.929 with stop words + stems",
-   "value": 0.9293,
+   "value": 0.9295,
    "printed": [
     "0.929"
    ],
@@ -18102,11 +18050,11 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.9075,
-    "high": 0.9463
+    "low": 0.9077,
+    "high": 0.9464
    },
    "cited_in": [],
-   "commit": "55e33989f85b0be6eb4657a5d91e4cfb0ee0e263",
+   "commit": "f9592a6dd3c5d667f53f44237ad84ad4a762decc",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -18135,18 +18083,14 @@
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "needs the GPU and the extraction model: the cross-platform fix to _detach_kwargs moved nevertwice/_engine_hooks.py, which sits in these claims' closure, so every stand behind them must be re-run before the numbers are live again. CI's first matrix run in 27 days showed the Windows detach flags fell back to 0 on POSIX and the engine had to move; the artifacts are untouched and the numbers are not disputed.",
-   "withdrawn_on": "2026-09-22",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "morphology.vault.session.en.morph.recall_at_10",
-   "statement": "on the English half of the owner's store, a session summary finds a note extracted from it at RECALL@10 0.957 with stop words + stems",
-   "value": 0.9569,
+   "statement": "on the English half of the owner's store, a session summary finds a note extracted from it at RECALL@10 0.955 with stop words + stems",
+   "value": 0.9551,
    "printed": [
-    "0.957"
+    "0.955"
    ],
    "unit": "recall@10",
    "dataset": "owner_vault_snapshot",
@@ -18158,11 +18102,11 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.9389,
-    "high": 0.9698
+    "low": 0.9368,
+    "high": 0.9683
    },
    "cited_in": [],
-   "commit": "55e33989f85b0be6eb4657a5d91e4cfb0ee0e263",
+   "commit": "f9592a6dd3c5d667f53f44237ad84ad4a762decc",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -18191,18 +18135,14 @@
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "needs the GPU and the extraction model: the cross-platform fix to _detach_kwargs moved nevertwice/_engine_hooks.py, which sits in these claims' closure, so every stand behind them must be re-run before the numbers are live again. CI's first matrix run in 27 days showed the Windows detach flags fell back to 0 on POSIX and the engine had to move; the artifacts are untouched and the numbers are not disputed.",
-   "withdrawn_on": "2026-09-22",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "morphology.vault.session.en.morph.mrr",
-   "statement": "on the English half of the owner's store, MRR 0.852 with stop words + stems",
-   "value": 0.8518,
+   "statement": "on the English half of the owner's store, MRR 0.855 with stop words + stems",
+   "value": 0.8545,
    "printed": [
-    "0.852"
+    "0.855"
    ],
    "unit": "mrr",
    "dataset": "owner_vault_snapshot",
@@ -18213,7 +18153,7 @@
    "pointer": "protocols.session.halves.en.morph.mrr",
    "ci": null,
    "cited_in": [],
-   "commit": "55e33989f85b0be6eb4657a5d91e4cfb0ee0e263",
+   "commit": "f9592a6dd3c5d667f53f44237ad84ad4a762decc",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -18242,11 +18182,7 @@
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "needs the GPU and the extraction model: the cross-platform fix to _detach_kwargs moved nevertwice/_engine_hooks.py, which sits in these claims' closure, so every stand behind them must be re-run before the numbers are live again. CI's first matrix run in 27 days showed the Windows detach flags fell back to 0 on POSIX and the engine had to move; the artifacts are untouched and the numbers are not disputed.",
-   "withdrawn_on": "2026-09-22",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "h2h_locomo.nevertwice.recall_at_1",
@@ -55074,11 +55010,11 @@
   },
   {
    "id": "vault.contested_per_week",
-   "statement": "on a real store the sleep-time judge would see at most 76 contested pairs a week - the upper bound, since a note written before the stamp existed cannot be told from a slug retirement",
-   "value": 75.5,
+   "statement": "on a real store the sleep-time judge would see at most 96 contested pairs a week - the upper bound, since a note written before the stamp existed cannot be told from a slug retirement",
+   "value": 95.75,
    "printed": [
-    "76",
-    "75.5"
+    "96",
+    "95.8"
    ],
    "unit": "pairs a week",
    "n": 297,
@@ -55088,7 +55024,7 @@
    "command": "python research/k8_vault_dryrun.py <vault> --weeks 4 --today 2026-09-16 --out research/results/k8_vault_dryrun.json",
    "raw": "research/results/k8_vault_dryrun.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "f9592a6dd3c5d667f53f44237ad84ad4a762decc",
    "produced_by": [
     "research/k8_vault_dryrun.py",
     "nevertwice/_engine.py",
@@ -55119,18 +55055,14 @@
    ],
    "ci": null,
    "note": "297 same-slug collisions from other sessions in the 4 weeks to 2026-09-16, over 8,371 typed notes. Rules 2 and 4 are inert on this store: 1 of 3,540 notes written in the window carry a `[facts]` block, so every collision is a contested pair. Against the run's token budget this is headroom of about three times.",
-   "raw_gap": "the vault is private, so the counts are published and the notes behind them are not",
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "raw_gap": "the vault is private, so the counts are published and the notes behind them are not"
   },
   {
    "id": "vault.collision_events",
-   "statement": "the same dry run found 302 same-slug collisions in 4 weeks (98 on the retirement branch, 199 on the same-day absorb)",
-   "value": 302,
+   "statement": "the same dry run found 384 same-slug collisions in 4 weeks (98 on the retirement branch, 199 on the same-day absorb)",
+   "value": 384,
    "printed": [
-    "302"
+    "384"
    ],
    "unit": "collisions",
    "n": 8371,
@@ -55140,7 +55072,7 @@
    "command": "python research/k8_vault_dryrun.py <vault> --weeks 4 --today 2026-09-16 --out research/results/k8_vault_dryrun.json",
    "raw": "research/results/k8_vault_dryrun.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "f9592a6dd3c5d667f53f44237ad84ad4a762decc",
    "produced_by": [
     "research/k8_vault_dryrun.py",
     "nevertwice/_engine.py",
@@ -55170,19 +55102,15 @@
     "sandbox_guard.py"
    ],
    "ci": null,
-   "raw_gap": "the vault is private, so the counts are published and the notes behind them are not",
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "raw_gap": "the vault is private, so the counts are published and the notes behind them are not"
   },
   {
    "id": "vault.notes_scanned",
-   "statement": "the dry run read 8,477 typed notes without writing one",
-   "value": 8477,
+   "statement": "the dry run read 9,760 typed notes without writing one",
+   "value": 9760,
    "printed": [
-    "8,477",
-    "8477"
+    "9,760",
+    "9760"
    ],
    "unit": "notes",
    "n": 8371,
@@ -55192,7 +55120,7 @@
    "command": "python research/k8_vault_dryrun.py <vault> --weeks 4 --today 2026-09-16 --out research/results/k8_vault_dryrun.json",
    "raw": "research/results/k8_vault_dryrun.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "f9592a6dd3c5d667f53f44237ad84ad4a762decc",
    "produced_by": [
     "research/k8_vault_dryrun.py",
     "nevertwice/_engine.py",
@@ -55223,11 +55151,7 @@
    ],
    "ci": null,
    "note": "`tests/_test_k8_vault_dryrun_readonly.py` proves the word read-only: every write-capable function of the hook is spied and the store fingerprinted, and three planted writes each turn the check red.",
-   "raw_gap": "the vault is private, so the counts are published and the notes behind them are not",
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "raw_gap": "the vault is private, so the counts are published and the notes behind them are not"
   },
   {
    "id": "guards.guards_deterministic.project_recall",

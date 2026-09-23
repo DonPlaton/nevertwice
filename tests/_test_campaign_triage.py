@@ -7,7 +7,7 @@ not reproduce the problem with fresh data and the same green checks. `tools/camp
 does the sorting; this suite pins its numbers so the split is a decision with a count attached
 rather than a paragraph.
 
-    A   43   deterministic given committed inputs   (31 our own arms, 12 competitors')
+    A   24   deterministic given committed inputs   (12 our own arms, 12 competitors')
     B    0   noisy, printed no finer than its spread
     C   45   noisy, printed FINER than the stand resolves
     D  268   noisy, no run-to-run spread measured for the field
@@ -68,7 +68,9 @@ groups = T.groups_of(pending)
 #: ran settles a field printed finer than its spread, or a machine-dependent one.
 #: 2026-09-23, the K3/K6 merge: the embedding stands changed, so their eight live claims went back
 #: to pending (A 35 -> 43, all eight our own arms; the ninth, Matryoshka, is historical).
-KNOWN = {"A": 43, "B": 0, "C": 45, "D": 268, "E": 10}
+#: 2026-09-23, the owner allowed the store-reading stands: the 19 live-vault claims were measured on a
+#: read-only copy of the store and came back live (A 43 -> 24, all nineteen our own arms).
+KNOWN = {"A": 24, "B": 0, "C": 45, "D": 268, "E": 10}
 
 print("\n- the split is the one the campaign was planned against -")
 check("the pending set has not moved", len(pending) == sum(KNOWN.values()),
@@ -78,7 +80,7 @@ for g, n in KNOWN.items():
 
 own = [c for c, _ in groups["A"] if not T.COMPETITOR.search(c["id"])]
 comp = [c for c, _ in groups["A"] if T.COMPETITOR.search(c["id"])]
-check("and A splits 31 our own / 12 competitor arms", (len(own), len(comp)) == (31, 12),
+check("and A splits 12 our own / 12 competitor arms", (len(own), len(comp)) == (12, 12),
       f"{len(own)} / {len(comp)}")
 
 #: C carries a seam of its own. The spread table was measured on ONE stand, so `SPREAD.get(leaf)`

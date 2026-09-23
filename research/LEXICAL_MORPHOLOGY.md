@@ -83,9 +83,12 @@ notes extracted from that session are the relevant set, and the pool is the proj
 notes. That is the direction production runs in - a situation, then the lessons about it.
 
 <!-- claims:lexical-morphology-vault -->
-> **Withdrawn 2026-09.** needs the GPU and the extraction model: the cross-platform fix to _detach_kwargs moved nevertwice/_engine_hooks.py, which sits in these claims' closure, so every stand behind them must be re-run before the numbers are live again. CI's first matrix run in 27 days showed the Windows detach flags fell back to 0 on POSIX and the engine had to move; the artifacts are untouched and the numbers are not disputed.
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/lexical_morphology_probe.py --protocol both --out research/results/lexical_morphology_vault.json` is what re-measures this one.
+| half | R@1 | R@5 | R@10 | MRR |
+|---|---|---|---|---|
+| Russian half, raw tokens | 0.664 | 0.828 | 0.888 | 0.739 |
+| Russian half, stop words + stems | 0.737 | 0.862 | 0.897 | 0.791 |
+| English half, raw tokens | 0.780 | 0.924 | 0.951 | 0.843 |
+| English half, stop words + stems | **0.798** | **0.929** | **0.955** | **0.855** |
 <!-- /claims:lexical-morphology-vault -->
 
 The store is private and the numbers are published from the committed artifact
