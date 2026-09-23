@@ -229,9 +229,17 @@ check(f"{checked} digests verified against the file they name", not wrong, " | "
 print(f"       ({absent} named a file that is not in this clone - third-party corpora, by design)")
 
 print("\n- and the inventory is pinned, so new pins cannot arrive unnoticed -")
-#: Measured 2026-09-22 at `b956966`. A change here is a decision: either a new artifact arrived
-#: with provenance, or one lost it.
-check("the number of pinned artifacts has not moved", len(artifacts) == 163, str(len(artifacts)))
+#: Measured 2026-09-22 at `b956966`, then 163 -> 167 (C7, 2026-09-23): Q5's cross-project bench
+#: committed four new dataset files under research/data/ - cross_project_v1.json (the original
+#: 100-case population, bf01e0d), cross_project_ib_v1.json (the identifier-bound 50-case
+#: population, 8c4bdf0), principle_twins_v1.json (the A6 calibration set, 32248df), and
+#: cross_project_df_v1.json (the digit-free 40-case population, 4b859c6, this task's own C3).
+#: Each is a deterministically-GENERATED fixture (`research/gen_cross_project_dataset.py`), not
+#: hand-pinned evidence, and carries no `code_sha`/`commit`/`sha256` pin of its own (the pin
+#: KIND count below is unchanged) - it is counted here only because it is a committed .json file
+#: under research/, which is what `artifacts` scans for. A change here is still a decision:
+#: either a new artifact arrived with provenance, or one lost it.
+check("the number of pinned artifacts has not moved", len(artifacts) == 167, str(len(artifacts)))
 check("and the number of pin KINDS has not moved", len(kinds) == 145,
       f"{len(kinds)} kinds over {len(pins)} values")
 
