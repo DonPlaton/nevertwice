@@ -747,59 +747,59 @@ def _hyphen_part_is_infra(t: str) -> bool:
 
 
 def _looks_like_identifier(token: str, project: str) -> bool:
-    """Whether a declared `entities` string is worth forbidding as a `principle_scan`
-    de-identification token - NOT every entity a model lists names something identifying. A
-    model asked for "2-5 key entities of the lesson" (`_principle_prompt_rubric`) routinely
-    lists an ordinary technical word - "database", "retry", "timeout" - and
-    `write_typed_note`'s call to `principle_scan` used to forbid every declared entity
-    VERBATIM, so a principle that so much as USED one of its own note's entity words (not
-    named anything project-specific) was silently rejected. Found 2026-09-24 on the first real
-    `--extract` run of `research/cross_project_bench.py`: 5 of 10 written notes' principles were
-    dropped this way, and `write_rejections_by_class` read 0 everywhere, because the rejection
-    never correlated with a PLANTED identifier - it correlated with the model's own vocabulary.
+    """Whether a declared `entities` string is worth forbidding OUTRIGHT - at WRITE time
+    (`_engine_write.py`) and at the promotion-time re-scan (`principles.py::_rescan`, which
+    calls this SAME function so the two gates cannot silently drift apart again) - as a
+    `principle_scan` de-identification token. NOT every entity a model lists names something
+    identifying: a model asked for "2-5 key entities of the lesson"
+    (`_principle_prompt_rubric`) routinely lists an ordinary technical word - "database",
+    "retry", "timeout" - and forbidding every declared entity VERBATIM used to reject a
+    principle that so much as USED one of its own note's entity words. Found 2026-09-24 on the
+    first real `--extract` run: 5 of 10 written notes' principles were dropped this way, and
+    the SAME defect reappeared one layer later at promotion (`principles.py::_rescan`, fixed
+    alongside this file).
 
     A token counts as identifier-shaped when ANY of these holds:
       - it carries a digit, a dot or a slash anywhere (`_has_digit_dot_or_slash`);
       - it carries an underscore (`_has_underscore` - snake_case AND SCREAMING_SNAKE);
       - it is ALL-CAPS with an underscore (`_is_screaming_snake` - a second, independent read
         of the same SCREAMING_SNAKE shape, see its own docstring for why);
-      - it has an internal lowercase-to-uppercase transition (`_has_camel_transition` -
-        camelCase/PascalCase; a PLAIN ACRONYM like "API" or "HTTP" has no lowercase letter to
-        transition from, so it stays generic without a separate allowlist);
-      - a whole hyphen-separated part of it is an infrastructure noun
-        (`_hyphen_part_is_infra` - "payments-api", "db-primary", never "client-side");
       - it equals the project's own slug outright (forbidden regardless of shape).
 
-    First widening (2026-09-24 initial cut, digit/dot/slash/project-slug only) missed the
-    COMMONEST shapes of a real codebase's identifiers - the auditor's probe against a realistic
-    entity list found `payments-api`, `billing_service`, `UserRepository`,
-    `STRIPE_SECRET_KEY`, `useAuthStore`, `db-primary`, `orders_table`, `kafka-consumer-group`,
-    `OrderService` and `prod-cluster` all silently kept (forbidden = False) - ten of twelve
-    wrongly-kept tokens now caught by the five rules above (`tests/
-    _test_principle_entity_forbidding.py`, red before this widening).
+    Option (A), 2026-09-24 (second auditor pass, on top of the first widening below): a
+    SEPARATE probe found the first widening swung too far the OTHER way. Once
+    `_has_camel_transition`/`_hyphen_part_is_infra` were added to this chain, they ALSO
+    forbade the commonest PUBLIC tech names in a coding lesson - 18 of 20 probed, PostgreSQL,
+    JavaScript, GitHub, WebSocket, GraphQL, MongoDB, DevOps... - and 9 of 14 generic hyphen
+    concepts - consumer-group, worker-queue, api-gateway, service-mesh... - because SHAPE alone
+    cannot tell a public name from a private one (PostgreSQL vs UserRepository are the same
+    camelCase shape; api-gateway vs payments-api are the same hyphen-infra shape). Only
+    PROVENANCE - whether a name is corroborated by >=2 projects' OWN corpus - can tell them
+    apart, and that check already exists at promotion time
+    (`principles.py::_token_provenance`), over the whole corpus a single write never gets to
+    see. So this write/rescan gate now stops at the shapes that are RARELY public - a digit, a
+    dot, a slash, an underscore, ALL-CAPS-with-underscore, the project's own slug - and
+    camelCase/PascalCase and hyphen-infra names are left ENTIRELY to `_token_provenance`, which
+    (2026-09-24, same pass) was widened to check those two shapes specifically, so a PRIVATE
+    camelCase/kebab name is still caught, just one layer later.
+    `_has_camel_transition`/`_hyphen_part_is_infra`/`_INFRA_HYPHEN_TOKENS` stay DEFINED below
+    (unused by this function's own chain) rather than deleted: `_token_provenance` now calls
+    them directly, and `tests/_test_principle_entity_forbidding.py`'s mutation re-adds
+    `_has_camel_transition` to this chain to prove removing it from HERE specifically is what
+    stopped the public-name false positives, not a change to the functions themselves.
 
-    TWO tokens from that same probe are a DELIBERATE residual, not an oversight: `phoenix` (a
-    single lowercase product/service word) and `acme-corp` (a company kebab whose parts are
-    NOT infra nouns). A lone lowercase word, or a hyphenated one whose parts read as ordinary
-    words, cannot be told apart from vocabulary by SHAPE alone - the only honest way to widen
-    further would be a project-specific word list, which is exactly what
-    `principles.py::_token_provenance` already is, built at PROMOTION time over the corpus a
-    single write never gets to see (a token only ONE project's corpus ever uses fails
-    provenance regardless of what this shape check let through at write time). This function
-    stays a SHAPE check; it does not try to be a dictionary. Documented as a residual in
-    `docs/WEAKNESSES.md` (W17).
-
-    Every new check above is either a plain string operation (`_has_underscore`,
-    `_is_screaming_snake`, the hyphen split) or one bounded, unquantified character-class scan
-    (`_has_camel_transition`) - the same discipline `_PRINCIPLE_IP_RE` and its siblings follow,
-    so this cannot become the next `_DANGER_RE`."""
+    Residual, unrelated to option (A): `phoenix` (a single lowercase product/service word) and
+    `acme-corp` (a company kebab whose parts are not infra nouns) stay kept here regardless -
+    neither has ANY shape (digit/underscore/case/hyphen) that distinguishes it from ordinary
+    vocabulary, so `_token_provenance` (corpus corroboration) is their only possible defence
+    too, and it cannot be told to check a shape that is not there. Documented in
+    `docs/WEAKNESSES.md` (W17)."""
     t = (token or "").strip()
     if not t:
         return False
     if t.lower() == (project or "").lower():
         return True
-    return (_has_digit_dot_or_slash(t) or _has_underscore(t) or _is_screaming_snake(t)
-           or _has_camel_transition(t) or _hyphen_part_is_infra(t))
+    return _has_digit_dot_or_slash(t) or _has_underscore(t) or _is_screaming_snake(t)
 
 
 # W7 corroboration-gated quarantine - OFF by default. On a single-user store the user owns every
