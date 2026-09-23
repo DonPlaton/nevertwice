@@ -56,18 +56,13 @@ def check(name: str, condition: bool, detail: str = "") -> None:
 
 
 def _engine_env(tmp: Path) -> dict:
-    """A walled subprocess env, ALSO isolated for the store and the transcript sweep root -
-    every call in this file that might hand off to the real engine needs both walls, or a run
-    against a live `memory_hook.py` reads the owner's real ~/.claude/projects (found the hard
-    way while first smoke-testing this shim: no NEVERTWICE_PROJECTS_ROOT override swept real,
+    """`_wall.walled()` already points NEVERTWICE_HOME/VAULT at a store inside `tmp`; this adds
+    the one thing it does not own - the transcript SWEEP root - because a run against a live
+    `memory_hook.py` with no NEVERTWICE_PROJECTS_ROOT override reads the owner's real
+    ~/.claude/projects (found the hard way while first smoke-testing this shim: it swept real,
     unrelated project transcripts through a real extractor)."""
     env = _wall.walled(tmp)
-    store = tmp / "store"
-    proj = tmp / "proj"
-    env["NEVERTWICE_HOME"] = str(store)
-    env["NEVERTWICE_VAULT"] = str(store)
-    env["NEVERTWICE_CLOUD"] = "none"
-    env["NEVERTWICE_PROJECTS_ROOT"] = str(proj)
+    env["NEVERTWICE_PROJECTS_ROOT"] = str(tmp / "proj")
     return env
 
 

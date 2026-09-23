@@ -48,13 +48,20 @@ try:
     from . import memory_hook as m
 except ImportError:                 # run as a script, not as a package
     import memory_hook as m  # noqa: E402
+try:
+    from . import hookwire
+except ImportError:                 # run as a script, not as a package
+    import hookwire  # noqa: E402
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 #: What `install_status()["state"]` may be. `unavailable` is not a failure - it is the honest
-#: answer on a machine where the host simply is not installed, and it is different from
-#: `not_wired`, which means the host is here and Nevertwice is not attached to it.
-STATES = ("wired", "not_wired", "unavailable")
+#: answer on a machine where the host simply is not installed. `dead` is new in schema 2: the
+#: host IS wired, but the command names a file that is not there any more - the clone was
+#: deleted, moved, or `pip uninstall`'d while the hooks were still wired - and `not_wired`
+#: would have told an owner to re-run `install.py` when the truth is closer to "this WAS
+#: wired and something broke it".
+STATES = ("wired", "dead", "not_wired", "unavailable")
 
 #: Cap on how much of one transcript is read, in BYTES - `_read_capped` reads binary so the
 #: name is the truth on a transcript that is not ASCII. A rollout log can be tens of
@@ -313,8 +320,7 @@ class ClaudeCodeAdapter(HostAdapter):
         return [Path(env)] if env else [Path.home() / ".claude" / "projects"]
 
     def settings_path(self) -> Path:
-        return Path(os.environ.get("NEVERTWICE_CLAUDE_SETTINGS")
-                    or Path.home() / ".claude" / "settings.json")
+        return hookwire.settings_path()
 
     def normalize(self, raw: str, *, source: Path | None = None) -> list[dict]:
         out = []
@@ -340,7 +346,25 @@ class ClaudeCodeAdapter(HostAdapter):
             return {"host": self.name, "state": "unavailable",
                     "detail": "Claude Code is not installed for this user",
                     "evidence": [str(r) for r in self.roots()] + [str(settings)]}
-        hooks, foreign = _claude_hooks(settings)
+        hooks, foreign, dead = _claude_hooks(settings)
+        if dead:
+            # A wired entry that names a file that is not there any more. Whether this BLOCKS
+            # the agent depends on which of the three failure shapes it is - `hookwire.
+            # dead_reason` already answered that per entry; this reports the worst of them,
+            # because one blocking entry among five is still a block.
+            blocks = any(b for _label, _reason, b in dead)
+            first_reason = dead[0][1]
+            detail = (f"{len(dead)} of {len(hooks)} Nevertwice hook(s) in {settings} point at "
+                      f"a file that is not there ({first_reason}). "
+                      + ("Claude Code BLOCKS every edit and prompt until this is fixed - the "
+                         "command exits 2." if blocks else
+                         "They exit 0, so the agent is not blocked, but memory is off.")
+                      + " Fix: re-run `python install.py` from the clone's location, or "
+                        "`python install.py --uninstall`; with no clone left, delete the "
+                        "entries whose command contains nevertwice/hook_shim.py or "
+                        "nevertwice/memory_hook.py.")
+            return {"host": self.name, "state": "dead", "detail": detail,
+                    "evidence": sorted(f"{label} ({reason})" for label, reason, _b in dead)}
         if hooks:
             return {"host": self.name, "state": "wired",
                     "detail": f"{len(hooks)} Nevertwice hook(s) in {settings}",
@@ -369,9 +393,12 @@ class ClaudeCodeAdapter(HostAdapter):
         """
         settings = self.settings_path()
         if not settings.exists():
-            return {"host": self.name, "ok": True, "changed": [],
-                    "detail": "no Claude Code settings file - nothing to undo",
-                    "dry_run": dry_run}
+            shim_changed = hookwire.remove_shim(settings, dry_run=dry_run)
+            detail = ("no Claude Code settings file - nothing to undo" if not shim_changed
+                      else (f"no settings file; {'would remove' if dry_run else 'removed'} "
+                            f"the leftover shim at {shim_changed[0]}"))
+            return {"host": self.name, "ok": True, "changed": shim_changed,
+                    "detail": detail, "dry_run": dry_run}
         try:
             # ONE read. `data` is parsed from these bytes and the backup is written from them,
             # so the backup is exactly the version being replaced. Taking the backup from a
@@ -431,62 +458,69 @@ class ClaudeCodeAdapter(HostAdapter):
                                    f" failed ({type(exc).__name__}: {exc}); {settings} still "
                                    f"holds the hooks this call would have removed"),
                         "removed": [], "dry_run": False}
-            return {"host": self.name, "ok": True, "changed": [str(settings), str(backup)],
-                    "detail": f"removed {len(removed)} hook entry(ies); "
-                              f"previous settings kept at {backup.name}",
-                    "removed": removed, "dry_run": False}
-        return {"host": self.name, "ok": True,
-                "changed": [] if dry_run else [],
-                "detail": (f"would remove {len(removed)} hook entry(ies)" if removed
-                           else "no Nevertwice hook entries to remove"),
-                "removed": removed, "dry_run": dry_run}
+            changed = [str(settings), str(backup)]
+            detail = (f"removed {len(removed)} hook entry(ies); "
+                     f"previous settings kept at {backup.name}")
+            try:
+                changed += hookwire.remove_shim(settings, dry_run=False)
+            except OSError as exc:
+                # The settings rewrite above already succeeded - "ok" stays True - but the
+                # shim removal is a SEPARATE write and can fail on its own (a locked file, a
+                # read-only parent). Say so rather than swallowing it: the leftover path is
+                # named so a person can remove it by hand.
+                shim_p = hookwire.shim_path(settings)
+                detail += (f"; the shim at {shim_p} could not be removed "
+                          f"({type(exc).__name__}: {exc}) - remove it by hand")
+            return {"host": self.name, "ok": True, "changed": changed,
+                    "detail": detail, "removed": removed, "dry_run": False}
+        # dry-run, or a real run with no hook entries to remove for real: a leftover shim (one
+        # `write_shim` actually put there) is still named/removed here - uninstall undoes
+        # everything install did, not only the entries a settings.json still references.
+        shim_changed = hookwire.remove_shim(settings, dry_run=dry_run)
+        detail = (f"would remove {len(removed)} hook entry(ies)" if removed
+                  else "no Nevertwice hook entries to remove")
+        if shim_changed:
+            detail += (f"; {'would remove' if dry_run else 'removed'} the leftover shim at "
+                      f"{shim_changed[0]}")
+        return {"host": self.name, "ok": True, "changed": shim_changed,
+                "detail": detail, "removed": removed, "dry_run": dry_run}
 
 
-#: The exact marker `install.py` uses, and for its reason: a **path suffix**, never a bare
-#: filename. A filename match would also claim a hand-rolled `~/.claude/scripts/memory_hook.py`
-#: - which is a real deployment shape, the one this project's own author runs - and uninstall
-#: would then delete a hook it never installed. Being narrow here means status, install and
-#: uninstall all answer with the same definition of "ours".
-OUR_HOOK_SUFFIXES = ("nevertwice/memory_hook.py", "nevertwice/mcp_server.py")
-
-#: Any command that runs a script by one of our names, wherever it lives. Used only to tell a
-#: *foreign or hand-rolled copy* apart from "nothing is wired at all", never to remove anything.
-OUR_SCRIPT_NAMES = ("memory_hook.py", "mcp_server.py")
-
-
-def _command(entry) -> str:
-    if not isinstance(entry, dict):
-        return ""
-    return str(entry.get("command", "")).replace("\\", "/").lower()
+#: Aliases of `hookwire`'s definitions - kept under these names because callers throughout this
+#: module (and the tests) already spell them this way, but there is exactly ONE definition now.
+#: A **path suffix**, never a bare filename: a filename match would also claim a hand-rolled
+#: `~/.claude/scripts/memory_hook.py` - a real deployment shape, the one this project's own
+#: author runs - and uninstall would then delete a hook it never installed.
+OUR_HOOK_SUFFIXES = hookwire.OUR_HOOK_SUFFIXES
+OUR_SCRIPT_NAMES = hookwire.OUR_SCRIPT_NAMES
+_is_ours = hookwire.is_ours
+_is_a_foreign_copy = hookwire.is_foreign_copy
 
 
-def _is_ours(entry) -> bool:
-    cmd = _command(entry)
-    return any(suffix in cmd for suffix in OUR_HOOK_SUFFIXES)
+def _claude_hooks(settings: Path) -> tuple[list[str], list[str], list[tuple[str, str, bool]]]:
+    """(ours, foreign copies of our scripts, dead ones) - never conflated.
 
-
-def _is_a_foreign_copy(entry) -> bool:
-    """Runs one of our scripts, but not from the installed package."""
-    cmd = _command(entry)
-    return (not _is_ours(entry)) and any(name in cmd for name in OUR_SCRIPT_NAMES)
-
-
-def _claude_hooks(settings: Path) -> tuple[list[str], list[str]]:
-    """(ours, foreign copies of our scripts) - the two are never conflated."""
+    `dead` is `[(label, reason, blocks)]` for every OURS entry `hookwire.dead_reason` finds a
+    problem with - a subset of `ours`, not a fourth bucket, because a dead entry is still ours
+    to report and still ours to remove on uninstall.
+    """
     try:
         data = json.loads(settings.read_text(encoding="utf-8-sig"))
     except (OSError, ValueError):
-        return [], []
-    ours, foreign = [], []
+        return [], [], []
+    ours, foreign, dead = [], [], []
     for event_name, groups in (data.get("hooks") or {}).items():
         for group in groups if isinstance(groups, list) else []:
             for entry in (group.get("hooks") or []) if isinstance(group, dict) else []:
                 label = f"{event_name}: {entry.get('command', '')}"
                 if _is_ours(entry):
                     ours.append(label)
+                    reason = hookwire.dead_reason(entry)
+                    if reason is not None:
+                        dead.append((label, reason[0], reason[1]))
                 elif _is_a_foreign_copy(entry):
                     foreign.append(label)
-    return ours, foreign
+    return ours, foreign, dead
 
 
 def _tool_calls(content) -> list[dict]:
@@ -695,7 +729,7 @@ def main() -> None:
     report = status_report()
     print(f"\n  Host adapters - {report['generated']}\n  " + "-" * 62)
     for host in report["hosts"]:
-        mark = {"wired": "[wired]   ", "not_wired": "[not wired]",
+        mark = {"wired": "[wired]   ", "dead": "[dead]     ", "not_wired": "[not wired]",
                 "unavailable": "[absent]  "}[host["state"]]
         print(f"  {mark} {host['host']}")
         print(f"              {host['detail']}")

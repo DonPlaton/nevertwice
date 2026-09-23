@@ -3,8 +3,15 @@ subprocess/process env through this module, never `dict(os.environ)` alone.
 
 Not a suite - `_test_*.py` globs miss it on purpose (`tests/_test_hermeticity.py`'s own
 census would otherwise demand it import `_env_guard`, which is backwards: this module IS
-part of the wall `_env_guard` builds on top of, for the two variables it does not own -
-HOME/USERPROFILE and the Claude Code settings/projects overrides).
+part of the wall `_env_guard` builds on top of, for the variables it does not own -
+HOME/USERPROFILE, the Claude Code settings/projects overrides, and the store-location
+variables `sandbox_guard.py` pins for the in-process suites but a SUBPROCESS running
+`install.py` does not inherit any pinning from: `ensure_store()` reads NEVERTWICE_HOME /
+NEVERTWICE_VAULT (and the legacy ANAMNESIS_*/CLAUDE_MEMORY_* aliases) straight from its own
+environment, and a real (non `--print`) install with only the settings wall applied would
+`mkdir` and write a `.gitignore` wherever those resolve on the machine actually running the
+suite - found while smoke-testing this file, on a machine whose shell exports
+NEVERTWICE_HOME for the owner's own live use.
 
 A previous test of the installer wrote five hooks into the owner's real settings.json
 (2026-09-23, restored from the installer's own backup) because a test pinned only
@@ -31,6 +38,14 @@ from pathlib import Path
 #: to land inside the same temp directory, or a call under test can reach the real
 #: ~/.claude/settings.json - the incident this file exists to make structurally impossible.
 WALL_VARS = ("HOME", "USERPROFILE", "NEVERTWICE_CLAUDE_SETTINGS", "NEVERTWICE_CLAUDE_PROJECTS")
+
+#: Store-location variables `install.py`'s own `ensure_store()` (and, transitively, a real
+#: engine run) resolves from the raw environment. Not asserted as strictly as WALL_VARS - a
+#: caller may deliberately clear one to test a fallback - but always POINTED inside the wall
+#: by `walled()`, so a real (non `--print`) install run under it can never reach a real store
+#: even when the ambient shell exports one of these (mirrors `sandbox_guard.STORE_ROOT_VARS`).
+STORE_VARS = ("NEVERTWICE_HOME", "NEVERTWICE_VAULT", "ANAMNESIS_HOME", "ANAMNESIS_VAULT",
+             "CLAUDE_MEMORY_HOME", "CLAUDE_MEMORY_VAULT")
 
 
 def _real_settings_path() -> Path:
@@ -77,6 +92,9 @@ def walled(tmp) -> dict:
     env["USERPROFILE"] = str(tmp)
     env["NEVERTWICE_CLAUDE_SETTINGS"] = str(tmp / "settings.json")
     env["NEVERTWICE_CLAUDE_PROJECTS"] = str(tmp / "projects")
+    for name in STORE_VARS:
+        env[name] = str(tmp / "store")
+    env["NEVERTWICE_CLOUD"] = "none"
     _assert_walled(env, tmp)
     return env
 
@@ -87,9 +105,10 @@ def walled_in_process(tmp):
     code under test that reads `os.environ` directly in THIS process rather than through a
     subprocess (`hookwire.settings_path()` among it)."""
     tmp = Path(tmp)
-    saved = {name: os.environ.get(name) for name in WALL_VARS}
+    all_vars = WALL_VARS + STORE_VARS + ("NEVERTWICE_CLOUD",)
+    saved = {name: os.environ.get(name) for name in all_vars}
     env = walled(tmp)
-    for name in WALL_VARS:
+    for name in all_vars:
         os.environ[name] = env[name]
     try:
         yield
