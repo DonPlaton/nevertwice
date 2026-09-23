@@ -43,6 +43,19 @@ sys.modules[_spec.name] = br
 _spec.loader.exec_module(br)
 
 
+def _asks_for_plan(problem: str) -> bool:
+    """Is this the tool's plan requirement - its own sentence, naming its own plan file?
+
+    Four checks here asked `"plan" in problem`, which is true of any problem that mentions a
+    function called `planted`, `planner` or `explanation`. On 2026-09-23 the live-tree check went
+    red because a test helper named `planted` changed its signature: the tool reported "planted:
+    contract changed", the substring matched, and the suite said the tool had asked for a plan it
+    never asked for - red only while that diff sat uncommitted. The question is whether THE PLAN
+    RULE fired, so it is asked of the sentence the rule writes and the file it names.
+    """
+    return "requires a written plan at" in problem and br._PLAN_FILE.as_posix() in problem
+
+
 LIB_BEFORE = """\
 def train_step(model, batch):
     return model(batch)
@@ -803,14 +816,14 @@ class OverReach(unittest.TestCase):
         verdict = br.check_sources(before, after, scan={},
                                    plan_required=True, plan_present=False)
         self.assertEqual(verdict.inferred, "L2")
-        self.assertTrue(any("plan" in p for p in verdict.problems))
+        self.assertTrue(any(_asks_for_plan(p) for p in verdict.problems))
 
     def test_l2_with_a_plan_clears_the_plan_problem(self):
         before = {f"pkg{i}/m.py": "def f(): pass\n" for i in range(5)}
         after = {f"pkg{i}/m.py": "def f(): pass\n# note\n" for i in range(5)}
         verdict = br.check_sources(before, after, scan={},
                                    plan_required=True, plan_present=True)
-        self.assertFalse(any("plan" in p for p in verdict.problems))
+        self.assertFalse(any(_asks_for_plan(p) for p in verdict.problems))
 
 
 class Calibrated(unittest.TestCase):
@@ -863,7 +876,7 @@ class Calibrated(unittest.TestCase):
         after = {f"pkg{i}/m.py": "def g(): pass\n" for i in range(5)}
         verdict = br.check_sources(before, after, scan={})
         self.assertEqual(verdict.inferred, "L2", "the class is still reported")
-        self.assertFalse(any("plan" in p for p in verdict.problems))
+        self.assertFalse(any(_asks_for_plan(p) for p in verdict.problems))
 
     def test_the_l2_class_survives_the_silence(self):
         """Opting out of the demand must not opt out of the diagnosis."""
@@ -875,7 +888,7 @@ class Calibrated(unittest.TestCase):
         """This repository has none, so the live check must stay silent about plans."""
         self.assertFalse((ROOT / ".nevertwice").exists())
         verdict = br.check_working_tree(ROOT)
-        self.assertFalse(any("plan" in p for p in verdict.problems), verdict.render())
+        self.assertFalse(any(_asks_for_plan(p) for p in verdict.problems), verdict.render())
 
     def test_the_scan_asks_git_rather_than_walking_everything(self):
         """5.3 GB of vendored clones live under research/embed_universal/data/ here.
