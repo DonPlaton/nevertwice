@@ -57,6 +57,19 @@ check("nothing leaked into the universal arm at all (neither stage let anything 
 check("the clean fallback in the undeclared-entity case still promotes SOMETHING useful",
       universal["benefit"] > 0.0, str(universal))
 
+print("\n- finding 2 (2026-09-24): the all_arm preview carries its own hit count beside it -")
+for r in result["rows"]:
+    aa = r["all_arm"]
+    for key in ("session_start_cross_preview", "session_start_cross_hits",
+               "prompt_cross_preview", "prompt_cross_hits"):
+        check(f"{r['case_id']}: all_arm carries {key!r}", key in aa, sorted(aa))
+    check(f"{r['case_id']}: 0 session-start hits means an empty preview, not the reverse",
+          aa["session_start_cross_hits"] > 0 or not aa["session_start_cross_preview"],
+          (aa["session_start_cross_hits"], aa["session_start_cross_preview"][:60]))
+    check(f"{r['case_id']}: 0 prompt hits means an empty preview, not the reverse",
+          aa["prompt_cross_hits"] > 0 or not aa["prompt_cross_preview"],
+          (aa["prompt_cross_hits"], aa["prompt_cross_preview"][:60]))
+
 print("\n- mutation: bypassing principle_scan lets the write-time classes through -")
 make_sandbox(m, "cpb_extract_dry_mut_scan_", offline=True)
 cases2 = cpb.load_cases(cpb.DATA, n=cpb._DRY_N_CASES)

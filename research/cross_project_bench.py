@@ -435,7 +435,7 @@ def _principle_cosine(info_a: dict, info_c: dict, project_a: str, project_c: str
     return m.cosine(va, vc)
 
 
-def _cross_preview(project_b: str, query: str, max_chars: int = 300) -> str:
+def _cross_preview(project_b: str, query: str, max_chars: int = 300) -> tuple[str, int]:
     """The `all`-arm cross-project section a real injection would render for this query,
     truncated - built from the retrieval+render PRIMITIVE (`retrieve_cross_project` +
     `_cross_line`), not by calling `emit_session_start_context`/`emit_prompt_recall` directly.
@@ -445,9 +445,16 @@ def _cross_preview(project_b: str, query: str, max_chars: int = 300) -> str:
     to save/restore in the `finally` below, alongside `embed_text` and `llm_available`, for a
     preview that (by design) renders the same lines either way: both real injection paths build
     their cross section from this exact call, just with a different query and a budget/dedup
-    pass this preview does not simulate."""
+    pass this preview does not simulate.
+
+    Returns (text, n_hits) - finding 2 (2026-09-24): the coordinator read a real 5-case run's
+    preview text as empty while the SAME row's `all` arm scored a nonzero benefit/cross_chars;
+    not reproduced from the artifact this bench itself wrote (every row read back had BOTH
+    previews populated, matching cross_chars). `n_hits` is exposed alongside the text so a
+    future row can tell "0 hits, so an empty preview is correct" apart from "hits found, but
+    the render came back empty" without inferring it purely from a string's length."""
     hits = m.retrieve_cross_project(project_b, query, mode="all")
-    return _hit_text(hits)[:max_chars]
+    return _hit_text(hits)[:max_chars], len(hits)
 
 
 def _write_gate_diagnosis(raw_principle: str, project: str, entities: list) -> dict:
@@ -531,12 +538,21 @@ def _diagnostic_row(i: int, case: dict, written: dict[str, dict], case_rows: dic
                                               case["project_a"]["project"],
                                               case["project_c"]["project"]),
         "promote_report": promote_report,
-        "all_arm": {
-            "session_start_cross_preview": _cross_preview(project_b, project_b),
-            # reuses `all`'s own run_case() call above - the SAME retrieve_cross_project(project_b,
-            # prompt, mode="all") call, not a second one.
-            "prompt_cross_preview": (case_rows["all"].get("text") or "")[:300],
-        },
+        "all_arm": _all_arm_preview(project_b, case_rows["all"]),
+    }
+
+
+def _all_arm_preview(project_b: str, all_row: dict) -> dict:
+    """The `all_arm` block of a diagnostic row - split out of `_diagnostic_row` only so both
+    previews' text AND hit count sit next to each other under one name (finding 2)."""
+    ss_text, ss_hits = _cross_preview(project_b, project_b)
+    # prompt_cross_preview reuses `all`'s own run_case() call above - the SAME
+    # retrieve_cross_project(project_b, prompt, mode="all") call, not a second one; its hit
+    # count is already on that row as `n_hits`.
+    return {
+        "session_start_cross_preview": ss_text, "session_start_cross_hits": ss_hits,
+        "prompt_cross_preview": (all_row.get("text") or "")[:300],
+        "prompt_cross_hits": all_row.get("n_hits", 0),
     }
 
 
