@@ -59,7 +59,11 @@ def install_recorder(m) -> None:
     same project, type and slug (live or archived) beside the item about to be written."""
     orig = m.write_typed_note
 
-    def recorder(folder, item, project, date, tags, ntype, session_stem_=None, siblings=None):
+    def recorder(folder, item, project, date, tags, ntype, session_stem_=None, siblings=None,
+                 why=None):
+        #: `why` is the writer's reason channel (review 2026-09-23, R14): process_session passes
+        #: it, and a recorder without it raised TypeError on every capture, which the stand's
+        #: `except Exception` turned into an error row per case - a stand measuring nothing.
         if isinstance(item, dict):
             title = m.redact_secrets(m._strip_lead_icon(item.get("title", "untitled")))
             desc = m.redact_secrets(item.get("description", "") or "")
@@ -102,7 +106,7 @@ def install_recorder(m) -> None:
                 "new_marked": sb._hit(CUR["new_markers"], f"{title} {desc}"),
             })
         return orig(folder, item, project, date, tags, ntype,
-                    session_stem_=session_stem_, siblings=siblings)
+                    session_stem_=session_stem_, siblings=siblings, why=why)
 
     m.write_typed_note = recorder
 

@@ -224,6 +224,21 @@ def _drop_retired_vectors(cache: dict, dry: bool = False) -> int:
     return dropped
 
 
+def _restore_bytes(path: Path, raw: bytes) -> None:
+    """Put `raw` back at `path` atomically - a temp file beside it, then the engine's replace with
+    retry. write_atomic takes text, and the undo of a carry must be the bytes that were there."""
+    tmp = path.with_name(f"{path.name}.{os.getpid()}.undo.tmp")
+    try:
+        tmp.write_bytes(raw)
+        m._replace_with_retry(tmp, path)
+    except BaseException:
+        try:
+            tmp.unlink(missing_ok=True)
+        except OSError:
+            pass
+        raise
+
+
 def _carry_into(new_path: Path, text: str, rec: int, sources: set[str],
                 supersedes: list[str]) -> int:
     """Merge a retiring note's history into the note that replaces it; return the recurrence.
@@ -422,11 +437,10 @@ def adjudicate_contested(apply: bool, has_llm: bool, cap: int | None = None,
                     if apply:
                         # the retired statement's history carries into the one that replaced it, as
                         # the write-time absorb used to carry it (recurrence = distinct sessions)
+                        #: `_note_recur_sources` reads `sources` through the engine's list reader (R6,
+                        #: fixed in the reader itself: the union that stood here counted a quoted link
+                        #: twice, raw and unwrapped - third review, 2026-09-23)
                         r_old, s_old = m._note_recur_sources(old_path)
-                        #: both sides read through the one list reader: `_note_recur_sources` drops a
-                        #: string-valued `sources` (a hand-written flow list) and falls back to the
-                        #: session, so the retiring note's own history was lost from the carry (R6)
-                        s_old = set(s_old) | set(m._list_field(fm_old.get("sources")))
                         new_sources = m._list_field(fm_new.get("sources"))           # #3: never per character
                         sources = set(s_old) | set(new_sources)
                         for sess in (fm_old.get("session"), fm_new.get("session")):
@@ -454,24 +468,36 @@ def adjudicate_contested(apply: bool, has_llm: bool, cap: int | None = None,
                         # F5 still holds: the contested clear rides in the retirement's own atomic
                         # stamp, never a separate write before it. If the retirement fails, the carry
                         # is written back out, and the pair stays contested for the next run.
-                        before = new_path.read_text(encoding="utf-8", errors="replace")
+                        #: One read serves the carry and the undo: the bytes as they are, so the undo
+                        #: restores them exactly (a CRLF note stays CRLF, an odd byte stays itself -
+                        #: third review, 2026-09-23), and the text the carry parses is decoded from them
+                        #: the way read_text would.
+                        raw = new_path.read_bytes()
+                        before = raw.decode("utf-8", errors="replace").replace("\r\n", "\n").replace("\r", "\n")
                         rec = _carry_into(new_path, before, rec, sources, sup_list)
-                        if not m.supersede_note(old_path, new_stem, via="judge",
-                                                extra_fields={m.CONTESTED_KEY: remaining},
-                                                cache=cache):
+                        try:
+                            retired_ok = m.supersede_note(old_path, new_stem, via="judge",
+                                                          extra_fields={m.CONTESTED_KEY: remaining},
+                                                          cache=cache)
+                            why_not = ""
+                        except OSError as e:
+                            #: raised from inside supersede_note (Superseded/ cannot be created, say)
+                            #: is a failed retirement too - the carry is undone on this path as well
+                            retired_ok, why_not = False, f" ({e})"
+                        if not retired_ok:
                             #: the pair is still contested on disk: an error, so `left` counts it -
                             #: "nothing left" over a pair still queued is #4 read the other way
                             #: (auditing session's case B on 5961f38, a real WinError 32 unlink)
                             stats["errors"] += 1
                             try:
-                                m.write_atomic(new_path, before)
-                                print(f"      supersede failed for {old_path.name} - left live, still "
-                                      "contested; the carry was undone", file=sys.stderr)
+                                _restore_bytes(new_path, raw)
+                                print(f"      supersede failed for {old_path.name}{why_not} - left live, "
+                                      "still contested; the carry was undone", file=sys.stderr)
                             except OSError as e:
-                                print(f"      supersede failed for {old_path.name} and the carry into "
-                                      f"{new_path.name} could not be undone ({e}) - the pair stays "
-                                      "contested, and a replaces next run re-applies the same merge",
-                                      file=sys.stderr)
+                                print(f"      supersede failed for {old_path.name}{why_not} and the carry "
+                                      f"into {new_path.name} could not be undone ({e}) - the pair stays "
+                                      "contested; a replaces next run re-applies the same merge, any "
+                                      "other verdict leaves it on the winner", file=sys.stderr)
                         else:
                             # the retired stem already left the cache: supersede_note pops it from
                             # the cache it is handed (the F13 pop that stood here was dead, #15)
@@ -637,22 +663,21 @@ def _union_meta_into_keeper(keep_fp: Path, member_fps: list[Path]) -> None:
             continue
 
     def _as_list(v):
-        #: a string through the engine's one list reader (R11): a hand-written `[a, b]` is two
-        #: entries here too, not the one string `["[a, b]"]` the merge used to write back
-        if isinstance(v, str):
-            return m._list_field(v)
+        #: relations only - a list of maps, not of names; the plain list fields above go through
+        #: the engine's list reader instead
         return v if isinstance(v, list) else ([v] if v not in (None, "") else [])
 
     merged = {}
     for field in ("tags", "entities", "sources"):        # plain list fields
+        #: through the engine's one list reader, items as well as strings: `"[[s1]]"` in one note
+        #: and `s1` in another are one session, not two keys (third review, 2026-09-23)
         seen, out = set(), []
         for fm in fms:
-            for item in _as_list(fm.get(field)):
-                key = str(item)
-                if key not in seen:
-                    seen.add(key)
+            for item in m._list_field(fm.get(field)):
+                if item not in seen:
+                    seen.add(item)
                     out.append(item)
-        if out and out != _as_list(kfm.get(field)):
+        if out and out != m._list_field(kfm.get(field)):
             merged[field] = out
     # entity_types is a MAP ({name: type}), not a list: union as a dict (keeper wins on a
     # conflict) - folding it through _as_list produced a list-of-dicts that every later reader
@@ -1110,6 +1135,13 @@ def _run_consolidation(apply, mode, has_llm):
     #    to archive one side of a pair K8 deliberately keeps apart before the judge ever ruled on it.
     #    Judging first also means a pair the judge just resolved this run is already off the
     #    contested list by the time the merge's own exclusion set (next) is built.
+    #: 466a5d4 parked failed carries in this file and 5961f38 removed it for carry-first. Nothing
+    #: reads it any more; if a store ran that build and parked something, say so rather than let
+    #: the file sit in the vault and its git history unexplained (third review, 2026-09-23).
+    _orphan = m.VAULT / ".consolidate_carry_pending.json"
+    if _orphan.exists():
+        print(f"[consolidate] {_orphan.name} is left from an earlier build and is no longer read: "
+              "the carries in it were not applied - see `git show 5961f38`", file=sys.stderr)
     adj = adjudicate_contested(apply, has_llm, cache=cache)
     print(f"[consolidate] contested pairs: {adj['pairs']} - {adj['judged']} judge call(s), "
           f"{adj['tokens_spent']} of {adj['budget']} tokens (~{adj['budget'] // TOKENS_PER_PAIR_EST} pairs a run "

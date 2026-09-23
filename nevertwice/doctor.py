@@ -365,8 +365,11 @@ def _frontmatter_lines(path: Path) -> list[str] | None:
     return None
 
 
-#: The frontmatter keys the engine reads through `_list_field` (see check_list_fields).
-_READ_AS_LIST = ("contested", "disputed", "supersedes")
+#: The frontmatter keys the engine reads through `_list_field` (see check_list_fields). A claim
+#: about the engine, held by tests/_test_doctor.py: each key is fed `[[stem]]` through the reader
+#: the engine really uses for it, so the day one of them stops going through `_list_field`, the
+#: list here fails instead of silently exempting a real misread (auditing session, 63eb7b2).
+_READ_AS_LIST = ("contested", "disputed", "supersedes", "sources")
 
 
 def check_list_fields(vault: Path) -> dict:
@@ -434,8 +437,8 @@ def check_list_fields(vault: Path) -> dict:
             #: `_contested_of`) are asked of THAT reader, not of the parser: since 5961f38 it reads
             #: a link, links in a row and a flow list as intended, so reporting them sent people to
             #: repair what was not broken (auditing session, probe C). Every other key keeps the
-            #: parser's answer - `sources` among them, whose recurrence reader still takes a string
-            #: for no list at all.
+            #: parser's answer. `sources` joined the list when its recurrence reader moved onto
+            #: `_list_field` (third review, 2026-09-23).
             read_ok = {k for k in list_keys + link_keys
                        if k in _READ_AS_LIST and _m._list_field(fm.get(k))}
             misread = [k for k in list_keys if k not in read_ok and not isinstance(fm.get(k), list)]
@@ -453,10 +456,8 @@ def check_list_fields(vault: Path) -> dict:
     return _check("list_fields", title, WARN, detail,
                   'rewrite a list as a JSON list on one line - tags: ["a", "b"] - which is the '
                   "form the engine writes and reads back. A bare [[link]] reads as text either way. "
-                  "For `sources` - the sessions nevertwice counts for recurrence - write a JSON list "
-                  'of session stems WITHOUT brackets - sources: ["session-stem"] - because a string '
-                  "there is read as no list and only the note's own session is counted; "
-                  "contested, disputed and supersedes are read correctly in any of these forms. "
+                  "The keys nevertwice itself reads as note lists - contested, disputed, supersedes, "
+                  "sources - are read correctly in any of these forms and are not reported. "
                   'Only for an Obsidian link property, quote it - related: "[[note]]"')
 
 

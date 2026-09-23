@@ -133,6 +133,21 @@ try:
     qfm = m._read_frontmatter(qlie.read_text(encoding="utf-8"))[0] if qlie.exists() else {}
     check("W7 quarantined note does NOT inherit recurrence/sources it never earned (audit)",
           qlie.exists() and "recurrence" not in qfm and "sources" not in qfm)
+    # The same case with the corroborated note's sources in the JSON form the ENGINE writes. The
+    # fixture above hand-writes `sources: [s1, s2, s3]`, which the old reader took for no list at
+    # all - and the rule counted the retired note's sources as the new note's corroboration, so it
+    # quarantined only because of the misread. With the engine's own form it never fired (third
+    # review, 2026-09-23: the one list reader made the fixture read like real data).
+    d3 = sandbox()
+    (d3 / "Patterns").mkdir(exist_ok=True)
+    (d3 / "Patterns" / "2026-06-01-proj-pattern-corroborated-truth.md").write_text(
+        '---\ndate: 2026-06-01\nproject: proj\ntype: pattern\nrecurrence: 3\n'
+        'sources: ["s1", "s2", "s3"]\n---\n\n# corroborated truth\n\nbody\n', encoding="utf-8")
+    lie2 = m.write_typed_note("Patterns", {"title": "lie", "description": "a lone override",
+            "supersedes": "corroborated truth", "confidence": 0.8},
+            "proj", "2026-06-05", ["t"], "pattern", session_stem_="2026-06-05-1200-proj-lone")
+    check("W7 ON: the same lone supersede is quarantined when the sources are the engine's own form",
+          lie2 == "" and (d3 / "Patterns" / "2026-06-01-proj-pattern-corroborated-truth.md").exists())
 finally:
     m.QUARANTINE_MODE = _q
 

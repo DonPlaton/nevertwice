@@ -234,6 +234,7 @@ def _ingest(pool: dict, cap: int | None, project: str) -> dict:
     #: A model that obeys the off-topic instruction returns empty lists, so `off_topic` above stays
     #: 0 and the zero reads as a regime. The session's own verdict is what separates the two.
     off_topic_sessions = 0
+    not_stored = 0
     t0 = time.time()
     for sid, text in items:
         try:
@@ -250,6 +251,11 @@ def _ingest(pool: dict, cap: int | None, project: str) -> dict:
         #: avoid. The return carries both numbers on every call, including zero.
         if res.get("relevant") is False:
             off_topic_sessions += 1
+        #: an extraction that failed (process_session left it for retry) returns stored False and
+        #: empty counts - the "zero examined reads as zero offenders" shape, so it is counted apart
+        #: and named beside any zero (third review, 2026-09-23)
+        if not res.get("stored"):
+            not_stored += 1
         for key, acc in (("proposed", proposed), ("refused", refused), ("quarantined", quarantined),
                          ("skipped", skipped), ("off_topic", off_topic)):
             for kind in acc:
@@ -271,7 +277,8 @@ def _ingest(pool: dict, cap: int | None, project: str) -> dict:
         if d.exists():
             #: Quarantine/ is on disk for review and never served (W7) - counting it reported a
             #: quarantined, empty-for-recall store as holding typed notes (review 2026-09-23, R9)
-            typed += sum(1 for p in d.rglob("*.md") if not {"Superseded", "Quarantine"} & set(p.parts))
+            typed += sum(1 for p in d.rglob("*.md")
+                         if not {"Superseded", "Quarantine"} & set(p.relative_to(d).parts))
     stats1 = dict(getattr(m, "_LLM_STATS", {}) or {})
     write_cost = {k: stats1.get(k, 0) - stats0.get(k, 0)
                   for k in ("prompt_tokens", "eval_tokens", "ollama", "cloud", "fail")}
@@ -284,6 +291,7 @@ def _ingest(pool: dict, cap: int | None, project: str) -> dict:
     return {"written": written, "typed_notes": typed,
             "proposed": proposed, "refused": refused, "quarantined": quarantined,
             "skipped": skipped, "off_topic": off_topic, "off_topic_sessions": off_topic_sessions,
+            "not_stored": not_stored,
             "write_cost_tokens": write_cost,
             "seconds": round(time.time() - t0, 1)}
 
@@ -618,9 +626,12 @@ def main(argv=None) -> int:
             if ing:
                 wc = ing.get("write_cost_tokens") or {}
                 k_off, n_sess = ing.get("off_topic_sessions") or 0, ing.get("written", 0)
-                verdict = (("extractor produced nothing - a regime, not a refusal" if not k_off else
-                            f"extractor produced nothing, and the relevance gate judged {k_off} of "
-                            f"{n_sess} session(s) off-topic - for those a gate, not a regime")
+                k_fail = ing.get("not_stored") or 0
+                verdict = (("extractor produced nothing - a regime, not a refusal"
+                            if not (k_off or k_fail) else
+                            f"extractor produced nothing; of {n_sess} session(s) the relevance gate "
+                            f"judged {k_off} off-topic and {k_fail} failed to extract - for those a "
+                            "gate or a failure, not a regime")
                            if prop == 0 else
                            f"extractor proposed {prop}, write path refused {refu}"
                            + "".join(f", {k.replace('_', '-')} {n}" for k in ("off_topic", "quarantined", "skipped")

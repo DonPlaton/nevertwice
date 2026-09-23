@@ -734,5 +734,48 @@ for raw, want in (("[[a]], [[b]]", ["a", "b"]), ("[[a]] [[b]]", ["a", "b"]), ("[
 check("and `contested` is read through it: a hand-written flow list names two stems",
       m._contested_of({m.CONTESTED_KEY: "[a, b]"}) == ["a", "b"])
 
+print("\n- third review of 2026-09-23: the carry-first contract -")
+#: Carry-first rests on the carry being idempotent (a killed run re-applies it), and on every
+#: failed retirement undoing it - including one that RAISES from inside supersede_note - exactly.
+d = fresh()
+o, n = pair()
+cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(True))
+wp = m.VAULT / "Decisions" / f"{n}.md"
+once = wp.read_bytes()
+cm._carry_into(wp, wp.read_text(encoding="utf-8"), 2, {SA, SB}, [o])
+check("the carry is idempotent: applying the same carry again changes no byte",
+      wp.read_bytes() == once, f"{once[:200]!r} -> {wp.read_bytes()[:200]!r}")
+
+d = fresh()
+o, n = pair()
+wp = m.VAULT / "Decisions" / f"{n}.md"
+wp.write_bytes(wp.read_bytes().replace(b"\n", b"\r\n"))            # a winner saved by a CRLF editor
+crlf = wp.read_bytes()
+_real_sup = m.supersede_note
+
+
+def _raises(*a, **k):
+    raise PermissionError(13, "cannot create Superseded/", "x")
+
+
+m.supersede_note = _raises
+try:
+    res = cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(True))
+finally:
+    m.supersede_note = _real_sup
+check("a retirement that RAISES is undone like one that returns False: errors 1, left 1",
+      res.get("errors") == 1 and res.get("left") == 1 and fm(o).get("contested") == [n], str(res))
+check("and the undo restores the winner's exact bytes - CRLF stays CRLF",
+      wp.read_bytes() == crlf, f"{len(crlf)} -> {len(wp.read_bytes())} bytes")
+
+d = fresh()
+(m.VAULT / ".consolidate_carry_pending.json").write_text("[]", encoding="utf-8")
+err = io.StringIO()
+from contextlib import redirect_stderr  # noqa: E402
+with redirect_stdout(io.StringIO()), redirect_stderr(err):
+    cm._run_consolidation(False, "DRY-RUN", False)
+check("a carry ledger left by 466a5d4 is reported, not ignored",
+      ".consolidate_carry_pending.json" in err.getvalue(), err.getvalue()[-300:])
+
 print(f"\nK8 layer 3: {len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")
 sys.exit(1 if FAILED else 0)

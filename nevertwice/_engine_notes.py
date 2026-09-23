@@ -457,10 +457,11 @@ def _note_recur_sources(p: Path) -> tuple[int, set]:
     inflate its salience past 1 - anti-gaming defence-in-depth beyond write idempotency (C5)."""
     fm = _read_frontmatter_file(p)
     n = _coerce_recurrence(fm.get("recurrence", 1))
-    src = fm.get("sources")
-    if isinstance(src, list):
-        sources = {str(s) for s in src if s}
-    else:
+    #: Through the engine's one list reader: a hand-written `sources: [s1, s2]` or `[[s1]]` reads as
+    #: its sessions, not as no list at all. This fallback dropped them on every write-path absorb and
+    #: retirement, and the consolidator had patched only its own call (third review, 2026-09-23).
+    sources = set(_list_field(fm.get("sources")))
+    if not sources:
         s = fm.get("session")
         sources = {str(s)} if s else set()
     return n, sources

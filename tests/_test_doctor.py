@@ -566,19 +566,49 @@ def test_a_list_the_engine_cannot_read_is_counted() -> None:
             "---\ntype: decision\nsources: [[2026-01-01-1000-p-session-aaaaaaaa]]\n---\n\nbody\n",
             encoding="utf-8")
         result = check_list_fields(only.parent)
-        check("a bare link in `sources` alone is reported, and by its key - its reader loses it",
-              result["status"] == doctor.WARN and "sources" in result["detail"],
+        check("nor in `sources` - its recurrence reader takes it since the third review",
+              result["status"] == doctor.OK, f"{result['status']}: {result['detail']}")
+        (only / "2026-01-07-p-decision-sup.md").write_text(
+            "---\ntype: decision\ntags: [python, testing]\n---\n\nbody\n", encoding="utf-8")
+        result = check_list_fields(only.parent)
+        check("a hand-written list on a key the engine does not read as a list is reported",
+              result["status"] == doctor.WARN and "tags" in result["detail"],
               f"{result['status']}: {result['detail']}")
-        #: The repair must not lead into the defect it reports. "Quote it" alone sends someone to
-        #: write `supersedes: "[[note]]"`, which the doctor then reads as fine and the engine
-        #: reads as a stem named "[[note]]" that does not exist - the pair is lost silently
-        #: (auditing session's probe on ddaf6f0). The engine's form comes first, and quoting is
-        #: offered only after it, for a link property.
+        #: The repair must not lead into the defect it reports: the engine's JSON form comes first,
+        #: and quoting is offered only after it, for a link property (auditing session's probe on
+        #: ddaf6f0). It also says which keys nevertwice reads correctly, so no one rewrites them.
         r = result["repair"]
-        engine_form, quoted = 'sources: ["session-stem"]', '"[[note]]"'
-        check("the repair names the engine's stem form before it offers quotes",
-              engine_form in r and "nevertwice" in r and quoted in r
-              and r.index(engine_form) < r.index(quoted), r)
+        engine_form, quoted = 'tags: ["a", "b"]', '"[[note]]"'
+        check("the repair names the engine's form before it offers quotes, and the keys it reads",
+              engine_form in r and quoted in r and r.index(engine_form) < r.index(quoted)
+              and all(k in r for k in doctor._READ_AS_LIST), r)
+
+    #: `_READ_AS_LIST` is a claim about the engine, so it is held against the engine: each key is fed
+    #: `[[stem]]` through the reader the engine really uses for it (auditing session's (c) on
+    #: 63eb7b2). The day one of them stops going through `_list_field`, this fails instead of the
+    #: doctor silently exempting a real misread.
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "nevertwice"))
+    import memory_hook as m  # noqa: PLC0415
+    import consolidate_memory as cm  # noqa: PLC0415
+    from _sandbox import make_sandbox  # noqa: PLC0415
+    make_sandbox(m, "doctor_readers_", offline=True)
+    dec = m.VAULT / "Decisions"
+    dec.mkdir(parents=True, exist_ok=True)
+    stamps = dec / "2026-01-09-p-decision-stamps.md"
+    stamps.write_text("---\ntype: decision\ncontested: [[2026-01-10-p-decision-c]]\n"
+                      "disputed: [[2026-01-10-p-decision-d]]\nsources: [[s-one]]\n"
+                      "supersedes: [[2026-01-01-p-decision-older]]\n---\n\n# stamps\n\nbody\n",
+                      encoding="utf-8")
+    c_rows, d_rows = m._iter_contested_both(None)
+    readers = {
+        "contested": [s for r in c_rows for s in r["new_stems"]] == ["2026-01-10-p-decision-c"],
+        "disputed": [s for r in d_rows for s in r["new_stems"]] == ["2026-01-10-p-decision-d"],
+        "sources": m._note_recur_sources(stamps)[1] == {"s-one"},
+    }
+    cm._carry_into(stamps, stamps.read_text(encoding="utf-8"), 1, set(), [])
+    readers["supersedes"] = m._read_frontmatter_file(stamps).get("supersedes") == ["2026-01-01-p-decision-older"]
+    check("every key the doctor exempts is read as a list by the engine's own reader for it",
+          set(readers) == set(doctor._READ_AS_LIST) and all(readers.values()), str(readers))
 
     with tempfile.TemporaryDirectory() as tmp:
         result = check_list_fields(Path(tmp) / "absent")

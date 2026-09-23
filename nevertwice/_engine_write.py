@@ -220,7 +220,7 @@ def _replacement_guard(old_desc: str, new_desc: str) -> str:
 _WIKILINK_RE = _lazy_re(r"\[\[([^\[\]|]+)(?:\|[^\]]*)?\]\]")
 
 
-def _list_field(v) -> list[str]:
+def _list_field(v: object) -> list[str]:
     """A frontmatter list field as the note meant it, whatever shape it was written in.
 
     `_read_frontmatter` reads the JSON list the engine writes as a list, but what a person or
@@ -234,19 +234,55 @@ def _list_field(v) -> list[str]:
     if isinstance(v, list):
         out: list[str] = []
         for x in v:
-            if isinstance(x, str) and "[[" in x:
-                out.extend(t.strip() for t in _WIKILINK_RE.findall(x) if t.strip())
+            if isinstance(x, str):
+                out.extend(_unwrap_list_item(x))
             elif x not in (None, ""):
-                out.append(str(x).strip().strip("\"'"))
-        return [x for x in out if x]
+                out.append(str(x))
+        return out
     if not isinstance(v, str) or not v.strip():
         return []
     s = v.strip()
-    if "[[" in s:
+    if _ONLY_LINKS_RE.fullmatch(s):                     # [[a]] / [[a]], [[b]] / [[a]] [[b]]
         return [t.strip() for t in _WIKILINK_RE.findall(s) if t.strip()]
-    if s.startswith("[") and s.endswith("]"):
-        return [x for x in (p.strip().strip("\"'") for p in s[1:-1].split(",")) if x]
-    return [s]
+    if s.startswith("[") and s.endswith("]"):          # a flow list; links may be its items
+        #: every item kept: `[stem-a, [[stem-b]]]` is two stems. Taking only the link targets of
+        #: a string with `[[` in it dropped stem-a, and the stamp writers then wrote `contested`
+        #: back without it - a pair off the judge's queue for good (third review, 2026-09-23)
+        return [y for x in _split_outside_links(s[1:-1]) for y in _unwrap_list_item(x)]
+    return _unwrap_list_item(s)
+
+
+_ONLY_LINKS_RE = _lazy_re(r"\s*(?:\[\[[^\[\]]+\]\]\s*,?\s*)+")
+
+
+def _unwrap_list_item(x: str) -> list[str]:
+    """One item of a list field: quotes stripped, a link replaced by its target."""
+    x = x.strip().strip("\"'").strip()
+    if "[[" in x:
+        return [t.strip() for t in _WIKILINK_RE.findall(x) if t.strip()]
+    return [x] if x else []
+
+
+def _split_outside_links(inner: str) -> list[str]:
+    """Split a flow list's inside on the commas that are not inside a `[[...]]` link."""
+    out: list[str] = []
+    buf: list[str] = []
+    depth = i = 0
+    while i < len(inner):
+        if inner.startswith("[[", i):
+            depth, i = depth + 1, i + 2
+            buf.append("[[")
+        elif inner.startswith("]]", i) and depth:
+            depth, i = depth - 1, i + 2
+            buf.append("]]")
+        elif inner[i] == "," and not depth:
+            out.append("".join(buf))
+            buf, i = [], i + 1
+        else:
+            buf.append(inner[i])
+            i += 1
+    out.append("".join(buf))
+    return out
 
 
 def _contested_of(fm: dict) -> list[str]:
@@ -817,7 +853,14 @@ def write_typed_note(folder: str, item, project: str, date: str,
     dest = p
     quarantine_reason = ""
     if QUARANTINE_MODE:
-        n_sources = len(prior_sources | ({session_stem_} if session_stem_ else set())) or 1
+        #: The NEW statement's own corroboration: its history when it refreshes itself in place, and
+        #: this session - not the sources of the notes it is about to retire. Those are evidence for
+        #: the OLD statement; counting them made a lone note that retires a corroborated one look
+        #: corroborated itself, so "single-source supersedes a corroborated note" could not fire on
+        #: any note whose `sources` the engine read. It fired only when a hand-written flow list was
+        #: misread as no sources - which the one list reader stopped doing (third review, 2026-09-23;
+        #: _test_audit_fixes' W7 fixture). The carry into recurrence still uses prior_sources.
+        n_sources = len(set(absorb_sources) | ({session_stem_} if session_stem_ else set())) or 1
         qconf = _coerce_confidence(confidence)
         if n_sources < 2 and qconf is not None and qconf >= QUARANTINE_CONF:
             quarantine_reason = "single-source near-max confidence"

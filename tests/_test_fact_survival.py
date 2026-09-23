@@ -12,6 +12,7 @@ harvester salvages it from the session text near the note's topic. Pure logic; n
 """
 import sys
 import time
+from collections.abc import Callable
 from pathlib import Path
 
 try:
@@ -123,7 +124,7 @@ _big = "a/b.c-d" * 6800            # ~48 kB of the same
 MIN_CALLS, MIN_RUNS = 8, 12
 
 
-def _calls_for(fn) -> int:
+def _calls_for(fn: Callable[[], object]) -> int:
     """How many calls one timed batch of `fn` needs to clear the timer (see `_cost_pair`)."""
     n = 1
     while True:
@@ -148,7 +149,7 @@ def _calls_for(fn) -> int:
         n *= 8
 
 
-def _cost_pair(small_fn, big_fn) -> tuple[float, float]:
+def _cost_pair(small_fn: Callable[[], object], big_fn: Callable[[], object]) -> tuple[float, float]:
     """Seconds per call for both inputs: the cheapest of MIN_RUNS runs of enough calls to
     clear the timer, the two inputs measured in TURNS - small, big, small, big.
 
@@ -222,7 +223,7 @@ def _cost_pair(small_fn, big_fn) -> tuple[float, float]:
     return best_s, best_b
 
 
-def _harvest(src: str):
+def _harvest(src: str) -> Callable[[], object]:
     return lambda: m._harvest_literals(src, "a build note about paths", want=10, exclude=set())
 
 
