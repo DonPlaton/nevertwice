@@ -253,11 +253,14 @@ check("the run reports the tokens its verdicts cost", (res["prompt_tokens"], res
 print("\n- mutation check: a scan that misses the stamp is caught -")
 d = fresh()
 o, n = pair()
-_real = m._iter_contested
-m._iter_contested = lambda project=None: []
-res = cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(True))
+#: The run reads both stamps in one walk (#13, 2026-09-23), so that walk is what is blinded.
+_real = m._iter_contested_both
+m._iter_contested_both = lambda project=None: ([], [])
+try:
+    res = cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(True))
+finally:
+    m._iter_contested_both = _real
 check("with the scan blinded no pair is found - the suite above would redden", res["pairs"] == 0 and fm(o).get("contested") == [n])
-m._iter_contested = _real
 
 print("\n- a run of retirements writes the vector cache once, not once a pair -")
 #: K9 tail, measured by the auditing session on a copy of the owner's cache: 6 514 entries,
@@ -514,6 +517,163 @@ rewrite_desc(n, VETO_NEW, FIXED_NEW)
 res = cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(True))
 check("and a change after the baseline puts it back on the queue",
       res.get("requeued") == 1 and res["judged"] == 1, str(res))
+
+#: The /code-review xhigh of 2026-09-23, findings #1 #3 #4 #11 #13 - each case below was run
+#: against the code before its fix and failed there.
+import io  # noqa: E402
+import json  # noqa: E402
+from contextlib import redirect_stdout  # noqa: E402
+
+print("\n- #1: a locked note in a dispute does not abort the weekly run -")
+#: `_requeue_changed_disputes` hashed both notes with no guard, before adjudicate's try block:
+#: one PermissionError (Obsidian, AV, OneDrive holding the note) ended the whole consolidation -
+#: the failure F10 was written to prevent, one step earlier in the same function.
+d = fresh()
+o, n = pair(old_desc=VETO_OLD, new_desc=VETO_NEW)
+cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(True))          # disputed + hashed
+o2, n2 = pair(title="queue depth", d1="2026-06-02", d2="2026-06-10",
+              old_desc=f"The queue depth is 10.{F}the queue depth is 10",
+              new_desc=f"The queue depth is 50.{F}the queue depth is 50")
+rewrite_desc(n, VETO_NEW, FIXED_NEW)                                           # would re-queue
+_real_fields = cm._pair_fields
+
+
+def _locked(p):
+    if Path(p).stem == n:
+        raise PermissionError(13, "The process cannot access the file", str(p))
+    return _real_fields(p)
+
+
+cm._pair_fields = _locked
+try:
+    try:
+        res = cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(True))
+        raised = None
+    except OSError as e:
+        res, raised = {}, e
+finally:
+    cm._pair_fields = _real_fields
+check("a PermissionError while hashing a dispute does not escape the run",
+      raised is None, repr(raised))
+check("and the run still judges the other pair",
+      res.get("judged") == 1 and res.get("replaces") == 1, str(res))
+check("the locked dispute stays disputed, untouched, for the next run",
+      fm(o).get("disputed") == [n], str(fm(o)))
+
+print("\n- #3: a hand-written string list is not iterated one character at a time -")
+#: The parser reads an unquoted flow list `[a, b]` or a bare `[[link]]` as ONE string. The replace
+#: branch iterated `sources` and `supersedes` without isinstance, so every character became a
+#: source (inflating recurrence) and a supersedes entry (written back to the winner).
+d = fresh()
+o, n = pair()
+fp = m.VAULT / "Decisions" / f"{n}.md"
+body = fp.read_text(encoding="utf-8")
+lines = body.split("\n")
+lines = [ln for ln in lines if not ln.startswith(("sources:", "supersedes:"))]
+lines.insert(1, "sources: [sess-x1, sess-x2]")
+lines.insert(1, "supersedes: [[older-note]]")
+fp.write_text("\n".join(lines), encoding="utf-8")
+check("the fixture reads as strings, the case the review named",
+      isinstance(fm(n).get("sources"), str) and isinstance(fm(n).get("supersedes"), str),
+      f"{fm(n).get('sources')!r} {fm(n).get('supersedes')!r}")
+res = cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(True))
+win = fm(n)
+srcs, sups = win.get("sources") or [], win.get("supersedes") or []
+check("the winner's sources are session ids, not characters",
+      res.get("replaces") == 1 and not any(len(str(s)) == 1 for s in srcs)
+      and {"sess-x1", "sess-x2", SA, SB} <= set(map(str, srcs)), str(srcs))
+check("recurrence counts sessions, not characters", int(str(win.get("recurrence"))) <= 4,
+      str(win.get("recurrence")))
+check("supersedes keeps the linked stem and gains the retired one, no single characters",
+      o in sups and "older-note" in sups and not any(len(str(s)) == 1 for s in sups), str(sups))
+
+print("\n- #4: a carry that fails after the retirement is parked, not lost -")
+#: The old note retires first (F5); the winner's history write comes after. An OSError there was
+#: reported as 'pair failed - left as is' and counted in errors, but nothing was left as is: the
+#: old note was already in Superseded/, never re-queued, and its recurrence and sources gone.
+CARRY = getattr(cm, "CARRY_PENDING_NAME", ".consolidate_carry_pending.json")
+d = fresh()
+o, n = pair()
+_real_write = m.write_atomic
+
+
+def _winner_locked(path, text, *a, **k):
+    if Path(path).stem == n and Path(path).parent.name == "Decisions":
+        raise PermissionError(13, "The process cannot access the file", str(path))
+    return _real_write(path, text, *a, **k)
+
+
+m.write_atomic = _winner_locked
+try:
+    res = cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(True))
+finally:
+    m.write_atomic = _real_write
+check("the retirement is counted as a replacement, not as a failed pair",
+      res.get("replaces") == 1 and res.get("errors") == 0
+      and (d / "Decisions" / "Superseded" / f"{o}.md").exists(), str(res))
+check("the carry is parked on disk for the next run", res.get("carry_parked") == 1
+      and (m.VAULT / CARRY).exists(), str(res))
+res = cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(True))
+win = fm(n)
+check("the next run applies it: recurrence 2, both sessions, supersedes the retired note",
+      res.get("carried_late") == 1 and str(win.get("recurrence")) == "2"
+      and set(win.get("sources") or []) == {SA, SB} and win.get("supersedes") == [o], str(win))
+check("and the ledger is gone once applied", not (m.VAULT / CARRY).exists())
+res = cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(True))
+check("applying is idempotent: a third run changes nothing",
+      res.get("carried_late", 0) == 0 and str(fm(n).get("recurrence")) == "2", str(res))
+
+print("\n- #11: the dry run plans what apply would do, and the report prints it -")
+d = fresh()
+o, n = pair(old_desc=VETO_OLD, new_desc=VETO_NEW)
+cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(True))
+rewrite_desc(n, VETO_NEW, FIXED_NEW)
+SEEN.clear()
+plan = cm.adjudicate_contested(apply=False, has_llm=True, judge=judge(True))
+check("a dry run counts the re-queued pair in its plan and judges it, as apply would",
+      plan.get("requeued") == 1 and plan["pairs"] == 1 and plan["judged"] == 1, str(plan))
+check("and still writes nothing", fm(o).get("disputed") == [n] and not fm(o).get("contested"))
+
+d = fresh()
+o, n = pair()
+cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(True))           # o retires
+cache = m.load_embed_cache()
+cache[o] = {"title": "ghost", "desc": "", "ntype": "decision", "project": "k8p", "vec": [0.1, 0.2]}
+m.save_embed_cache(cache)
+plan = cm.adjudicate_contested(apply=False, has_llm=True, judge=judge(True))
+on_disk = json.loads((m.VAULT / ".embeddings_cache.json").read_text(encoding="utf-8"))
+check("a dry run reports the ghost vector apply would heal, and leaves it on disk",
+      plan.get("healed") == 1 and o in (on_disk.get("entries", on_disk) if isinstance(on_disk, dict) else {}),
+      str(plan.get("healed")))
+buf = io.StringIO()
+with redirect_stdout(buf):
+    cm._run_consolidation(False, "DRY-RUN", False)
+line = next((ln for ln in buf.getvalue().splitlines() if "contested pairs" in ln), "")
+check("the consolidation report prints what was healed", "healed 1" in line, line)
+
+print("\n- #13: one consolidation walks the typed notes twice, not four times -")
+#: requeue, the judge's queue and the merge's exclusion set (once per key) each walked and
+#: header-read every typed note - four walks where two answer the same questions.
+d = fresh()
+o, n = pair(old_desc=VETO_OLD, new_desc=VETO_NEW)
+cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(True))
+_real_both = m._iter_contested_both
+WALKS = [0]
+
+
+def _counting_both(*a, **k):
+    WALKS[0] += 1
+    return _real_both(*a, **k)
+
+
+m._iter_contested_both = _counting_both
+try:
+    with redirect_stdout(io.StringIO()):
+        cm._run_consolidation(False, "DRY-RUN", False)
+finally:
+    m._iter_contested_both = _real_both
+check("two walks a consolidation: one before judging, one for the merge's exclusion set",
+      WALKS[0] == 2, f"{WALKS[0]} walks")
 
 print(f"\nK8 layer 3: {len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")
 sys.exit(1 if FAILED else 0)

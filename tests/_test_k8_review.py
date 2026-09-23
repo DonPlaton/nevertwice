@@ -288,9 +288,30 @@ def _raising_write_atomic(path, text):
 m.write_atomic = _raising_write_atomic
 res = cm.adjudicate_contested(apply=True, has_llm=True, judge=judge_fixed(True))
 check("the run did not abort - both pairs were judged", res["judged"] == 2, str(res))
-check("one pair recorded an error; 'left' still reflects it as unresolved",
-      res["errors"] == 1 and res["left"] == 1, str(res))
+#: Since F5 the first write outside Superseded/ is the CARRY into the winner, made after the old
+#: note already retired - so this failure never left a pair "as is", and this check used to assert
+#: the report that said it did (review 2026-09-23, #4). Both pairs are replacements, the failed
+#: carry is parked for the next run, and nothing is left contested.
+check("the failed write came after a retirement: a replacement, its carry parked, nothing left",
+      res["replaces"] == 2 and res["errors"] == 0 and res.get("carry_parked") == 1
+      and res["left"] == 0, str(res))
 m.write_atomic = _real_write_atomic
+
+#: F10 proper: a write that fails BEFORE anything changed - the stamp clear of a `separate` - is the
+#: pair left exactly as it was, counted in errors, and 'left' still shows it.
+d = fresh()
+write(OLD_FACT, S1, title="pool retry a")
+write(NEW_FACT, S2, title="pool retry a")
+write(f"The retry backoff is 2 seconds.{F}the retry backoff is 2 seconds", S1, title="pool retry b")
+write(f"The retry backoff is 9 seconds.{F}the retry backoff is 9 seconds", S2, title="pool retry b")
+_calls.clear()
+m.write_atomic = _raising_write_atomic
+try:
+    res = cm.adjudicate_contested(apply=True, has_llm=True, judge=judge_fixed(False))
+finally:
+    m.write_atomic = _real_write_atomic
+check("a write failing before any change: the run goes on, one error, and 'left' still counts it",
+      res["judged"] == 2 and res["separate"] == 2 and res["errors"] == 1 and res["left"] == 1, str(res))
 
 # ── F6: refresh_lock, wall-clock budget, consecutive-failure stop, backend recorded ─────────
 print("\n- F6: refresh_lock is called after every judge call -")
