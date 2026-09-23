@@ -406,6 +406,42 @@ def _brain_prompt_block() -> str:
     )
 
 
+def _principle_prompt_rubric() -> str:
+    """A1 (Q5): the FIELD explanation for `principle`, in the STATIC part of the prompt -
+    before `Known parameters` / `SESSION`, unlike every other FIELD explanation (which sit
+    after the transcript because they were added there before prefix-cache friendliness was a
+    design goal - review, A1). Its content is the same for every call regardless of project, so
+    keeping it ahead of the per-session `project_hint`/`tag_vocab`/transcript block is what lets
+    an inference backend's prefix cache actually reuse it across sessions.
+
+    Read PRINCIPLE_FIELD at CALL time, not at import: a suite that flips the flag to prove the
+    prompt changes (`tests/_test_principle_prompt.py`) rebinds `m.PRINCIPLE_FIELD`, the same way
+    `tests/_test_brain_invariants.py` rebinds the brain profile for `_brain_prompt_block`.
+    Empty string when off - the prompt is then byte-for-byte what it was before this field
+    existed, matching `_principle_schema_field`'s own off-switch."""
+    if not PRINCIPLE_FIELD:
+        return ""
+    return (
+        "\nFIELD principle (pattern/mistake only) - a de-identified, project-independent\n"
+        "restatement of the lesson: ONE sentence, generalisable to any project, or \"\" when\n"
+        "the lesson has no such standalone form. Never name a project, host, file path, IP\n"
+        "address, person, or version string - state the RULE, not the incident. Example: not\n"
+        "\"switched quantum_prism's GHZ compiler to sm_120\" but \"pin the target compute\n"
+        "capability before comparing kernel benchmarks across GPUs\".\n"
+    )
+
+
+def _principle_schema_field() -> str:
+    """A1 (Q5): the `principle` key's suffix in the JSON schema shown to the model, appended
+    right after `"confidence": 0.9` on a pattern/mistake item (never a decision - A1 scopes the
+    field to pattern/mistake only). The instructional placeholder VALUE is the self-documenting
+    convention this schema already uses (see "facts": ["literal token copied VERBATIM ..."]).
+    Empty when PRINCIPLE_FIELD is off, so the schema is the old one, unchanged."""
+    if not PRINCIPLE_FIELD:
+        return ""
+    return ', "principle": "one de-identified, project-independent sentence, or \\"\\" if project-specific"'
+
+
 def _is_relevant(flag) -> bool:
     """Interpret the LLM's project_relevant flag; default True when absent so a
     backend that omits it never silently drops knowledge (audit C1)."""

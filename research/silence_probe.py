@@ -88,7 +88,9 @@ def main() -> int:
             existing_patterns=", ".join(existing["pattern"]) or "(none)",
             existing_mistakes=", ".join(existing["mistake"]) or "(none)",
             existing_decisions=", ".join(existing["decision"]) or "(none)",
-            brain_block=m._brain_prompt_block(), language_rule=m.language_rule(transcript_full))
+            brain_block=m._brain_prompt_block(), language_rule=m.language_rule(transcript_full),
+            principle_rubric=m._principle_prompt_rubric(),   # A1 (Q5)
+            principle_schema=m._principle_schema_field())    # A1 (Q5)
         extraction = m.generate_json(prompt, project=project)
         raw_counts = {}
         if isinstance(extraction, dict):
