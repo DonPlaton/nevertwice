@@ -50,12 +50,25 @@ FROZEN = HERE / "heldout" / "external_heldout_v1.json"
 ARTIFACT = HERE / "heldout" / "baseline_v1.json"
 
 #: (label, kind, path-or-id). The merged fine-tune is local; the other two come from the HF cache.
+#: `nevertwice-embed-distil` was listed here by da1132e - the same commit that deleted its
+#: checkpoint after M3 failed both gates - so from then on this default run could not finish: it
+#: died loading the fourth model, after encoding three, and wrote nothing. Its table is
+#: `heldout/distil_v1.json`, kept as the record of a rejected experiment; reproducing it means
+#: regenerating the checkpoint (distil.py) and running this stand at da1132e.
 MODELS = [
     ("stock bge-m3", "bi", "BAAI/bge-m3"),
     ("nevertwice-embed", "bi", str(HERE / "models" / "universal_v1_merged")),
-    ("nevertwice-embed-distil", "bi", str(HERE / "models" / "distil_v1_merged")),
     ("bge-reranker-v2-m3", "cross", "BAAI/bge-reranker-v2-m3"),
 ]
+
+
+def _missing_local_models(models: list) -> list[str]:
+    """Every model given as a local path that is not on disk - checked before anything loads.
+
+    A Hugging Face id is not a path and is left to the loader: whether it is cached is the HF
+    cache's business, and a miss there fails at the first model rather than after the third."""
+    return [f"{label} -> {path}" for label, _kind, path in models
+            if Path(path).is_absolute() and not Path(path).is_dir()]
 
 BOOTSTRAP = 2000
 SEED = 20260827
@@ -316,6 +329,12 @@ def main(argv: list[str] | None = None) -> int:
     if args.show:
         report(json.loads(Path(args.out).read_text(encoding="utf-8")))
         return 0
+
+    missing = _missing_local_models(MODELS)
+    if missing:
+        print("model(s) not on disk, nothing loaded and nothing written: " + "; ".join(missing),
+              file=sys.stderr)
+        return 2
 
     data = json.loads(FROZEN.read_text(encoding="utf-8"))
     results = {}

@@ -17,8 +17,17 @@ dimensions and divide by the new norm, because cosine over an unnormalised prefi
 
     python research/embed_universal/truncation_eval.py
     python research/embed_universal/truncation_eval.py --print
+    python research/embed_universal/truncation_eval.py --models nevertwice-embed \\
+        --out research/embed_universal/heldout/truncation_v1.json
 
 Needs a CUDA GPU. Writes heldout/matryoshka_v1.json (committed).
+
+The Matryoshka checkpoint was deleted by the decision M4 recorded, so the two-model run can no
+longer be repeated; K1 and K2 are kept as the record of that experiment. K3 needs only the shipped
+model, and `--models nevertwice-embed` measures it alone into its OWN artifact. Every chosen model
+is checked on disk before anything loads - a missing one used to surface as a loader traceback
+after the first model's encode - and a subset run is refused onto the two-model artifact, which it
+would silently cut down to one model and take K1 and K2 with it.
 """
 from __future__ import annotations
 
@@ -41,6 +50,11 @@ MODELS = [
     ("nevertwice-embed", str(HERE / "models" / "universal_v1_merged")),
     ("nevertwice-embed-matryoshka", str(HERE / "models" / "matryoshka_v1_merged")),
 ]
+SHIPPED, MATRYOSHKA = "nevertwice-embed", "nevertwice-embed-matryoshka"
+#: comparison -> the models it reads. A comparison is computed only when all of them were run.
+NEEDS = {"K1_full_vs_shipped": (SHIPPED, MATRYOSHKA),
+         "K2_truncated_vs_own_full": (MATRYOSHKA,),
+         "K3_shipped_truncated_vs_own_full": (SHIPPED,)}
 WIDTHS = [1024, 512, 256]
 #: float32 is what a naive index stores. The saving is proportional either way, but the bytes
 #: quoted have to name a dtype or they are not bytes.
@@ -112,29 +126,58 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--print", dest="show", action="store_true")
     parser.add_argument("--out", default=str(ARTIFACT))
+    parser.add_argument("--models", default=",".join(label for label, _ in MODELS),
+                        help="comma-separated labels to run (default: all); a comparison is "
+                             "computed only when every model it reads was run")
     args = parser.parse_args(argv)
 
     if args.show:
         report(json.loads(Path(args.out).read_text(encoding="utf-8")))
         return 0
 
+    known = dict(MODELS)
+    wanted = list(dict.fromkeys(x.strip() for x in args.models.split(",") if x.strip()))
+    unknown = [x for x in wanted if x not in known]
+    if not wanted or unknown:
+        print(f"unknown model label(s): {', '.join(unknown) or '(none given)'}; "
+              f"have {', '.join(known)}", file=sys.stderr)
+        return 2
+    missing = [f"{x} -> {known[x]}" for x in wanted if not Path(known[x]).is_dir()]
+    if missing:
+        print("model(s) not on disk, nothing loaded and nothing written: " + "; ".join(missing)
+              + f"\n  K3 needs only the shipped model: --models {SHIPPED} --out "
+                "research/embed_universal/heldout/truncation_v1.json", file=sys.stderr)
+        return 2
+    if set(wanted) != set(known) and Path(args.out).resolve() == ARTIFACT.resolve():
+        print(f"refusing a {len(wanted)}-model run onto {ARTIFACT.name}: it holds all "
+              f"{len(known)} models and K1/K2, which this run would erase - name an --out",
+              file=sys.stderr)
+        return 2
+
     data = json.loads(FROZEN.read_text(encoding="utf-8"))
     results = {}
-    for label, path in MODELS:
+    for label in wanted:
         print(f"-- {label}", flush=True)
-        results[label] = evaluate(label, path, data)
+        results[label] = evaluate(label, known[label], data)
 
-    mat, v1 = results["nevertwice-embed-matryoshka"], results["nevertwice-embed"]
-    comparisons = {"K1_full_vs_shipped": {}, "K2_truncated_vs_own_full": {},
-                   "K3_shipped_truncated_vs_own_full": {}}
+    def pair(ref: str, ref_w: str, chal: str, chal_w: str, axis: str) -> dict:
+        return _paired(results[ref]["widths"][ref_w]["ranks"][axis],
+                       results[chal]["widths"][chal_w]["ranks"][axis])
+
+    comparisons: dict = {}
+    skipped = {name: "not run: " + ", ".join(m for m in needs if m not in results)
+               for name, needs in NEEDS.items() if any(m not in results for m in needs)}
     for axis in ("retrieval_title", "retrieval_situation"):
-        comparisons["K1_full_vs_shipped"][axis] = _paired(
-            v1["widths"]["1024"]["ranks"][axis], mat["widths"]["1024"]["ranks"][axis])
+        if "K1_full_vs_shipped" not in skipped:
+            comparisons.setdefault("K1_full_vs_shipped", {})[axis] = pair(
+                SHIPPED, "1024", MATRYOSHKA, "1024", axis)
         for width in ("512", "256"):
-            comparisons["K2_truncated_vs_own_full"].setdefault(width, {})[axis] = _paired(
-                mat["widths"]["1024"]["ranks"][axis], mat["widths"][width]["ranks"][axis])
-            comparisons["K3_shipped_truncated_vs_own_full"].setdefault(width, {})[axis] = _paired(
-                v1["widths"]["1024"]["ranks"][axis], v1["widths"][width]["ranks"][axis])
+            if "K2_truncated_vs_own_full" not in skipped:
+                comparisons.setdefault("K2_truncated_vs_own_full", {}).setdefault(width, {})[axis] = \
+                    pair(MATRYOSHKA, "1024", MATRYOSHKA, width, axis)
+            if "K3_shipped_truncated_vs_own_full" not in skipped:
+                comparisons.setdefault("K3_shipped_truncated_vs_own_full", {}).setdefault(
+                    width, {})[axis] = pair(SHIPPED, "1024", SHIPPED, width, axis)
 
     payload = {
         "generated_by": "research/embed_universal/truncation_eval.py",
@@ -150,6 +193,7 @@ def main(argv: list[str] | None = None) -> int:
                                       for w, b in r["widths"].items()}}
                    for label, r in results.items()},
         "comparisons": comparisons,
+        **({"comparisons_skipped": skipped} if skipped else {}),
         "ranks": {label: {w: b["ranks"] for w, b in r["widths"].items()}
                   for label, r in results.items()},
     }
@@ -169,11 +213,17 @@ def report(payload: dict) -> None:
                   f"situation r@5 {_fmt(b['retrieval_situation']['recall@5'])}   "
                   f"title r@1 {_fmt(b['retrieval_title']['recall@1'])}   "
                   f"twin auc {_fmt(b['twin']['auc'])}")
-    print("\n-- K1: the Matryoshka full vector against shipped v1 (the guard)")
-    for axis, b in payload["comparisons"]["K1_full_vs_shipped"].items():
-        print(f"   {axis:20s} d(r@1) {_fmt(b['delta_recall@1'])}   d(r@5) {_fmt(b['delta_recall@5'])}")
+    for key, why in payload.get("comparisons_skipped", {}).items():
+        print(f"\n-- {key}: skipped ({why})")
+    if "K1_full_vs_shipped" in payload["comparisons"]:
+        print("\n-- K1: the Matryoshka full vector against shipped v1 (the guard)")
+        for axis, b in payload["comparisons"]["K1_full_vs_shipped"].items():
+            print(f"   {axis:20s} d(r@1) {_fmt(b['delta_recall@1'])}   "
+                  f"d(r@5) {_fmt(b['delta_recall@5'])}")
     for key, title in (("K2_truncated_vs_own_full", "K2: truncated against its own full vector"),
                        ("K3_shipped_truncated_vs_own_full", "K3: v1 truncated naively (baseline)")):
+        if key not in payload["comparisons"]:
+            continue
         print(f"\n-- {title}")
         for width, axes in payload["comparisons"][key].items():
             for axis, b in axes.items():
