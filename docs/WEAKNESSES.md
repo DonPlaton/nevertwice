@@ -469,11 +469,14 @@ below is read in context:
   "STRIPE_SECRET_KEY", "useAuthStore", "db-primary", "orders_table", "kafka-consumer-group",
   "OrderService" and "prod-cluster" all silently survived - then, once widened to catch a
   camelCase/PascalCase transition and a hyphenated infra noun on top of digit/dot/slash/
-  underscore, found too WIDE by a second probe: eighteen of twenty public tech names (PostgreSQL,
-  JavaScript, GitHub, WebSocket, GraphQL, MongoDB, DevOps...) and nine of fourteen generic hyphen
-  concepts (consumer-group, worker-queue, api-gateway, service-mesh...) were now ALSO forbidden,
-  because shape cannot tell a public name from a private one - PostgreSQL and UserRepository are
-  the same camelCase shape, api-gateway and payments-api the same hyphen-infra shape.
+  underscore, found too WIDE by a second probe: most public tech names (PostgreSQL, JavaScript,
+  GitHub, WebSocket, GraphQL, MongoDB, DevOps...) and most generic hyphen concepts
+  (consumer-group, worker-queue, api-gateway, service-mesh...) were now ALSO forbidden, because
+  shape cannot tell a public name from a private one - PostgreSQL and UserRepository are the
+  same camelCase shape, api-gateway and payments-api the same hyphen-infra shape. The exact
+  probe is pinned in `tests/_test_principle_entity_forbidding.py`'s `PUBLIC_TECH_NAMES` /
+  `GENERIC_HYPHEN_CONCEPTS` lists and their "... reads generic at write time" checks, not
+  restated here as a count.
 
   **Option (A), the decision this repository made:** the write/rescan gate stops at shapes that
   are RARELY public - digit/dot/slash, underscore, ALL-CAPS-with-underscore, the project's own
