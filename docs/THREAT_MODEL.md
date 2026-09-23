@@ -156,7 +156,7 @@ crossing an MCP or hook boundary.
   its content tokens is attested by at least two of the cluster's own source projects' live
   notes - a product name only one project ever wrote cannot pass, whether or not the extractor
   declared it as an entity (closing W-Seventeen one layer later than write time). —
-  `tests/_test_principle_promote.py::the product-name tokens are named as offending`
+  `tests/_test_principle_promote.py::BOTH sides' private-name tokens are named as offending`
 - **Residual risk:** `all` mode is still available (`NEVERTWICE_CROSS_PROJECT=all`) and is, by
   design, the unrestricted pre-Q5 behaviour - choosing it re-opens this boundary entirely. The
   `_user_brief` learned user-profile injection (`build_user_model.py`) is a SEPARATE
