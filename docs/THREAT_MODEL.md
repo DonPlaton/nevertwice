@@ -155,7 +155,7 @@ crossing an MCP or hook boundary.
 - **Claim:** A candidate sentence is promoted into the universal pool only when EVERY one of
   its content tokens is attested by at least two of the cluster's own source projects' live
   notes - a product name only one project ever wrote cannot pass, whether or not the extractor
-  declared it as an entity (closing W-Seventeen one layer later than write time). —
+  declared it as an entity (closing W17 one layer later than write time). —
   `tests/_test_principle_promote.py::BOTH sides' private-name tokens are named as offending`
 - **Residual risk:** `all` mode is still available (`NEVERTWICE_CROSS_PROJECT=all`) and is, by
   design, the unrestricted pre-Q5 behaviour - choosing it re-opens this boundary entirely. The
@@ -163,8 +163,7 @@ crossing an MCP or hook boundary.
   cross-project channel this boundary does not cover - see `docs/WEAKNESSES.md`. The token-
   provenance gate counts DISTINCT projects, not how independent they are of each other - a name
   that genuinely appears in two small, otherwise-unrelated projects' own text passes, because at
-  that point it is shared vocabulary the corpus itself attests to (`docs/WEAKNESSES.md`,
-  W-Seventeen).
+  that point it is shared vocabulary the corpus itself attests to (`docs/WEAKNESSES.md` W17).
 
 ## Boundary: outbound network
 

@@ -56,6 +56,24 @@ REQUIRED = ("id", "statement", "value", "printed", "unit", "dataset", "environme
 # Fenced blocks are shell commands and illustrative terminal output, not measurements.
 FENCE = re.compile(r"^```.*?^```", re.S | re.M)
 NUMBER = re.compile(r"\d+(?:,\d{3})*(?:\.\d+)?")
+# IDs are not measurements. This project numbers its own findings/decisions/campaigns/tracks
+# (WEAKNESSES.md's W<N>, PLAN's R<N> risks, decision D<N>s, campaigns K<N>/A<N>/B<N>/C<N>[a-z]/
+# Q<N>/M<N>/F<N>/N<N>/H<N>/P<N>, and G5.1-style gate numbers with an optional dotted sub-index)
+# - a register tag, never a count or a percentage. The coordinator's finding (C7, 2026-09-23):
+# disguising an ID as a spelled-out word ("W17" -> "W-Seventeen") to dodge the numeric-token
+# count breaks every existing cross-reference to that ID (grep W17 no longer finds the entry)
+# without removing anything real - the fix belongs in the COUNTER, recognizing the ID shape and
+# excluding THAT SPECIFIC OCCURRENCE, not in the document. A bare digit elsewhere (a real
+# measurement that happens to share the same value, e.g. "17%") is UNAFFECTED - this strips only
+# the ID-shaped SPAN (letter + digits, whole token) before the plain NUMBER scan ever sees it,
+# it does not exempt a value context-free. Anchored at both ends (`\b`) so it never matches
+# inside a longer identifier (`raw17` is not `W17`); no decimal part except G's own dotted gate
+# form (`G5.1`).
+ID_TOKEN = re.compile(
+    r"\b(?:W|R|D|K|Q|M|B|F|A|N|H|P)\d+\b"
+    r"|\bC\d+[a-z]?\b"
+    r"|\bG\d+(?:\.\d+)?\b"
+)
 # A block emitted by tools/render_claims.py or tools/comparison_snapshot.py.
 GENERATED_REGION = re.compile(
     r"<!-- (claims|comparison):([\w-]+) -->.*?<!-- /\1:\2 -->", re.S)
@@ -315,6 +333,11 @@ def _numeric_tokens(doc: str) -> int:
     version, a bare single digit - are excluded. Otherwise dating a comparative claim
     ("measured 2026-07-05") would count as *adding* unevidenced numbers and trip the
     ratchet, punishing exactly the change task B3 asks for.
+
+    Register-ID-shaped tokens (`ID_TOKEN` above - W17, R12, G5.1...) are stripped WHOLE
+    before the plain number scan runs, not filtered by value afterward - a real
+    measurement that happens to share the same digits elsewhere on the page (a "17%"
+    with no letter prefix) is untouched, only the ID's own span is removed.
     """
     text = (ROOT / doc).read_text(encoding="utf-8", errors="replace")
     # Numbers inside a generated region are produced from committed data by a tool
@@ -322,6 +345,7 @@ def _numeric_tokens(doc: str) -> int:
     # them would make generating a table look like adding unevidenced claims.
     text = GENERATED_REGION.sub("", text)
     text = FENCE.sub("", text)
+    text = ID_TOKEN.sub("", text)
     ignore = [re.compile(n["pattern"]) for n in MANIFEST["non_metrics"]
               if "pattern" in n and not n.get("context")]
     literals = {n["literal"] for n in MANIFEST["non_metrics"]

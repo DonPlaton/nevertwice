@@ -432,14 +432,14 @@
       "budget": 6,
       "target": "E2",
       "note": "Trust boundaries and their tests. Its numbers are incident dates, thresholds and constants rather than published measurements, so it is registered as backlog with a ratchet instead of exempted - an exemption is a hole that never closes. Its *claims* are governed more strictly than any metric: tests/_test_threat_model.py fails when one names a check that does not exist.",
-      "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years and bare single digits"
+      "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, bare single digits, and register-ID-shaped tokens (W<N>/R<N>/D<N>/K<N>/Q<N>/M<N>/B<N>/F<N>/A<N>/C<N>[a-z]/G<N>(.<N>)?/P<N>/N<N>/H<N> - IDs are not measurements)"
     },
     "docs/WEAKNESSES.md": {
       "governance": "backlog",
-      "budget": 146,
+      "budget": 134,
       "target": null,
-      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
-      "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
+      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered. Lowered 146 -> 134 (C7, 2026-09-23): the counter now excludes register-ID-shaped tokens (W<N>, R<N>...) as IDs, not measurements, which also drops every PRE-EXISTING W<N> heading's own digits out of the count, not only the ones this task added - the 146 baseline had been counting them as if they were measurements all along.",
+      "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions, bare single digits, and register-ID-shaped tokens (W<N>/R<N>/D<N>/K<N>/Q<N>/M<N>/B<N>/F<N>/A<N>/C<N>[a-z]/G<N>(.<N>)?/P<N>/N<N>/H<N> - IDs are not measurements)"
     },
     "docs/starter-issues/01-latency-interval-not-point.md": {
       "governance": "exempt",
@@ -772,8 +772,8 @@
     },
     "research/invariants_lab/AXES_F3.md": {
       "governance": "backlog",
-      "budget": 129,
-      "note": "Task F3 of the invariants lab: the ratchet's three unaudited axes against ruff's pylint-derived rules, the four defects that audit found, and the flag rate re-measured with and without them. All numbers are on corpus_dev and in sample."
+      "budget": 126,
+      "note": "Task F3 of the invariants lab: the ratchet's three unaudited axes against ruff's pylint-derived rules, the four defects that audit found, and the flag rate re-measured with and without them. All numbers are on corpus_dev and in sample. Lowered 129 -> 126 (C7, 2026-09-23, Q5's evidence_manifest fix): the numeric counter now excludes register-ID-shaped tokens (W<N>/R<N>/F<N>/...) as IDs, not measurements, which drops this page's own task-label digits (F3) out of the count too."
     },
     "research/invariants_lab/BLAST_RADIUS_D5.md": {
       "governance": "backlog",
@@ -871,13 +871,13 @@
     },
     "research/invariants_lab/RATCHET_R3.md": {
       "governance": "backlog",
-      "budget": 40,
-      "note": "Tasks R1-R3 of the invariants lab: the complexity ratchet, measured by agreement with an independent instrument rather than by recall against its own metric, which would be 1.0 by construction. One gate of four fails and the mechanism is deleted. Numbers regenerate from research/invariants_lab/measure_ratchet.py against ratchet_r3.json and the SHAs in corpus_manifest.json; the metric itself is pinned against ruff C901 on every module in nevertwice/ by tests/_test_complexity.py."
+      "budget": 38,
+      "note": "Tasks R1-R3 of the invariants lab: the complexity ratchet, measured by agreement with an independent instrument rather than by recall against its own metric, which would be 1.0 by construction. One gate of four fails and the mechanism is deleted. Numbers regenerate from research/invariants_lab/measure_ratchet.py against ratchet_r3.json and the SHAs in corpus_manifest.json; the metric itself is pinned against ruff C901 on every module in nevertwice/ by tests/_test_complexity.py. Lowered 40 -> 38 (C7, 2026-09-23, Q5's evidence_manifest fix): the numeric counter now excludes register-ID-shaped tokens (R<N>/...) as IDs, not measurements, which drops this page's own task-label digits (R1-R3) out of the count too."
     },
     "research/invariants_lab/README.md": {
       "governance": "backlog",
-      "budget": 58,
-      "note": "Task T5 of the invariants lab: the write-up that ties the six mechanisms together. Every number on it is quoted from one of the per-mechanism documents registered beside it and regenerates from the harness that produced it. Two mechanisms passed their gates, four did not, and the cross-cutting finding -- that scope rather than accuracy is what buys silence -- is stated as an observation across five measured flag rates rather than as a law."
+      "budget": 57,
+      "note": "Task T5 of the invariants lab: the write-up that ties the six mechanisms together. Every number on it is quoted from one of the per-mechanism documents registered beside it and regenerates from the harness that produced it. Two mechanisms passed their gates, four did not, and the cross-cutting finding -- that scope rather than accuracy is what buys silence -- is stated as an observation across five measured flag rates rather than as a law. Lowered 58 -> 57 (C7, 2026-09-23, Q5's evidence_manifest fix): the numeric counter now excludes register-ID-shaped tokens as IDs, not measurements."
     },
     "research/invariants_lab/SCALE_X4.md": {
       "governance": "backlog",
@@ -886,8 +886,8 @@
     },
     "research/invariants_lab/SHIP_G4.md": {
       "governance": "backlog",
-      "budget": 88,
-      "note": "Task G4: the invariants/v3 write-up for a reader outside this project -- what finishing four half-built mechanisms showed, why abstention is the only lever that moved a flag rate by an order of magnitude, and why it is not general."
+      "budget": 87,
+      "note": "Task G4: the invariants/v3 write-up for a reader outside this project -- what finishing four half-built mechanisms showed, why abstention is the only lever that moved a flag rate by an order of magnitude, and why it is not general. Lowered 88 -> 87 (C7, 2026-09-23, Q5's evidence_manifest fix): the numeric counter now excludes register-ID-shaped tokens (G<N>/...) as IDs, not measurements, which drops this page's own task-label digit (G4) out of the count too."
     },
     "research/invariants_lab/SURFACE_F2.md": {
       "governance": "backlog",

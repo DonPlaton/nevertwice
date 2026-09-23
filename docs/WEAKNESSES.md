@@ -414,7 +414,7 @@ below is read in context:
   SOTA claims.
 - **W14 [info] `sources` frontmatter** adds bounded store bloat (≤25 session stems) on recurring
   notes; not injected into context, so no recall-token cost.
-- **W-Sixteen [KNOWN GAP, Q5/A4] `_user_brief` is a second cross-project channel the principle-layer
+- **W16 [KNOWN GAP, Q5/A4] `_user_brief` is a second cross-project channel the principle-layer
   boundary does not cover.** `NEVERTWICE_CROSS_PROJECT` (`universal`/`all`/`off`,
   `docs/THREAT_MODEL.md`'s "cross-project recall" boundary) governs the `🔗 Similar lessons from
   other projects` section only. `_user_brief` (`_engine_recall.py`, built by
@@ -423,9 +423,9 @@ below is read in context:
   - it can carry whatever the profile-builder distilled ACROSS every project it has seen,
   regardless of `off`/`universal`/`all`. Setting `NEVERTWICE_CROSS_PROJECT=off` does not touch
   this second channel. Not fixed here - it is out of Q5's scope (PLAN-Q3Q5.md's "Вне рамки"
-  list, risk R-Twelve) - and is recorded so a reader of the cross-project boundary does not assume
+  list, risk R12) - and is recorded so a reader of the cross-project boundary does not assume
   it is the only one.
-- **W-Seventeen [CLOSED AT PROMOTION, Q5/A3+A5] `principle_scan` has no standalone pattern for the
+- **W17 [CLOSED AT PROMOTION, Q5/A3+A5] `principle_scan` has no standalone pattern for the
   "entity" class at WRITE time - closed one layer later, by a token-provenance rule at
   PROMOTION time (owner review).** `principle_scan`'s other five identifier
   classes (IP, URL/FQDN, path, email, host:port/version) are regex-detected regardless of what
