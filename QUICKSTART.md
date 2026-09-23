@@ -110,18 +110,19 @@ trusting a confident wrong answer.
 
 ## 5. Uninstall: hooks first, then the package
 
-The hooks point at `nevertwice/memory_hook.py`
-inside this checkout. If the checkout or the package goes while the hooks are still wired, every
-hook command fails, and Claude Code treats that failure from PreToolUse and UserPromptSubmit as a
-block: every edit, command and prompt is refused. So:
+Each hook command runs `~/.claude/nevertwice/hook_shim.py`, a small file `install.py` writes
+beside `settings.json` (never inside the checkout), with this checkout's `memory_hook.py` as
+its one argument. Delete or move the checkout while wired and the shim still runs - it just
+finds no engine, says so on stderr, and **exits 0**: memory turns off, your prompts and tool
+calls never get blocked. Uninstalling first is still the tidy path:
 
 ```bash
 python install.py --uninstall --print  # shows the hook entries it would remove, writes nothing
-python install.py --uninstall          # removes only nevertwice's entries; your own hooks stay
+python install.py --uninstall          # removes nevertwice's entries AND the shim; your own hooks stay
 pip uninstall nevertwice               # now safe, and so is deleting the checkout
 ```
 
-Already deleted the checkout and the agent is blocked? Edit `~/.claude/settings.json` by hand and
-remove the entries whose command ends in `nevertwice/memory_hook.py`, or restore the
-`settings.json.bak-nevertwice-*` copy the installer left beside it (that also rolls back any
-settings changed since the install).
+No checkout left to run `install.py` from? Edit `~/.claude/settings.json` by hand and remove the
+entries whose command contains `nevertwice/hook_shim.py` or `nevertwice/memory_hook.py`, then
+delete `~/.claude/nevertwice/`; or restore the `settings.json.bak-nevertwice-*` copy the installer
+left beside it (that also rolls back any settings changed since the install).
