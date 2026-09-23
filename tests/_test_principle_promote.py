@@ -9,6 +9,7 @@ principle text, so cosine similarity is deterministic and hand-checkable.
 """
 from __future__ import annotations
 
+import ipaddress
 import re
 import sys
 from pathlib import Path
@@ -809,6 +810,119 @@ def test_m_underscore_and_hyphen_unify_but_dot_does_not() -> None:
          not ok6 and "payments-api" in offending6, offending6)
 
 
+def test_o_never_public_identifiers_reject_even_when_corroborated() -> None:
+    """C6 (2026-09-24, the coordinator's decision, amended twice - stdlib version-parity, then
+    the explicit RFC5737 carve-out): an RFC1918/CGNAT/IPv6-ULA address or an internal-TLD
+    hostname is NEVER treated as public by corroboration alone. Two UNRELATED private networks
+    reusing the same 10.x/172.16.x/192.168.x/100.64.x/fc00::/7 address, or the same internal
+    hostname convention, is near-certain by pure chance (every home router answers to
+    192.168.1.1) - seeing it in two projects' corpora is not evidence of a shared identity the
+    way seeing "PostgreSQL" in two corpora is. `_is_never_public_identifier` overrides an
+    otherwise-PASSING corroboration count for exactly these shapes; it can only turn a pass
+    into a fail, never the reverse (test_o2 below proves the override does not over-fire)."""
+    print("\n- C6: RFC1918/CGNAT/ULA addresses and internal-TLD hosts never cross -")
+    cases = [
+        ("10.11.23.35", "RFC1918 (10.0.0.0/8)"),
+        ("api.internal", "internal TLD (.internal)"),
+        ("100.64.1.1", "CGNAT/Tailscale (100.64.0.0/10)"),
+        ("100.101.102.103", "CGNAT/Tailscale (100.64.0.0/10)"),
+        ("fd12:3456::1", "IPv6 ULA (fc00::/7)"),
+    ]
+    for word, label in cases:
+        tag = word.replace(":", "_").replace(".", "_")
+        make_sandbox(m, f"pp_c6_np_{tag}_", offline=True)
+        pr = _import_fresh()
+        _write("project_a", f"seen {word} a", "")
+        _write("project_c", f"seen {word} c", "")
+        sentence = f"reachable at {word} from both sides."
+        ok, offending = pr._token_provenance(sentence, "project_a",
+                                             {"project_a", "project_c"}, {})
+        check(f"{label} ({word!r}): corroborated by both projects, still rejected",
+             not ok and word.lower() in [o.lower() for o in offending],
+             f"ok={ok} offending={offending}")
+
+
+def test_o2_public_examples_still_cross_when_corroborated() -> None:
+    """C6, the positive controls (not merely asserted - each is run): loopback, version
+    strings, protocol/version slashes, and RFC 5737's public documentation addresses are NOT
+    on the never-public list, so ordinary corroboration (both projects use the same string)
+    still lets them cross. The coordinator's decision on RFC 5737 (192.0.2.0/24,
+    198.51.100.0/24, 203.0.113.0/24): these are public EXAMPLE addresses used throughout docs,
+    man pages and tutorials - not evidence of a private network, so two projects both using
+    one is unremarkable and corroboration is allowed to carry it, unlike an RFC1918 address."""
+    print("\n- C6: loopback / version strings / protocol slashes / RFC5737 examples still cross -")
+    cases = [
+        ("127.0.0.1", "loopback (not on the never-public list)"),
+        ("192.0.2.5", "RFC 5737 documentation range (public example, coordinator's decision)"),
+    ]
+    for word, label in cases:
+        make_sandbox(m, f"pp_c6_pub_{word.replace('.', '_')}_", offline=True)
+        pr = _import_fresh()
+        _write("project_a", f"seen {word} a", "")
+        _write("project_c", f"seen {word} c", "")
+        sentence = f"reachable at {word} from both sides."
+        ok, offending = pr._token_provenance(sentence, "project_a",
+                                             {"project_a", "project_c"}, {})
+        check(f"{label} ({word!r}): corroborated by both projects, and passes",
+             ok, f"ok={ok} offending={offending}")
+
+    make_sandbox(m, "pp_c6_version_", offline=True)
+    pr = _import_fresh()
+    _write("project_a", "uses 3.12 and HTTP/2 a", "")
+    _write("project_c", "uses 3.12 and HTTP/2 c", "")
+    sentence = "Python 3.12 speaks HTTP/2 to the server."
+    ok, offending = pr._token_provenance(sentence, "project_a", {"project_a", "project_c"}, {})
+    check("'3.12' (version) and 'HTTP/2' (protocol/version slash) corroborated by both, "
+         "both pass - not IPv4-shaped (not four dotted octets), so never-public never fires",
+         ok, f"ok={ok} offending={offending}")
+
+
+def test_o3_mutation_removing_never_public_check_reddens_by_name() -> None:
+    """Mutation: monkeypatch `_is_never_public_identifier` to always return False (as if C6
+    had never been added) - the SAME RFC1918 address from test_o now WRONGLY passes
+    provenance on the strength of corroboration alone, proving the override is load-bearing."""
+    print("\n- C6 mutation: removing the never-public check lets 10.x through -")
+    make_sandbox(m, "pp_c6_mut_", offline=True)
+    pr = _import_fresh()
+    _write("project_a", "seen 10.11.23.35 a", "")
+    _write("project_c", "seen 10.11.23.35 c", "")
+    sentence = "reachable at 10.11.23.35 from both sides."
+    ok_before, offending_before = pr._token_provenance(sentence, "project_a",
+                                                        {"project_a", "project_c"}, {})
+    check("before the mutation: 10.11.23.35 fails provenance despite corroboration",
+         not ok_before and "10.11.23.35" in offending_before, offending_before)
+
+    saved = pr._is_never_public_identifier
+    pr._is_never_public_identifier = lambda norm: False
+    try:
+        ok_after, offending_after = pr._token_provenance(sentence, "project_a",
+                                                          {"project_a", "project_c"}, {})
+    finally:
+        pr._is_never_public_identifier = saved
+    check("mutation: WITHOUT the never-public override, 10.11.23.35 now passes (would FAIL "
+         "'fails provenance despite corroboration' above)", ok_after, offending_after)
+
+
+def test_o4_is_private_would_have_missed_the_cgnat_range() -> None:
+    """C6 (owner requirement, run once, not just claimed): the REJECTED alternative,
+    `ipaddress.ip_address(x).is_private`, is both version-dependent (CPython 3.12.4 vs 3.13,
+    gh-113171 changed its semantics) AND, on the interpreter running this suite, already
+    fails to flag 100.64.0.0/10 (CGNAT/Tailscale) as private at all - printed below, not
+    asserted on, because the point is that stdlib behavior cannot be relied on here, in
+    EITHER direction, on any given interpreter. `_is_never_public_identifier`'s own explicit-
+    list check is what this module actually runs, and that check is asserted (interpreter-
+    independent, per its own definition - no stdlib property involved)."""
+    print("\n- C6: is_private, the alternative NOT used, on this interpreter -")
+    pr = _import_fresh()
+    for word in ("100.64.1.1", "100.101.102.103"):
+        stdlib_says_private = ipaddress.ip_address(word).is_private
+        print(f"    ipaddress.ip_address({word!r}).is_private == {stdlib_says_private} on "
+             f"{sys.version.split()[0]} (informational only, not asserted on)")
+        check(f"{word!r}: this module's OWN explicit-list check flags it regardless "
+             "of what stdlib .is_private says on this interpreter",
+             pr._is_never_public_identifier(word), word)
+
+
 def test_n_common_words_is_empty_and_the_guard_still_fires_if_grown_back() -> None:
     """C1b (2026-09-24, the coordinator's decision): `_COMMON_WORDS` is now EMPTY - a
     hand-curated "definitely ordinary" list kept getting partly re-contaminated by the next
@@ -871,6 +985,10 @@ def main() -> int:
                test_k_compound_corroborated_as_whole_not_by_parts,
                test_l_mutation_corroborating_by_parts_reddens_k_by_name,
                test_m_underscore_and_hyphen_unify_but_dot_does_not,
+               test_o_never_public_identifiers_reject_even_when_corroborated,
+               test_o2_public_examples_still_cross_when_corroborated,
+               test_o3_mutation_removing_never_public_check_reddens_by_name,
+               test_o4_is_private_would_have_missed_the_cgnat_range,
                test_n_common_words_is_empty_and_the_guard_still_fires_if_grown_back):
         fn()
     print(f"\nprinciple promote: {PASSED} passed, {FAILED} failed")

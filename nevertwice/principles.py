@@ -53,6 +53,7 @@ Standard library + the engine only - no third-party dependency.
 """
 from __future__ import annotations
 
+import ipaddress
 import json
 import re
 import sys
@@ -320,6 +321,52 @@ def _is_uncorroborated_private_word(tok: str, source_project: str, vocab_cache: 
     return True
 
 
+#: C6 (2026-09-24, the coordinator's amended decision): an EXPLICIT network list, checked with
+#: `ipaddress.ip_address(x) in ipaddress.ip_network(n)` - deliberately NOT `.is_private`/
+#: `.is_global`, whose semantics changed between CPython 3.12.4 and 3.13 (gh-113171) and this
+#: repo's support matrix is 3.10-3.14, so a stdlib property that answers differently per
+#: interpreter cannot be the gate. Two private-address RFCs plus IPv6 ULA - every one of these
+#: is near-certain to be reused, unrelated, by two different private networks, so seeing the
+#: SAME address in two projects' corpora is coincidence, not evidence of a shared public
+#: identity, however the ordinary corroboration rule would read it:
+#:   10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16   - RFC 1918 (classic private IPv4)
+#:   100.64.0.0/10                                - RFC 6598 (CGNAT; also Tailscale's own range)
+#:   fc00::/7                                      - RFC 4193 (IPv6 unique local addresses)
+#: Deliberately NOT on this list, so corroboration still lets them cross:
+#:   127.0.0.0/8 (loopback) and 169.254.0.0/16 (link-local) - everyone's own box or own segment,
+#:     not evidence of a SHARED private network the way an RFC1918 address is;
+#:   192.0.2.0/24, 198.51.100.0/24, 203.0.113.0/24 (RFC 5737 documentation ranges) - the
+#:     coordinator's decision: these are public EXAMPLE addresses (man pages, RFCs, tutorials),
+#:     not evidence of anything private, so two projects both using one is unremarkable, not
+#:     suspicious.
+_NEVER_PUBLIC_NETWORKS = tuple(ipaddress.ip_network(n) for n in (
+    "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "100.64.0.0/10", "fc00::/7",
+))
+#: Hostnames ending in an internal-only TLD/pseudo-TLD - never a public DNS name, whatever else
+#: corroborates it (RFC 6762 §, RFC 8375, and common ops convention for `.corp`/`.intra`).
+_NEVER_PUBLIC_HOST_SUFFIXES = (".internal", ".local", ".lan", ".corp", ".intra", ".home.arpa")
+
+
+def _is_never_public_identifier(norm: str) -> bool:
+    """True when `norm` (an already `_normalize_shaped_word`-normalized identifier) must be
+    treated as private REGARDLESS of how many projects' vocabularies it appears in - ordinary
+    corroboration (`seen_in >= TOKEN_PROVENANCE_MIN_PROJECTS`) proves "at least two projects
+    wrote this exact string", which is good evidence of a genuinely shared PUBLIC identity for
+    almost everything this layer sees (PostgreSQL, a consumer-group concept) - but not for an
+    RFC1918/CGNAT/ULA address or an internal-TLD hostname, which two UNRELATED private networks
+    are likely to reuse independently by pure convention (every home router is someone's
+    192.168.1.1). Called only on the shaped-word path (`_token_provenance`), only after the
+    ordinary corroboration check already ran - this is an override that can turn a PASS into a
+    FAIL, never the reverse."""
+    try:
+        addr = ipaddress.ip_address(norm)
+    except ValueError:
+        addr = None
+    if addr is not None:
+        return any(addr in net for net in _NEVER_PUBLIC_NETWORKS)
+    return norm.endswith(_NEVER_PUBLIC_HOST_SUFFIXES)
+
+
 def _token_provenance(sentence: str, source_project: str, cluster_projects: set,
                       vocab_cache: dict) -> tuple[bool, list]:
     """Two independent checks over `sentence`, each against `TOKEN_PROVENANCE_MIN_PROJECTS` of
@@ -365,7 +412,10 @@ def _token_provenance(sentence: str, source_project: str, cluster_projects: set,
                 vocab_cache[cache_key] = _project_shaped_word_vocabulary(proj)
             if norm in vocab_cache[cache_key]:
                 seen_in += 1
-        if seen_in < TOKEN_PROVENANCE_MIN_PROJECTS:
+        # C6 (2026-09-24): a never-public shape (RFC1918/CGNAT/ULA address, internal-TLD host)
+        # overrides an otherwise-passing corroboration count - two projects both writing the
+        # SAME private-range address is not evidence they share a public identity.
+        if seen_in < TOKEN_PROVENANCE_MIN_PROJECTS or _is_never_public_identifier(norm):
             offending.append(norm)
 
     for tok in _content_tokens(sentence):
