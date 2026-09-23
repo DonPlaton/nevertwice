@@ -86,8 +86,8 @@ project's history holds, where a linter has nothing to read - the model-written 
 about two and a half times what the linter catches, while the engine's no-model patterns catch
 exactly what the linter does. The lead is paid for on the same class it is earned on: the
 model-written arm raises a flag on about a fifth of the project-class calls that repeat nothing,
-where the linter raises none. Every rate here is withdrawn until the campaign that follows the
-part-4 review re-measures it. Quoting the arm's all-calls false-alarm rate beside a project-class recall
+where the linter raises none. Every rate here was re-measured on 2026-09-23 by the campaign that
+followed the part-4 review. Quoting the arm's all-calls false-alarm rate beside a project-class recall
 would be two denominators in one sentence, which is why the register carries `project_fpr`
 separately. See [`GUARD_BENCH.md`](GUARD_BENCH.md), where the gate this arm missed is printed:
 until this campaign neither guard arm had a project-class figure at all, because the stand and its

@@ -204,7 +204,7 @@ LoCoMo turns are short enough that the embedding-cap defect never touched them.
 <!-- /claims:locomo -->
 
 The exclusion was written around a reported 94% for plain BM25. The term-overlap floor here
-leads at R@5 - the figure is withdrawn until the post-review campaign - and the three methods order exactly as they do on LongMemEval, so on the
+leads at R@5 - re-measured on 2026-09-23 by the post-review campaign - and the three methods order exactly as they do on LongMemEval, so on the
 **retrieval** axis LoCoMo separates systems perfectly well. The 94% figure is about judge-scored
 **answer accuracy**, which measures the reader as much as the memory and which nothing in this
 repository measures. So the exclusion is narrowed rather than lifted: not a candidate as a

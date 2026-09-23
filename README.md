@@ -55,7 +55,7 @@ So the interventions are the product, and each one is token-budgeted:
 
 - **Guards** - a pattern distilled from a past mistake, checked against the edit before your agent writes
   it; one line fires on a match, at **zero context tokens until it does**. Measured ([GUARD_BENCH.md](research/GUARD_BENCH.md)):
-  a linter wins on generic repeats; on the project-specific ones only memory knows, guards catch about two and a half times as many, at a false alarm on a fifth of **that same class's** clean calls where a linter pays none - every rate withdrawn until the post-review campaign.
+  a linter wins on generic repeats; on the project-specific ones only memory knows, guards catch about two and a half times as many, at a false alarm on a fifth of **that same class's** clean calls where a linter pays none - re-measured on 2026-09-23 by the post-review campaign.
   Advisory until corroborated, self-retiring on false positives, always overridable: memory proposes, reality disposes.
 - **Anticipation** - predicts the failure the current plan is heading toward by resemblance to past
   ones, and surfaces *one* precise warning. Spend is proportional to risk, not paid per turn.
