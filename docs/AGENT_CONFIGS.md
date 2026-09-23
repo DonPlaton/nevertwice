@@ -26,7 +26,9 @@ python install.py
 That wires the hooks that capture sessions, inject the project card at session start, recall
 per prompt, and run the guard before an edit lands. It backs up `~/.claude/settings.json`
 first and is idempotent, so re-running it is safe. `python install.py --print` shows exactly
-what it would change and writes nothing.
+what it would change and writes nothing. Each hook runs a small shim at
+`~/.claude/nevertwice/hook_shim.py` rather than this checkout directly, so moving or deleting
+the checkout later turns memory off instead of blocking every tool call (see QUICKSTART §5).
 
 To add the MCP tools on top - useful when you want the agent to *call* memory explicitly
 rather than only receive it - put this in `.mcp.json` at the root of a project:

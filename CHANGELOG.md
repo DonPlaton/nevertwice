@@ -551,6 +551,26 @@ empty.
 
 ### Fixed
 
+- **A deleted or moved clone used to BLOCK the agent, not just turn memory off.** Every hook
+  command was `"<python>" "<clone>/nevertwice/memory_hook.py"`; delete the clone (or `pip
+  uninstall` it) while wired and `python <missing file>` exits 2 - CPython's own exit code for
+  a script that is not there - which Claude Code treats as a BLOCK from PreToolUse and
+  UserPromptSubmit: every edit, command and prompt refused, with no way left to ask the agent
+  to repair its own settings.json (third premortem, 2026-09-23). `install.py` now also writes
+  `~/.claude/nevertwice/hook_shim.py` - beside settings.json, never inside the clone being
+  wired - and points every hook at it with the clone's `memory_hook.py` as its one argument.
+  The shim hands the process to the real engine unchanged (same stdin/stdout/exit code,
+  `SystemExit` included) when it is there, and degrades to a message on stderr (and stdout for
+  `SessionStart`) plus **exit 0** when it is not - both DELETE and RENAME of the clone,
+  verified across all five wired events. A venv created inside the clone is never the wired
+  interpreter either (`hookwire.hook_python` rebases it to the venv's base interpreter, which
+  survives the clone's deletion). `nevertwice.hosts` gained schema 2: `STATES` adds `"dead"` -
+  a wired entry whose command names a file that is gone now reads as `dead`, with a detail
+  that says whether the specific failure blocks the agent (an old-style entry or a missing
+  shim script does; a shim whose engine went missing does not) - not silently `wired` forever,
+  which told the owner nothing was wrong. `nevertwice-hosts` prints `[dead]`.
+  `install.py --uninstall` now removes the shim along with the hook entries it always removed.
+  See `docs/CONFIG.md` (`NEVERTWICE_CLAUDE_SETTINGS`) and QUICKSTART.md §5.
 - **Two run-count sentences lagged the pooled Zep arm.** `docs/BENCHMARKS.md` said "the other arms are
   one run each" and `README.md` counted Zep/Graphiti among the arms kept as last measured and
   restamped, after that arm had been re-run twice on a flushed FalkorDB and pooled. Word claims

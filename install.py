@@ -41,13 +41,31 @@ except Exception:
 PKG = Path(__file__).resolve().parent / "nevertwice"
 HOOK = PKG / "memory_hook.py"
 MCP = PKG / "mcp_server.py"
+#: The interpreter THIS run is using - for the MCP snippet, the scheduled-task/cron wrappers
+#: and the startup banner, none of which are a wired hook command and none of which should be
+#: silently rebased (see HOOK_PYTHON below).
 PYTHON = sys.executable.replace("\\", "/")
-#: The same resolution `nevertwice.hosts.ClaudeCodeAdapter.settings_path()` uses. Two definitions
-#: of "which settings.json" is how a test pointed the uninstall at a temporary file while the
+
+#: `hookwire` is stdlib-only and has no sibling imports, precisely so this line can run before
+#: `nevertwice/hosts.py` - which itself imports the engine - exists to be imported. It is the
+#: ONE definition of "which settings.json", "which shim path" and "which command string" - two
+#: definitions of the first is how a test pointed the uninstall at a temporary file while the
 #: installer, reading only Path.home(), wrote five hooks into the owner's real settings.json
-#: (2026-09-23, restored from the installer's own backup). One definition now.
-SETTINGS = Path(os.environ.get("NEVERTWICE_CLAUDE_SETTINGS")
-                or Path.home() / ".claude" / "settings.json")
+#: (2026-09-23, restored from the installer's own backup).
+sys.path.insert(0, str(PKG))
+import hookwire  # noqa: E402
+
+SETTINGS = hookwire.settings_path()
+#: Beside settings.json, never inside the clone being wired - deleting the clone that installed
+#: the shim must not delete the shim along with it.
+SHIM = hookwire.shim_path(SETTINGS)
+#: The interpreter a wired HOOK command runs under. Ordinarily the same as `PYTHON`; rebased
+#: only when that interpreter itself lives inside THIS clone (a venv created in the checkout),
+#: since such an interpreter would vanish along with the clone - defeating the whole point of a
+#: shim meant to survive that. `mcp_snippet()` deliberately keeps using `PYTHON`: the MCP
+#: server already lives inside the clone regardless of which interpreter is named, and a
+#: rebased interpreter may be missing packages this venv installed.
+HOOK_PYTHON = hookwire.hook_python(sys.executable, PKG.parent).replace("\\", "/")
 # event -> matcher. "" matches all; PreToolUse is scoped to code-writing tools so the guard
 # hook (active memory, axis A) only spawns before an edit/command, never on a Read/Grep.
 EVENTS = {
@@ -61,7 +79,7 @@ DRY = "--print" in sys.argv
 
 
 def _cmd() -> str:
-    return f'"{PYTHON}" "{str(HOOK).replace(chr(92), "/")}"'
+    return hookwire.hook_command(HOOK_PYTHON, SHIM, HOOK)
 
 
 def store_dir() -> Path:
@@ -130,21 +148,45 @@ def ensure_store() -> None:
 
 
 def _our_hook_entries(groups: list):
-    """Every hook dict in these groups that points at OUR packaged hook - matched by the
-    `nevertwice/memory_hook.py` path suffix, not the bare filename. A filename-substring
-    match would also claim (and silently repoint) a foreign or pre-rename script that
-    happens to be called memory_hook.py, like a hand-rolled ~/.claude/scripts copy
-    (critic 2026-07). Old installs of THIS package always contain the package dir in
-    the path, so re-installs still adopt their stale entries."""
+    """Every hook dict in these groups that points at one of OUR packaged scripts - matched by
+    path suffix (`hookwire.is_ours`), not the bare filename. A filename-substring match would
+    also claim (and silently repoint) a foreign or pre-rename script that happens to be called
+    memory_hook.py, like a hand-rolled ~/.claude/scripts copy (critic 2026-07). Old installs of
+    THIS package always contain the package dir in the path, so re-installs still adopt their
+    stale entries - including pre-shim installs, which this repoints onto the shim."""
     for g in groups or []:
         for h in g.get("hooks", []):
-            cmd = (h.get("command") or "").replace("\\", "/").lower()
-            if "nevertwice/memory_hook.py" in cmd:
+            if hookwire.is_ours(h):
                 yield h
+
+
+def _warn_if_shim_inside_clone() -> None:
+    """The shim is only load-bearing outside the clone it was written by; if
+    NEVERTWICE_CLAUDE_SETTINGS happens to point somewhere inside this checkout, deleting the
+    checkout would delete the shim right along with the engine it exists to survive losing."""
+    clone_root = PKG.parent.resolve()
+    try:
+        shim_resolved = SHIM.resolve()
+    except OSError:
+        return
+    if shim_resolved == clone_root or clone_root in shim_resolved.parents:
+        print(f"  ! warning: the shim at {SHIM} resolves INSIDE this clone ({clone_root}) - "
+              "deleting the clone would delete the shim too, defeating its purpose. Check "
+              "NEVERTWICE_CLAUDE_SETTINGS.")
 
 
 def wire_hooks() -> None:
     print(f"[hooks] {SETTINGS}")
+    try:
+        _cmd()
+    except ValueError as exc:
+        # The command Claude Code will run is a `python -c "<payload>"` string wrapped in one
+        # double-quoted shell token; a path containing a quote/backtick/`$` cannot be made safe
+        # inside it (`hookwire._c_safe`). Refuse BEFORE writing the shim or touching
+        # settings.json - a hook command that is safe to read and unsafe to run is worse than
+        # no hook at all.
+        print(f"  ! refusing to wire: {exc}")
+        return
     if not SETTINGS.parent.exists():
         # ~/.claude is absent: this machine has no Claude Code. Wiring still creates it and
         # is harmless, but say so plainly so a Cursor/Codex/other user isn't misled into
@@ -152,6 +194,12 @@ def wire_hooks() -> None:
         print("  note: ~/.claude not found - Claude Code doesn't look installed here.")
         print("        For Cursor / Cline / Codex / Zed, wire the MCP server or run the watch")
         print("        daemon instead - see docs/INTEGRATIONS.md. (Wiring the hooks anyway is safe.)")
+    if HOOK_PYTHON != PYTHON:
+        print(f"  note: wiring the base interpreter {HOOK_PYTHON} - this run's own "
+              f"({PYTHON}) lives inside the clone and would vanish along with it")
+    _warn_if_shim_inside_clone()
+    verb = hookwire.write_shim(SETTINGS, (PKG / "hook_shim.py").read_bytes(), dry_run=DRY)
+    print(f"[shim] {SHIM} ({verb}, v{hookwire.SHIM_VERSION})")
     settings = {}
     if SETTINGS.exists():
         try:
@@ -424,6 +472,12 @@ def uninstall() -> int:
             print(f"    {entry}")
     else:
         print(f"  {result.get('detail') or 'no nevertwice hook entries found'}")
+    # The adapter reports the shim's own removal through `changed` (never through `removed`,
+    # which is hook ENTRIES) - print it separately so it is not read as a sixth hook entry.
+    shim_changed = [c for c in (result.get("changed") or [])
+                    if c.replace("\\", "/").lower().endswith("nevertwice/hook_shim.py")]
+    if shim_changed:
+        print(f"  {'would remove' if DRY else 'removed'} the shim: {shim_changed[0]}")
     if not DRY and removed:
         print("\nDone. The package and the checkout can now be removed safely; "
               "restart your agent so the hook list reloads.")

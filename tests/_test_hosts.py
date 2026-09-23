@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -44,9 +45,11 @@ FIXTURES = HERE / "fixtures" / "hosts"
 sys.path.insert(0, str(HERE))
 
 import _env_guard  # noqa: F401, E402 - must run before any project import
+import _wall  # noqa: E402 - the HOME/settings wall; not a project module, no ordering rule on it
 
 sys.path.insert(0, str(ROOT / "nevertwice"))
 import hosts                    # noqa: E402
+import hookwire                 # noqa: E402
 import schemas                  # noqa: E402
 
 PASSED = 0
@@ -379,7 +382,16 @@ def test_claude_code_install_status_and_reversible_uninstall() -> None:
                   adapter.install_status()["state"] == "not_wired",
                   str(adapter.install_status()))
 
-            mine = {"type": "command", "command": "python .../nevertwice/memory_hook.py"}
+            # A REAL file: since dead_reason() (schema 2) checks existence, a wired entry whose
+            # script is not on disk now reads as `dead`, not `wired` - this fixture is about
+            # "wired", so `mine` has to point at something that is actually there. A synthetic
+            # `.../nevertwice/memory_hook.py` (the pre-schema-2 shape of this fixture) used to
+            # read as wired purely by substring match; it now reads `dead`, which is its own
+            # property, covered separately below.
+            engine = Path(tmp) / "clone" / "nevertwice" / "memory_hook.py"
+            engine.parent.mkdir(parents=True)
+            engine.write_text("x = 1\n", encoding="utf-8")
+            mine = {"type": "command", "command": f'python "{engine}"'}
             theirs = {"type": "command", "command": "python /home/me/my_own_hook.py"}
             # A hand-rolled flat copy - the shape this project's own author runs. It must be
             # detected, reported, and never touched.
@@ -443,6 +455,162 @@ def test_claude_code_install_status_and_reversible_uninstall() -> None:
         finally:
             os.environ.pop("NEVERTWICE_CLAUDE_SETTINGS", None)
             os.environ.pop("NEVERTWICE_CLAUDE_PROJECTS", None)
+
+
+def test_a_hook_whose_files_are_gone_reads_as_dead() -> None:
+    """Schema 2: a wired entry whose command names a file that is not there any more reads as
+    `dead`, not `wired` - and the detail says whether that blocks the agent, which depends on
+    WHICH file is missing (`hookwire.dead_reason`'s whole reason for existing).
+    """
+    print("\n- a wired entry whose files are gone reads as dead, not wired -")
+    with tempfile.TemporaryDirectory() as td:
+        tmp = Path(td)
+        with _wall.walled_in_process(tmp):
+            settings = hookwire.settings_path()
+            adapter = hosts.get("claude-code")
+
+            # (a) an old-style entry (no shim) whose script is gone: dead, and BLOCKS.
+            gone_engine = tmp / "gone_clone" / "nevertwice" / "memory_hook.py"
+            settings.write_text(json.dumps({"hooks": {
+                "PreToolUse": [{"hooks": [{"type": "command",
+                                          "command": f'python "{gone_engine}"'}]}]}}),
+                                encoding="utf-8")
+            status = adapter.install_status()
+            check("(a) an old-style entry with no engine reads as dead",
+                  status["state"] == "dead", str(status))
+            check("(a) and the detail says it BLOCKS", "BLOCKS" in status["detail"],
+                  status["detail"])
+
+            # (b) a shim entry: live shim + missing ENGINE -> dead, does NOT block.
+            live_shim = tmp / "shimhome" / "nevertwice" / "hook_shim.py"
+            live_shim.parent.mkdir(parents=True)
+            live_shim.write_text("x = 1\n", encoding="utf-8")
+            settings.write_text(json.dumps({"hooks": {"SessionStart": [{"hooks": [
+                {"type": "command",
+                 "command": hookwire.hook_command("python", live_shim, gone_engine)}]}]}}),
+                                encoding="utf-8")
+            status = adapter.install_status()
+            check("(b) a shim with a missing ENGINE reads as dead",
+                  status["state"] == "dead", str(status))
+            check("(b) and the detail says it does NOT block (exits 0)",
+                  "exit 0" in status["detail"] and "BLOCKS" not in status["detail"],
+                  status["detail"])
+
+            # (b, continued) now the shim ITSELF is also gone too: for the CURRENT -c form
+            # this still does NOT block - the -c payload's own `os.path.isfile(s)` guard is
+            # exactly what a later correction to this track added, so a hand-deleted
+            # hook_shim.py stops being the "last block path". A missing shim only blocks for
+            # a LEGACY 3-token entry (built by hand below - `hookwire.hook_command` no longer
+            # builds that shape), which has nothing catching the interpreter's own
+            # file-not-found exit.
+            live_shim.unlink()
+            status = adapter.install_status()
+            check("(b) a missing SHIM under the CURRENT -c form reads as dead but does NOT "
+                  "block (the -c wrapper degrades itself)",
+                  status["state"] == "dead" and "BLOCKS" not in status["detail"]
+                  and "exit 0" in status["detail"], str(status))
+
+            legacy_shim_cmd = " ".join(f'"{str(p).replace(chr(92), "/")}"'
+                                       for p in ("python", live_shim, gone_engine))
+            settings.write_text(json.dumps({"hooks": {"SessionStart": [{"hooks": [
+                {"type": "command", "command": legacy_shim_cmd}]}]}}), encoding="utf-8")
+            status = adapter.install_status()
+            check("(b) a missing SHIM under the LEGACY 3-token form reads as dead and DOES "
+                  "block (nothing catches the interpreter's own file-not-found exit)",
+                  status["state"] == "dead" and "BLOCKS" in status["detail"], str(status))
+
+            # (c) a missing interpreter: dead, does not block.
+            live_shim.parent.mkdir(parents=True, exist_ok=True)
+            live_shim.write_text("x = 1\n", encoding="utf-8")
+            real_engine = tmp / "realclone" / "nevertwice" / "memory_hook.py"
+            real_engine.parent.mkdir(parents=True)
+            real_engine.write_text("x = 1\n", encoding="utf-8")
+            settings.write_text(json.dumps({"hooks": {"SessionStart": [{"hooks": [
+                {"type": "command", "command": hookwire.hook_command(
+                    tmp / "gone" / "python", live_shim, real_engine)}]}]}}),
+                                encoding="utf-8")
+            status = adapter.install_status()
+            check("(c) a missing interpreter reads as dead",
+                  status["state"] == "dead", str(status))
+            check("(c) and names 'interpreter missing'",
+                  "interpreter missing" in status["detail"], status["detail"])
+
+            # (d) one live entry beside one dead one: still dead overall - a single blocked
+            # event is still a block, whatever the other four are doing.
+            settings.write_text(json.dumps({"hooks": {
+                "SessionStart": [{"hooks": [{"type": "command",
+                                            "command": hookwire.hook_command(
+                                                "python", live_shim, real_engine)}]}],
+                "PreToolUse": [{"hooks": [{"type": "command",
+                                          "command": f'python "{gone_engine}"'}]}],
+            }}), encoding="utf-8")
+            status = adapter.install_status()
+            check("(d) one live + one dead hook still reads as dead overall",
+                  status["state"] == "dead", str(status))
+
+            # (e) the report and the schema agree dead is a real state.
+            report = hosts.status_report()
+            check("(e) 'dead' is one of the declared states", "dead" in hosts.STATES)
+            check("(e) the report's counts include 'dead'", "dead" in report["counts"],
+                  str(report["counts"]))
+            check("(e) schema_version is 2", hosts.SCHEMA_VERSION == 2)
+
+            # (f) the CLI marks it [dead], not [wired].
+            env = _wall.walled(tmp)
+            r = subprocess.run([sys.executable, "-m", "nevertwice.hosts"], cwd=str(ROOT),
+                               env=env, capture_output=True, text=True, timeout=60)
+            check("(f) `python -m nevertwice.hosts` exits 0", r.returncode == 0,
+                  f"exit {r.returncode}: {r.stderr[-300:]}")
+            check("(f) it prints [dead], not [wired], for claude-code",
+                  "[dead]" in r.stdout and "[wired]" not in r.stdout,
+                  r.stdout)
+
+
+def test_uninstall_also_removes_the_shim() -> None:
+    print("\n- uninstall undoes the shim too, and only a shim that is really ours -")
+    with tempfile.TemporaryDirectory() as td:
+        tmp = Path(td)
+        with _wall.walled_in_process(tmp):
+            settings = hookwire.settings_path()
+            adapter = hosts.get("claude-code")
+            engine = tmp / "clone" / "nevertwice" / "memory_hook.py"
+            engine.parent.mkdir(parents=True)
+            engine.write_text("x = 1\n", encoding="utf-8")
+
+            verb = hookwire.write_shim(settings, (ROOT / "nevertwice" / "hook_shim.py")
+                                       .read_bytes(), dry_run=False)
+            check("the shim template installs clean", verb == "written", verb)
+            shim = hookwire.shim_path(settings)
+            settings.write_text(json.dumps({"hooks": {"SessionStart": [{"hooks": [
+                {"type": "command",
+                 "command": hookwire.hook_command("python", shim, engine)}]}]}}),
+                                encoding="utf-8")
+
+            preview = adapter.uninstall(dry_run=True)
+            check("dry-run leaves the shim on disk", shim.is_file())
+            check("...but names it in what it would remove",
+                  any(str(shim) in c for c in preview["changed"]), str(preview["changed"]))
+
+            done = adapter.uninstall(dry_run=False)
+            check("a real uninstall removes the hook entry",
+                  done["ok"] and len(done["removed"]) == 1, str(done))
+            check("...and removes the shim too", not shim.is_file())
+            check("...and reports it in 'changed'",
+                  any(str(shim) in c for c in done["changed"]), str(done["changed"]))
+
+            # A file at the shim's path WITHOUT the marker is not ours to delete, whoever put
+            # it there and however it got there - `remove_shim`'s own contract, exercised here
+            # through the adapter rather than directly against `hookwire`.
+            shim.parent.mkdir(parents=True, exist_ok=True)
+            shim.write_text("not a nevertwice shim\n", encoding="utf-8")
+            settings.write_text(json.dumps({"hooks": {"SessionStart": [{"hooks": [
+                {"type": "command",
+                 "command": hookwire.hook_command("python", shim, engine)}]}]}}),
+                                encoding="utf-8")
+            done2 = adapter.uninstall(dry_run=False)
+            check("a marker-less file at the shim path survives uninstall",
+                  shim.is_file() and shim.read_text(encoding="utf-8") == "not a nevertwice shim\n",
+                  str(done2))
 
 
 def test_claude_code_is_not_swept_as_well_as_hooked() -> None:
@@ -574,8 +742,7 @@ def test_install_py_uninstall_is_reachable_and_takes_only_ours() -> None:
         #: and read only Path.home() - wrote five hooks into the owner's real settings.json
         #: (2026-09-23, restored from the installer's backup). A test must be safe against the
         #: code it tests being broken, because that is exactly when it runs against it.
-        env = dict(os.environ, NEVERTWICE_CLAUDE_SETTINGS=str(settings),
-                   HOME=str(tmp), USERPROFILE=str(tmp))
+        env = _wall.walled(tmp)          # walled() names settings.json the same way: tmp/settings.json
         before = settings.read_text(encoding="utf-8")
 
         typo = subprocess.run([sys.executable, str(root / "install.py"), "--unistall"],
@@ -617,6 +784,48 @@ def test_install_py_uninstall_is_reachable_and_takes_only_ours() -> None:
               and not (home / ".claude").exists(),
               (plan.stdout + plan.stderr)[-300:])
 
+    print("\n- `--uninstall` still finds its own entries after the CLONE ITSELF has moved -")
+    with tempfile.TemporaryDirectory() as tmp2:
+        moved_home = Path(tmp2) / "home"
+        moved_home.mkdir()
+        env2 = _wall.walled(moved_home)
+        settings2 = Path(env2["NEVERTWICE_CLAUDE_SETTINGS"])
+
+        clone_a = Path(tmp2) / "clone_a"
+        shutil.copytree(root / "nevertwice", clone_a / "nevertwice",
+                        ignore=shutil.ignore_patterns("__pycache__"))
+        shutil.copy2(root / "install.py", clone_a / "install.py")
+        clone_b = Path(tmp2) / "clone_b"
+        os.rename(clone_a, clone_b)                  # the clone moved AFTER it was installed
+
+        old_style = {"type": "command", "command": "python D:/gone/nevertwice/memory_hook.py"}
+        decoy_shim = {"type": "command", "command": hookwire.hook_command(
+            "python", Path(tmp2) / "decoy" / "nevertwice" / "hook_shim.py",
+            Path(tmp2) / "decoy" / "nevertwice" / "memory_hook.py")}
+        theirs2 = {"type": "command", "command": "python /home/me/my_own_hook.py"}
+        settings2.write_text(json.dumps({"hooks": {
+            "PreToolUse": [{"hooks": [old_style, theirs2]}],
+            "UserPromptSubmit": [{"hooks": [decoy_shim]}]}}), encoding="utf-8")
+
+        # A REAL, marked shim at the settings-relative path (independent of what any entry's
+        # command names) - uninstall has to find and remove THIS one too.
+        real_shim = hookwire.shim_path(settings2)
+        real_shim.parent.mkdir(parents=True, exist_ok=True)
+        real_shim.write_bytes((root / "nevertwice" / "hook_shim.py").read_bytes())
+
+        moved = subprocess.run([sys.executable, str(clone_b / "install.py"), "--uninstall"],
+                               capture_output=True, text=True, env=env2, timeout=120)
+        data2 = json.loads(settings2.read_text(encoding="utf-8"))
+        commands2 = [h.get("command", "") for groups in data2.get("hooks", {}).values()
+                    for g in groups for h in g.get("hooks", [])]
+        check("`--uninstall` from the MOVED clone exits 0", moved.returncode == 0,
+              (moved.stdout + moved.stderr)[-300:])
+        check("no command is left pointing at nevertwice, moved or not - neither entry needed "
+              "its OWN file to exist to be recognised as ours",
+              not any("nevertwice" in c for c in commands2), str(commands2))
+        check("the user's own hook stays", commands2 == [theirs2["command"]], str(commands2))
+        check("the real shim at the settings-relative path is gone too", not real_shim.is_file())
+
 
 def test_zz_every_check_passed() -> None:
     """Bare pytest must reach the same verdict as this suite's exit code.
@@ -626,6 +835,8 @@ def test_zz_every_check_passed() -> None:
     Enforced for every counting suite by `tests/_test_the_harness_agrees_with_itself.py`.
     """
     assert FAILED == 0, f"{FAILED} check(s) failed - see the FAIL lines above"
+    assert _wall.settings_unchanged(), (
+        "the real ~/.claude/settings.json changed during this suite - see _wall.py")
 
 
 def main() -> int:
@@ -639,6 +850,8 @@ def main() -> int:
                test_a_truncated_tail_does_not_lose_the_session,
                test_the_read_cap_is_the_bytes_it_is_named_for,
                test_claude_code_install_status_and_reversible_uninstall,
+               test_a_hook_whose_files_are_gone_reads_as_dead,
+               test_uninstall_also_removes_the_shim,
                test_claude_code_is_not_swept_as_well_as_hooked,
                test_cursor_explains_itself_instead_of_returning_nothing,
                test_the_status_report_covers_every_host,

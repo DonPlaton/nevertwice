@@ -184,6 +184,18 @@ After setting `NEVERTWICE_EMBED_QUANT`, rebuild the index once the same way.
 | `NEVERTWICE_TRUNCATE_HEAD_CHARS` | n/a | Absolute head-char override for `truncate_smart` (wins over the fraction). |
 | `NEVERTWICE_ENV_FILE` | n/a | Custom `.env` location (otherwise package/repo-root only). |
 
+## Claude Code hook wiring (`install.py` / `nevertwice-hosts`)
+
+Not for tuning what Nevertwice remembers - for pointing `install.py` and the `claude-code`
+host adapter at a settings.json that is not the real one. Both read them the same way
+(`hookwire.settings_path()`), so a test harness or a portable-config setup can move both
+`install.py --uninstall` and `nevertwice-hosts`'s wired/dead check together.
+
+| Variable | Default | Notes |
+|---|---|---|
+| `NEVERTWICE_CLAUDE_SETTINGS` | `~/.claude/settings.json` | Where the hook entries AND the shim (`<its parent>/nevertwice/hook_shim.py`) live. Moving this moves both. |
+| `NEVERTWICE_CLAUDE_PROJECTS` | `~/.claude/projects` | Where the `claude-code` host adapter looks for session transcripts (`CLAUDE_PROJECTS_ROOT` is the legacy name; `NEVERTWICE_PROJECTS_ROOT` above is the separate, engine-wide sweep root). |
+
 ## Graph (`graph.json` for code navigation)
 
 | Variable | Default | Notes |
