@@ -20,6 +20,7 @@ in this tree, and this module adds no new dependency to it.
 """
 from __future__ import annotations
 
+import json
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -30,6 +31,54 @@ ROOT = Path(__file__).resolve().parent.parent
 #: outside both (docs, .loop/, tests/) does not make a MEASUREMENT non-reproducible from its
 #: commit, so it is not asked about here.
 WATCHED_DIRS = ("nevertwice/", "research/")
+#: C4b (2026-09-23, the auditor's finding on 7f40807): a campaign writes its OWN artifact
+#: outputs under research/ as it runs - `is_dirty()`'s plain `git diff --quiet` over
+#: WATCHED_DIRS could not tell "the code changed" from "an earlier stand in THIS campaign
+#: already wrote its own output file here" - with only research/results/guards_pack.json
+#: touched, it returned True, and from the second stand of a campaign on, every artifact would
+#: be stamped dirty on otherwise-clean code. These are OUTPUTS, not source that changes what a
+#: later run would measure - the same set frozen against measurement (not against writing)
+#: elsewhere in this tree.
+_EXCLUDED_DIR_PREFIXES = ("research/results/",)
+_EXCLUDED_TOP_LEVEL_SUFFIXES = (".svg", ".png")   # research/*.svg, research/*.png - direct
+                                                   # children of research/ only, not recursive
+
+
+#: K5 (2026-09-24, the auditor's finding on 0328eab): a `raw` path is excluded only when it
+#: is a DATA file - a future claim's `raw` pointing at a `.py` (a generator script committed as
+#: its own "raw" for some other reason) must never let a source-file CHANGE hide behind this
+#: exclusion. `raw` paths in this manifest are always result data, never source, but the check
+#: does not trust that by convention alone.
+_RAW_DATA_SUFFIXES = (".json", ".jsonl")
+
+
+def _excluded_raw_paths() -> frozenset[str]:
+    """Every claim's own `raw` path in research/evidence_manifest.json, restricted to `.json`/
+    `.jsonl` data files (`_RAW_DATA_SUFFIXES`) - the committed result file a claim's number was
+    read from, which is itself a campaign OUTPUT, not source. Failing to read the manifest
+    (missing, unparsable) excludes nothing, the conservative direction: an empty exclusion set
+    can only make `is_dirty` MORE likely to (correctly) report dirty, never silently hide a real
+    change."""
+    try:
+        manifest = json.loads((ROOT / "research" / "evidence_manifest.json")
+                              .read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return frozenset()
+    return frozenset(c["raw"] for c in manifest.get("claims", [])
+                     if c.get("raw") and str(c["raw"]).endswith(_RAW_DATA_SUFFIXES))
+
+
+def _is_output_path(rel_path: str, excluded_raw: frozenset[str]) -> bool:
+    """True when `rel_path` (git's own `/`-separated relative path) is a campaign OUTPUT this
+    module excludes from dirtiness, not source."""
+    if rel_path.startswith(_EXCLUDED_DIR_PREFIXES):
+        return True
+    if rel_path in excluded_raw:
+        return True
+    if rel_path.startswith("research/") and "/" not in rel_path[len("research/"):]:
+        if rel_path.endswith(_EXCLUDED_TOP_LEVEL_SUFFIXES):
+            return True
+    return False
 
 
 def git_commit() -> str:
@@ -46,18 +95,32 @@ def git_commit() -> str:
 
 
 def is_dirty(paths: tuple[str, ...] = WATCHED_DIRS) -> bool:
-    """True iff any TRACKED file under `paths` differs from `HEAD` - staged or not. An untracked
+    """True iff any TRACKED file under `paths` differs from `HEAD` - staged or not - EXCLUDING
+    campaign OUTPUTS (research/results/, a research/*.svg or *.png figure, every claim's own
+    `raw` path in research/evidence_manifest.json - see `_is_output_path`, C4b). An untracked
     new file is deliberately invisible here: `git diff` never sees one, and a stand's own scratch
     output living beside its source (a `*_cache.json`, a `.tmp`) must not read as "dirty" for
     every run that ever writes one. A git failure (no repository, no `git` on PATH) reads as
     dirty: an unprovable "clean" is not a clean, and this is the conservative default the
-    freshness checks elsewhere in this tree already use."""
+    freshness checks elsewhere in this tree already use.
+
+    Lists the changed files (`git diff --name-only`) rather than asking `--quiet` for a single
+    yes/no, specifically so each one can be checked against the output exclusion before deciding
+    - a plain `--quiet` cannot distinguish "only an output changed" from "source changed too"."""
     try:
-        res = subprocess.run(["git", "diff", "--quiet", "HEAD", "--", *paths],
-                             cwd=str(ROOT), timeout=30, capture_output=True)
-        return res.returncode != 0
+        res = subprocess.run(["git", "diff", "--name-only", "HEAD", "--", *paths],
+                             cwd=str(ROOT), timeout=30, capture_output=True, text=True)
+        # `--name-only` (unlike `--quiet`) does not use its exit code to say "a diff exists" -
+        # it prints the (possibly empty) list and exits 0 on success regardless of content, so
+        # any NON-zero exit here is a genuine error (bad revision, not a repository), not "no
+        # diff" - read as dirty either way, the same conservative default as a raised exception.
+        if res.returncode != 0:
+            return True
     except (OSError, ValueError):
         return True
+    changed = [line.strip() for line in res.stdout.splitlines() if line.strip()]
+    excluded_raw = _excluded_raw_paths()
+    return any(not _is_output_path(f, excluded_raw) for f in changed)
 
 
 def measured_at() -> dict:

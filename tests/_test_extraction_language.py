@@ -68,7 +68,9 @@ print("\n- the prompt actually carries it -")
 filled = m.EXTRACTION_PROMPT.format(
     transcript=EN * 4, project_hint="demo", tag_vocab="a, b",
     existing_patterns="(none)", existing_mistakes="(none)", existing_decisions="(none)",
-    brain_block="", language_rule=m.language_rule(EN * 4))
+    brain_block="", language_rule=m.language_rule(EN * 4),
+    principle_rubric=m._principle_prompt_rubric(),   # A1 (Q5)
+    principle_schema=m._principle_schema_field())    # A1 (Q5)
 check("the resolved rule reaches the prompt", "in ENGLISH" in filled)
 check("the conditional wording is gone", "dominant language of the SESSION content (a"
       not in filled)

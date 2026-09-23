@@ -1,0 +1,1768 @@
+{
+ "_schema": "Q5 G5.1 identifier-bound population (.loop/PREREG-Q5-IDENTIFIER-BOUND-2026-09-23.md): 50 cases, one planted identifier class per case, the identifier IS the lesson - a faithful extractor cannot state the rule without it, so the `all` arm's PRODUCTION channel (title/description) has something real to carry. project_a and project_c each get their OWN spelling of a same-class identifier. project_b's prompt is the same situation without the identifier. Kept beside, not replacing, the original 100-case (de-identified) population.",
+ "identifier_classes": [
+  "ip",
+  "host",
+  "path",
+  "entity"
+ ],
+ "class_counts": {
+  "ip": 13,
+  "host": 13,
+  "path": 12,
+  "entity": 12
+ },
+ "n_cases": 50,
+ "cases": [
+  {
+   "id": "cpv1-ib-001",
+   "topic": "identifier-bound-ip",
+   "identifier_class": "ip",
+   "project_a": {
+    "project": "cpv1_ib_001_alpha",
+    "title": "identifier-bound ip - cpv1-ib-001 - a",
+    "description": "Lesson: the replica at 172.16.11.1 lags behind after a deploy; read from the primary until it catches up.",
+    "principle": "Lesson: the replica at 172.16.11.1 lags behind after a deploy; read from the primary until it catches up.",
+    "planted": {
+     "ip": "172.16.11.1"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  [2026-09-24 09:02:11] read latency spike traced to replica 172.16.11.1\nAssistant: that replica is still catching up on WAL replay from the last deploy.\nAssistant: found it. the replica at 172.16.11.1 lags behind after a deploy; read from the primary until it catches up\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_001_gamma",
+    "title": "identifier-bound ip - cpv1-ib-001 - c",
+    "description": "Lesson: the replica at 172.16.22.1 lags behind after a deploy; read from the primary until it catches up.",
+    "principle": "Lesson: the replica at 172.16.22.1 lags behind after a deploy; read from the primary until it catches up.",
+    "planted": {
+     "ip": "172.16.22.1"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  [2026-09-24 09:02:11] read latency spike traced to replica 172.16.22.1\nAssistant: that replica is still catching up on WAL replay from the last deploy.\nAssistant: found it. the replica at 172.16.22.1 lags behind after a deploy; read from the primary until it catches up\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_001_beta",
+    "prompt": "One of our replicas seems to be lagging right after a deploy - should I read from it or go straight to primary?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_001_delta",
+    "title": "testing-mocking - unrelated",
+    "description": "Don't mock the database in an integration test; run it against a real instance so a migration bug actually surfaces.",
+    "principle": "Don't mock the database in an integration test; run it against a real instance so a migration bug actually surfaces."
+   }
+  },
+  {
+   "id": "cpv1-ib-002",
+   "topic": "identifier-bound-ip",
+   "identifier_class": "ip",
+   "project_a": {
+    "project": "cpv1_ib_002_alpha",
+    "title": "identifier-bound ip - cpv1-ib-002 - a",
+    "description": "Lesson: the replica at 172.16.11.2 lags behind after a deploy; read from the primary until it catches up.",
+    "principle": "Lesson: the replica at 172.16.11.2 lags behind after a deploy; read from the primary until it catches up.",
+    "planted": {
+     "ip": "172.16.11.2"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  [2026-09-24 09:02:11] read latency spike traced to replica 172.16.11.2\nAssistant: that replica is still catching up on WAL replay from the last deploy.\nAssistant: found it. the replica at 172.16.11.2 lags behind after a deploy; read from the primary until it catches up\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_002_gamma",
+    "title": "identifier-bound ip - cpv1-ib-002 - c",
+    "description": "Lesson: the replica at 172.16.22.2 lags behind after a deploy; read from the primary until it catches up.",
+    "principle": "Lesson: the replica at 172.16.22.2 lags behind after a deploy; read from the primary until it catches up.",
+    "planted": {
+     "ip": "172.16.22.2"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  [2026-09-24 09:02:11] read latency spike traced to replica 172.16.22.2\nAssistant: that replica is still catching up on WAL replay from the last deploy.\nAssistant: found it. the replica at 172.16.22.2 lags behind after a deploy; read from the primary until it catches up\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_002_beta",
+    "prompt": "One of our replicas seems to be lagging right after a deploy - should I read from it or go straight to primary?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_002_delta",
+    "title": "testing-fixtures - unrelated",
+    "description": "Keep test fixtures independent so one test's setup can never leak into another test's assertions.",
+    "principle": "Keep test fixtures independent so one test's setup can never leak into another test's assertions."
+   }
+  },
+  {
+   "id": "cpv1-ib-003",
+   "topic": "identifier-bound-ip",
+   "identifier_class": "ip",
+   "project_a": {
+    "project": "cpv1_ib_003_alpha",
+    "title": "identifier-bound ip - cpv1-ib-003 - a",
+    "description": "Lesson: the replica at 172.16.11.3 lags behind after a deploy; read from the primary until it catches up.",
+    "principle": "Lesson: the replica at 172.16.11.3 lags behind after a deploy; read from the primary until it catches up.",
+    "planted": {
+     "ip": "172.16.11.3"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  [2026-09-24 09:02:11] read latency spike traced to replica 172.16.11.3\nAssistant: that replica is still catching up on WAL replay from the last deploy.\nAssistant: found it. the replica at 172.16.11.3 lags behind after a deploy; read from the primary until it catches up\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_003_gamma",
+    "title": "identifier-bound ip - cpv1-ib-003 - c",
+    "description": "Lesson: the replica at 172.16.22.3 lags behind after a deploy; read from the primary until it catches up.",
+    "principle": "Lesson: the replica at 172.16.22.3 lags behind after a deploy; read from the primary until it catches up.",
+    "planted": {
+     "ip": "172.16.22.3"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  [2026-09-24 09:02:11] read latency spike traced to replica 172.16.22.3\nAssistant: that replica is still catching up on WAL replay from the last deploy.\nAssistant: found it. the replica at 172.16.22.3 lags behind after a deploy; read from the primary until it catches up\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_003_beta",
+    "prompt": "One of our replicas seems to be lagging right after a deploy - should I read from it or go straight to primary?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_003_delta",
+    "title": "retries-transient - unrelated",
+    "description": "Retry only on transient or server errors, never on a client error that will fail identically every time.",
+    "principle": "Retry only on transient or server errors, never on a client error that will fail identically every time."
+   }
+  },
+  {
+   "id": "cpv1-ib-004",
+   "topic": "identifier-bound-ip",
+   "identifier_class": "ip",
+   "project_a": {
+    "project": "cpv1_ib_004_alpha",
+    "title": "identifier-bound ip - cpv1-ib-004 - a",
+    "description": "Lesson: the replica at 172.16.11.4 lags behind after a deploy; read from the primary until it catches up.",
+    "principle": "Lesson: the replica at 172.16.11.4 lags behind after a deploy; read from the primary until it catches up.",
+    "planted": {
+     "ip": "172.16.11.4"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  [2026-09-24 09:02:11] read latency spike traced to replica 172.16.11.4\nAssistant: that replica is still catching up on WAL replay from the last deploy.\nAssistant: found it. the replica at 172.16.11.4 lags behind after a deploy; read from the primary until it catches up\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_004_gamma",
+    "title": "identifier-bound ip - cpv1-ib-004 - c",
+    "description": "Lesson: the replica at 172.16.22.4 lags behind after a deploy; read from the primary until it catches up.",
+    "principle": "Lesson: the replica at 172.16.22.4 lags behind after a deploy; read from the primary until it catches up.",
+    "planted": {
+     "ip": "172.16.22.4"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  [2026-09-24 09:02:11] read latency spike traced to replica 172.16.22.4\nAssistant: that replica is still catching up on WAL replay from the last deploy.\nAssistant: found it. the replica at 172.16.22.4 lags behind after a deploy; read from the primary until it catches up\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_004_beta",
+    "prompt": "One of our replicas seems to be lagging right after a deploy - should I read from it or go straight to primary?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_004_delta",
+    "title": "retries-backoff - unrelated",
+    "description": "Cap retry attempts with exponential backoff so a failing dependency cannot be hammered indefinitely.",
+    "principle": "Cap retry attempts with exponential backoff so a failing dependency cannot be hammered indefinitely."
+   }
+  },
+  {
+   "id": "cpv1-ib-005",
+   "topic": "identifier-bound-ip",
+   "identifier_class": "ip",
+   "project_a": {
+    "project": "cpv1_ib_005_alpha",
+    "title": "identifier-bound ip - cpv1-ib-005 - a",
+    "description": "Lesson: the replica at 172.16.11.5 lags behind after a deploy; read from the primary until it catches up.",
+    "principle": "Lesson: the replica at 172.16.11.5 lags behind after a deploy; read from the primary until it catches up.",
+    "planted": {
+     "ip": "172.16.11.5"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  [2026-09-24 09:02:11] read latency spike traced to replica 172.16.11.5\nAssistant: that replica is still catching up on WAL replay from the last deploy.\nAssistant: found it. the replica at 172.16.11.5 lags behind after a deploy; read from the primary until it catches up\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_005_gamma",
+    "title": "identifier-bound ip - cpv1-ib-005 - c",
+    "description": "Lesson: the replica at 172.16.22.5 lags behind after a deploy; read from the primary until it catches up.",
+    "principle": "Lesson: the replica at 172.16.22.5 lags behind after a deploy; read from the primary until it catches up.",
+    "planted": {
+     "ip": "172.16.22.5"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  [2026-09-24 09:02:11] read latency spike traced to replica 172.16.22.5\nAssistant: that replica is still catching up on WAL replay from the last deploy.\nAssistant: found it. the replica at 172.16.22.5 lags behind after a deploy; read from the primary until it catches up\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_005_beta",
+    "prompt": "One of our replicas seems to be lagging right after a deploy - should I read from it or go straight to primary?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_005_delta",
+    "title": "secrets-redact - unrelated",
+    "description": "Redact secrets before any text reaches persistent storage or a log line.",
+    "principle": "Redact secrets before any text reaches persistent storage or a log line."
+   }
+  },
+  {
+   "id": "cpv1-ib-006",
+   "topic": "identifier-bound-ip",
+   "identifier_class": "ip",
+   "project_a": {
+    "project": "cpv1_ib_006_alpha",
+    "title": "identifier-bound ip - cpv1-ib-006 - a",
+    "description": "Lesson: the replica at 172.16.11.6 lags behind after a deploy; read from the primary until it catches up.",
+    "principle": "Lesson: the replica at 172.16.11.6 lags behind after a deploy; read from the primary until it catches up.",
+    "planted": {
+     "ip": "172.16.11.6"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  [2026-09-24 09:02:11] read latency spike traced to replica 172.16.11.6\nAssistant: that replica is still catching up on WAL replay from the last deploy.\nAssistant: found it. the replica at 172.16.11.6 lags behind after a deploy; read from the primary until it catches up\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_006_gamma",
+    "title": "identifier-bound ip - cpv1-ib-006 - c",
+    "description": "Lesson: the replica at 172.16.22.6 lags behind after a deploy; read from the primary until it catches up.",
+    "principle": "Lesson: the replica at 172.16.22.6 lags behind after a deploy; read from the primary until it catches up.",
+    "planted": {
+     "ip": "172.16.22.6"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  [2026-09-24 09:02:11] read latency spike traced to replica 172.16.22.6\nAssistant: that replica is still catching up on WAL replay from the last deploy.\nAssistant: found it. the replica at 172.16.22.6 lags behind after a deploy; read from the primary until it catches up\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_006_beta",
+    "prompt": "One of our replicas seems to be lagging right after a deploy - should I read from it or go straight to primary?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_006_delta",
+    "title": "secrets-vcs - unrelated",
+    "description": "Never commit a credential to version control, even in a throwaway branch that will be deleted.",
+    "principle": "Never commit a credential to version control, even in a throwaway branch that will be deleted."
+   }
+  },
+  {
+   "id": "cpv1-ib-007",
+   "topic": "identifier-bound-ip",
+   "identifier_class": "ip",
+   "project_a": {
+    "project": "cpv1_ib_007_alpha",
+    "title": "identifier-bound ip - cpv1-ib-007 - a",
+    "description": "Lesson: the replica at 172.16.11.7 lags behind after a deploy; read from the primary until it catches up.",
+    "principle": "Lesson: the replica at 172.16.11.7 lags behind after a deploy; read from the primary until it catches up.",
+    "planted": {
+     "ip": "172.16.11.7"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  [2026-09-24 09:02:11] read latency spike traced to replica 172.16.11.7\nAssistant: that replica is still catching up on WAL replay from the last deploy.\nAssistant: found it. the replica at 172.16.11.7 lags behind after a deploy; read from the primary until it catches up\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_007_gamma",
+    "title": "identifier-bound ip - cpv1-ib-007 - c",
+    "description": "Lesson: the replica at 172.16.22.7 lags behind after a deploy; read from the primary until it catches up.",
+    "principle": "Lesson: the replica at 172.16.22.7 lags behind after a deploy; read from the primary until it catches up.",
+    "planted": {
+     "ip": "172.16.22.7"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  [2026-09-24 09:02:11] read latency spike traced to replica 172.16.22.7\nAssistant: that replica is still catching up on WAL replay from the last deploy.\nAssistant: found it. the replica at 172.16.22.7 lags behind after a deploy; read from the primary until it catches up\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_007_beta",
+    "prompt": "One of our replicas seems to be lagging right after a deploy - should I read from it or go straight to primary?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_007_delta",
+    "title": "caching-invalidate - unrelated",
+    "description": "Invalidate a cache entry the moment its source of truth changes, rather than relying on a time-based expiry alone.",
+    "principle": "Invalidate a cache entry the moment its source of truth changes, rather than relying on a time-based expiry alone."
+   }
+  },
+  {
+   "id": "cpv1-ib-008",
+   "topic": "identifier-bound-ip",
+   "identifier_class": "ip",
+   "project_a": {
+    "project": "cpv1_ib_008_alpha",
+    "title": "identifier-bound ip - cpv1-ib-008 - a",
+    "description": "Lesson: the replica at 172.16.11.8 lags behind after a deploy; read from the primary until it catches up.",
+    "principle": "Lesson: the replica at 172.16.11.8 lags behind after a deploy; read from the primary until it catches up.",
+    "planted": {
+     "ip": "172.16.11.8"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  [2026-09-24 09:02:11] read latency spike traced to replica 172.16.11.8\nAssistant: that replica is still catching up on WAL replay from the last deploy.\nAssistant: found it. the replica at 172.16.11.8 lags behind after a deploy; read from the primary until it catches up\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_008_gamma",
+    "title": "identifier-bound ip - cpv1-ib-008 - c",
+    "description": "Lesson: the replica at 172.16.22.8 lags behind after a deploy; read from the primary until it catches up.",
+    "principle": "Lesson: the replica at 172.16.22.8 lags behind after a deploy; read from the primary until it catches up.",
+    "planted": {
+     "ip": "172.16.22.8"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  [2026-09-24 09:02:11] read latency spike traced to replica 172.16.22.8\nAssistant: that replica is still catching up on WAL replay from the last deploy.\nAssistant: found it. the replica at 172.16.22.8 lags behind after a deploy; read from the primary until it catches up\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_008_beta",
+    "prompt": "One of our replicas seems to be lagging right after a deploy - should I read from it or go straight to primary?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_008_delta",
+    "title": "caching-key - unrelated",
+    "description": "Key a cache by every input that affects the result, or two different queries will silently share one answer.",
+    "principle": "Key a cache by every input that affects the result, or two different queries will silently share one answer."
+   }
+  },
+  {
+   "id": "cpv1-ib-009",
+   "topic": "identifier-bound-ip",
+   "identifier_class": "ip",
+   "project_a": {
+    "project": "cpv1_ib_009_alpha",
+    "title": "identifier-bound ip - cpv1-ib-009 - a",
+    "description": "Lesson: the replica at 172.16.11.9 lags behind after a deploy; read from the primary until it catches up.",
+    "principle": "Lesson: the replica at 172.16.11.9 lags behind after a deploy; read from the primary until it catches up.",
+    "planted": {
+     "ip": "172.16.11.9"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  [2026-09-24 09:02:11] read latency spike traced to replica 172.16.11.9\nAssistant: that replica is still catching up on WAL replay from the last deploy.\nAssistant: found it. the replica at 172.16.11.9 lags behind after a deploy; read from the primary until it catches up\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_009_gamma",
+    "title": "identifier-bound ip - cpv1-ib-009 - c",
+    "description": "Lesson: the replica at 172.16.22.9 lags behind after a deploy; read from the primary until it catches up.",
+    "principle": "Lesson: the replica at 172.16.22.9 lags behind after a deploy; read from the primary until it catches up.",
+    "planted": {
+     "ip": "172.16.22.9"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  [2026-09-24 09:02:11] read latency spike traced to replica 172.16.22.9\nAssistant: that replica is still catching up on WAL replay from the last deploy.\nAssistant: found it. the replica at 172.16.22.9 lags behind after a deploy; read from the primary until it catches up\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_009_beta",
+    "prompt": "One of our replicas seems to be lagging right after a deploy - should I read from it or go straight to primary?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_009_delta",
+    "title": "concurrency-critical-section - unrelated",
+    "description": "Hold a lock for the shortest possible critical section to avoid starving other writers.",
+    "principle": "Hold a lock for the shortest possible critical section to avoid starving other writers."
+   }
+  },
+  {
+   "id": "cpv1-ib-010",
+   "topic": "identifier-bound-ip",
+   "identifier_class": "ip",
+   "project_a": {
+    "project": "cpv1_ib_010_alpha",
+    "title": "identifier-bound ip - cpv1-ib-010 - a",
+    "description": "Lesson: the replica at 172.16.11.10 lags behind after a deploy; read from the primary until it catches up.",
+    "principle": "Lesson: the replica at 172.16.11.10 lags behind after a deploy; read from the primary until it catches up.",
+    "planted": {
+     "ip": "172.16.11.10"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  [2026-09-24 09:02:11] read latency spike traced to replica 172.16.11.10\nAssistant: that replica is still catching up on WAL replay from the last deploy.\nAssistant: found it. the replica at 172.16.11.10 lags behind after a deploy; read from the primary until it catches up\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_010_gamma",
+    "title": "identifier-bound ip - cpv1-ib-010 - c",
+    "description": "Lesson: the replica at 172.16.22.10 lags behind after a deploy; read from the primary until it catches up.",
+    "principle": "Lesson: the replica at 172.16.22.10 lags behind after a deploy; read from the primary until it catches up.",
+    "planted": {
+     "ip": "172.16.22.10"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  [2026-09-24 09:02:11] read latency spike traced to replica 172.16.22.10\nAssistant: that replica is still catching up on WAL replay from the last deploy.\nAssistant: found it. the replica at 172.16.22.10 lags behind after a deploy; read from the primary until it catches up\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_010_beta",
+    "prompt": "One of our replicas seems to be lagging right after a deploy - should I read from it or go straight to primary?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_010_delta",
+    "title": "concurrency-reread - unrelated",
+    "description": "Re-read shared state after acquiring a lock; a value read before the lock can be stale by the time you actually have it.",
+    "principle": "Re-read shared state after acquiring a lock; a value read before the lock can be stale by the time you actually have it."
+   }
+  },
+  {
+   "id": "cpv1-ib-011",
+   "topic": "identifier-bound-ip",
+   "identifier_class": "ip",
+   "project_a": {
+    "project": "cpv1_ib_011_alpha",
+    "title": "identifier-bound ip - cpv1-ib-011 - a",
+    "description": "Lesson: the replica at 172.16.11.11 lags behind after a deploy; read from the primary until it catches up.",
+    "principle": "Lesson: the replica at 172.16.11.11 lags behind after a deploy; read from the primary until it catches up.",
+    "planted": {
+     "ip": "172.16.11.11"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  [2026-09-24 09:02:11] read latency spike traced to replica 172.16.11.11\nAssistant: that replica is still catching up on WAL replay from the last deploy.\nAssistant: found it. the replica at 172.16.11.11 lags behind after a deploy; read from the primary until it catches up\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_011_gamma",
+    "title": "identifier-bound ip - cpv1-ib-011 - c",
+    "description": "Lesson: the replica at 172.16.22.11 lags behind after a deploy; read from the primary until it catches up.",
+    "principle": "Lesson: the replica at 172.16.22.11 lags behind after a deploy; read from the primary until it catches up.",
+    "planted": {
+     "ip": "172.16.22.11"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  [2026-09-24 09:02:11] read latency spike traced to replica 172.16.22.11\nAssistant: that replica is still catching up on WAL replay from the last deploy.\nAssistant: found it. the replica at 172.16.22.11 lags behind after a deploy; read from the primary until it catches up\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_011_beta",
+    "prompt": "One of our replicas seems to be lagging right after a deploy - should I read from it or go straight to primary?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_011_delta",
+    "title": "config-fallback - unrelated",
+    "description": "Give every config value read from the environment a safe fallback instead of raising at import time.",
+    "principle": "Give every config value read from the environment a safe fallback instead of raising at import time."
+   }
+  },
+  {
+   "id": "cpv1-ib-012",
+   "topic": "identifier-bound-ip",
+   "identifier_class": "ip",
+   "project_a": {
+    "project": "cpv1_ib_012_alpha",
+    "title": "identifier-bound ip - cpv1-ib-012 - a",
+    "description": "Lesson: the replica at 172.16.11.12 lags behind after a deploy; read from the primary until it catches up.",
+    "principle": "Lesson: the replica at 172.16.11.12 lags behind after a deploy; read from the primary until it catches up.",
+    "planted": {
+     "ip": "172.16.11.12"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  [2026-09-24 09:02:11] read latency spike traced to replica 172.16.11.12\nAssistant: that replica is still catching up on WAL replay from the last deploy.\nAssistant: found it. the replica at 172.16.11.12 lags behind after a deploy; read from the primary until it catches up\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_012_gamma",
+    "title": "identifier-bound ip - cpv1-ib-012 - c",
+    "description": "Lesson: the replica at 172.16.22.12 lags behind after a deploy; read from the primary until it catches up.",
+    "principle": "Lesson: the replica at 172.16.22.12 lags behind after a deploy; read from the primary until it catches up.",
+    "planted": {
+     "ip": "172.16.22.12"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  [2026-09-24 09:02:11] read latency spike traced to replica 172.16.22.12\nAssistant: that replica is still catching up on WAL replay from the last deploy.\nAssistant: found it. the replica at 172.16.22.12 lags behind after a deploy; read from the primary until it catches up\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_012_beta",
+    "prompt": "One of our replicas seems to be lagging right after a deploy - should I read from it or go straight to primary?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_012_delta",
+    "title": "config-boundary-validation - unrelated",
+    "description": "Validate a config value's type at the boundary, not deep inside the code that eventually uses it.",
+    "principle": "Validate a config value's type at the boundary, not deep inside the code that eventually uses it."
+   }
+  },
+  {
+   "id": "cpv1-ib-013",
+   "topic": "identifier-bound-ip",
+   "identifier_class": "ip",
+   "project_a": {
+    "project": "cpv1_ib_013_alpha",
+    "title": "identifier-bound ip - cpv1-ib-013 - a",
+    "description": "Lesson: the replica at 172.16.11.13 lags behind after a deploy; read from the primary until it catches up.",
+    "principle": "Lesson: the replica at 172.16.11.13 lags behind after a deploy; read from the primary until it catches up.",
+    "planted": {
+     "ip": "172.16.11.13"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  [2026-09-24 09:02:11] read latency spike traced to replica 172.16.11.13\nAssistant: that replica is still catching up on WAL replay from the last deploy.\nAssistant: found it. the replica at 172.16.11.13 lags behind after a deploy; read from the primary until it catches up\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_013_gamma",
+    "title": "identifier-bound ip - cpv1-ib-013 - c",
+    "description": "Lesson: the replica at 172.16.22.13 lags behind after a deploy; read from the primary until it catches up.",
+    "principle": "Lesson: the replica at 172.16.22.13 lags behind after a deploy; read from the primary until it catches up.",
+    "planted": {
+     "ip": "172.16.22.13"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  [2026-09-24 09:02:11] read latency spike traced to replica 172.16.22.13\nAssistant: that replica is still catching up on WAL replay from the last deploy.\nAssistant: found it. the replica at 172.16.22.13 lags behind after a deploy; read from the primary until it catches up\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_013_beta",
+    "prompt": "One of our replicas seems to be lagging right after a deploy - should I read from it or go straight to primary?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_013_delta",
+    "title": "errors-narrow-catch - unrelated",
+    "description": "Catch the narrowest exception type you can actually recover from; a bare except hides real bugs.",
+    "principle": "Catch the narrowest exception type you can actually recover from; a bare except hides real bugs."
+   }
+  },
+  {
+   "id": "cpv1-ib-014",
+   "topic": "identifier-bound-host",
+   "identifier_class": "host",
+   "project_a": {
+    "project": "cpv1_ib_014_alpha",
+    "title": "identifier-bound host - cpv1-ib-014 - a",
+    "description": "Lesson: svc-iba014.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: svc-iba014.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "host": "svc-iba014.internal.example"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh svc-iba014.internal.example 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. svc-iba014.internal.example must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_014_gamma",
+    "title": "identifier-bound host - cpv1-ib-014 - c",
+    "description": "Lesson: svc-ibc014.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: svc-ibc014.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "host": "svc-ibc014.internal.example"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh svc-ibc014.internal.example 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. svc-ibc014.internal.example must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_014_beta",
+    "prompt": "About to kick off a deploy - is there a service that needs draining first?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_014_delta",
+    "title": "errors-context - unrelated",
+    "description": "Log an error with enough context to reproduce it, not just the exception's bare message.",
+    "principle": "Log an error with enough context to reproduce it, not just the exception's bare message."
+   }
+  },
+  {
+   "id": "cpv1-ib-015",
+   "topic": "identifier-bound-host",
+   "identifier_class": "host",
+   "project_a": {
+    "project": "cpv1_ib_015_alpha",
+    "title": "identifier-bound host - cpv1-ib-015 - a",
+    "description": "Lesson: svc-iba015.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: svc-iba015.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "host": "svc-iba015.internal.example"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh svc-iba015.internal.example 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. svc-iba015.internal.example must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_015_gamma",
+    "title": "identifier-bound host - cpv1-ib-015 - c",
+    "description": "Lesson: svc-ibc015.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: svc-ibc015.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "host": "svc-ibc015.internal.example"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh svc-ibc015.internal.example 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. svc-ibc015.internal.example must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_015_beta",
+    "prompt": "About to kick off a deploy - is there a service that needs draining first?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_015_delta",
+    "title": "migration-backward-compat - unrelated",
+    "description": "Make a migration backward compatible so the old code can still run during a rolling deploy.",
+    "principle": "Make a migration backward compatible so the old code can still run during a rolling deploy."
+   }
+  },
+  {
+   "id": "cpv1-ib-016",
+   "topic": "identifier-bound-host",
+   "identifier_class": "host",
+   "project_a": {
+    "project": "cpv1_ib_016_alpha",
+    "title": "identifier-bound host - cpv1-ib-016 - a",
+    "description": "Lesson: svc-iba016.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: svc-iba016.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "host": "svc-iba016.internal.example"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh svc-iba016.internal.example 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. svc-iba016.internal.example must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_016_gamma",
+    "title": "identifier-bound host - cpv1-ib-016 - c",
+    "description": "Lesson: svc-ibc016.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: svc-ibc016.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "host": "svc-ibc016.internal.example"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh svc-ibc016.internal.example 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. svc-ibc016.internal.example must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_016_beta",
+    "prompt": "About to kick off a deploy - is there a service that needs draining first?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_016_delta",
+    "title": "migration-separate-backfill - unrelated",
+    "description": "Never run a schema migration and a large data backfill in the same transaction.",
+    "principle": "Never run a schema migration and a large data backfill in the same transaction."
+   }
+  },
+  {
+   "id": "cpv1-ib-017",
+   "topic": "identifier-bound-host",
+   "identifier_class": "host",
+   "project_a": {
+    "project": "cpv1_ib_017_alpha",
+    "title": "identifier-bound host - cpv1-ib-017 - a",
+    "description": "Lesson: svc-iba017.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: svc-iba017.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "host": "svc-iba017.internal.example"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh svc-iba017.internal.example 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. svc-iba017.internal.example must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_017_gamma",
+    "title": "identifier-bound host - cpv1-ib-017 - c",
+    "description": "Lesson: svc-ibc017.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: svc-ibc017.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "host": "svc-ibc017.internal.example"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh svc-ibc017.internal.example 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. svc-ibc017.internal.example must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_017_beta",
+    "prompt": "About to kick off a deploy - is there a service that needs draining first?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_017_delta",
+    "title": "logging-no-pii - unrelated",
+    "description": "Never log a raw request body that might contain personal data.",
+    "principle": "Never log a raw request body that might contain personal data."
+   }
+  },
+  {
+   "id": "cpv1-ib-018",
+   "topic": "identifier-bound-host",
+   "identifier_class": "host",
+   "project_a": {
+    "project": "cpv1_ib_018_alpha",
+    "title": "identifier-bound host - cpv1-ib-018 - a",
+    "description": "Lesson: svc-iba018.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: svc-iba018.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "host": "svc-iba018.internal.example"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh svc-iba018.internal.example 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. svc-iba018.internal.example must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_018_gamma",
+    "title": "identifier-bound host - cpv1-ib-018 - c",
+    "description": "Lesson: svc-ibc018.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: svc-ibc018.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "host": "svc-ibc018.internal.example"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh svc-ibc018.internal.example 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. svc-ibc018.internal.example must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_018_beta",
+    "prompt": "About to kick off a deploy - is there a service that needs draining first?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_018_delta",
+    "title": "logging-structured - unrelated",
+    "description": "Use structured logging so a field can be queried later instead of grepped out of free text.",
+    "principle": "Use structured logging so a field can be queried later instead of grepped out of free text."
+   }
+  },
+  {
+   "id": "cpv1-ib-019",
+   "topic": "identifier-bound-host",
+   "identifier_class": "host",
+   "project_a": {
+    "project": "cpv1_ib_019_alpha",
+    "title": "identifier-bound host - cpv1-ib-019 - a",
+    "description": "Lesson: svc-iba019.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: svc-iba019.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "host": "svc-iba019.internal.example"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh svc-iba019.internal.example 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. svc-iba019.internal.example must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_019_gamma",
+    "title": "identifier-bound host - cpv1-ib-019 - c",
+    "description": "Lesson: svc-ibc019.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: svc-ibc019.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "host": "svc-ibc019.internal.example"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh svc-ibc019.internal.example 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. svc-ibc019.internal.example must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_019_beta",
+    "prompt": "About to kick off a deploy - is there a service that needs draining first?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_019_delta",
+    "title": "ratelimit-identity - unrelated",
+    "description": "Rate limit by the caller's identity, not by IP address, or one user behind a shared proxy blocks everyone else.",
+    "principle": "Rate limit by the caller's identity, not by IP address, or one user behind a shared proxy blocks everyone else."
+   }
+  },
+  {
+   "id": "cpv1-ib-020",
+   "topic": "identifier-bound-host",
+   "identifier_class": "host",
+   "project_a": {
+    "project": "cpv1_ib_020_alpha",
+    "title": "identifier-bound host - cpv1-ib-020 - a",
+    "description": "Lesson: svc-iba020.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: svc-iba020.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "host": "svc-iba020.internal.example"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh svc-iba020.internal.example 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. svc-iba020.internal.example must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_020_gamma",
+    "title": "identifier-bound host - cpv1-ib-020 - c",
+    "description": "Lesson: svc-ibc020.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: svc-ibc020.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "host": "svc-ibc020.internal.example"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh svc-ibc020.internal.example 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. svc-ibc020.internal.example must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_020_beta",
+    "prompt": "About to kick off a deploy - is there a service that needs draining first?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_020_delta",
+    "title": "ratelimit-retry-signal - unrelated",
+    "description": "Return a clear retry-after signal when throttling a client, rather than a bare rejection.",
+    "principle": "Return a clear retry-after signal when throttling a client, rather than a bare rejection."
+   }
+  },
+  {
+   "id": "cpv1-ib-021",
+   "topic": "identifier-bound-host",
+   "identifier_class": "host",
+   "project_a": {
+    "project": "cpv1_ib_021_alpha",
+    "title": "identifier-bound host - cpv1-ib-021 - a",
+    "description": "Lesson: svc-iba021.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: svc-iba021.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "host": "svc-iba021.internal.example"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh svc-iba021.internal.example 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. svc-iba021.internal.example must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_021_gamma",
+    "title": "identifier-bound host - cpv1-ib-021 - c",
+    "description": "Lesson: svc-ibc021.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: svc-ibc021.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "host": "svc-ibc021.internal.example"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh svc-ibc021.internal.example 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. svc-ibc021.internal.example must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_021_beta",
+    "prompt": "About to kick off a deploy - is there a service that needs draining first?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_021_delta",
+    "title": "memory-free-early - unrelated",
+    "description": "Free a large buffer as soon as its last use is done, not at the end of the function.",
+    "principle": "Free a large buffer as soon as its last use is done, not at the end of the function."
+   }
+  },
+  {
+   "id": "cpv1-ib-022",
+   "topic": "identifier-bound-host",
+   "identifier_class": "host",
+   "project_a": {
+    "project": "cpv1_ib_022_alpha",
+    "title": "identifier-bound host - cpv1-ib-022 - a",
+    "description": "Lesson: svc-iba022.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: svc-iba022.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "host": "svc-iba022.internal.example"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh svc-iba022.internal.example 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. svc-iba022.internal.example must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_022_gamma",
+    "title": "identifier-bound host - cpv1-ib-022 - c",
+    "description": "Lesson: svc-ibc022.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: svc-ibc022.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "host": "svc-ibc022.internal.example"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh svc-ibc022.internal.example 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. svc-ibc022.internal.example must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_022_beta",
+    "prompt": "About to kick off a deploy - is there a service that needs draining first?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_022_delta",
+    "title": "memory-profile-first - unrelated",
+    "description": "Profile before optimizing memory use; a guess about what is expensive is usually wrong.",
+    "principle": "Profile before optimizing memory use; a guess about what is expensive is usually wrong."
+   }
+  },
+  {
+   "id": "cpv1-ib-023",
+   "topic": "identifier-bound-host",
+   "identifier_class": "host",
+   "project_a": {
+    "project": "cpv1_ib_023_alpha",
+    "title": "identifier-bound host - cpv1-ib-023 - a",
+    "description": "Lesson: svc-iba023.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: svc-iba023.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "host": "svc-iba023.internal.example"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh svc-iba023.internal.example 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. svc-iba023.internal.example must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_023_gamma",
+    "title": "identifier-bound host - cpv1-ib-023 - c",
+    "description": "Lesson: svc-ibc023.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: svc-ibc023.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "host": "svc-ibc023.internal.example"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh svc-ibc023.internal.example 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. svc-ibc023.internal.example must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_023_beta",
+    "prompt": "About to kick off a deploy - is there a service that needs draining first?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_023_delta",
+    "title": "deps-lockfile - unrelated",
+    "description": "Pin a dependency's exact version in a lockfile so a build is reproducible months later.",
+    "principle": "Pin a dependency's exact version in a lockfile so a build is reproducible months later."
+   }
+  },
+  {
+   "id": "cpv1-ib-024",
+   "topic": "identifier-bound-host",
+   "identifier_class": "host",
+   "project_a": {
+    "project": "cpv1_ib_024_alpha",
+    "title": "identifier-bound host - cpv1-ib-024 - a",
+    "description": "Lesson: svc-iba024.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: svc-iba024.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "host": "svc-iba024.internal.example"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh svc-iba024.internal.example 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. svc-iba024.internal.example must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_024_gamma",
+    "title": "identifier-bound host - cpv1-ib-024 - c",
+    "description": "Lesson: svc-ibc024.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: svc-ibc024.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "host": "svc-ibc024.internal.example"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh svc-ibc024.internal.example 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. svc-ibc024.internal.example must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_024_beta",
+    "prompt": "About to kick off a deploy - is there a service that needs draining first?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_024_delta",
+    "title": "deps-review - unrelated",
+    "description": "Review what a new dependency actually does before adding it, not just its popularity.",
+    "principle": "Review what a new dependency actually does before adding it, not just its popularity."
+   }
+  },
+  {
+   "id": "cpv1-ib-025",
+   "topic": "identifier-bound-host",
+   "identifier_class": "host",
+   "project_a": {
+    "project": "cpv1_ib_025_alpha",
+    "title": "identifier-bound host - cpv1-ib-025 - a",
+    "description": "Lesson: svc-iba025.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: svc-iba025.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "host": "svc-iba025.internal.example"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh svc-iba025.internal.example 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. svc-iba025.internal.example must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_025_gamma",
+    "title": "identifier-bound host - cpv1-ib-025 - c",
+    "description": "Lesson: svc-ibc025.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: svc-ibc025.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "host": "svc-ibc025.internal.example"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh svc-ibc025.internal.example 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. svc-ibc025.internal.example must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_025_beta",
+    "prompt": "About to kick off a deploy - is there a service that needs draining first?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_025_delta",
+    "title": "api-idempotent - unrelated",
+    "description": "Make an API idempotent so a client's retry after a timeout cannot double the effect.",
+    "principle": "Make an API idempotent so a client's retry after a timeout cannot double the effect."
+   }
+  },
+  {
+   "id": "cpv1-ib-026",
+   "topic": "identifier-bound-host",
+   "identifier_class": "host",
+   "project_a": {
+    "project": "cpv1_ib_026_alpha",
+    "title": "identifier-bound host - cpv1-ib-026 - a",
+    "description": "Lesson: svc-iba026.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: svc-iba026.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "host": "svc-iba026.internal.example"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh svc-iba026.internal.example 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. svc-iba026.internal.example must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_026_gamma",
+    "title": "identifier-bound host - cpv1-ib-026 - c",
+    "description": "Lesson: svc-ibc026.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: svc-ibc026.internal.example must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "host": "svc-ibc026.internal.example"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh svc-ibc026.internal.example 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. svc-ibc026.internal.example must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_026_beta",
+    "prompt": "About to kick off a deploy - is there a service that needs draining first?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_026_delta",
+    "title": "api-versioning - unrelated",
+    "description": "Version a public API explicitly rather than silently changing behavior under the same endpoint.",
+    "principle": "Version a public API explicitly rather than silently changing behavior under the same endpoint."
+   }
+  },
+  {
+   "id": "cpv1-ib-027",
+   "topic": "identifier-bound-path",
+   "identifier_class": "path",
+   "project_a": {
+    "project": "cpv1_ib_027_alpha",
+    "title": "identifier-bound path - cpv1-ib-027 - a",
+    "description": "Lesson: never write under /var/lib/app-iba027/state.db while the migrator is running, or the state file corrupts.",
+    "principle": "Lesson: never write under /var/lib/app-iba027/state.db while the migrator is running, or the state file corrupts.",
+    "planted": {
+     "path": "/var/lib/app-iba027/state.db"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  Traceback (most recent call last):\n    File \"/var/lib/app-iba027/state.db\", line 88, in apply_migration\n      raise OSError('state file busy - migrator holds the lock')\nAssistant: found it. never write under /var/lib/app-iba027/state.db while the migrator is running, or the state file corrupts\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_027_gamma",
+    "title": "identifier-bound path - cpv1-ib-027 - c",
+    "description": "Lesson: never write under /var/lib/app-ibc027/state.db while the migrator is running, or the state file corrupts.",
+    "principle": "Lesson: never write under /var/lib/app-ibc027/state.db while the migrator is running, or the state file corrupts.",
+    "planted": {
+     "path": "/var/lib/app-ibc027/state.db"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  Traceback (most recent call last):\n    File \"/var/lib/app-ibc027/state.db\", line 88, in apply_migration\n      raise OSError('state file busy - migrator holds the lock')\nAssistant: found it. never write under /var/lib/app-ibc027/state.db while the migrator is running, or the state file corrupts\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_027_beta",
+    "prompt": "The migrator is running right now - is it safe to write to the state file?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_027_delta",
+    "title": "review-deletions - unrelated",
+    "description": "Review a diff for what it removes, not only what it adds; a deletion can silently drop a guard.",
+    "principle": "Review a diff for what it removes, not only what it adds; a deletion can silently drop a guard."
+   }
+  },
+  {
+   "id": "cpv1-ib-028",
+   "topic": "identifier-bound-path",
+   "identifier_class": "path",
+   "project_a": {
+    "project": "cpv1_ib_028_alpha",
+    "title": "identifier-bound path - cpv1-ib-028 - a",
+    "description": "Lesson: never write under /var/lib/app-iba028/state.db while the migrator is running, or the state file corrupts.",
+    "principle": "Lesson: never write under /var/lib/app-iba028/state.db while the migrator is running, or the state file corrupts.",
+    "planted": {
+     "path": "/var/lib/app-iba028/state.db"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  Traceback (most recent call last):\n    File \"/var/lib/app-iba028/state.db\", line 88, in apply_migration\n      raise OSError('state file busy - migrator holds the lock')\nAssistant: found it. never write under /var/lib/app-iba028/state.db while the migrator is running, or the state file corrupts\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_028_gamma",
+    "title": "identifier-bound path - cpv1-ib-028 - c",
+    "description": "Lesson: never write under /var/lib/app-ibc028/state.db while the migrator is running, or the state file corrupts.",
+    "principle": "Lesson: never write under /var/lib/app-ibc028/state.db while the migrator is running, or the state file corrupts.",
+    "planted": {
+     "path": "/var/lib/app-ibc028/state.db"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  Traceback (most recent call last):\n    File \"/var/lib/app-ibc028/state.db\", line 88, in apply_migration\n      raise OSError('state file busy - migrator holds the lock')\nAssistant: found it. never write under /var/lib/app-ibc028/state.db while the migrator is running, or the state file corrupts\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_028_beta",
+    "prompt": "The migrator is running right now - is it safe to write to the state file?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_028_delta",
+    "title": "review-explain-why - unrelated",
+    "description": "A review comment should say why a change is wrong, not just that it is wrong.",
+    "principle": "A review comment should say why a change is wrong, not just that it is wrong."
+   }
+  },
+  {
+   "id": "cpv1-ib-029",
+   "topic": "identifier-bound-path",
+   "identifier_class": "path",
+   "project_a": {
+    "project": "cpv1_ib_029_alpha",
+    "title": "identifier-bound path - cpv1-ib-029 - a",
+    "description": "Lesson: never write under /var/lib/app-iba029/state.db while the migrator is running, or the state file corrupts.",
+    "principle": "Lesson: never write under /var/lib/app-iba029/state.db while the migrator is running, or the state file corrupts.",
+    "planted": {
+     "path": "/var/lib/app-iba029/state.db"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  Traceback (most recent call last):\n    File \"/var/lib/app-iba029/state.db\", line 88, in apply_migration\n      raise OSError('state file busy - migrator holds the lock')\nAssistant: found it. never write under /var/lib/app-iba029/state.db while the migrator is running, or the state file corrupts\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_029_gamma",
+    "title": "identifier-bound path - cpv1-ib-029 - c",
+    "description": "Lesson: never write under /var/lib/app-ibc029/state.db while the migrator is running, or the state file corrupts.",
+    "principle": "Lesson: never write under /var/lib/app-ibc029/state.db while the migrator is running, or the state file corrupts.",
+    "planted": {
+     "path": "/var/lib/app-ibc029/state.db"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  Traceback (most recent call last):\n    File \"/var/lib/app-ibc029/state.db\", line 88, in apply_migration\n      raise OSError('state file busy - migrator holds the lock')\nAssistant: found it. never write under /var/lib/app-ibc029/state.db while the migrator is running, or the state file corrupts\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_029_beta",
+    "prompt": "The migrator is running right now - is it safe to write to the state file?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_029_delta",
+    "title": "deploy-canary - unrelated",
+    "description": "Roll a deploy out to a small percentage of traffic before shipping it everywhere.",
+    "principle": "Roll a deploy out to a small percentage of traffic before shipping it everywhere."
+   }
+  },
+  {
+   "id": "cpv1-ib-030",
+   "topic": "identifier-bound-path",
+   "identifier_class": "path",
+   "project_a": {
+    "project": "cpv1_ib_030_alpha",
+    "title": "identifier-bound path - cpv1-ib-030 - a",
+    "description": "Lesson: never write under /var/lib/app-iba030/state.db while the migrator is running, or the state file corrupts.",
+    "principle": "Lesson: never write under /var/lib/app-iba030/state.db while the migrator is running, or the state file corrupts.",
+    "planted": {
+     "path": "/var/lib/app-iba030/state.db"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  Traceback (most recent call last):\n    File \"/var/lib/app-iba030/state.db\", line 88, in apply_migration\n      raise OSError('state file busy - migrator holds the lock')\nAssistant: found it. never write under /var/lib/app-iba030/state.db while the migrator is running, or the state file corrupts\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_030_gamma",
+    "title": "identifier-bound path - cpv1-ib-030 - c",
+    "description": "Lesson: never write under /var/lib/app-ibc030/state.db while the migrator is running, or the state file corrupts.",
+    "principle": "Lesson: never write under /var/lib/app-ibc030/state.db while the migrator is running, or the state file corrupts.",
+    "planted": {
+     "path": "/var/lib/app-ibc030/state.db"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  Traceback (most recent call last):\n    File \"/var/lib/app-ibc030/state.db\", line 88, in apply_migration\n      raise OSError('state file busy - migrator holds the lock')\nAssistant: found it. never write under /var/lib/app-ibc030/state.db while the migrator is running, or the state file corrupts\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_030_beta",
+    "prompt": "The migrator is running right now - is it safe to write to the state file?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_030_delta",
+    "title": "deploy-rollback - unrelated",
+    "description": "Keep a fast, tested rollback path for every deploy, not just a forward migration plan.",
+    "principle": "Keep a fast, tested rollback path for every deploy, not just a forward migration plan."
+   }
+  },
+  {
+   "id": "cpv1-ib-031",
+   "topic": "identifier-bound-path",
+   "identifier_class": "path",
+   "project_a": {
+    "project": "cpv1_ib_031_alpha",
+    "title": "identifier-bound path - cpv1-ib-031 - a",
+    "description": "Lesson: never write under /var/lib/app-iba031/state.db while the migrator is running, or the state file corrupts.",
+    "principle": "Lesson: never write under /var/lib/app-iba031/state.db while the migrator is running, or the state file corrupts.",
+    "planted": {
+     "path": "/var/lib/app-iba031/state.db"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  Traceback (most recent call last):\n    File \"/var/lib/app-iba031/state.db\", line 88, in apply_migration\n      raise OSError('state file busy - migrator holds the lock')\nAssistant: found it. never write under /var/lib/app-iba031/state.db while the migrator is running, or the state file corrupts\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_031_gamma",
+    "title": "identifier-bound path - cpv1-ib-031 - c",
+    "description": "Lesson: never write under /var/lib/app-ibc031/state.db while the migrator is running, or the state file corrupts.",
+    "principle": "Lesson: never write under /var/lib/app-ibc031/state.db while the migrator is running, or the state file corrupts.",
+    "planted": {
+     "path": "/var/lib/app-ibc031/state.db"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  Traceback (most recent call last):\n    File \"/var/lib/app-ibc031/state.db\", line 88, in apply_migration\n      raise OSError('state file busy - migrator holds the lock')\nAssistant: found it. never write under /var/lib/app-ibc031/state.db while the migrator is running, or the state file corrupts\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_031_beta",
+    "prompt": "The migrator is running right now - is it safe to write to the state file?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_031_delta",
+    "title": "monitor-symptom - unrelated",
+    "description": "Alert on a symptom the user would notice, not on every internal metric that happens to move.",
+    "principle": "Alert on a symptom the user would notice, not on every internal metric that happens to move."
+   }
+  },
+  {
+   "id": "cpv1-ib-032",
+   "topic": "identifier-bound-path",
+   "identifier_class": "path",
+   "project_a": {
+    "project": "cpv1_ib_032_alpha",
+    "title": "identifier-bound path - cpv1-ib-032 - a",
+    "description": "Lesson: never write under /var/lib/app-iba032/state.db while the migrator is running, or the state file corrupts.",
+    "principle": "Lesson: never write under /var/lib/app-iba032/state.db while the migrator is running, or the state file corrupts.",
+    "planted": {
+     "path": "/var/lib/app-iba032/state.db"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  Traceback (most recent call last):\n    File \"/var/lib/app-iba032/state.db\", line 88, in apply_migration\n      raise OSError('state file busy - migrator holds the lock')\nAssistant: found it. never write under /var/lib/app-iba032/state.db while the migrator is running, or the state file corrupts\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_032_gamma",
+    "title": "identifier-bound path - cpv1-ib-032 - c",
+    "description": "Lesson: never write under /var/lib/app-ibc032/state.db while the migrator is running, or the state file corrupts.",
+    "principle": "Lesson: never write under /var/lib/app-ibc032/state.db while the migrator is running, or the state file corrupts.",
+    "planted": {
+     "path": "/var/lib/app-ibc032/state.db"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  Traceback (most recent call last):\n    File \"/var/lib/app-ibc032/state.db\", line 88, in apply_migration\n      raise OSError('state file busy - migrator holds the lock')\nAssistant: found it. never write under /var/lib/app-ibc032/state.db while the migrator is running, or the state file corrupts\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_032_beta",
+    "prompt": "The migrator is running right now - is it safe to write to the state file?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_032_delta",
+    "title": "monitor-trend - unrelated",
+    "description": "A dashboard should show the trend over time, not just the current value, or a slow regression goes unnoticed.",
+    "principle": "A dashboard should show the trend over time, not just the current value, or a slow regression goes unnoticed."
+   }
+  },
+  {
+   "id": "cpv1-ib-033",
+   "topic": "identifier-bound-path",
+   "identifier_class": "path",
+   "project_a": {
+    "project": "cpv1_ib_033_alpha",
+    "title": "identifier-bound path - cpv1-ib-033 - a",
+    "description": "Lesson: never write under /var/lib/app-iba033/state.db while the migrator is running, or the state file corrupts.",
+    "principle": "Lesson: never write under /var/lib/app-iba033/state.db while the migrator is running, or the state file corrupts.",
+    "planted": {
+     "path": "/var/lib/app-iba033/state.db"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  Traceback (most recent call last):\n    File \"/var/lib/app-iba033/state.db\", line 88, in apply_migration\n      raise OSError('state file busy - migrator holds the lock')\nAssistant: found it. never write under /var/lib/app-iba033/state.db while the migrator is running, or the state file corrupts\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_033_gamma",
+    "title": "identifier-bound path - cpv1-ib-033 - c",
+    "description": "Lesson: never write under /var/lib/app-ibc033/state.db while the migrator is running, or the state file corrupts.",
+    "principle": "Lesson: never write under /var/lib/app-ibc033/state.db while the migrator is running, or the state file corrupts.",
+    "planted": {
+     "path": "/var/lib/app-ibc033/state.db"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  Traceback (most recent call last):\n    File \"/var/lib/app-ibc033/state.db\", line 88, in apply_migration\n      raise OSError('state file busy - migrator holds the lock')\nAssistant: found it. never write under /var/lib/app-ibc033/state.db while the migrator is running, or the state file corrupts\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_033_beta",
+    "prompt": "The migrator is running right now - is it safe to write to the state file?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_033_delta",
+    "title": "security-boundary-validate - unrelated",
+    "description": "Validate input at the boundary where it enters the system, not deep inside a function that assumes it is already safe.",
+    "principle": "Validate input at the boundary where it enters the system, not deep inside a function that assumes it is already safe."
+   }
+  },
+  {
+   "id": "cpv1-ib-034",
+   "topic": "identifier-bound-path",
+   "identifier_class": "path",
+   "project_a": {
+    "project": "cpv1_ib_034_alpha",
+    "title": "identifier-bound path - cpv1-ib-034 - a",
+    "description": "Lesson: never write under /var/lib/app-iba034/state.db while the migrator is running, or the state file corrupts.",
+    "principle": "Lesson: never write under /var/lib/app-iba034/state.db while the migrator is running, or the state file corrupts.",
+    "planted": {
+     "path": "/var/lib/app-iba034/state.db"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  Traceback (most recent call last):\n    File \"/var/lib/app-iba034/state.db\", line 88, in apply_migration\n      raise OSError('state file busy - migrator holds the lock')\nAssistant: found it. never write under /var/lib/app-iba034/state.db while the migrator is running, or the state file corrupts\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_034_gamma",
+    "title": "identifier-bound path - cpv1-ib-034 - c",
+    "description": "Lesson: never write under /var/lib/app-ibc034/state.db while the migrator is running, or the state file corrupts.",
+    "principle": "Lesson: never write under /var/lib/app-ibc034/state.db while the migrator is running, or the state file corrupts.",
+    "planted": {
+     "path": "/var/lib/app-ibc034/state.db"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  Traceback (most recent call last):\n    File \"/var/lib/app-ibc034/state.db\", line 88, in apply_migration\n      raise OSError('state file busy - migrator holds the lock')\nAssistant: found it. never write under /var/lib/app-ibc034/state.db while the migrator is running, or the state file corrupts\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_034_beta",
+    "prompt": "The migrator is running right now - is it safe to write to the state file?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_034_delta",
+    "title": "security-default-restrictive - unrelated",
+    "description": "Default to the most restrictive permission and widen it deliberately, not the other way around.",
+    "principle": "Default to the most restrictive permission and widen it deliberately, not the other way around."
+   }
+  },
+  {
+   "id": "cpv1-ib-035",
+   "topic": "identifier-bound-path",
+   "identifier_class": "path",
+   "project_a": {
+    "project": "cpv1_ib_035_alpha",
+    "title": "identifier-bound path - cpv1-ib-035 - a",
+    "description": "Lesson: never write under /var/lib/app-iba035/state.db while the migrator is running, or the state file corrupts.",
+    "principle": "Lesson: never write under /var/lib/app-iba035/state.db while the migrator is running, or the state file corrupts.",
+    "planted": {
+     "path": "/var/lib/app-iba035/state.db"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  Traceback (most recent call last):\n    File \"/var/lib/app-iba035/state.db\", line 88, in apply_migration\n      raise OSError('state file busy - migrator holds the lock')\nAssistant: found it. never write under /var/lib/app-iba035/state.db while the migrator is running, or the state file corrupts\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_035_gamma",
+    "title": "identifier-bound path - cpv1-ib-035 - c",
+    "description": "Lesson: never write under /var/lib/app-ibc035/state.db while the migrator is running, or the state file corrupts.",
+    "principle": "Lesson: never write under /var/lib/app-ibc035/state.db while the migrator is running, or the state file corrupts.",
+    "planted": {
+     "path": "/var/lib/app-ibc035/state.db"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  Traceback (most recent call last):\n    File \"/var/lib/app-ibc035/state.db\", line 88, in apply_migration\n      raise OSError('state file busy - migrator holds the lock')\nAssistant: found it. never write under /var/lib/app-ibc035/state.db while the migrator is running, or the state file corrupts\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_035_beta",
+    "prompt": "The migrator is running right now - is it safe to write to the state file?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_035_delta",
+    "title": "vcs-atomic-commit - unrelated",
+    "description": "Keep a commit to one logical change so a later revert does not also undo something unrelated.",
+    "principle": "Keep a commit to one logical change so a later revert does not also undo something unrelated."
+   }
+  },
+  {
+   "id": "cpv1-ib-036",
+   "topic": "identifier-bound-path",
+   "identifier_class": "path",
+   "project_a": {
+    "project": "cpv1_ib_036_alpha",
+    "title": "identifier-bound path - cpv1-ib-036 - a",
+    "description": "Lesson: never write under /var/lib/app-iba036/state.db while the migrator is running, or the state file corrupts.",
+    "principle": "Lesson: never write under /var/lib/app-iba036/state.db while the migrator is running, or the state file corrupts.",
+    "planted": {
+     "path": "/var/lib/app-iba036/state.db"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  Traceback (most recent call last):\n    File \"/var/lib/app-iba036/state.db\", line 88, in apply_migration\n      raise OSError('state file busy - migrator holds the lock')\nAssistant: found it. never write under /var/lib/app-iba036/state.db while the migrator is running, or the state file corrupts\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_036_gamma",
+    "title": "identifier-bound path - cpv1-ib-036 - c",
+    "description": "Lesson: never write under /var/lib/app-ibc036/state.db while the migrator is running, or the state file corrupts.",
+    "principle": "Lesson: never write under /var/lib/app-ibc036/state.db while the migrator is running, or the state file corrupts.",
+    "planted": {
+     "path": "/var/lib/app-ibc036/state.db"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  Traceback (most recent call last):\n    File \"/var/lib/app-ibc036/state.db\", line 88, in apply_migration\n      raise OSError('state file busy - migrator holds the lock')\nAssistant: found it. never write under /var/lib/app-ibc036/state.db while the migrator is running, or the state file corrupts\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_036_beta",
+    "prompt": "The migrator is running right now - is it safe to write to the state file?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_036_delta",
+    "title": "vcs-explain-why - unrelated",
+    "description": "Write a commit message that explains why a change was made, not just what changed.",
+    "principle": "Write a commit message that explains why a change was made, not just what changed."
+   }
+  },
+  {
+   "id": "cpv1-ib-037",
+   "topic": "identifier-bound-path",
+   "identifier_class": "path",
+   "project_a": {
+    "project": "cpv1_ib_037_alpha",
+    "title": "identifier-bound path - cpv1-ib-037 - a",
+    "description": "Lesson: never write under /var/lib/app-iba037/state.db while the migrator is running, or the state file corrupts.",
+    "principle": "Lesson: never write under /var/lib/app-iba037/state.db while the migrator is running, or the state file corrupts.",
+    "planted": {
+     "path": "/var/lib/app-iba037/state.db"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  Traceback (most recent call last):\n    File \"/var/lib/app-iba037/state.db\", line 88, in apply_migration\n      raise OSError('state file busy - migrator holds the lock')\nAssistant: found it. never write under /var/lib/app-iba037/state.db while the migrator is running, or the state file corrupts\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_037_gamma",
+    "title": "identifier-bound path - cpv1-ib-037 - c",
+    "description": "Lesson: never write under /var/lib/app-ibc037/state.db while the migrator is running, or the state file corrupts.",
+    "principle": "Lesson: never write under /var/lib/app-ibc037/state.db while the migrator is running, or the state file corrupts.",
+    "planted": {
+     "path": "/var/lib/app-ibc037/state.db"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  Traceback (most recent call last):\n    File \"/var/lib/app-ibc037/state.db\", line 88, in apply_migration\n      raise OSError('state file busy - migrator holds the lock')\nAssistant: found it. never write under /var/lib/app-ibc037/state.db while the migrator is running, or the state file corrupts\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_037_beta",
+    "prompt": "The migrator is running right now - is it safe to write to the state file?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_037_delta",
+    "title": "perf-ratio-not-absolute - unrelated",
+    "description": "Measure the ratio of costs on a hostile input, not the absolute time, to tell linear from quadratic.",
+    "principle": "Measure the ratio of costs on a hostile input, not the absolute time, to tell linear from quadratic."
+   }
+  },
+  {
+   "id": "cpv1-ib-038",
+   "topic": "identifier-bound-path",
+   "identifier_class": "path",
+   "project_a": {
+    "project": "cpv1_ib_038_alpha",
+    "title": "identifier-bound path - cpv1-ib-038 - a",
+    "description": "Lesson: never write under /var/lib/app-iba038/state.db while the migrator is running, or the state file corrupts.",
+    "principle": "Lesson: never write under /var/lib/app-iba038/state.db while the migrator is running, or the state file corrupts.",
+    "planted": {
+     "path": "/var/lib/app-iba038/state.db"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  Traceback (most recent call last):\n    File \"/var/lib/app-iba038/state.db\", line 88, in apply_migration\n      raise OSError('state file busy - migrator holds the lock')\nAssistant: found it. never write under /var/lib/app-iba038/state.db while the migrator is running, or the state file corrupts\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_038_gamma",
+    "title": "identifier-bound path - cpv1-ib-038 - c",
+    "description": "Lesson: never write under /var/lib/app-ibc038/state.db while the migrator is running, or the state file corrupts.",
+    "principle": "Lesson: never write under /var/lib/app-ibc038/state.db while the migrator is running, or the state file corrupts.",
+    "planted": {
+     "path": "/var/lib/app-ibc038/state.db"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  Traceback (most recent call last):\n    File \"/var/lib/app-ibc038/state.db\", line 88, in apply_migration\n      raise OSError('state file busy - migrator holds the lock')\nAssistant: found it. never write under /var/lib/app-ibc038/state.db while the migrator is running, or the state file corrupts\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_038_beta",
+    "prompt": "The migrator is running right now - is it safe to write to the state file?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_038_delta",
+    "title": "perf-batch - unrelated",
+    "description": "Batch many small operations into one call when the fixed cost per call dominates the work itself.",
+    "principle": "Batch many small operations into one call when the fixed cost per call dominates the work itself."
+   }
+  },
+  {
+   "id": "cpv1-ib-039",
+   "topic": "identifier-bound-entity",
+   "identifier_class": "entity",
+   "project_a": {
+    "project": "cpv1_ib_039_alpha",
+    "title": "identifier-bound entity - cpv1-ib-039 - a",
+    "description": "Lesson: queue-shard-iba039 silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: queue-shard-iba039 silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "entity": "queue-shard-iba039"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show queue-shard-iba039 silently truncating anything over 4 MB.\nAssistant: found it. queue-shard-iba039 silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_039_gamma",
+    "title": "identifier-bound entity - cpv1-ib-039 - c",
+    "description": "Lesson: queue-shard-ibc039 silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: queue-shard-ibc039 silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "entity": "queue-shard-ibc039"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show queue-shard-ibc039 silently truncating anything over 4 MB.\nAssistant: found it. queue-shard-ibc039 silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_039_beta",
+    "prompt": "I need to publish a larger payload to the queue - anything that could drop it silently?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_039_delta",
+    "title": "docs-explain-reasoning - unrelated",
+    "description": "Document the reasoning behind a non-obvious decision, not just the decision itself.",
+    "principle": "Document the reasoning behind a non-obvious decision, not just the decision itself."
+   }
+  },
+  {
+   "id": "cpv1-ib-040",
+   "topic": "identifier-bound-entity",
+   "identifier_class": "entity",
+   "project_a": {
+    "project": "cpv1_ib_040_alpha",
+    "title": "identifier-bound entity - cpv1-ib-040 - a",
+    "description": "Lesson: queue-shard-iba040 silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: queue-shard-iba040 silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "entity": "queue-shard-iba040"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show queue-shard-iba040 silently truncating anything over 4 MB.\nAssistant: found it. queue-shard-iba040 silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_040_gamma",
+    "title": "identifier-bound entity - cpv1-ib-040 - c",
+    "description": "Lesson: queue-shard-ibc040 silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: queue-shard-ibc040 silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "entity": "queue-shard-ibc040"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show queue-shard-ibc040 silently truncating anything over 4 MB.\nAssistant: found it. queue-shard-ibc040 silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_040_beta",
+    "prompt": "I need to publish a larger payload to the queue - anything that could drop it silently?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_040_delta",
+    "title": "docs-runnable-examples - unrelated",
+    "description": "Keep an example in the documentation runnable, or it silently rots the first time the API changes.",
+    "principle": "Keep an example in the documentation runnable, or it silently rots the first time the API changes."
+   }
+  },
+  {
+   "id": "cpv1-ib-041",
+   "topic": "identifier-bound-entity",
+   "identifier_class": "entity",
+   "project_a": {
+    "project": "cpv1_ib_041_alpha",
+    "title": "identifier-bound entity - cpv1-ib-041 - a",
+    "description": "Lesson: queue-shard-iba041 silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: queue-shard-iba041 silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "entity": "queue-shard-iba041"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show queue-shard-iba041 silently truncating anything over 4 MB.\nAssistant: found it. queue-shard-iba041 silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_041_gamma",
+    "title": "identifier-bound entity - cpv1-ib-041 - c",
+    "description": "Lesson: queue-shard-ibc041 silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: queue-shard-ibc041 silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "entity": "queue-shard-ibc041"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show queue-shard-ibc041 silently truncating anything over 4 MB.\nAssistant: found it. queue-shard-ibc041 silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_041_beta",
+    "prompt": "I need to publish a larger payload to the queue - anything that could drop it silently?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_041_delta",
+    "title": "testing-mocking - unrelated",
+    "description": "Don't mock the database in an integration test; run it against a real instance so a migration bug actually surfaces.",
+    "principle": "Don't mock the database in an integration test; run it against a real instance so a migration bug actually surfaces."
+   }
+  },
+  {
+   "id": "cpv1-ib-042",
+   "topic": "identifier-bound-entity",
+   "identifier_class": "entity",
+   "project_a": {
+    "project": "cpv1_ib_042_alpha",
+    "title": "identifier-bound entity - cpv1-ib-042 - a",
+    "description": "Lesson: queue-shard-iba042 silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: queue-shard-iba042 silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "entity": "queue-shard-iba042"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show queue-shard-iba042 silently truncating anything over 4 MB.\nAssistant: found it. queue-shard-iba042 silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_042_gamma",
+    "title": "identifier-bound entity - cpv1-ib-042 - c",
+    "description": "Lesson: queue-shard-ibc042 silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: queue-shard-ibc042 silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "entity": "queue-shard-ibc042"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show queue-shard-ibc042 silently truncating anything over 4 MB.\nAssistant: found it. queue-shard-ibc042 silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_042_beta",
+    "prompt": "I need to publish a larger payload to the queue - anything that could drop it silently?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_042_delta",
+    "title": "testing-fixtures - unrelated",
+    "description": "Keep test fixtures independent so one test's setup can never leak into another test's assertions.",
+    "principle": "Keep test fixtures independent so one test's setup can never leak into another test's assertions."
+   }
+  },
+  {
+   "id": "cpv1-ib-043",
+   "topic": "identifier-bound-entity",
+   "identifier_class": "entity",
+   "project_a": {
+    "project": "cpv1_ib_043_alpha",
+    "title": "identifier-bound entity - cpv1-ib-043 - a",
+    "description": "Lesson: queue-shard-iba043 silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: queue-shard-iba043 silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "entity": "queue-shard-iba043"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show queue-shard-iba043 silently truncating anything over 4 MB.\nAssistant: found it. queue-shard-iba043 silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_043_gamma",
+    "title": "identifier-bound entity - cpv1-ib-043 - c",
+    "description": "Lesson: queue-shard-ibc043 silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: queue-shard-ibc043 silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "entity": "queue-shard-ibc043"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show queue-shard-ibc043 silently truncating anything over 4 MB.\nAssistant: found it. queue-shard-ibc043 silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_043_beta",
+    "prompt": "I need to publish a larger payload to the queue - anything that could drop it silently?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_043_delta",
+    "title": "retries-transient - unrelated",
+    "description": "Retry only on transient or server errors, never on a client error that will fail identically every time.",
+    "principle": "Retry only on transient or server errors, never on a client error that will fail identically every time."
+   }
+  },
+  {
+   "id": "cpv1-ib-044",
+   "topic": "identifier-bound-entity",
+   "identifier_class": "entity",
+   "project_a": {
+    "project": "cpv1_ib_044_alpha",
+    "title": "identifier-bound entity - cpv1-ib-044 - a",
+    "description": "Lesson: queue-shard-iba044 silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: queue-shard-iba044 silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "entity": "queue-shard-iba044"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show queue-shard-iba044 silently truncating anything over 4 MB.\nAssistant: found it. queue-shard-iba044 silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_044_gamma",
+    "title": "identifier-bound entity - cpv1-ib-044 - c",
+    "description": "Lesson: queue-shard-ibc044 silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: queue-shard-ibc044 silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "entity": "queue-shard-ibc044"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show queue-shard-ibc044 silently truncating anything over 4 MB.\nAssistant: found it. queue-shard-ibc044 silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_044_beta",
+    "prompt": "I need to publish a larger payload to the queue - anything that could drop it silently?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_044_delta",
+    "title": "retries-backoff - unrelated",
+    "description": "Cap retry attempts with exponential backoff so a failing dependency cannot be hammered indefinitely.",
+    "principle": "Cap retry attempts with exponential backoff so a failing dependency cannot be hammered indefinitely."
+   }
+  },
+  {
+   "id": "cpv1-ib-045",
+   "topic": "identifier-bound-entity",
+   "identifier_class": "entity",
+   "project_a": {
+    "project": "cpv1_ib_045_alpha",
+    "title": "identifier-bound entity - cpv1-ib-045 - a",
+    "description": "Lesson: queue-shard-iba045 silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: queue-shard-iba045 silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "entity": "queue-shard-iba045"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show queue-shard-iba045 silently truncating anything over 4 MB.\nAssistant: found it. queue-shard-iba045 silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_045_gamma",
+    "title": "identifier-bound entity - cpv1-ib-045 - c",
+    "description": "Lesson: queue-shard-ibc045 silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: queue-shard-ibc045 silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "entity": "queue-shard-ibc045"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show queue-shard-ibc045 silently truncating anything over 4 MB.\nAssistant: found it. queue-shard-ibc045 silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_045_beta",
+    "prompt": "I need to publish a larger payload to the queue - anything that could drop it silently?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_045_delta",
+    "title": "secrets-redact - unrelated",
+    "description": "Redact secrets before any text reaches persistent storage or a log line.",
+    "principle": "Redact secrets before any text reaches persistent storage or a log line."
+   }
+  },
+  {
+   "id": "cpv1-ib-046",
+   "topic": "identifier-bound-entity",
+   "identifier_class": "entity",
+   "project_a": {
+    "project": "cpv1_ib_046_alpha",
+    "title": "identifier-bound entity - cpv1-ib-046 - a",
+    "description": "Lesson: queue-shard-iba046 silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: queue-shard-iba046 silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "entity": "queue-shard-iba046"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show queue-shard-iba046 silently truncating anything over 4 MB.\nAssistant: found it. queue-shard-iba046 silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_046_gamma",
+    "title": "identifier-bound entity - cpv1-ib-046 - c",
+    "description": "Lesson: queue-shard-ibc046 silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: queue-shard-ibc046 silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "entity": "queue-shard-ibc046"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show queue-shard-ibc046 silently truncating anything over 4 MB.\nAssistant: found it. queue-shard-ibc046 silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_046_beta",
+    "prompt": "I need to publish a larger payload to the queue - anything that could drop it silently?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_046_delta",
+    "title": "secrets-vcs - unrelated",
+    "description": "Never commit a credential to version control, even in a throwaway branch that will be deleted.",
+    "principle": "Never commit a credential to version control, even in a throwaway branch that will be deleted."
+   }
+  },
+  {
+   "id": "cpv1-ib-047",
+   "topic": "identifier-bound-entity",
+   "identifier_class": "entity",
+   "project_a": {
+    "project": "cpv1_ib_047_alpha",
+    "title": "identifier-bound entity - cpv1-ib-047 - a",
+    "description": "Lesson: queue-shard-iba047 silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: queue-shard-iba047 silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "entity": "queue-shard-iba047"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show queue-shard-iba047 silently truncating anything over 4 MB.\nAssistant: found it. queue-shard-iba047 silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_047_gamma",
+    "title": "identifier-bound entity - cpv1-ib-047 - c",
+    "description": "Lesson: queue-shard-ibc047 silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: queue-shard-ibc047 silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "entity": "queue-shard-ibc047"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show queue-shard-ibc047 silently truncating anything over 4 MB.\nAssistant: found it. queue-shard-ibc047 silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_047_beta",
+    "prompt": "I need to publish a larger payload to the queue - anything that could drop it silently?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_047_delta",
+    "title": "caching-invalidate - unrelated",
+    "description": "Invalidate a cache entry the moment its source of truth changes, rather than relying on a time-based expiry alone.",
+    "principle": "Invalidate a cache entry the moment its source of truth changes, rather than relying on a time-based expiry alone."
+   }
+  },
+  {
+   "id": "cpv1-ib-048",
+   "topic": "identifier-bound-entity",
+   "identifier_class": "entity",
+   "project_a": {
+    "project": "cpv1_ib_048_alpha",
+    "title": "identifier-bound entity - cpv1-ib-048 - a",
+    "description": "Lesson: queue-shard-iba048 silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: queue-shard-iba048 silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "entity": "queue-shard-iba048"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show queue-shard-iba048 silently truncating anything over 4 MB.\nAssistant: found it. queue-shard-iba048 silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_048_gamma",
+    "title": "identifier-bound entity - cpv1-ib-048 - c",
+    "description": "Lesson: queue-shard-ibc048 silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: queue-shard-ibc048 silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "entity": "queue-shard-ibc048"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show queue-shard-ibc048 silently truncating anything over 4 MB.\nAssistant: found it. queue-shard-ibc048 silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_048_beta",
+    "prompt": "I need to publish a larger payload to the queue - anything that could drop it silently?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_048_delta",
+    "title": "caching-key - unrelated",
+    "description": "Key a cache by every input that affects the result, or two different queries will silently share one answer.",
+    "principle": "Key a cache by every input that affects the result, or two different queries will silently share one answer."
+   }
+  },
+  {
+   "id": "cpv1-ib-049",
+   "topic": "identifier-bound-entity",
+   "identifier_class": "entity",
+   "project_a": {
+    "project": "cpv1_ib_049_alpha",
+    "title": "identifier-bound entity - cpv1-ib-049 - a",
+    "description": "Lesson: queue-shard-iba049 silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: queue-shard-iba049 silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "entity": "queue-shard-iba049"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show queue-shard-iba049 silently truncating anything over 4 MB.\nAssistant: found it. queue-shard-iba049 silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_049_gamma",
+    "title": "identifier-bound entity - cpv1-ib-049 - c",
+    "description": "Lesson: queue-shard-ibc049 silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: queue-shard-ibc049 silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "entity": "queue-shard-ibc049"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show queue-shard-ibc049 silently truncating anything over 4 MB.\nAssistant: found it. queue-shard-ibc049 silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_049_beta",
+    "prompt": "I need to publish a larger payload to the queue - anything that could drop it silently?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_049_delta",
+    "title": "concurrency-critical-section - unrelated",
+    "description": "Hold a lock for the shortest possible critical section to avoid starving other writers.",
+    "principle": "Hold a lock for the shortest possible critical section to avoid starving other writers."
+   }
+  },
+  {
+   "id": "cpv1-ib-050",
+   "topic": "identifier-bound-entity",
+   "identifier_class": "entity",
+   "project_a": {
+    "project": "cpv1_ib_050_alpha",
+    "title": "identifier-bound entity - cpv1-ib-050 - a",
+    "description": "Lesson: queue-shard-iba050 silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: queue-shard-iba050 silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "entity": "queue-shard-iba050"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show queue-shard-iba050 silently truncating anything over 4 MB.\nAssistant: found it. queue-shard-iba050 silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_ib_050_gamma",
+    "title": "identifier-bound entity - cpv1-ib-050 - c",
+    "description": "Lesson: queue-shard-ibc050 silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: queue-shard-ibc050 silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "entity": "queue-shard-ibc050"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show queue-shard-ibc050 silently truncating anything over 4 MB.\nAssistant: found it. queue-shard-ibc050 silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_ib_050_beta",
+    "prompt": "I need to publish a larger payload to the queue - anything that could drop it silently?"
+   },
+   "distractor": {
+    "project": "cpv1_ib_050_delta",
+    "title": "concurrency-reread - unrelated",
+    "description": "Re-read shared state after acquiring a lock; a value read before the lock can be stale by the time you actually have it.",
+    "principle": "Re-read shared state after acquiring a lock; a value read before the lock can be stale by the time you actually have it."
+   }
+  }
+ ]
+}

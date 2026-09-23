@@ -235,7 +235,13 @@ print("\n- and the inventory is pinned, so new pins cannot arrive unnoticed -")
 #: code_sha, measured_by[].code_sha and the oracle corpus sha256) and +2 kinds on locomo_raw.json
 #: (embed_cache.mtime/.sha256, which the stand now records beside its cache). Diffed against a
 #: worktree at HEAD, none lost.
-check("the number of pinned artifacts has not moved", len(artifacts) == 164, str(len(artifacts)))
+#: 2026-09-24, the step-4 merge of q5/principle-layer: +4 artifacts, Q5's cross-project bench
+#: datasets under research/data/ - cross_project_v1.json (bf01e0d), cross_project_ib_v1.json
+#: (8c4bdf0), principle_twins_v1.json (32248df), cross_project_df_v1.json (4b859c6). Each is a
+#: deterministically GENERATED fixture (research/gen_cross_project_dataset.py) with no pin of its
+#: own, counted because it is a committed .json under research/. Both counts re-measured on the
+#: merged tree, not taken from either side (q5 alone read 167 / 145 on its older base).
+check("the number of pinned artifacts has not moved", len(artifacts) == 168, str(len(artifacts)))
 check("and the number of pin KINDS has not moved", len(kinds) == 150,
       f"{len(kinds)} kinds over {len(pins)} values")
 

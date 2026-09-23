@@ -156,6 +156,39 @@ def test_no_link_in_the_graph_is_broken() -> None:
           "; ".join(broken[:6]))
 
 
+#: `.loop/` is in .gitignore: a reader of the repository has none of it, so a public file that
+#: points there sends them to evidence they cannot open. The step-4 merge (2026-09-24) found
+#: seven such pointers added in one branch - the whole reason for a shipped default lived in an
+#: ignored file. These two predate the rule and are named rather than silently tolerated; the
+#: list may only shrink.
+LOOP_REF_ALLOWED = {
+    ("docs/WEAKNESSES.md", "`.loop/GOAL-CLOSE.md`"),
+    ("docs/WEAKNESSES.md", "`.loop/AUDIT-T2-T4-VERDICTS.md`"),
+}
+
+
+def loop_references() -> set:
+    """(path, reference) for every `.loop/...` mention in tracked docs/ and nevertwice/ files."""
+    out = subprocess.run(["git", "grep", "-n", "-o", "-E", r"`?\.loop/[A-Za-z0-9_./-]+`?", "--",
+                          "docs", "nevertwice"], cwd=ROOT, capture_output=True, text=True,
+                         encoding="utf-8", errors="replace")
+    refs = set()
+    for line in out.stdout.splitlines():
+        path, _lineno, ref = line.split(":", 2)
+        refs.add((path, ref))
+    return refs
+
+
+def test_public_files_do_not_point_into_the_ignored_loop_directory() -> None:
+    print("\n- docs/ and nevertwice/ do not cite files a reader cannot open (.loop/ is ignored) -")
+    refs = loop_references()
+    check("the scan finds the two named references, so it can see one at all",
+          LOOP_REF_ALLOWED <= refs, str(sorted(LOOP_REF_ALLOWED - refs)))
+    stray = sorted(refs - LOOP_REF_ALLOWED)
+    check("no docs/ or nevertwice/ file cites .loop/ beyond the two named ones", not stray,
+          "; ".join(f"{p}: {r}" for p, r in stray[:6]))
+
+
 def test_zz_every_check_passed() -> None:
     """Bare pytest must reach the same verdict as this suite's exit code.
 

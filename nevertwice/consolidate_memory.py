@@ -29,6 +29,18 @@ try:
 except ImportError:                 # run as a script, not as a package
     import memory_hook as m
 
+# A5 (Q5): the principle-layer promoter. Imported HERE, and only here - never through the
+# engine's `_sibling()`/ENGINE_PARTS, so `principles.py` joins THIS script's produced_by
+# closure, not the engine's (checked with `tools/produced_by.py`, see the module docstring).
+# Its own absence (a partial or pre-Q5 checkout) must not break consolidation's other passes.
+try:
+    from . import principles as _principles
+except ImportError:
+    try:
+        import principles as _principles
+    except ImportError:
+        _principles = None
+
 try:                                      # never crash printing → / Cyrillic on a cp1251 console
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 except Exception:
@@ -1257,6 +1269,21 @@ def _run_consolidation(apply, mode, has_llm):
           + (f" ({adj['skipped']})" if adj.get("skipped") else "") + f" [{mode}]")
     if apply and (drained or adj["replaces"] or adj.get("healed")):
         m.save_embed_cache(cache)                    # one write for the drain and the judging
+
+    # 2c) A5 (Q5): promote de-identified principles that recur across >=2 projects into the
+    #     `universal` pool A4's cross-project recall reads. Its own switch
+    #     (NEVERTWICE_PRINCIPLE_PROMOTE) so a store that has not opted in sees no behaviour
+    #     change; best-effort so a failure here never aborts the rest of consolidation.
+    if _principles is not None and _principles.PRINCIPLE_PROMOTE_ENABLED:
+        try:
+            promo = _principles.promote(apply=apply)
+            print(f"[consolidate] principles: {promo['candidates']} candidate(s), "
+                  f"{promo['clusters']} cluster(s) - promoted {promo['promoted']}, "
+                  f"refreshed {promo['refreshed']}, refused {promo['refused']}, "
+                  f"retired {promo['retired']} [{mode}]")
+        except Exception as e:                        # noqa: BLE001 - never abort the rest of the run
+            print(f"[consolidate] principle promotion skipped: {type(e).__name__}: {e}",
+                  file=sys.stderr)
 
     # 2b) F2: both members of every pair K8 is still keeping apart (contested) or the judge
     #     vetoed (disputed) are off limits to the near-dup merge below - a pair still on either

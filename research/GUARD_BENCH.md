@@ -42,18 +42,9 @@ tokens per call and latency per check. A guard that fires on the right risk but 
 mistake is a false alarm, not partial credit.
 
 <!-- claims:guard-bench -->
-| arm | recall of the right guard | precision | hard-negative false alarms | project-only recall | tokens / call | ms / check |
-|---|---|---|---|---|---|---|
-| **guards, engine's no-model patterns** | 0.380 at FPR 0.179 (over budget) | - | 0.268 | 0.154 | 3.320 | withdrawn |
-| **guards, model-written patterns** | 0.348 at FPR 0.155 (over budget) | - | 0.225 | 0.404 | 5.340 | withdrawn |
-| cold-start pack (no history) | 0.196 | 0.818 | 0.000 | 0.000 | 1.150 | withdrawn |
-| linter or scanner (scored in its favour) | 0.457 | 1.000 | 0.000 | 0.154 | 0.000 | withdrawn |
-| prompt recall over the notes (top three) | 0.000 | 0.000 | 0.014 | 0.000 | 103.560 | withdrawn |
-| silence (floor) | 0.000 | - | 0.000 | 0.000 | 0.000 | withdrawn |
-
-<sub>**Withdrawn** - ms / check for guards, engine's no-model patterns, guards, model-written patterns, cold-start pack (no history), linter or scanner (scored in its favour), prompt recall over the notes (top three), silence (floor): timed inside the 2026-09-23 campaign on a loaded machine (a 30B model resident, commit charge near its limit, other sessions running); re-measured in the idle latency step</sub>
-
-<sub>no operating point under the false-alarm budget for guards, engine's no-model patterns, guards, model-written patterns - a guard fires or it does not, and firing catches the repeats shown at the false-alarm rate shown; their hard-negative and project-only cells are read where the arm fires, not at the budget the rows below use.</sub>
+> **Withdrawn 2026-09.** withdrawn at the step-4 engine merge (Q5 principle layer, note_snippet word boundary, defaults set by the Q5 gates): re-measurement needs the v2 campaign on GPU with local Ollama models
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/guard_bench.py --llm --save` is what re-measures this one.
 <!-- /claims:guard-bench -->
 
 The gate written before the run (`.loop/GOAL-CLOSE.md`, J6): a guard arm keeps the README's

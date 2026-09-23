@@ -71,8 +71,20 @@ def test_every_artifact_behind_a_live_claim_is_listed() -> None:
           str(sc["out_of_scope_still_backing_a_live_claim"]))
     check("the out-of-scope set is explained", len(sc["out_of_scope_reason"]) > 60,
           sc["out_of_scope_reason"])
+    #: The floor was ">= 3", a number with no reason behind it; the step-4 engine merge
+    #: (2026-09-24) withdrew 314 claims in one pass and left two artifacts behind the seven
+    #: that stayed live, so the floor went red on a register that is small, not on a rule that
+    #: is vacuous. What makes the rule non-vacuous is that it sees EVERY artifact a live claim
+    #: rests on - so the count is now checked against an independent recount of the register,
+    #: which is stronger than any floor: a scope report that silently drops one fails here.
+    _live_raw = sorted({c["raw"] for c in json.loads(
+        (ROOT / "research" / "evidence_manifest.json").read_text(encoding="utf-8"))["claims"]
+        if not c.get("stale") and c.get("raw")})
     check("live claims were actually found, so the rule is not vacuous",
-          len(sc["live_claims_backed_by"]) >= 3, str(sc["live_claims_backed_by"]))
+          len(sc["live_claims_backed_by"]) >= 1, str(sc["live_claims_backed_by"]))
+    check("and the scope report names exactly the artifacts the register's live claims rest on",
+          sorted(sc["live_claims_backed_by"]) == _live_raw,
+          f"{sorted(sc['live_claims_backed_by'])} vs {_live_raw}")
 
     phantom = [a["file"] for a in R.ARTIFACTS
                if not (ROOT / a["file"]).exists() and a["kind"] != R.ABSENT_INPUT]

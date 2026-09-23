@@ -668,7 +668,9 @@ m.save_embed_cache({
     newx: {"ntype": "pattern", "project": "other", "title": "cross project fold", "desc": NEW_FACT,
           "prevention": "", "recurrence": 1},
 })
-xhits = m.retrieve_cross_project(PROJ, "http client timeout", k=5, cache=m.load_embed_cache())
+xhits = m.retrieve_cross_project(PROJ, "http client timeout", k=5, cache=m.load_embed_cache(),
+                                 mode="all")   # A4 (Q5): default is now "universal"; this
+                                                # fixture seeds an ordinary project ("other")
 xstems = [h["stem"] for h in xhits]
 check("cross-project recall folds the pair too - one hit, the earlier attached",
       newx in xstems and oldx not in xstems, str(xhits))

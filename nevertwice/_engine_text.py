@@ -406,6 +406,42 @@ def _brain_prompt_block() -> str:
     )
 
 
+def _principle_prompt_rubric() -> str:
+    """A1 (Q5): the FIELD explanation for `principle`, in the STATIC part of the prompt -
+    before `Known parameters` / `SESSION`, unlike every other FIELD explanation (which sit
+    after the transcript because they were added there before prefix-cache friendliness was a
+    design goal - review, A1). Its content is the same for every call regardless of project, so
+    keeping it ahead of the per-session `project_hint`/`tag_vocab`/transcript block is what lets
+    an inference backend's prefix cache actually reuse it across sessions.
+
+    Read PRINCIPLE_FIELD at CALL time, not at import: a suite that flips the flag to prove the
+    prompt changes (`tests/_test_principle_prompt.py`) rebinds `m.PRINCIPLE_FIELD`, the same way
+    `tests/_test_brain_invariants.py` rebinds the brain profile for `_brain_prompt_block`.
+    Empty string when off - the prompt is then byte-for-byte what it was before this field
+    existed, matching `_principle_schema_field`'s own off-switch."""
+    if not PRINCIPLE_FIELD:
+        return ""
+    return (
+        "\nFIELD principle (pattern/mistake only) - a de-identified, project-independent\n"
+        "restatement of the lesson: ONE sentence, generalisable to any project, or \"\" when\n"
+        "the lesson has no such standalone form. Never name a project, host, file path, IP\n"
+        "address, person, or version string - state the RULE, not the incident. Example: not\n"
+        "\"switched quantum_prism's GHZ compiler to sm_120\" but \"pin the target compute\n"
+        "capability before comparing kernel benchmarks across GPUs\".\n"
+    )
+
+
+def _principle_schema_field() -> str:
+    """A1 (Q5): the `principle` key's suffix in the JSON schema shown to the model, appended
+    right after `"confidence": 0.9` on a pattern/mistake item (never a decision - A1 scopes the
+    field to pattern/mistake only). The instructional placeholder VALUE is the self-documenting
+    convention this schema already uses (see "facts": ["literal token copied VERBATIM ..."]).
+    Empty when PRINCIPLE_FIELD is off, so the schema is the old one, unchanged."""
+    if not PRINCIPLE_FIELD:
+        return ""
+    return ', "principle": "one de-identified, project-independent sentence, or \\"\\" if project-specific"'
+
+
 def _is_relevant(flag) -> bool:
     """Interpret the LLM's project_relevant flag; default True when absent so a
     backend that omits it never silently drops knowledge (audit C1)."""
@@ -550,6 +586,220 @@ def _looks_unsafe(text: str) -> bool:
     """The write-time poisoning guard: reject extracted knowledge that is injection-shaped (W8
     phrasing) OR a bare dangerous imperative (W8 action). One call site, defense-in-depth."""
     return _looks_injected(text) or _looks_dangerous(text)
+
+
+# ── A3 (Q5, principle layer): de-identify a cross-project "principle" sentence ─────────
+# A `principle` is meant to travel OUTSIDE its own project (A4's universal recall pool), so it
+# must carry no clue about where it came from. Grouped exactly as the plan's classes: an ablated
+# group is what `tests/_test_principle_scan.py` mutates to prove each one is load-bearing BY
+# NAME. Every pattern here is a BOUNDED, single-pass shape - no nested unbounded quantifier over
+# the same character class - because this repository was bitten once by a regex that
+# backtracked exponentially on a hostile input (`_DANGER_RE`'s history above), and a
+# de-identification gate that stalls a session-end write is worse than the identifier it was
+# built to catch. `_lazy_re`: this scan runs once per pattern/mistake item at write time, never
+# on PreToolUse, so compiling on first use (not at import) costs nothing that matters.
+_PRINCIPLE_IP_RE = _lazy_re(
+    r"\b(?:\d{1,3}\.){3}\d{1,3}\b"                                    # IPv4
+    r"|\b(?:[0-9A-Fa-f]{1,4}:){2,7}[0-9A-Fa-f]{1,4}\b"                 # IPv6, full/compressed form
+    r"|\b(?:[0-9A-Fa-f]{1,4}:){1,7}:(?:[0-9A-Fa-f]{1,4})?\b")          # IPv6, trailing '::' shorthand
+_PRINCIPLE_URL_RE = _lazy_re(
+    r"\b[a-zA-Z][a-zA-Z0-9+.-]{1,15}://[^\s<>\"']+"                    # scheme://... (URL)
+    r"|\b(?:[a-zA-Z0-9][a-zA-Z0-9-]{0,61}\.){1,}[a-zA-Z]{2,24}\b")     # bare FQDN (word.word.tld)
+_PRINCIPLE_PATH_RE = _lazy_re(
+    r"\b[A-Za-z]:[\\/][^\s\"'<>]{1,200}"                               # C:\... / C:/...
+    r"|\\\\[^\s\\\"'<>]+\\[^\s\"'<>]{1,200}"                           # \\host\share UNC path
+    r"|(?<![\w./])(?:/[\w.-]+){2,}"                                    # /abs/posix/path
+    r"|(?<![\w./])~(?:/[\w.-]+)+"                                      # ~/posix/path
+    r"|\b[\w-]+(?:/[\w-]+)+\.[A-Za-z0-9]{1,8}\b")                      # rel/path/with-a.ext
+_PRINCIPLE_EMAIL_RE = _lazy_re(r"\b[\w.+-]+@[\w-]+(?:\.[\w-]+)*\b")    # user@host or user@a.b.tld -
+                                                                        # the dotted TLD is OPTIONAL
+                                                                        # (an intranet "user@host"
+                                                                        # address is still an
+                                                                        # identifier worth catching)
+_PRINCIPLE_PORT_RE = _lazy_re(
+    r"\b[a-zA-Z][\w.-]*:\d{2,5}\b"                                     # host:port (host starts with a
+                                                                        # letter - a bare "12:30" is a
+                                                                        # clock, not an endpoint)
+    r"|\bport\s*[:=]?\s*\d{2,5}\b", re.IGNORECASE)                     # "port 8080" / "port: 8080"
+# {1,2}, not {1,3}: a plain IPv4 address is ALWAYS four dotted octets (3 repeats) and is
+# already caught by `_PRINCIPLE_IP_RE` - letting the version pattern also swallow that exact
+# shape would double-classify every IPv4 literal as "a version string", which breaks the
+# per-class mutation test's isolation (ablating either pattern alone would leave the other
+# still rejecting an IPv4 address). Capped at three numbers total, which is every example the
+# plan gives (3.12.1, v2.0) and stays a version, not a four-octet address.
+#: `(?!\.\d)` after the boundary and `(?<!\d\.)` before it: without both, `{1,2}` still matches
+#: a THREE-octet slice of a genuine four-octet IPv4 address, and `re.search` tries every start
+#: position - blocking only the forward continuation ("10.0.0" out of "10.0.0.5") still leaves
+#: "0.0.5", starting one octet in, matching on its own. The trailing lookahead blocks a match
+#: that continues into another ".digit"; the leading lookbehind blocks a match that STARTS
+#: right after one - together no three-number slice of a four-number run can match at all.
+_PRINCIPLE_VERSION_RE = _lazy_re(r"(?<!\d\.)\bv?\d+(?:\.\d+){1,2}\b(?!\.\d)")   # 3.12.1, v2.0
+
+#: Named groups, walked in order by `principle_scan` and by its own mutation test - ablating one
+#: entry (a test-only monkeypatch of this dict, never a file edit) must fail exactly the check
+#: for that class and no other.
+PRINCIPLE_IDENTIFIER_GROUPS: dict = {
+    "ip": (_PRINCIPLE_IP_RE,),
+    "url_fqdn": (_PRINCIPLE_URL_RE,),
+    "path": (_PRINCIPLE_PATH_RE,),
+    "email": (_PRINCIPLE_EMAIL_RE,),
+    "host_port": (_PRINCIPLE_PORT_RE,),
+    "version": (_PRINCIPLE_VERSION_RE,),
+}
+
+
+def principle_scan(text: str, forbidden: set[str]) -> str:
+    """De-identification gate for the `principle` field: "" when `text` carries a source
+    identifier, otherwise the cleaned (whitespace-collapsed) text. The write path
+    (`_engine_write.py`) calls this on the item's own `principle`, forbidding the project slug
+    and this note's own entities; the promoter (`principles.py`, A5) calls it again at
+    promotion time forbidding the project's whole vocabulary - a fact that only shows up once a
+    principle is compared against a project's full note corpus is still caught before it ever
+    reaches another project's recall.
+
+    Errs toward REJECTING: a false positive here costs a "" principle, which the write path
+    already treats as simply absent - the rest of the note is untouched either way (the
+    degradation contract, A3). A false negative would leak a project's identity into another
+    project's memory through A4's universal pool, which the read path has no way to catch
+    afterwards. So a borderline match (a timestamp that parses as IPv6-shaped, a filename
+    extension that parses as an FQDN) is deliberately left rejected rather than tuned away.
+    """
+    s = (text or "").strip()
+    if not s:
+        return ""
+    for group in PRINCIPLE_IDENTIFIER_GROUPS.values():
+        for pat in group:
+            if pat.search(s):
+                return ""
+    toks = sorted({t.strip() for t in (forbidden or ()) if t and t.strip()},
+                  key=len, reverse=True)
+    if toks:
+        alt = "|".join(re.escape(t) for t in toks)
+        if re.search(rf"\b(?:{alt})\b", s, re.IGNORECASE):
+            return ""
+    return re.sub(r"\s+", " ", s)
+
+
+#: Whole-hyphen-part infra vocabulary (2026-09-24 widening, (A) below) - a hyphenated entity
+#: with no digit/dot/slash/underscore/case-transition ("payments-api", "db-primary",
+#: "kafka-consumer-group", "prod-cluster") still names something project-specific, and shape
+#: alone cannot tell it from a genuinely generic compound ("client-side", "fixture-isolation").
+#: The auditor's probe (2026-09-24, quoted in the finding) is the count this list is built from
+#: - `cross_project_v2.json`'s real extracted `entities` were not yet available (that 100-case
+#: run was still in progress; `cross_project_diag.json` predates entity capture entirely, so it
+#: contributes nothing). Of the probe's hyphenated tokens: 2 read as generic (client-side,
+#: fixture-isolation - 0 of their 2 parts are infra terms) and 4 read as identifier-like
+#: (payments-api, db-primary, kafka-consumer-group, prod-cluster - 6 of their 7 parts ARE:
+#: api, db, consumer, group, prod, cluster). `svc`, `service`, `staging`, `worker`, `queue` are
+#: the same semantic category (infrastructure/ops nouns) added by analogy, not directly
+#: attested in this small a sample - flagged here rather than presented as measured. A part is
+#: matched WHOLE, case-insensitive, never as a substring (so "clustering" is not "cluster").
+_INFRA_HYPHEN_TOKENS = frozenset({
+    "api", "svc", "service", "db", "cluster", "prod", "staging", "worker", "queue",
+    "consumer", "group",
+})
+
+
+def _has_digit_dot_or_slash(t: str) -> bool:
+    """A digit, a dot or a slash anywhere - `a000`, `JIRA-1234`, `v2`, a port number, a
+    hostname/FQDN fragment, a file extension, a path fragment. One bounded character-class
+    scan, no quantifier over a repeated group - the same discipline `_PRINCIPLE_IP_RE` and its
+    siblings above follow."""
+    return bool(re.search(r"[\d./]", t))
+
+
+def _has_underscore(t: str) -> bool:
+    """snake_case and SCREAMING_SNAKE both carry an underscore - `orders_table`,
+    `billing_service`, `STRIPE_SECRET_KEY` all name something specific to one codebase, never a
+    plain English compound (those use a space or a hyphen)."""
+    return "_" in t
+
+
+def _is_screaming_snake(t: str) -> bool:
+    """ALL-CAPS with an underscore, named as its OWN check (2026-09-24 widening) even though
+    `_has_underscore` already catches every SCREAMING_SNAKE token on its own - a second,
+    independent read of the same shape, so an ablation of the underscore rule alone does not
+    silently also disable this one (`tests/_test_principle_entity_forbidding.py`'s mutation
+    proves the underscore rule specifically is load-bearing, by name, for `orders_table` and
+    `billing_service` - tokens ONLY this or `_has_underscore` can catch, never both at once for
+    those two)."""
+    return "_" in t and t.isupper()
+
+
+def _has_camel_transition(t: str) -> bool:
+    """An internal lowercase-to-uppercase transition - `UserRepository`, `useAuthStore`,
+    `OrderService` - camelCase and PascalCase both name a specific class/module/variable, never
+    a plain English word. A pure acronym ("API", "HTTP") has NO lowercase letter to transition
+    FROM, so it never matches this - that is what keeps a plain acronym generic without a
+    separate allowlist. One bounded two-character scan, no quantifier."""
+    return bool(re.search(r"[a-z][A-Z]", t))
+
+
+def _hyphen_part_is_infra(t: str) -> bool:
+    """A hyphenated token where at least one whole part (case-insensitive) is an infrastructure
+    noun (`_INFRA_HYPHEN_TOKENS`) - the hard case a plain shape rule cannot otherwise separate
+    ("client-side" from "payments-api"). Splitting on "-" and checking set membership is O(n)
+    with no regex at all - the number of hyphens in a token is itself bounded by the token's
+    length, so this cannot be the slow path no matter how it is fed."""
+    if "-" not in t:
+        return False
+    return bool({p.lower() for p in t.split("-") if p} & _INFRA_HYPHEN_TOKENS)
+
+
+def _looks_like_identifier(token: str, project: str) -> bool:
+    """Whether a declared `entities` string is worth forbidding OUTRIGHT - at WRITE time
+    (`_engine_write.py`) and at the promotion-time re-scan (`principles.py::_rescan`, which
+    calls this SAME function so the two gates cannot silently drift apart again) - as a
+    `principle_scan` de-identification token. NOT every entity a model lists names something
+    identifying: a model asked for "2-5 key entities of the lesson"
+    (`_principle_prompt_rubric`) routinely lists an ordinary technical word - "database",
+    "retry", "timeout" - and forbidding every declared entity VERBATIM used to reject a
+    principle that so much as USED one of its own note's entity words. Found 2026-09-24 on the
+    first real `--extract` run: 5 of 10 written notes' principles were dropped this way, and
+    the SAME defect reappeared one layer later at promotion (`principles.py::_rescan`, fixed
+    alongside this file).
+
+    A token counts as identifier-shaped when ANY of these holds:
+      - it carries a digit, a dot or a slash anywhere (`_has_digit_dot_or_slash`);
+      - it carries an underscore (`_has_underscore` - snake_case AND SCREAMING_SNAKE);
+      - it is ALL-CAPS with an underscore (`_is_screaming_snake` - a second, independent read
+        of the same SCREAMING_SNAKE shape, see its own docstring for why);
+      - it equals the project's own slug outright (forbidden regardless of shape).
+
+    Option (A), 2026-09-24 (second auditor pass, on top of the first widening below): a
+    SEPARATE probe found the first widening swung too far the OTHER way. Once
+    `_has_camel_transition`/`_hyphen_part_is_infra` were added to this chain, they ALSO
+    forbade the commonest PUBLIC tech names in a coding lesson - 18 of 20 probed, PostgreSQL,
+    JavaScript, GitHub, WebSocket, GraphQL, MongoDB, DevOps... - and 9 of 14 generic hyphen
+    concepts - consumer-group, worker-queue, api-gateway, service-mesh... - because SHAPE alone
+    cannot tell a public name from a private one (PostgreSQL vs UserRepository are the same
+    camelCase shape; api-gateway vs payments-api are the same hyphen-infra shape). Only
+    PROVENANCE - whether a name is corroborated by >=2 projects' OWN corpus - can tell them
+    apart, and that check already exists at promotion time
+    (`principles.py::_token_provenance`), over the whole corpus a single write never gets to
+    see. So this write/rescan gate now stops at the shapes that are RARELY public - a digit, a
+    dot, a slash, an underscore, ALL-CAPS-with-underscore, the project's own slug - and
+    camelCase/PascalCase and hyphen-infra names are left ENTIRELY to `_token_provenance`, which
+    (2026-09-24, same pass) was widened to check those two shapes specifically, so a PRIVATE
+    camelCase/kebab name is still caught, just one layer later.
+    `_has_camel_transition`/`_hyphen_part_is_infra`/`_INFRA_HYPHEN_TOKENS` stay DEFINED below
+    (unused by this function's own chain) rather than deleted: `_token_provenance` now calls
+    them directly, and `tests/_test_principle_entity_forbidding.py`'s mutation re-adds
+    `_has_camel_transition` to this chain to prove removing it from HERE specifically is what
+    stopped the public-name false positives, not a change to the functions themselves.
+
+    Residual, unrelated to option (A): `phoenix` (a single lowercase product/service word) and
+    `acme-corp` (a company kebab whose parts are not infra nouns) stay kept here regardless -
+    neither has ANY shape (digit/underscore/case/hyphen) that distinguishes it from ordinary
+    vocabulary, so `_token_provenance` (corpus corroboration) is their only possible defence
+    too, and it cannot be told to check a shape that is not there. Documented in
+    `docs/WEAKNESSES.md` (W17)."""
+    t = (token or "").strip()
+    if not t:
+        return False
+    if t.lower() == (project or "").lower():
+        return True
+    return _has_digit_dot_or_slash(t) or _has_underscore(t) or _is_screaming_snake(t)
 
 
 # W7 corroboration-gated quarantine - OFF by default. On a single-user store the user owns every

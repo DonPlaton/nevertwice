@@ -938,6 +938,8 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
         existing_decisions=", ".join(existing["decision"]) or "(none)",
         brain_block=_brain_prompt_block(),     # F1: typed-entity ask, "" unless a brain profile is on
         language_rule=language_rule(transcript_full),
+        principle_rubric=_principle_prompt_rubric(),   # A1 (Q5): "" unless PRINCIPLE_FIELD is on
+        principle_schema=_principle_schema_field(),    # A1 (Q5): the matching schema-line suffix
     )
     extraction = generate_json(prompt, project=project_hint)
     if not extraction:

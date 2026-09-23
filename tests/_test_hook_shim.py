@@ -729,7 +729,9 @@ ALLOWLIST: dict[str, str] = {
     "NEVERTWICE_ADAPTIVE_RECUR": "a boolean flag string",
     "NEVERTWICE_ATTACH_EARLIER_ALWAYS": "a boolean flag string",
     "NEVERTWICE_CLOUD_ONLY": "a boolean flag string",
-    "NEVERTWICE_CROSS_PROJECT": "a boolean flag string",
+    "NEVERTWICE_CROSS_PROJECT": "a mode-selector string (off/all/universal; 0/1 accepted as off/all)",
+    "NEVERTWICE_PRINCIPLE": "a boolean flag string (ask the extractor for the de-identified principle field)",
+    "NEVERTWICE_PRINCIPLE_PROMOTE": "a boolean flag string (run the sleep-time principle promoter)",
     "NEVERTWICE_EMBED_DOC_PREFIX": "a text prefix string prepended to embedded documents",
     "NEVERTWICE_EMBED_PREFIX": "a text prefix string",
     "NEVERTWICE_EMBED_QUERY_PREFIX": "a text prefix string prepended to embedded queries",
@@ -883,7 +885,14 @@ def test_walled_covers_or_allowlists_every_env_name_in_the_package() -> None:
                        "CLAUDE_MEMORY_PROFILE", "CLAUDE_MEMORY_CLOUD", "CLAUDE_MEMORY_EMBED_MODEL",
                        "NEVERTWICE_EXTRACT_RETRY", "NEVERTWICE_BUDGET_TURN_TOKENS",
                        "NEVERTWICE_BUDGET_SESSION_TOKENS", "NEVERTWICE_BUDGET_TURN_LATENCY_MS",
-                       "NEVERTWICE_BUDGET_SESSION_LATENCY_MS"}
+                       "NEVERTWICE_BUDGET_SESSION_LATENCY_MS",
+                       # the step-4 merge of the Q5 principle layer (2026-09-24): the field flag
+                       # (_engine_config.py, a direct literal read) and the promoter's cosine
+                       # threshold (principles.py, env_float -> auto-numeric).
+                       "NEVERTWICE_PRINCIPLE", "NEVERTWICE_PRINCIPLE_T",
+                       # and the promoter switch, read as m.os.environ.get until this merge -
+                       # a form the scanner does not see; now a direct os.environ.get.
+                       "NEVERTWICE_PRINCIPLE_PROMOTE"}
     expected_total = 168 - len(expected_lost) + len(expected_gained)
     check(f"this scanner finds {len(all_names)} names - every difference from the auditor's "
           f"168 named above: {len(expected_gained)} gained, {len(expected_lost)} lost "

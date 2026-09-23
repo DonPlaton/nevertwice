@@ -280,7 +280,16 @@ def archive_old_typed(days: int | None = None) -> int:
     per-folder Archive/ subdir. Knowledge is preserved (moved, never deleted),
     but the live folders - and the dedup-grounding glob that scans them - stop
     growing without bound (audit F24). Obsidian resolves [[stem]] regardless of
-    folder, so existing wikilinks keep working after the move."""
+    folder, so existing wikilinks keep working after the move.
+
+    A5/C10 (Q5): a `universal`-project note is EXEMPT from this date-based aging. Its stem's
+    date is when the cluster was last promoted, not when the lesson stopped being true -
+    `principles.py` re-derives the whole `universal` pool from the live corpus every
+    consolidation run, and its OWN retirement rule (a cluster's sources dropping below two
+    projects) is the correct forgetting signal for this project, not wall-clock age. Without
+    this exemption a universal note promoted once and never re-clustered (e.g. promotion
+    disabled again) would silently age out from under `retrieve_cross_project`, which is a
+    different, quieter failure than the deliberate retirement A5 already performs."""
     # Resolved HERE, not in the signature: a default argument is evaluated once at
     # def time, so a module constant frozen there stops answering to the module.
     days = TYPED_ARCHIVE_AFTER_DAYS if days is None else days
@@ -294,6 +303,9 @@ def archive_old_typed(days: int | None = None) -> int:
         arch = d / "Archive"
         arch.mkdir(exist_ok=True)
         for p in d.glob("*.md"):
+            parsed = parse_typed_stem(p.stem)
+            if parsed and parsed["project"] == UNIVERSAL_PROJECT:
+                continue
             try:
                 note_date = datetime.strptime(p.stem[:10], "%Y-%m-%d").date()
             except ValueError:

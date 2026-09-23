@@ -351,7 +351,10 @@ m.save_embed_cache({
 _al = m.ollama_alive
 m.ollama_alive = lambda timeout_s=4: False
 try:
-    cross = m.retrieve_cross_project("proja", "subprocess vram windows spawn", 2)
+    # A4 (Q5): CROSS_PROJECT_MODE now defaults to "universal", which would see neither of
+    # these two ordinary projects - this suite is exercising the original unrestricted I-7
+    # behaviour, so it asks for "all" explicitly (mode parity is `tests/_test_cross_mode.py`).
+    cross = m.retrieve_cross_project("proja", "subprocess vram windows spawn", 2, mode="all")
     check("cross-project surfaces the OTHER project's lesson",
           bool(cross) and cross[0]["project"] == "projb")
     check("cross-project excludes own project",

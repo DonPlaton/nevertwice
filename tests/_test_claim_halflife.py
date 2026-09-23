@@ -76,9 +76,58 @@ for days, floor, ceil in ((1, 0.15, 0.35), (7, 0.01, 0.10)):
 
 #: A horizon longer than the register cannot be answered, and the tool must say so rather than
 #: divide by zero or print a share over an empty population.
+#:
+#: K4 (2026-09-23, the auditor's finding): the ORIGINAL assertion here hardcoded "n30 == 0"
+#: because the register was 28.5 days old when it was written. `head` moves forward with every
+#: commit that touches the register, and the first claim's birth (2026-08-24 22:45:38) is fixed
+#: history - the span between them only grows. At d009e47 it crossed 30.019 days, so this
+#: assertion went red on EVERY future commit to the register, on q5 and on invariants/v3 alike -
+#: a calendar time bomb, not a real check of `survival`'s behaviour.
+#:
+#: Replaced with a TIME-INDEPENDENT invariant: n30 must equal the count of records whose birth
+#: is at or before head-30d, counted HERE independently of `H.survival`'s own censoring logic
+#: (so a bug in censoring cannot cancel an equal bug in the reference count - two different
+#: implementations of the same rule, not one checked against itself). This holds exactly the
+#: same whether the register's span is under 30 days (both sides read 0, the ORIGINAL
+#: assumption) or over it (both sides read whatever the register now actually has) - never
+#: red on a calendar date alone.
+horizon30 = dt.timedelta(days=30)
+expected_n30 = sum(1 for r in records.values() if head - r["born"] >= horizon30)
 s30, n30 = H.survival(records, head, 30)
-check("thirty days has no observations, because the register is younger than that", n30 == 0,
-      f"{s30}/{n30}")
+check("the 30-day OBSERVED count matches an independently-counted reference (born <= "
+     "head-30d), whatever the register's current age happens to be",
+     n30 == expected_n30, f"n30={n30} expected={expected_n30}")
+if expected_n30 == 0:
+    print("       (register is still younger than 30 days: 0 observations, the original case)")
+else:
+    print(f"       (register has crossed 30 days: {n30} observation(s), {s30} survivor(s) - "
+         "research/CLAIM_HALFLIFE.md's '30 days | 0 | 0' row is a snapshot as of `737444c` "
+         "and correct AT that commit; a refresh at HEAD would show "
+         f"{n30} observed, {s30} survivor at 30 days)")
+
+
+def _survival_without_censoring(records: dict, days: int) -> tuple[int, int]:
+    """The OLD, broken shape `H.survival` replaced: every record counts as 'observed'
+    regardless of age - the exact defect censoring exists to prevent (a claim born yesterday
+    cannot honestly answer "did it survive 30 days"). Reconstructed inline rather than by
+    monkeypatching `H.survival` - there is no separate 'censoring' toggle inside it to flip,
+    the censoring IS the function - for the mutation proof below."""
+    horizon = dt.timedelta(days=days)
+    survivors = observed = 0
+    for rec in records.values():
+        observed += 1
+        if rec["died"] is None or rec["died"] - rec["born"] >= horizon:
+            survivors += 1
+    return survivors, observed
+
+
+check("setup: at least one record is younger than 30 days (otherwise the mutation below "
+     "cannot bite - censored and uncensored counts would coincide by accident)",
+     expected_n30 < len(records), f"expected_n30={expected_n30} of {len(records)} records")
+_, n30_uncensored = _survival_without_censoring(records, 30)
+check("mutation: WITHOUT censoring, the 30-day observed count no longer matches the "
+     "independent reference (would FAIL the invariant check above, by name)",
+     n30_uncensored != expected_n30, f"n30_uncensored={n30_uncensored} expected={expected_n30}")
 
 print("\n- censoring is real: a claim too young to ask is not counted as a survivor -")
 young = {"probe.too.young": {"family": "probe", "born": head - dt.timedelta(hours=2), "died": None}}

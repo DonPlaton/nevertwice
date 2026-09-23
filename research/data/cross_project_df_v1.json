@@ -1,0 +1,1452 @@
+{
+ "_schema": "Q5 G5.1 digit-free population (.loop/PREREG-Q5-DIGITFREE-2026-09-23.md): 40 cases, 10 per shape (snake_case, camel_pascal, screaming_snake, kebab), no digit/dot/slash in any planted identifier - the write-time classifier forbids only digit/dot/slash-shaped tokens, so this population tests everything outside that. The identifier IS the lesson, same construction as identifier-bound. project_a and project_c each get their OWN spelling of a same-shape identifier. project_b's prompt is the same situation without either spelling. Kept beside, not replacing, the original 100-case and identifier-bound 50-case populations.",
+ "digitfree_shapes": [
+  "snake_case",
+  "camel_pascal",
+  "screaming_snake",
+  "kebab"
+ ],
+ "n_cases": 40,
+ "cases": [
+  {
+   "id": "cpv1-df-001",
+   "topic": "digitfree-snake_case-camel_pascal",
+   "identifier_shape": "snake_case",
+   "rule_template": "camel_pascal",
+   "project_a": {
+    "project": "cpv1_df_001_alpha",
+    "title": "digit-free snake_case/camel_pascal - cpv1-df-001 - a",
+    "description": "Lesson: billing_service needs its cache cleared after a schema migration, or reads go stale.",
+    "principle": "Lesson: billing_service needs its cache cleared after a schema migration, or reads go stale.",
+    "planted": {
+     "snake_case": "billing_service"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ psql -c 'select count(*) from cache_status'\n  ERROR: billing_service is stale - the last migration changed the underlying schema\nAssistant: found it. billing_service needs its cache cleared after a schema migration, or reads go stale\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_df_001_gamma",
+    "title": "digit-free snake_case/camel_pascal - cpv1-df-001 - c",
+    "description": "Lesson: invoicing_service needs its cache cleared after a schema migration, or reads go stale.",
+    "principle": "Lesson: invoicing_service needs its cache cleared after a schema migration, or reads go stale.",
+    "planted": {
+     "snake_case": "invoicing_service"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ psql -c 'select count(*) from cache_status'\n  ERROR: invoicing_service is stale - the last migration changed the underlying schema\nAssistant: found it. invoicing_service needs its cache cleared after a schema migration, or reads go stale\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_df_001_beta",
+    "prompt": "Just ran a schema migration - anything that needs its cache cleared after?"
+   },
+   "distractor": {
+    "project": "cpv1_df_001_delta",
+    "title": "testing-mocking - unrelated",
+    "description": "Don't mock the database in an integration test; run it against a real instance so a migration bug actually surfaces.",
+    "principle": "Don't mock the database in an integration test; run it against a real instance so a migration bug actually surfaces."
+   }
+  },
+  {
+   "id": "cpv1-df-002",
+   "topic": "digitfree-snake_case-snake_case",
+   "identifier_shape": "snake_case",
+   "rule_template": "snake_case",
+   "project_a": {
+    "project": "cpv1_df_002_alpha",
+    "title": "digit-free snake_case/snake_case - cpv1-df-002 - a",
+    "description": "Lesson: orders_service must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: orders_service must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "snake_case": "orders_service"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh orders_service 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. orders_service must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_df_002_gamma",
+    "title": "digit-free snake_case/snake_case - cpv1-df-002 - c",
+    "description": "Lesson: checkout_service must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: checkout_service must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "snake_case": "checkout_service"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh checkout_service 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. checkout_service must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_df_002_beta",
+    "prompt": "About to kick off a deploy - is there a service that needs draining first?"
+   },
+   "distractor": {
+    "project": "cpv1_df_002_delta",
+    "title": "testing-fixtures - unrelated",
+    "description": "Keep test fixtures independent so one test's setup can never leak into another test's assertions.",
+    "principle": "Keep test fixtures independent so one test's setup can never leak into another test's assertions."
+   }
+  },
+  {
+   "id": "cpv1-df-003",
+   "topic": "digitfree-snake_case-snake_case",
+   "identifier_shape": "snake_case",
+   "rule_template": "snake_case",
+   "project_a": {
+    "project": "cpv1_df_003_alpha",
+    "title": "digit-free snake_case/snake_case - cpv1-df-003 - a",
+    "description": "Lesson: payments_service must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: payments_service must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "snake_case": "payments_service"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh payments_service 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. payments_service must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_df_003_gamma",
+    "title": "digit-free snake_case/snake_case - cpv1-df-003 - c",
+    "description": "Lesson: wallet_service must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: wallet_service must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "snake_case": "wallet_service"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh wallet_service 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. wallet_service must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_df_003_beta",
+    "prompt": "About to kick off a deploy - is there a service that needs draining first?"
+   },
+   "distractor": {
+    "project": "cpv1_df_003_delta",
+    "title": "retries-transient - unrelated",
+    "description": "Retry only on transient or server errors, never on a client error that will fail identically every time.",
+    "principle": "Retry only on transient or server errors, never on a client error that will fail identically every time."
+   }
+  },
+  {
+   "id": "cpv1-df-004",
+   "topic": "digitfree-snake_case-camel_pascal",
+   "identifier_shape": "snake_case",
+   "rule_template": "camel_pascal",
+   "project_a": {
+    "project": "cpv1_df_004_alpha",
+    "title": "digit-free snake_case/camel_pascal - cpv1-df-004 - a",
+    "description": "Lesson: sessions_service needs its cache cleared after a schema migration, or reads go stale.",
+    "principle": "Lesson: sessions_service needs its cache cleared after a schema migration, or reads go stale.",
+    "planted": {
+     "snake_case": "sessions_service"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ psql -c 'select count(*) from cache_status'\n  ERROR: sessions_service is stale - the last migration changed the underlying schema\nAssistant: found it. sessions_service needs its cache cleared after a schema migration, or reads go stale\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_df_004_gamma",
+    "title": "digit-free snake_case/camel_pascal - cpv1-df-004 - c",
+    "description": "Lesson: identity_service needs its cache cleared after a schema migration, or reads go stale.",
+    "principle": "Lesson: identity_service needs its cache cleared after a schema migration, or reads go stale.",
+    "planted": {
+     "snake_case": "identity_service"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ psql -c 'select count(*) from cache_status'\n  ERROR: identity_service is stale - the last migration changed the underlying schema\nAssistant: found it. identity_service needs its cache cleared after a schema migration, or reads go stale\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_df_004_beta",
+    "prompt": "Just ran a schema migration - anything that needs its cache cleared after?"
+   },
+   "distractor": {
+    "project": "cpv1_df_004_delta",
+    "title": "retries-backoff - unrelated",
+    "description": "Cap retry attempts with exponential backoff so a failing dependency cannot be hammered indefinitely.",
+    "principle": "Cap retry attempts with exponential backoff so a failing dependency cannot be hammered indefinitely."
+   }
+  },
+  {
+   "id": "cpv1-df-005",
+   "topic": "digitfree-snake_case-screaming_snake",
+   "identifier_shape": "snake_case",
+   "rule_template": "screaming_snake",
+   "project_a": {
+    "project": "cpv1_df_005_alpha",
+    "title": "digit-free snake_case/screaming_snake - cpv1-df-005 - a",
+    "description": "Lesson: caching_service rotates automatically every quarter; hardcoding it breaks after the first rotation.",
+    "principle": "Lesson: caching_service rotates automatically every quarter; hardcoding it breaks after the first rotation.",
+    "planted": {
+     "snake_case": "caching_service"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ grep -rn CONFIG_FLAG .\n  config.py:42: caching_service = True  # hardcoded, rotated last quarter\nAssistant: found it. caching_service rotates automatically every quarter; hardcoding it breaks after the first rotation\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_df_005_gamma",
+    "title": "digit-free snake_case/screaming_snake - cpv1-df-005 - c",
+    "description": "Lesson: buffering_service rotates automatically every quarter; hardcoding it breaks after the first rotation.",
+    "principle": "Lesson: buffering_service rotates automatically every quarter; hardcoding it breaks after the first rotation.",
+    "planted": {
+     "snake_case": "buffering_service"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ grep -rn CONFIG_FLAG .\n  config.py:42: buffering_service = True  # hardcoded, rotated last quarter\nAssistant: found it. buffering_service rotates automatically every quarter; hardcoding it breaks after the first rotation\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_df_005_beta",
+    "prompt": "Is there anything that rotates automatically I should know about before hardcoding a value?"
+   },
+   "distractor": {
+    "project": "cpv1_df_005_delta",
+    "title": "secrets-redact - unrelated",
+    "description": "Redact secrets before any text reaches persistent storage or a log line.",
+    "principle": "Redact secrets before any text reaches persistent storage or a log line."
+   }
+  },
+  {
+   "id": "cpv1-df-006",
+   "topic": "digitfree-snake_case-kebab",
+   "identifier_shape": "snake_case",
+   "rule_template": "kebab",
+   "project_a": {
+    "project": "cpv1_df_006_alpha",
+    "title": "digit-free snake_case/kebab - cpv1-df-006 - a",
+    "description": "Lesson: queueing_service silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: queueing_service silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "snake_case": "queueing_service"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show queueing_service silently truncating anything over 4 MB.\nAssistant: found it. queueing_service silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_df_006_gamma",
+    "title": "digit-free snake_case/kebab - cpv1-df-006 - c",
+    "description": "Lesson: piping_service silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: piping_service silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "snake_case": "piping_service"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show piping_service silently truncating anything over 4 MB.\nAssistant: found it. piping_service silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_df_006_beta",
+    "prompt": "I need to publish a larger payload to the queue - anything that could drop it silently?"
+   },
+   "distractor": {
+    "project": "cpv1_df_006_delta",
+    "title": "secrets-vcs - unrelated",
+    "description": "Never commit a credential to version control, even in a throwaway branch that will be deleted.",
+    "principle": "Never commit a credential to version control, even in a throwaway branch that will be deleted."
+   }
+  },
+  {
+   "id": "cpv1-df-007",
+   "topic": "digitfree-snake_case-screaming_snake",
+   "identifier_shape": "snake_case",
+   "rule_template": "screaming_snake",
+   "project_a": {
+    "project": "cpv1_df_007_alpha",
+    "title": "digit-free snake_case/screaming_snake - cpv1-df-007 - a",
+    "description": "Lesson: search_service rotates automatically every quarter; hardcoding it breaks after the first rotation.",
+    "principle": "Lesson: search_service rotates automatically every quarter; hardcoding it breaks after the first rotation.",
+    "planted": {
+     "snake_case": "search_service"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ grep -rn CONFIG_FLAG .\n  config.py:42: search_service = True  # hardcoded, rotated last quarter\nAssistant: found it. search_service rotates automatically every quarter; hardcoding it breaks after the first rotation\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_df_007_gamma",
+    "title": "digit-free snake_case/screaming_snake - cpv1-df-007 - c",
+    "description": "Lesson: indexing_service rotates automatically every quarter; hardcoding it breaks after the first rotation.",
+    "principle": "Lesson: indexing_service rotates automatically every quarter; hardcoding it breaks after the first rotation.",
+    "planted": {
+     "snake_case": "indexing_service"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ grep -rn CONFIG_FLAG .\n  config.py:42: indexing_service = True  # hardcoded, rotated last quarter\nAssistant: found it. indexing_service rotates automatically every quarter; hardcoding it breaks after the first rotation\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_df_007_beta",
+    "prompt": "Is there anything that rotates automatically I should know about before hardcoding a value?"
+   },
+   "distractor": {
+    "project": "cpv1_df_007_delta",
+    "title": "caching-invalidate - unrelated",
+    "description": "Invalidate a cache entry the moment its source of truth changes, rather than relying on a time-based expiry alone.",
+    "principle": "Invalidate a cache entry the moment its source of truth changes, rather than relying on a time-based expiry alone."
+   }
+  },
+  {
+   "id": "cpv1-df-008",
+   "topic": "digitfree-snake_case-snake_case",
+   "identifier_shape": "snake_case",
+   "rule_template": "snake_case",
+   "project_a": {
+    "project": "cpv1_df_008_alpha",
+    "title": "digit-free snake_case/snake_case - cpv1-df-008 - a",
+    "description": "Lesson: auth_service must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: auth_service must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "snake_case": "auth_service"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh auth_service 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. auth_service must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_df_008_gamma",
+    "title": "digit-free snake_case/snake_case - cpv1-df-008 - c",
+    "description": "Lesson: access_service must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: access_service must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "snake_case": "access_service"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh access_service 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. access_service must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_df_008_beta",
+    "prompt": "About to kick off a deploy - is there a service that needs draining first?"
+   },
+   "distractor": {
+    "project": "cpv1_df_008_delta",
+    "title": "caching-key - unrelated",
+    "description": "Key a cache by every input that affects the result, or two different queries will silently share one answer.",
+    "principle": "Key a cache by every input that affects the result, or two different queries will silently share one answer."
+   }
+  },
+  {
+   "id": "cpv1-df-009",
+   "topic": "digitfree-snake_case-camel_pascal",
+   "identifier_shape": "snake_case",
+   "rule_template": "camel_pascal",
+   "project_a": {
+    "project": "cpv1_df_009_alpha",
+    "title": "digit-free snake_case/camel_pascal - cpv1-df-009 - a",
+    "description": "Lesson: reporting_service needs its cache cleared after a schema migration, or reads go stale.",
+    "principle": "Lesson: reporting_service needs its cache cleared after a schema migration, or reads go stale.",
+    "planted": {
+     "snake_case": "reporting_service"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ psql -c 'select count(*) from cache_status'\n  ERROR: reporting_service is stale - the last migration changed the underlying schema\nAssistant: found it. reporting_service needs its cache cleared after a schema migration, or reads go stale\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_df_009_gamma",
+    "title": "digit-free snake_case/camel_pascal - cpv1-df-009 - c",
+    "description": "Lesson: insights_service needs its cache cleared after a schema migration, or reads go stale.",
+    "principle": "Lesson: insights_service needs its cache cleared after a schema migration, or reads go stale.",
+    "planted": {
+     "snake_case": "insights_service"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ psql -c 'select count(*) from cache_status'\n  ERROR: insights_service is stale - the last migration changed the underlying schema\nAssistant: found it. insights_service needs its cache cleared after a schema migration, or reads go stale\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_df_009_beta",
+    "prompt": "Just ran a schema migration - anything that needs its cache cleared after?"
+   },
+   "distractor": {
+    "project": "cpv1_df_009_delta",
+    "title": "concurrency-critical-section - unrelated",
+    "description": "Hold a lock for the shortest possible critical section to avoid starving other writers.",
+    "principle": "Hold a lock for the shortest possible critical section to avoid starving other writers."
+   }
+  },
+  {
+   "id": "cpv1-df-010",
+   "topic": "digitfree-snake_case-kebab",
+   "identifier_shape": "snake_case",
+   "rule_template": "kebab",
+   "project_a": {
+    "project": "cpv1_df_010_alpha",
+    "title": "digit-free snake_case/kebab - cpv1-df-010 - a",
+    "description": "Lesson: metrics_service silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: metrics_service silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "snake_case": "metrics_service"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show metrics_service silently truncating anything over 4 MB.\nAssistant: found it. metrics_service silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_df_010_gamma",
+    "title": "digit-free snake_case/kebab - cpv1-df-010 - c",
+    "description": "Lesson: telemetry_service silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: telemetry_service silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "snake_case": "telemetry_service"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show telemetry_service silently truncating anything over 4 MB.\nAssistant: found it. telemetry_service silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_df_010_beta",
+    "prompt": "I need to publish a larger payload to the queue - anything that could drop it silently?"
+   },
+   "distractor": {
+    "project": "cpv1_df_010_delta",
+    "title": "concurrency-reread - unrelated",
+    "description": "Re-read shared state after acquiring a lock; a value read before the lock can be stale by the time you actually have it.",
+    "principle": "Re-read shared state after acquiring a lock; a value read before the lock can be stale by the time you actually have it."
+   }
+  },
+  {
+   "id": "cpv1-df-011",
+   "topic": "digitfree-camel_pascal-camel_pascal",
+   "identifier_shape": "camel_pascal",
+   "rule_template": "camel_pascal",
+   "project_a": {
+    "project": "cpv1_df_011_alpha",
+    "title": "digit-free camel_pascal/camel_pascal - cpv1-df-011 - a",
+    "description": "Lesson: BillingService needs its cache cleared after a schema migration, or reads go stale.",
+    "principle": "Lesson: BillingService needs its cache cleared after a schema migration, or reads go stale.",
+    "planted": {
+     "camel_pascal": "BillingService"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ psql -c 'select count(*) from cache_status'\n  ERROR: BillingService is stale - the last migration changed the underlying schema\nAssistant: found it. BillingService needs its cache cleared after a schema migration, or reads go stale\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_df_011_gamma",
+    "title": "digit-free camel_pascal/camel_pascal - cpv1-df-011 - c",
+    "description": "Lesson: invoicingService needs its cache cleared after a schema migration, or reads go stale.",
+    "principle": "Lesson: invoicingService needs its cache cleared after a schema migration, or reads go stale.",
+    "planted": {
+     "camel_pascal": "invoicingService"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ psql -c 'select count(*) from cache_status'\n  ERROR: invoicingService is stale - the last migration changed the underlying schema\nAssistant: found it. invoicingService needs its cache cleared after a schema migration, or reads go stale\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_df_011_beta",
+    "prompt": "Just ran a schema migration - anything that needs its cache cleared after?"
+   },
+   "distractor": {
+    "project": "cpv1_df_011_delta",
+    "title": "config-fallback - unrelated",
+    "description": "Give every config value read from the environment a safe fallback instead of raising at import time.",
+    "principle": "Give every config value read from the environment a safe fallback instead of raising at import time."
+   }
+  },
+  {
+   "id": "cpv1-df-012",
+   "topic": "digitfree-camel_pascal-kebab",
+   "identifier_shape": "camel_pascal",
+   "rule_template": "kebab",
+   "project_a": {
+    "project": "cpv1_df_012_alpha",
+    "title": "digit-free camel_pascal/kebab - cpv1-df-012 - a",
+    "description": "Lesson: OrdersService silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: OrdersService silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "camel_pascal": "OrdersService"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show OrdersService silently truncating anything over 4 MB.\nAssistant: found it. OrdersService silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_df_012_gamma",
+    "title": "digit-free camel_pascal/kebab - cpv1-df-012 - c",
+    "description": "Lesson: checkoutService silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: checkoutService silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "camel_pascal": "checkoutService"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show checkoutService silently truncating anything over 4 MB.\nAssistant: found it. checkoutService silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_df_012_beta",
+    "prompt": "I need to publish a larger payload to the queue - anything that could drop it silently?"
+   },
+   "distractor": {
+    "project": "cpv1_df_012_delta",
+    "title": "config-boundary-validation - unrelated",
+    "description": "Validate a config value's type at the boundary, not deep inside the code that eventually uses it.",
+    "principle": "Validate a config value's type at the boundary, not deep inside the code that eventually uses it."
+   }
+  },
+  {
+   "id": "cpv1-df-013",
+   "topic": "digitfree-camel_pascal-snake_case",
+   "identifier_shape": "camel_pascal",
+   "rule_template": "snake_case",
+   "project_a": {
+    "project": "cpv1_df_013_alpha",
+    "title": "digit-free camel_pascal/snake_case - cpv1-df-013 - a",
+    "description": "Lesson: PaymentsService must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: PaymentsService must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "camel_pascal": "PaymentsService"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh PaymentsService 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. PaymentsService must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_df_013_gamma",
+    "title": "digit-free camel_pascal/snake_case - cpv1-df-013 - c",
+    "description": "Lesson: walletService must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: walletService must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "camel_pascal": "walletService"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh walletService 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. walletService must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_df_013_beta",
+    "prompt": "About to kick off a deploy - is there a service that needs draining first?"
+   },
+   "distractor": {
+    "project": "cpv1_df_013_delta",
+    "title": "errors-narrow-catch - unrelated",
+    "description": "Catch the narrowest exception type you can actually recover from; a bare except hides real bugs.",
+    "principle": "Catch the narrowest exception type you can actually recover from; a bare except hides real bugs."
+   }
+  },
+  {
+   "id": "cpv1-df-014",
+   "topic": "digitfree-camel_pascal-screaming_snake",
+   "identifier_shape": "camel_pascal",
+   "rule_template": "screaming_snake",
+   "project_a": {
+    "project": "cpv1_df_014_alpha",
+    "title": "digit-free camel_pascal/screaming_snake - cpv1-df-014 - a",
+    "description": "Lesson: SessionsService rotates automatically every quarter; hardcoding it breaks after the first rotation.",
+    "principle": "Lesson: SessionsService rotates automatically every quarter; hardcoding it breaks after the first rotation.",
+    "planted": {
+     "camel_pascal": "SessionsService"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ grep -rn CONFIG_FLAG .\n  config.py:42: SessionsService = True  # hardcoded, rotated last quarter\nAssistant: found it. SessionsService rotates automatically every quarter; hardcoding it breaks after the first rotation\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_df_014_gamma",
+    "title": "digit-free camel_pascal/screaming_snake - cpv1-df-014 - c",
+    "description": "Lesson: identityService rotates automatically every quarter; hardcoding it breaks after the first rotation.",
+    "principle": "Lesson: identityService rotates automatically every quarter; hardcoding it breaks after the first rotation.",
+    "planted": {
+     "camel_pascal": "identityService"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ grep -rn CONFIG_FLAG .\n  config.py:42: identityService = True  # hardcoded, rotated last quarter\nAssistant: found it. identityService rotates automatically every quarter; hardcoding it breaks after the first rotation\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_df_014_beta",
+    "prompt": "Is there anything that rotates automatically I should know about before hardcoding a value?"
+   },
+   "distractor": {
+    "project": "cpv1_df_014_delta",
+    "title": "errors-context - unrelated",
+    "description": "Log an error with enough context to reproduce it, not just the exception's bare message.",
+    "principle": "Log an error with enough context to reproduce it, not just the exception's bare message."
+   }
+  },
+  {
+   "id": "cpv1-df-015",
+   "topic": "digitfree-camel_pascal-kebab",
+   "identifier_shape": "camel_pascal",
+   "rule_template": "kebab",
+   "project_a": {
+    "project": "cpv1_df_015_alpha",
+    "title": "digit-free camel_pascal/kebab - cpv1-df-015 - a",
+    "description": "Lesson: CachingService silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: CachingService silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "camel_pascal": "CachingService"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show CachingService silently truncating anything over 4 MB.\nAssistant: found it. CachingService silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_df_015_gamma",
+    "title": "digit-free camel_pascal/kebab - cpv1-df-015 - c",
+    "description": "Lesson: bufferingService silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: bufferingService silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "camel_pascal": "bufferingService"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show bufferingService silently truncating anything over 4 MB.\nAssistant: found it. bufferingService silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_df_015_beta",
+    "prompt": "I need to publish a larger payload to the queue - anything that could drop it silently?"
+   },
+   "distractor": {
+    "project": "cpv1_df_015_delta",
+    "title": "migration-backward-compat - unrelated",
+    "description": "Make a migration backward compatible so the old code can still run during a rolling deploy.",
+    "principle": "Make a migration backward compatible so the old code can still run during a rolling deploy."
+   }
+  },
+  {
+   "id": "cpv1-df-016",
+   "topic": "digitfree-camel_pascal-screaming_snake",
+   "identifier_shape": "camel_pascal",
+   "rule_template": "screaming_snake",
+   "project_a": {
+    "project": "cpv1_df_016_alpha",
+    "title": "digit-free camel_pascal/screaming_snake - cpv1-df-016 - a",
+    "description": "Lesson: QueueingService rotates automatically every quarter; hardcoding it breaks after the first rotation.",
+    "principle": "Lesson: QueueingService rotates automatically every quarter; hardcoding it breaks after the first rotation.",
+    "planted": {
+     "camel_pascal": "QueueingService"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ grep -rn CONFIG_FLAG .\n  config.py:42: QueueingService = True  # hardcoded, rotated last quarter\nAssistant: found it. QueueingService rotates automatically every quarter; hardcoding it breaks after the first rotation\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_df_016_gamma",
+    "title": "digit-free camel_pascal/screaming_snake - cpv1-df-016 - c",
+    "description": "Lesson: pipingService rotates automatically every quarter; hardcoding it breaks after the first rotation.",
+    "principle": "Lesson: pipingService rotates automatically every quarter; hardcoding it breaks after the first rotation.",
+    "planted": {
+     "camel_pascal": "pipingService"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ grep -rn CONFIG_FLAG .\n  config.py:42: pipingService = True  # hardcoded, rotated last quarter\nAssistant: found it. pipingService rotates automatically every quarter; hardcoding it breaks after the first rotation\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_df_016_beta",
+    "prompt": "Is there anything that rotates automatically I should know about before hardcoding a value?"
+   },
+   "distractor": {
+    "project": "cpv1_df_016_delta",
+    "title": "migration-separate-backfill - unrelated",
+    "description": "Never run a schema migration and a large data backfill in the same transaction.",
+    "principle": "Never run a schema migration and a large data backfill in the same transaction."
+   }
+  },
+  {
+   "id": "cpv1-df-017",
+   "topic": "digitfree-camel_pascal-camel_pascal",
+   "identifier_shape": "camel_pascal",
+   "rule_template": "camel_pascal",
+   "project_a": {
+    "project": "cpv1_df_017_alpha",
+    "title": "digit-free camel_pascal/camel_pascal - cpv1-df-017 - a",
+    "description": "Lesson: SearchService needs its cache cleared after a schema migration, or reads go stale.",
+    "principle": "Lesson: SearchService needs its cache cleared after a schema migration, or reads go stale.",
+    "planted": {
+     "camel_pascal": "SearchService"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ psql -c 'select count(*) from cache_status'\n  ERROR: SearchService is stale - the last migration changed the underlying schema\nAssistant: found it. SearchService needs its cache cleared after a schema migration, or reads go stale\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_df_017_gamma",
+    "title": "digit-free camel_pascal/camel_pascal - cpv1-df-017 - c",
+    "description": "Lesson: indexingService needs its cache cleared after a schema migration, or reads go stale.",
+    "principle": "Lesson: indexingService needs its cache cleared after a schema migration, or reads go stale.",
+    "planted": {
+     "camel_pascal": "indexingService"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ psql -c 'select count(*) from cache_status'\n  ERROR: indexingService is stale - the last migration changed the underlying schema\nAssistant: found it. indexingService needs its cache cleared after a schema migration, or reads go stale\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_df_017_beta",
+    "prompt": "Just ran a schema migration - anything that needs its cache cleared after?"
+   },
+   "distractor": {
+    "project": "cpv1_df_017_delta",
+    "title": "logging-no-pii - unrelated",
+    "description": "Never log a raw request body that might contain personal data.",
+    "principle": "Never log a raw request body that might contain personal data."
+   }
+  },
+  {
+   "id": "cpv1-df-018",
+   "topic": "digitfree-camel_pascal-screaming_snake",
+   "identifier_shape": "camel_pascal",
+   "rule_template": "screaming_snake",
+   "project_a": {
+    "project": "cpv1_df_018_alpha",
+    "title": "digit-free camel_pascal/screaming_snake - cpv1-df-018 - a",
+    "description": "Lesson: AuthService rotates automatically every quarter; hardcoding it breaks after the first rotation.",
+    "principle": "Lesson: AuthService rotates automatically every quarter; hardcoding it breaks after the first rotation.",
+    "planted": {
+     "camel_pascal": "AuthService"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ grep -rn CONFIG_FLAG .\n  config.py:42: AuthService = True  # hardcoded, rotated last quarter\nAssistant: found it. AuthService rotates automatically every quarter; hardcoding it breaks after the first rotation\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_df_018_gamma",
+    "title": "digit-free camel_pascal/screaming_snake - cpv1-df-018 - c",
+    "description": "Lesson: accessService rotates automatically every quarter; hardcoding it breaks after the first rotation.",
+    "principle": "Lesson: accessService rotates automatically every quarter; hardcoding it breaks after the first rotation.",
+    "planted": {
+     "camel_pascal": "accessService"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ grep -rn CONFIG_FLAG .\n  config.py:42: accessService = True  # hardcoded, rotated last quarter\nAssistant: found it. accessService rotates automatically every quarter; hardcoding it breaks after the first rotation\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_df_018_beta",
+    "prompt": "Is there anything that rotates automatically I should know about before hardcoding a value?"
+   },
+   "distractor": {
+    "project": "cpv1_df_018_delta",
+    "title": "logging-structured - unrelated",
+    "description": "Use structured logging so a field can be queried later instead of grepped out of free text.",
+    "principle": "Use structured logging so a field can be queried later instead of grepped out of free text."
+   }
+  },
+  {
+   "id": "cpv1-df-019",
+   "topic": "digitfree-camel_pascal-camel_pascal",
+   "identifier_shape": "camel_pascal",
+   "rule_template": "camel_pascal",
+   "project_a": {
+    "project": "cpv1_df_019_alpha",
+    "title": "digit-free camel_pascal/camel_pascal - cpv1-df-019 - a",
+    "description": "Lesson: ReportingService needs its cache cleared after a schema migration, or reads go stale.",
+    "principle": "Lesson: ReportingService needs its cache cleared after a schema migration, or reads go stale.",
+    "planted": {
+     "camel_pascal": "ReportingService"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ psql -c 'select count(*) from cache_status'\n  ERROR: ReportingService is stale - the last migration changed the underlying schema\nAssistant: found it. ReportingService needs its cache cleared after a schema migration, or reads go stale\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_df_019_gamma",
+    "title": "digit-free camel_pascal/camel_pascal - cpv1-df-019 - c",
+    "description": "Lesson: insightsService needs its cache cleared after a schema migration, or reads go stale.",
+    "principle": "Lesson: insightsService needs its cache cleared after a schema migration, or reads go stale.",
+    "planted": {
+     "camel_pascal": "insightsService"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ psql -c 'select count(*) from cache_status'\n  ERROR: insightsService is stale - the last migration changed the underlying schema\nAssistant: found it. insightsService needs its cache cleared after a schema migration, or reads go stale\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_df_019_beta",
+    "prompt": "Just ran a schema migration - anything that needs its cache cleared after?"
+   },
+   "distractor": {
+    "project": "cpv1_df_019_delta",
+    "title": "ratelimit-identity - unrelated",
+    "description": "Rate limit by the caller's identity, not by IP address, or one user behind a shared proxy blocks everyone else.",
+    "principle": "Rate limit by the caller's identity, not by IP address, or one user behind a shared proxy blocks everyone else."
+   }
+  },
+  {
+   "id": "cpv1-df-020",
+   "topic": "digitfree-camel_pascal-snake_case",
+   "identifier_shape": "camel_pascal",
+   "rule_template": "snake_case",
+   "project_a": {
+    "project": "cpv1_df_020_alpha",
+    "title": "digit-free camel_pascal/snake_case - cpv1-df-020 - a",
+    "description": "Lesson: MetricsService must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: MetricsService must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "camel_pascal": "MetricsService"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh MetricsService 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. MetricsService must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_df_020_gamma",
+    "title": "digit-free camel_pascal/snake_case - cpv1-df-020 - c",
+    "description": "Lesson: telemetryService must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: telemetryService must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "camel_pascal": "telemetryService"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh telemetryService 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. telemetryService must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_df_020_beta",
+    "prompt": "About to kick off a deploy - is there a service that needs draining first?"
+   },
+   "distractor": {
+    "project": "cpv1_df_020_delta",
+    "title": "ratelimit-retry-signal - unrelated",
+    "description": "Return a clear retry-after signal when throttling a client, rather than a bare rejection.",
+    "principle": "Return a clear retry-after signal when throttling a client, rather than a bare rejection."
+   }
+  },
+  {
+   "id": "cpv1-df-021",
+   "topic": "digitfree-screaming_snake-screaming_snake",
+   "identifier_shape": "screaming_snake",
+   "rule_template": "screaming_snake",
+   "project_a": {
+    "project": "cpv1_df_021_alpha",
+    "title": "digit-free screaming_snake/screaming_snake - cpv1-df-021 - a",
+    "description": "Lesson: BILLING_CONFIG_FLAG rotates automatically every quarter; hardcoding it breaks after the first rotation.",
+    "principle": "Lesson: BILLING_CONFIG_FLAG rotates automatically every quarter; hardcoding it breaks after the first rotation.",
+    "planted": {
+     "screaming_snake": "BILLING_CONFIG_FLAG"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ grep -rn CONFIG_FLAG .\n  config.py:42: BILLING_CONFIG_FLAG = True  # hardcoded, rotated last quarter\nAssistant: found it. BILLING_CONFIG_FLAG rotates automatically every quarter; hardcoding it breaks after the first rotation\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_df_021_gamma",
+    "title": "digit-free screaming_snake/screaming_snake - cpv1-df-021 - c",
+    "description": "Lesson: INVOICING_CONFIG_FLAG rotates automatically every quarter; hardcoding it breaks after the first rotation.",
+    "principle": "Lesson: INVOICING_CONFIG_FLAG rotates automatically every quarter; hardcoding it breaks after the first rotation.",
+    "planted": {
+     "screaming_snake": "INVOICING_CONFIG_FLAG"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ grep -rn CONFIG_FLAG .\n  config.py:42: INVOICING_CONFIG_FLAG = True  # hardcoded, rotated last quarter\nAssistant: found it. INVOICING_CONFIG_FLAG rotates automatically every quarter; hardcoding it breaks after the first rotation\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_df_021_beta",
+    "prompt": "Is there anything that rotates automatically I should know about before hardcoding a value?"
+   },
+   "distractor": {
+    "project": "cpv1_df_021_delta",
+    "title": "memory-free-early - unrelated",
+    "description": "Free a large buffer as soon as its last use is done, not at the end of the function.",
+    "principle": "Free a large buffer as soon as its last use is done, not at the end of the function."
+   }
+  },
+  {
+   "id": "cpv1-df-022",
+   "topic": "digitfree-screaming_snake-screaming_snake",
+   "identifier_shape": "screaming_snake",
+   "rule_template": "screaming_snake",
+   "project_a": {
+    "project": "cpv1_df_022_alpha",
+    "title": "digit-free screaming_snake/screaming_snake - cpv1-df-022 - a",
+    "description": "Lesson: ORDERS_CONFIG_FLAG rotates automatically every quarter; hardcoding it breaks after the first rotation.",
+    "principle": "Lesson: ORDERS_CONFIG_FLAG rotates automatically every quarter; hardcoding it breaks after the first rotation.",
+    "planted": {
+     "screaming_snake": "ORDERS_CONFIG_FLAG"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ grep -rn CONFIG_FLAG .\n  config.py:42: ORDERS_CONFIG_FLAG = True  # hardcoded, rotated last quarter\nAssistant: found it. ORDERS_CONFIG_FLAG rotates automatically every quarter; hardcoding it breaks after the first rotation\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_df_022_gamma",
+    "title": "digit-free screaming_snake/screaming_snake - cpv1-df-022 - c",
+    "description": "Lesson: CHECKOUT_CONFIG_FLAG rotates automatically every quarter; hardcoding it breaks after the first rotation.",
+    "principle": "Lesson: CHECKOUT_CONFIG_FLAG rotates automatically every quarter; hardcoding it breaks after the first rotation.",
+    "planted": {
+     "screaming_snake": "CHECKOUT_CONFIG_FLAG"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ grep -rn CONFIG_FLAG .\n  config.py:42: CHECKOUT_CONFIG_FLAG = True  # hardcoded, rotated last quarter\nAssistant: found it. CHECKOUT_CONFIG_FLAG rotates automatically every quarter; hardcoding it breaks after the first rotation\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_df_022_beta",
+    "prompt": "Is there anything that rotates automatically I should know about before hardcoding a value?"
+   },
+   "distractor": {
+    "project": "cpv1_df_022_delta",
+    "title": "memory-profile-first - unrelated",
+    "description": "Profile before optimizing memory use; a guess about what is expensive is usually wrong.",
+    "principle": "Profile before optimizing memory use; a guess about what is expensive is usually wrong."
+   }
+  },
+  {
+   "id": "cpv1-df-023",
+   "topic": "digitfree-screaming_snake-kebab",
+   "identifier_shape": "screaming_snake",
+   "rule_template": "kebab",
+   "project_a": {
+    "project": "cpv1_df_023_alpha",
+    "title": "digit-free screaming_snake/kebab - cpv1-df-023 - a",
+    "description": "Lesson: PAYMENTS_CONFIG_FLAG silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: PAYMENTS_CONFIG_FLAG silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "screaming_snake": "PAYMENTS_CONFIG_FLAG"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show PAYMENTS_CONFIG_FLAG silently truncating anything over 4 MB.\nAssistant: found it. PAYMENTS_CONFIG_FLAG silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_df_023_gamma",
+    "title": "digit-free screaming_snake/kebab - cpv1-df-023 - c",
+    "description": "Lesson: WALLET_CONFIG_FLAG silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: WALLET_CONFIG_FLAG silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "screaming_snake": "WALLET_CONFIG_FLAG"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show WALLET_CONFIG_FLAG silently truncating anything over 4 MB.\nAssistant: found it. WALLET_CONFIG_FLAG silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_df_023_beta",
+    "prompt": "I need to publish a larger payload to the queue - anything that could drop it silently?"
+   },
+   "distractor": {
+    "project": "cpv1_df_023_delta",
+    "title": "deps-lockfile - unrelated",
+    "description": "Pin a dependency's exact version in a lockfile so a build is reproducible months later.",
+    "principle": "Pin a dependency's exact version in a lockfile so a build is reproducible months later."
+   }
+  },
+  {
+   "id": "cpv1-df-024",
+   "topic": "digitfree-screaming_snake-kebab",
+   "identifier_shape": "screaming_snake",
+   "rule_template": "kebab",
+   "project_a": {
+    "project": "cpv1_df_024_alpha",
+    "title": "digit-free screaming_snake/kebab - cpv1-df-024 - a",
+    "description": "Lesson: SESSIONS_CONFIG_FLAG silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: SESSIONS_CONFIG_FLAG silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "screaming_snake": "SESSIONS_CONFIG_FLAG"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show SESSIONS_CONFIG_FLAG silently truncating anything over 4 MB.\nAssistant: found it. SESSIONS_CONFIG_FLAG silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_df_024_gamma",
+    "title": "digit-free screaming_snake/kebab - cpv1-df-024 - c",
+    "description": "Lesson: IDENTITY_CONFIG_FLAG silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: IDENTITY_CONFIG_FLAG silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "screaming_snake": "IDENTITY_CONFIG_FLAG"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show IDENTITY_CONFIG_FLAG silently truncating anything over 4 MB.\nAssistant: found it. IDENTITY_CONFIG_FLAG silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_df_024_beta",
+    "prompt": "I need to publish a larger payload to the queue - anything that could drop it silently?"
+   },
+   "distractor": {
+    "project": "cpv1_df_024_delta",
+    "title": "deps-review - unrelated",
+    "description": "Review what a new dependency actually does before adding it, not just its popularity.",
+    "principle": "Review what a new dependency actually does before adding it, not just its popularity."
+   }
+  },
+  {
+   "id": "cpv1-df-025",
+   "topic": "digitfree-screaming_snake-snake_case",
+   "identifier_shape": "screaming_snake",
+   "rule_template": "snake_case",
+   "project_a": {
+    "project": "cpv1_df_025_alpha",
+    "title": "digit-free screaming_snake/snake_case - cpv1-df-025 - a",
+    "description": "Lesson: CACHING_CONFIG_FLAG must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: CACHING_CONFIG_FLAG must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "screaming_snake": "CACHING_CONFIG_FLAG"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh CACHING_CONFIG_FLAG 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. CACHING_CONFIG_FLAG must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_df_025_gamma",
+    "title": "digit-free screaming_snake/snake_case - cpv1-df-025 - c",
+    "description": "Lesson: BUFFERING_CONFIG_FLAG must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: BUFFERING_CONFIG_FLAG must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "screaming_snake": "BUFFERING_CONFIG_FLAG"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh BUFFERING_CONFIG_FLAG 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. BUFFERING_CONFIG_FLAG must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_df_025_beta",
+    "prompt": "About to kick off a deploy - is there a service that needs draining first?"
+   },
+   "distractor": {
+    "project": "cpv1_df_025_delta",
+    "title": "api-idempotent - unrelated",
+    "description": "Make an API idempotent so a client's retry after a timeout cannot double the effect.",
+    "principle": "Make an API idempotent so a client's retry after a timeout cannot double the effect."
+   }
+  },
+  {
+   "id": "cpv1-df-026",
+   "topic": "digitfree-screaming_snake-snake_case",
+   "identifier_shape": "screaming_snake",
+   "rule_template": "snake_case",
+   "project_a": {
+    "project": "cpv1_df_026_alpha",
+    "title": "digit-free screaming_snake/snake_case - cpv1-df-026 - a",
+    "description": "Lesson: QUEUEING_CONFIG_FLAG must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: QUEUEING_CONFIG_FLAG must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "screaming_snake": "QUEUEING_CONFIG_FLAG"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh QUEUEING_CONFIG_FLAG 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. QUEUEING_CONFIG_FLAG must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_df_026_gamma",
+    "title": "digit-free screaming_snake/snake_case - cpv1-df-026 - c",
+    "description": "Lesson: PIPING_CONFIG_FLAG must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: PIPING_CONFIG_FLAG must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "screaming_snake": "PIPING_CONFIG_FLAG"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh PIPING_CONFIG_FLAG 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. PIPING_CONFIG_FLAG must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_df_026_beta",
+    "prompt": "About to kick off a deploy - is there a service that needs draining first?"
+   },
+   "distractor": {
+    "project": "cpv1_df_026_delta",
+    "title": "api-versioning - unrelated",
+    "description": "Version a public API explicitly rather than silently changing behavior under the same endpoint.",
+    "principle": "Version a public API explicitly rather than silently changing behavior under the same endpoint."
+   }
+  },
+  {
+   "id": "cpv1-df-027",
+   "topic": "digitfree-screaming_snake-kebab",
+   "identifier_shape": "screaming_snake",
+   "rule_template": "kebab",
+   "project_a": {
+    "project": "cpv1_df_027_alpha",
+    "title": "digit-free screaming_snake/kebab - cpv1-df-027 - a",
+    "description": "Lesson: SEARCH_CONFIG_FLAG silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: SEARCH_CONFIG_FLAG silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "screaming_snake": "SEARCH_CONFIG_FLAG"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show SEARCH_CONFIG_FLAG silently truncating anything over 4 MB.\nAssistant: found it. SEARCH_CONFIG_FLAG silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_df_027_gamma",
+    "title": "digit-free screaming_snake/kebab - cpv1-df-027 - c",
+    "description": "Lesson: INDEXING_CONFIG_FLAG silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: INDEXING_CONFIG_FLAG silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "screaming_snake": "INDEXING_CONFIG_FLAG"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show INDEXING_CONFIG_FLAG silently truncating anything over 4 MB.\nAssistant: found it. INDEXING_CONFIG_FLAG silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_df_027_beta",
+    "prompt": "I need to publish a larger payload to the queue - anything that could drop it silently?"
+   },
+   "distractor": {
+    "project": "cpv1_df_027_delta",
+    "title": "review-deletions - unrelated",
+    "description": "Review a diff for what it removes, not only what it adds; a deletion can silently drop a guard.",
+    "principle": "Review a diff for what it removes, not only what it adds; a deletion can silently drop a guard."
+   }
+  },
+  {
+   "id": "cpv1-df-028",
+   "topic": "digitfree-screaming_snake-camel_pascal",
+   "identifier_shape": "screaming_snake",
+   "rule_template": "camel_pascal",
+   "project_a": {
+    "project": "cpv1_df_028_alpha",
+    "title": "digit-free screaming_snake/camel_pascal - cpv1-df-028 - a",
+    "description": "Lesson: AUTH_CONFIG_FLAG needs its cache cleared after a schema migration, or reads go stale.",
+    "principle": "Lesson: AUTH_CONFIG_FLAG needs its cache cleared after a schema migration, or reads go stale.",
+    "planted": {
+     "screaming_snake": "AUTH_CONFIG_FLAG"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ psql -c 'select count(*) from cache_status'\n  ERROR: AUTH_CONFIG_FLAG is stale - the last migration changed the underlying schema\nAssistant: found it. AUTH_CONFIG_FLAG needs its cache cleared after a schema migration, or reads go stale\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_df_028_gamma",
+    "title": "digit-free screaming_snake/camel_pascal - cpv1-df-028 - c",
+    "description": "Lesson: ACCESS_CONFIG_FLAG needs its cache cleared after a schema migration, or reads go stale.",
+    "principle": "Lesson: ACCESS_CONFIG_FLAG needs its cache cleared after a schema migration, or reads go stale.",
+    "planted": {
+     "screaming_snake": "ACCESS_CONFIG_FLAG"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ psql -c 'select count(*) from cache_status'\n  ERROR: ACCESS_CONFIG_FLAG is stale - the last migration changed the underlying schema\nAssistant: found it. ACCESS_CONFIG_FLAG needs its cache cleared after a schema migration, or reads go stale\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_df_028_beta",
+    "prompt": "Just ran a schema migration - anything that needs its cache cleared after?"
+   },
+   "distractor": {
+    "project": "cpv1_df_028_delta",
+    "title": "review-explain-why - unrelated",
+    "description": "A review comment should say why a change is wrong, not just that it is wrong.",
+    "principle": "A review comment should say why a change is wrong, not just that it is wrong."
+   }
+  },
+  {
+   "id": "cpv1-df-029",
+   "topic": "digitfree-screaming_snake-camel_pascal",
+   "identifier_shape": "screaming_snake",
+   "rule_template": "camel_pascal",
+   "project_a": {
+    "project": "cpv1_df_029_alpha",
+    "title": "digit-free screaming_snake/camel_pascal - cpv1-df-029 - a",
+    "description": "Lesson: REPORTING_CONFIG_FLAG needs its cache cleared after a schema migration, or reads go stale.",
+    "principle": "Lesson: REPORTING_CONFIG_FLAG needs its cache cleared after a schema migration, or reads go stale.",
+    "planted": {
+     "screaming_snake": "REPORTING_CONFIG_FLAG"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ psql -c 'select count(*) from cache_status'\n  ERROR: REPORTING_CONFIG_FLAG is stale - the last migration changed the underlying schema\nAssistant: found it. REPORTING_CONFIG_FLAG needs its cache cleared after a schema migration, or reads go stale\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_df_029_gamma",
+    "title": "digit-free screaming_snake/camel_pascal - cpv1-df-029 - c",
+    "description": "Lesson: INSIGHTS_CONFIG_FLAG needs its cache cleared after a schema migration, or reads go stale.",
+    "principle": "Lesson: INSIGHTS_CONFIG_FLAG needs its cache cleared after a schema migration, or reads go stale.",
+    "planted": {
+     "screaming_snake": "INSIGHTS_CONFIG_FLAG"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ psql -c 'select count(*) from cache_status'\n  ERROR: INSIGHTS_CONFIG_FLAG is stale - the last migration changed the underlying schema\nAssistant: found it. INSIGHTS_CONFIG_FLAG needs its cache cleared after a schema migration, or reads go stale\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_df_029_beta",
+    "prompt": "Just ran a schema migration - anything that needs its cache cleared after?"
+   },
+   "distractor": {
+    "project": "cpv1_df_029_delta",
+    "title": "deploy-canary - unrelated",
+    "description": "Roll a deploy out to a small percentage of traffic before shipping it everywhere.",
+    "principle": "Roll a deploy out to a small percentage of traffic before shipping it everywhere."
+   }
+  },
+  {
+   "id": "cpv1-df-030",
+   "topic": "digitfree-screaming_snake-screaming_snake",
+   "identifier_shape": "screaming_snake",
+   "rule_template": "screaming_snake",
+   "project_a": {
+    "project": "cpv1_df_030_alpha",
+    "title": "digit-free screaming_snake/screaming_snake - cpv1-df-030 - a",
+    "description": "Lesson: METRICS_CONFIG_FLAG rotates automatically every quarter; hardcoding it breaks after the first rotation.",
+    "principle": "Lesson: METRICS_CONFIG_FLAG rotates automatically every quarter; hardcoding it breaks after the first rotation.",
+    "planted": {
+     "screaming_snake": "METRICS_CONFIG_FLAG"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ grep -rn CONFIG_FLAG .\n  config.py:42: METRICS_CONFIG_FLAG = True  # hardcoded, rotated last quarter\nAssistant: found it. METRICS_CONFIG_FLAG rotates automatically every quarter; hardcoding it breaks after the first rotation\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_df_030_gamma",
+    "title": "digit-free screaming_snake/screaming_snake - cpv1-df-030 - c",
+    "description": "Lesson: TELEMETRY_CONFIG_FLAG rotates automatically every quarter; hardcoding it breaks after the first rotation.",
+    "principle": "Lesson: TELEMETRY_CONFIG_FLAG rotates automatically every quarter; hardcoding it breaks after the first rotation.",
+    "planted": {
+     "screaming_snake": "TELEMETRY_CONFIG_FLAG"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ grep -rn CONFIG_FLAG .\n  config.py:42: TELEMETRY_CONFIG_FLAG = True  # hardcoded, rotated last quarter\nAssistant: found it. TELEMETRY_CONFIG_FLAG rotates automatically every quarter; hardcoding it breaks after the first rotation\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_df_030_beta",
+    "prompt": "Is there anything that rotates automatically I should know about before hardcoding a value?"
+   },
+   "distractor": {
+    "project": "cpv1_df_030_delta",
+    "title": "deploy-rollback - unrelated",
+    "description": "Keep a fast, tested rollback path for every deploy, not just a forward migration plan.",
+    "principle": "Keep a fast, tested rollback path for every deploy, not just a forward migration plan."
+   }
+  },
+  {
+   "id": "cpv1-df-031",
+   "topic": "digitfree-kebab-snake_case",
+   "identifier_shape": "kebab",
+   "rule_template": "snake_case",
+   "project_a": {
+    "project": "cpv1_df_031_alpha",
+    "title": "digit-free kebab/snake_case - cpv1-df-031 - a",
+    "description": "Lesson: billing-service must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: billing-service must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "kebab": "billing-service"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh billing-service 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. billing-service must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_df_031_gamma",
+    "title": "digit-free kebab/snake_case - cpv1-df-031 - c",
+    "description": "Lesson: invoicing-worker must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: invoicing-worker must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "kebab": "invoicing-worker"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh invoicing-worker 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. invoicing-worker must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_df_031_beta",
+    "prompt": "About to kick off a deploy - is there a service that needs draining first?"
+   },
+   "distractor": {
+    "project": "cpv1_df_031_delta",
+    "title": "monitor-symptom - unrelated",
+    "description": "Alert on a symptom the user would notice, not on every internal metric that happens to move.",
+    "principle": "Alert on a symptom the user would notice, not on every internal metric that happens to move."
+   }
+  },
+  {
+   "id": "cpv1-df-032",
+   "topic": "digitfree-kebab-kebab",
+   "identifier_shape": "kebab",
+   "rule_template": "kebab",
+   "project_a": {
+    "project": "cpv1_df_032_alpha",
+    "title": "digit-free kebab/kebab - cpv1-df-032 - a",
+    "description": "Lesson: orders-service silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: orders-service silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "kebab": "orders-service"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show orders-service silently truncating anything over 4 MB.\nAssistant: found it. orders-service silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_df_032_gamma",
+    "title": "digit-free kebab/kebab - cpv1-df-032 - c",
+    "description": "Lesson: checkout-worker silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: checkout-worker silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "kebab": "checkout-worker"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show checkout-worker silently truncating anything over 4 MB.\nAssistant: found it. checkout-worker silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_df_032_beta",
+    "prompt": "I need to publish a larger payload to the queue - anything that could drop it silently?"
+   },
+   "distractor": {
+    "project": "cpv1_df_032_delta",
+    "title": "monitor-trend - unrelated",
+    "description": "A dashboard should show the trend over time, not just the current value, or a slow regression goes unnoticed.",
+    "principle": "A dashboard should show the trend over time, not just the current value, or a slow regression goes unnoticed."
+   }
+  },
+  {
+   "id": "cpv1-df-033",
+   "topic": "digitfree-kebab-screaming_snake",
+   "identifier_shape": "kebab",
+   "rule_template": "screaming_snake",
+   "project_a": {
+    "project": "cpv1_df_033_alpha",
+    "title": "digit-free kebab/screaming_snake - cpv1-df-033 - a",
+    "description": "Lesson: payments-service rotates automatically every quarter; hardcoding it breaks after the first rotation.",
+    "principle": "Lesson: payments-service rotates automatically every quarter; hardcoding it breaks after the first rotation.",
+    "planted": {
+     "kebab": "payments-service"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ grep -rn CONFIG_FLAG .\n  config.py:42: payments-service = True  # hardcoded, rotated last quarter\nAssistant: found it. payments-service rotates automatically every quarter; hardcoding it breaks after the first rotation\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_df_033_gamma",
+    "title": "digit-free kebab/screaming_snake - cpv1-df-033 - c",
+    "description": "Lesson: wallet-worker rotates automatically every quarter; hardcoding it breaks after the first rotation.",
+    "principle": "Lesson: wallet-worker rotates automatically every quarter; hardcoding it breaks after the first rotation.",
+    "planted": {
+     "kebab": "wallet-worker"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ grep -rn CONFIG_FLAG .\n  config.py:42: wallet-worker = True  # hardcoded, rotated last quarter\nAssistant: found it. wallet-worker rotates automatically every quarter; hardcoding it breaks after the first rotation\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_df_033_beta",
+    "prompt": "Is there anything that rotates automatically I should know about before hardcoding a value?"
+   },
+   "distractor": {
+    "project": "cpv1_df_033_delta",
+    "title": "security-boundary-validate - unrelated",
+    "description": "Validate input at the boundary where it enters the system, not deep inside a function that assumes it is already safe.",
+    "principle": "Validate input at the boundary where it enters the system, not deep inside a function that assumes it is already safe."
+   }
+  },
+  {
+   "id": "cpv1-df-034",
+   "topic": "digitfree-kebab-screaming_snake",
+   "identifier_shape": "kebab",
+   "rule_template": "screaming_snake",
+   "project_a": {
+    "project": "cpv1_df_034_alpha",
+    "title": "digit-free kebab/screaming_snake - cpv1-df-034 - a",
+    "description": "Lesson: sessions-service rotates automatically every quarter; hardcoding it breaks after the first rotation.",
+    "principle": "Lesson: sessions-service rotates automatically every quarter; hardcoding it breaks after the first rotation.",
+    "planted": {
+     "kebab": "sessions-service"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ grep -rn CONFIG_FLAG .\n  config.py:42: sessions-service = True  # hardcoded, rotated last quarter\nAssistant: found it. sessions-service rotates automatically every quarter; hardcoding it breaks after the first rotation\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_df_034_gamma",
+    "title": "digit-free kebab/screaming_snake - cpv1-df-034 - c",
+    "description": "Lesson: identity-worker rotates automatically every quarter; hardcoding it breaks after the first rotation.",
+    "principle": "Lesson: identity-worker rotates automatically every quarter; hardcoding it breaks after the first rotation.",
+    "planted": {
+     "kebab": "identity-worker"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ grep -rn CONFIG_FLAG .\n  config.py:42: identity-worker = True  # hardcoded, rotated last quarter\nAssistant: found it. identity-worker rotates automatically every quarter; hardcoding it breaks after the first rotation\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_df_034_beta",
+    "prompt": "Is there anything that rotates automatically I should know about before hardcoding a value?"
+   },
+   "distractor": {
+    "project": "cpv1_df_034_delta",
+    "title": "security-default-restrictive - unrelated",
+    "description": "Default to the most restrictive permission and widen it deliberately, not the other way around.",
+    "principle": "Default to the most restrictive permission and widen it deliberately, not the other way around."
+   }
+  },
+  {
+   "id": "cpv1-df-035",
+   "topic": "digitfree-kebab-kebab",
+   "identifier_shape": "kebab",
+   "rule_template": "kebab",
+   "project_a": {
+    "project": "cpv1_df_035_alpha",
+    "title": "digit-free kebab/kebab - cpv1-df-035 - a",
+    "description": "Lesson: caching-service silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: caching-service silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "kebab": "caching-service"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show caching-service silently truncating anything over 4 MB.\nAssistant: found it. caching-service silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_df_035_gamma",
+    "title": "digit-free kebab/kebab - cpv1-df-035 - c",
+    "description": "Lesson: buffering-worker silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: buffering-worker silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "kebab": "buffering-worker"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show buffering-worker silently truncating anything over 4 MB.\nAssistant: found it. buffering-worker silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_df_035_beta",
+    "prompt": "I need to publish a larger payload to the queue - anything that could drop it silently?"
+   },
+   "distractor": {
+    "project": "cpv1_df_035_delta",
+    "title": "vcs-atomic-commit - unrelated",
+    "description": "Keep a commit to one logical change so a later revert does not also undo something unrelated.",
+    "principle": "Keep a commit to one logical change so a later revert does not also undo something unrelated."
+   }
+  },
+  {
+   "id": "cpv1-df-036",
+   "topic": "digitfree-kebab-snake_case",
+   "identifier_shape": "kebab",
+   "rule_template": "snake_case",
+   "project_a": {
+    "project": "cpv1_df_036_alpha",
+    "title": "digit-free kebab/snake_case - cpv1-df-036 - a",
+    "description": "Lesson: queueing-service must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: queueing-service must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "kebab": "queueing-service"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh queueing-service 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. queueing-service must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_df_036_gamma",
+    "title": "digit-free kebab/snake_case - cpv1-df-036 - c",
+    "description": "Lesson: piping-worker must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: piping-worker must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "kebab": "piping-worker"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh piping-worker 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. piping-worker must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_df_036_beta",
+    "prompt": "About to kick off a deploy - is there a service that needs draining first?"
+   },
+   "distractor": {
+    "project": "cpv1_df_036_delta",
+    "title": "vcs-explain-why - unrelated",
+    "description": "Write a commit message that explains why a change was made, not just what changed.",
+    "principle": "Write a commit message that explains why a change was made, not just what changed."
+   }
+  },
+  {
+   "id": "cpv1-df-037",
+   "topic": "digitfree-kebab-camel_pascal",
+   "identifier_shape": "kebab",
+   "rule_template": "camel_pascal",
+   "project_a": {
+    "project": "cpv1_df_037_alpha",
+    "title": "digit-free kebab/camel_pascal - cpv1-df-037 - a",
+    "description": "Lesson: search-service needs its cache cleared after a schema migration, or reads go stale.",
+    "principle": "Lesson: search-service needs its cache cleared after a schema migration, or reads go stale.",
+    "planted": {
+     "kebab": "search-service"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ psql -c 'select count(*) from cache_status'\n  ERROR: search-service is stale - the last migration changed the underlying schema\nAssistant: found it. search-service needs its cache cleared after a schema migration, or reads go stale\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_df_037_gamma",
+    "title": "digit-free kebab/camel_pascal - cpv1-df-037 - c",
+    "description": "Lesson: indexing-worker needs its cache cleared after a schema migration, or reads go stale.",
+    "principle": "Lesson: indexing-worker needs its cache cleared after a schema migration, or reads go stale.",
+    "planted": {
+     "kebab": "indexing-worker"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ psql -c 'select count(*) from cache_status'\n  ERROR: indexing-worker is stale - the last migration changed the underlying schema\nAssistant: found it. indexing-worker needs its cache cleared after a schema migration, or reads go stale\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_df_037_beta",
+    "prompt": "Just ran a schema migration - anything that needs its cache cleared after?"
+   },
+   "distractor": {
+    "project": "cpv1_df_037_delta",
+    "title": "perf-ratio-not-absolute - unrelated",
+    "description": "Measure the ratio of costs on a hostile input, not the absolute time, to tell linear from quadratic.",
+    "principle": "Measure the ratio of costs on a hostile input, not the absolute time, to tell linear from quadratic."
+   }
+  },
+  {
+   "id": "cpv1-df-038",
+   "topic": "digitfree-kebab-camel_pascal",
+   "identifier_shape": "kebab",
+   "rule_template": "camel_pascal",
+   "project_a": {
+    "project": "cpv1_df_038_alpha",
+    "title": "digit-free kebab/camel_pascal - cpv1-df-038 - a",
+    "description": "Lesson: auth-service needs its cache cleared after a schema migration, or reads go stale.",
+    "principle": "Lesson: auth-service needs its cache cleared after a schema migration, or reads go stale.",
+    "planted": {
+     "kebab": "auth-service"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ psql -c 'select count(*) from cache_status'\n  ERROR: auth-service is stale - the last migration changed the underlying schema\nAssistant: found it. auth-service needs its cache cleared after a schema migration, or reads go stale\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_df_038_gamma",
+    "title": "digit-free kebab/camel_pascal - cpv1-df-038 - c",
+    "description": "Lesson: access-worker needs its cache cleared after a schema migration, or reads go stale.",
+    "principle": "Lesson: access-worker needs its cache cleared after a schema migration, or reads go stale.",
+    "planted": {
+     "kebab": "access-worker"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ psql -c 'select count(*) from cache_status'\n  ERROR: access-worker is stale - the last migration changed the underlying schema\nAssistant: found it. access-worker needs its cache cleared after a schema migration, or reads go stale\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_df_038_beta",
+    "prompt": "Just ran a schema migration - anything that needs its cache cleared after?"
+   },
+   "distractor": {
+    "project": "cpv1_df_038_delta",
+    "title": "perf-batch - unrelated",
+    "description": "Batch many small operations into one call when the fixed cost per call dominates the work itself.",
+    "principle": "Batch many small operations into one call when the fixed cost per call dominates the work itself."
+   }
+  },
+  {
+   "id": "cpv1-df-039",
+   "topic": "digitfree-kebab-snake_case",
+   "identifier_shape": "kebab",
+   "rule_template": "snake_case",
+   "project_a": {
+    "project": "cpv1_df_039_alpha",
+    "title": "digit-free kebab/snake_case - cpv1-df-039 - a",
+    "description": "Lesson: reporting-service must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: reporting-service must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "kebab": "reporting-service"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh reporting-service 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. reporting-service must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_df_039_gamma",
+    "title": "digit-free kebab/snake_case - cpv1-df-039 - c",
+    "description": "Lesson: insights-worker must be drained before every deploy, or in-flight requests get dropped.",
+    "principle": "Lesson: insights-worker must be drained before every deploy, or in-flight requests get dropped.",
+    "planted": {
+     "kebab": "insights-worker"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\n  $ ssh insights-worker 'systemctl status app'\n  active (running), but mid-drain from the last rollout - requests are being dropped.\nAssistant: found it. insights-worker must be drained before every deploy, or in-flight requests get dropped\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_df_039_beta",
+    "prompt": "About to kick off a deploy - is there a service that needs draining first?"
+   },
+   "distractor": {
+    "project": "cpv1_df_039_delta",
+    "title": "docs-explain-reasoning - unrelated",
+    "description": "Document the reasoning behind a non-obvious decision, not just the decision itself.",
+    "principle": "Document the reasoning behind a non-obvious decision, not just the decision itself."
+   }
+  },
+  {
+   "id": "cpv1-df-040",
+   "topic": "digitfree-kebab-kebab",
+   "identifier_shape": "kebab",
+   "rule_template": "kebab",
+   "project_a": {
+    "project": "cpv1_df_040_alpha",
+    "title": "digit-free kebab/kebab - cpv1-df-040 - a",
+    "description": "Lesson: metrics-service silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: metrics-service silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "kebab": "metrics-service"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show metrics-service silently truncating anything over 4 MB.\nAssistant: found it. metrics-service silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_c": {
+    "project": "cpv1_df_040_gamma",
+    "title": "digit-free kebab/kebab - cpv1-df-040 - c",
+    "description": "Lesson: telemetry-worker silently drops messages over 4 MB; split large payloads before publishing.",
+    "principle": "Lesson: telemetry-worker silently drops messages over 4 MB; split large payloads before publishing.",
+    "planted": {
+     "kebab": "telemetry-worker"
+    },
+    "session": "User: we keep running into trouble around this - can you help me get to the bottom of it?\nAssistant: let me check what's going on.\nAssistant: the publisher logs show telemetry-worker silently truncating anything over 4 MB.\nAssistant: found it. telemetry-worker silently drops messages over 4 MB; split large payloads before publishing\nUser: good catch - let's write that down so we don't relearn it the hard way.\nAssistant: agreed, noting it now.\n"
+   },
+   "project_b": {
+    "project": "cpv1_df_040_beta",
+    "prompt": "I need to publish a larger payload to the queue - anything that could drop it silently?"
+   },
+   "distractor": {
+    "project": "cpv1_df_040_delta",
+    "title": "docs-runnable-examples - unrelated",
+    "description": "Keep an example in the documentation runnable, or it silently rots the first time the API changes.",
+    "principle": "Keep an example in the documentation runnable, or it silently rots the first time the API changes."
+   }
+  }
+ ]
+}

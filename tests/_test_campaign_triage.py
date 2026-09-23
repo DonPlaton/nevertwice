@@ -7,16 +7,16 @@ not reproduce the problem with fresh data and the same green checks. `tools/camp
 does the sorting; this suite pins its numbers so the split is a decision with a count attached
 rather than a paragraph.
 
-    A   24   deterministic given committed inputs   (12 our own arms, 12 competitors')
+    A  271   deterministic given committed inputs   (211 our own arms, 60 competitors')
     B    0   noisy, printed no finer than its spread
     C   45   noisy, printed FINER than the stand resolves
-    D  268   noisy, no run-to-run spread measured for the field
+    D  335   noisy, no run-to-run spread measured for the field
     E   10   machine-dependent
 
 **B is zero OF THE FORTY-FIVE WHOSE SPREAD IS KNOWN**, and the qualifier is the whole point.
 B and D are not independent: a claim cannot reach B without first leaving D, and D is "nobody
 measured this field". So `B = 0` is a statement about the 45 claims on the five fields that were
-measured - all 45 print finer than their stand resolves - and says nothing about the other 268.
+measured - all 45 print finer than their stand resolves - and says nothing about the other 335.
 Written flat as "no claim prints coarser than its spread" it would read as a property of the
 project when it is a property of our knowledge (the distinction is the auditing session's,
 2026-09-22). The five-run study is the authority for the 45: `over_retraction_rate` ranged
@@ -70,7 +70,10 @@ groups = T.groups_of(pending)
 #: to pending (A 35 -> 43, all eight our own arms; the ninth, Matryoshka, is historical).
 #: 2026-09-23, the owner allowed the store-reading stands: the 19 live-vault claims were measured on a
 #: read-only copy of the store and came back live (A 43 -> 24, all nineteen our own arms).
-KNOWN = {"A": 24, "B": 0, "C": 45, "D": 268, "E": 10}
+#: 2026-09-24, the step-4 engine merge (Q5 principle layer, note_snippet word boundary, defaults set
+#: by the Q5 gates): the engine moved under 314 live claims, withdrawn in one pass (A 24 -> 271,
+#: D 268 -> 335; the A split moves to 211 our own / 60 competitors'). C and E did not move.
+KNOWN = {"A": 271, "B": 0, "C": 45, "D": 335, "E": 10}
 
 print("\n- the split is the one the campaign was planned against -")
 check("the pending set has not moved", len(pending) == sum(KNOWN.values()),
@@ -80,7 +83,7 @@ for g, n in KNOWN.items():
 
 own = [c for c, _ in groups["A"] if not T.COMPETITOR.search(c["id"])]
 comp = [c for c, _ in groups["A"] if T.COMPETITOR.search(c["id"])]
-check("and A splits 12 our own / 12 competitor arms", (len(own), len(comp)) == (12, 12),
+check("and A splits 211 our own / 60 competitor arms", (len(own), len(comp)) == (211, 60),
       f"{len(own)} / {len(comp)}")
 
 #: C carries a seam of its own. The spread table was measured on ONE stand, so `SPREAD.get(leaf)`
@@ -101,7 +104,7 @@ measured = len(groups["B"]) + len(groups["C"])
 check(f"the fields with a measured spread carry {measured} claims, and none of them is in B",
       not groups["B"] and measured == 45, f"B {len(groups['B'])}, measured {measured}")
 check("the unmeasured majority is counted, not folded into the same sentence",
-      len(groups["D"]) == 268, str(len(groups["D"])))
+      len(groups["D"]) == KNOWN["D"], str(len(groups["D"])))
 c_over = [c for c, _ in groups["C"]
           if (c.get("pointer") or "").endswith("over_retraction_rate")]
 check("the gate called absolute is in C, printed finer than it is resolved", len(c_over) == 6,

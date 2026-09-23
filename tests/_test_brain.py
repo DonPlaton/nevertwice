@@ -106,7 +106,9 @@ check("brain_block present + lists the ontology for research",
       "entity_types" in blk and "method" in blk and "paper" in blk)
 _FIELDS = dict(transcript="x", project_hint="p", tag_vocab="t", existing_patterns="-",
                existing_mistakes="-", existing_decisions="-",
-               language_rule=m.language_rule("x"))
+               language_rule=m.language_rule("x"),
+               principle_rubric=m._principle_prompt_rubric(),   # A1 (Q5)
+               principle_schema=m._principle_schema_field())    # A1 (Q5)
 formatted = m.EXTRACTION_PROMPT.format(brain_block=blk, **_FIELDS)
 check("EXTRACTION_PROMPT formats with brain_block (no KeyError, placeholder consumed)",
       "{brain_block}" not in formatted and "entity_types" in formatted)

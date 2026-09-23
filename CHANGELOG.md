@@ -16,6 +16,30 @@ empty.
 
 ### Added
 
+- **Q5, the principle layer (in progress): de-identified cross-project recall, no verdict-adjudication
+  half.** `nevertwice/_engine_text.py::principle_scan` rejects an IP, URL/FQDN, Windows/POSIX path,
+  email, host:port/bare port, version string, or a caller-named forbidden token (project slug,
+  entities, and - at promotion time - a project's whole vocabulary), every pattern a bounded
+  `_lazy_re` shape. The extraction prompt (`_engine_config.py`) asks pattern/mistake items for a
+  one-sentence `principle`, gated by `NEVERTWICE_PRINCIPLE` (default on) and placed in the STATIC
+  part of the prompt for prefix-cache friendliness. `write_typed_note` (`_engine_write.py`) turns
+  it into `fm["principle"]` through redact → cap (word boundary) → the W8 unsafe-payload gate →
+  `principle_scan`, never touching the rest of the note on a miss, and an absorb rewrite carries
+  it forward (`_ABSORB_CARRY_FIELDS`). `NEVERTWICE_CROSS_PROJECT` grows from on/off into
+  `off`/`all`/`universal` (default `universal`, docs/CONFIG.md), and `retrieve_cross_project`'s
+  universal mode draws candidates ONLY from the synthetic `universal` project - a project's own
+  notes cannot reach another project's cross-project section this way, proved against an `all`-mode
+  positive control (`tests/_test_cross_mode.py`). New boundary in `docs/THREAT_MODEL.md`
+  ("cross-project recall"); known gap recorded in `docs/WEAKNESSES.md` (W16: `_user_brief` is a
+  separate cross-project channel this boundary does not cover). Tests:
+  `tests/_test_principle_scan.py`, `tests/_test_principle_prompt.py`,
+  `tests/_test_principle_write.py`, `tests/_test_cross_mode.py`. The sleep-time promoter that
+  actually populates the `universal` pool (A5), its threshold calibration (A6) and the
+  cross-project benchmark (A9) are separate, not-yet-landed steps of the same plan
+  (`.loop/PLAN-Q3Q5.md`) - until A5 ships, `universal` mode is silent by construction (an empty
+  pool). The ride-along contested-block/verdict-adjudication half of that plan (Q3) is explicitly
+  NOT part of this work - it waits on a GPU kill-switch measurement (A0).
+
 - **K8-B, four corrections before the merge (2026-09-17;** `tests/_test_k8_vault_dryrun_readonly.py`**).** The three
   step-0 research scripts declare their store to the sandbox lint: `k8_judge_eval.py` and `k8_skeleton.py` isolate
   before the first project import; `k8_vault_dryrun.py` declares `allow_live` (it parses the owner's vault by path),

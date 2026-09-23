@@ -1,0 +1,1058 @@
+#!/usr/bin/env python3
+"""A9 (Q5): does the principle layer actually keep an identifier out of a DIFFERENT project's
+memory while still letting the underlying lesson travel? Three arms, one dataset
+(`research/data/cross_project_v1.json`, 100 cases - see `gen_cross_project_dataset.py`):
+
+  off        - NEVERTWICE_CROSS_PROJECT=off:        no cross-project section at all.
+  all        - NEVERTWICE_CROSS_PROJECT=all:         the pre-Q5 behaviour, unrestricted.
+  universal  - NEVERTWICE_CROSS_PROJECT=universal:   A4's default - only the promoted pool.
+
+Per case: project_a and project_c each learned the SAME underlying rule independently, each
+with its own planted identifiers (IP, host, path, entity). `principles.promote()` runs before
+the `universal` arm is read, so that pool actually has something in it. project_b then asks a
+topically-related prompt and the bench reads what each arm's cross-project section injects.
+
+THREE extractor modes, because the owner's original concern was narrower than the first cut of
+this bench tested (2026-09-23 review):
+
+  --extract            (default for a real run) - each side's lesson is learned IN CONTEXT, in
+                        a short synthetic session transcript with the planted identifiers woven
+                        into the dialogue (an IP in a log line, a hostname in a command, a path
+                        in a traceback, an entity in the prose). The REAL extraction pipeline
+                        (EXTRACTION_PROMPT + generate_json, pinned model/temperature) proposes
+                        the `principle` field itself - this is what actually exercises A1/A3's
+                        write-time scanner, because a pre-written clean principle never does.
+  --oracle-principles   a CONTROL: writes each case's pre-written ground-truth principle
+                        directly, no extraction at all - isolates retrieval/promotion from
+                        extraction, so a regression can be attributed to one or the other.
+  (--dry's stub)        `--dry` alone uses a deterministic, no-model stub extractor that
+                        deliberately smuggles one planted identifier into an otherwise-clean
+                        principle, across 6 project_a/project_c slots (one per identifier
+                        class, plus a second "entity" scenario left undeclared) - see
+                        `_stub_poison_extraction` and `_DRY_POISON_PLAN`.
+
+Metrics, per arm, aggregated over every case:
+  leak         - fraction of cases where ANY planted identifier reaches project_b's injected
+                 text, and leak_by_class breaks that down per identifier class. The claim the
+                 whole layer exists to make true: 0 for `universal`, nonzero for `all` (the
+                 positive control that proves the metric can see a leak at all).
+  benefit      - fraction of cases where project_b's injection surfaces SOMETHING from the
+                 shared rule's own vocabulary - "did the layer transfer the lesson," not merely
+                 "did it stay silent and safe."
+  noise        - fraction of injected lines that came from the unrelated distractor.
+  cross_chars  - mean injected-section length (a token-budget proxy).
+
+Reported SEPARATELY, once per run (not per arm - each is a WRITE- or PROMOTION-time property,
+not a read-time one), and by STAGE (owner review, 2026-09-23 - closing W17 moved the boundary
+for an undeclared entity name from "documented gap" to "caught one layer later"):
+  write_rejections_by_class      - how many extracted principles `principle_scan` refused
+                                    before they ever reached disk, by identifier class.
+  promotion_rejections_by_class  - how many planted identifiers reached disk (principle_scan
+                                    had nothing to catch them WITH - a real risk for the
+                                    "entity" class specifically, W17) but were kept out of the
+                                    universal pool by `principles.py`'s token-provenance gate
+                                    at promotion time instead.
+A rejection at either stage is the principle layer doing its job, not a leak - but which
+boundary caught it has to stay visible, or "leak=0" cannot be told apart from "nothing was ever
+checked."
+
+    python research/cross_project_bench.py --help
+    python research/cross_project_bench.py --dry                  # 3 cases, stub extractor +
+                                                                    # stub embedder, no model
+    python research/cross_project_bench.py --cases 100            # the real --extract sweep,
+                                                                    # ~200 extraction calls (2
+                                                                    # per case), written under
+                                                                    # .loop/explore/ by default
+    python research/cross_project_bench.py --oracle-principles     # the control, no extraction
+                                                                    # NOT RUN as part of this work
+                                                                    # (A9, plan): the GPU is busy
+                                                                    # with a measurement campaign;
+                                                                    # checked in with --help and
+                                                                    # --dry only.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import re
+import sys
+import tempfile
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parent
+sys.path.insert(0, str(ROOT))
+import sandbox_guard  # noqa: E402 - one store sandbox for every research script
+
+sandbox_guard.isolate(prefix="nevertwice_cross_project_bench_")
+
+# Pinned BEFORE any nevertwice import - the house pattern (research/supersession_bench.py): one
+# extraction model, temperature 0, for every case. A different model or a sampled temperature
+# would confound the architecture being measured (the principle layer's scanner) with plain
+# extractor variance, and `--extract`'s whole point is measuring what a real model proposes.
+LLM = os.environ.get("CROSS_PROJECT_LLM", "qwen3-coder:30b")
+os.environ["NEVERTWICE_MODEL"] = LLM
+os.environ["NEVERTWICE_EXTRACT_TEMP"] = "0"
+os.environ["NEVERTWICE_CLOUD"] = "none"        # local only: nothing billed, nothing leaves here
+
+sys.path.insert(0, str(ROOT / "nevertwice"))
+import memory_hook as m  # noqa: E402
+import principles as pr  # noqa: E402
+import _provenance as prov  # noqa: E402 - C4(a): the shared measured_at/stamp helper, ported
+                            # from q3/ride-along 901f3b1 (research/ is already on sys.path -
+                            # whatever caller imported THIS module put it there)
+
+DATA = HERE / "data" / "cross_project_v1.json"
+# The identifier-bound population (Q5 G5.1, finding 3, 2026-09-24): registered
+# .loop/PREREG-Q5-IDENTIFIER-BOUND-2026-09-23.md BEFORE any number from it. 50 cases, one
+# planted identifier PER case, and the identifier IS the lesson - the original 100-case
+# population deliberately keeps the identifier OUT of the stated rule (H5's whole finding was
+# that this leaves `all`'s positive control nothing real to leak); this population is the
+# opposite by design, kept BESIDE the original, never replacing it.
+IB_DATA = HERE / "data" / "cross_project_ib_v1.json"
+# C3 (2026-09-23), .loop/PREREG-Q5-DIGITFREE-2026-09-23.md: 40 cases, 10 per shape
+# (DIGITFREE_SHAPES below), no digit/dot/slash in any planted identifier - the write-time
+# classifier forbids only digit/dot/slash-shaped tokens, so this is the population that tests
+# everything outside that (billing_service, BillingService, BILLING_CONFIG_FLAG,
+# billing-service). Same "identifier IS the lesson" construction as identifier-bound, kept
+# BESIDE both existing populations.
+DF_DATA = HERE / "data" / "cross_project_df_v1.json"
+# .loop/explore/, not research/results/: an exploratory run must not write where a published,
+# cited claim's artifact lives (research/evidence_manifest.json) - promote it explicitly with
+# --out once the numbers are trusted, the same discipline research/principle_twins.py follows.
+OUT = ROOT / ".loop" / "explore" / "cross_project.json"
+ARMS = ("off", "all", "universal")
+IDENTIFIER_CLASSES = ("ip", "host", "path", "entity")
+# Task B (2026-09-23): the digit-free population plants a CODE-IDENTIFIER shape, not one of
+# IDENTIFIER_CLASSES's four regex-shaped classes - digit/dot/slash is exactly what this
+# population's PREREG excludes by construction. `leak_by_class`/`write_rejections`/
+# `promotion_rejections` are keyed off ALL_CLASSES (the union) everywhere, not
+# IDENTIFIER_CLASSES alone, so a digit-free row's shape gets its own tracked key instead of
+# silently landing nowhere in the per-class breakdown while `leak`/`benefit` (which never
+# iterate a fixed key set) kept working by accident.
+DIGITFREE_SHAPES = ("snake_case", "camel_pascal", "screaming_snake", "kebab")
+ALL_CLASSES = IDENTIFIER_CLASSES + DIGITFREE_SHAPES
+_STOPWORDS = {"the", "a", "an", "of", "to", "in", "on", "for", "and", "or", "is", "it", "its",
+             "not", "this", "that", "so", "before", "than", "with", "at", "by", "be", "as"}
+
+
+def load_cases(path: Path, n: int | None = None) -> list[dict]:
+    data = json.loads(path.read_text(encoding="utf-8"))
+    cases = data.get("cases") or []
+    return cases[:n] if n else cases
+
+
+#: `_stub_poison_extraction` always appends a poisoning clause in exactly this shape - stripped
+#: here so the stub embedder can hash the SHARED base phrasing underneath it. A real embedder
+#: would treat "X (see acme-widget-server)" as a small variation on "X", not a different topic;
+#: this is what lets `--dry` cluster a poisoned candidate with its own case's clean twin instead
+#: of bypassing `principles.py`'s real clustering/provenance pipeline entirely.
+_POISON_SUFFIX_RE = re.compile(r"\s*\(see [^)]*\)\s*$")
+
+
+def _fixed_stub_vector(text: str) -> list[float]:
+    """A deterministic, hash-based unit-ish vector - no model, no randomness across runs.
+    Stripping the poisoning suffix FIRST means a poisoned candidate and its case's own clean
+    twin hash to the SAME base text and therefore cluster (cosine 1.0) exactly as they would
+    under a real embedder's semantic similarity - unlike a bare whole-text hash (which cannot
+    cluster two different strings at all), this lets `--dry` drive `principles.promote()`'s
+    REAL clustering and token-provenance gate end to end, not a bypass of it. Two DIFFERENT
+    cases' base phrasings still hash to different, effectively orthogonal vectors, so cases
+    never cluster with each other (each also gets its own isolated per-case vault anyway)."""
+    import hashlib                                                  # noqa: PLC0415
+    base = _POISON_SUFFIX_RE.sub("", text.strip().lower())
+    h = hashlib.sha256(base.encode("utf-8")).digest()
+    return [b / 255.0 for b in h[:16]]
+
+
+# ── oracle mode: pre-written ground truth, no extraction at all ────────────────────────────
+
+def build_side_oracle(case: dict, side: str, *, principle_override: str | None = None) -> dict:
+    """Write `side`'s note straight from the dataset's pre-written `description`/`principle` -
+    the CONTROL: it never asks a model anything, so a leak or a benefit measured here is purely
+    about retrieval and promotion, never about extraction quality.
+
+    `principle_override`, `--dry` only: the dataset's own project_a/project_c phrasings are
+    genuine independent paraphrases (different words for the same rule, by design - the same
+    corpus A6's calibration uses), which `--dry`'s hash-based stub embedder cannot cluster (it
+    is not a semantic model). Overriding both sides to the SAME text lets `--dry` still drive
+    `principles.promote()`'s real pipeline end to end; whether genuinely-different paraphrasing
+    clusters under a REAL embedder is exactly what `--cases N` (a real run) and A6 measure, not
+    what this control is for."""
+    row = case[side]
+    principle = principle_override if principle_override is not None else row["principle"]
+    # Oracle mode never "extracts" - it is deterministic ground truth, one item - but the row
+    # shape is kept identical to `build_side_extracted`'s so a diagnostic row reads the same
+    # regardless of `extractor_mode`.
+    items = [{"ntype": "pattern", "title": row["title"],
+             "has_principle": bool(principle.strip()), "principle": principle, "entities": []}]
+    stem = m.write_typed_note("Patterns",
+                              {"title": row["title"], "description": row["description"],
+                               "principle": principle},
+                              row["project"], "2026-09-23", [], "pattern")
+    if not stem:
+        return {"stem": None, "ntype": "pattern", "written_principle": "",
+               "project_relevant": True, "n_items": 1, "items": items,
+               "raw_principle": principle, "raw_entities": []}
+    m.update_embeddings([(stem, "pattern", row["project"], row["title"], row["description"], "")])
+    fm = m._read_frontmatter_file(m.VAULT / "Patterns" / f"{stem}.md")
+    written = fm.get("principle") if isinstance(fm.get("principle"), str) else ""
+    return {"stem": stem, "ntype": "pattern", "written_principle": written,
+           "project_relevant": True, "n_items": 1, "items": items, "raw_principle": principle,
+           "raw_entities": []}
+
+
+# ── --extract mode: the real extraction pipeline over a synthetic transcript ───────────────
+
+def _extract_real(session_text: str, project: str) -> dict:
+    """One real `generate_json` call, over exactly the prompt `process_session` would build for
+    this transcript (empty tag_vocab/existing-notes - a fresh per-case sandbox has none). This
+    is the ONE thing `--oracle-principles` cannot test: whether a real model, given raw session
+    text with identifiers woven into it, proposes a `principle` that still carries one."""
+    prompt = m.EXTRACTION_PROMPT.format(
+        transcript=session_text, project_hint=project, tag_vocab="(empty - pick freely)",
+        existing_patterns="(none)", existing_mistakes="(none)", existing_decisions="(none)",
+        brain_block="", language_rule=m.language_rule(session_text),
+        principle_rubric=m._principle_prompt_rubric(), principle_schema=m._principle_schema_field())
+    return m.generate_json(prompt, project=project) or {}
+
+
+def _stub_poison_extraction(phrasing: str, planted: dict, poison_class: str | None) -> dict:
+    """A deterministic, no-model stand-in for `_extract_real`, used only by `--dry`. The
+    `principle` is the clean phrasing unless `poison_class` names one identifier class to
+    smuggle into it - exactly the shape a real extractor's own mistake would take if it forgot
+    to de-identify before filling the field. `principle_scan` runs on this exactly as it would
+    on a real model's output, so this is a faithful test of the write-time gate even though
+    nothing here asked a model anything.
+
+    TWO shapes for the "entity" identifier, because they exercise DIFFERENT boundaries
+    (W17, then its closure at promotion, owner review 2026-09-23):
+      "entity"             - the planted value IS declared in the item's `entities` field, the
+                              way a model that followed the extraction prompt's own "entities -
+                              2-5 key entities of the lesson" instruction would. `principle_scan`
+                              catches this at WRITE time through the forbidden-token path (its
+                              only path for this class - it has no standalone regex pattern for
+                              "entity", unlike the other five classes).
+      "entity_undeclared"   - the SAME planted value, mentioned in the principle's prose but
+                              NEVER declared as an entity - a model that did not follow that
+                              instruction. `principle_scan` has nothing to catch this WITH (no
+                              declared token to forbid, no regex pattern either), so it reaches
+                              disk; `principles.py`'s token-provenance check at PROMOTION time
+                              is the boundary that has to catch it instead - the actual gap W17
+                              named, now closed one layer later than write time."""
+    principle = phrasing
+    entities: list[str] = []
+    if poison_class:
+        base_class = "entity" if poison_class == "entity_undeclared" else poison_class
+        principle = f"{phrasing} (see {planted[base_class]})"
+        if poison_class == "entity":            # declared - NOT "entity_undeclared"
+            entities = [planted["entity"]]
+    return {"project_relevant": True,
+           "patterns": [{"title": "flaky failure fix", "description": phrasing, "facts": [],
+                        "principle": principle, "entities": entities, "relations": [],
+                        "confidence": 0.9}],
+           "mistakes": [], "decisions": []}
+
+
+def _first_pattern_or_mistake(extraction: dict) -> tuple[str, dict] | None:
+    for ntype, key in (("pattern", "patterns"), ("mistake", "mistakes")):
+        items = extraction.get(key)
+        if isinstance(items, list) and items and isinstance(items[0], dict):
+            return ntype, items[0]
+    return None
+
+
+def _classes_present(text: str, planted: dict) -> list[str]:
+    low = (text or "").lower()
+    return [cls for cls, val in planted.items() if val and val.lower() in low]
+
+
+# ── diagnostic instrumentation (2026-09-24, owner review of the first real `--extract` run) ──
+# leak=0 on `all` (the positive control PREREG G5.1 needs to leak) and an empty universal pool
+# with no promotion line at all, on the SAME run, are both symptoms that could come from several
+# different places - the extractor never proposing a `principle`, the write-time scanner eating
+# it, `promote()` never seeing a candidate, the A/C principles clustering below T_PRINCIPLE, or
+# the identifier never reaching the DESCRIPTION `_cross_line` actually renders in the first
+# place. `rows` (below) is built so each hypothesis has ONE field that settles it, rather than
+# re-running with print statements sprinkled in by hand every time a new guess needs checking.
+
+def _identifier_hits(text: str, planted: dict) -> dict[str, bool]:
+    """Which of `ALL_CLASSES` (C3, 2026-09-23 - the four regex-shaped IDENTIFIER_CLASSES plus
+    DIGITFREE_SHAPES) appear (case-insensitive substring) in `text` - always every key, unlike
+    `_classes_present`'s presence-only list, so a row's shape does not depend on which classes
+    happened to fire."""
+    low = (text or "").lower()
+    return {cls: bool(planted.get(cls)) and str(planted[cls]).lower() in low
+           for cls in ALL_CLASSES}
+
+
+def _extraction_items(extraction: dict) -> list[dict]:
+    """Every pattern/mistake item a real (or stub) extraction call proposed, title + whether it
+    carries a non-empty `principle` + its declared `entities` - diagnostic only.
+    `_first_pattern_or_mistake` still decides which ONE item actually gets written; this exists
+    to answer "did a LATER item have a principle the first one lacked" (H1/H2 at the item
+    level, not just the written note's), and `entities` is what `_write_gate_diagnosis` needs
+    to replay the write-time forbidden-token check (finding 1, 2026-09-24)."""
+    out = []
+    for ntype, key in (("pattern", "patterns"), ("mistake", "mistakes")):
+        items = extraction.get(key)
+        if isinstance(items, list):
+            for it in items:
+                if not isinstance(it, dict):
+                    continue
+                p = it.get("principle") if isinstance(it.get("principle"), str) else ""
+                ents = it.get("entities") if isinstance(it.get("entities"), list) else []
+                out.append({"ntype": ntype, "title": it.get("title", ""),
+                           "has_principle": bool(p.strip()), "principle": p,
+                           "entities": [str(e) for e in ents]})
+    return out
+
+
+def build_side_extracted(case: dict, side: str, *, use_real: bool, poison_class: str | None,
+                         rejections: dict, stub_phrasing: str | None = None) -> dict:
+    """Write `side`'s note through the REAL write path (`write_typed_note`), sourced from
+    either a real model call (`use_real=True`, `--extract`) or the deterministic poisoning stub
+    (`--dry`). Compares the raw PROPOSED `principle` against what actually reached disk to
+    detect and CLASSIFY a WRITE-time scanner rejection - `write_typed_note` never exposes this
+    itself (a rejected principle degrades silently, by design, A3's degradation contract), so
+    this comparison is the bench's own instrumentation, not a new engine surface.
+
+    Always returns a dict (never bare `None`) - `stem`/`ntype` are `None` when nothing was
+    written (project_relevant=False, an empty extraction, or a write-time refusal); every other
+    field (`n_items`, `items`, `raw_principle`) is still populated, because "the extractor
+    proposed nothing usable" and "something was proposed but rejected" are different answers to
+    H1/H2 and a diagnostic row has to be able to tell them apart.
+
+    `stub_phrasing`, stub mode only: the SHARED base phrasing to use for BOTH project_a and
+    project_c (instead of each side's own, naturally-divergent paraphrase from the dataset) -
+    isolates what the token-provenance tests are actually about (one side's poisoning clause)
+    from ordinary paraphrase vocabulary drift, the same discipline
+    tests/_test_principle_promote.py's own provenance fixtures use."""
+    row = case[side]
+    project, planted = row["project"], row["planted"]
+    if use_real:
+        extraction = _extract_real(row["session"], project)
+    else:
+        phrasing = stub_phrasing if stub_phrasing is not None else row["principle"]
+        extraction = _stub_poison_extraction(phrasing, planted, poison_class)
+    # H1/H2 diagnostic: EVERY proposed item's principle status, not just whichever one
+    # `_first_pattern_or_mistake` picks below - settles "did the extractor emit `principle` at
+    # all" independently of "did the bench happen to pick the item that had one".
+    items_all = _extraction_items(extraction)
+    if not extraction.get("project_relevant", True):
+        return {"stem": None, "ntype": None, "written_principle": "",
+               "project_relevant": False, "n_items": len(items_all), "items": items_all,
+               "raw_principle": "", "raw_entities": []}
+    picked = _first_pattern_or_mistake(extraction)
+    if not picked:
+        return {"stem": None, "ntype": None, "written_principle": "",
+               "project_relevant": True, "n_items": len(items_all), "items": items_all,
+               "raw_principle": "", "raw_entities": []}
+    ntype, item = picked
+    raw_principle = item.get("principle") if isinstance(item.get("principle"), str) else ""
+    raw_entities = item.get("entities") if isinstance(item.get("entities"), list) else []
+    raw_entities = [str(e) for e in raw_entities]
+    stem = m.write_typed_note(m.TYPE_FOLDER[ntype], item, project, "2026-09-23", [], ntype)
+    if not stem:
+        return {"stem": None, "ntype": ntype, "written_principle": "",
+               "project_relevant": True, "n_items": len(items_all), "items": items_all,
+               "raw_principle": raw_principle, "raw_entities": raw_entities}
+    fp = m.VAULT / m.TYPE_FOLDER[ntype] / f"{stem}.md"
+    fm = m._read_frontmatter_file(fp)
+    written_principle = fm.get("principle") if isinstance(fm.get("principle"), str) else ""
+    m.update_embeddings([(stem, ntype, project, item.get("title", ""),
+                         item.get("description", ""), item.get("prevention", ""))])
+    if raw_principle and not written_principle:
+        for cls in _classes_present(raw_principle, planted):
+            rejections[cls] = rejections.get(cls, 0) + 1
+    return {"stem": stem, "ntype": ntype, "written_principle": written_principle,
+           "project_relevant": True, "n_items": len(items_all), "items": items_all,
+           "raw_principle": raw_principle, "raw_entities": raw_entities}
+
+
+# ── shared: the distractor is always oracle-written (it is noise, not the thing under test) ──
+
+def build_distractor(case: dict) -> None:
+    d = case["distractor"]
+    stem = m.write_typed_note("Patterns",
+                              {"title": d["title"], "description": d["description"],
+                               "principle": d["principle"]},
+                              d["project"], "2026-09-23", [], "pattern")
+    if stem:
+        m.update_embeddings([(stem, "pattern", d["project"], d["title"], d["description"], "")])
+
+
+def _hit_text(hits: list[dict]) -> str:
+    return "\n".join(m._cross_line(h) for h in hits)
+
+
+def _rule_keywords(case: dict) -> set[str]:
+    words = set()
+    for side in ("project_a", "project_c"):
+        for tok in case[side]["principle"].lower().replace(",", " ").replace(".", " ").split():
+            tok = tok.strip("-'\"")
+            if len(tok) >= 4 and tok not in _STOPWORDS:
+                words.add(tok)
+    return words
+
+
+def run_case(case: dict, arm: str) -> dict:
+    project_b = case["project_b"]["project"]
+    prompt = case["project_b"]["prompt"]
+    hits = m.retrieve_cross_project(project_b, prompt, mode=arm)
+    text = _hit_text(hits)
+    low = text.lower()
+
+    leak_by_class = {cls: False for cls in ALL_CLASSES}                 # C3: ALL_CLASSES
+    for side in ("project_a", "project_c"):
+        for cls, val in (case[side]["planted"] or {}).items():
+            if val and val.lower() in low:
+                leak_by_class[cls] = True
+    leaked = any(leak_by_class.values())
+
+    keywords = _rule_keywords(case)
+    benefit = any(k in low for k in keywords) if keywords else False
+
+    distractor_title = case["distractor"]["title"].lower()
+    lines = [ln for ln in text.split("\n") if ln.strip()]
+    noise_lines = sum(1 for ln in lines if distractor_title in ln.lower())
+    noise = (noise_lines / len(lines)) if lines else 0.0
+
+    return {"leaked": leaked, "leak_by_class": leak_by_class, "benefit": benefit, "noise": noise,
+           "cross_chars": len(text), "n_hits": len(hits),
+           # the raw rendered text - NOT aggregated into `summary` below, only read (per case,
+           # `all` arm only) to build the diagnostic row's cross-section preview, so the arm
+           # summaries stay exactly what they were before this instrumentation existed.
+           "text": text}
+
+
+def _side_written_description(info: dict) -> str:
+    """The text `_cross_line` would actually render for this note - `_note_snippet` reads the
+    note's DESCRIPTION section from disk, never its `principle` frontmatter (H5): a planted
+    identifier can survive all the way into `principle` and still never reach project_b,
+    because the injected line is built from the description, not the principle. `""` when
+    nothing was written for this side.
+
+    Capped at `_note_snippet`'s 220-char recall-injection budget, plain char-slice, no
+    word-boundary awareness - by design, this is a RECALL simulation, and recall really does
+    serve exactly this text. Do NOT reuse this field as a vocabulary source: see
+    `_side_written_description_full` below (C2, 2026-09-23)."""
+    if not info.get("stem"):
+        return ""
+    return m._note_snippet(info["stem"], info["ntype"])
+
+
+def _side_written_description_full(info: dict) -> str:
+    """The FULL, untruncated description exactly as `principles.py::_project_token_vocabulary`
+    reads it at promotion time - read straight from the note file's DESCRIPTION section, never
+    through `_note_snippet` (which caps at 220 chars for a different purpose, recall injection,
+    see `_side_written_description` above). `""` when nothing was written for this side.
+
+    C2 (2026-09-23): the H6 trigger recount (`.loop/explore/h6_recount.py`, a text-only, offline
+    reconstruction with no live vault to re-read) had only `written_description` to build with,
+    and used it as a stand-in for `_project_token_vocabulary`'s "desc" field - which in
+    PRODUCTION is never truncated at all. Six tokens the recount flagged as uncorroborated
+    (difficul, docum, funct, loc, oper, propagati) were the last, cut-off word of a 220-char-
+    exactly description, an artifact of that field substitution, not anything
+    `_project_token_vocabulary` (or provenance) ever actually sees - `promote_report["clusters"]`
+    for one such row (cpv1-016) is 0, confirming the real promotion path never even reached
+    provenance for it. This field exists so a future recount reads what production actually
+    reads, instead of the recall-simulation snippet."""
+    if not info.get("stem"):
+        return ""
+    ntype = info.get("ntype")
+    folder = m.TYPE_FOLDER.get(ntype)
+    if not folder:
+        return ""
+    fp = m.VAULT / folder / f"{info['stem']}.md"
+    try:
+        text = fp.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return ""
+    _fm, body = m._read_frontmatter(text)
+    _title, desc, _prevention = m._parse_note_body(body.split("\n"))
+    return desc
+
+
+def _principle_cosine(info_a: dict, info_c: dict, project_a: str, project_c: str) -> float | None:
+    """Cosine between what is ACTUALLY on disk for A and C, embedded the same way
+    `principles.py::_embed` embeds a promotion candidate (own project identity, `doc_embed_kind`)
+    - the exact pair `promote()`'s clustering step would see (H4). `None` when either side wrote
+    no principle at all, so "nothing to cluster" (H1/H2) is never read as "clustered below
+    T_PRINCIPLE" (H4) - they are different rows in the report this instruments."""
+    pa, pc = info_a.get("written_principle") or "", info_c.get("written_principle") or ""
+    if not pa or not pc:
+        return None
+    kind = m.doc_embed_kind() if hasattr(m, "doc_embed_kind") else None
+    va = m.embed_text(pa, kind=kind, project=project_a)
+    vc = m.embed_text(pc, kind=kind, project=project_c)
+    if not va or not vc:
+        return None
+    return m.cosine(va, vc)
+
+
+def _cross_preview(project_b: str, query: str, max_chars: int = 300) -> tuple[str, int]:
+    """The `all`-arm cross-project section a real injection would render for this query,
+    truncated - built from the retrieval+render PRIMITIVE (`retrieve_cross_project` +
+    `_cross_line`), not by calling `emit_session_start_context`/`emit_prompt_recall` directly.
+    Those two read `CROSS_PROJECT_MODE`/`INJECT_CROSS_PROJECT` off the module globals bound at
+    IMPORT time, not from this bench's per-arm `mode=` override - calling them as-is would
+    silently preview the wrong arm, and mutating those globals per case would be a third thing
+    to save/restore in the `finally` below, alongside `embed_text` and `llm_available`, for a
+    preview that (by design) renders the same lines either way: both real injection paths build
+    their cross section from this exact call, just with a different query and a budget/dedup
+    pass this preview does not simulate.
+
+    Returns (text, n_hits) - finding 2 (2026-09-24): the coordinator read a real 5-case run's
+    preview text as empty while the SAME row's `all` arm scored a nonzero benefit/cross_chars;
+    not reproduced from the artifact this bench itself wrote (every row read back had BOTH
+    previews populated, matching cross_chars). `n_hits` is exposed alongside the text so a
+    future row can tell "0 hits, so an empty preview is correct" apart from "hits found, but
+    the render came back empty" without inferring it purely from a string's length."""
+    hits = m.retrieve_cross_project(project_b, query, mode="all")
+    return _hit_text(hits)[:max_chars], len(hits)
+
+
+def _write_gate_diagnosis(raw_principle: str, project: str, entities: list) -> dict:
+    """Replays `_engine_write.py`'s `principle` write-time gate, IN THE SAME ORDER, to record
+    WHICH stage and WHICH token/class would reject a given (principle, entities) pair -
+    `write_typed_note` never exposes this itself (A3's degradation contract: a rejected
+    principle just becomes `""`, silently). Finding 1, 2026-09-24: the first real `--extract`
+    run showed 5 of 10 written notes' principles dropped with `write_rejections_by_class`
+    reading 0 everywhere, because the bench's own rejection classifier only ever attributed a
+    drop to a PLANTED identifier - this function is what answers "then what DID reject it".
+
+    Read-only mirror, not a call into the engine's own function: `write_typed_note` does not
+    return this detail on any path, so there is nothing to call instead of reimplementing the
+    four gates (redact -> cap -> `_looks_unsafe` -> `principle_scan`) in the same order.
+    `stage` is one of: "no_raw_principle" (nothing was proposed - not this gate's job at all),
+    "looks_unsafe", "principle_scan_regex" (one of `PRINCIPLE_IDENTIFIER_GROUPS`, unconditional,
+    `class` names which), "principle_scan_forbidden_token" (`class` is "project_slug" or
+    "entity", `token` the exact string matched), or "kept"."""
+    if not raw_principle:
+        return {"stage": "no_raw_principle", "capped": False, "class": None, "token": None}
+    p = m.redact_secrets(raw_principle).strip()
+    capped = len(p) > m.PRINCIPLE_MAX_CHARS
+    if capped:
+        p = m._cut_word_boundary(p, m.PRINCIPLE_MAX_CHARS)
+    if p and m._looks_unsafe(p):
+        return {"stage": "looks_unsafe", "capped": capped, "class": None, "token": None}
+    if not p:
+        return {"stage": "empty_after_redact_or_cap", "capped": capped, "class": None,
+               "token": None}
+    for cls, group in m.PRINCIPLE_IDENTIFIER_GROUPS.items():
+        for pat in group:
+            match = pat.search(p)
+            if match:
+                return {"stage": "principle_scan_regex", "capped": capped, "class": cls,
+                       "token": match.group(0)}
+    forbidden_entities = {e for e in entities if m._looks_like_identifier(e, project)}
+    toks = sorted({t.strip() for t in ({project} | forbidden_entities) if t and t.strip()},
+                  key=len, reverse=True)
+    if toks:
+        alt = "|".join(re.escape(t) for t in toks)
+        match = re.search(rf"\b(?:{alt})\b", p, re.IGNORECASE)
+        if match:
+            is_project = match.group(0).lower() == (project or "").lower()
+            return {"stage": "principle_scan_forbidden_token", "capped": capped,
+                   "class": "project_slug" if is_project else "entity",
+                   "token": match.group(0)}
+    return {"stage": "kept", "capped": capped, "class": None, "token": None}
+
+
+def _diagnostic_row(i: int, case: dict, written: dict[str, dict], case_rows: dict[str, dict],
+                    promote_report: dict) -> dict:
+    """One row of `rows` (owner review, 2026-09-24): everything H1-H5 need to be told apart,
+    for A and C plus the promotion step plus what project_b's `all`-arm cross section actually
+    renders - see the module docstring's "Diagnostic instrumentation" section."""
+    project_b = case["project_b"]["project"]
+    prompt = case["project_b"]["prompt"]
+    sides = {}
+    for side in ("project_a", "project_c"):
+        info = written[side]
+        planted = case[side]["planted"] or {}
+        written_desc = _side_written_description(info)
+        sides[side] = {
+            "project": case[side]["project"],
+            "n_extracted_items": info.get("n_items", 0),
+            "items": info.get("items", []),
+            "written": bool(info.get("stem")),
+            "has_principle": bool((info.get("written_principle") or "").strip()),
+            "written_principle": info.get("written_principle") or "",
+            "written_description": written_desc,
+            # C2 (2026-09-23): the untruncated description - use THIS for any vocabulary/
+            # provenance reconstruction from this row, never `written_description` above (that
+            # one is capped at 220 chars for the recall-simulation, H5, and can end mid-word).
+            "written_description_full": _side_written_description_full(info),
+            "description_identifier_hits": _identifier_hits(written_desc, planted),
+            # finding 1 (2026-09-24): WHY the raw proposed principle did or didn't survive to
+            # `written_principle` - the write-time gate never says this itself.
+            "write_gate": _write_gate_diagnosis(info.get("raw_principle") or "",
+                                                case[side]["project"],
+                                                info.get("raw_entities") or []),
+        }
+    return {
+        "case_id": case.get("id", i), "case_index": i,
+        "project_a": sides["project_a"], "project_c": sides["project_c"],
+        "principle_cosine": _principle_cosine(written["project_a"], written["project_c"],
+                                              case["project_a"]["project"],
+                                              case["project_c"]["project"]),
+        "promote_report": promote_report,
+        "all_arm": _all_arm_preview(project_b, case_rows["all"]),
+    }
+
+
+def _all_arm_preview(project_b: str, all_row: dict) -> dict:
+    """The `all_arm` block of a diagnostic row - split out of `_diagnostic_row` only so both
+    previews' text AND hit count sit next to each other under one name (finding 2)."""
+    ss_text, ss_hits = _cross_preview(project_b, project_b)
+    # prompt_cross_preview reuses `all`'s own run_case() call above - the SAME
+    # retrieve_cross_project(project_b, prompt, mode="all") call, not a second one; its hit
+    # count is already on that row as `n_hits`.
+    return {
+        "session_start_cross_preview": ss_text, "session_start_cross_hits": ss_hits,
+        "prompt_cross_preview": (all_row.get("text") or "")[:300],
+        "prompt_cross_hits": all_row.get("n_hits", 0),
+    }
+
+
+#: --dry's fixture: 3 cases x 2 sides = 6 slots. The first four cover the write-time classes
+#: (ip/host/path caught by regex regardless of declaration; entity declared, caught through
+#: the forbidden-token path) - the ORIGINAL --dry design. The fifth is the restored first-draft
+#: variant (owner review, 2026-09-23): the SAME entity value, mentioned in prose but NEVER
+#: declared - write-time has nothing to catch it WITH, so it reaches disk, and the sixth slot
+#: (case 2's project_c, left clean) is what lets the token-provenance gate at PROMOTION time
+#: either recover via the clean fallback or reject the cluster outright - either way the
+#: identifier must not reach project_b, which is exactly what this fixture proves.
+_DRY_POISON_PLAN: dict[tuple[int, str], str | None] = {
+    (0, "project_a"): "ip", (0, "project_c"): "host",
+    (1, "project_a"): "path", (1, "project_c"): "entity",
+    (2, "project_a"): "entity_undeclared", (2, "project_c"): None,
+}
+_DRY_N_CASES = 3
+
+
+def _run_promote_with_us_capture() -> tuple[dict, list[dict]]:
+    """Run `principles.py::promote()` once, instrumented so every `_token_provenance` call ALSO
+    records S beside U (C4(c), .loop/DECISION-Q5-H6-TRIGGER-2026-09-23-ADDENDUM.md (a): "S = no
+    uniqueness rule: shape (compound, whole) plus corroboration only... the fresh run records S
+    as a counterfactual count beside U") - `principles.py` itself is never modified; the spy
+    calls the REAL, saved `_token_provenance` for U (promote()'s actual decision, unaffected),
+    then calls it AGAIN with `_is_uncorroborated_private_word` forced to never flag anything
+    (S's own definition) against a COPY of `vocab_cache` (the forced-False stub never reads the
+    cache, so nothing from the S call can leak into U's cache for a LATER call in the same
+    promote() run - defensive, not currently load-bearing).
+
+    `_token_provenance` returns `offending = shape_rejections + uniqueness_rejections` (two
+    independent loops, appended in that order - principles.py's own code) - so with uniqueness
+    forced off, S's offending IS EXACTLY the shape rejections, and U's offending MINUS S's
+    offending is EXACTLY the uniqueness rejections. `rule` follows
+    `.loop/explore/h6_recount.py`'s own convention (shape takes priority when both fire)."""
+    real = pr._token_provenance
+    pairs: list[dict] = []
+
+    def _spy(sentence, source_project, cluster_projects, vocab_cache):
+        u_ok, u_offending = real(sentence, source_project, cluster_projects, vocab_cache)
+        saved_uniq = pr._is_uncorroborated_private_word
+        pr._is_uncorroborated_private_word = lambda *a, **k: False
+        try:
+            s_ok, s_offending = real(sentence, source_project, cluster_projects,
+                                     dict(vocab_cache))
+        finally:
+            pr._is_uncorroborated_private_word = saved_uniq
+        shape_offending = sorted(s_offending)
+        uniqueness_offending = sorted(set(u_offending) - set(s_offending))
+        rule = "none" if u_ok else ("shape" if shape_offending else "uniqueness")
+        pairs.append({
+            "source_project": source_project, "cluster_projects": sorted(cluster_projects),
+            "U": {"passes": u_ok, "rule": rule, "offending": sorted(u_offending)},
+            "S": {"passes": s_ok, "offending": shape_offending},
+            "uniqueness_offending": uniqueness_offending,          # C4(d) input, see below
+        })
+        return u_ok, u_offending                       # promote()'s real decision - unchanged
+
+    pr._token_provenance = _spy
+    try:
+        report = pr.promote(apply=True)
+    finally:
+        pr._token_provenance = real
+    return report, pairs
+
+
+def _cold_start_flag_count(uniqueness_offending: list[str], source_project: str,
+                           scope_projects: set, project_vocab: dict) -> int:
+    """C4(d) (.loop/DECISION-...-ADDENDUM.md (b), "U flags about 2.75x more tokens with 2 live
+    projects... than with all projects"): how many of U's uniqueness-only offending tokens
+    (from `_run_promote_with_us_capture`'s per-pair `uniqueness_offending`) would STILL be
+    flagged if the corroboration search were scoped to `scope_projects` only, using
+    `project_vocab` (a plain `{project: content-token-set}` registry, no live vault read - a
+    project no longer on disk, because the per-case vault was already rebased for a later case,
+    is looked up here exactly the same way as one still live). A token counts as corroborated
+    (NOT flagged) the moment it appears in ANY other scoped project's vocabulary - the same
+    "at least one other project used it too" rule `_is_uncorroborated_private_word` itself
+    applies, just against a caller-chosen project set instead of `_all_live_projects()`."""
+    count = 0
+    for tok in uniqueness_offending:
+        corroborated = any(tok in project_vocab.get(p, set())
+                          for p in scope_projects if p != source_project)
+        if not corroborated:
+            count += 1
+    return count
+
+
+def run_bench(cases: list[dict], *, extractor_mode: str, dry: bool) -> dict:
+    """`extractor_mode` is one of "oracle" (pre-written ground truth, no extraction),
+    "extract" (the real pipeline) or "stub" (the deterministic --dry poisoning fixture).
+
+    Two REJECTION STAGES, reported separately (owner review, 2026-09-23) - a rejection is the
+    principle layer doing its job, not a leak, but WHICH boundary caught it has to be visible,
+    or "leak=0" cannot be told apart from "nothing was ever checked":
+      write_rejections_by_class      - principle_scan refused it before it ever reached disk.
+      promotion_rejections_by_class  - it WAS written (principle_scan had nothing to catch it
+                                        with), but the token-provenance gate in
+                                        principles.py kept it out of the universal pool (either
+                                        by rejecting the whole cluster, or by promoting a
+                                        clean fallback candidate instead - either way this
+                                        specific identifier never reached project_b)."""
+    embed = _fixed_stub_vector if dry else None
+    per_arm: dict[str, list[dict]] = {arm: [] for arm in ARMS}
+    write_rejections: dict[str, int] = {cls: 0 for cls in ALL_CLASSES}       # C3: ALL_CLASSES
+    promotion_rejections: dict[str, int] = {cls: 0 for cls in ALL_CLASSES}
+    # NOT named `rows`: the summary loop below already uses that name for its own per-arm
+    # iteration variable, and shadowing it would leave this bound to whichever arm's per-case
+    # list the summary loop happened to visit last - a silent, wrong answer, not a crash.
+    diag_rows: list[dict] = []
+    # C4(d): every project's content-token vocabulary this run has EVER written, captured
+    # WHILE that case's vault is still live (before the next case's `_rebase_vault` discards
+    # it) - a project no longer on disk is still lookup-able here. `us_pairs_by_case[i]` holds
+    # case i's own `_run_promote_with_us_capture` pairs, matched to `diag_rows[i]` by index
+    # AFTER the loop, once `all_project_vocab` is the full run's registry, not just what had
+    # been written by case i's own turn.
+    all_project_vocab: dict[str, set] = {}
+    us_pairs_by_case: list[list[dict]] = []
+
+    for i, case in enumerate(cases):
+        # A FRESH vault per case, not a shared one: this bench's metrics are per-case (does
+        # THIS case's own pair leak) - a shared store would let one case's universal note
+        # answer another case's query, which is a real thing A4 does on purpose but not what
+        # "leak" is measuring here.
+        m._rebase_vault(Path(tempfile.mkdtemp(prefix="nevertwice_cpb_case_")))
+        saved_embed = None
+        if dry:
+            saved_embed = m.embed_text
+            m.embed_text = lambda text, kind=None, timeout=None, project=None, _e=embed: _e(text)
+        try:
+            written: dict[str, dict] = {}
+            if extractor_mode == "oracle":
+                # --dry: both sides share project_a's own phrasing (see build_side_oracle's
+                # docstring) so the hash-based stub embedder can still cluster them; a real
+                # (non-dry) oracle run keeps each side's own dataset phrasing untouched.
+                oracle_override = case["project_a"]["principle"] if dry else None
+                for side in ("project_a", "project_c"):
+                    written[side] = build_side_oracle(case, side,
+                                                      principle_override=oracle_override)
+            else:
+                use_real = extractor_mode == "extract"
+                for side in ("project_a", "project_c"):
+                    poison_class = None if use_real else _DRY_POISON_PLAN.get((i, side))
+                    # stub mode: BOTH sides use project_a's OWN phrasing as the shared base, so
+                    # a provenance pass/fail is purely about the poisoning clause, never about
+                    # the dataset's ordinary (and irrelevant here) paraphrase vocabulary drift.
+                    stub_phrasing = None if use_real else case["project_a"]["principle"]
+                    written[side] = build_side_extracted(
+                        case, side, use_real=use_real, poison_class=poison_class,
+                        rejections=write_rejections, stub_phrasing=stub_phrasing)
+            build_distractor(case)
+
+            # C4(d): capture THIS case's written projects' vocabulary now, while its vault is
+            # still the live one - `_project_token_vocabulary` reads from `m.VAULT`, so this
+            # must happen before the next iteration's `_rebase_vault` makes these files
+            # unreadable. project_a/project_c/distractor all wrote a note above (project_b
+            # never does - it is only ever a QUERY project).
+            for proj in (case["project_a"]["project"], case["project_c"]["project"],
+                        case["distractor"]["project"]):
+                all_project_vocab[proj] = pr._project_token_vocabulary(proj)
+
+            # Guard-minting (principles.py's _mint_global_guard) may call an LLM of its own for
+            # a promoted mistake cluster - forcing llm_available() False here keeps this
+            # bench's extraction-call budget exactly the ~200 the docstring promises,
+            # regardless of extractor_mode, and steers guard proposals to the deterministic
+            # fallback rather than silently billing an uncounted extra call per case. Also
+            # covers --dry, which needs the REAL clustering/provenance pipeline to run (not a
+            # bypass) to actually exercise the token-provenance gate this widening is for.
+            saved_llm_available = m.llm_available
+            m.llm_available = lambda: False
+            try:
+                promote_report, us_pairs = _run_promote_with_us_capture()
+            finally:
+                m.llm_available = saved_llm_available
+            us_pairs_by_case.append(us_pairs)
+
+            case_rows: dict[str, dict] = {}
+            for arm in ARMS:
+                row = run_case(case, arm)
+                per_arm[arm].append(row)
+                case_rows[arm] = row
+
+            # Promotion-stage classification: a planted value that SURVIVED write (present in
+            # the written principle) but did not reach the universal arm was caught somewhere
+            # between write and the final universal note - by provenance, not principle_scan.
+            universal_leak_by_class = case_rows["universal"]["leak_by_class"]
+            for side in ("project_a", "project_c"):
+                info = written.get(side)
+                wp = ((info or {}).get("written_principle") or "").lower()
+                if not wp:
+                    continue          # write-rejected already, or nothing written at all
+                for cls, val in (case[side]["planted"] or {}).items():
+                    if val and val.lower() in wp and not universal_leak_by_class[cls]:
+                        promotion_rejections[cls] = promotion_rejections.get(cls, 0) + 1
+
+            diag_rows.append(_diagnostic_row(i, case, written, case_rows, promote_report))
+        finally:
+            if dry:
+                m.embed_text = saved_embed
+
+    # C4(d): the cold-start comparison, now that `all_project_vocab` is the FULL run's registry
+    # (every project this run ever wrote to, not just case i's own) - "narrow" is what U
+    # actually experienced live (this pair's own cluster_projects, the per-case-isolated
+    # vault's real scope); "wide" re-scopes the SAME uniqueness-offending tokens against every
+    # project this run wrote, a real (not simulated) mature-store comparison built entirely
+    # from this run's own data. cold_start_totals aggregates both across every pair reaching
+    # provenance in this population, the same shape the ADDENDUM's own "141 vs 51" reading used.
+    cold_start_narrow_total = cold_start_wide_total = 0
+    all_projects_this_run = set(all_project_vocab)
+    for i, pairs in enumerate(us_pairs_by_case):
+        for pair in pairs:
+            uniq = pair.pop("uniqueness_offending")
+            narrow = _cold_start_flag_count(uniq, pair["source_project"],
+                                            set(pair["cluster_projects"]), all_project_vocab)
+            wide = _cold_start_flag_count(uniq, pair["source_project"],
+                                          all_projects_this_run, all_project_vocab)
+            pair["cold_start"] = {"uniqueness_offending_tokens": uniq,
+                                  "narrow_flagged": narrow, "wide_flagged": wide}
+            cold_start_narrow_total += narrow
+            cold_start_wide_total += wide
+        diag_rows[i]["token_provenance_pairs"] = pairs
+
+    summary = {}
+    for arm, rows in per_arm.items():
+        n = len(rows) or 1
+        # C4(b): raw COUNTS beside the existing fractions, per class, for this arm - a reader
+        # asking "how many, not just what share" no longer has to back-compute count from
+        # fraction*n_cases (lossy once fraction is rounded, and indirect either way).
+        hits_by_class = {cls: sum(1 for r in rows if r["leak_by_class"][cls])
+                         for cls in ALL_CLASSES}
+        summary[arm] = {
+            "n_cases": len(rows),
+            "leak": sum(1 for r in rows if r["leaked"]) / n,
+            "leak_hits": sum(1 for r in rows if r["leaked"]),
+            "leak_by_class": {cls: hits_by_class[cls] / n for cls in ALL_CLASSES},
+            "leak_hits_by_class": hits_by_class,
+            "benefit": sum(1 for r in rows if r["benefit"]) / n,
+            "noise": sum(r["noise"] for r in rows) / n,
+            "cross_chars_mean": sum(r["cross_chars"] for r in rows) / n,
+        }
+    return {"arms": summary, "n_cases": len(cases), "extractor_mode": extractor_mode,
+           "write_rejections_by_class": write_rejections,
+           "promotion_rejections_by_class": promotion_rejections,
+           # kept for anyone still reading the old key name
+           "scanner_rejections_by_class": write_rejections,
+           # C4(d): totals across every pair reaching provenance in this population - the same
+           # "narrow (2 live projects) vs wide (the whole run)" comparison the ADDENDUM's own
+           # cold-start reading used, computed here from this run's OWN data, not reused numbers.
+           "cold_start": {"narrow_flagged_total": cold_start_narrow_total,
+                         "wide_flagged_total": cold_start_wide_total},
+           # diagnostic instrumentation (2026-09-23): one entry per case - see _diagnostic_row.
+           # C4(c): each row's own "token_provenance_pairs" carries U/S/cold_start per pair.
+           "rows": diag_rows}
+
+
+def _measured_at() -> dict:
+    """C4(a) (2026-09-23): this bench's own provenance stamp - `research/_provenance.py`'s
+    shared `measured_at()` (git_head/dirty/utc, ported from q3/ride-along 901f3b1) PLUS the
+    fields specific to a cross-project run: which model actually extracted, which model
+    actually embedded, which clustering threshold and which per-arm retrieval mode were
+    actually in effect - none of these are recoverable from the commit alone (all four are
+    environment/runtime state, not source), so an artifact that carries only `commit`/`utc`
+    still leaves them to be inferred or remembered, exactly the gap `_provenance.py` closes
+    one level up for the commit itself.
+
+    `commit` is renamed to `git_head` in the returned dict (the coordinator's field name) -
+    `_provenance.py`'s OWN contract (commit/utc/dirty) is untouched; this is just the name
+    under which THIS stand re-exposes it."""
+    base = prov.measured_at()
+    return {"git_head": base["commit"], "dirty": base["dirty"], "utc": base["utc"],
+           "python": sys.version.split()[0], "extractor_model": LLM,
+           "embedder_model": m.embed_signature(), "nevertwice_principle_t": pr.T_PRINCIPLE,
+           "cross_project_mode_by_arm": {arm: arm for arm in ARMS}}
+
+
+def _select_case_ids(path: Path, spec: str) -> list[dict]:
+    """A cheap diagnostic subset by case id, falling back to a 0-based index for a token that
+    matches no id - `--case-ids 0,3,7,12,19` instead of `--cases N`'s "first N only", so a
+    diagnostic run can target the cases a FULL sweep already flagged as interesting (a write
+    rejection, an empty principle, whatever the first real run's numbers pointed at), rather
+    than re-running from case 0 every time. Unknown ids/indices are reported and skipped, never
+    silently dropped - a diagnostic run that quietly returned fewer rows than asked would be
+    exactly the kind of "why is this empty" question this instrumentation exists to prevent."""
+    all_cases = load_cases(path, None)
+    by_id = {str(c.get("id")): c for c in all_cases}
+    picked = []
+    for tok in (s.strip() for s in spec.split(",")):
+        if not tok:
+            continue
+        if tok in by_id:
+            picked.append(by_id[tok])
+            continue
+        try:
+            idx = int(tok)
+        except ValueError:
+            print(f"[cross_project_bench] --case-ids: no case id {tok!r}", file=sys.stderr)
+            continue
+        if 0 <= idx < len(all_cases):
+            picked.append(all_cases[idx])
+        else:
+            print(f"[cross_project_bench] --case-ids: index {idx} out of range "
+                 f"(0-{len(all_cases) - 1})", file=sys.stderr)
+    return picked
+
+
+def _cosine_distribution(rows: list[dict]) -> dict:
+    """Finding 4 (2026-09-24): how far REAL A/C principle pairs sit from `T_PRINCIPLE`, over a
+    full run - values, not just a pass/fail count, so "no clusters" (nothing paired) can be
+    told apart from "nearly clustered" (paired, just under threshold - the one real 5-case
+    example read 0.7226 against a T of 0.75). `None` fields when no case had a principle on
+    BOTH sides to compare at all."""
+    vals = [r["principle_cosine"] for r in rows if r.get("principle_cosine") is not None]
+    if not vals:
+        return {"n": 0, "values": [], "mean": None, "median": None, "min": None, "max": None}
+    sv = sorted(vals)
+    n = len(sv)
+    median = sv[n // 2] if n % 2 else (sv[n // 2 - 1] + sv[n // 2]) / 2
+    return {"n": n, "values": vals, "mean": round(sum(vals) / n, 4), "median": round(median, 4),
+           "min": round(min(vals), 4), "max": round(max(vals), 4)}
+
+
+def _run_population(data_path: Path, label: str, args, extractor_mode: str) -> dict | None:
+    """Load + run ONE population's cases, print its summary, return the artifact dict (or
+    `None` if it has no cases to run). Finding 3 (2026-09-24): split out of `main` so
+    `--population both` can call this twice and report the two populations SEPARATELY, without
+    changing what a single-population run has always produced."""
+    if args.case_ids and not args.dry:
+        cases = _select_case_ids(data_path, args.case_ids)
+    else:
+        n = _DRY_N_CASES if args.dry else args.cases
+        cases = load_cases(data_path, n)
+    if not cases:
+        print(f"[cross_project_bench] {label}: no cases loaded", file=sys.stderr)
+        return None
+    print(f"[cross_project_bench] {label}: {len(cases)} case(s), extractor={extractor_mode}, "
+         f"arms: {', '.join(ARMS)}" + (" (no model)" if args.dry else ""))
+
+    result = run_bench(cases, extractor_mode=extractor_mode, dry=args.dry)
+    for arm, s in result["arms"].items():
+        print(f"  {arm:9} leak={s['leak']:.3f} benefit={s['benefit']:.3f} "
+             f"noise={s['noise']:.3f} cross_chars~{s['cross_chars_mean']:.0f}"
+             f"  leak_by_class={s['leak_by_class']}")
+    if extractor_mode != "oracle":
+        print(f"  rejected at write by principle_scan (the scanner doing its job, NOT a "
+             f"leak): {result['write_rejections_by_class']}")
+        print(f"  rejected at promotion by provenance (principles.py, NOT a leak): "
+             f"{result['promotion_rejections_by_class']}")
+    for r in result["rows"]:
+        a, c = r["project_a"], r["project_c"]
+        print(f"  case {r['case_id']}: A items={a['n_extracted_items']} "
+             f"principle={'y' if a['has_principle'] else 'n'}  "
+             f"C items={c['n_extracted_items']} principle={'y' if c['has_principle'] else 'n'}  "
+             f"cosine={r['principle_cosine']}  "
+             f"promote candidates={r['promote_report']['candidates']} "
+             f"clusters={r['promote_report']['clusters']} "
+             f"promoted={r['promote_report']['promoted']}")
+    cd = _cosine_distribution(result["rows"])
+    print(f"  principle_cosine: n={cd['n']} mean={cd['mean']} median={cd['median']} "
+         f"min={cd['min']} max={cd['max']}")
+
+    result["population"] = label
+    result["cosine_distribution"] = cd
+    if not args.dry:
+        result.update({"dataset": str(data_path), "embed_signature": m.embed_signature(),
+                       "extraction_model": LLM, "measured_at": _measured_at()})
+    return result
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--data", default="", help="dataset path override for a SINGLE "
+                        "population (--population original, identifier_bound or digit_free "
+                        "only; ignored under --population both, where each population uses "
+                        "its own default path)")
+    parser.add_argument("--out", default=str(OUT), help="results artifact path (default: %(default)s)")
+    parser.add_argument("--cases", type=int, default=None, help="limit to the first N cases")
+    parser.add_argument("--case-ids", default="",
+                        help="comma-separated case ids (or 0-based indices, for a token that "
+                             "matches no id) - a cheap diagnostic run over exactly these cases "
+                             "instead of the first N; takes precedence over --cases, ignored "
+                             "under --dry (which always uses its own fixed 3-case fixture)")
+    parser.add_argument("--population", default="original",
+                        choices=["original", "identifier_bound", "digit_free", "both"],
+                        help="which case population to run (default: %(default)s). "
+                             "'identifier_bound' is the 50-case population where the planted "
+                             "identifier IS the lesson (.loop/PREREG-Q5-IDENTIFIER-BOUND-"
+                             "2026-09-23.md, finding 3); 'digit_free' is the 40-case population "
+                             "where the planted identifier has no digit, dot or slash - "
+                             "snake_case/camelCase-PascalCase/SCREAMING_SNAKE/kebab, 10 each "
+                             "(.loop/PREREG-Q5-DIGITFREE-2026-09-23.md, C3); 'both' runs "
+                             "'original' and 'identifier_bound' separately and reports them "
+                             "under a top-level 'populations' key (digit_free is NOT included "
+                             "in 'both' - select it on its own). Ignored under --dry, which "
+                             "always uses the original population's fixed 3-case stub fixture.")
+    parser.add_argument("--oracle-principles", action="store_true",
+                        help="control: write each case's pre-written ground-truth principle "
+                             "directly, no extraction at all")
+    parser.add_argument("--dry", action="store_true",
+                        help=f"{_DRY_N_CASES} cases, a deterministic stub extractor (poisons "
+                             "one planted identifier of each class, plus a second entity "
+                             "scenario left undeclared) + stub embedder, no model - proves "
+                             "principle_scan rejects at write time and principles.py's token-"
+                             "provenance gate rejects at promotion time, end to end")
+    args = parser.parse_args(argv)
+
+    if args.dry:
+        extractor_mode = "oracle" if args.oracle_principles else "stub"
+    else:
+        extractor_mode = "oracle" if args.oracle_principles else "extract"
+
+    default_path = {"original": DATA, "identifier_bound": IB_DATA, "digit_free": DF_DATA}
+    populations = ["original"] if args.dry else (
+        ["original", "identifier_bound"] if args.population == "both" else [args.population])
+    if args.data and args.population != "both":
+        default_path = {**default_path, populations[0]: Path(args.data)}
+
+    results: dict[str, dict] = {}
+    for label in populations:
+        res = _run_population(default_path[label], label, args, extractor_mode)
+        if res is not None:
+            results[label] = res
+    if not results:
+        return 1
+
+    if args.dry:
+        print("[cross_project_bench] --dry: plumbing exercised, nothing written to disk")
+        return 0
+
+    if args.population == "both":
+        artifact = {"populations": results}
+    else:
+        artifact = results[populations[0]]
+    out_path = Path(args.out)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(artifact, ensure_ascii=False, indent=1) + "\n",
+                        encoding="utf-8", newline="")
+    print(f"[cross_project_bench] wrote {out_path}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

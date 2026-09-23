@@ -134,6 +134,47 @@ crossing an MCP or hook boundary.
   is a protocol violation that confuses every conforming client. —
   `tests/_test_properties.py::a notification (no id) is never answered`
 
+## Boundary: cross-project recall
+
+- **Owner:** `nevertwice/_engine_recall.py` — `retrieve_cross_project`, `CROSS_PROJECT_MODE`;
+  `nevertwice/principles.py` — the token-provenance gate a candidate must clear before it is
+  promoted into the pool this boundary reads from.
+- **Trusted:** nothing. A project's own notes are untrusted with respect to every OTHER
+  project until something has de-identified and independently corroborated them.
+- **Untrusted:** a project's own title, description, entities and source project name -
+  whether any of it may be shown inside a DIFFERENT project's session.
+- **Claim:** In the default mode (`universal`), a cross-project hit's shown project is always
+  the literal `universal` constant, never the record's own `project` field - so a mistagged or
+  hand-edited note cannot leak a source project's name through the injection line. —
+  `tests/_test_cross_mode.py::every hit's shown project is 'universal'`
+- **Claim:** In `universal` mode, project A's own notes never reach project B's cross-project
+  section, proved against a positive control: the same query in `all` mode (the unrestricted,
+  opt-in legacy behaviour) DOES surface them, so the negative result in `universal` mode is not
+  merely an empty test. —
+  `tests/_test_cross_mode.py::'all' mode DOES surface project A's note (proves the test can see a leak)`
+- **Claim:** A candidate sentence is promoted into the universal pool only when EVERY one of
+  its content tokens is attested by at least two of the cluster's own source projects' live
+  notes - a product name only one project ever wrote cannot pass, whether or not the extractor
+  declared it as an entity (closing W17 one layer later than write time). —
+  `tests/_test_principle_promote.py::BOTH sides' private-name tokens are named as offending`
+- **Residual risk:** by DEFAULT, this boundary is OPEN - C8 reverted
+  `NEVERTWICE_CROSS_PROJECT` to `all` (unrestricted, unrestricted-by-default transfer of every
+  project's own notes), because Q5's gates did not hold on the fresh reading
+  ([`research/Q5_PRINCIPLE_LAYER.md`](../research/Q5_PRINCIPLE_LAYER.md): G5.1 VOID/underpowered, G5.3 not distinguishable, G5.5 not
+  measured) - `all` is not a reader's opt-in choice, it is what runs unless
+  `NEVERTWICE_CROSS_PROJECT=universal` is set explicitly, together with `NEVERTWICE_PRINCIPLE=1`.
+  F4 names the measured consequence: an identifier plants and leaks through `all` on every bench
+  population read so far - see [`research/Q5_PRINCIPLE_LAYER.md`](../research/Q5_PRINCIPLE_LAYER.md) for the reading (this document's
+  own budget is for incident dates, thresholds and constants, not a second copy of a bench
+  result). `universal` mode is designed to close this specific leak when explicitly chosen, but was itself
+  read as VOID/underpowered (G5.1) on the SAME reading, so it is a narrower, UNVERIFIED
+  alternative, not a proven one. The `_user_brief` learned user-profile injection
+  (`build_user_model.py`) is a SEPARATE cross-project channel neither mode covers - see
+  `docs/WEAKNESSES.md`. The token-provenance gate (when `universal` mode IS chosen) counts
+  DISTINCT projects, not how independent they are of each other - a name that genuinely appears
+  in two small, otherwise-unrelated projects' own text passes, because at that point it is
+  shared vocabulary the corpus itself attests to (`docs/WEAKNESSES.md` W17).
+
 ## Boundary: outbound network
 
 - **Owner:** `nevertwice/config.py` — `NEVERTWICE_LOCAL_ONLY`, the cloud router

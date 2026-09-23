@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
-"""`research/_provenance.py`: the shared `stamp(payload)` helper every listed stand calls before
-writing its artifact - "an artifact proves its own commit instead of leaning on a time window"
-(the auditor's ask). Covers the helper itself (deterministic, no ambient-repo-state dependence -
-`git_commit`/`is_dirty` are exercised through a monkeypatched `subprocess.run`, not by asserting
-on whatever this checkout's OWN dirty state happens to be right now) and one real stand-level
-check: `research/cheap_baselines.py`'s `build(save=True)` runs entirely without Ollama (the
-default `_SUMMARISER = "extractive"` path) and its saved artifact carries the stamp.
+"""`research/_provenance.py` (ported from q3/ride-along 901f3b1, C4/2026-09-23): the shared
+`stamp(payload)` helper - "an artifact proves its own commit instead of leaning on a time
+window" (the auditor's ask). Covers the helper itself (deterministic, no ambient-repo-state
+dependence - `git_commit`/`is_dirty` are exercised through a monkeypatched `subprocess.run`, not
+by asserting on whatever this checkout's OWN dirty state happens to be right now).
+
+The stand-level check (research/cheap_baselines.py writes a stamped artifact without
+Ollama) comes from v2/prep, where the helper is wired into all 12 stands; the q5 branch
+had dropped it because only its own bench used the helper there - restored at the
+step-4 merge, where both halves meet.
 
     python tests/research/_test_provenance.py
 """
@@ -79,6 +82,128 @@ def test_is_dirty_reflects_the_git_diff_returncode() -> None:
               prov.is_dirty() is True)
     finally:
         prov.subprocess.run = saved
+
+
+def test_is_dirty_excludes_campaign_outputs() -> None:
+    """C4b (2026-09-23, the auditor's finding on 7f40807): `is_dirty()` used to read ANY
+    changed file under WATCHED_DIRS as dirty, including a campaign's OWN output - with only
+    research/results/guards_pack.json touched it returned True, so from the second stand of a
+    campaign on, every artifact would be stamped dirty on otherwise-clean code. Now excludes
+    research/results/, a research/*.svg or *.png figure, and every claim's own committed `raw`
+    path in research/evidence_manifest.json - all OUTPUTS, never source.
+
+    `subprocess.run` is monkeypatched to return a FIXED changed-file list (`--name-only`'s own
+    output shape), not the real tree's current state - this suite's own outcome must not depend
+    on what happens to be uncommitted right now."""
+    print("\n- is_dirty() excludes campaign OUTPUTS: results/, figures, and every claim's raw "
+         "path (C4b) -")
+    saved = prov.subprocess.run
+    try:
+        # K5 (2026-09-24, the auditor's finding on 0328eab): case (a) used to be a path that
+        # ALSO happens to be a registered claim's `raw` pointer (research/results/
+        # guards_pack.json) - so it was covered by the RAW-PATH rule and never actually
+        # exercised the DIRECTORY-PREFIX rule at all; a mutation of _EXCLUDED_DIR_PREFIXES
+        # alone left this whole suite green. An unregistered campaign output - a new stand's
+        # result file BEFORE it is added to the manifest - is exactly the case that matters and
+        # the one the prefix rule alone has to cover.
+        unregistered = "research/results/_unregistered_probe.json"
+        check("setup: the unregistered-probe path is NOT a registered claim's raw path (so "
+             "case (a) below exercises the DIRECTORY-PREFIX rule, not the raw-path rule)",
+             unregistered not in prov._excluded_raw_paths(), unregistered)
+        prov.subprocess.run = lambda *a, **k: _FakeCompleted(
+            returncode=0, stdout=f"{unregistered}\n")
+        check("(a) only an UNREGISTERED results JSON modified -> dirty is False",
+             prov.is_dirty() is False)
+
+        prov.subprocess.run = lambda *a, **k: _FakeCompleted(
+            returncode=0, stdout="research/some_chart.svg\n")
+        check("(b) only a figure (research/*.svg) modified -> dirty is False",
+             prov.is_dirty() is False)
+        prov.subprocess.run = lambda *a, **k: _FakeCompleted(
+            returncode=0, stdout="research/another_chart.png\n")
+        check("(b) only a figure (research/*.png) modified -> dirty is False",
+             prov.is_dirty() is False)
+
+        prov.subprocess.run = lambda *a, **k: _FakeCompleted(
+            returncode=0, stdout="research/cross_project_bench.py\n")
+        check("(c) a research/*.py source file modified -> dirty is True",
+             prov.is_dirty() is True)
+        prov.subprocess.run = lambda *a, **k: _FakeCompleted(
+            returncode=0, stdout="nevertwice/principles.py\n")
+        check("(c) a nevertwice/*.py engine file modified -> dirty is True",
+             prov.is_dirty() is True)
+
+        # K5: named BEFORE indexing into it, so a mutation that empties the set entirely goes
+        # red by NAME (this check) rather than by an IndexError from `sorted(...)[0]` below.
+        excluded_raw = prov._excluded_raw_paths()
+        check("the manifest yields at least one raw path to exclude (a non-empty set)",
+             len(excluded_raw) > 0, str(len(excluded_raw)))
+        some_raw = sorted(excluded_raw)[0]
+        prov.subprocess.run = lambda *a, **k: _FakeCompleted(
+            returncode=0, stdout=f"{some_raw}\n")
+        check(f"a claim's own committed raw path ({some_raw!r}) modified alone -> dirty is False",
+             prov.is_dirty() is False)
+
+        prov.subprocess.run = lambda *a, **k: _FakeCompleted(
+            returncode=0,
+            stdout="research/results/guards_pack.json\nresearch/cross_project_bench.py\n")
+        check("an output change PLUS a real source change together -> still dirty is True "
+             "(exclusion never hides a genuine change riding along with an output)",
+             prov.is_dirty() is True)
+
+        prov.subprocess.run = lambda *a, **k: _FakeCompleted(
+            returncode=0, stdout="research/sub/chart.svg\n")
+        check("a figure NOT directly under research/ (research/sub/chart.svg) is NOT excluded "
+             "- the wildcard is a single level, not recursive", prov.is_dirty() is True)
+    finally:
+        prov.subprocess.run = saved
+
+
+def test_excluded_raw_paths_only_covers_json_or_jsonl_data_files() -> None:
+    """K5 (2026-09-24, the auditor's finding on 0328eab): a `raw` path is excluded only when it
+    is a .json/.jsonl DATA file - a future claim whose `raw` happens to point at a `.py` (a
+    generator script committed for some other reason) must never let a real SOURCE change hide
+    behind the raw-path exclusion. Manifest content is faked via a monkeypatched
+    `Path.read_text` so this test does not depend on what research/evidence_manifest.json
+    currently contains (checked separately elsewhere: all 52 of its real raw paths are .json
+    today, so this only matters for what the manifest could contain later)."""
+    print("\n- _excluded_raw_paths() only ever excludes .json/.jsonl data files (K5) -")
+    fake_manifest = json.dumps({"claims": [
+        {"id": "a", "raw": "research/results/probe.json"},
+        {"id": "b", "raw": "research/results/probe.jsonl"},
+        {"id": "c", "raw": "research/some_generator.py"},
+    ]})
+    saved_read_text = Path.read_text
+    Path.read_text = lambda self, *a, **k: fake_manifest
+    try:
+        excluded = prov._excluded_raw_paths()
+    finally:
+        Path.read_text = saved_read_text
+    check(".json raw path IS excluded", "research/results/probe.json" in excluded, str(excluded))
+    check(".jsonl raw path IS excluded", "research/results/probe.jsonl" in excluded,
+         str(excluded))
+    check(".py raw path is NEVER excluded, even though it is a claim's own raw pointer",
+         "research/some_generator.py" not in excluded, str(excluded))
+
+
+def test_mutation_removing_the_output_exclusion_reddens_by_name() -> None:
+    """Mutation: `_is_output_path` forced to always return False (as if C4b's exclusion had
+    never been added) - the SAME results-only change from test (a) above now WRONGLY reads as
+    dirty, proving the exclusion is load-bearing."""
+    print("\n- C4b mutation: removing the output exclusion makes a results-only change dirty -")
+    saved_run = prov.subprocess.run
+    saved_excl = prov._is_output_path
+    try:
+        prov.subprocess.run = lambda *a, **k: _FakeCompleted(
+            returncode=0, stdout="research/results/guards_pack.json\n")
+        check("before the mutation: a results-only change is NOT dirty",
+             prov.is_dirty() is False)
+        prov._is_output_path = lambda *a, **k: False
+        check("mutation: WITHOUT the output exclusion, the SAME results-only change now reads "
+             "dirty (would FAIL 'is NOT dirty' above)", prov.is_dirty() is True)
+    finally:
+        prov.subprocess.run = saved_run
+        prov._is_output_path = saved_excl
 
 
 def test_measured_at_shape() -> None:
@@ -181,6 +306,9 @@ def main() -> int:
     for fn in (test_git_commit_returns_the_real_head,
                test_git_commit_degrades_on_a_git_failure_without_raising,
                test_is_dirty_reflects_the_git_diff_returncode,
+               test_is_dirty_excludes_campaign_outputs,
+               test_excluded_raw_paths_only_covers_json_or_jsonl_data_files,
+               test_mutation_removing_the_output_exclusion_reddens_by_name,
                test_measured_at_shape,
                test_stamp_mutates_in_place_and_returns_the_same_object,
                test_stamp_does_not_clobber_an_existing_differently_named_provenance_field,

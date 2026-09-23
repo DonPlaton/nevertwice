@@ -649,17 +649,36 @@ def as_of(project: str | None, date: str) -> list[dict]:
 
 def retrieve_cross_project(project: str, query: str, k: int | None = None,
                            cache: dict | None = None, embed_timeout: int | None = None,
-                           alive_timeout: int = 2) -> list[dict]:
+                           alive_timeout: int = 2, mode: str | None = None) -> list[dict]:
     """Lessons from OTHER projects relevant to this one - transferable gotchas
     across a shared stack (audit I-7). Same hybrid ranking as retrieve_relevant
     but inverted project filter and a higher bar (semantic floor + ≥2 shared
     lexical tokens) so cross-project noise stays out. GPU-free under a busy GPU
     (lexical). `cache`/timeouts let the hot per-prompt path reuse a loaded cache
-    and stay within a tight budget. Returns hits annotated with their project."""
+    and stay within a tight budget. Returns hits annotated with their project.
+
+    A4 (Q5): `mode` (default: the live `CROSS_PROJECT_MODE`, read at CALL time so a suite that
+    rebinds it is honoured) picks WHERE candidates come from - everything after this point
+    (the semantic floor, the lexical bar, RRF fusion, sibling folding, the live-note check) is
+    unchanged for every mode, which is what keeps "universal" exactly as conservative as "all"
+    once it has a pool to draw from:
+      "off"       - no candidates at all; the caller's `INJECT_CROSS_PROJECT` gate normally
+                    skips this call entirely, but a direct caller gets the same silence.
+      "all"       - the original I-7 behaviour: every OTHER project's own notes (O-U1 rejected).
+      "universal" - ONLY the synthetic `universal` project's own notes (O-U1 accepted) - a
+                    project's own material never reaches this path in this mode, by construction
+                    of what `_retrieval_candidates` returns for that project name.
+    """
     if embed_timeout is None:
         embed_timeout = RETRIEVAL_EMBED_TIMEOUT
     k = CROSS_PROJECT_K if k is None else k
-    cands = _retrieval_candidates(project, cross=True, cache=cache, query=query)
+    mode = CROSS_PROJECT_MODE if mode is None else mode
+    if mode == "off":
+        return []
+    if mode == "universal":
+        cands = _retrieval_candidates(UNIVERSAL_PROJECT, cross=False, cache=cache, query=query)
+    else:
+        cands = _retrieval_candidates(project, cross=True, cache=cache, query=query)
     if not cands:
         return []
     rec_of = {s: r for s, r in cands}
@@ -691,7 +710,14 @@ def retrieve_cross_project(project: str, query: str, k: int | None = None,
     ranked = sorted(scores, key=lambda s: (-scores[s], s))
     # Also-fix (xhigh review): this path never folded same-slug siblings at all - fold the
     # FULL ranked list (K8 layer 2), same as retrieve_relevant, before the `[:k]` cut.
-    paired = pair_siblings([dict(_hit(s, rec_of[s]), project=rec_of[s].get("project"))
+    # A4/C7: in universal mode the displayed project is ALWAYS the literal constant, never
+    # whatever the record's own `project` field says - defense in depth against a mistagged or
+    # hand-edited universal note leaking a source project's name through `_cross_line`, on top
+    # of `_retrieval_candidates(UNIVERSAL_PROJECT, cross=False, ...)` already restricting the
+    # candidate POOL to that project.
+    _shown_project = UNIVERSAL_PROJECT if mode == "universal" else None
+    paired = pair_siblings([dict(_hit(s, rec_of[s]),
+                                 project=_shown_project or rec_of[s].get("project"))
                             for s in ranked])
     # A retracted fact must never come back - the same guarantee `retrieve_relevant` makes, and
     # for the same reason: the live folders are flat-globbed and `Superseded/` is a subdirectory,
@@ -787,7 +813,20 @@ def _note_snippet(stem: str, ntype: str, max_chars: int = 220) -> str:
         out = f"{out} → {prevention}" if out else prevention
     if resolved:
         out = ("✅ solved - " + out) if out else "✅ solved"
-    return out[:max_chars].rstrip()
+    # C5 (2026-09-23): a plain `out[:max_chars]` char-slice can cut a word (or an
+    # identifier-shaped token, e.g. "svc-a000.internal") in half - `_cut_word_boundary`
+    # (`_engine_write.py`, shared namespace, A3/Q5's own `principle`-cap helper) either keeps
+    # the whole last word/token or drops it entirely: NEVER a fragment when a word boundary
+    # exists before the cap; otherwise nothing (C5b, 2026-09-23 - the auditor's edge case: no
+    # boundary at all before `max_chars`, e.g. this note's own first "word" already exceeds it
+    # - `"a" * 300`, or a URL with no space for 260 characters. `require_boundary=True` is
+    # THIS caller's own choice, not `_cut_word_boundary`'s default: cross-project recall must
+    # never inject a partial token under any circumstance, including this one; `principle`'s
+    # own cap keeps the OLD default behaviour, a fragment rather than an empty field - see
+    # `_cut_word_boundary`'s own docstring for why the two callers differ on purpose. An empty
+    # snippet already degrades cleanly at every caller of THIS function (title only, or a
+    # fallback to the raw description - never a dangling separator).
+    return _cut_word_boundary(out, max_chars, require_boundary=True)
 
 
 def _fit_fact_line(line: str, room: int) -> str:
@@ -864,7 +903,12 @@ def _user_brief(max_chars: int = 320) -> str:
 def _cross_line(r: dict) -> str:
     """One cross-project fact line - shared by the SessionStart and prompt-recall
     injections (each had its own copy, review 2026-08 cleanup). No stale check:
-    _note_stale needs the CURRENT project's dir, which a foreign note doesn't have."""
+    _note_stale needs the CURRENT project's dir, which a foreign note doesn't have.
+
+    A4/C7 (Q5): in universal mode `r["project"]` is ALREADY forced to `UNIVERSAL_PROJECT` by
+    `retrieve_cross_project` before it reaches here, so the label below prints `[universal]`,
+    never a source project's name - and `snip` (the note's own description) is the medoid
+    principle sentence A5's promoter wrote, not anything naming where it came from."""
     snip = _note_snippet(r["stem"], r["ntype"])
     return (f"- [{r.get('project')}] **{r.get('title', '').strip()}**"
             + (f" - {snip}" if snip else ""))
@@ -1011,7 +1055,8 @@ def emit_session_start_context(cwd: str) -> None:
     _add_facts("**✅ Working patterns/decisions:**", others)
     if INJECT_CROSS_PROJECT and used[0] < INJECT_BUDGET_CHARS:
         _add_facts("**🔗 Similar lessons from other projects:**",
-                   retrieve_cross_project(project, brief or project, cache=rcache),
+                   retrieve_cross_project(project, brief or project, cache=rcache,
+                                          mode=CROSS_PROJECT_MODE),
                    line_fn=_cross_line)
     parts += footer
     _si = "\n".join(parts)

@@ -151,7 +151,8 @@ def emit_prompt_recall(cwd: str, prompt: str, session_id: str) -> None:
         cross = [c for c in retrieve_cross_project(
                      project, prompt, cache=cache,
                      embed_timeout=PROMPT_RECALL_EMBED_TIMEOUT,
-                     alive_timeout=PROMPT_RECALL_ALIVE_TIMEOUT)
+                     alive_timeout=PROMPT_RECALL_ALIVE_TIMEOUT,
+                     mode=CROSS_PROJECT_MODE)
                  if c.get("stem") not in seen]
     if not fresh and not cross:
         return  # nothing new for this prompt → stay silent (self-throttling)

@@ -643,12 +643,70 @@ RETRIEVAL_EMBED_TIMEOUT = env_int("NEVERTWICE_RETRIEVAL_EMBED_TIMEOUT", 5)
 # before cosine, so one huge project can't stall a prompt with a full brute-force
 # scan (improvement P1). Smaller projects keep an exact full scan - no recall loss.
 RETRIEVAL_PREFILTER_LIMIT = env_int("NEVERTWICE_PREFILTER_LIMIT", 600)
-# Cross-project transfer (I-7): surface a few lessons from OTHER projects that
-# are highly relevant (shared stack → transferable gotchas). Higher bar to keep
-# noise out. Toggle off with NEVERTWICE_CROSS_PROJECT=0.
-INJECT_CROSS_PROJECT = os.environ.get("NEVERTWICE_CROSS_PROJECT", "1") != "0"
+# Cross-project transfer (I-7 → Q5/A4, the principle layer): surface a few lessons from OTHER
+# projects that are highly relevant. Three modes, in the SAME variable that used to be a plain
+# on/off switch:
+#   "off"       - no cross-project section at all.
+#   "all"       - the original I-7 behaviour: candidates are every OTHER project's own notes,
+#                 shown labelled with their source project (unrestricted transfer, unrestricted
+#                 leak surface - C7/C6).
+#   "universal" - candidates come ONLY from the synthetic `universal` project (O-U1): notes the
+#                 sleep-time promoter (principles.py, A5) minted from a de-identified `principle`
+#                 that recurred across >=2 DIFFERENT projects. A project's own notes never reach
+#                 another project this way - only what already cleared `principle_scan` twice
+#                 (write time and promotion time) and was independently corroborated elsewhere.
+# C8 (2026-09-24): DEFAULT is "all", not "universal". The universal-pool default was C6's own
+# bet that Q5's gates would hold; they did not (research/Q5_PRINCIPLE_LAYER.md - G5.1 is
+# VOID/underpowered, G5.3 is not distinguishable, G5.5 is not measured), so under
+# PREREG-Q3Q5:83-85 the merge default reverts to the pre-Q5 behaviour: "all" (unrestricted
+# cross-project transfer, the original I-7 behaviour) and NEVERTWICE_PRINCIPLE=0 (below) -
+# nothing this branch built produces content unless explicitly turned on (the sleep-time
+# promoter still runs, over an empty candidate set). "universal" is now OPT-IN,
+# together: NEVERTWICE_CROSS_PROJECT=universal AND NEVERTWICE_PRINCIPLE=1 (the promoter has
+# nothing to promote if the extractor was never asked for a `principle` field in the first
+# place - turning on the read side alone would silently degrade to an empty pool, not to the
+# de-identified transfer this mode promises).
+def _parse_cross_project_mode() -> str:
+    raw = os.environ.get("NEVERTWICE_CROSS_PROJECT")
+    if raw is None or not raw.strip():
+        return "all"
+    v = raw.strip().lower()
+    if v in ("0", "off"):
+        return "off"
+    if v in ("1", "all"):
+        return "all"
+    if v == "universal":
+        return "universal"
+    # config-time: log() is not defined yet (see _EARLY_WARNINGS above) - queued, flushed by
+    # the first real log() call, same as _http_url's non-http(s) override refusal.
+    _EARLY_WARNINGS.append(
+        f"NEVERTWICE_CROSS_PROJECT={raw!r} not recognised (want off/all/universal) - "
+        f"using 'all'")
+    return "all"
+
+
+CROSS_PROJECT_MODE = _parse_cross_project_mode()
+# Name kept (not renamed to e.g. CROSS_PROJECT_ENABLED) because suites rebind it directly as a
+# fast on/off gate independent of MODE - see `_engine_hooks.py`/`_engine_recall.py`'s call
+# sites, which check this first and pass MODE through separately.
+INJECT_CROSS_PROJECT = CROSS_PROJECT_MODE != "off"
 CROSS_PROJECT_K = env_int("NEVERTWICE_CROSS_K", 2)
 CROSS_PROJECT_SIM_FLOOR = env_float("NEVERTWICE_CROSS_SIM_FLOOR", 0.5)
+# The synthetic project every promoted cross-project principle lives under (O-U1). Never a real
+# project's slug - `slug_project` never returns "universal" verbatim for anything a human would
+# type (it transliterates/truncates), but a caller cannot control what a session names a
+# project, so A5 and A4 both treat this as a RESERVED name rather than relying on that alone.
+UNIVERSAL_PROJECT = "universal"
+# A3: the extraction prompt asks pattern/mistake items for a de-identified, project-independent
+# `principle` sentence. C8 (2026-09-24): DEFAULT is OFF (was "1"/on) - Q5's gates did not hold
+# (research/Q5_PRINCIPLE_LAYER.md), so under PREREG-Q3Q5:83-85 this reverts to off at merge, same
+# reasoning as CROSS_PROJECT_MODE above. On with NEVERTWICE_PRINCIPLE=1 - the schema line AND
+# the rubric are both omitted from the prompt when off (see
+# `_principle_prompt_rubric`/`_principle_schema_field` in `_engine_text.py`), so the prompt is
+# byte-for-byte what it was before this field existed.
+PRINCIPLE_FIELD = os.environ.get("NEVERTWICE_PRINCIPLE", "0") != "0"
+# Cap for the field on disk (`_engine_write.py`) - a one-sentence rule, not a paragraph.
+PRINCIPLE_MAX_CHARS = 200
 # Learned user model (I-6): inject a short cross-project working profile (built
 # by build_user_model.py → User/profile.md). Off with NEVERTWICE_USER_MODEL=0.
 INJECT_USER_MODEL = os.environ.get("NEVERTWICE_USER_MODEL", "1") != "0"
@@ -713,7 +771,7 @@ configuration re-sent every turn: global instructions (CLAUDE.md), "Active Proje
 lists, system reminders, tool definitions. NEVER extract knowledge from such blocks and
 NEVER attribute work to a project merely because its name appears in them - project
 attribution comes only from the actual commands, files and paths the session worked on.
-
+{principle_rubric}
 Known parameters:
   project (use exactly this value): {project_hint}
   preferred tags (pick from this list when one fits, lowercase; invent a new one only if nothing fits):
@@ -738,7 +796,7 @@ Schema:
       "facts": ["literal token copied VERBATIM from the session, [] if none"],
       "supersedes": "", "contradicts": "", "resolves": "",
       "entities": ["key-entity", "another-one"],
-      "relations": [{{"rel": "fixes", "target": "entity"}}], "confidence": 0.9}}
+      "relations": [{{"rel": "fixes", "target": "entity"}}], "confidence": 0.9{principle_schema}}}
   ],
   "mistakes": [
     {{"title": "short title of the mistake",
@@ -747,7 +805,7 @@ Schema:
       "prevention": "one line: the concrete action/check that avoids a repeat",
       "supersedes": "", "contradicts": "",
       "entities": ["key-entity", "another-one"],
-      "relations": [{{"rel": "caused-by", "target": "entity"}}], "confidence": 0.9}}
+      "relations": [{{"rel": "caused-by", "target": "entity"}}], "confidence": 0.9{principle_schema}}}
   ],
   "decisions": [
     {{"title": "short title of the decision",

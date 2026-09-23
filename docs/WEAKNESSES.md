@@ -119,18 +119,9 @@ they cannot lag the artifact.
   is measured. Live table:
 
 <!-- claims:guard-bench -->
-| arm | recall of the right guard | precision | hard-negative false alarms | project-only recall | tokens / call | ms / check |
-|---|---|---|---|---|---|---|
-| **guards, engine's no-model patterns** | 0.380 at FPR 0.179 (over budget) | - | 0.268 | 0.154 | 3.320 | withdrawn |
-| **guards, model-written patterns** | 0.348 at FPR 0.155 (over budget) | - | 0.225 | 0.404 | 5.340 | withdrawn |
-| cold-start pack (no history) | 0.196 | 0.818 | 0.000 | 0.000 | 1.150 | withdrawn |
-| linter or scanner (scored in its favour) | 0.457 | 1.000 | 0.000 | 0.154 | 0.000 | withdrawn |
-| prompt recall over the notes (top three) | 0.000 | 0.000 | 0.014 | 0.000 | 103.560 | withdrawn |
-| silence (floor) | 0.000 | - | 0.000 | 0.000 | 0.000 | withdrawn |
-
-<sub>**Withdrawn** - ms / check for guards, engine's no-model patterns, guards, model-written patterns, cold-start pack (no history), linter or scanner (scored in its favour), prompt recall over the notes (top three), silence (floor): timed inside the 2026-09-23 campaign on a loaded machine (a 30B model resident, commit charge near its limit, other sessions running); re-measured in the idle latency step</sub>
-
-<sub>no operating point under the false-alarm budget for guards, engine's no-model patterns, guards, model-written patterns - a guard fires or it does not, and firing catches the repeats shown at the false-alarm rate shown; their hard-negative and project-only cells are read where the arm fires, not at the budget the rows below use.</sub>
+> **Withdrawn 2026-09.** withdrawn at the step-4 engine merge (Q5 principle layer, note_snippet word boundary, defaults set by the Q5 gates): re-measurement needs the v2 campaign on GPU with local Ollama models
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/guard_bench.py --llm --save` is what re-measures this one.
 <!-- /claims:guard-bench -->
 
 - **[CORPUS GATES FAILED - J3] The code-session corpus does not separate retrieval systems.** On the
@@ -423,6 +414,87 @@ below is read in context:
   SOTA claims.
 - **W14 [info] `sources` frontmatter** adds bounded store bloat (≤25 session stems) on recurring
   notes; not injected into context, so no recall-token cost.
+- **W16 [KNOWN GAP, Q5/A4] `_user_brief` is a second cross-project channel the principle-layer
+  boundary does not cover.** `NEVERTWICE_CROSS_PROJECT` (`universal`/`all`/`off`,
+  `docs/THREAT_MODEL.md`'s "cross-project recall" boundary) governs the `🔗 Similar lessons from
+  other projects` section only. `_user_brief` (`_engine_recall.py`, built by
+  `build_user_model.py` → `User/profile.md`, gated by the separate `NEVERTWICE_USER_MODEL`) is a
+  learned working-profile summary injected at SessionStart independently of `CROSS_PROJECT_MODE`
+  - it can carry whatever the profile-builder distilled ACROSS every project it has seen,
+  regardless of `off`/`universal`/`all`. Setting `NEVERTWICE_CROSS_PROJECT=off` does not touch
+  this second channel. Not fixed here - it is out of Q5's scope (PLAN-Q3Q5.md's "Вне рамки"
+  list, risk R12) - and is recorded so a reader of the cross-project boundary does not assume
+  it is the only one.
+- **W17 [CLOSED AT PROMOTION, Q5/A3+A5] `principle_scan` has no standalone pattern for the
+  "entity" class at WRITE time - closed one layer later, by a token-provenance rule at
+  PROMOTION time (owner review).** `principle_scan`'s other five identifier
+  classes (IP, URL/FQDN, path, email, host:port/version) are regex-detected regardless of what
+  the extractor declares around them; entity-class protection at write time runs entirely
+  through the FORBIDDEN-TOKEN path - the project slug and the item's own `entities` field,
+  nothing else - so a model that mentions a product name in prose without also declaring it as
+  an entity slips past write time with no regex fallback to catch it. Surfaced by
+  `research/cross_project_bench.py`'s `--dry` stub extractor
+  (`tests/research/_test_cross_project_bench_extract_dry.py`) while widening A9 to test
+  EXTRACTED principles rather than only pre-written ones.
+
+  Rather than leave this a documented write-time gap, the boundary the owner named is
+  promotion, not write: a principle sits inside its OWN project's note until `principles.py`
+  moves it across, so promotion is where cross-project corroboration belongs for every TOKEN
+  of a candidate sentence, not only for the sentence as a whole (the >=2-project CLUSTER rule
+  already had). `nevertwice/principles.py`'s `_token_provenance` now requires every content
+  token (lowercased, length >= 3, not a stopword, each part of a hyphenated/underscored token
+  counted separately) of the chosen sentence to appear in the vocabulary (title + description +
+  principle + entities + tags, across all live notes) of at least `TOKEN_PROVENANCE_MIN_PROJECTS`
+  (2, `NEVERTWICE_PRINCIPLE_T`'s sibling constant) of the cluster's OWN source projects - this
+  does not depend on what the extractor declared at all, so an undeclared entity is caught here
+  even though nothing upstream of it caught it. If the medoid fails, the next-most-central
+  member is tried, in order; a cluster with no passing candidate is not promoted and is counted
+  as `rejected_single_project_token`, with the offending tokens named (`tests/
+  _test_principle_promote.py`, cases (a)/(b)/(c); `research/cross_project_bench.py --dry` now
+  reports write-time and promotion-time rejections in SEPARATE per-class counters, since they
+  are different boundaries doing their jobs, not two names for the same event).
+
+  **Residual gap, genuinely different from the one this replaces:** a name that happens to
+  appear in >=2 projects' OWN text passes - at that point it is shared vocabulary the corpus
+  itself attests to, and arguably not one client's identifier at all (a generic technical term
+  like "kubernetes" or "postgres" is supposed to pass for exactly this reason). Whether a name
+  shared by exactly two SMALL, otherwise-unrelated projects should still count as "corroborated"
+  is a judgement call this rule does not make - it counts projects, not how independent they
+  are of each other.
+
+  **Second residual, at WRITE time this time (`_looks_like_identifier`,
+  `_engine_text.py` - two auditor passes on the same commit day).** The write-time gate that
+  decides which DECLARED entities are worth forbidding (added alongside the promotion-time rule
+  above) was first found too NARROW - "payments-api", "billing_service", "UserRepository",
+  "STRIPE_SECRET_KEY", "useAuthStore", "db-primary", "orders_table", "kafka-consumer-group",
+  "OrderService" and "prod-cluster" all silently survived - then, once widened to catch a
+  camelCase/PascalCase transition and a hyphenated infra noun on top of digit/dot/slash/
+  underscore, found too WIDE by a second probe: most public tech names (PostgreSQL, JavaScript,
+  GitHub, WebSocket, GraphQL, MongoDB, DevOps...) and most generic hyphen concepts
+  (consumer-group, worker-queue, api-gateway, service-mesh...) were now ALSO forbidden, because
+  shape cannot tell a public name from a private one - PostgreSQL and UserRepository are the
+  same camelCase shape, api-gateway and payments-api the same hyphen-infra shape. The exact
+  probe is pinned in `tests/_test_principle_entity_forbidding.py`'s `PUBLIC_TECH_NAMES` /
+  `GENERIC_HYPHEN_CONCEPTS` lists and their "... reads generic at write time" checks, not
+  restated here as a count.
+
+  **Option (A), the decision this repository made:** the write/rescan gate stops at shapes that
+  are RARELY public - digit/dot/slash, underscore, ALL-CAPS-with-underscore, the project's own
+  slug - and camelCase/PascalCase and hyphen-infra names are left OFF it entirely, defended
+  instead by `_token_provenance` at promotion time, widened the same day to check those two
+  shapes specifically (previously it checked every content token indiscriminately, which
+  blocked genuine cross-project PARAPHRASES too - a separate defect, H6, fixed alongside this
+  one). The residual this leaves: a PRIVATE camelCase or kebab name (a class, a service, a
+  table only one codebase has) can sit inside its OWN project's principle - write time no
+  longer touches it - but cannot CROSS into the universal pool without appearing in >=2
+  projects' own vocabulary, which `_token_provenance` still enforces. A public name is expected
+  to clear that bar easily (many projects' corpora use "PostgreSQL"); a private one is expected
+  to fail it, the same way an entity nobody ever declared always has.
+
+  The FIRST residual this section already named - `phoenix` (a lone lowercase word) and
+  `acme-corp` (a kebab whose parts are not infra nouns) - is UNCHANGED by option (A): neither
+  has a shape (digit/underscore/case/hyphen) for the write gate OR the widened provenance check
+  to key on, so both are, and remain, defended by promotion-time corpus corroboration alone.
 
 ## Less-traveled-path audit (2026-06-17)
 
