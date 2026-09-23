@@ -98,6 +98,64 @@ def _run_via_powershell(command: str, *, cwd: Path, env: dict, input_text: str =
     return subprocess.run(["powershell", "-NoProfile", "-Command", ps], cwd=str(cwd), env=env,
                           input=input_text, capture_output=True, text=True, timeout=timeout)
 
+
+def _posix_bash_path() -> str | None:
+    """A `bash` on PATH - checked ONLY on POSIX. On Windows a bare `bash` on PATH resolves to
+    WSL's launcher (see `GIT_BASH`'s own docstring above) - an entirely different shell and
+    filesystem, never what "bash" means on this machine; Git Bash is reached through the
+    hardcoded `GIT_BASH` path instead, which is why this helper refuses to answer on Windows at
+    all rather than returning a WSL path that would silently test the wrong thing."""
+    if os.name == "nt":
+        return None
+    return shutil.which("bash")
+
+
+def _run_via_sh(command: str, *, cwd: Path, env: dict, input_text: str = "{}",
+               timeout: int = 60) -> subprocess.CompletedProcess:
+    """`sh -c` - Claude Code's docs say it "spawns `sh -c`" for a shell-form hook command on
+    macOS and Linux, which makes this the product's MAIN path on two of the three operating
+    systems it runs on, not an optional extra a missing-shell check may skip. `shutil.which`
+    resolves whichever `/bin/sh` this machine actually has (dash, ash, bash-as-sh, ...) rather
+    than assuming a path."""
+    sh = shutil.which("sh")
+    return subprocess.run([sh, "-c", command], cwd=str(cwd), env=env,
+                          input=input_text, capture_output=True, text=True, timeout=timeout)
+
+
+def _run_via_posix_bash(command: str, *, cwd: Path, env: dict, input_text: str = "{}",
+                        timeout: int = 60) -> subprocess.CompletedProcess:
+    """`bash -c` on POSIX (`_posix_bash_path`, above) - an EXTRA check alongside `sh`, never a
+    substitute for it: `sh` is what Claude Code actually spawns there, `bash` is a common but
+    not guaranteed `sh` provider (some systems point `/bin/sh` at dash or ash instead)."""
+    bash = _posix_bash_path()
+    return subprocess.run([bash, "-c", command], cwd=str(cwd), env=env,
+                          input=input_text, capture_output=True, text=True, timeout=timeout)
+
+
+def _available_shells(powershell_label: str = "PowerShell") -> list[tuple[str, object]]:
+    """Every shell this machine can test the `-c` command through, matching Claude Code's own
+    per-platform choice (its docs: PowerShell/Git Bash on Windows, `sh -c` on macOS/Linux) - so
+    "no shell available" means "cannot test AT ALL" everywhere, never "skipped this platform's
+    main path". Windows: Git Bash (the exact path, `GIT_BASH`) and PowerShell, as before -
+    `bash`/`sh` are deliberately NOT probed there (see `_posix_bash_path`'s own docstring: a
+    bare `bash` on PATH there is WSL, a different filesystem). POSIX (macOS/Linux, including a
+    CI runner): `sh` - required, since it is the product's own primary path there and present
+    on essentially every POSIX system - plus `bash` as an extra where present. This machine is
+    Windows, so the POSIX branch is exercised by construction and CI, not locally - see (б)
+    Cause 1's commit message for how that was checked."""
+    shells: list[tuple[str, object]] = []
+    if os.name == "nt":
+        if _git_bash_available():
+            shells.append(("Git Bash", _run_via_git_bash))
+        if _powershell_available():
+            shells.append((powershell_label, _run_via_powershell))
+    else:
+        if shutil.which("sh"):
+            shells.append(("sh", _run_via_sh))
+        if _posix_bash_path():
+            shells.append(("bash", _run_via_posix_bash))
+    return shells
+
 #: The five events every hook is wired to (install.py's own EVENTS dict), each with a minimal
 #: valid payload - reused from tests/_test_entry_point.py's own EVENTS shape.
 FIVE_EVENTS = {
@@ -1522,7 +1580,21 @@ def test_migration_repoints_old_style_entries() -> None:
         ours_commands = [h["command"] for ev in five
                          for g in data["hooks"][ev] for h in g["hooks"]]
         shim = hookwire.shim_path(settings)
-        expected = hookwire.hook_command(sys.executable, shim, old_engine)
+        # (б) CI redness (Windows, all Pythons): install.py's own SETTINGS/SHIM come from
+        # `hookwire.settings_path()`, which never resolves the NEVERTWICE_CLAUDE_SETTINGS
+        # override - but its HOOK (the engine path) comes from `PKG = Path(__file__).resolve()
+        # .parent / "nevertwice"`, which DOES resolve. On a GitHub Windows runner (TEMP set to
+        # an 8.3 SHORT spelling, e.g. C:/Users/RUNNER~1/AppData/Local/Temp/...) that asymmetry
+        # is real, not a test bug on the product's side: the wired command's shim path stays
+        # short (from the unresolved settings override) while its engine path comes out long
+        # (`.resolve()` canonicalises 8.3 short segments) - reproduced directly on this machine
+        # by pointing TEMP/TMP at a short spelling before running this test, confirmed red with
+        # exactly this shape (`s=...VERYLO~1.../hook_shim.py`, `e=...verylong.../memory_hook.py`
+        # in the same command string). `old_engine` here was built from the test's own `tmp`
+        # object, never resolved, so it silently assumed BOTH halves keep whatever spelling the
+        # test constructed them with - `.resolve()` on just this half of the EXPECTED string
+        # is what makes the test's expectation match what install.py ACTUALLY computes.
+        expected = hookwire.hook_command(sys.executable, shim, old_engine.resolve())
         check("all five entries (both legacy forms) repointed onto the identical -c command, "
               "one per event, none duplicated",
               len(ours_commands) == 5 and all(c == expected for c in ours_commands),
@@ -1562,13 +1634,11 @@ def test_c_payload_never_shadows_a_stdlib_import_from_cwd() -> None:
     available on this machine, with the engine present (its own `import json`, `import
     pathlib`) and absent (the shim's degraded branch's `import json`)."""
     print("\n- the -c payload never lets the project's cwd shadow a stdlib import -")
-    shells = []
-    if _git_bash_available():
-        shells.append(("Git Bash", _run_via_git_bash))
-    if _powershell_available():
-        # F2: _run_via_powershell tests a TRANSFORMED command ("& ...; exit $LASTEXITCODE"),
-        # not necessarily what Claude Code itself passes to PowerShell - see its docstring.
-        shells.append(("PowerShell", _run_via_powershell))
+    # F2: on Windows, _run_via_powershell tests a TRANSFORMED command ("& ...; exit
+    # $LASTEXITCODE"), not necessarily what Claude Code itself passes to PowerShell - see its
+    # own docstring. (б) Cause 1: on POSIX this now also covers `sh` (Claude Code's own main
+    # path there, per its docs) - see `_available_shells`'s docstring.
+    shells = _available_shells()
     check("at least one shell is available to test through", bool(shells), "none found")
 
     for shell_name, runner in shells:
@@ -1608,12 +1678,8 @@ def test_c_payload_exit_codes_both_shells() -> None:
     third value, so a mutation that special-cases 0/2 cannot hide behind it); the shim deleted
     degrades to 0; the whole clone deleted (engine gone, shim untouched) degrades to 0 too."""
     print("\n- exit-code propagation through the -c form, every shell available -")
-    shells = []
-    if _git_bash_available():
-        shells.append(("Git Bash", _run_via_git_bash))
-    if _powershell_available():
-        shells.append(("PowerShell (via the $LASTEXITCODE relay - see _run_via_powershell)",
-                       _run_via_powershell))
+    shells = _available_shells(
+        "PowerShell (via the $LASTEXITCODE relay - see _run_via_powershell)")
     check("at least one shell is available to test through", bool(shells), "none found")
 
     for shell_name, runner in shells:
