@@ -69,6 +69,12 @@ check("mutation: bare `in` matching finds '60' inside '1960' (would FAIL 'a mark
 
 
 print("\n- fix 5: each project gets its own tracked directory, distinct from every other -")
+#: The stand puts its project dirs under ROOT/.loop/token_floor_cwd, so a checkout that itself sits
+#: under a path the engine excludes from tracking by design (the OS temp dir, a recycle bin)
+#: cannot pass the checks below - six FAILs that say nothing about the stand. Named once, first,
+#: so that case reads as what it is (the auditing session's clean worktree in %TEMP%, 2026-09-24).
+check("precondition: this checkout is not under a path the engine excludes from tracking",
+      not m._is_excluded_path(m._norm_path(str(tf.ROOT))), str(tf.ROOT))
 cwd_a = tf._make_cwd("proj_alpha")
 cwd_b = tf._make_cwd("proj_beta")
 check("project A's cwd is tracked", m.is_tracked_project(cwd_a), cwd_a)
