@@ -23,11 +23,14 @@ from __future__ import annotations
 import ast
 import json
 import os
+import re
 import shlex
 import shutil
 import subprocess
 import sys
 import tempfile
+import time
+import venv
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -42,6 +45,19 @@ sys.path.insert(0, str(PKG))
 import hookwire  # noqa: E402
 
 SHIM_SRC = PKG / "hook_shim.py"
+TS = re.compile(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}")
+
+#: The five events every hook is wired to (install.py's own EVENTS dict), each with a minimal
+#: valid payload - reused from tests/_test_entry_point.py's own EVENTS shape.
+FIVE_EVENTS = {
+    "PreToolUse": {"hook_event_name": "PreToolUse", "session_id": "e1", "tool_name": "Edit",
+                   "tool_input": {"file_path": "a.py", "new_string": "y = 1"}},
+    "SessionStart": {"hook_event_name": "SessionStart", "session_id": "e2", "source": "startup"},
+    "UserPromptSubmit": {"hook_event_name": "UserPromptSubmit", "session_id": "e2",
+                         "prompt": "why does the handler crash with failure mode 3"},
+    "SessionEnd": {"hook_event_name": "SessionEnd", "session_id": "e2", "reason": "clear"},
+    "PreCompact": {"hook_event_name": "PreCompact", "session_id": "e2", "trigger": "manual"},
+}
 
 PASSED = 0
 FAILED = 0
@@ -368,6 +384,213 @@ def test_req1_rename() -> None:
         _req1(Path(td), lambda clone: os.rename(clone, clone.with_name("nevertwice-moved")))
 
 
+def test_identity_across_all_five_events() -> None:
+    """The same real engine, driven direct and through the shim, across every wired event -
+    same exit code, same stdout, same stderr (timestamps and store paths masked), same store
+    tree. Not just the happy path: this is what proves the shim is a transparent hand-off and
+    not merely "usually works"."""
+    print("\n- identical behaviour, direct vs through the shim, all five events -")
+    with tempfile.TemporaryDirectory() as td:
+        tmp = Path(td)
+        clone = _make_clone(tmp)
+        engine = clone / "memory_hook.py"
+
+        #: The payload's `cwd` has to be the SAME literal string for both arms - each still
+        #: gets its own isolated store/root directory, but the engine logs the `cwd` it was
+        #: given verbatim, and two different real temp paths there is a difference in the
+        #: harness, not in the code under test (found running this the first time).
+        shared_cwd = str(tmp / "shared-cwd")
+
+        def drive(via_shim: bool, label: str, event: dict):
+            root = tmp / label
+            root.mkdir()
+            env = _engine_env(root)
+            argv = (_shim_command(root, engine) if via_shim else [sys.executable, str(engine)])
+            store = Path(env["NEVERTWICE_HOME"])
+            r = subprocess.run(argv, input=json.dumps(dict(event, cwd=shared_cwd)),
+                               capture_output=True, text=True, env=env, timeout=240)
+
+            def mask(s: str) -> str:
+                return TS.sub("<TS>", s.replace(str(store), "<STORE>").replace(str(root), "<ROOT>"))
+            tree = (sorted(str(p.relative_to(store)) for p in store.rglob("*") if p.is_file())
+                    if store.is_dir() else [])
+            return r.returncode, mask(r.stdout), mask(r.stderr), tree
+
+        for label, event in FIVE_EVENTS.items():
+            a = drive(False, f"{label}_direct", event)
+            b = drive(True, f"{label}_shim", event)
+            check(f"{label}: identical exit/stdout/stderr/store-tree, direct vs via the shim",
+                  a == b,
+                  next((f"{w} differs" for w, x, y in zip(("exit", "stdout", "stderr", "files"),
+                                                          a, b) if x != y), ""))
+
+
+def test_migration_repoints_old_style_entries() -> None:
+    """`install.py` finds five pre-existing OLD-STYLE (pre-shim) entries and repoints every one
+    of them onto the identical shim command, in place - never appending a second hook beside a
+    stale one. A foreign copy and the user's own hook are untouched, byte for byte."""
+    print("\n- install.py repoints five old-style entries onto the shim -")
+    with tempfile.TemporaryDirectory() as td:
+        tmp = Path(td)
+        home = tmp / "home"
+        home.mkdir()
+        env = _wall.walled(home)
+        settings = Path(env["NEVERTWICE_CLAUDE_SETTINGS"])
+
+        clone = tmp / "clone"
+        shutil.copytree(PKG, clone / "nevertwice", ignore=shutil.ignore_patterns("__pycache__"))
+        shutil.copy2(ROOT / "install.py", clone / "install.py")
+        old_engine = clone / "nevertwice" / "memory_hook.py"
+        old_cmd = f'"{sys.executable}" "{old_engine}"'.replace("\\", "/")
+
+        foreign = {"type": "command",
+                  "command": "python C:/Users/me/.claude/scripts/memory_hook.py"}
+        theirs = {"type": "command", "command": "python /home/me/my_own_hook.py"}
+        five = ("SessionStart", "UserPromptSubmit", "SessionEnd", "PreCompact", "PreToolUse")
+        hooks = {ev: [{"matcher": "", "hooks": [{"type": "command", "command": old_cmd}]}]
+                for ev in five}
+        hooks["Extra"] = [{"hooks": [foreign, theirs]}]
+        settings.write_text(json.dumps({"hooks": hooks}), encoding="utf-8")
+
+        r = subprocess.run([sys.executable, str(clone / "install.py")], env=env,
+                           capture_output=True, text=True, timeout=120)
+        check("install.py exits 0 against five pre-existing old-style entries",
+              r.returncode == 0, f"exit {r.returncode}: {r.stderr[-300:]}")
+
+        data = json.loads(settings.read_text(encoding="utf-8"))
+        ours_commands = [h["command"] for ev in five
+                         for g in data["hooks"][ev] for h in g["hooks"]]
+        shim = hookwire.shim_path(settings)
+        expected = hookwire.hook_command(sys.executable, shim, old_engine)
+        check("all five entries repointed onto the identical shim command, none duplicated",
+              len(ours_commands) == 5 and all(c == expected for c in ours_commands),
+              str(ours_commands))
+        check("the shim was actually installed where the repointed command points",
+              shim.is_file() and shim.read_bytes() == (PKG / "hook_shim.py").read_bytes())
+
+        extra_commands = [h["command"] for g in data["hooks"]["Extra"] for h in g["hooks"]]
+        check("the foreign copy and the user's own hook survive untouched, byte for byte",
+              extra_commands == [foreign["command"], theirs["command"]], str(extra_commands))
+
+
+def test_venv_in_clone_is_never_the_wired_interpreter() -> None:
+    """O3b: a venv created INSIDE the checkout being installed must not become the wired
+    interpreter - it would vanish along with the clone, exactly like the engine does, defeating
+    the shim's whole purpose. `hookwire.hook_python` rebases it; this drives that end to end
+    through a real `install.py` run and a real venv."""
+    print("\n- a venv created inside the clone is never the wired interpreter (O3b) -")
+    with tempfile.TemporaryDirectory() as td:
+        tmp = Path(td)
+        home = tmp / "home"
+        home.mkdir()
+        env = _wall.walled(home)
+        settings = Path(env["NEVERTWICE_CLAUDE_SETTINGS"])
+
+        clone = tmp / "clone"
+        shutil.copytree(PKG, clone / "nevertwice", ignore=shutil.ignore_patterns("__pycache__"))
+        shutil.copy2(ROOT / "install.py", clone / "install.py")
+
+        venv_dir = clone / ".venv"
+        venv.create(venv_dir, with_pip=False)
+        venv_python = venv_dir / ("Scripts/python.exe" if os.name == "nt" else "bin/python3")
+        check("the venv interpreter exists", venv_python.is_file(), str(venv_python))
+
+        r = subprocess.run([str(venv_python), str(clone / "install.py")], env=env,
+                           capture_output=True, text=True, timeout=180)
+        check("install.py exits 0 run under a venv interpreter living inside the clone",
+              r.returncode == 0, f"exit {r.returncode}: {r.stderr[-400:]}")
+
+        data = json.loads(settings.read_text(encoding="utf-8"))
+        wired_cmd = data["hooks"]["SessionStart"][0]["hooks"][0]["command"]
+        wired_interp = hookwire.tokens(wired_cmd)[0]
+        clone_norm = str(clone.resolve()).replace("\\", "/").lower()
+        check("the wired interpreter is NOT the venv's own, and not under the clone at all",
+              not wired_interp.lower().startswith(clone_norm + "/"), wired_cmd)
+
+        shutil.rmtree(clone)                      # the clone AND its venv are both gone now
+        argv = shlex.split(wired_cmd)
+        r2 = subprocess.run(argv, input=json.dumps({"hook_event_name": "SessionStart"}),
+                           capture_output=True, text=True, timeout=60)
+        check("after the clone (and its venv) is deleted, the wired command still exits 0",
+              r2.returncode == 0, f"exit {r2.returncode}: {r2.stderr[-300:]}")
+
+
+def test_every_subprocess_call_touching_install_or_hosts_is_walled() -> None:
+    """Req 4, statically: every `subprocess.run`/`Popen`/`check_output`/`check_call` anywhere
+    under tests/ whose arguments mention install.py, hook_shim.py or hosts has to pass an env
+    built through `_wall.walled(...)` - never `dict(os.environ, ...)` alone. One call built the
+    wrong way is how a test wrote five hooks into the owner's real settings.json."""
+    print("\n- every install.py/hosts/hook_shim subprocess call in tests/ is walled -")
+    target_names = ("install.py", "hook_shim.py", "nevertwice.hosts", "nevertwice/hosts")
+    call_methods = {"run", "Popen", "check_output", "check_call"}
+    offenders = []
+    checked = 0
+    for path in sorted((ROOT / "tests").glob("_test_*.py")):
+        src = path.read_text(encoding="utf-8", errors="replace")
+        try:
+            tree = ast.parse(src)
+        except SyntaxError:
+            continue
+        funcs = [n for n in ast.walk(tree)
+                if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))]
+        for fn in funcs:
+            fn_src = ast.get_source_segment(src, fn) or ""
+            for node in ast.walk(fn):
+                if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                        and node.func.attr in call_methods):
+                    continue
+                call_src = ast.get_source_segment(src, node) or ""
+                if not any(name in call_src for name in target_names):
+                    continue
+                checked += 1
+                has_env_kw = any(kw.arg == "env" for kw in node.keywords)
+                walled_upstream = "walled(" in fn_src or "walled_in_process(" in fn_src
+                if not (has_env_kw and walled_upstream):
+                    offenders.append(f"{path.relative_to(ROOT)}:{node.lineno}")
+    check("at least one call was actually checked (a rule over nothing proves nothing)",
+          checked >= 5, str(checked))
+    check("every install.py/hosts/hook_shim subprocess call passes an env built by the wall",
+          not offenders, "; ".join(offenders[:8]))
+
+
+def test_latency_direct_vs_via_the_shim() -> None:
+    """Printed, never asserted - PreToolUse latency is a performance property, not a
+    correctness one, and the whole track's other suites already gate the engine's own hot
+    path. 25 alternating runs of the SAME trivial stub "engine", direct (`python stub.py`) vs
+    through the shim (`python hook_shim.py stub.py`) - isolating exactly what the shim's own
+    indirection (argv handling, the sys.path insert, `runpy.run_path`) costs on top of a bare
+    `python <script>`, with no real store I/O on either side to drown it out."""
+    print("\n- latency: direct vs through the shim (informational only) -")
+    with tempfile.TemporaryDirectory() as td:
+        stub = Path(td) / "stub_engine.py"
+        stub.write_text("import sys\n", encoding="utf-8")
+        event = json.dumps({"hook_event_name": "PreToolUse", "session_id": "lat"})
+
+        def once(argv):
+            t0 = time.perf_counter()
+            subprocess.run(argv, input=event, capture_output=True, text=True, timeout=60)
+            return time.perf_counter() - t0
+
+        direct_argv = [sys.executable, str(stub)]
+        shim_argv = [sys.executable, str(SHIM_SRC), str(stub)]
+        direct_times, shim_times = [], []
+        for i in range(25):
+            if i % 2 == 0:
+                direct_times.append(once(direct_argv))
+                shim_times.append(once(shim_argv))
+            else:
+                shim_times.append(once(shim_argv))
+                direct_times.append(once(direct_argv))
+        direct_times.sort()
+        shim_times.sort()
+        n = len(direct_times)
+        print(f"       direct (python stub.py)          : min {direct_times[0] * 1000:.2f} ms, "
+              f"median {direct_times[n // 2] * 1000:.2f} ms")
+        print(f"       via shim (python hook_shim.py ...) : min {shim_times[0] * 1000:.2f} ms, "
+              f"median {shim_times[n // 2] * 1000:.2f} ms")
+        check("the latency comparison ran to completion", len(direct_times) == len(shim_times) == 25)
+
+
 def test_non_blocking_even_with_a_missing_interpreter() -> None:
     """The shell's own "command not found" for a missing interpreter must never coincide with
     exit 2 - which is Claude Code's block code - so this asserts inequality, never a specific
@@ -405,6 +628,11 @@ def main() -> int:
                test_shim_needs_engine_dir_on_syspath,
                test_req1_delete,
                test_req1_rename,
+               test_identity_across_all_five_events,
+               test_migration_repoints_old_style_entries,
+               test_venv_in_clone_is_never_the_wired_interpreter,
+               test_every_subprocess_call_touching_install_or_hosts_is_walled,
+               test_latency_direct_vs_via_the_shim,
                test_non_blocking_even_with_a_missing_interpreter):
         fn()
     test_zz_every_check_passed()
