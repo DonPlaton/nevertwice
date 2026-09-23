@@ -404,9 +404,56 @@ def _sleep_and_reread(api, cases: list[dict], k: int, prefix: str) -> dict:
             "config": f"the same store after consolidate_memory.adjudicate_contested(budget={adj['budget']}, cap={adj['cap']})"}
 
 
-def run_nevertwice(cases: list[dict], k: int, sleep: bool = False) -> dict:
+#: A9 (PLAN-Q3Q5.md): mechanism A's queue empties after ONE MORE session of the project, not a
+#: week - but this stand's cases carry only two sessions (C2, PLAN's own contradiction list: "у
+#: кейса ДВЕ сессии - A не срабатывает"). A third, deliberately inert session gives A something to
+#: empty the queue AGAINST, without adding a fact of its own - "nothing else changed" is the
+#: point, checked below (`_project_slugs`).
+FILLER_SESSION = "Back on {domain}; reran the suite, nothing else changed."
+
+
+def _llm_stats_snapshot(m) -> tuple[int, int]:
+    """`(prompt_tokens, eval_tokens)` accumulated on `_LLM_STATS` so far - a process-lifetime
+    running total, never reset between sessions. A per-session cost is the DELTA of two
+    snapshots, never this value alone."""
+    return (m._LLM_STATS.get("prompt_tokens", 0), m._LLM_STATS.get("eval_tokens", 0))
+
+
+def _llm_stats_delta(before: tuple[int, int], after: tuple[int, int]) -> dict:
+    return {"prompt_tokens": after[0] - before[0], "eval_tokens": after[1] - before[1]}
+
+
+def _project_slugs(project: str) -> set[str]:
+    """Every typed-note slug this project currently has on disk, live or retired
+    (`Superseded/`) - the same globbing `_store_state` uses, read for its SLUG rather than its
+    fact content. `--third-session`'s own check is that this set does not grow across the filler
+    capture: "wrote no note on the case's slug"."""
+    import memory_hook as m                                       # noqa: PLC0415
+    import sandbox_guard as sg                                     # noqa: PLC0415
+    root = Path(sg.store())
+    out: set[str] = set()
+    for folder in ("Patterns", "Mistakes", "Decisions"):
+        d = root / folder
+        if not d.exists():
+            continue
+        paths = list(d.glob(f"*-{project}-*.md"))
+        sup = d / "Superseded"
+        if sup.exists():
+            paths += list(sup.glob(f"*-{project}-*.md"))
+        for md in paths:
+            parsed = m.parse_typed_stem(md.stem)
+            if parsed:
+                out.add(parsed["slug"])
+    return out
+
+
+def run_nevertwice(cases: list[dict], k: int, sleep: bool = False, third_session: bool = False) -> dict:
     """The public path: one `capture_session` per session, then `recall`. `sleep` adds the second
     reading of K8: the judge over the contested pairs, then recall again (`after_sleep`).
+    `third_session` (A9) adds one filler session per case AFTER the normal two and reads again
+    (`after_next_session`, G3.5's "after the NEXT session of the project" - weaker than a week,
+    stronger than nothing, PLAN's own honest wording for what mechanism A actually buys) - plus,
+    per session (including the filler), the `_LLM_STATS` token delta the capture cost (G3.2).
 
     A separate project per case, so one case cannot retrieve another's notes - the same
     isolation a real user gets from working in different repositories, and without it the
@@ -418,10 +465,11 @@ def run_nevertwice(cases: list[dict], k: int, sleep: bool = False) -> dict:
     os.environ.setdefault("NEVERTWICE_EMBED_MODEL", EMBED_MODEL)
     try:
         from nevertwice import api
+        import memory_hook as m                       # noqa: PLC0415 - A9: per-session token deltas
     except Exception as e:                            # pragma: no cover - import-time only
         return {"blocked": f"nevertwice import failed ({type(e).__name__}: {e})"}
 
-    rows, t0 = [], time.time()
+    rows, next_rows, t0 = [], [], time.time()
     #: What this pass DID, as opposed to what it found lying in the store. `capture_session`
     #: returns `stored: False` whenever `process_session` did not write, and a repeat that
     #: stored nothing has measured nothing - see `pool`, which refuses that. `notes_written`
@@ -444,10 +492,13 @@ def run_nevertwice(cases: list[dict], k: int, sleep: bool = False) -> dict:
     ingested = not_stored = 0
     for i, case in enumerate(cases):
         project = f"sup{i:03d}"
+        session_tokens = []
         try:
             for j, session in enumerate(case["sessions"]):
+                before = _llm_stats_snapshot(m)
                 r = api.capture_session("\n".join(session), project=project,
                                         session_id=f"{project}-s{j}", trigger="ingest")
+                session_tokens.append(_llm_stats_delta(before, _llm_stats_snapshot(m)))
                 if isinstance(r, dict) and r.get("stored"):
                     ingested += 1
                 else:
@@ -457,13 +508,36 @@ def run_nevertwice(cases: list[dict], k: int, sleep: bool = False) -> dict:
             continue
         hits = api.recall(case["query"], project=project, k=k)
         items = [hit_text(h) for h in hits]
-        rows.append({**_row(case, items), **_store_state(project, case)})
+        row = {**_row(case, items), **_store_state(project, case), "session_tokens": session_tokens}
+        if third_session:
+            slugs_before = _project_slugs(project)
+            before = _llm_stats_snapshot(m)
+            filler = FILLER_SESSION.format(domain=case.get("domain") or "the project")
+            api.capture_session(filler, project=project,
+                                session_id=f"{project}-s{len(case['sessions'])}", trigger="ingest")
+            session_tokens.append(_llm_stats_delta(before, _llm_stats_snapshot(m)))
+            new_slugs = sorted(_project_slugs(project) - slugs_before)
+            row["third_session_new_slugs"] = new_slugs
+            row["third_session_silent"] = not new_slugs   # wrote no note on the case's slug
+            next_hits = api.recall(case["query"], project=project, k=k)
+            next_items = [hit_text(h) for h in next_hits]
+            next_rows.append({**_row(case, next_items), **_store_state(project, case)})
+        rows.append(row)
         print(f"  [{i + 1}/{len(cases)}] {case['id']}  hits={len(hits)}"
-              f"  stale={rows[-1]['stale_returned']}@{rows[-1]['stale_rank']}", flush=True)
+              f"  stale={rows[-1]['stale_returned']}@{rows[-1]['stale_rank']}"
+              + (f"  third_session_silent={row['third_session_silent']}" if third_session else ""),
+              flush=True)
     out = {"rows": rows, **score(rows), "seconds": round(time.time() - t0, 1),
            "sessions_ingested": ingested, "sessions_not_stored": not_stored,
            "config": f"ollama {LLM} + {EMBED_MODEL}, k={k}",
            "store_bytes": store_bytes()}
+    if third_session:
+        out["after_next_session"] = {
+            "rows": next_rows, **score(next_rows),
+            "config": "the same store after one filler third session per case, before sleep",
+            "all_third_sessions_silent": all(r.get("third_session_silent", True)
+                                             for r in rows if "error" not in r),
+        }
     if sleep:
         out["after_sleep"] = _sleep_and_reread(api, cases, k, "sup")
     return out
@@ -1037,7 +1111,8 @@ def _one_run(data: dict, cases: list[dict], args, arm_names: list[str]) -> dict:
             print(f"- {name}: unknown arm (have: {', '.join(ARMS)})")
             continue
         print(f"- {name}")
-        res = fn(cases, args.k, sleep=args.sleep) if name == "nevertwice" else fn(cases, args.k)
+        res = (fn(cases, args.k, sleep=args.sleep, third_session=args.third_session)
+              if name == "nevertwice" else fn(cases, args.k))
         out["arms"][name] = res
         if res.get("blocked"):
             print(f"  BLOCKED: {res['blocked']}\n")
@@ -1047,6 +1122,11 @@ def _one_run(data: dict, cases: list[dict], args, arm_names: list[str]) -> dict:
               f"current {res['current_rate']} {res['current_ci']} | "
               f"control miss {res['control_miss_rate']} | "
               f"{res['mean_chars_returned']} chars/query | {res['seconds']}s")
+        if res.get("after_next_session"):
+            nxt = res["after_next_session"]
+            print(f"  after next session: stale {nxt['stale_rate']} | current {nxt['current_rate']} | "
+                  f"control miss {nxt['control_miss_rate']} | "
+                  f"third sessions all silent: {nxt['all_third_sessions_silent']}")
         if res.get("after_sleep"):
             after = res.pop("after_sleep")
             out["arms"]["nevertwice_after_sleep"] = after
@@ -1091,6 +1171,11 @@ def main() -> int:
     ap.add_argument("--sleep", action="store_true",
                     help="K8: read the engine arm twice - after session two, and again after the "
                          "sleep-time judge over the contested pairs (arm `nevertwice_after_sleep`)")
+    ap.add_argument("--third-session", action="store_true", dest="third_session",
+                    help="A9 (Q3): add one filler session per case after the normal two, check it "
+                         "wrote no note on the case's slug, and read again (`after_next_session`, "
+                         "G3.5's honest 'after the NEXT session' framing) - plus per-session token "
+                         "deltas (G3.2). Engine arm only; other arms are unaffected.")
     ap.add_argument("--out", default="")
     ap.add_argument("--compare", nargs="*", default=None,
                     help="result files to pair against each other instead of running an arm")
@@ -1166,6 +1251,8 @@ def main() -> int:
             base += ["--limit", str(args.limit)]
         if args.sleep:
             base += ["--sleep"]
+        if args.third_session:
+            base += ["--third-session"]
         if args.probe:
             base += ["--probe"]
         paths = []
