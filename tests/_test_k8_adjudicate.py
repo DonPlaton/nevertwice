@@ -986,6 +986,15 @@ op.write_text(op.read_text(encoding="utf-8").replace(f'contested: ["{n}"]', f"co
 cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(None))
 check("the weekly run keeps a stamp it cannot read, for doctor to report - it does not erase it",
       f"[[{n}]], [[{n}]]" in str(fm(o).get("contested")), str(fm(o).get("contested")))
+#: The line that does it runs only when the cleanup runs - when the same stamp ALSO names a note
+#: that is gone. A stamp holding only the unreadable entry never reaches it, so the case above
+#: stayed green with the line removed (auditing session's H5 on c585ad8).
+d = fresh()
+o, n = pair()
+cm._set_contested(m.VAULT / "Decisions" / f"{o}.md", ["2026-06-20-k8p-decision-gone-note", "a b"])
+cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(None))
+check("with a gone note beside it, the cleanup drops the gone note and keeps the unreadable entry",
+      fm(o).get("contested") == ["a b"], str(fm(o).get("contested")))
 
 #: 5: the Superseded/ copy that proves a retirement must be NEW - an earlier one of the same name
 #: proved nothing about a note renamed during the judge call.
