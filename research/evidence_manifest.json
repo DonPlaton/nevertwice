@@ -734,7 +734,7 @@
   },
   "research/SUPERSESSION.md": {
    "governance": "backlog",
-   "budget": 62,
+   "budget": 61,
    "note": "Every figure on this page is registered above; the budget covers the per-shape breakdown and the prose, which restate registered numbers in other shapes. The study pages are backlog by the same rule as the rest of the archive.",
    "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks and generated regions, excluding years, months, Python versions and bare single digits",
    "generator": "research/supersession_bench.py"
@@ -8981,7 +8981,11 @@
    "caveat": "The marginal intervals overlap; the paired difference is the claim that matters and it contains zero. See embed.heldout.situation.delta_recall_at_1.",
    "produced_by": [
     "research/embed_universal/heldout_eval.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the stand changed (K3: --models and a disk preflight; K6: the deleted distil checkpoint dropped from MODELS); re-measured on the GPU in the v2 D1 block",
+   "withdrawn_on": "2026-09-23",
+   "pending_remeasure": true
   },
   {
    "id": "embed.heldout.situation.delta_recall_at_1",
@@ -9011,7 +9015,11 @@
    "caveat": "McNemar's discordant counts are 10 won / 4 lost, exact two-sided p = .18. This does NOT say the fine-tune is worthless - it says the evidence for it was never external, and the external evidence is silent. The shipped 0.220 -> 0.475 headline was measured on the owner's private vault and remains unreproducible by anyone else.",
    "produced_by": [
     "research/embed_universal/heldout_eval.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the stand changed (K3: --models and a disk preflight; K6: the deleted distil checkpoint dropped from MODELS); re-measured on the GPU in the v2 D1 block",
+   "withdrawn_on": "2026-09-23",
+   "pending_remeasure": true
   },
   {
    "id": "embed.heldout.situation.reranker_delta_recall_at_5",
@@ -9041,7 +9049,11 @@
    "caveat": "It reranks the stock retriever's top 50, so it is capped by that retriever's recall@50 of 0.968. At recall@1 it gains nothing (-0.014 [-0.074, 0.042]) and it is worse on the title axis: it knows which five documents matter, not which one.",
    "produced_by": [
     "research/embed_universal/heldout_eval.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the stand changed (K3: --models and a disk preflight; K6: the deleted distil checkpoint dropped from MODELS); re-measured on the GPU in the v2 D1 block",
+   "withdrawn_on": "2026-09-23",
+   "pending_remeasure": true
   },
   {
    "id": "embed.hard_negatives.situation.delta_recall_at_5",
@@ -9207,7 +9219,11 @@
    "produced_by": [
     "research/embed_universal/truncation_eval.py",
     "research/embed_universal/heldout_eval.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the stand changed (K3: --models and a disk preflight; K6: the deleted distil checkpoint dropped from MODELS); re-measured on the GPU in the v2 D1 block",
+   "withdrawn_on": "2026-09-23",
+   "pending_remeasure": true
   },
   {
    "id": "embed.matryoshka.256d_no_gain_over_naive",
@@ -9236,7 +9252,11 @@
    "produced_by": [
     "research/embed_universal/truncation_eval.py",
     "research/embed_universal/heldout_eval.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "historical: the record of the Matryoshka experiment: its checkpoint was deleted by the M4 decision, so the two-model run cannot be repeated; K3, the half that needs only the shipped model, is re-measured separately with --models nevertwice-embed",
+   "withdrawn_on": "2026-09-23",
+   "historical_on": "2026-09-23"
   },
   {
    "id": "embed.capacity.r64_vs_shipped",
@@ -9267,7 +9287,11 @@
    "produced_by": [
     "research/embed_universal/capacity_sweep.py",
     "research/embed_universal/heldout_eval.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the stand changed (K3: --models and a disk preflight; K6: the deleted distil checkpoint dropped from MODELS); re-measured on the GPU in the v2 D1 block",
+   "withdrawn_on": "2026-09-23",
+   "pending_remeasure": true
   },
   {
    "id": "embed.capacity.v1_recipe_does_not_reproduce_v1",
@@ -9297,7 +9321,11 @@
    "produced_by": [
     "research/embed_universal/capacity_sweep.py",
     "research/embed_universal/heldout_eval.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the stand changed (K3: --models and a disk preflight; K6: the deleted distil checkpoint dropped from MODELS); re-measured on the GPU in the v2 D1 block",
+   "withdrawn_on": "2026-09-23",
+   "pending_remeasure": true
   },
   {
    "id": "embed.serving.vector_agreement_median_cosine",
@@ -9323,7 +9351,11 @@
    "produced_by": [
     "research/embed_universal/serving_check.py",
     "research/embed_universal/heldout_eval.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the stand changed (K3: --models and a disk preflight; K6: the deleted distil checkpoint dropped from MODELS); re-measured on the GPU in the v2 D1 block",
+   "withdrawn_on": "2026-09-23",
+   "pending_remeasure": true
   },
   {
    "id": "embed.serving.latency_ratio",
@@ -9349,7 +9381,11 @@
    "produced_by": [
     "research/embed_universal/serving_check.py",
     "research/embed_universal/heldout_eval.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the stand changed (K3: --models and a disk preflight; K6: the deleted distil checkpoint dropped from MODELS); re-measured on the GPU in the v2 D1 block",
+   "withdrawn_on": "2026-09-23",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.extraction.language_drift",
@@ -56367,6 +56403,16 @@
    "literal": "0.037",
    "context": "The first run of this file reported|Namespacing the ids",
    "reason": "the value the FIRST run of research/LOCOMO.md reported before the id collision was found - a defect in the harness, not a measurement of the ranker, and the page keeps it because deleting the number one was wrong about destroys the record of having been wrong. Scoped by context so the figure is excused only on the two lines that narrate the defect; it became visible when the locomo family was restored on 2026-09-22 and the page came under the rule for the first time."
+  },
+  {
+   "literal": "256",
+   "context": "sha256",
+   "reason": "the hash function's name in 'sha256' (a corpus pin), not a measurement"
+  },
+  {
+   "literal": "64",
+   "context": "7b-64k",
+   "reason": "the context length inside the model name 'qwen2.5-7b-64k', not a measurement"
   }
  ],
  "drift_note": "A drift entry records a number a document prints that the stored raw result contradicts. All five entries opened by task B1 were closed by task B2: the tables are generated from this manifest now, and the prose around them was corrected to the stored values. Open a new entry when a published figure is found to disagree and cannot be corrected in the same change; the test fails once the document no longer prints it, so an entry cannot outlive its fix.",

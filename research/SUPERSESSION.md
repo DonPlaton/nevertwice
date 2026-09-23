@@ -511,7 +511,7 @@ the harness now counts per-case errors and refuses to score an arm that mostly f
   Graphiti rows are two runs on a flushed FalkorDB with every group id prefixed by the run's own
   name, pooled and published with their spread like ours.
 - **n = 120 supersession case-runs.** Enough to separate a few per cent from almost everything many times over; not
-  enough to distinguish 0.042 from half of it, and the two runs behind it sit five points apart,
+  enough to distinguish the pooled stale rate from half of it, and the two runs behind it sit five points apart,
   which says something about a third only in that it will land between.
 - **The cases are written here, not scraped.** They are realistic in shape and were authored
   before any arm ran, but they are ours, and a corpus its author wrote is a weaker instrument
