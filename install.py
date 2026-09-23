@@ -177,6 +177,16 @@ def _warn_if_shim_inside_clone() -> None:
 
 def wire_hooks() -> None:
     print(f"[hooks] {SETTINGS}")
+    try:
+        _cmd()
+    except ValueError as exc:
+        # The command Claude Code will run is a `python -c "<payload>"` string wrapped in one
+        # double-quoted shell token; a path containing a quote/backtick/`$` cannot be made safe
+        # inside it (`hookwire._c_safe`). Refuse BEFORE writing the shim or touching
+        # settings.json - a hook command that is safe to read and unsafe to run is worse than
+        # no hook at all.
+        print(f"  ! refusing to wire: {exc}")
+        return
     if not SETTINGS.parent.exists():
         # ~/.claude is absent: this machine has no Claude Code. Wiring still creates it and
         # is harmless, but say so plainly so a Cursor/Codex/other user isn't misled into

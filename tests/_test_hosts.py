@@ -496,11 +496,27 @@ def test_a_hook_whose_files_are_gone_reads_as_dead() -> None:
                   "exit 0" in status["detail"] and "BLOCKS" not in status["detail"],
                   status["detail"])
 
-            # (b, continued) now the shim ITSELF is also gone: dead, and BLOCKS (nothing left
-            # to catch the interpreter's own file-not-found exit).
+            # (b, continued) now the shim ITSELF is also gone too: for the CURRENT -c form
+            # this still does NOT block - the -c payload's own `os.path.isfile(s)` guard is
+            # exactly what a later correction to this track added, so a hand-deleted
+            # hook_shim.py stops being the "last block path". A missing shim only blocks for
+            # a LEGACY 3-token entry (built by hand below - `hookwire.hook_command` no longer
+            # builds that shape), which has nothing catching the interpreter's own
+            # file-not-found exit.
             live_shim.unlink()
             status = adapter.install_status()
-            check("(b) a missing SHIM (the script itself) reads as dead and BLOCKS",
+            check("(b) a missing SHIM under the CURRENT -c form reads as dead but does NOT "
+                  "block (the -c wrapper degrades itself)",
+                  status["state"] == "dead" and "BLOCKS" not in status["detail"]
+                  and "exit 0" in status["detail"], str(status))
+
+            legacy_shim_cmd = " ".join(f'"{str(p).replace(chr(92), "/")}"'
+                                       for p in ("python", live_shim, gone_engine))
+            settings.write_text(json.dumps({"hooks": {"SessionStart": [{"hooks": [
+                {"type": "command", "command": legacy_shim_cmd}]}]}}), encoding="utf-8")
+            status = adapter.install_status()
+            check("(b) a missing SHIM under the LEGACY 3-token form reads as dead and DOES "
+                  "block (nothing catches the interpreter's own file-not-found exit)",
                   status["state"] == "dead" and "BLOCKS" in status["detail"], str(status))
 
             # (c) a missing interpreter: dead, does not block.

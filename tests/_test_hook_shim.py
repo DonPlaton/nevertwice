@@ -47,6 +47,48 @@ import hookwire  # noqa: E402
 SHIM_SRC = PKG / "hook_shim.py"
 TS = re.compile(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}")
 
+#: The EXACT Git Bash path, never the bare `bash` name: on this machine (and any dev machine
+#: with WSL enabled) a bare `bash` on PATH resolves to `C:/Windows/System32/bash.exe` - WSL's
+#: launcher, an entirely different shell running an entirely different filesystem - not the
+#: MSYS bash Claude Code actually shells out to when it prefers Git Bash on Windows.
+GIT_BASH = Path(r"C:\Program Files\Git\bin\bash.exe")
+
+
+def _git_bash_available() -> bool:
+    return GIT_BASH.is_file()
+
+
+def _powershell_available() -> bool:
+    from shutil import which
+    return which("powershell") is not None
+
+
+def _run_via_git_bash(command: str, *, cwd: Path, env: dict, input_text: str = "{}",
+                      timeout: int = 60) -> subprocess.CompletedProcess:
+    return subprocess.run([str(GIT_BASH), "-c", command], cwd=str(cwd), env=env,
+                          input=input_text, capture_output=True, text=True, timeout=timeout)
+
+
+def _run_via_powershell(command: str, *, cwd: Path, env: dict, input_text: str = "{}",
+                        timeout: int = 60) -> subprocess.CompletedProcess:
+    """Windows PowerShell 5.1's `-Command` does NOT propagate a native process's exit code to
+    its own without an explicit relay - verified empirically on this machine: `powershell
+    -NoProfile -Command "& python -c \\"import sys;sys.exit(7)\\""` reports exit 1, every
+    time, regardless of the real code, for ANY non-zero exit - not specific to this project's
+    payload. `; exit $LASTEXITCODE` is the closest approximation this suite can construct to
+    observe our command's REAL exit code on PowerShell 5.1.
+
+    Whether Claude Code's own PowerShell invocation performs the same relay internally could
+    NOT be established from here - its source is not in this repository, and the exact
+    invocation shape it uses is not documented anywhere this session could reach. This is
+    reported explicitly, not guessed at: the four/five exit-code cases below are measured
+    THROUGH THIS RELAY, which is the most faithful reproduction this machine can construct,
+    and the report this session hands back says so in those words.
+    """
+    ps = f"& {command}; exit $LASTEXITCODE"
+    return subprocess.run(["powershell", "-NoProfile", "-Command", ps], cwd=str(cwd), env=env,
+                          input=input_text, capture_output=True, text=True, timeout=timeout)
+
 #: The five events every hook is wired to (install.py's own EVENTS dict), each with a minimal
 #: valid payload - reused from tests/_test_entry_point.py's own EVENTS shape.
 FIVE_EVENTS = {
@@ -79,6 +121,14 @@ def _engine_env(tmp: Path) -> dict:
     first smoke-testing this shim: it swept real, unrelated project transcripts through a
     real extractor). Kept as a thin alias so call sites in this file say what they mean."""
     return _wall.walled(tmp)
+
+
+def _payload_parses(payload: str) -> bool:
+    try:
+        ast.parse(payload)
+        return True
+    except SyntaxError:
+        return False
 
 
 def _config_path_env_names() -> set[str]:
@@ -158,7 +208,6 @@ def test_walled_covers_every_path_resolving_name_in_config() -> None:
               f"escaping: {escaping}")
 
 
-
 # ------------------------------------------------------------- pure functions (hookwire)
 
 
@@ -173,11 +222,38 @@ def test_tokens_and_hook_command() -> None:
           hookwire.tokens(r'"C:\Users\Me\python.exe" "C:\Users\Me\nevertwice\memory_hook.py"')
           == ["C:/Users/Me/python.exe", "C:/Users/Me/nevertwice/memory_hook.py"])
     check("empty command has no tokens", hookwire.tokens("") == [])
+
     cmd = hookwire.hook_command(r"C:\Py\python.exe", r"C:\home\nevertwice\hook_shim.py",
                                 r"D:\clone\nevertwice\memory_hook.py")
-    check("hook_command quotes and forward-slashes every token",
-          cmd == '"C:/Py/python.exe" "C:/home/nevertwice/hook_shim.py" '
-                 '"D:/clone/nevertwice/memory_hook.py"', cmd)
+    toks = hookwire.tokens(cmd)
+    check("hook_command wires the interpreter, then -c, then a payload - 3 tokens",
+          len(toks) == 3 and toks[0] == "C:/Py/python.exe" and toks[1] == "-c", str(toks))
+    payload = toks[2]
+    check("the payload is valid, self-contained Python source",
+          _payload_parses(payload), payload)
+    check("the payload carries the shim and engine paths, forward-slashed",
+          "C:/home/nevertwice/hook_shim.py" in payload
+          and "D:/clone/nevertwice/memory_hook.py" in payload, payload)
+    check("the payload drops '' and '.' from sys.path BEFORE importing anything but sys",
+          payload.startswith("import sys;sys.path[:]=[p for p in sys.path if p not in "
+                             "('','.')];import"),
+          payload)
+    check("the payload contains no double quote, backtick or $ (must survive an outer "
+          "double-quoted shell token, POSIX and PowerShell alike)",
+          not any(c in payload for c in ('"', "`", "$")), payload)
+    parsed = hookwire._parse_c_payload(payload)
+    check("hookwire's own parser recovers the exact shim/engine pair from the payload",
+          parsed == ("C:/home/nevertwice/hook_shim.py", "D:/clone/nevertwice/memory_hook.py"),
+          str(parsed))
+
+    for bad, char in (("C:/it's/here", "'"), ('C:/say "hi"/x', '"'),
+                      ("C:/$HOME/x", "$"), ("C:/back`tick/x", "`")):
+        try:
+            hookwire.hook_command(bad, "shim", "engine")
+            check(f"a path containing {char!r} is refused at construction time", False, bad)
+        except ValueError as exc:
+            check(f"a path containing {char!r} is refused at construction time",
+                  char in str(exc), str(exc))
 
 
 def test_is_ours_and_is_foreign_copy() -> None:
@@ -195,6 +271,15 @@ def test_is_ours_and_is_foreign_copy() -> None:
           not hookwire.is_ours(theirs) and not hookwire.is_foreign_copy(theirs))
 
 
+def _legacy_shim_cmd(py, shim, engine) -> str:
+    """The PRE-`-c` 3-token shape (`"<py>" "<shim>" "<engine>"`) - `hookwire.hook_command`
+    itself no longer builds this (it builds the `-c` form now), but `dead_reason` still has to
+    classify it correctly for an install from before this form existed, right up until the
+    next `install.py` run repoints it. Built here, by hand, precisely because it must NOT come
+    from `hook_command` any more."""
+    return " ".join(f'"{str(p).replace(chr(92), "/")}"' for p in (py, shim, engine))
+
+
 def test_dead_reason() -> None:
     print("\n- dead_reason() - which failures block the agent, which do not -")
     with tempfile.TemporaryDirectory() as td:
@@ -208,34 +293,52 @@ def test_dead_reason() -> None:
         py = tmp / "python.exe"
         py.write_bytes(b"")
 
+        print("  - the CURRENT -c form: nothing blocks any more -")
         live = {"command": hookwire.hook_command(py, shim, engine)}
-        check("a fully-live shim entry is not dead", hookwire.dead_reason(live) is None)
+        check("a fully-live -c entry is not dead", hookwire.dead_reason(live) is None)
 
         missing_engine = {"command": hookwire.hook_command(py, shim, tmp / "gone.py")}
         reason = hookwire.dead_reason(missing_engine)
-        check("a shim with a missing ENGINE is dead but does not block",
+        check("-c form, engine missing: dead but does NOT block",
               reason is not None and reason[1] is False, str(reason))
         check("...and names 'engine missing'", reason is not None and "engine missing" in reason[0])
 
         missing_shim = {"command": hookwire.hook_command(
             py, tmp / "goneshimdir" / "nevertwice" / "hook_shim.py", engine)}
         reason = hookwire.dead_reason(missing_shim)
-        check("a missing SCRIPT (the shim itself) is dead and DOES block",
+        check("-c form, shim missing: dead but does NOT block (the -c wrapper degrades itself)",
+              reason is not None and reason[1] is False, str(reason))
+        check("...and names 'shim missing'", reason is not None and "shim missing" in reason[0])
+
+        missing_interp = {"command": hookwire.hook_command(tmp / "gone_py.exe", shim, engine)}
+        reason = hookwire.dead_reason(missing_interp)
+        check("-c form, interpreter missing (a path, has a slash): dead but does not block",
+              reason is not None and reason[1] is False, str(reason))
+
+        bare_interp = {"command": hookwire.hook_command("python", shim, engine)}
+        check("-c form, a bare 'python' interpreter (resolved on PATH) is never judged missing",
+              hookwire.dead_reason(bare_interp) is None)
+
+        print("  - the LEGACY 3-token shim form: unchanged, a missing SCRIPT still blocks -")
+        legacy_live = {"command": _legacy_shim_cmd(py, shim, engine)}
+        check("legacy shim form, fully live: not dead", hookwire.dead_reason(legacy_live) is None)
+
+        legacy_missing_engine = {"command": _legacy_shim_cmd(py, shim, tmp / "gone2.py")}
+        reason = hookwire.dead_reason(legacy_missing_engine)
+        check("legacy shim form, engine missing: dead but does NOT block (unchanged)",
+              reason is not None and reason[1] is False, str(reason))
+
+        legacy_missing_shim = {"command": _legacy_shim_cmd(
+            py, tmp / "goneshimdir2" / "nevertwice" / "hook_shim.py", engine)}
+        reason = hookwire.dead_reason(legacy_missing_shim)
+        check("legacy shim form, a missing SCRIPT (the shim itself) is dead and DOES block "
+              "(no -c wrapper in the way to catch it)",
               reason is not None and reason[1] is True, str(reason))
 
         old_missing = {"command": f'"{py}" "{tmp / "gone3" / "nevertwice" / "memory_hook.py"}"'}
         reason = hookwire.dead_reason(old_missing)
-        check("an old-style entry whose memory_hook.py is gone is dead and DOES block",
-              reason is not None and reason[1] is True, str(reason))
-
-        missing_interp = {"command": hookwire.hook_command(tmp / "gone_py.exe", shim, engine)}
-        reason = hookwire.dead_reason(missing_interp)
-        check("a missing interpreter (a path, has a slash) is dead but does not block",
-              reason is not None and reason[1] is False, str(reason))
-
-        bare_interp = {"command": f'"python" "{shim}" "{engine}"'}
-        check("a bare 'python' interpreter (resolved on PATH) is never judged missing",
-              hookwire.dead_reason(bare_interp) is None)
+        check("the OLDEST 2-token entry (no shim at all) whose memory_hook.py is gone "
+              "is dead and DOES block", reason is not None and reason[1] is True, str(reason))
 
         check("an unrelated hook is never judged dead",
               hookwire.dead_reason({"command": '"python" "/home/me/my_hook.py"'}) is None)
@@ -503,10 +606,12 @@ def test_identity_across_all_five_events() -> None:
 
 
 def test_migration_repoints_old_style_entries() -> None:
-    """`install.py` finds five pre-existing OLD-STYLE (pre-shim) entries and repoints every one
-    of them onto the identical shim command, in place - never appending a second hook beside a
-    stale one. A foreign copy and the user's own hook are untouched, byte for byte."""
-    print("\n- install.py repoints five old-style entries onto the shim -")
+    """`install.py` finds five pre-existing entries in BOTH forms this `-c` form supersedes -
+    the oldest (`"<py>" "<engine>"`, no shim at all) and the 3-token shim form this whole
+    track wired before the `-c` correction - and repoints every one of them onto the
+    identical `-c` command, in place - never appending a second hook beside a stale one. A
+    foreign copy and the user's own hook are untouched, byte for byte."""
+    print("\n- install.py repoints BOTH legacy forms onto the -c command -")
     with tempfile.TemporaryDirectory() as td:
         tmp = Path(td)
         home = tmp / "home"
@@ -518,36 +623,160 @@ def test_migration_repoints_old_style_entries() -> None:
         shutil.copytree(PKG, clone / "nevertwice", ignore=shutil.ignore_patterns("__pycache__"))
         shutil.copy2(ROOT / "install.py", clone / "install.py")
         old_engine = clone / "nevertwice" / "memory_hook.py"
-        old_cmd = f'"{sys.executable}" "{old_engine}"'.replace("\\", "/")
+        oldest_cmd = f'"{sys.executable}" "{old_engine}"'.replace("\\", "/")
+        # A shim wired by an install from BEFORE this correction - a real file, at the exact
+        # path a fresh install would also compute, so repointing it is indistinguishable from
+        # repointing the shim the fresh install itself will write.
+        pre_c_shim = hookwire.shim_path(settings)
+        pre_c_shim.parent.mkdir(parents=True)
+        pre_c_shim.write_bytes((PKG / "hook_shim.py").read_bytes())
+        shim_form_cmd = _legacy_shim_cmd(sys.executable, pre_c_shim, old_engine)
 
         foreign = {"type": "command",
                   "command": "python C:/Users/me/.claude/scripts/memory_hook.py"}
         theirs = {"type": "command", "command": "python /home/me/my_own_hook.py"}
-        five = ("SessionStart", "UserPromptSubmit", "SessionEnd", "PreCompact", "PreToolUse")
-        hooks = {ev: [{"matcher": "", "hooks": [{"type": "command", "command": old_cmd}]}]
-                for ev in five}
+        oldest_events = ("SessionStart", "UserPromptSubmit", "SessionEnd")
+        shim_form_events = ("PreCompact", "PreToolUse")
+        hooks = {ev: [{"matcher": "", "hooks": [{"type": "command", "command": oldest_cmd}]}]
+                for ev in oldest_events}
+        hooks.update({ev: [{"matcher": "", "hooks": [{"type": "command",
+                                                       "command": shim_form_cmd}]}]
+                     for ev in shim_form_events})
         hooks["Extra"] = [{"hooks": [foreign, theirs]}]
         settings.write_text(json.dumps({"hooks": hooks}), encoding="utf-8")
 
         r = subprocess.run([sys.executable, str(clone / "install.py")], env=env,
                            capture_output=True, text=True, timeout=120)
-        check("install.py exits 0 against five pre-existing old-style entries",
+        check("install.py exits 0 against five pre-existing entries in two legacy forms",
               r.returncode == 0, f"exit {r.returncode}: {r.stderr[-300:]}")
 
         data = json.loads(settings.read_text(encoding="utf-8"))
+        five = oldest_events + shim_form_events
         ours_commands = [h["command"] for ev in five
                          for g in data["hooks"][ev] for h in g["hooks"]]
         shim = hookwire.shim_path(settings)
         expected = hookwire.hook_command(sys.executable, shim, old_engine)
-        check("all five entries repointed onto the identical shim command, none duplicated",
+        check("all five entries (both legacy forms) repointed onto the identical -c command, "
+              "one per event, none duplicated",
               len(ours_commands) == 5 and all(c == expected for c in ours_commands),
               str(ours_commands))
+        check("every repointed command is genuinely the current -c form (starts with -c, not "
+              "a bare engine or shim path)", all(hookwire.tokens(c)[1] == "-c"
+                                                 for c in ours_commands), str(ours_commands))
         check("the shim was actually installed where the repointed command points",
               shim.is_file() and shim.read_bytes() == (PKG / "hook_shim.py").read_bytes())
 
         extra_commands = [h["command"] for g in data["hooks"]["Extra"] for h in g["hooks"]]
         check("the foreign copy and the user's own hook survive untouched, byte for byte",
               extra_commands == [foreign["command"], theirs["command"]], str(extra_commands))
+
+
+def _make_shadow_project(tmp: Path) -> tuple[Path, Path]:
+    """A `project` directory (the hook's cwd) containing a `json.py` and a `pathlib.py` that
+    each append a marker line to `marker.txt` if ever imported - and the marker file's path.
+    Neither is ever legitimately importable from a project directory; if either marker
+    appears, `sys.path[0]` still held the cwd when something tried to `import json` or
+    `import pathlib`."""
+    project = tmp / "project"
+    project.mkdir()
+    marker = tmp / "marker.txt"
+    for name in ("json", "pathlib"):
+        (project / f"{name}.py").write_text(
+            f"with open({str(marker)!r}, 'a', encoding='utf-8') as _f:\n"
+            f"    _f.write('{name}.py SHADOWED' + chr(10))\n",
+            encoding="utf-8")
+    return project, marker
+
+
+def test_c_payload_never_shadows_a_stdlib_import_from_cwd() -> None:
+    """`python -c` puts `''` (the cwd) at `sys.path[0]`, and Claude Code runs a hook command
+    with cwd = the user's PROJECT. A project containing its own `json.py`/`pathlib.py` must
+    never have either imported instead of the real stdlib module - checked through every shell
+    available on this machine, with the engine present (its own `import json`, `import
+    pathlib`) and absent (the shim's degraded branch's `import json`)."""
+    print("\n- the -c payload never lets the project's cwd shadow a stdlib import -")
+    shells = []
+    if _git_bash_available():
+        shells.append(("Git Bash", _run_via_git_bash))
+    if _powershell_available():
+        shells.append(("PowerShell", _run_via_powershell))
+    check("at least one shell is available to test through", bool(shells), "none found")
+
+    for shell_name, runner in shells:
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            project, marker = _make_shadow_project(tmp)
+            shimdir = tmp / "shimhome"
+            shimdir.mkdir()
+            shim = shimdir / "hook_shim.py"
+            shim.write_bytes(SHIM_SRC.read_bytes())
+            engine = tmp / "clone" / "nevertwice" / "memory_hook.py"
+            engine.parent.mkdir(parents=True)
+            engine.write_text("import json, pathlib, sys\nsys.exit(0)\n", encoding="utf-8")
+
+            cmd = hookwire.hook_command(sys.executable, shim, engine)
+            env = _engine_env(tmp)
+
+            r = runner(cmd, cwd=project, env=env)
+            check(f"{shell_name}: engine present - command exits 0",
+                  r.returncode == 0, f"exit {r.returncode}: {r.stderr[-300:]}")
+            check(f"{shell_name}: engine present - the marker never appears",
+                  not marker.exists(),
+                  marker.read_text(encoding="utf-8") if marker.exists() else "")
+
+            engine.unlink()          # now the degraded (engine-gone) path, same cwd/shell
+            r2 = runner(cmd, cwd=project, env=env)
+            check(f"{shell_name}: engine absent - command still exits 0",
+                  r2.returncode == 0, f"exit {r2.returncode}: {r2.stderr[-300:]}")
+            check(f"{shell_name}: engine absent - the marker never appears",
+                  not marker.exists(),
+                  marker.read_text(encoding="utf-8") if marker.exists() else "")
+
+
+def test_c_payload_exit_codes_both_shells() -> None:
+    """Five cases, through every shell available on this machine: the engine's own exit code
+    propagates unchanged for 0, a deliberate 2 (Claude Code's BLOCK code) and 7 (an arbitrary
+    third value, so a mutation that special-cases 0/2 cannot hide behind it); the shim deleted
+    degrades to 0; the whole clone deleted (engine gone, shim untouched) degrades to 0 too."""
+    print("\n- exit-code propagation through the -c form, every shell available -")
+    shells = []
+    if _git_bash_available():
+        shells.append(("Git Bash", _run_via_git_bash))
+    if _powershell_available():
+        shells.append(("PowerShell (via the $LASTEXITCODE relay - see _run_via_powershell)",
+                       _run_via_powershell))
+    check("at least one shell is available to test through", bool(shells), "none found")
+
+    for shell_name, runner in shells:
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            cwd = tmp / "project"
+            cwd.mkdir()
+            shimdir = tmp / "shimhome"
+            shimdir.mkdir()
+            shim = shimdir / "hook_shim.py"
+            shim.write_bytes(SHIM_SRC.read_bytes())
+            engine = tmp / "clone" / "nevertwice" / "memory_hook.py"
+            engine.parent.mkdir(parents=True)
+            env = _engine_env(tmp)
+            cmd = hookwire.hook_command(sys.executable, shim, engine)
+
+            for code in (0, 2, 7):
+                engine.write_text(f"import sys\nsys.exit({code})\n", encoding="utf-8")
+                r = runner(cmd, cwd=cwd, env=env)
+                check(f"{shell_name}: engine exit {code} -> {code}", r.returncode == code,
+                      f"exit {r.returncode}: {r.stderr[-300:]}")
+
+            shim.unlink()
+            r = runner(cmd, cwd=cwd, env=env)
+            check(f"{shell_name}: shim deleted -> exit 0", r.returncode == 0,
+                  f"exit {r.returncode}: {r.stderr[-300:]}")
+            shim.write_bytes(SHIM_SRC.read_bytes())        # restore for the next case
+
+            shutil.rmtree(engine.parent.parent)             # the whole clone gone
+            r = runner(cmd, cwd=cwd, env=env)
+            check(f"{shell_name}: clone deleted (engine gone) -> exit 0", r.returncode == 0,
+                  f"exit {r.returncode}: {r.stderr[-300:]}")
 
 
 def test_venv_in_clone_is_never_the_wired_interpreter() -> None:
@@ -667,6 +896,31 @@ def test_latency_direct_vs_via_the_shim() -> None:
               f"median {shim_times[n // 2] * 1000:.2f} ms")
         check("the latency comparison ran to completion", len(direct_times) == len(shim_times) == 25)
 
+        # The CURRENT -c form vs the PRE-correction 3-token shim form - what the cwd-safety
+        # fix and the "shim itself can go missing" fix cost on top of the shape this replaces.
+        # Both invoked directly (list-form subprocess, no shell layer) so the number is the
+        # payload's own overhead, not a shell's. The payload string is pulled straight out of
+        # `hook_command` itself, never rebuilt by hand here.
+        c_payload = hookwire.tokens(hookwire.hook_command(sys.executable, stub, stub))[2]
+        c_argv = [sys.executable, "-c", c_payload]
+        token_argv = [sys.executable, str(stub), str(stub)]
+        c_times, token_times = [], []
+        for i in range(25):
+            if i % 2 == 0:
+                c_times.append(once(c_argv))
+                token_times.append(once(token_argv))
+            else:
+                token_times.append(once(token_argv))
+                c_times.append(once(c_argv))
+        c_times.sort()
+        token_times.sort()
+        print(f"       -c form (python -c \"...\")          : min {c_times[0] * 1000:.2f} ms, "
+              f"median {c_times[n // 2] * 1000:.2f} ms")
+        print(f"       3-token form (python <shim> <eng>) : min {token_times[0] * 1000:.2f} ms, "
+              f"median {token_times[n // 2] * 1000:.2f} ms")
+        check("the -c-vs-3-token latency comparison ran to completion",
+              len(c_times) == len(token_times) == 25)
+
 
 def test_non_blocking_even_with_a_missing_interpreter() -> None:
     """The shell's own "command not found" for a missing interpreter must never coincide with
@@ -708,6 +962,8 @@ def main() -> int:
                test_req1_rename,
                test_identity_across_all_five_events,
                test_migration_repoints_old_style_entries,
+               test_c_payload_never_shadows_a_stdlib_import_from_cwd,
+               test_c_payload_exit_codes_both_shells,
                test_venv_in_clone_is_never_the_wired_interpreter,
                test_every_subprocess_call_touching_install_or_hosts_is_walled,
                test_latency_direct_vs_via_the_shim,
