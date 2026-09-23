@@ -36,6 +36,15 @@ CONTESTED_KEY = "contested"
 #: literal in the newer statement against literals in the earlier, or a value the session never
 #: said). Off the judge's queue, both served, visible to a human in conflicts() / integrity().
 DISPUTED_KEY = "disputed"
+#: A3 (Q5): fields an absorb rewrite (a same-session refresh or a same-day same-slug re-
+#: statement) carries forward from the note it is overwriting, UNLESS the new extraction
+#: supplies its own value (see the `fm.setdefault` loop below - "newer wins, older survives
+#: what newer left unsaid"). A module-level tuple, not an inline literal, so
+#: `tests/_test_principle_write.py`'s mutation can drop "principle" from it with a monkeypatch
+#: rather than an on-disk edit, and so the next field added here has one place to add it.
+_ABSORB_CARRY_FIELDS = ("status", "resolved_by", "resolves", "relations", "salience",
+                       "supersedes", "valid_to", "confidence", "principle",
+                       CONTESTED_KEY, DISPUTED_KEY)
 #: How an item's explicit `supersedes` / `contradicts` naming ANOTHER title is acted on. `write` (the
 #: default, rule 1 of ledger K8 as written: the extractor's own statement replaces on the spot, the
 #: M-2 path since 2026-08). `judge`: the named note is stamped contested and the sleep-time judge
@@ -615,6 +624,21 @@ def _record_why(why: list | None, reason: str) -> None:
         why.append(reason)
 
 
+def _cut_word_boundary(text: str, limit: int) -> str:
+    """Cap `text` at `limit` characters without splitting a word - used only for `principle`
+    (A3, Q5). A local helper rather than reusing `_engine_cards.py`'s `_one_line` (the same
+    word-boundary discipline, plus a sentence-boundary preference and a truncation marker):
+    that helper lives in a LATER engine part, and a two-line write-path utility does not
+    justify a forward reference across the engine's part ordering for a shared namespace this
+    file does not otherwise reach into."""
+    s = (text or "").strip()
+    if len(s) <= limit:
+        return s
+    head = s[:limit]
+    sp = head.rfind(" ")
+    return (head[:sp] if sp > 0 else head).rstrip()
+
+
 def write_typed_note(folder: str, item, project: str, date: str,
                      tags: list, ntype: str,
                      session_stem_: str | None = None,
@@ -640,6 +664,7 @@ def write_typed_note(folder: str, item, project: str, date: str,
         entities = _norm_entities(item.get("entities"))                # entity graph (Phase 1)
         relations = _norm_relations(item.get("relations"))             # typed edges (Phase 2)
         entity_types = _norm_entity_types(item.get("entity_types"))    # Brain layer (F1): {entity: type}
+        principle_raw = item.get("principle")                          # A3 (Q5): cross-project layer
     else:
         title = _strip_lead_icon(str(item))
         desc = prevention = supersedes_title = contradicts_title = resolves_title = ""
@@ -647,6 +672,7 @@ def write_typed_note(folder: str, item, project: str, date: str,
         entities = []
         relations = []
         entity_types = {}
+        principle_raw = None
 
     # Every relation target becomes reachable BY CONSTRUCTION (review 2026-08; the
     # integrity checker measured 73% of live edges pointing at entities no note carried,
@@ -666,6 +692,22 @@ def write_typed_note(folder: str, item, project: str, date: str,
         log(f"Rejected note (unsafe payload): {title[:50]!r}")
         _record_why(why, "refused")
         return ""
+
+    # A3 (Q5): the `principle` field's own gate, applied independently of the title/desc/
+    # prevention check above - a bad or over-long `principle` degrades to "" (dropped from the
+    # frontmatter below) and NEVER refuses or alters the rest of the note. Order matches the
+    # plan: not-a-string -> "", redact, cap at a word boundary, the same W8 unsafe-payload gate
+    # (on the principle alone, not mixed into the whole-note check), then `principle_scan`
+    # against the project slug plus this note's own entities - the write-time half of A3's
+    # de-identification; A5's promoter re-scans against the whole project vocabulary later.
+    principle = principle_raw if isinstance(principle_raw, str) else ""
+    principle = redact_secrets(principle).strip()
+    if len(principle) > PRINCIPLE_MAX_CHARS:
+        principle = _cut_word_boundary(principle, PRINCIPLE_MAX_CHARS)
+    if principle and _looks_unsafe(principle):
+        principle = ""
+    if principle:
+        principle = principle_scan(principle, {project} | set(entities))
 
     p = VAULT / folder
     p.mkdir(exist_ok=True)
@@ -918,8 +960,7 @@ def write_typed_note(folder: str, item, project: str, date: str,
             _old_fm = _read_frontmatter_file(absorb_into)
         except Exception:                       # a corrupt prior must not lose the new note
             _old_fm = {}
-        for _k in ("status", "resolved_by", "resolves", "relations", "salience",
-                   "supersedes", "valid_to", "confidence", CONTESTED_KEY, DISPUTED_KEY):
+        for _k in _ABSORB_CARRY_FIELDS:
             if _old_fm.get(_k) not in (None, "", [], {}):
                 _carried[_k] = _old_fm[_k]
 
@@ -941,6 +982,8 @@ def write_typed_note(folder: str, item, project: str, date: str,
         fm["relations"] = relations         # typed edges (Phase 2): relation-aware multi-hop
     if entity_types:
         fm["entity_types"] = entity_types   # Brain layer (F1): {entity: paper|method|...} for entity cards
+    if principle:
+        fm["principle"] = principle         # A3 (Q5): the cross-project, de-identified restatement
     if quarantine_reason:
         fm["quarantine_reason"] = quarantine_reason       # W7 provenance (kept out of recall)
     # Recurrence carry-forward, hardened against recurrence-GAMING (3B): the count is the

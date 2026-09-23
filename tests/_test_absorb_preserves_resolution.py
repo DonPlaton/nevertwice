@@ -30,8 +30,15 @@ def check(name, cond, detail=""):
 
 print("\n- the carried set is the one the review named -")
 src = _engine_source.SRC
+# A3 (Q5) pulled the inline tuple out into a module-level `_ABSORB_CARRY_FIELDS` constant (so
+# its own mutation test can monkeypatch it instead of editing the file), so the six fields this
+# review named now live at THAT declaration, not inline after `_carried: dict = {}` any more -
+# the loop that reads it (`for _k in _ABSORB_CARRY_FIELDS:`) still runs right after, unchanged.
+carry_decl = src.split("_ABSORB_CARRY_FIELDS = (")[1][:400]
 for field in ("status", "resolved_by", "resolves", "relations", "salience", "supersedes"):
-    check(f"{field} is carried across an absorb", f'"{field}"' in src.split("_carried: dict")[1][:900])
+    check(f"{field} is carried across an absorb", f'"{field}"' in carry_decl)
+check("the carried set is actually READ right after _carried: dict = {} is declared",
+      "_ABSORB_CARRY_FIELDS" in src.split("_carried: dict")[1][:400])
 
 print("\n- newer information wins -")
 seg = src.split("_carried.items()")[1][:400]
