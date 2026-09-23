@@ -65,7 +65,10 @@ SHIM = hookwire.shim_path(SETTINGS)
 #: shim meant to survive that. `mcp_snippet()` deliberately keeps using `PYTHON`: the MCP
 #: server already lives inside the clone regardless of which interpreter is named, and a
 #: rebased interpreter may be missing packages this venv installed.
-HOOK_PYTHON = hookwire.hook_python(sys.executable, PKG.parent).replace("\\", "/")
+#: `HOOK_PYTHON_WARNING` is `None` unless `hook_python` could not find ANY interpreter outside
+#: the clone at all - `wire_hooks()` prints it loudly rather than refusing to install.
+HOOK_PYTHON, HOOK_PYTHON_WARNING = hookwire.hook_python(sys.executable, PKG.parent)
+HOOK_PYTHON = HOOK_PYTHON.replace("\\", "/")
 # event -> matcher. "" matches all; PreToolUse is scoped to code-writing tools so the guard
 # hook (active memory, axis A) only spawns before an edit/command, never on a Read/Grep.
 EVENTS = {
@@ -197,6 +200,8 @@ def wire_hooks() -> None:
     if HOOK_PYTHON != PYTHON:
         print(f"  note: wiring the base interpreter {HOOK_PYTHON} - this run's own "
               f"({PYTHON}) lives inside the clone and would vanish along with it")
+    if HOOK_PYTHON_WARNING:
+        print(f"  ! WARNING: {HOOK_PYTHON_WARNING}")
     _warn_if_shim_inside_clone()
     verb = hookwire.write_shim(SETTINGS, (PKG / "hook_shim.py").read_bytes(), dry_run=DRY)
     print(f"[shim] {SHIM} ({verb}, v{hookwire.SHIM_VERSION})")

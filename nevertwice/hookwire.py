@@ -275,27 +275,155 @@ def dead_reason(entry) -> tuple[str, bool] | None:
     return None
 
 
-def hook_python(executable: str, clone_root) -> str:
-    """The interpreter a hook command should run under.
-
-    `executable` unchanged, unless it resolves INSIDE `clone_root` - a venv created inside the
-    checkout being wired, whose own interpreter would vanish along with the clone it lives in,
-    defeating the whole point of a shim that is meant to survive that. In that one case, the
-    venv's own base interpreter (`sys._base_executable`, falling back to a `python[.exe]` beside
-    `sys.base_prefix`), which lives outside the clone by construction.
-    """
+def _pyvenv_home(venv_root: Path) -> Path | None:
+    """The `home` line out of `<venv_root>/pyvenv.cfg` - the directory the venv's OWN metadata
+    says its base interpreter lives in, written by `venv`/`virtualenv` regardless of whether
+    the venv uses symlinks or copies (`home` names the base either way). `None` if the file is
+    missing, unreadable, or has no `home` line - a venv created some other way (or a bare copy
+    of a Python install with no `pyvenv.cfg` at all) simply skips this candidate, it is one of
+    several, never the only one `hook_python` tries."""
     try:
-        exe = Path(executable).resolve()
-        root = Path(clone_root).resolve()
+        text = (venv_root / "pyvenv.cfg").read_text(encoding="utf-8", errors="replace")
     except OSError:
-        return executable
-    if exe != root and root not in exe.parents:
-        return executable
-    base = getattr(sys, "_base_executable", "") or ""
-    if base and Path(base).is_file():
-        return base
-    name = "python.exe" if os.name == "nt" else "python3"
-    return str(Path(sys.base_prefix) / name)
+        return None
+    for line in text.splitlines():
+        key, sep, value = line.partition("=")
+        if sep and key.strip() == "home":
+            value = value.strip()
+            return Path(value) if value else None
+    return None
+
+
+def _base_prefix_fallback(base_prefix: str, os_name: str) -> str:
+    """The last-resort candidate: a `python[.exe]` beside `base_prefix` - PLATFORM-SHAPED, not
+    one path guessed at for both. A9 (2026-09): the original fallback was `base_prefix/python3`
+    on every platform, which is simply wrong on POSIX - a base install's own prefix directory
+    (`/usr`, `/usr/local`, a pyenv version dir, ...) does not carry a bare `python3` at its own
+    root, only under `bin/`; only Windows ever had `base_prefix\\python.exe` right. Split into
+    its own function, taking `os_name` as a plain argument rather than reading `os.name`
+    itself, so a test can drive both shapes without monkeypatching global process state - and
+    built with plain string joins, never `pathlib.Path` (whose `WindowsPath`/`PosixPath` split
+    is bound to the REAL running OS, not to this `os_name` argument, so a POSIX shape computed
+    on a Windows test runner - or vice versa - would otherwise come out with the wrong
+    separators regardless of what `os_name` says)."""
+    base = str(base_prefix).rstrip("/\\")
+    if os_name == "nt":
+        return f"{base}\\python.exe"
+    return f"{base}/bin/python3"
+
+
+def hook_python(executable: str, clone_root, *, base_executable: str | None = None,
+                base_prefix: str | None = None, os_name: str | None = None
+                ) -> tuple[str, str | None]:
+    """The interpreter a hook command should run under, and a warning to print if none could
+    be found - `(path, warning)`, `warning` `None` in the ordinary case.
+
+    `executable` unchanged (and no warning) unless the clone CONTAINS it - a venv created
+    inside the checkout being wired, whose own interpreter would vanish along with the clone it
+    lives in, defeating the whole point of a shim that is meant to survive that. "Contains" is
+    checked BOTH ways, `os.path.abspath(executable)` OR its `.resolve()`: a venv made with
+    `python -m venv` on POSIX puts a SYMLINK at `.venv/bin/python3` pointing at the true base -
+    `.resolve()` alone would follow that symlink OUT of the clone and conclude nothing needs
+    rebasing, while the command actually wired would still be that symlink's OWN path INSIDE
+    the clone (`abspath` catches this: the symlink file itself lives there, whichever direction
+    `resolve()` reads off it).
+
+    Once inside, the FIRST candidate that both exists AND resolves OUTSIDE the clone wins, in
+    this order - a defence in depth, since more than one of these can be wrong on its own:
+
+      (i) `executable`'s own RESOLVED real path - the fix for the symlinked-venv case above:
+          following the symlink lands on the true base interpreter directly;
+      (ii) `sys._base_executable` - right on every interpreter EXCEPT CPython 3.10 on POSIX
+           with a COPIED venv (`venv.create(..., symlinks=False)`, this project's own O3b test
+           and `python -m venv --copies`): there, `_base_executable` still names the venv's OWN
+           copy, not the true base (fixed in 3.11), so it resolves right back inside the clone
+           and this candidate is skipped, same as any other that fails to escape it;
+      (iii) `pyvenv.cfg`'s own `home` directory (`_pyvenv_home`, above) plus `python3` or
+            `python3.<minor>` (POSIX) / `python.exe` (Windows) - written by `venv` itself
+            regardless of symlinks-vs-copies, so this is what actually rescues 3.10 POSIX;
+      (iv) `base_prefix`'s own `bin/python3` (POSIX) / `python.exe` (Windows)
+           (`_base_prefix_fallback`, above) - the last resort, when the interpreter that
+           created this venv cannot be found by any of the above (a stripped-down or relocated
+           install with no working `pyvenv.cfg`).
+
+    If NONE of the four qualifies (e.g. a fully portable Python living inside the clone, with
+    no reachable base at all) this function does NOT refuse: it returns `executable` UNCHANGED
+    plus a WARNING string - `install.py` prints it loudly rather than failing the install, on
+    the judgment that a hook which fires today and goes silent if the clone is later deleted or
+    moved is better than no hook at all; the warning exists so that silence is not a surprise.
+
+    `base_executable`/`base_prefix`/`os_name` default to this PROCESS's own
+    `sys._base_executable`/`sys.base_prefix`/`os.name` - overridable ONLY so a test can drive
+    every branch of the fallback chain without creating a real venv (or several) for each one.
+    `install.py`'s one real call site never passes them; production behaviour is unchanged.
+    """
+    if base_executable is None:
+        base_executable = getattr(sys, "_base_executable", "") or ""
+    if base_prefix is None:
+        base_prefix = sys.base_prefix
+    if os_name is None:
+        os_name = os.name
+
+    def _resolved(p) -> Path | None:
+        try:
+            return Path(p).resolve()
+        except OSError:
+            return None
+
+    try:
+        root = Path(clone_root).resolve()
+        abs_exe = Path(os.path.abspath(executable))
+    except OSError:
+        return executable, None
+
+    def _under_clone(p: Path) -> bool:
+        return p == root or root in p.parents
+
+    real_exe = _resolved(abs_exe)
+    inside = _under_clone(abs_exe) or (real_exe is not None and _under_clone(real_exe))
+    if not inside:
+        return executable, None
+
+    def _qualifies(candidate) -> str | None:
+        """A candidate is used only if it names a real file whose RESOLVED path lands outside
+        the clone - a candidate that is itself a symlink pointing back inside is refused the
+        same way `executable` itself is checked, above."""
+        if not candidate:
+            return None
+        path = Path(candidate)
+        if not path.is_file():
+            return None
+        resolved = _resolved(path)
+        if resolved is None or _under_clone(resolved):
+            return None
+        return str(path)
+
+    guesses: list[str | None] = [str(real_exe) if real_exe is not None else None,
+                                 base_executable]
+    venv_root = abs_exe.parent.parent            # .venv/bin/python3 or .venv/Scripts/python.exe
+    home = _pyvenv_home(venv_root)
+    if home is not None:
+        if os_name == "nt":
+            guesses.append(str(home / "python.exe"))
+        else:
+            guesses.append(str(home / "python3"))
+            guesses.append(str(home / f"python3.{sys.version_info.minor}"))
+    guesses.append(_base_prefix_fallback(base_prefix, os_name))
+
+    for guess in guesses:
+        found = _qualifies(guess)
+        if found is not None:
+            return found, None
+
+    warning = (
+        f"no interpreter outside the clone at {root} could be found to wire the hook to "
+        f"(checked {executable!r}'s own resolved real path, sys._base_executable, "
+        "pyvenv.cfg's own 'home', and the base prefix's own python binary - none of them "
+        f"exists outside the clone). Wiring {executable} anyway: deleting or moving this "
+        "checkout will turn memory off SILENTLY, with no error, because the interpreter "
+        "Claude Code runs the hook with lives INSIDE the checkout it was told to remove."
+    )
+    return executable, warning
 
 
 def write_shim(settings, source: bytes, *, dry_run: bool = False) -> str:

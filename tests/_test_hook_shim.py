@@ -1291,13 +1291,175 @@ def test_hook_python() -> None:
         inside = clone / ".venv" / "Scripts" / "python.exe"
         inside.parent.mkdir(parents=True)
         inside.write_bytes(b"")
-        check("an interpreter outside the clone is returned unchanged",
-              hookwire.hook_python(str(outside), clone) == str(outside))
-        rebased = hookwire.hook_python(str(inside), clone)
+        result, warning = hookwire.hook_python(str(outside), clone)
+        check("an interpreter outside the clone is returned unchanged, no warning",
+              result == str(outside) and warning is None, (result, warning))
+        rebased, warning2 = hookwire.hook_python(str(inside), clone)
         check("an interpreter INSIDE the clone is rebased to something else",
               rebased != str(inside), rebased)
         check("...and the rebased interpreter is not itself under the clone",
               not str(Path(rebased).resolve()).startswith(str(clone.resolve()) + os.sep), rebased)
+        check("...with no warning - a real base interpreter (this test's own) was found",
+              warning2 is None, warning2)
+
+
+def test_hook_python_symlinked_venv_escapes_the_clone() -> None:
+    """(б), auditor finding 3, required test (b): `python -m venv` on POSIX makes the venv's
+    own interpreter (`.venv/bin/python3`) a SYMLINK to the true base - `venv.create`'s own
+    default there (`symlinks=True` on every POSIX platform). `.resolve()` alone FOLLOWS that
+    symlink out of the clone, so the OLD "is this inside the clone" check (resolved-only)
+    concluded "no, it doesn't need rebasing" and returned the symlink's OWN path, unchanged - a
+    string that still lives inside the clone: delete the clone and that command's interpreter
+    is gone (`sh` exit 127), memory goes silently off, with no shim message (the shim never
+    even runs - `python3` itself is what's missing this time, not the engine after it).
+
+    Fixed by checking `os.path.abspath(executable)` OR its `.resolve()` for "inside" (the
+    symlink's own unresolved path IS inside the clone, even though what it points at is not),
+    and by trying the RESOLVED real path as the very FIRST rebase candidate - which for a
+    symlink means the true base, escaping in one step.
+
+    Windows-skipped: creating a symlink there needs Developer Mode or an elevated process,
+    neither assumed here - this is exactly the CI evidence class the coordinator named
+    (ubuntu-3.10 / macos-3.10), so POSIX runners are where this actually proves itself."""
+    print("\n- hook_python() - a SYMLINKED venv also escapes the clone (POSIX only) -")
+    if os.name == "nt":
+        print("  skipped on Windows: os.symlink needs Developer Mode or elevation, not "
+             "assumed here - covered by CI's own POSIX runners instead")
+        return
+    with tempfile.TemporaryDirectory() as td:
+        tmp = Path(td)
+        clone = tmp / "clone"
+        venv_dir = clone / ".venv"
+        venv_dir.mkdir(parents=True)
+        venv.create(venv_dir, with_pip=False, symlinks=True)
+        py = venv_dir / "bin" / "python3"
+        if not py.is_file():
+            alt = sorted((venv_dir / "bin").glob("python3.*"))
+            py = alt[0] if alt else py
+        check("the venv interpreter exists", py.is_file(), str(py))
+        check("...and IS a symlink (the shape this test exists to cover)",
+              py.is_symlink(), str(py))
+
+        result, warning = hookwire.hook_python(str(py), clone)
+        clone_r = str(clone.resolve()).replace("\\", "/").lower()
+        check("the wired interpreter's RESOLVED path is outside the clone",
+              not str(Path(result).resolve()).replace("\\", "/").lower()
+              .startswith(clone_r + "/"), result)
+        check("...and the STRING ITSELF is outside the clone too - not just its target "
+              "(the actual bug: the OLD code returned the symlink's own path, unresolved)",
+              not result.replace("\\", "/").lower().startswith(clone_r + "/"), result)
+        check("no warning - a real base interpreter was found", warning is None, warning)
+
+
+def test_base_prefix_fallback_shape() -> None:
+    """(б), auditor finding 2: the LAST-RESORT fallback has to be platform-shaped. The
+    original code used `base_prefix/python3` on every platform - right on Windows
+    (`base_prefix\\python.exe` was never the bug), wrong on POSIX, where a base install's own
+    prefix directory does not carry a bare `python3` at its own root, only under `bin/`."""
+    print("\n- _base_prefix_fallback() - platform-shaped, not one guess for both -")
+    posix = hookwire._base_prefix_fallback("/usr", "posix")
+    check("POSIX: base_prefix/bin/python3", posix == "/usr/bin/python3", posix)
+    nt = hookwire._base_prefix_fallback("C:\\Python310", "nt")
+    check("Windows: base_prefix\\python.exe", nt == "C:\\Python310\\python.exe", nt)
+
+
+def test_hook_python_candidate_order() -> None:
+    """(б), auditor finding 1 and the required "candidate order" unit test (d): each candidate
+    mocked directly through `hook_python`'s own `base_executable`/`base_prefix` parameters,
+    each one deliberately made to fail so the NEXT is what actually gets returned - proving
+    fallthrough, not just that some candidate eventually works. Three scenarios:
+
+      1. `sys._base_executable` already escapes the clone - the ordinary (3.11+) case, used
+         directly, first candidate that is even tried after the resolved-real-path check.
+      2. `sys._base_executable` itself still points INSIDE the clone - this is EXACTLY 3.10's
+         POSIX bug for a COPIED venv (finding 1: "_base_executable still names the venv's own
+         interpreter") - falls through to `pyvenv.cfg`'s own `home`, which `venv` writes
+         regardless of symlinks-vs-copies and is what actually rescues 3.10.
+      3. Both of the above fail (no `pyvenv.cfg` at all, e.g. a hand-built venv) - falls
+         through to `base_prefix`'s own python binary, the last resort.
+    """
+    print("\n- hook_python() - candidate order: each one skipped in turn, mocked directly -")
+    with tempfile.TemporaryDirectory() as td:
+        tmp = Path(td)
+
+        def outside_file(name: str) -> Path:
+            p = tmp / "outside" / name
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_bytes(b"")
+            return p
+
+        # 1: base_executable already escapes - used directly
+        clone1 = tmp / "clone1"
+        copy1 = clone1 / ".venv" / "bin" / "python3"
+        copy1.parent.mkdir(parents=True)
+        copy1.write_bytes(b"")
+        base_ii = outside_file("base_ii")
+        result1, warn1 = hookwire.hook_python(str(copy1), clone1, base_executable=str(base_ii))
+        check("(ii) sys._base_executable is used directly when it already escapes the clone",
+              result1 == str(base_ii) and warn1 is None, (result1, warn1))
+
+        # 2: base_executable fails (simulates the 3.10 POSIX bug - still inside the clone) ->
+        # pyvenv.cfg's own home rescues it. The file at `home` has to be named the way
+        # `hook_python` actually looks for it (`python3` on POSIX, `python.exe` on Windows) -
+        # NOT just "some file that exists outside the clone", or this scenario would pass for
+        # the wrong reason (falling through past (iii) to (iv)'s base_prefix fallback instead).
+        clone2 = tmp / "clone2"
+        venv2 = clone2 / ".venv"
+        copy2 = venv2 / "bin" / "python3"
+        copy2.parent.mkdir(parents=True)
+        copy2.write_bytes(b"")
+        base_iii_dir = tmp / "base_iii_home"
+        base_iii_dir.mkdir()
+        base_iii = base_iii_dir / ("python.exe" if os.name == "nt" else "python3")
+        base_iii.write_bytes(b"")
+        (venv2 / "pyvenv.cfg").write_text(f"home = {base_iii_dir}\n", encoding="utf-8")
+        result2, warn2 = hookwire.hook_python(str(copy2), clone2, base_executable=str(copy2))
+        check("(ii) failing (still inside the clone, the 3.10 POSIX shape) falls through to "
+              "(iii) pyvenv.cfg's own home",
+              result2 == str(base_iii) and warn2 is None, (result2, warn2))
+
+        # 3: base_executable fails AND there is no pyvenv.cfg at all -> base_prefix fallback
+        clone3 = tmp / "clone3"
+        copy3 = clone3 / ".venv" / "bin" / "python3"
+        copy3.parent.mkdir(parents=True)
+        copy3.write_bytes(b"")
+        base_iv_dir = tmp / "base_iv"
+        base_iv = (base_iv_dir / "python.exe") if os.name == "nt" \
+            else (base_iv_dir / "bin" / "python3")
+        base_iv.parent.mkdir(parents=True)
+        base_iv.write_bytes(b"")
+        result3, warn3 = hookwire.hook_python(
+            str(copy3), clone3, base_executable=str(copy3), base_prefix=str(base_iv_dir))
+        check("(ii) and (iii) both failing (no pyvenv.cfg at all) falls through to (iv) "
+              "base_prefix's own python binary",
+              result3 == str(base_iv) and warn3 is None, (result3, warn3))
+
+
+def test_hook_python_no_candidate_warns_loudly() -> None:
+    """(б), required test (e): if NONE of the four candidates can be found at all - here,
+    `base_executable` itself points back inside the clone (the 3.10 shape) AND there is no
+    `pyvenv.cfg` AND `base_prefix`'s own python binary does not exist either - `hook_python`
+    does not refuse to wire anything: the coordinator's own decision is that a hook which fires
+    today and could go silent later is better than none. It returns the ORIGINAL `executable`
+    UNCHANGED plus a warning `install.py` prints loudly (`wire_hooks()`'s own `if
+    HOOK_PYTHON_WARNING: print(...)`) - checked here by name: it names the clone, the
+    interpreter actually wired, and says the failure mode is silent."""
+    print("\n- hook_python() - no candidate at all: wire it anyway, but warn loudly -")
+    with tempfile.TemporaryDirectory() as td:
+        tmp = Path(td)
+        clone = tmp / "clone"
+        copy = clone / ".venv" / "bin" / "python3"
+        copy.parent.mkdir(parents=True)
+        copy.write_bytes(b"")
+        missing_base_dir = tmp / "nowhere"          # deliberately never created
+        result, warning = hookwire.hook_python(
+            str(copy), clone, base_executable=str(copy), base_prefix=str(missing_base_dir))
+        check("wired anyway - the original executable, unchanged",
+              result == str(copy), result)
+        check("...with a warning naming the clone, the interpreter, and the silent failure "
+              "mode - by name, not just 'a warning exists'",
+              warning is not None and str(clone) in warning and str(copy) in warning
+              and "silent" in warning.lower(), warning)
 
 
 def test_write_shim_and_remove_shim() -> None:
@@ -1890,6 +2052,10 @@ def main() -> int:
                test_is_ours_and_is_foreign_copy,
                test_dead_reason,
                test_hook_python,
+               test_hook_python_symlinked_venv_escapes_the_clone,
+               test_base_prefix_fallback_shape,
+               test_hook_python_candidate_order,
+               test_hook_python_no_candidate_warns_loudly,
                test_write_shim_and_remove_shim,
                test_shim_hot_path_shape,
                test_shim_degraded_direct,
