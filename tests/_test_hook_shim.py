@@ -1341,13 +1341,154 @@ def test_hook_python_symlinked_venv_escapes_the_clone() -> None:
               py.is_symlink(), str(py))
 
         result, warning = hookwire.hook_python(str(py), clone)
-        clone_r = str(clone.resolve()).replace("\\", "/").lower()
-        check("the wired interpreter's RESOLVED path is outside the clone",
-              not str(Path(result).resolve()).replace("\\", "/").lower()
-              .startswith(clone_r + "/"), result)
-        check("...and the STRING ITSELF is outside the clone too - not just its target "
-              "(the actual bug: the OLD code returned the symlink's own path, unresolved)",
-              not result.replace("\\", "/").lower().startswith(clone_r + "/"), result)
+        # (б), round 3: NOT a plain string-prefix compare against `clone.resolve()` - that
+        # stayed green VACUOUSLY on macOS, where `/var` is a symlink to `/private/var`: a
+        # STILL-BUGGY `result` spelled through `/var/...` never string-starts-with a
+        # `/private/var/...` clone root, so the check "passed" whether or not the underlying
+        # bug was present, and this test could not see the bug it exists to catch. Both sides
+        # go through the SAME directory-realpath normalisation `hook_python` itself now uses
+        # (`hookwire._leaf_preserving_real` - ancestors resolved, the leaf name preserved) so
+        # two different-looking spellings of the SAME physical clone actually compare equal.
+        clone_real = clone.resolve()
+
+        def _under(p: Path | None) -> bool:
+            return p is not None and (p == clone_real or clone_real in p.parents)
+
+        result_full = Path(result).resolve()
+        result_dirreal = hookwire._leaf_preserving_real(result)
+        check("the wired interpreter's fully RESOLVED path is outside the clone",
+              not _under(result_full), result)
+        check("...and the STRING ITSELF, directory-realpath'd, is outside the clone too - "
+              "not a plain string-prefix compare against an already-resolved clone root, "
+              "which stays green VACUOUSLY on a machine where an ANCESTOR of the clone is "
+              "itself a symlink (macOS: /var -> /private/var; the actual bug: the OLD code "
+              "returned the symlink's own path, unresolved)",
+              not _under(result_dirreal), (result, result_dirreal))
+        check("no warning - a real base interpreter was found", warning is None, warning)
+
+
+def _make_dir_link(link: Path, target: Path) -> bool:
+    """A directory-level indirection from `link` to `target`, whichever primitive this
+    platform allows WITHOUT elevated privilege: `os.symlink` on POSIX (unprivileged there,
+    unlike a Windows file/dir symlink), a directory JUNCTION on Windows (`mklink /J` - also
+    unprivileged, unlike `os.symlink` there). Returns whether it succeeded; a caller skips
+    (never fails) on `False` rather than assume a privilege it cannot rely on."""
+    if os.name == "nt":
+        r = subprocess.run(["cmd", "/c", "mklink", "/J", str(link), str(target)],
+                           capture_output=True, text=True)
+        return r.returncode == 0
+    try:
+        os.symlink(str(target), str(link), target_is_directory=True)
+        return True
+    except OSError:
+        return False
+
+
+def test_leaf_preserving_real_resolves_ancestor_symlinks() -> None:
+    """(б), round 3, auditor finding: `_leaf_preserving_real` is the fix for the macOS-and-
+    sometimes-Linux half of this bug - `/var` on macOS is ITSELF a symlink to `/private/var`,
+    and every `tempfile` path lives under `/var/folders/...`, so `os.path.abspath` (which
+    NEVER follows a symlink) and `.resolve()` (which follows every symlink, including ones
+    ABOVE the file in question) never agree on the SAME file's own path there. Tested here
+    directly - a directory-level indirection is enough to exercise this (no FILE symlink,
+    hence no privilege issue: `_make_dir_link` uses `os.symlink` on POSIX, unprivileged for a
+    directory, and a JUNCTION on Windows, always unprivileged) - runs on BOTH platforms."""
+    print("\n- _leaf_preserving_real() - resolves ancestor directories, keeps the leaf name -")
+    with tempfile.TemporaryDirectory() as td:
+        tmp = Path(td)
+        real_root = tmp / "real_root"
+        (real_root / "clone").mkdir(parents=True)
+        marker = real_root / "clone" / "marker.txt"
+        marker.write_bytes(b"")
+        link_root = tmp / "link_root"
+        if not _make_dir_link(link_root, real_root):
+            print("  skipped: this account cannot create a directory link/junction here")
+            return
+        linked_marker = link_root / "clone" / "marker.txt"
+        check("the marker is reachable through the link",
+              linked_marker.is_file(), str(linked_marker))
+
+        # RED-BEFORE, shown directly: plain os.path.abspath (what hook_python built its
+        # "inside" check from before this round) never recognises the two spellings as the
+        # same file - this is the bug in isolation, not just asserted away.
+        abs_only = Path(os.path.abspath(str(linked_marker)))
+        real_marker = marker.resolve()
+        check("plain os.path.abspath does NOT match the fully-resolved real path (the bug "
+              "this function exists to fix, shown directly)",
+              abs_only != real_marker, (abs_only, real_marker))
+
+        result = hookwire._leaf_preserving_real(linked_marker)
+        check("_leaf_preserving_real DOES match - the ancestor link is resolved, the leaf "
+              "name ('marker.txt') is preserved exactly, not itself re-resolved",
+              result == real_marker, (result, real_marker))
+
+
+def test_hook_python_ancestor_symlinked_clone() -> None:
+    """(б), round 3, the coordinator's own required construction: a clone reached through a
+    symlinked ANCESTOR directory (`link_root -> real_root`, `real_root/clone` is the actual
+    checkout), containing a venv whose OWN interpreter is ALSO a symlink (`symlinks=True`,
+    `python -m venv`'s own POSIX default) - the exact macOS/Linux shape CI caught: `real_exe`
+    (fully resolved) escapes the clone for a GOOD reason (the venv's own symlink to the true
+    base), which used to mask the fact that the WIRED STRING itself - reached only through the
+    ancestor link - was still syntactically inside the clone by the OLD (unresolved-abspath)
+    "inside" check.
+
+    POSIX only: this needs a REAL FILE symlink (the venv's own interpreter) layered on top of
+    a directory-level indirection, and Windows cannot create the file half without Developer
+    Mode or elevation (confirmed, WinError 1314, same limitation as test (b) above) - a
+    junction alone is not enough here because it would have to sit at the exact FINAL path
+    component to reproduce this specific interaction, which is precisely what a junction
+    cannot do (it only ever indirects a DIRECTORY, never a single file). The ancestor-only half
+    of this mechanism (no venv-leaf symlink at all) IS covered cross-platform by
+    `test_leaf_preserving_real_resolves_ancestor_symlinks`, above, including on Windows via a
+    junction - confirmed empirically that a PLAIN venv (no leaf symlink) reached only through
+    an ancestor junction is already correctly caught by the pre-round-3 code too (the `real_exe`
+    check alone collapses both sides through the junction consistently when there is no
+    SEPARATE, genuinely-escaping leaf symlink in play) - it is specifically the COMBINATION
+    this test covers, and that combination needs a real symlink."""
+    print("\n- hook_python() - a clone reached through a symlinked ANCESTOR directory, "
+         "containing a symlinked venv (POSIX only) -")
+    if os.name == "nt":
+        print("  skipped on Windows: needs a real FILE symlink for the venv's own "
+             "interpreter (Developer Mode/elevation, not assumed here) layered on an "
+             "ancestor indirection - see this test's own docstring for why a junction alone "
+             "cannot reproduce this specific combination; covered by CI's own POSIX runners")
+        return
+    with tempfile.TemporaryDirectory() as td:
+        tmp = Path(td)
+        real_root = tmp / "real_root"
+        (real_root / "clone").mkdir(parents=True)
+        venv_dir = real_root / "clone" / ".venv"
+        venv.create(venv_dir, with_pip=False, symlinks=True)
+        py = venv_dir / "bin" / "python3"
+        if not py.is_file():
+            alt = sorted((venv_dir / "bin").glob("python3.*"))
+            py = alt[0] if alt else py
+        check("the venv interpreter exists and is a symlink",
+              py.is_file() and py.is_symlink(), str(py))
+
+        link_root = tmp / "link_root"
+        check("the ancestor link could be created",
+              _make_dir_link(link_root, real_root), str(link_root))
+        linked_clone = link_root / "clone"
+        linked_py = linked_clone / ".venv" / "bin" / py.name
+        check("the venv interpreter is reachable through the ancestor link too",
+              linked_py.is_file(), str(linked_py))
+
+        result, warning = hookwire.hook_python(str(linked_py), linked_clone)
+        clone_real = linked_clone.resolve()          # == real_root/clone, either spelling
+
+        def _under(p: Path | None) -> bool:
+            return p is not None and (p == clone_real or clone_real in p.parents)
+
+        result_full = Path(result).resolve()
+        result_dirreal = hookwire._leaf_preserving_real(result)
+        check("the wired interpreter is not under the clone by EITHER spelling - fully "
+              "resolved...",
+              not _under(result_full), result)
+        check("...or directory-realpath'd (the STRING itself, ancestors resolved, leaf kept) "
+              "- this is the check that was False before round 3's fix",
+              not _under(result_dirreal), (result, result_dirreal))
         check("no warning - a real base interpreter was found", warning is None, warning)
 
 
@@ -2053,6 +2194,8 @@ def main() -> int:
                test_dead_reason,
                test_hook_python,
                test_hook_python_symlinked_venv_escapes_the_clone,
+               test_leaf_preserving_real_resolves_ancestor_symlinks,
+               test_hook_python_ancestor_symlinked_clone,
                test_base_prefix_fallback_shape,
                test_hook_python_candidate_order,
                test_hook_python_no_candidate_warns_loudly,

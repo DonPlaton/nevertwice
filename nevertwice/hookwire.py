@@ -312,6 +312,37 @@ def _base_prefix_fallback(base_prefix: str, os_name: str) -> str:
     return f"{base}/bin/python3"
 
 
+def _leaf_preserving_real(p) -> Path | None:
+    """(б), round 3: `p` with every DIRECTORY COMPONENT run through `os.path.realpath`, but
+    its OWN last component left exactly as given.
+
+    `os.path.abspath` - what `hook_python` builds every path it checks with - normalises
+    `.`/`..`/drive-relative segments but NEVER follows a symlink. On macOS `/var` is itself a
+    symlink to `/private/var`, and every `tempfile` path lives under `/var/folders/...`, so an
+    abspath'd path and a `.resolve()`d one for the exact same file never compare equal: one
+    still says `/var/...`, the other `/private/var/...`. The same happens on Linux for any repo
+    kept behind a symlinked parent directory. Left unhandled, a containment check built purely
+    from `abspath` is `False` for every clone reached this way - the in-clone symlink path is
+    returned UNCHANGED, silently, on exactly the platforms (macOS always; Linux sometimes) this
+    whole module exists to protect.
+
+    Only ANCESTORS are realpath'd here, the leaf never is: a leaf that is ITSELF a symlink (the
+    venv's own `bin/python3` pointing at the true base) is a SEPARATE question `hook_python`
+    already asks by fully resolving (`real_exe`) - collapsing the two into one full `.resolve()`
+    would make a containment check unable to tell "the symlink FILE lives in the clone" (still
+    true, and still the thing that breaks when the clone is deleted) from "the symlink's TARGET
+    lives outside" (irrelevant to whether THIS spelling of the command survives) - exactly the
+    distinction the abspath-vs-resolve split already existed to preserve, one directory level
+    further out. A module-level function (not a closure inside `hook_python`) so it can be
+    tested directly, without building a whole clone/candidate scenario for every case."""
+    p = Path(p)
+    try:
+        parent_real = Path(os.path.realpath(os.path.dirname(str(p)) or "."))
+    except OSError:
+        return None
+    return parent_real / p.name
+
+
 def hook_python(executable: str, clone_root, *, base_executable: str | None = None,
                 base_prefix: str | None = None, os_name: str | None = None
                 ) -> tuple[str, str | None]:
@@ -321,12 +352,18 @@ def hook_python(executable: str, clone_root, *, base_executable: str | None = No
     `executable` unchanged (and no warning) unless the clone CONTAINS it - a venv created
     inside the checkout being wired, whose own interpreter would vanish along with the clone it
     lives in, defeating the whole point of a shim that is meant to survive that. "Contains" is
-    checked BOTH ways, `os.path.abspath(executable)` OR its `.resolve()`: a venv made with
-    `python -m venv` on POSIX puts a SYMLINK at `.venv/bin/python3` pointing at the true base -
-    `.resolve()` alone would follow that symlink OUT of the clone and conclude nothing needs
-    rebasing, while the command actually wired would still be that symlink's OWN path INSIDE
-    the clone (`abspath` catches this: the symlink file itself lives there, whichever direction
-    `resolve()` reads off it).
+    checked BOTH ways: `executable`'s own directories run through `os.path.realpath` (but NOT
+    its own final component - `_leaf_preserving_real`, below) OR its fully-`.resolve()`d form.
+    A venv made with `python -m venv` on POSIX puts a SYMLINK at `.venv/bin/python3` pointing
+    at the true base - `.resolve()` alone would follow that symlink OUT of the clone and
+    conclude nothing needs rebasing, while the command actually wired would still be that
+    symlink's OWN path INSIDE the clone (the leaf-preserving check catches this: the symlink
+    file itself lives there, whichever direction `.resolve()` reads off it). Round 3 (б): a
+    plain `os.path.abspath` alone is not enough EITHER, because it never follows a symlinked
+    ANCESTOR directory - on macOS `/var` is itself a symlink to `/private/var`, and every
+    `tempfile` path lives under `/var/folders/...`, so an abspath'd path and a clone root
+    computed via `.resolve()` never compared equal there at all (`_leaf_preserving_real`'s own
+    docstring has the full account, including why Linux is not immune either).
 
     Once inside, the FIRST candidate that both exists AND resolves OUTSIDE the clone wins, in
     this order - a defence in depth, since more than one of these can be wrong on its own:
@@ -376,25 +413,38 @@ def hook_python(executable: str, clone_root, *, base_executable: str | None = No
     except OSError:
         return executable, None
 
-    def _under_clone(p: Path) -> bool:
-        return p == root or root in p.parents
+    def _under_clone(p: Path | None) -> bool:
+        return p is not None and (p == root or root in p.parents)
+
+    def _escapes_clone(candidate: Path) -> bool:
+        """A candidate counts as escaping the clone only if BOTH measures agree it does - the
+        leaf-preserving, ancestor-realpath'd spelling (catches a symlinked ANCESTOR directory,
+        `_leaf_preserving_real`'s own docstring) and the fully resolved spelling (catches the
+        candidate ITSELF being a symlink back into the clone). Either one saying "still inside"
+        is disqualifying - the same OR the initial `inside` gate uses, read in the opposite
+        direction (there, either measure saying "inside" is enough to trigger a rebase; here,
+        either measure saying "still inside" is enough to refuse this candidate)."""
+        return not (_under_clone(_leaf_preserving_real(candidate))
+                   or _under_clone(_resolved(candidate)))
 
     real_exe = _resolved(abs_exe)
-    inside = _under_clone(abs_exe) or (real_exe is not None and _under_clone(real_exe))
+    exe_in_real_dir = _leaf_preserving_real(abs_exe)
+    inside = _under_clone(exe_in_real_dir) or _under_clone(real_exe)
     if not inside:
         return executable, None
 
     def _qualifies(candidate) -> str | None:
-        """A candidate is used only if it names a real file whose RESOLVED path lands outside
-        the clone - a candidate that is itself a symlink pointing back inside is refused the
-        same way `executable` itself is checked, above."""
+        """A candidate is used only if it names a real file that ESCAPES the clone by both
+        measures (`_escapes_clone`) - a candidate that is itself a symlink pointing back
+        inside, OR that only APPEARS to escape because its own path runs through a symlinked
+        ancestor directory the clone itself sits behind, is refused the same way `executable`
+        itself is checked, above."""
         if not candidate:
             return None
         path = Path(candidate)
         if not path.is_file():
             return None
-        resolved = _resolved(path)
-        if resolved is None or _under_clone(resolved):
+        if not _escapes_clone(path):
             return None
         return str(path)
 
