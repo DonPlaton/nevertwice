@@ -99,6 +99,9 @@ os.environ["NEVERTWICE_CLOUD"] = "none"        # local only: nothing billed, not
 sys.path.insert(0, str(ROOT / "nevertwice"))
 import memory_hook as m  # noqa: E402
 import principles as pr  # noqa: E402
+import _provenance as prov  # noqa: E402 - C4(a): the shared measured_at/stamp helper, ported
+                            # from q3/ride-along 901f3b1 (research/ is already on sys.path -
+                            # whatever caller imported THIS module put it there)
 
 DATA = HERE / "data" / "cross_project_v1.json"
 # The identifier-bound population (Q5 G5.1, finding 3, 2026-09-24): registered
@@ -630,6 +633,74 @@ _DRY_POISON_PLAN: dict[tuple[int, str], str | None] = {
 _DRY_N_CASES = 3
 
 
+def _run_promote_with_us_capture() -> tuple[dict, list[dict]]:
+    """Run `principles.py::promote()` once, instrumented so every `_token_provenance` call ALSO
+    records S beside U (C4(c), .loop/DECISION-Q5-H6-TRIGGER-2026-09-23-ADDENDUM.md (a): "S = no
+    uniqueness rule: shape (compound, whole) plus corroboration only... the fresh run records S
+    as a counterfactual count beside U") - `principles.py` itself is never modified; the spy
+    calls the REAL, saved `_token_provenance` for U (promote()'s actual decision, unaffected),
+    then calls it AGAIN with `_is_uncorroborated_private_word` forced to never flag anything
+    (S's own definition) against a COPY of `vocab_cache` (the forced-False stub never reads the
+    cache, so nothing from the S call can leak into U's cache for a LATER call in the same
+    promote() run - defensive, not currently load-bearing).
+
+    `_token_provenance` returns `offending = shape_rejections + uniqueness_rejections` (two
+    independent loops, appended in that order - principles.py's own code) - so with uniqueness
+    forced off, S's offending IS EXACTLY the shape rejections, and U's offending MINUS S's
+    offending is EXACTLY the uniqueness rejections. `rule` follows
+    `.loop/explore/h6_recount.py`'s own convention (shape takes priority when both fire)."""
+    real = pr._token_provenance
+    pairs: list[dict] = []
+
+    def _spy(sentence, source_project, cluster_projects, vocab_cache):
+        u_ok, u_offending = real(sentence, source_project, cluster_projects, vocab_cache)
+        saved_uniq = pr._is_uncorroborated_private_word
+        pr._is_uncorroborated_private_word = lambda *a, **k: False
+        try:
+            s_ok, s_offending = real(sentence, source_project, cluster_projects,
+                                     dict(vocab_cache))
+        finally:
+            pr._is_uncorroborated_private_word = saved_uniq
+        shape_offending = sorted(s_offending)
+        uniqueness_offending = sorted(set(u_offending) - set(s_offending))
+        rule = "none" if u_ok else ("shape" if shape_offending else "uniqueness")
+        pairs.append({
+            "source_project": source_project, "cluster_projects": sorted(cluster_projects),
+            "U": {"passes": u_ok, "rule": rule, "offending": sorted(u_offending)},
+            "S": {"passes": s_ok, "offending": shape_offending},
+            "uniqueness_offending": uniqueness_offending,          # C4(d) input, see below
+        })
+        return u_ok, u_offending                       # promote()'s real decision - unchanged
+
+    pr._token_provenance = _spy
+    try:
+        report = pr.promote(apply=True)
+    finally:
+        pr._token_provenance = real
+    return report, pairs
+
+
+def _cold_start_flag_count(uniqueness_offending: list[str], source_project: str,
+                           scope_projects: set, project_vocab: dict) -> int:
+    """C4(d) (.loop/DECISION-...-ADDENDUM.md (b), "U flags about 2.75x more tokens with 2 live
+    projects... than with all projects"): how many of U's uniqueness-only offending tokens
+    (from `_run_promote_with_us_capture`'s per-pair `uniqueness_offending`) would STILL be
+    flagged if the corroboration search were scoped to `scope_projects` only, using
+    `project_vocab` (a plain `{project: content-token-set}` registry, no live vault read - a
+    project no longer on disk, because the per-case vault was already rebased for a later case,
+    is looked up here exactly the same way as one still live). A token counts as corroborated
+    (NOT flagged) the moment it appears in ANY other scoped project's vocabulary - the same
+    "at least one other project used it too" rule `_is_uncorroborated_private_word` itself
+    applies, just against a caller-chosen project set instead of `_all_live_projects()`."""
+    count = 0
+    for tok in uniqueness_offending:
+        corroborated = any(tok in project_vocab.get(p, set())
+                          for p in scope_projects if p != source_project)
+        if not corroborated:
+            count += 1
+    return count
+
+
 def run_bench(cases: list[dict], *, extractor_mode: str, dry: bool) -> dict:
     """`extractor_mode` is one of "oracle" (pre-written ground truth, no extraction),
     "extract" (the real pipeline) or "stub" (the deterministic --dry poisoning fixture).
@@ -652,6 +723,14 @@ def run_bench(cases: list[dict], *, extractor_mode: str, dry: bool) -> dict:
     # iteration variable, and shadowing it would leave this bound to whichever arm's per-case
     # list the summary loop happened to visit last - a silent, wrong answer, not a crash.
     diag_rows: list[dict] = []
+    # C4(d): every project's content-token vocabulary this run has EVER written, captured
+    # WHILE that case's vault is still live (before the next case's `_rebase_vault` discards
+    # it) - a project no longer on disk is still lookup-able here. `us_pairs_by_case[i]` holds
+    # case i's own `_run_promote_with_us_capture` pairs, matched to `diag_rows[i]` by index
+    # AFTER the loop, once `all_project_vocab` is the full run's registry, not just what had
+    # been written by case i's own turn.
+    all_project_vocab: dict[str, set] = {}
+    us_pairs_by_case: list[list[dict]] = []
 
     for i, case in enumerate(cases):
         # A FRESH vault per case, not a shared one: this bench's metrics are per-case (does
@@ -686,6 +765,15 @@ def run_bench(cases: list[dict], *, extractor_mode: str, dry: bool) -> dict:
                         rejections=write_rejections, stub_phrasing=stub_phrasing)
             build_distractor(case)
 
+            # C4(d): capture THIS case's written projects' vocabulary now, while its vault is
+            # still the live one - `_project_token_vocabulary` reads from `m.VAULT`, so this
+            # must happen before the next iteration's `_rebase_vault` makes these files
+            # unreadable. project_a/project_c/distractor all wrote a note above (project_b
+            # never does - it is only ever a QUERY project).
+            for proj in (case["project_a"]["project"], case["project_c"]["project"],
+                        case["distractor"]["project"]):
+                all_project_vocab[proj] = pr._project_token_vocabulary(proj)
+
             # Guard-minting (principles.py's _mint_global_guard) may call an LLM of its own for
             # a promoted mistake cluster - forcing llm_available() False here keeps this
             # bench's extraction-call budget exactly the ~200 the docstring promises,
@@ -696,9 +784,10 @@ def run_bench(cases: list[dict], *, extractor_mode: str, dry: bool) -> dict:
             saved_llm_available = m.llm_available
             m.llm_available = lambda: False
             try:
-                promote_report = pr.promote(apply=True)
+                promote_report, us_pairs = _run_promote_with_us_capture()
             finally:
                 m.llm_available = saved_llm_available
+            us_pairs_by_case.append(us_pairs)
 
             case_rows: dict[str, dict] = {}
             for arm in ARMS:
@@ -724,14 +813,42 @@ def run_bench(cases: list[dict], *, extractor_mode: str, dry: bool) -> dict:
             if dry:
                 m.embed_text = saved_embed
 
+    # C4(d): the cold-start comparison, now that `all_project_vocab` is the FULL run's registry
+    # (every project this run ever wrote to, not just case i's own) - "narrow" is what U
+    # actually experienced live (this pair's own cluster_projects, the per-case-isolated
+    # vault's real scope); "wide" re-scopes the SAME uniqueness-offending tokens against every
+    # project this run wrote, a real (not simulated) mature-store comparison built entirely
+    # from this run's own data. cold_start_totals aggregates both across every pair reaching
+    # provenance in this population, the same shape the ADDENDUM's own "141 vs 51" reading used.
+    cold_start_narrow_total = cold_start_wide_total = 0
+    all_projects_this_run = set(all_project_vocab)
+    for i, pairs in enumerate(us_pairs_by_case):
+        for pair in pairs:
+            uniq = pair.pop("uniqueness_offending")
+            narrow = _cold_start_flag_count(uniq, pair["source_project"],
+                                            set(pair["cluster_projects"]), all_project_vocab)
+            wide = _cold_start_flag_count(uniq, pair["source_project"],
+                                          all_projects_this_run, all_project_vocab)
+            pair["cold_start"] = {"uniqueness_offending_tokens": uniq,
+                                  "narrow_flagged": narrow, "wide_flagged": wide}
+            cold_start_narrow_total += narrow
+            cold_start_wide_total += wide
+        diag_rows[i]["token_provenance_pairs"] = pairs
+
     summary = {}
     for arm, rows in per_arm.items():
         n = len(rows) or 1
+        # C4(b): raw COUNTS beside the existing fractions, per class, for this arm - a reader
+        # asking "how many, not just what share" no longer has to back-compute count from
+        # fraction*n_cases (lossy once fraction is rounded, and indirect either way).
+        hits_by_class = {cls: sum(1 for r in rows if r["leak_by_class"][cls])
+                         for cls in ALL_CLASSES}
         summary[arm] = {
             "n_cases": len(rows),
             "leak": sum(1 for r in rows if r["leaked"]) / n,
-            "leak_by_class": {cls: sum(1 for r in rows if r["leak_by_class"][cls]) / n
-                             for cls in ALL_CLASSES},                    # C3: ALL_CLASSES
+            "leak_hits": sum(1 for r in rows if r["leaked"]),
+            "leak_by_class": {cls: hits_by_class[cls] / n for cls in ALL_CLASSES},
+            "leak_hits_by_class": hits_by_class,
             "benefit": sum(1 for r in rows if r["benefit"]) / n,
             "noise": sum(r["noise"] for r in rows) / n,
             "cross_chars_mean": sum(r["cross_chars"] for r in rows) / n,
@@ -741,23 +858,34 @@ def run_bench(cases: list[dict], *, extractor_mode: str, dry: bool) -> dict:
            "promotion_rejections_by_class": promotion_rejections,
            # kept for anyone still reading the old key name
            "scanner_rejections_by_class": write_rejections,
-           # diagnostic instrumentation (2026-09-24): one entry per case - see _diagnostic_row.
+           # C4(d): totals across every pair reaching provenance in this population - the same
+           # "narrow (2 live projects) vs wide (the whole run)" comparison the ADDENDUM's own
+           # cold-start reading used, computed here from this run's OWN data, not reused numbers.
+           "cold_start": {"narrow_flagged_total": cold_start_narrow_total,
+                         "wide_flagged_total": cold_start_wide_total},
+           # diagnostic instrumentation (2026-09-23): one entry per case - see _diagnostic_row.
+           # C4(c): each row's own "token_provenance_pairs" carries U/S/cold_start per pair.
            "rows": diag_rows}
 
 
-def _git_head() -> str:
-    import subprocess                                            # noqa: PLC0415
-    try:
-        return subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(ROOT), capture_output=True,
-                              text=True, timeout=10, check=True).stdout.strip()
-    except Exception:                       # noqa: BLE001
-        return "?"
-
-
 def _measured_at() -> dict:
-    import datetime                                              # noqa: PLC0415
-    return {"commit": _git_head(),
-           "utc": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}
+    """C4(a) (2026-09-23): this bench's own provenance stamp - `research/_provenance.py`'s
+    shared `measured_at()` (git_head/dirty/utc, ported from q3/ride-along 901f3b1) PLUS the
+    fields specific to a cross-project run: which model actually extracted, which model
+    actually embedded, which clustering threshold and which per-arm retrieval mode were
+    actually in effect - none of these are recoverable from the commit alone (all four are
+    environment/runtime state, not source), so an artifact that carries only `commit`/`utc`
+    still leaves them to be inferred or remembered, exactly the gap `_provenance.py` closes
+    one level up for the commit itself.
+
+    `commit` is renamed to `git_head` in the returned dict (the coordinator's field name) -
+    `_provenance.py`'s OWN contract (commit/utc/dirty) is untouched; this is just the name
+    under which THIS stand re-exposes it."""
+    base = prov.measured_at()
+    return {"git_head": base["commit"], "dirty": base["dirty"], "utc": base["utc"],
+           "python": sys.version.split()[0], "extractor_model": LLM,
+           "embedder_model": m.embed_signature(), "nevertwice_principle_t": pr.T_PRINCIPLE,
+           "cross_project_mode_by_arm": {arm: arm for arm in ARMS}}
 
 
 def _select_case_ids(path: Path, spec: str) -> list[dict]:

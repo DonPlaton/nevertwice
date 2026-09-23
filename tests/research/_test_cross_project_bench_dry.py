@@ -11,6 +11,8 @@ suite `tests/research/_test_cross_project_bench_extract_dry.py` covers the OTHER
 extraction-side scanner rejection `--dry`'s stub extractor exists for (the 2026-09-23 widening:
 a pre-written principle alone cannot prove an EXTRACTED one gets caught).
 """
+import re
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -116,6 +118,74 @@ check("the capped snippet does NOT end mid-word any more (C5 fixed the artifact 
 check("the capped snippet is strictly shorter than a plain 220-char slice would be here "
      "(the straddling word was dropped whole, not kept as a fragment)",
       len(snippet) < 220, str(len(snippet)))
+
+print("\n- C4(a): measured_at carries git_head/dirty/utc/python/models/threshold/mode -")
+stamp = cpb._measured_at()
+_EXPECT_STAMP_KEYS = {"git_head", "dirty", "utc", "python", "extractor_model", "embedder_model",
+                      "nevertwice_principle_t", "cross_project_mode_by_arm"}
+check("measured_at has exactly the required keys", set(stamp) == _EXPECT_STAMP_KEYS, stamp)
+real_head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(cpb.ROOT), capture_output=True,
+                           text=True, check=True).stdout.strip()
+check("git_head matches git rev-parse HEAD", stamp["git_head"] == real_head,
+     (stamp["git_head"], real_head))
+check("dirty is a bool", isinstance(stamp["dirty"], bool), str(stamp["dirty"]))
+check("utc matches YYYY-MM-DDTHH:MM:SSZ",
+     bool(re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", stamp["utc"])), stamp["utc"])
+check("python matches sys.version", stamp["python"] == sys.version.split()[0], stamp["python"])
+check("extractor_model is cpb.LLM (the pinned extraction model)",
+     stamp["extractor_model"] == cpb.LLM, stamp["extractor_model"])
+check("embedder_model is m.embed_signature() ('provider:model')",
+     stamp["embedder_model"] == cpb.m.embed_signature(), stamp["embedder_model"])
+check("nevertwice_principle_t is the LIVE pr.T_PRINCIPLE (NEVERTWICE_PRINCIPLE_T, resolved)",
+     stamp["nevertwice_principle_t"] == cpb.pr.T_PRINCIPLE, stamp["nevertwice_principle_t"])
+check("cross_project_mode_by_arm names every ARM with the mode actually passed for it",
+     stamp["cross_project_mode_by_arm"] == {a: a for a in cpb.ARMS},
+     stamp["cross_project_mode_by_arm"])
+
+print("\n- C4(b): leak_hits/leak_hits_by_class are raw COUNTS beside the existing fractions -")
+result_b4 = cpb.run_bench(cpb.load_cases(cpb.DATA, n=cpb._DRY_N_CASES), extractor_mode="stub",
+                          dry=True)
+for arm_name, s in result_b4["arms"].items():
+    check(f"{arm_name}: leak_hits is an int, leak == leak_hits / n_cases",
+         isinstance(s["leak_hits"], int) and
+         (s["n_cases"] == 0 or abs(s["leak"] - s["leak_hits"] / s["n_cases"]) < 1e-9),
+         (s["leak_hits"], s["leak"], s["n_cases"]))
+    check(f"{arm_name}: leak_hits_by_class has the SAME keys as leak_by_class (ALL_CLASSES)",
+         set(s["leak_hits_by_class"]) == set(s["leak_by_class"]) == set(cpb.ALL_CLASSES),
+         (sorted(s["leak_hits_by_class"]), sorted(cpb.ALL_CLASSES)))
+    for cls in cpb.ALL_CLASSES:
+        check(f"{arm_name}/{cls}: leak_by_class == leak_hits_by_class / n_cases",
+             s["n_cases"] == 0 or
+             abs(s["leak_by_class"][cls] - s["leak_hits_by_class"][cls] / s["n_cases"]) < 1e-9,
+             (arm_name, cls, s["leak_hits_by_class"][cls], s["leak_by_class"][cls]))
+
+print("\n- C4(c)/(d): token_provenance_pairs carry U/S/rule/cold_start; totals aggregate -")
+pairs_seen = [p for r in result_b4["rows"] for p in r["token_provenance_pairs"]]
+check("at least one pair reached provenance on the --dry fixture (case cpv1-003's poisoned "
+     "queue-shard identifier clusters and is rejected)", len(pairs_seen) > 0, len(pairs_seen))
+rejected_pairs = [p for p in pairs_seen if not p["U"]["passes"]]
+check("at least one pair's U verdict is a rejection, named by rule",
+     any(p["U"]["rule"] in ("shape", "uniqueness") for p in rejected_pairs), rejected_pairs)
+for p in pairs_seen:
+    check(f"{p['source_project']}: U.offending is a SUPERSET of S.offending (S = shape only, "
+         "uniqueness forced off - U can only ADD uniqueness rejections on top)",
+         set(p["S"]["offending"]) <= set(p["U"]["offending"]),
+         (p["U"]["offending"], p["S"]["offending"]))
+    check(f"{p['source_project']}: U passing implies rule == 'none' and no offending tokens",
+         p["U"]["passes"] == (p["U"]["rule"] == "none") == (not p["U"]["offending"]),
+         (p["U"]["passes"], p["U"]["rule"], p["U"]["offending"]))
+    check(f"{p['source_project']}: cold_start.narrow_flagged == len(uniqueness_offending_tokens) "
+         "(this pair's OWN live scope IS the narrow one)",
+         p["cold_start"]["narrow_flagged"] == len(p["cold_start"]["uniqueness_offending_tokens"]),
+         p["cold_start"])
+    check(f"{p['source_project']}: cold_start.wide_flagged <= narrow_flagged (more corroboration "
+         "sources can only REDUCE how many stay flagged, never increase)",
+         p["cold_start"]["wide_flagged"] <= p["cold_start"]["narrow_flagged"], p["cold_start"])
+check("cold_start totals equal the sum of every pair's own narrow/wide counts",
+     result_b4["cold_start"]["narrow_flagged_total"] ==
+     sum(p["cold_start"]["narrow_flagged"] for p in pairs_seen) and
+     result_b4["cold_start"]["wide_flagged_total"] ==
+     sum(p["cold_start"]["wide_flagged"] for p in pairs_seen), result_b4["cold_start"])
 
 print("\n- --help exits 0 -")
 try:
