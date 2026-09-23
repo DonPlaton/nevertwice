@@ -246,38 +246,30 @@ def _project_shaped_word_vocabulary(project: str) -> set[str]:
     return vocab
 
 
-#: NOT a dictionary - none is available without a third-party dependency, and this module is
-#: "standard library + the engine only". A short list of ordinary English words common enough
-#: that being unique to one project's SMALL corpus is coincidence, not a private identifier -
-#: the same discipline `_STOPWORDS` and `_INFRA_HYPHEN_TOKENS` follow, EXCEPT the source: this
-#: list is grown ONLY from this project's own unit-test fixtures (`tests/
-#: _test_principle_promote.py`'s `_VECS`) or from generic vocabulary NOT taken from any
-#: `research/` bench corpus. NEVER grown from any `research/` bench corpus; grow only from a
-#: false positive on a REAL store - `tests/_test_principle_promote.py`'s own
-#: `test_no_common_word_occurs_in_the_bench_corpus` enforces this mechanically, not just by
-#: convention.
+#: THIRD correction (2026-09-24, C1b, the coordinator's decision): EMPTY. A hand-curated
+#: "definitely ordinary" word list cannot be grown without repeating the SAME defect twice
+#: over (140 words -> 18 -> 7, each cut still found partly bench-contaminated by the next
+#: audit - see the FIRST and SECOND correction notes preserved below) - the list's only
+#: possible sources were this project's OWN unit-test fixtures or hand-picked "generic"
+#: vocabulary, and both are a curator's guess about what counts as ordinary, not evidence.
+#: The corroboration rule (`_is_uncorroborated_private_word`, `_token_provenance`) needs NO
+#: exemption list at all: an ordinary word used by a genuine cross-project paraphrase is, by
+#: construction, either shared with the other side directly or coincidentally rare enough that
+#: a REAL corroborating mention (a second note, anywhere in that project's own corpus) settles
+#: it - real corpus evidence, not a guess about which words are "common enough". The cost this
+#: accepts is unchanged from the SECOND correction's own KNOWN LIMITATION: a genuinely ordinary
+#: word that happens to be unique to one project's SMALL corpus is asked for corroboration it
+#: may not have. `tests/_test_principle_promote.py`'s own guard test now asserts this list
+#: stays empty (not merely that no entry is bench-contaminated, since there is no entry) - if
+#: it is ever grown back, that test's mechanical bench-corpus scan still runs against whatever
+#: is added.
 #:
-#: SECOND correction (2026-09-24, C1 - the H6 trigger recount, `.loop/explore/h6_recount.json`
-#: / `.loop/DECISION-Q5-H6-TRIGGER-2026-09-23.md`): the FIRST correction already removed 122
-#: words tuned on the bench corpus, but 11 of the 18 survivors were STILL bench words by the
-#: same test - the auditor counted them >=3x across `research/cross_project_bench.py` AND
-#: `research/data/cross_project*.json` together (the .py can template case text, so both count):
-#: anything, bound, cap, disk, limit, load, measure, parameter, redact, secrets, writing. The
-#: fixture that needed them ("Cap a resource-bound parameter before scaling a workload.", "always
-#: redact secrets before writing anything to disk.") is rewritten in `tests/
-#: _test_principle_promote.py` with invented wording that occurs NOWHERE in `research/`
-#: (grep-verified, and the new mechanical test above checks it on every run) - not by adding a
-#: replacement word to this list. KNOWN LIMITATION, stated plainly rather than covered silently
-#: (the coordinator's instruction, 2026-09-24): a genuinely ordinary word missing from this
-#: list, unique to one project's corpus, is still flagged and asked for corroboration it may not
-#: have - the SAME over-cautious failure mode H6 already accepts for identifier-shaped tokens,
-#: now also possible for an ordinary word this list does not contain. This is DELIBERATE
-#: (`.loop/DECISION-Q5-H6-TRIGGER-2026-09-23.md`, "U ships (fail closed)"): the cost of an
-#: unpromoted ordinary principle is a mild, local loss; the cost of a leaked private name cannot
-#: be undone once it crosses into another project's sessions.
-_COMMON_WORDS = frozenset("""
-resource ceiling scaling increasing workload assuming bottleneck
-""".split())
+#: FIRST correction (140 -> 18 words, B2 fix, kept only unit-test-fixture words) and SECOND
+#: correction (18 -> 7 words, C1, `.loop/DECISION-Q5-H6-TRIGGER-2026-09-23.md`, removed
+#: anything/bound/cap/disk/limit/load/measure/parameter/redact/secrets/writing - all still
+#: found >=3x in the real `research/` bench corpus) are both superseded by this THIRD
+#: correction, not re-described here - see git history for their own reasoning if needed.
+_COMMON_WORDS: frozenset[str] = frozenset()
 
 
 def _all_live_projects() -> set[str]:

@@ -465,7 +465,16 @@ def test_g_ordinary_paraphrase_is_promoted() -> None:
     """(a) H6: a paraphrase pair whose wording differs throughout, no identifier-shaped token
     anywhere, is promoted - RED before this fix (every content token needed corroboration, and
     "resource"/"ceiling"/"scaling"/"increasing"/"workload"/"assuming"/"bottleneck" only ever
-    appear in ONE side's own vocabulary - here they are all `_COMMON_WORDS`, so none needs it)."""
+    appear in ONE side's own vocabulary).
+
+    C1b (2026-09-24): `_COMMON_WORDS` is now EMPTY (the coordinator's decision - a hand-curated
+    "definitely ordinary" list cannot be grown without either re-contaminating from the bench
+    corpus or staying arbitrary), so "resource"/"ceiling"/"increasing"/"workload" carry this
+    pair on genuine overlap (both sides use them), and each side's ONE remaining private word
+    ("scaling" for A, "assuming"/"bottleneck" for C) gets a second, unrelated, principle-less
+    note on the OTHER project - REAL corroboration, not an exemption list. RED before THIS
+    fix's corroborating notes: see the commit message for the capture (uniqueness rejects
+    "scaling"/"assuming"/"bottleneck" with no exemption list and no second note)."""
     print("\n- (a) H6: an ordinary-wording paraphrase (no identifier-shaped token) is promoted -")
     make_sandbox(m, "pp_h6_a_", offline=True)
     pr = _import_fresh()
@@ -474,7 +483,15 @@ def test_g_ordinary_paraphrase_is_promoted() -> None:
                  "the resource ceiling.")
     s_c = _write("project_c", "curb resource", "Assuming a resource ceiling before increasing "
                  "a workload is a bottleneck.")
+    # C1b: A's only private word is "scaling"; C's are "assuming"/"bottleneck". A second,
+    # unrelated note on the OTHER project uses each word in different prose - empty `principle`
+    # so it never becomes a promotion candidate itself, only contributes to
+    # `_project_token_vocabulary`.
+    corrob_c = _write("project_c", "scaling notes", "")
+    corrob_a = _write("project_a", "assuming bottleneck notes", "")
     check("both source notes were written", bool(s_a) and bool(s_c), f"{s_a}/{s_c}")
+    check("both corroborating notes were written", bool(corrob_c) and bool(corrob_a),
+         f"{corrob_c}/{corrob_a}")
 
     summary = pr.promote(apply=True)
     check("one cluster formed", summary["clusters"] == 1, str(summary))
@@ -535,7 +552,10 @@ def test_i_public_camel_name_in_both_is_promoted() -> None:
     """(c) H6: "PostgreSQL" - the SAME camelCase shape as the private "UserRepository" test
     above - is promoted when BOTH projects' own principles mention it: shape alone never
     decided this (option A already removed camelCase from the write gate for exactly this
-    reason), corroboration does."""
+    reason), corroboration does.
+
+    C1b (2026-09-24): `_COMMON_WORDS` is empty - same corroborating-note pattern as (a)
+    above for "scaling" (A) and "assuming"/"bottleneck" (C)."""
     print("\n- (c) H6: a public camelCase name corroborated by both projects is promoted -")
     make_sandbox(m, "pp_h6_c_", offline=True)
     pr = _import_fresh()
@@ -544,7 +564,11 @@ def test_i_public_camel_name_in_both_is_promoted() -> None:
                  "the resource ceiling for PostgreSQL.")
     s_c = _write("project_c", "tarnish postgres c", "Assuming a resource ceiling before "
                  "increasing PostgreSQL workload is a bottleneck.")
+    corrob_c = _write("project_c", "scaling notes", "")
+    corrob_a = _write("project_a", "assuming bottleneck notes", "")
     check("both source notes were written", bool(s_a) and bool(s_c), f"{s_a}/{s_c}")
+    check("both corroborating notes were written", bool(corrob_c) and bool(corrob_a),
+         f"{corrob_c}/{corrob_a}")
 
     summary = pr.promote(apply=True)
     check("one cluster formed", summary["clusters"] == 1, str(summary))
@@ -557,7 +581,10 @@ def test_i_public_camel_name_in_both_is_promoted() -> None:
 def test_i2_public_hyphen_concept_in_both_is_promoted() -> None:
     """(c, continued) "consumer-group" - a GENERIC hyphen concept (both parts are infra nouns,
     `_INFRA_HYPHEN_TOKENS`) - is promoted when BOTH projects mention it, the same reasoning as
-    PostgreSQL above but for the hyphen-infra shape instead of camelCase."""
+    PostgreSQL above but for the hyphen-infra shape instead of camelCase.
+
+    C1b (2026-09-24): `_COMMON_WORDS` is empty - same corroborating-note pattern as (a)/(c)
+    above for "scaling" (A) and "assuming"/"bottleneck" (C)."""
     print("\n- (c) H6: a public hyphen-infra concept corroborated by both projects is promoted -")
     make_sandbox(m, "pp_h6_c2_", offline=True)
     pr = _import_fresh()
@@ -566,7 +593,11 @@ def test_i2_public_hyphen_concept_in_both_is_promoted() -> None:
                  "resource ceiling for a consumer-group.")
     s_c = _write("project_c", "tarnish group c", "Assuming a resource ceiling before increasing "
                  "a consumer-group workload is a bottleneck.")
+    corrob_c = _write("project_c", "scaling notes", "")
+    corrob_a = _write("project_a", "assuming bottleneck notes", "")
     check("both source notes were written", bool(s_a) and bool(s_c), f"{s_a}/{s_c}")
+    check("both corroborating notes were written", bool(corrob_c) and bool(corrob_a),
+         f"{corrob_c}/{corrob_a}")
 
     summary = pr.promote(apply=True)
     check("one cluster formed", summary["clusters"] == 1, str(summary))
@@ -778,18 +809,22 @@ def test_m_underscore_and_hyphen_unify_but_dot_does_not() -> None:
          not ok6 and "payments-api" in offending6, offending6)
 
 
-def test_n_no_common_word_occurs_in_the_bench_corpus() -> None:
-    """C1 (2026-09-24): the mechanical guard `principles._COMMON_WORDS`'s own docstring promises.
-    `_COMMON_WORDS` must be grown from genuine, generic vocabulary - NEVER by reading what the
-    real `research/` bench corpus happens to contain and exempting those exact words, which would
-    quietly tune the "this is an ordinary word" list to make today's benchmark look cleaner than
-    the mechanism actually is. Any word occurring >=3 times (word-boundary, case-insensitive)
-    across `research/cross_project_bench*.py` + `research/data/cross_project*.json` is named as
-    an offender and the check fails; RED before this test existed, the removed 11-word set
-    (anything, bound, cap, disk, limit, load, measure, parameter, redact, secrets, writing) would
-    have gone undetected forever - see the red-before capture in the commit that adds this test."""
-    print("\n- C1: no _COMMON_WORDS entry is itself sourced from the real bench corpus -")
+def test_n_common_words_is_empty_and_the_guard_still_fires_if_grown_back() -> None:
+    """C1b (2026-09-24, the coordinator's decision): `_COMMON_WORDS` is now EMPTY - a
+    hand-curated "definitely ordinary" list kept getting partly re-contaminated by the next
+    audit (140 -> 18 -> 7 words, C1's own test still found 11 of those 7's predecessors bench-
+    sourced). Corroboration alone (a real second mention, not an exemption list) now decides
+    every non-identifier-shaped word.
+
+    This test asserts the emptiness directly, AND keeps C1's mechanical bench-corpus scan
+    running (harmless, vacuously true while the list is empty) - if `_COMMON_WORDS` is ever
+    grown back for any reason, this same scan immediately re-applies the ORIGINAL guard
+    (>=3 occurrences in `research/cross_project_bench*.py` + `research/data/cross_project*.json`
+    names the offender) to whatever was added, rather than needing to be rewritten first."""
+    print("\n- C1b: _COMMON_WORDS is empty, and the bench-corpus guard still fires if regrown -")
     pr = _import_fresh()
+    check("_COMMON_WORDS is empty", pr._COMMON_WORDS == frozenset(), sorted(pr._COMMON_WORDS))
+
     corpus_files = sorted(ROOT.glob("research/cross_project_bench*.py")) + \
         sorted(ROOT.glob("research/data/cross_project*.json"))
     check("at least one bench corpus file was found to scan", len(corpus_files) > 0,
@@ -801,8 +836,8 @@ def test_n_no_common_word_occurs_in_the_bench_corpus() -> None:
         hits = len(re.findall(rf"\b{re.escape(word)}\b", corpus_text, flags=re.IGNORECASE))
         if hits >= 3:
             offenders.append((word, hits))
-    check("no _COMMON_WORDS entry occurs >=3x in the bench corpus", not offenders,
-         f"offenders: {offenders}" if offenders else "")
+    check("no _COMMON_WORDS entry occurs >=3x in the bench corpus (vacuous while empty)",
+         not offenders, f"offenders: {offenders}" if offenders else "")
 
 
 def test_zz_every_check_passed() -> None:
@@ -836,7 +871,7 @@ def main() -> int:
                test_k_compound_corroborated_as_whole_not_by_parts,
                test_l_mutation_corroborating_by_parts_reddens_k_by_name,
                test_m_underscore_and_hyphen_unify_but_dot_does_not,
-               test_n_no_common_word_occurs_in_the_bench_corpus):
+               test_n_common_words_is_empty_and_the_guard_still_fires_if_grown_back):
         fn()
     print(f"\nprinciple promote: {PASSED} passed, {FAILED} failed")
     return 1 if FAILED else 0
