@@ -609,6 +609,13 @@ def test_a_backup_survives_a_file_that_vanishes_under_it() -> None:
         state = {"doomed": None}
 
         def scandir_that_loses_one(path="."):
+            #: A file descriptor passes straight through. On POSIX `shutil.rmtree` walks by
+            #: descriptor (`_rmtree_safe_fd` calls `os.scandir(topfd)`), so removing the victim
+            #: DIRECTORY re-entered this function with an int and `Path(int)` raised TypeError -
+            #: red on every Linux and macOS job of run 35803678547, green here because Windows
+            #: rmtree walks by path. Found by the auditing session from the CI log.
+            if not isinstance(path, (str, os.PathLike)):
+                return real_scandir(path)
             it = real_scandir(path)
             if state["doomed"] is not None or Path(path) != folder:
                 return it
