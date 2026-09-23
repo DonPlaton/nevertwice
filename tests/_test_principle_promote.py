@@ -45,10 +45,10 @@ _VECS = {
     # wrought chisel..." rule above, so the stub still clusters it - the PRODUCT NAME is what the
     # provenance check (not clustering) is supposed to catch.
     "tarnish a resource-wrought chisel before scaling acme-widget-server.": [1.0, 0.0, 0.0],
-    # H6 (2026-09-24): a genuine PARAPHRASE, different ordinary wording throughout, still
+    # H6 (2026-09-23): a genuine PARAPHRASE, different ordinary wording throughout, still
     # clusters here (same vector) - real clustering is a real embedder's job, not this stub's;
     # the stub only has to hold the cosine fixed so the test isolates what provenance decides.
-    # C1 (2026-09-24): built ONLY from `_COMMON_WORDS` (resource/ceiling/scaling/increasing/
+    # C1 (2026-09-23): built ONLY from `_COMMON_WORDS` (resource/ceiling/scaling/increasing/
     # workload/assuming/bottleneck) + stopwords, on BOTH sides - any invented word here would
     # itself be a single-project token needing corroboration it cannot get (the bug this
     # correction fixes: the FIRST rewrite of this fixture swapped one non-exempt word for
@@ -74,7 +74,7 @@ _VECS = {
     # H6-era update to test (a) below: C's own invented private name, so NEITHER side has a
     # clean fallback the other could be promoted through instead (see that test's own comment).
     "tarnish a resource-wrought chisel before scaling globex-nimbus-array.": [1.0, 0.0, 0.0],
-    # The auditor's exact nine-name probe (2026-09-24) - one principle per private name, C always
+    # The auditor's exact nine-name probe (2026-09-23) - one principle per private name, C always
     # poisoned with its own distinct private name (no clean fallback), plus the public
     # "consumer-group" concept pair (H6, promoted, corroborated by both).
     "tarnish a resource-wrought chisel before scaling useauthstore.": [1.0, 0.0, 0.0],
@@ -210,7 +210,7 @@ def test_a_undeclared_product_name_blocks_promotion_via_token_provenance() -> No
     token-provenance check is the one that has to catch this, because nothing upstream of it
     does.
 
-    C ALSO carries its own invented private name here (H6-era update, 2026-09-24) - not the
+    C ALSO carries its own invented private name here (H6-era update, 2026-09-23) - not the
     plain "before scaling a workload." this test used before H6. `_promote_cluster` tries the
     next-most-central candidate when the medoid fails ("the clean fallback"), and once H6
     stopped flagging every non-identical word, C's plain phrasing had NOTHING left to fail on
@@ -419,7 +419,7 @@ def test_dry_run_writes_nothing() -> None:
 
 
 def test_d_own_generic_entity_no_longer_self_rejects_at_promotion() -> None:
-    """(d) 2026-09-24: the v2 100-case real run's actual dominant defect. A note's own declared
+    """(d) 2026-09-23: the v2 100-case real run's actual dominant defect. A note's own declared
     entity is routinely a GENERIC word its own principle also uses ("workload" declared, "...
     scaling a workload." in the text) - `_rescan`'s promotion-time forbidden set used to include
     EVERY declared entity verbatim, so `principle_scan` rejected the candidate against its OWN
@@ -453,7 +453,7 @@ def test_d_own_generic_entity_no_longer_self_rejects_at_promotion() -> None:
           summary["promoted"] == 1, str(summary))
 
 
-# ── H6 (2026-09-24): provenance for IDENTIFIER-SHAPED tokens only ──────────────────────────
+# ── H6 (2026-09-23): provenance for IDENTIFIER-SHAPED tokens only ──────────────────────────
 # Before this fix, `_token_provenance` required >=2-project corroboration for EVERY content
 # token, including the ordinary English words a genuine paraphrase is full of - each project's
 # own vocabulary is usually just its one note's own wording, so two honest paraphrases almost
@@ -468,7 +468,7 @@ def test_g_ordinary_paraphrase_is_promoted() -> None:
     "resource"/"ceiling"/"scaling"/"increasing"/"workload"/"assuming"/"bottleneck" only ever
     appear in ONE side's own vocabulary).
 
-    C1b (2026-09-24): `_COMMON_WORDS` is now EMPTY (the coordinator's decision - a hand-curated
+    C1b (2026-09-23): `_COMMON_WORDS` is now EMPTY (the coordinator's decision - a hand-curated
     "definitely ordinary" list cannot be grown without either re-contaminating from the bench
     corpus or staying arbitrary), so "resource"/"ceiling"/"increasing"/"workload" carry this
     pair on genuine overlap (both sides use them), and each side's ONE remaining private word
@@ -515,7 +515,7 @@ def test_h_private_shaped_name_blocks_promotion_per_shape() -> None:
     for - A's OWN shape-specific token blocking THAT candidate."""
     print("\n- (b) H6: a private camel/kebab/snake name blocks promotion, token named -")
     c_poisoned = "Tarnish a resource-wrought chisel before scaling globex-nimbus-array."
-    # B1 (2026-09-24): the offending token is the WHOLE normalized compound now, not a split
+    # B1 (2026-09-23): the offending token is the WHOLE normalized compound now, not a split
     # part - "billing_service" normalizes to "billing-service" ("_" unified with "-").
     cases = [
         ("camel", "tarnish a resource-wrought chisel before scaling UserRepository.", "userrepository"),
@@ -555,7 +555,7 @@ def test_i_public_camel_name_in_both_is_promoted() -> None:
     decided this (option A already removed camelCase from the write gate for exactly this
     reason), corroboration does.
 
-    C1b (2026-09-24): `_COMMON_WORDS` is empty - same corroborating-note pattern as (a)
+    C1b (2026-09-23): `_COMMON_WORDS` is empty - same corroborating-note pattern as (a)
     above for "scaling" (A) and "assuming"/"bottleneck" (C)."""
     print("\n- (c) H6: a public camelCase name corroborated by both projects is promoted -")
     make_sandbox(m, "pp_h6_c_", offline=True)
@@ -584,7 +584,7 @@ def test_i2_public_hyphen_concept_in_both_is_promoted() -> None:
     `_INFRA_HYPHEN_TOKENS`) - is promoted when BOTH projects mention it, the same reasoning as
     PostgreSQL above but for the hyphen-infra shape instead of camelCase.
 
-    C1b (2026-09-24): `_COMMON_WORDS` is empty - same corroborating-note pattern as (a)/(c)
+    C1b (2026-09-23): `_COMMON_WORDS` is empty - same corroborating-note pattern as (a)/(c)
     above for "scaling" (A) and "assuming"/"bottleneck" (C)."""
     print("\n- (c) H6: a public hyphen-infra concept corroborated by both projects is promoted -")
     make_sandbox(m, "pp_h6_c2_", offline=True)
@@ -609,7 +609,7 @@ def test_i2_public_hyphen_concept_in_both_is_promoted() -> None:
 
 
 def test_h2_auditors_nine_name_probe_all_blocked() -> None:
-    """The auditor's exact probe (2026-09-24): nine private names, each present in ONE
+    """The auditor's exact probe (2026-09-23): nine private names, each present in ONE
     project's vocabulary only, must ALL be NOT promoted, with the token named in the rejection -
     seven shape-classifiable (camelCase/PascalCase, hyphen-infra) already covered per-shape
     above, plus "phoenix" (a lone lowercase word) and "acme-corp" (a hyphenated company name,
@@ -618,7 +618,7 @@ def test_h2_auditors_nine_name_probe_all_blocked() -> None:
     catches them. Not covered silently: if this test is red, the uniqueness rule is not doing
     its job for these two."""
     print("\n- the auditor's nine-name probe: all nine private names blocked, token named -")
-    # B1 (2026-09-24): the seven shape-classifiable names are named as the WHOLE normalized
+    # B1 (2026-09-23): the seven shape-classifiable names are named as the WHOLE normalized
     # compound now, never a split part - db-primary and kafka-consumer-group used to be named
     # by a coincidentally-surviving fragment ("primary", "kafka"); now the compound itself is
     # the identity that is (or is not) corroborated. phoenix/acme-corp are NOT shape-classified
@@ -699,7 +699,7 @@ def test_j_mutation_ignoring_camel_shape_reddens_h_camel_case() -> None:
          "caught it, not the uniqueness backstop", ok_after, offending_after)
 
 
-# ── B1 (2026-09-24, coordinator review of 1daf871): a compound is corroborated as a WHOLE ──
+# ── B1 (2026-09-23, coordinator review of 1daf871): a compound is corroborated as a WHOLE ──
 # Before this fix, _identifier_shaped_tokens ran a shaped word through _content_tokens
 # ("payments-api" -> {"payments", "api"}) and each PART was looked up separately in a
 # project's ordinary vocabulary - so a project that used "payments" and "api" separately in
@@ -780,7 +780,7 @@ def test_l_mutation_corroborating_by_parts_reddens_k_by_name() -> None:
 
 
 def test_m_underscore_and_hyphen_unify_but_dot_does_not() -> None:
-    """B1's normalization addition (coordinator decision, 2026-09-24): "-" and "_" are the SAME
+    """B1's normalization addition (coordinator decision, 2026-09-23): "-" and "_" are the SAME
     identity (5) - the same name spelled kebab by one project and snake by another is still
     corroboration; "." is NOT unified with either (6) - a dot carries host/path structure a
     hyphen does not share, so "payments-api" and "payments.api" are different names."""
@@ -811,7 +811,7 @@ def test_m_underscore_and_hyphen_unify_but_dot_does_not() -> None:
 
 
 def test_o_never_public_identifiers_reject_even_when_corroborated() -> None:
-    """C6 (2026-09-24, the coordinator's decision, amended twice - stdlib version-parity, then
+    """C6 (2026-09-23, the coordinator's decision, amended twice - stdlib version-parity, then
     the explicit RFC5737 carve-out): an RFC1918/CGNAT/IPv6-ULA address or an internal-TLD
     hostname is NEVER treated as public by corroboration alone. Two UNRELATED private networks
     reusing the same 10.x/172.16.x/192.168.x/100.64.x/fc00::/7 address, or the same internal
@@ -923,7 +923,7 @@ def test_o4_is_private_would_have_missed_the_cgnat_range() -> None:
              pr._is_never_public_identifier(word), word)
 
 
-#: C6b (2026-09-24, the auditor's probe of 35b5226 through the REAL pipeline, not just the
+#: C6b (2026-09-23, the auditor's probe of 35b5226 through the REAL pipeline, not just the
 #: helper in isolation): "Always pin 10.0.0.5:5432 and db.internal:5432 behind 10.0.0.0/8,
 #: reach [fd00::1]:443 or https://db.internal/x and printer.local." - `_is_never_public_
 #: identifier` returned False for 5 of these 6 real-world spellings (host:port, [ipv6]:port,
@@ -1031,7 +1031,7 @@ def test_p3_mutation_removing_host_extraction_reddens_by_name() -> None:
 
 
 def test_p4_never_public_cidr_containment_not_intersection() -> None:
-    """C6c (2026-09-24, the auditor's probe of e46a8bd): `_is_never_public_identifier`'s CIDR
+    """C6c (2026-09-23, the auditor's probe of e46a8bd): `_is_never_public_identifier`'s CIDR
     path used `.overlaps()`, which flags any SUPERNET of a never-public range too -
     "0.0.0.0/0" (and "::/0") overlaps EVERY network that exists, including 10.0.0.0/8, but
     "never open a security group to 0.0.0.0/0" is itself a public, universal principle, not a
@@ -1091,7 +1091,7 @@ def test_p5_mutation_removing_subnet_containment_reddens_0_0_0_0_0() -> None:
 
 
 def test_n_common_words_is_empty_and_the_guard_still_fires_if_grown_back() -> None:
-    """C1b (2026-09-24, the coordinator's decision): `_COMMON_WORDS` is now EMPTY - a
+    """C1b (2026-09-23, the coordinator's decision): `_COMMON_WORDS` is now EMPTY - a
     hand-curated "definitely ordinary" list kept getting partly re-contaminated by the next
     audit (140 -> 18 -> 7 words, C1's own test still found 11 of those 7's predecessors bench-
     sourced). Corroboration alone (a real second mention, not an exemption list) now decides

@@ -79,7 +79,7 @@ check("--dry exits 0", rc == 0, str(rc))
 check("--dry does not create/modify the results artifact",
       cpb.OUT.exists() == before, f"existed before: {before}, exists now: {cpb.OUT.exists()}")
 
-print("\n- C2 (2026-09-24): written_description_full is the UNTRUNCATED on-disk description -")
+print("\n- C2 (2026-09-23): written_description_full is the UNTRUNCATED on-disk description -")
 long_desc = ("Splitting structural changes from large backfills in separate transactions "
             "prevents table locking and reduces flaky failures. The original operation "
             "combined both in one transaction, causing a timeout due to extended lock "
@@ -104,7 +104,7 @@ check("the full field is longer than the capped snippet on this fixture",
 check("the capped snippet is still a prefix of the full description (a boundary-safe cut, "
      "not an arbitrary one, but a prefix either way)",
       long_desc.startswith(snippet), repr(snippet[-15:]))
-# C5 (2026-09-24): `_note_snippet` now cuts at a WORD boundary (`_cut_word_boundary`), not a
+# C5 (2026-09-23): `_note_snippet` now cuts at a WORD boundary (`_cut_word_boundary`), not a
 # plain char-slice - the artifact C2 found here (this exact fixture used to end "...extended
 # loc") is fixed at the source. The capped snippet is shorter than a plain [:220] slice would
 # be (the straddling word is dropped whole, not fragmented), and full != snippet still holds -

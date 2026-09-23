@@ -164,7 +164,7 @@ def _project_token_vocabulary(project: str) -> set[str]:
 
 def _identifier_shaped_words(sentence: str) -> set[str]:
     """The whitespace-separated words of `sentence` that look identifier-shaped, by ALL FIVE
-    shapes (2026-09-24, H6) - not just the three the write/rescan gate keeps after option (A).
+    shapes (2026-09-23, H6) - not just the three the write/rescan gate keeps after option (A).
     camelCase/PascalCase and hyphen-infra moved OFF the write gate specifically BECAUSE
     provenance (corpus corroboration) is the mechanism that tells a public name (PostgreSQL,
     corroborated by many projects' own corpus) from a private one (UserRepository, corroborated
@@ -188,7 +188,7 @@ def _identifier_shaped_words(sentence: str) -> set[str]:
 
 def _normalize_shaped_word(word: str) -> str:
     """The identity a compound identifier is corroborated BY (B1, coordinator decision
-    2026-09-24): lowercased, with "-" and "_" UNIFIED - the same name spelled kebab by one
+    2026-09-23): lowercased, with "-" and "_" UNIFIED - the same name spelled kebab by one
     project and snake by another ("payments-api" / "payments_api") is still the same name, and
     treating them as different would let a private identifier cross just by respelling it. "."
     and "/" are left AS-IS, never unified with "-"/"_": they carry host and path STRUCTURE
@@ -198,7 +198,7 @@ def _normalize_shaped_word(word: str) -> str:
 
 
 def _project_shaped_word_vocabulary(project: str) -> set[str]:
-    """Every identifier-shaped WORD (2026-09-24, H6/B1 - `_identifier_shaped_words`, normalized
+    """Every identifier-shaped WORD (2026-09-23, H6/B1 - `_identifier_shaped_words`, normalized
     whole by `_normalize_shaped_word`) across `project`'s own live typed notes - title,
     description, principle, entities and tags, the same fields `_project_token_vocabulary`
     reads.
@@ -247,7 +247,7 @@ def _project_shaped_word_vocabulary(project: str) -> set[str]:
     return vocab
 
 
-#: THIRD correction (2026-09-24, C1b, the coordinator's decision): EMPTY. A hand-curated
+#: THIRD correction (2026-09-23, C1b, the coordinator's decision): EMPTY. A hand-curated
 #: "definitely ordinary" word list cannot be grown without repeating the SAME defect twice
 #: over (140 words -> 18 -> 7, each cut still found partly bench-contaminated by the next
 #: audit - see the FIRST and SECOND correction notes preserved below) - the list's only
@@ -290,7 +290,7 @@ def _all_live_projects() -> set[str]:
 
 
 def _is_uncorroborated_private_word(tok: str, source_project: str, vocab_cache: dict) -> bool:
-    """The coordinator's rule (2026-09-24, the second H6 residual): a plain lowercase word
+    """The coordinator's rule (2026-09-23, the second H6 residual): a plain lowercase word
     ("phoenix") or a hyphenated one whose parts are not infra nouns ("acme-corp") has NO shape
     this layer can key on at all - `_identifier_shaped_words` cannot flag either. So flag by
     CORPUS EVIDENCE instead: `tok` counts as a private word when it appears in
@@ -321,7 +321,7 @@ def _is_uncorroborated_private_word(tok: str, source_project: str, vocab_cache: 
     return True
 
 
-#: C6 (2026-09-24, the coordinator's amended decision): an EXPLICIT network list, checked with
+#: C6 (2026-09-23, the coordinator's amended decision): an EXPLICIT network list, checked with
 #: `ipaddress.ip_address(x) in ipaddress.ip_network(n)` - deliberately NOT `.is_private`/
 #: `.is_global`, whose semantics changed between CPython 3.12.4 and 3.13 (gh-113171) and this
 #: repo's support matrix is 3.10-3.14, so a stdlib property that answers differently per
@@ -347,7 +347,7 @@ _NEVER_PUBLIC_NETWORKS = tuple(ipaddress.ip_network(n) for n in (
 _NEVER_PUBLIC_HOST_SUFFIXES = (".internal", ".local", ".lan", ".corp", ".intra", ".home.arpa")
 
 
-#: C6b (2026-09-24, the auditor's probe through the real pipeline): `_is_never_public_identifier`
+#: C6b (2026-09-23, the auditor's probe through the real pipeline): `_is_never_public_identifier`
 #: checked the BARE value only - `ip_address("10.0.0.5:5432")` and `ip_address("db.internal:5432")`
 #: both raise ValueError (a port suffix is not part of an address), `"db.internal:5432".endswith(
 #: ".internal")` is False (the suffix is BEFORE the port, not at the string's end), `ip_address(
@@ -415,8 +415,9 @@ def _is_never_public_identifier(norm: str) -> bool:
         except ValueError:
             candidate_net = None
         if candidate_net is not None:
-            # C6c (2026-09-24, the auditor's probe of e46a8bd): `.overlaps()` flags any
-            # SUPERNET of a never-public range too - "0.0.0.0/0" (or "::/0") overlaps every
+            # C6c (2026-09-23, the coordinator's finding in the auditor's suggested overlaps
+            # rule): `.overlaps()` flags any SUPERNET of a never-public range too -
+            # "0.0.0.0/0" (or "::/0") overlaps every
             # network that exists, including 10.0.0.0/8, but "never open a security group to
             # 0.0.0.0/0" is itself a public, universal principle, not a private address. The
             # right question is containment, not intersection: never-public only when the
@@ -445,13 +446,13 @@ def _token_provenance(sentence: str, source_project: str, cluster_projects: set,
     `cluster_projects` - "repetition proves universality" (the same idea the >=2-project CLUSTER
     rule already applies to the whole sentence):
 
-      1. every identifier-shaped WORD (2026-09-24, H6/B1 - `_identifier_shaped_words`,
+      1. every identifier-shaped WORD (2026-09-23, H6/B1 - `_identifier_shaped_words`,
          corroborated as the WHOLE normalized compound via `_project_shaped_word_vocabulary`,
          never split into parts - see that function's own docstring for why the split version
          was wrong);
       2. every OTHER content token (not part of any shaped word) that is an uncorroborated
          private word with no shape at all (`_is_uncorroborated_private_word` - the
-         coordinator's rule for "phoenix"/"acme-corp", 2026-09-24).
+         coordinator's rule for "phoenix"/"acme-corp", 2026-09-23).
 
     A client's product name that only ONE project ever wrote cannot pass this, whether or not
     the extractor happened to declare it as an entity - unlike the write-time scanner
@@ -463,7 +464,7 @@ def _token_provenance(sentence: str, source_project: str, cluster_projects: set,
     (`(project, "shaped")`) from the plain content-token vocabulary, since they are different
     identity spaces over the same notes.
 
-    BEFORE H6 (2026-09-24), EVERY content token needed >=2-project corroboration, including the
+    BEFORE H6 (2026-09-23), EVERY content token needed >=2-project corroboration, including the
     ordinary English words a genuine cross-project PARAPHRASE is full of ("cap", "resource",
     "workload", "scaling") - each project's own vocabulary is usually just its one note's own
     wording, so two honest paraphrases of the same rule almost never share enough exact words to
@@ -484,7 +485,7 @@ def _token_provenance(sentence: str, source_project: str, cluster_projects: set,
                 vocab_cache[cache_key] = _project_shaped_word_vocabulary(proj)
             if norm in vocab_cache[cache_key]:
                 seen_in += 1
-        # C6 (2026-09-24): a never-public shape (RFC1918/CGNAT/ULA address, internal-TLD host)
+        # C6 (2026-09-23): a never-public shape (RFC1918/CGNAT/ULA address, internal-TLD host)
         # overrides an otherwise-passing corroboration count - two projects both writing the
         # SAME private-range address is not evidence they share a public identity.
         if seen_in < TOKEN_PROVENANCE_MIN_PROJECTS or _is_never_public_identifier(norm):
@@ -553,7 +554,7 @@ def _project_vocabulary(project: str) -> set[str]:
     folders) - the project-wide forbidden set A5's re-scan uses, stronger than the write-time
     scan (which only forbade the ONE note's own entities).
 
-    FILTERED through `m._looks_like_identifier` (2026-09-24) - this used to forbid every
+    FILTERED through `m._looks_like_identifier` (2026-09-23) - this used to forbid every
     declared entity/tag VERBATIM, the SAME defect finding 1 fixed at write time, silently
     reintroduced here because this promotion-time rescan never got the same filter. A note's
     own principle routinely USES one of its own generic entity words ("storage" declared as an
@@ -591,7 +592,7 @@ def _rescan(candidates: list[dict]) -> list[dict]:
     A5). A candidate the scanner now rejects is dropped, never silently kept.
 
     The per-candidate `entities` contribution is ALSO filtered through `m._looks_like_identifier`
-    (2026-09-24, same fix as `_project_vocabulary` above) - a candidate's own declared entities
+    (2026-09-23, same fix as `_project_vocabulary` above) - a candidate's own declared entities
     are exactly the vocabulary `_project_vocabulary` would find for it one call later anyway
     (once it is itself a live note), so leaving this one unfiltered would just move the same
     self-rejection to the FIRST promotion run instead of the second."""

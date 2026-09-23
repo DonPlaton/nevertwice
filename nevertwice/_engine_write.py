@@ -633,7 +633,7 @@ def _cut_word_boundary(text: str, limit: int, *, require_boundary: bool = False)
     not justify a forward reference across the engine's part ordering for a shared namespace
     this file does not otherwise reach into.
 
-    `require_boundary` (C5b, 2026-09-24, default False - the SHARED default, UNCHANGED for
+    `require_boundary` (C5b, 2026-09-23, default False - the SHARED default, UNCHANGED for
     every existing caller including `principle`'s own cap below): never a fragment when a word
     boundary exists before `limit`, otherwise nothing - EXCEPT that "otherwise nothing" only
     applies when `require_boundary=True`. The one case C5 itself did not cover: `text`'s very

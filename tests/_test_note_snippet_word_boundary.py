@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""C5 (2026-09-24): `_note_snippet` (`nevertwice/_engine_recall.py` ~797) used a plain
+"""C5 (2026-09-23): `_note_snippet` (`nevertwice/_engine_recall.py` ~797) used a plain
 `out[:max_chars].rstrip()` char-slice to cap the text cross-project recall injects into
 another session - this can cut a plain word in half (the H6 recount's `difficul`/`docum`/
 `funct`/`loc`/`oper`/`propagati` fragments, C2) OR split an identifier-shaped token
@@ -113,7 +113,7 @@ def test_b_identifier_crossing_the_boundary_is_never_split() -> None:
 
 
 def test_c_no_boundary_at_all_returns_empty() -> None:
-    """C5b (2026-09-24, the auditor's edge case on 490ee47): when the FIRST token alone
+    """C5b (2026-09-23, the auditor's edge case on 490ee47): when the FIRST token alone
     already exceeds `max_chars` - no space anywhere before the cut - C5's own fix still fell
     back to the raw fragment (`_cut_word_boundary`'s pre-C5b-only branch). `_note_snippet`
     now asks for `require_boundary=True`: no boundary before the cap means NOTHING, not a

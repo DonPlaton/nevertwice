@@ -70,7 +70,7 @@ for r in result["rows"]:
           aa["prompt_cross_hits"] > 0 or not aa["prompt_cross_preview"],
           (aa["prompt_cross_hits"], aa["prompt_cross_preview"][:60]))
 
-print("\n- C2b (2026-09-24): the defence has TWO independent layers - restated so each mutation "
+print("\n- C2b (2026-09-23): the defence has TWO independent layers - restated so each mutation "
      "isolates ONE layer at a time, per the coordinator's bisection (49cc10c introduced a "
      "regression here that 49cc10c's own regression list did not catch: whole-compound "
      "corroboration (B1) already lets PROMOTION-time provenance catch ip/host/path on its "
