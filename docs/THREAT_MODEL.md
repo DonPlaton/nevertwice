@@ -136,7 +136,9 @@ crossing an MCP or hook boundary.
 
 ## Boundary: cross-project recall
 
-- **Owner:** `nevertwice/_engine_recall.py` — `retrieve_cross_project`, `CROSS_PROJECT_MODE`
+- **Owner:** `nevertwice/_engine_recall.py` — `retrieve_cross_project`, `CROSS_PROJECT_MODE`;
+  `nevertwice/principles.py` — the token-provenance gate a candidate must clear before it is
+  promoted into the pool this boundary reads from.
 - **Trusted:** nothing. A project's own notes are untrusted with respect to every OTHER
   project until something has de-identified and independently corroborated them.
 - **Untrusted:** a project's own title, description, entities and source project name -
@@ -150,10 +152,18 @@ crossing an MCP or hook boundary.
   opt-in legacy behaviour) DOES surface them, so the negative result in `universal` mode is not
   merely an empty test. —
   `tests/_test_cross_mode.py::'all' mode DOES surface project A's note (proves the test can see a leak)`
+- **Claim:** A candidate sentence is promoted into the universal pool only when EVERY one of
+  its content tokens is attested by at least two of the cluster's own source projects' live
+  notes - a product name only one project ever wrote cannot pass, whether or not the extractor
+  declared it as an entity (closing W17 one layer later than write time). —
+  `tests/_test_principle_promote.py::the product-name tokens are named as offending`
 - **Residual risk:** `all` mode is still available (`NEVERTWICE_CROSS_PROJECT=all`) and is, by
   design, the unrestricted pre-Q5 behaviour - choosing it re-opens this boundary entirely. The
   `_user_brief` learned user-profile injection (`build_user_model.py`) is a SEPARATE
-  cross-project channel this boundary does not cover - see `docs/WEAKNESSES.md`.
+  cross-project channel this boundary does not cover - see `docs/WEAKNESSES.md`. The token-
+  provenance gate counts DISTINCT projects, not how independent they are of each other - a name
+  that genuinely appears in two small, otherwise-unrelated projects' own text passes, because at
+  that point it is shared vocabulary the corpus itself attests to (`docs/WEAKNESSES.md` W17).
 
 ## Boundary: outbound network
 

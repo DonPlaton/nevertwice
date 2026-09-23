@@ -24,12 +24,27 @@ Pipeline (`promote`):
      identity - a stamp mismatch refuses the whole cache rather than mixing vector spaces;
   5. cluster pairwise by cosine >= T_PRINCIPLE, but ONLY across candidates from DIFFERENT
      projects and the SAME note type (a pattern's principle never merges with a mistake's);
-  6. a cluster spanning >= 2 distinct projects is written as one `universal` note per cluster -
-     description = the medoid sentence, `sources` = every member stem, `recurrence` = the
-     number of DISTINCT projects (not the member count - two notes from one project must not
-     inflate it); a mistake cluster also mints a global advisory guard;
-  7. an existing `universal` note whose live cluster has fallen to one project (or lost its
-     principle entirely) is retired to Archive/, mirroring `archive_old_typed`'s own move.
+  6. TOKEN PROVENANCE (owner review, 2026-09-23, closing W17): before a cluster is promoted,
+     every content token of the candidate sentence must occur in the vocabulary of at least
+     TOKEN_PROVENANCE_MIN_PROJECTS of the cluster's OWN source projects - the same "repetition
+     proves universality" idea the >=2-project cluster rule already applies to the whole
+     sentence, now applied per token. This is the actual cross-project BOUNDARY for an entity
+     the write-time scanner missed (W17): `principle_scan` only catches a product name when the
+     extractor declared it as an entity; this check does not depend on what was declared at
+     all, because it asks the CORPUS, not the extraction. The medoid is tried first; on failure
+     the next-most-central member is tried, in order, until one passes or none does - a cluster
+     with no passing candidate is not promoted, counted as `rejected_single_project_token`, and
+     the offending tokens are reported (never silently dropped - a rejection is the boundary
+     doing its job and has to be visible, same principle as the write-time scan's degradation
+     contract);
+  7. a cluster spanning >= 2 distinct projects, WITH a provenance-passing candidate, is written
+     as one `universal` note per cluster - description = the chosen sentence, `sources` = every
+     member stem, `recurrence` = the number of DISTINCT projects (not the member count - two
+     notes from one project must not inflate it); a mistake cluster also mints a global
+     advisory guard;
+  8. an existing `universal` note whose live cluster has fallen to one project, lost its
+     principle entirely, or stopped passing token provenance is retired to Archive/, mirroring
+     `archive_old_typed`'s own move.
 
     python -m nevertwice.principles --dry     # print what WOULD be promoted, write nothing
     python -m nevertwice.principles --apply   # write (normally called from consolidate_memory.py)
@@ -39,6 +54,7 @@ Standard library + the engine only - no third-party dependency.
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -69,6 +85,122 @@ MIN_CLUSTER_PROJECTS = 2
 PRINCIPLES_CACHE_PATH = "Universal/principles_cache.json"
 #: The typed folders a `principle` can live on (A1 scopes the field to pattern/mistake).
 _PRINCIPLE_TYPES = ("pattern", "mistake")
+
+#: How many of a cluster's DISTINCT source projects must independently carry a content token
+#: before a candidate sentence is allowed to promote (W17 closure, owner review 2026-09-23) - a
+#: module-level name, not an inline literal, so tests/_test_principle_promote.py's mutation can
+#: monkeypatch it without editing this file.
+TOKEN_PROVENANCE_MIN_PROJECTS = 2
+
+#: Grammatical stopwords only - a TECHNICAL word (python, docker, cache, retry) is exactly the
+#: kind of token the provenance check is supposed to let through when both projects use it, so
+#: this list stays short and does not try to filter jargon.
+_STOPWORDS = frozenset({
+    "the", "a", "an", "of", "to", "in", "on", "for", "and", "or", "is", "it", "its", "not",
+    "this", "that", "so", "before", "than", "with", "at", "by", "be", "as", "are", "was",
+    "were", "will", "would", "should", "could", "can", "do", "does", "did", "has", "have",
+    "had", "but", "if", "then", "else", "when", "while", "from", "into", "onto", "out", "up",
+    "down", "over", "under", "again", "once", "here", "there", "all", "any", "both", "each",
+    "few", "more", "most", "other", "some", "such", "no", "nor", "own", "same", "too", "very",
+    "just", "one", "two", "you", "your", "we", "our", "they", "their", "what", "which", "who",
+    "whom", "these", "those", "am", "been", "being",
+})
+_MIN_TOKEN_LEN = 3
+
+
+def _content_tokens(text: str) -> set[str]:
+    """Lowercased alnum runs, length >= 3, stopwords dropped. A hyphen/underscore/space inside
+    a token is a SPLIT point, not part of it - `queue-shard-a000` yields three tokens
+    (`queue`, `shard`, `a000`), each independently provable - "each part of a code-like token
+    counts" (the plan's own wording). A plain `re.findall`, not `_lazy_re`: this runs only at
+    promotion time (sleep-time consolidation), never on a hot path a PreToolUse call shares."""
+    return {t for t in re.findall(r"[a-z0-9]+", (text or "").lower())
+           if len(t) >= _MIN_TOKEN_LEN and t not in _STOPWORDS}
+
+
+def _project_token_vocabulary(project: str) -> set[str]:
+    """Every content token across `project`'s own live typed notes - title, description,
+    principle, entities and tags, all three folders (unlike `_project_vocabulary` above, which
+    is the write-time re-scan's FORBIDDEN-TOKEN set of literal entity/tag strings; this is a
+    tokenized bag of words for the provenance check below, a different question).
+
+    FAIL CLOSED (owner instruction): a note, or a whole project, that cannot be read
+    contributes NOTHING to its own vocabulary - never lets a read error masquerade as "this
+    project already contains every token", which is the direction that would defeat the
+    check. `_read_frontmatter_file`/`parse_typed_stem` already degrade to {}/None on a bad
+    file; the `try` here additionally covers the full-text read this function needs for the
+    title/description that frontmatter-only reads skip."""
+    vocab: set[str] = set()
+    for ntype in m.TYPED_TYPES:
+        folder = m.VAULT / m.TYPE_FOLDER[ntype]
+        if not folder.exists():
+            continue
+        for p in sorted(folder.glob("*.md")):
+            parsed = m.parse_typed_stem(p.stem)
+            if not parsed or parsed["project"] != project:
+                continue
+            try:
+                text = p.read_text(encoding="utf-8", errors="replace")
+            except OSError:
+                continue
+            fm, body = m._read_frontmatter(text)
+            title, desc, _prevention = m._parse_note_body(body.split("\n"))
+            vocab |= _content_tokens(title)
+            vocab |= _content_tokens(desc)
+            principle = fm.get("principle")
+            if isinstance(principle, str):
+                vocab |= _content_tokens(principle)
+            ents = fm.get("entities")
+            if isinstance(ents, list):
+                for e in ents:
+                    vocab |= _content_tokens(str(e))
+            tags = fm.get("tags")
+            if isinstance(tags, list):
+                for t in tags:
+                    vocab |= _content_tokens(str(t))
+    return vocab
+
+
+def _token_provenance(sentence: str, cluster_projects: set, vocab_cache: dict) -> tuple[bool, list]:
+    """Every content token of `sentence` must occur in the vocabulary of at least
+    TOKEN_PROVENANCE_MIN_PROJECTS of `cluster_projects` - "repetition proves universality" (the
+    same idea the >=2-project CLUSTER rule already applies to the whole sentence), now applied
+    per token. A client's product name that only ONE project ever wrote cannot pass this,
+    whether or not the extractor happened to declare it as an entity - unlike the write-time
+    scanner (`principle_scan`, gated on declared entities), this check asks the CORPUS, not the
+    extraction, so nothing the extractor did or did not declare can defeat it. `vocab_cache` is
+    built once per `promote()` run and shared across every cluster's checks (the plan's own
+    "build it once per promote run and cache it by project").
+
+    Returns (passes, offending_tokens) - offending is empty exactly when it passes."""
+    offending = []
+    for tok in _content_tokens(sentence):
+        seen_in = 0
+        for proj in cluster_projects:
+            if proj not in vocab_cache:
+                vocab_cache[proj] = _project_token_vocabulary(proj)
+            if tok in vocab_cache[proj]:
+                seen_in += 1
+        if seen_in < TOKEN_PROVENANCE_MIN_PROJECTS:
+            offending.append(tok)
+    return not offending, offending
+
+
+def _ranked_by_centrality(cluster: list[dict], vecs: dict[str, list]) -> list[dict]:
+    """Cluster members ordered by average cosine to every OTHER member, highest first - the
+    medoid is the head. Used both for the description text (as before A9's widening) and now
+    for the provenance fallback order: "if the medoid fails, try the other members in order of
+    their average cosine" (owner review, 2026-09-23)."""
+    if len(cluster) == 1:
+        return list(cluster)
+    scored = []
+    for cand in cluster:
+        vc = vecs[cand["stem"]]
+        others = [m2 for m2 in cluster if m2["stem"] != cand["stem"]]
+        score = sum(m.cosine(vc, vecs[m2["stem"]]) for m2 in others) / len(others)
+        scored.append((score, cand))
+    scored.sort(key=lambda pair: -pair[0])
+    return [c for _score, c in scored]
 
 
 def _live_principle_candidates() -> list[dict]:
@@ -223,21 +355,6 @@ def _cluster(candidates: list[dict], vecs: dict[str, list]) -> list[list[dict]]:
            if len({m2["project"] for m2 in g}) >= MIN_CLUSTER_PROJECTS]
 
 
-def _medoid(cluster: list[dict], vecs: dict[str, list]) -> dict:
-    """The member whose average cosine to every OTHER member is highest - the sentence that
-    best represents the cluster, rather than an arbitrary pick (first/newest)."""
-    if len(cluster) == 1:
-        return cluster[0]
-    best, best_score = cluster[0], -2.0
-    for cand in cluster:
-        vc = vecs[cand["stem"]]
-        others = [m2 for m2 in cluster if m2["stem"] != cand["stem"]]
-        score = sum(m.cosine(vc, vecs[m2["stem"]]) for m2 in others) / len(others)
-        if score > best_score:
-            best, best_score = cand, score
-    return best
-
-
 def _find_existing_universal(ntype: str, member_stems: set[str]) -> Path | None:
     """An existing LIVE `universal` note of this ntype whose `sources` already shares at least
     one of this cluster's current members - "the same cluster, seen again" (the plan's
@@ -258,11 +375,31 @@ def _find_existing_universal(ntype: str, member_stems: set[str]) -> Path | None:
     return None
 
 
-def _promote_cluster(cluster: list[dict], vecs: dict[str, list], apply: bool) -> dict:
+def _promote_cluster(cluster: list[dict], vecs: dict[str, list], apply: bool,
+                     vocab_cache: dict) -> dict:
     ntype = cluster[0]["ntype"]
     member_stems = {c["stem"] for c in cluster}
     projects = sorted({c["project"] for c in cluster})
-    medoid = _medoid(cluster, vecs)
+    ranked = _ranked_by_centrality(cluster, vecs)
+
+    # TOKEN PROVENANCE (W17 closure): the medoid is tried first; on failure the next-most-
+    # central member is tried, in that order, until one candidate's sentence passes or none
+    # does. When NONE passes, the offending tokens are the UNION over every attempt, not just
+    # the medoid's - a reader asking "why did this cluster fail" deserves every reason found,
+    # not only the first one tried.
+    chosen = None
+    all_offending: set = set()
+    for cand in ranked:
+        ok, offending = _token_provenance(cand["principle"], set(projects), vocab_cache)
+        if ok:
+            chosen = cand
+            break
+        all_offending.update(offending)
+    if chosen is None:
+        return {"action": "rejected_single_project_token", "ntype": ntype, "title": "",
+               "projects": projects, "members": sorted(member_stems),
+               "offending_tokens": sorted(all_offending)}
+    medoid = chosen
 
     existing = _find_existing_universal(ntype, member_stems)
     if existing is not None:
@@ -301,6 +438,17 @@ def _promote_cluster(cluster: list[dict], vecs: dict[str, list], apply: bool) ->
             text, {"recurrence": len(projects), "sources": sources}))
     except OSError:
         pass
+
+    # BUG FOUND while widening A9's --dry to exercise real retrieval (2026-09-23): write_typed_
+    # note does NOT embed - that is a separate pipeline step everywhere else it is called
+    # (process_session follows it with update_embeddings; consolidate_memory's own near-dup
+    # merge relies on the caller having already embedded). This module was the one write path
+    # that skipped it, so a freshly promoted universal note sat on disk with no cache/index
+    # entry and was invisible to retrieve_cross_project(mode="universal") until something else
+    # (embed_index.py, or a later session's incremental sync) caught it up - the pool A4 exists
+    # to serve stayed silent for however long that took. Embedding here, right after the write,
+    # closes that gap the same way every other writer already does it.
+    m.update_embeddings([(stem, ntype, m.UNIVERSAL_PROJECT, title, medoid["principle"], "")])
 
     if ntype == "mistake":
         _mint_global_guard(stem, title, medoid["principle"])
@@ -371,10 +519,20 @@ def promote(apply: bool = False) -> dict:
     candidates = _rescan(_live_principle_candidates())
     vecs = _embed(candidates) if candidates else {}
     clusters = _cluster(candidates, vecs)
-    results = [_promote_cluster(c, vecs, apply) for c in clusters]
+    #: Built ONCE per run, shared across every cluster's provenance check (the plan's own
+    #: "build it once per promote run and cache it by project") - re-walking a project's whole
+    #: note corpus per cluster would be quadratic in the number of clusters sharing a project.
+    vocab_cache: dict[str, set] = {}
+    results = [_promote_cluster(c, vecs, apply, vocab_cache) for c in clusters]
+    # A cluster that failed token provenance was never actually promoted - its members must
+    # NOT count as "current" for retirement purposes, or an existing universal note from a
+    # PRIOR run (before this cluster started failing provenance) would wrongly look "still
+    # represented" and survive. Only a genuinely promoted/refreshed cluster keeps its sources
+    # alive for `_retire_dropped` below.
     all_current_members: set = set()
-    for c in clusters:
-        all_current_members.update(m2["stem"] for m2 in c)
+    for c, r in zip(clusters, results):
+        if r["action"] in ("promoted", "refreshed"):
+            all_current_members.update(m2["stem"] for m2 in c)
     retired = _retire_dropped(all_current_members, apply)
     return {
         "candidates": len(candidates),
@@ -382,6 +540,8 @@ def promote(apply: bool = False) -> dict:
         "promoted": sum(1 for r in results if r["action"] == "promoted"),
         "refreshed": sum(1 for r in results if r["action"] == "refreshed"),
         "refused": sum(1 for r in results if r["action"] == "refused"),
+        "rejected_single_project_token": sum(
+            1 for r in results if r["action"] == "rejected_single_project_token"),
         "retired": len(retired),
         "results": results,
         "retired_stems": retired,
@@ -395,9 +555,14 @@ def main(argv: list[str] | None = None) -> int:
     verb = "would promote" if not apply else "promoted"
     print(f"[principles] {summary['candidates']} candidate(s), {summary['clusters']} cluster(s) "
          f"- {verb} {summary['promoted']}, refreshed {summary['refreshed']}, "
-         f"refused {summary['refused']}, retired {summary['retired']}")
+         f"refused {summary['refused']}, "
+         f"rejected_single_project_token {summary['rejected_single_project_token']}, "
+         f"retired {summary['retired']}")
     for r in summary["results"]:
-        print(f"  {r['action']:9} [{r['ntype']}] {r['title']!r} <- {', '.join(r['projects'])}")
+        extra = (f" offending={r['offending_tokens']}"
+                if r["action"] == "rejected_single_project_token" else "")
+        print(f"  {r['action']:28} [{r['ntype']}] {r['title']!r} <- "
+             f"{', '.join(r['projects'])}{extra}")
     for stem in summary["retired_stems"]:
         print(f"  retired   {stem}")
     return 0

@@ -425,25 +425,42 @@ below is read in context:
   this second channel. Not fixed here - it is out of Q5's scope (PLAN-Q3Q5.md's "Вне рамки"
   list, risk R12) - and is recorded so a reader of the cross-project boundary does not assume
   it is the only one.
-- **W17 [KNOWN GAP, Q5/A3] `principle_scan` has no standalone pattern for the "entity" class -
-  an entity/product name is caught ONLY when the extractor also declares it in the item's own
-  `entities` field.** `principle_scan`'s other five identifier classes (IP, URL/FQDN, path,
-  email, host:port/version) are regex-detected regardless of what the extractor declares
-  around them; entity-class protection runs entirely through the FORBIDDEN-TOKEN path - the
-  project slug and `entities`, nothing else. The extraction prompt DOES ask for entities ("2-5
-  key entities of the lesson"), so a well-behaved extraction that mentions a product name in
-  its `principle` text would typically also list it as an entity and get caught - but nothing
-  enforces that pairing, and a model that mentions a name in prose without also declaring it
-  would slip through with no regex fallback to catch it. Surfaced by
+- **W17 [CLOSED AT PROMOTION, Q5/A3+A5] `principle_scan` has no standalone pattern for the
+  "entity" class at WRITE time - closed one layer later, by a token-provenance rule at
+  PROMOTION time (owner review, 2026-09-23).** `principle_scan`'s other five identifier
+  classes (IP, URL/FQDN, path, email, host:port/version) are regex-detected regardless of what
+  the extractor declares around them; entity-class protection at write time runs entirely
+  through the FORBIDDEN-TOKEN path - the project slug and the item's own `entities` field,
+  nothing else - so a model that mentions a product name in prose without also declaring it as
+  an entity slips past write time with no regex fallback to catch it. Surfaced by
   `research/cross_project_bench.py`'s `--dry` stub extractor
   (`tests/research/_test_cross_project_bench_extract_dry.py`) while widening A9 to test
-  EXTRACTED principles rather than only pre-written ones (2026-09-23) - the stub's first draft
-  left `entities` empty for its "entity" poison and the class went uncaught; the fixed stub
-  declares the entity (mirroring instruction-following extraction) to demonstrate the
-  mechanism that DOES work, but the "mentioned in prose, never declared" failure mode this
-  found is real and not fixed here - it would need either a second, generic content-shaped
-  pattern (high false-positive risk on ordinary kebab-case technical terms) or a harder
-  requirement that entities be exhaustive, neither decided in this work.
+  EXTRACTED principles rather than only pre-written ones (2026-09-23).
+
+  Rather than leave this a documented write-time gap, the boundary the owner named is
+  promotion, not write: a principle sits inside its OWN project's note until `principles.py`
+  moves it across, so promotion is where cross-project corroboration belongs for every TOKEN
+  of a candidate sentence, not only for the sentence as a whole (the >=2-project CLUSTER rule
+  already had). `nevertwice/principles.py`'s `_token_provenance` now requires every content
+  token (lowercased, length >= 3, not a stopword, each part of a hyphenated/underscored token
+  counted separately) of the chosen sentence to appear in the vocabulary (title + description +
+  principle + entities + tags, across all live notes) of at least `TOKEN_PROVENANCE_MIN_PROJECTS`
+  (2, `NEVERTWICE_PRINCIPLE_T`'s sibling constant) of the cluster's OWN source projects - this
+  does not depend on what the extractor declared at all, so an undeclared entity is caught here
+  even though nothing upstream of it caught it. If the medoid fails, the next-most-central
+  member is tried, in order; a cluster with no passing candidate is not promoted and is counted
+  as `rejected_single_project_token`, with the offending tokens named (`tests/
+  _test_principle_promote.py`, cases (a)/(b)/(c); `research/cross_project_bench.py --dry` now
+  reports write-time and promotion-time rejections in SEPARATE per-class counters, since they
+  are different boundaries doing their jobs, not two names for the same event).
+
+  **Residual gap, genuinely different from the one this replaces:** a name that happens to
+  appear in >=2 projects' OWN text passes - at that point it is shared vocabulary the corpus
+  itself attests to, and arguably not one client's identifier at all (a generic technical term
+  like "kubernetes" or "postgres" is supposed to pass for exactly this reason). Whether a name
+  shared by exactly two SMALL, otherwise-unrelated projects should still count as "corroborated"
+  is a judgement call this rule does not make - it counts projects, not how independent they
+  are of each other.
 
 ## Less-traveled-path audit (2026-06-17)
 

@@ -39,6 +39,10 @@ _VECS = {
     "cap a resource-bound parameter before scaling a workload.": [1.0, 0.0, 0.0],
     "measure before assuming a resource limit is the bottleneck.": [0.0, 1.0, 0.0],
     "always redact secrets before writing anything to disk.": [0.0, 0.0, 1.0],
+    # W17 closure (token provenance, 2026-09-23): same cosine as the plain "cap a resource-
+    # bound..." rule above, so the stub still clusters it - the PRODUCT NAME is what the
+    # provenance check (not clustering) is supposed to catch.
+    "cap a resource-bound parameter before scaling acme-widget-server.": [1.0, 0.0, 0.0],
 }
 
 
@@ -152,6 +156,96 @@ def test_a_scanner_hit_at_promotion_time_is_not_promoted() -> None:
           summary["candidates"] == 1, str(summary))
 
 
+def test_a_undeclared_product_name_blocks_promotion_via_token_provenance() -> None:
+    """(a) W17 closure: A's principle mentions a product name it never declared as an entity
+    (so A1's write-time scan and A5's `_rescan` both let it through - see
+    test_a_scanner_hit_at_promotion_time_is_not_promoted for that boundary); A and C otherwise
+    share the exact same rule wording. The PROMOTION-time token-provenance check is the one
+    that has to catch this, because nothing upstream of it does."""
+    print("\n- (a) an undeclared product name blocks promotion at the provenance gate -")
+    make_sandbox(m, "pp_prov_a_", offline=True)
+    pr = _import_fresh()
+    m.embed_text = _stub_embed
+    poisoned = "Cap a resource-bound parameter before scaling acme-widget-server."
+    clean = "Cap a resource-bound parameter before scaling a workload."
+    s_a = _write("project_a", "cap batch size", poisoned)          # entities=[] - undeclared
+    s_c = _write("project_c", "cap worker pool", clean)
+    check("both source notes were written", bool(s_a) and bool(s_c), f"{s_a}/{s_c}")
+    fm_a = m._read_frontmatter_file(m.VAULT / "Patterns" / f"{s_a}.md")
+    check("the product name is on disk, undeclared as an entity (write-time scan let it "
+          "through)", "acme-widget-server" in (fm_a.get("principle") or "")
+          and not fm_a.get("entities"), fm_a)
+
+    summary = pr.promote(apply=True)
+    check("a cluster formed (the stub embedder still merges the two phrasings)",
+          summary["clusters"] == 1, str(summary))
+    check("nothing was promoted", summary["promoted"] == 0, str(summary))
+    check("the rejection is counted as rejected_single_project_token",
+          summary["rejected_single_project_token"] == 1, str(summary))
+    result = summary["results"][0]
+    check("the product-name tokens are named as offending",
+          {"acme", "widget", "server"} <= set(result["offending_tokens"]),
+          str(result["offending_tokens"]))
+    universal_dir = m.VAULT / "Patterns"
+    universal_notes = [p for p in universal_dir.glob("*.md")
+                       if (m.parse_typed_stem(p.stem) or {}).get("project") == m.UNIVERSAL_PROJECT]
+    check("no universal note exists on disk", not universal_notes, str(universal_notes))
+
+
+def test_b_shared_generic_wording_is_promoted() -> None:
+    """(b) The positive control for (a): the SAME rule, phrased with only generic words BOTH
+    projects' own vocabulary already carries (via the exact-same prefix), is promoted - the
+    provenance gate does not block an ordinary cross-project rule, only a single-project
+    token inside one."""
+    print("\n- (b) the same rule in only shared generic words is promoted -")
+    make_sandbox(m, "pp_prov_b_", offline=True)
+    pr = _import_fresh()
+    m.embed_text = _stub_embed
+    clean = "Cap a resource-bound parameter before scaling a workload."
+    s_a = _write("project_a", "cap batch size", clean)
+    s_c = _write("project_c", "cap worker pool", clean)
+    check("both source notes were written", bool(s_a) and bool(s_c), f"{s_a}/{s_c}")
+
+    summary = pr.promote(apply=True)
+    check("one cluster formed", summary["clusters"] == 1, str(summary))
+    check("it was promoted", summary["promoted"] == 1, str(summary))
+    check("nothing was rejected for single-project tokens",
+          summary["rejected_single_project_token"] == 0, str(summary))
+
+
+def test_c_mutation_token_provenance_threshold_of_one() -> None:
+    """(c) A monkeypatch of `pr.TOKEN_PROVENANCE_MIN_PROJECTS` down to 1, restored in
+    `finally` - proves the provenance gate, not just the cluster-level MIN_CLUSTER_PROJECTS
+    check, is what stops (a)'s undeclared product name: at threshold 1, a token appearing in
+    even ONE project's own vocabulary already "passes", so the whole point of the check (a
+    name genuinely shared by >=2 projects) is gone and (a)'s poisoned case promotes."""
+    print("\n- (c) mutation: threshold of 1 project lets (a)'s undeclared product name promote -")
+    make_sandbox(m, "pp_prov_c_", offline=True)
+    pr = _import_fresh()
+    m.embed_text = _stub_embed
+    poisoned = "Cap a resource-bound parameter before scaling acme-widget-server."
+    clean = "Cap a resource-bound parameter before scaling a workload."
+    _write("project_a", "cap batch size", poisoned)
+    _write("project_c", "cap worker pool", clean)
+
+    saved = pr.TOKEN_PROVENANCE_MIN_PROJECTS
+    pr.TOKEN_PROVENANCE_MIN_PROJECTS = 1
+    try:
+        summary = pr.promote(apply=False)   # dry: prove it WOULD promote, don't write
+    finally:
+        pr.TOKEN_PROVENANCE_MIN_PROJECTS = saved
+    check("mutation: WITHOUT the real threshold, the undeclared product name now promotes "
+          "(would FAIL 'nothing was promoted' in test (a) above)",
+          summary["clusters"] == 1 and summary["promoted"] == 1
+          and summary["rejected_single_project_token"] == 0, str(summary))
+
+    # sanity: the real, unmutated threshold still refuses it.
+    summary_real = pr.promote(apply=False)
+    check("and the unmutated threshold (2) still refuses it",
+          summary_real["promoted"] == 0 and summary_real["rejected_single_project_token"] == 1,
+          str(summary_real))
+
+
 def test_retire_on_drop_below_two_projects() -> None:
     print("\n- a universal note is retired once its cluster falls below two projects -")
     make_sandbox(m, "pp_retire_", offline=True)
@@ -218,12 +312,22 @@ def test_mutation_removing_the_distinct_projects_check() -> None:
     _write("project_a", "cap batch size", principle)
     _write("project_a", "cap thread pool", principle)
 
+    # Two independent guards now stand between a single-project repeat and promotion - the
+    # cluster-level MIN_CLUSTER_PROJECTS check (this test's own subject) and the token-level
+    # TOKEN_PROVENANCE_MIN_PROJECTS check (W17 closure, its own dedicated mutation test below).
+    # Demonstrating THIS guard in isolation means neutralising the other one too, or a real
+    # single-project leak would still be caught by provenance and this test would misreport
+    # MIN_CLUSTER_PROJECTS as load-bearing when the observed rejection actually came from
+    # somewhere else.
     saved = pr.MIN_CLUSTER_PROJECTS
+    saved_tp = pr.TOKEN_PROVENANCE_MIN_PROJECTS
     pr.MIN_CLUSTER_PROJECTS = 1
+    pr.TOKEN_PROVENANCE_MIN_PROJECTS = 1
     try:
         summary = pr.promote(apply=False)   # dry: prove the cluster forms, don't write
     finally:
         pr.MIN_CLUSTER_PROJECTS = saved
+        pr.TOKEN_PROVENANCE_MIN_PROJECTS = saved_tp
     # Same-project pairs are never UNIONED at all (a separate, still-active guard inside
     # _cluster's pairwise loop), so the two notes stay two singleton components - but with the
     # distinct-projects FILTER dropped to 1, both singletons now pass it and both "promote"
@@ -269,6 +373,9 @@ def main() -> int:
     for fn in (test_two_different_projects_are_promoted,
                test_one_project_twice_is_not_promoted,
                test_a_scanner_hit_at_promotion_time_is_not_promoted,
+               test_a_undeclared_product_name_blocks_promotion_via_token_provenance,
+               test_b_shared_generic_wording_is_promoted,
+               test_c_mutation_token_provenance_threshold_of_one,
                test_retire_on_drop_below_two_projects,
                test_a_cache_stamp_mismatch_is_refused,
                test_mutation_removing_the_distinct_projects_check,
