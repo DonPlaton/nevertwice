@@ -534,9 +534,14 @@ def test_a_list_the_engine_cannot_read_is_counted() -> None:
              "pair: [[note-a]], [[note-b]]\n"
              "topics: [[python, testing]]")
         result = check_list_fields(vault)
-        check("a bare link on ANY key (contested, disputed, supersedes, related), a list of "
-              "links and a nested flow list all count",
-              result["detail"].startswith("9 list field"), result["detail"])
+        #: Since 5961f38 the engine reads contested, disputed and supersedes through one list reader
+        #: that takes a link, links in a row and a flow list as meant - so those three are asked of
+        #: that reader and no longer counted; `related`, the list of links, the links in a row and
+        #: the nested flow list still count (auditing session, probe C). Was 9 before.
+        check("the keys the engine reads as lists are not counted; every other key still is",
+              result["detail"].startswith("6 list field")
+              and not any(f": {k}" in result["detail"] for k in ("contested", "disputed", "supersedes")),
+              result["detail"])
 
         sup = folder / "Superseded"
         sup.mkdir()
@@ -544,7 +549,7 @@ def test_a_list_the_engine_cannot_read_is_counted() -> None:
             "---\ntype: decision\ntags: [a, b]\n---\n\nbody\n", encoding="utf-8")
         result = check_list_fields(vault)
         check("a retired note is not counted - nothing reads it any more",
-              result["detail"].startswith("9 list field"), result["detail"])
+              result["detail"].startswith("6 list field"), result["detail"])
 
     #: Isolated, because a total can hide it: on the previous version two wrongly counted
     #: scalars and two wrongly exempted links happened to give the same total of 9.
@@ -555,8 +560,14 @@ def test_a_list_the_engine_cannot_read_is_counted() -> None:
             "---\ntype: decision\nsupersedes: [[2026-01-01-p-decision-x]]\n---\n\nbody\n",
             encoding="utf-8")
         result = check_list_fields(only.parent)
-        check("a bare link in `supersedes` alone is reported, and by its key",
-              result["status"] == doctor.WARN and "supersedes" in result["detail"],
+        check("a bare link in `supersedes` alone is not reported: the engine's reader takes it",
+              result["status"] == doctor.OK, f"{result['status']}: {result['detail']}")
+        (only / "2026-01-07-p-decision-sup.md").write_text(
+            "---\ntype: decision\nsources: [[2026-01-01-1000-p-session-aaaaaaaa]]\n---\n\nbody\n",
+            encoding="utf-8")
+        result = check_list_fields(only.parent)
+        check("a bare link in `sources` alone is reported, and by its key - its reader loses it",
+              result["status"] == doctor.WARN and "sources" in result["detail"],
               f"{result['status']}: {result['detail']}")
         #: The repair must not lead into the defect it reports. "Quote it" alone sends someone to
         #: write `supersedes: "[[note]]"`, which the doctor then reads as fine and the engine
@@ -564,7 +575,7 @@ def test_a_list_the_engine_cannot_read_is_counted() -> None:
         #: (auditing session's probe on ddaf6f0). The engine's form comes first, and quoting is
         #: offered only after it, for a link property.
         r = result["repair"]
-        engine_form, quoted = 'supersedes: ["note"]', '"[[note]]"'
+        engine_form, quoted = 'sources: ["session-stem"]', '"[[note]]"'
         check("the repair names the engine's stem form before it offers quotes",
               engine_form in r and "nevertwice" in r and quoted in r
               and r.index(engine_form) < r.index(quoted), r)

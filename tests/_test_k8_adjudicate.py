@@ -632,6 +632,8 @@ finally:
 check("a retirement that fails undoes the carry: the winner is byte-identical, the pair contested",
       (m.VAULT / "Decisions" / f"{n}.md").read_text(encoding="utf-8") == win_before
       and fm(o).get("contested") == [n], str(res))
+check("and the report counts it as left, not resolved: errors 1, left 1",
+      res.get("errors") == 1 and res.get("left") == 1, str(res))
 
 print("\n- #11: the dry run plans what apply would do, and the report prints it -")
 d = fresh()

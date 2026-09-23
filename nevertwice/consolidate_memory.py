@@ -459,6 +459,10 @@ def adjudicate_contested(apply: bool, has_llm: bool, cap: int | None = None,
                         if not m.supersede_note(old_path, new_stem, via="judge",
                                                 extra_fields={m.CONTESTED_KEY: remaining},
                                                 cache=cache):
+                            #: the pair is still contested on disk: an error, so `left` counts it -
+                            #: "nothing left" over a pair still queued is #4 read the other way
+                            #: (auditing session's case B on 5961f38, a real WinError 32 unlink)
+                            stats["errors"] += 1
                             try:
                                 m.write_atomic(new_path, before)
                                 print(f"      supersede failed for {old_path.name} - left live, still "

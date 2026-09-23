@@ -365,6 +365,10 @@ def _frontmatter_lines(path: Path) -> list[str] | None:
     return None
 
 
+#: The frontmatter keys the engine reads through `_list_field` (see check_list_fields).
+_READ_AS_LIST = ("contested", "disputed", "supersedes")
+
+
 def check_list_fields(vault: Path) -> dict:
     """Frontmatter lists written in a form the engine's parser reads as something else.
 
@@ -426,8 +430,16 @@ def check_list_fields(vault: Path) -> dict:
             if not (list_keys or link_keys):
                 continue
             fm, _ = _m._read_frontmatter("---\n" + "\n".join(lines) + "\n---\n")
-            misread = [k for k in list_keys if not isinstance(fm.get(k), list)]
-            bare = [k for k in link_keys if not isinstance(fm.get(k), list)]
+            #: Keys the engine reads through its one list reader (`_list_field`; the two stamps via
+            #: `_contested_of`) are asked of THAT reader, not of the parser: since 5961f38 it reads
+            #: a link, links in a row and a flow list as intended, so reporting them sent people to
+            #: repair what was not broken (auditing session, probe C). Every other key keeps the
+            #: parser's answer - `sources` among them, whose recurrence reader still takes a string
+            #: for no list at all.
+            read_ok = {k for k in list_keys + link_keys
+                       if k in _READ_AS_LIST and _m._list_field(fm.get(k))}
+            misread = [k for k in list_keys if k not in read_ok and not isinstance(fm.get(k), list)]
+            bare = [k for k in link_keys if k not in read_ok and not isinstance(fm.get(k), list)]
             if misread or bare:
                 notes += 1
                 bad += [f"{p.name}: {k}" for k in misread]
@@ -441,10 +453,11 @@ def check_list_fields(vault: Path) -> dict:
     return _check("list_fields", title, WARN, detail,
                   'rewrite a list as a JSON list on one line - tags: ["a", "b"] - which is the '
                   "form the engine writes and reads back. A bare [[link]] reads as text either way. "
-                  "If the key names notes for nevertwice (contested, disputed, supersedes, sources), "
-                  'write a JSON list of stems WITHOUT brackets - supersedes: ["note"] - because a '
-                  'quoted "[[note]]" there is a stem that does not exist and the pair is lost; only '
-                  'for an Obsidian link property, quote it - related: "[[note]]"')
+                  "For `sources` - the sessions nevertwice counts for recurrence - write a JSON list "
+                  'of session stems WITHOUT brackets - sources: ["session-stem"] - because a string '
+                  "there is read as no list and only the note's own session is counted; "
+                  "contested, disputed and supersedes are read correctly in any of these forms. "
+                  'Only for an Obsidian link property, quote it - related: "[[note]]"')
 
 
 def check_package_matches_repo() -> dict:
