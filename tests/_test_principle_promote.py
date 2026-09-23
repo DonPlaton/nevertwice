@@ -1030,6 +1030,66 @@ def test_p3_mutation_removing_host_extraction_reddens_by_name() -> None:
          "10.0.0.5:5432" not in offending_after_lower, offending_after)
 
 
+def test_p4_never_public_cidr_containment_not_intersection() -> None:
+    """C6c (2026-09-24, the auditor's probe of e46a8bd): `_is_never_public_identifier`'s CIDR
+    path used `.overlaps()`, which flags any SUPERNET of a never-public range too -
+    "0.0.0.0/0" (and "::/0") overlaps EVERY network that exists, including 10.0.0.0/8, but
+    "never open a security group to 0.0.0.0/0" is itself a public, universal principle, not a
+    private address - it must stay False. The fix asks containment, not intersection:
+    never-public only when the MENTIONED range is entirely INSIDE a never-public net
+    (`ip_network(x, strict=False).subnet_of(net)`, same IP version).
+
+    Accepted, pinned by its own case: a CIDR only PARTLY private (10.0.0.0/7 = the private
+    10.0.0.0/8 plus the public 11.0.0.0/8) is NOT flagged either, the same reasoning as
+    0.0.0.0/0 - a range that is not ENTIRELY private is not evidence of a shared private
+    network the way a range that IS entirely private is."""
+    print("\n- C6c: CIDR never-public is containment (subnet_of), not intersection (overlaps) -")
+    pr = _import_fresh()
+    never_public_cases = [
+        ("10.1.0.0/16", "entirely inside 10.0.0.0/8"),
+        ("10.0.0.0/8", "IS a never-public net (a network is a subnet of itself)"),
+        ("fd00::/8", "entirely inside fc00::/7 (IPv6 ULA)"),
+    ]
+    for cidr, label in never_public_cases:
+        check(f"{cidr!r} ({label}): never-public", pr._is_never_public_identifier(cidr), cidr)
+
+    public_cases = [
+        ("0.0.0.0/0", "the whole IPv4 space - a supernet, not a subnet, of 10.0.0.0/8"),
+        ("::/0", "the whole IPv6 space - a supernet, not a subnet, of fc00::/7"),
+        ("8.0.0.0/7", "does not overlap any never-public net at all"),
+        ("10.0.0.0/7", "only PARTLY private (10.0.0.0/8 + public 11.0.0.0/8) - the accepted "
+                       "consequence, pinned"),
+    ]
+    for cidr, label in public_cases:
+        check(f"{cidr!r} ({label}): NOT never-public", not pr._is_never_public_identifier(cidr),
+             cidr)
+
+
+def test_p5_mutation_removing_subnet_containment_reddens_0_0_0_0_0() -> None:
+    """Mutation: restore the OLD `.overlaps()` logic (as if C6c had never been added) - the
+    SAME "0.0.0.0/0" from test_p4 now WRONGLY reads as never-public, proving the
+    containment-not-intersection fix is load-bearing."""
+    print("\n- C6c mutation: reverting to overlaps() wrongly flags 0.0.0.0/0 -")
+    pr = _import_fresh()
+    check("before the mutation: 0.0.0.0/0 is NOT never-public",
+         not pr._is_never_public_identifier("0.0.0.0/0"), "0.0.0.0/0")
+
+    def _old_overlaps_logic(norm: str) -> bool:
+        cidr_match = pr._NEVER_PUBLIC_CIDR_RE.match(norm)
+        if cidr_match:
+            try:
+                candidate_net = ipaddress.ip_network(norm, strict=False)
+            except ValueError:
+                candidate_net = None
+            if candidate_net is not None:
+                return any(candidate_net.overlaps(net) for net in pr._NEVER_PUBLIC_NETWORKS)
+        return False
+
+    check("mutation: the PRE-C6c overlaps() logic wrongly flags 0.0.0.0/0 as never-public "
+         "(would FAIL 'is NOT never-public' above)", _old_overlaps_logic("0.0.0.0/0"),
+         "0.0.0.0/0")
+
+
 def test_n_common_words_is_empty_and_the_guard_still_fires_if_grown_back() -> None:
     """C1b (2026-09-24, the coordinator's decision): `_COMMON_WORDS` is now EMPTY - a
     hand-curated "definitely ordinary" list kept getting partly re-contaminated by the next
@@ -1099,6 +1159,8 @@ def main() -> int:
                test_p_never_public_real_world_forms_alone_and_in_the_full_sentence,
                test_p2_never_public_public_controls_stay_false_after_c6b,
                test_p3_mutation_removing_host_extraction_reddens_by_name,
+               test_p4_never_public_cidr_containment_not_intersection,
+               test_p5_mutation_removing_subnet_containment_reddens_0_0_0_0_0,
                test_n_common_words_is_empty_and_the_guard_still_fires_if_grown_back):
         fn()
     print(f"\nprinciple promote: {PASSED} passed, {FAILED} failed")

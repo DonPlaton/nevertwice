@@ -415,7 +415,20 @@ def _is_never_public_identifier(norm: str) -> bool:
         except ValueError:
             candidate_net = None
         if candidate_net is not None:
-            return any(candidate_net.overlaps(net) for net in _NEVER_PUBLIC_NETWORKS)
+            # C6c (2026-09-24, the auditor's probe of e46a8bd): `.overlaps()` flags any
+            # SUPERNET of a never-public range too - "0.0.0.0/0" (or "::/0") overlaps every
+            # network that exists, including 10.0.0.0/8, but "never open a security group to
+            # 0.0.0.0/0" is itself a public, universal principle, not a private address. The
+            # right question is containment, not intersection: never-public only when the
+            # MENTIONED range is entirely INSIDE a never-public net (`subnet_of`, same IP
+            # version - mixing v4/v6 in one comparison raises TypeError, so the version check
+            # comes first and short-circuits it). Accepted consequence: a CIDR only PARTLY
+            # private (10.0.0.0/7 = the private 10.0.0.0/8 plus the public 11.0.0.0/8) is NOT
+            # flagged either - the same reasoning as 0.0.0.0/0, and equally accepted, not a
+            # gap to close: a range that is not ENTIRELY private is not evidence of a shared
+            # private network the way a range that IS entirely private is.
+            return any(candidate_net.version == net.version and candidate_net.subnet_of(net)
+                      for net in _NEVER_PUBLIC_NETWORKS)
     host = _never_public_host(norm)
     try:
         addr = ipaddress.ip_address(host)
