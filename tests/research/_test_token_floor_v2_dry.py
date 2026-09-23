@@ -128,8 +128,14 @@ mini_groups = {first_group: {"session_ids": g["session_ids"][:2],
                              "question_ids": g["question_ids"][:2]}}
 qids = set(mini_groups[first_group]["question_ids"])
 mini_data = [e for e in data if e["question_id"] in qids]
-toks = tf.tokenizers()
-check("a tokenizer is available for this suite", bool(toks))
+#: A stub, not `tf.tokenizers()`: that asks for tiktoken, which is not installed on the CI
+#: matrix and fetches its encoding files over the network on first use - a hermetic suite can
+#: have neither. The counts are not what this block tests (the rows' fields and reasons are);
+#: `_count` only needs a name -> encode mapping, and a deterministic whitespace count gives it
+#: one. Found by the first CI run of this suite (run 35929566950, 2026-09-24).
+toks = {"stub/whitespace": {"version": "test", "encode": lambda s: len(s.split())}}
+check("the stub tokenizer is wired in and counts deterministically",
+      toks["stub/whitespace"]["encode"]("a b  c") == 3)
 res = tf.run_nevertwice(mini_data, pool, toks, None, groups=mini_groups, dry=True,
                         corpus_name="code_sessions_v1")
 check("run_nevertwice did not block", "blocked" not in res, res.get("blocked", ""))

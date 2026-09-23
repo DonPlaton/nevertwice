@@ -167,9 +167,15 @@ check("promotion-stage still catches the undeclared entity",
 
 print("\n- main(['--dry']) exits 0 and writes nothing -")
 make_sandbox(m, "cpb_extract_dry_main_", offline=True)
+#: Compared before/after, not "does not exist": cpb.OUT sits in .loop/explore/, where a real
+#: exploration run of this stand legitimately leaves its artifact - a working tree that has run
+#: the stand failed this check without --dry writing anything (step-4 merge, 2026-09-24).
+_out_before = (cpb.OUT.stat().st_mtime_ns, cpb.OUT.stat().st_size) if cpb.OUT.exists() else None
 rc = cpb.main(["--dry"])
 check("--dry exits 0", rc == 0, str(rc))
-check("--dry does not create the results artifact", not cpb.OUT.exists(), str(cpb.OUT))
+_out_after = (cpb.OUT.stat().st_mtime_ns, cpb.OUT.stat().st_size) if cpb.OUT.exists() else None
+check("--dry neither creates nor rewrites the results artifact", _out_after == _out_before,
+      f"{cpb.OUT}: {_out_before} -> {_out_after}")
 
 print("\n- CLI flag combinations resolve to the right extractor mode -")
 
