@@ -67,6 +67,8 @@ TOP_SITUATION = 3
 CHAR_BUDGET = int(os.environ.get("CODESESS_CHAR_BUDGET", "24000"))
 ARMS = ("nevertwice_full", "naive", "mem0_infer")
 BRACKETS = ("none", "oracle")
+#: F6: the only arm whose contexts read our engine - naive/mem0_infer never touch nevertwice/.
+ENGINE_ARMS = ("nevertwice_full",)
 _SEP = re.compile(r"[\s_\-]+")
 
 
@@ -446,6 +448,8 @@ def main() -> int:
             print(f"unknown arm {args.arm!r}; have {', '.join(CONTEXT_FNS)}")
             return 2
         ctx = fn(corpus, seed_pairs=args.seed_pairs) if args.arm == "nevertwice_full" else fn(corpus)
+        if args.arm in ENGINE_ARMS:
+            fe.stamp_engine_commit(ctx)
         fe._save(_ctx_path(args.arm), ctx)
         print(f"  {args.arm}: contexts for {len([k for k in ctx if not k.startswith('_')])} questions -> {_ctx_path(args.arm).name}")
         return 0
@@ -469,6 +473,16 @@ def main() -> int:
     if args.stage == "answer":
         answer_stage(arms, qs, pool, READER)
         return 0
+    # F6: judge/summary/--save can make zero model calls on complete caches, and would restamp
+    # an OLD engine measurement as today's (frontier_eval.check_engine_freshness - the one
+    # shared implementation, not a second independently-matched copy of "is this cache current").
+    problems = fe.check_engine_freshness(arms, ENGINE_ARMS, _ctx_path,
+                                         "python research/code_sessions_eval.py")
+    if problems:
+        print("F6 guard: refusing - a cached engine context is stale relative to HEAD:")
+        for p in problems:
+            print(f"  - {p}")
+        return 2
     if args.stage == "judge":
         judge_stage(arms, qs, READER, JUDGE)
     res = summarise(arms, qs, corpus, READER, JUDGE)

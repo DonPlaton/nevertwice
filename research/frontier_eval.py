@@ -73,6 +73,104 @@ CHAR_BUDGET = int(os.environ.get("FRONTIER_CHAR_BUDGET", "90000"))   # ~22k toke
 ARMS = ("nevertwice_whole", "nevertwice_snippet", "nevertwice_full", "mem0", "mem0_infer",
         "amem_full", "langmem_full")
 BRACKETS = ("none", "oracle")
+#: The arms whose contexts read OUR engine - `contexts_nevertwice`/`contexts_nevertwice_full`.
+#: The competitor arms (mem0*, amem_full, langmem_full) read a competitor's own store or
+#: pipeline and never touch `nevertwice/`, so a commit here cannot restamp what they measured.
+ENGINE_ARMS = ("nevertwice_whole", "nevertwice_snippet", "nevertwice_full")
+
+
+# ── F6: the restamp trap ────────────────────────────────────────────────────────
+#
+# With complete answer/verdict caches, `judge --save` and `summary` make ZERO model calls -
+# every key the loop looks for is already there - and `tools/remeasure.py` decides an artifact
+# is fresh by reading ITS OWN mtime, not the code that produced the numbers inside it. Running
+# either stage today re-writes `frontier.json` with today's timestamp, over numbers an ENGINE
+# arm's cache produced on an OLD commit - a restamp, not a measurement. The guard: every cached
+# `contexts` entry for an engine arm records the commit it was produced at
+# (`stamp_engine_commit`), and `judge`/`summary`/`--save` refuse when that commit is not
+# provably still current (`check_engine_freshness`) - named after `tools/produced_by.py`'s own
+# question, "has the code moved since this number was measured?", asked at read time instead of
+# left to a manifest's freshness check that never sees this file's cache at all.
+
+def git_head() -> str:
+    import subprocess                                              # noqa: PLC0415
+    try:
+        return subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(ROOT), capture_output=True,
+                              text=True, timeout=10, check=True).stdout.strip()
+    except (OSError, ValueError) as e:
+        return f"?({type(e).__name__})"
+    except Exception:                                              # noqa: BLE001
+        return "?"
+
+
+def git_diff_quiet(base: str, paths: list[str]) -> bool:
+    """True iff nothing under `paths` differs between `base` and HEAD. Any git failure (a bad or
+    unresolvable revision, no git on PATH) reads as "changed": this exists to refuse a stale
+    restamp, and an unprovable "unchanged" must not pass as one."""
+    import subprocess                                              # noqa: PLC0415
+    if not base or not paths:
+        return False
+    try:
+        res = subprocess.run(["git", "diff", "--quiet", base, "HEAD", "--", *paths],
+                             cwd=str(ROOT), timeout=30, capture_output=True)
+        return res.returncode == 0
+    except (OSError, ValueError):
+        return False
+
+
+def engine_closure(entry_command: str) -> list[str]:
+    """The repo files `entry_command` depends on (`tools/produced_by.py`, static AST walk - no
+    GPU, no execution). `entry_command` is a full command string, e.g.
+    "python research/frontier_eval.py" - the arguments after the entry file do not affect the
+    import closure, only which file is the entry point."""
+    sys.path.insert(0, str(ROOT / "tools"))
+    import produced_by as pb                                       # noqa: PLC0415
+    return pb.closure(entry_command)
+
+
+def stamp_engine_commit(ctx: dict) -> dict:
+    """Mark a `contexts` cache entry for an ENGINE arm with the commit it was produced at, so a
+    later `judge`/`summary`/`--save` can tell a fresh cache from a restamped one. `_`-prefixed,
+    the convention `_ingest`/`_store` already use for cache metadata that is not a question id."""
+    ctx["_engine_commit"] = git_head()
+    return ctx
+
+
+def check_engine_freshness(arms: list[str], engine_arms: tuple[str, ...], ctx_path_fn,
+                           entry_command: str) -> list[str]:
+    """Refusal messages for every requested arm in `engine_arms` whose cached `contexts` entry
+    is stale relative to HEAD, or carries no recorded commit at all (a legacy cache from before
+    this check existed - refused the same way, since staleness cannot be proven either way for
+    it). Empty means every engine arm named in `arms` that HAS a cache is provably still
+    current; an arm with no cache yet is not this function's job - the stage that reads it
+    (`answer_stage`/`judge_stage`) already reports that absence on its own.
+
+    `ctx_path_fn` and `entry_command` are the one seam this function is shared through
+    (`code_sessions_eval.py` calls it with its own `_ctx_path` and its own entry command) -
+    two research scripts must not each carry an independently-matched copy of "is this cache
+    still current"."""
+    wanted = [a for a in arms if a in engine_arms]
+    if not wanted:
+        return []
+    head = git_head()
+    closure = engine_closure(entry_command)
+    rerun_prefix = f"{entry_command} contexts --arm"
+    problems = []
+    for arm in wanted:
+        ctx = _load(ctx_path_fn(arm))
+        if not ctx:
+            continue
+        recorded = ctx.get("_engine_commit")
+        if not recorded:
+            problems.append(f"{arm}: cached contexts carry no recorded engine commit (a legacy "
+                            f"cache from before this check) - rerun: {rerun_prefix} {arm}")
+            continue
+        if recorded == head or git_diff_quiet(recorded, closure):
+            continue
+        problems.append(f"{arm}: cached contexts were produced at {recorded[:12]}, HEAD is "
+                        f"{head[:12]}, and the engine has changed since - rerun: "
+                        f"{rerun_prefix} {arm}")
+    return problems
 
 
 def _ctx_path(arm: str) -> Path:
@@ -535,6 +633,8 @@ def main() -> int:
                   f"its memories live in process and are not retained after the head-to-head run)")
             return 2
         ctx = fn(data, pool)
+        if args.arm in ENGINE_ARMS:
+            stamp_engine_commit(ctx)
         _save(_ctx_path(args.arm), ctx)
         n_items = sum(len(v) for k, v in ctx.items() if not k.startswith("_"))
         print(f"  {args.arm}: contexts for {len([k for k in ctx if not k.startswith('_')])} questions, "
@@ -543,6 +643,14 @@ def main() -> int:
     if args.stage == "answer":
         answer_stage(arms, data, pool, READER, CHAR_BUDGET)
         return 0
+    # F6: judge/summary/--save can make zero model calls on complete caches, and would restamp
+    # an OLD engine measurement as today's - refuse before either stage runs, not after.
+    problems = check_engine_freshness(arms, ENGINE_ARMS, _ctx_path, "python research/frontier_eval.py")
+    if problems:
+        print("F6 guard: refusing - a cached engine context is stale relative to HEAD:")
+        for p in problems:
+            print(f"  - {p}")
+        return 2
     if args.stage == "judge":
         judge_stage(arms, data, READER, JUDGE, JUDGE2, args.agree_n)
     res = summarise(arms, data, READER, JUDGE, JUDGE2)
