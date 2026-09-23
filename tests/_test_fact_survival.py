@@ -123,8 +123,36 @@ _big = "a/b.c-d" * 6800            # ~48 kB of the same
 MIN_CALLS, MIN_RUNS = 8, 12
 
 
-def _cost(fn) -> float:
-    """Seconds per call: the cheapest of MIN_RUNS runs of enough calls to clear the timer.
+def _calls_for(fn) -> int:
+    """How many calls one timed batch of `fn` needs to clear the timer (see `_cost_pair`)."""
+    n = 1
+    while True:
+        t0 = time.perf_counter()
+        for _ in range(n):
+            fn()
+        span = time.perf_counter() - t0
+        #: MIN_CALLS is about the TIMER, and a call that already takes 50 ms has cleared it
+        #: many times over - repeating such a call eight times buys resolution nobody needs and
+        #: costs the suite minutes. It is not hypothetical: the pathological shape this gate
+        #: exists to catch runs 0.26 s at 12 kB and 4.09 s at 48 kB, so a floor of eight calls
+        #: would make the suite spend seven minutes before reporting the pattern as slow. The
+        #: escape hatch changes nothing for the eighteen real patterns, whose calls are 0.1 to
+        #: 1.3 ms - three orders of magnitude under it - and the sweep above was measured with
+        #: it in place.
+        #: 5 ms, not 1: the auditing session's reading of the same macOS failure - a batch shorter
+        #: than the runner's scheduling quantum is decided by one pause, and the minimum over runs
+        #: cannot remove what hit a batch that short every time. Turns remove the long bursts,
+        #: the longer batch the short ones.
+        if (span >= 0.005 and (n >= MIN_CALLS or span / n >= 0.05)) or n >= 512:
+            return n
+        n *= 8
+
+
+def _cost_pair(small_fn, big_fn) -> tuple[float, float]:
+    """Seconds per call for both inputs: the cheapest of MIN_RUNS runs of enough calls to
+    clear the timer, the two inputs measured in TURNS - small, big, small, big.
+
+    Why the cheapest of many runs (this was `_cost`, measured one input at a time):
 
     A single `perf_counter` pair measures the machine as much as the code, and the gate below
     leaves only TWO times of headroom by construction - the input is four times bigger and the
@@ -157,50 +185,48 @@ def _cost(fn) -> float:
 
     Swept on a quiet machine, 18 patterns x 7 repeats, worst ratio observed against a true 4.0:
 
-        runs=4  n>=1    5.21      0.7 s     <- what shipped, and what macOS crossed
-        runs=4  n>=8    5.61      2.2 s
-        runs=12 n>=8    4.42      5.5 s     <- here
-        runs=30 n>=8    4.49     12.9 s
-        runs=12 n>=64   4.33     41.1 s
+    runs=4  n>=1    5.21      0.7 s     <- what shipped, and what macOS crossed
+    runs=4  n>=8    5.61      2.2 s
+    runs=12 n>=8    4.42      5.5 s     <- here
+    runs=30 n>=8    4.49     12.9 s
+    runs=12 n>=64   4.33     41.1 s
 
     The median was 3.97-4.00 at every setting, which answers the question the gate asks: these
     patterns are linear, and what moved was the instrument. Twelve runs is the knee - thirty buys
     nothing, and a floor of 64 calls buys 0.09 for seven times the wall clock. At twelve the worst
     observation sits 11% above the truth instead of 31%, which is the headroom the gate of eight
     needs in order to be about the code.
+
+    Why in turns:
+
+    Measured one at a time, the small input's twelve runs came and then the big input's twelve,
+    its own window of wall time. A burst of contention on a shared runner that covers the second
+    window - some 150 ms - raises every one of the big input's runs, and the minimum cannot
+    remove what hit all of them. That is the macOS 3.12 failure of e0e6924's matrix run:
+    `0.00019->0.00154 = 8.3x` on the IP:port pattern, whose ratio is 4.0 at every setting of the
+    sweep above. Taking the two in turns puts the same burst over both sides:
+    a slow window now costs one run of each, and the minima come from the runs it missed. The
+    gate asks about the ratio, so the two numbers must share their moments.
     """
-    n = 1
-    while True:
-        t0 = time.perf_counter()
-        for _ in range(n):
-            fn()
-        span = time.perf_counter() - t0
-        #: MIN_CALLS is about the TIMER, and a call that already takes 50 ms has cleared it
-        #: many times over - repeating such a call eight times buys resolution nobody needs and
-        #: costs the suite minutes. It is not hypothetical: the pathological shape this gate
-        #: exists to catch runs 0.26 s at 12 kB and 4.09 s at 48 kB, so a floor of eight calls
-        #: would make the suite spend seven minutes before reporting the pattern as slow. The
-        #: escape hatch changes nothing for the eighteen real patterns, whose calls are 0.1 to
-        #: 1.3 ms - three orders of magnitude under it - and the sweep above was measured with
-        #: it in place.
-        if (span >= 0.001 and (n >= MIN_CALLS or span / n >= 0.05)) or n >= 512:
-            break
-        n *= 8
-    best = span / n
+    ns, nb = _calls_for(small_fn), _calls_for(big_fn)
+    best_s = best_b = float("inf")
     for _ in range(MIN_RUNS):
         t0 = time.perf_counter()
-        for _ in range(n):
-            fn()
-        best = min(best, (time.perf_counter() - t0) / n)
-    return best
+        for _ in range(ns):
+            small_fn()
+        best_s = min(best_s, (time.perf_counter() - t0) / ns)
+        t0 = time.perf_counter()
+        for _ in range(nb):
+            big_fn()
+        best_b = min(best_b, (time.perf_counter() - t0) / nb)
+    return best_s, best_b
 
 
-def _harvest_cost(src: str) -> float:
-    return _cost(lambda: m._harvest_literals(src, "a build note about paths",
-                                             want=10, exclude=set()))
+def _harvest(src: str):
+    return lambda: m._harvest_literals(src, "a build note about paths", want=10, exclude=set())
 
 
-_t_small, _t_big = _harvest_cost(_small), _harvest_cost(_big)
+_t_small, _t_big = _cost_pair(_harvest(_small), _harvest(_big))
 check("four times the text costs less than eight times the work"
       f" ({_t_small:.3f}s -> {_t_big:.3f}s)", _t_big < 8 * max(_t_small, 1e-6))
 check(f"and 48 kB of it stays under a second ({_t_big:.3f}s)", _t_big < 1.0)
@@ -208,8 +234,7 @@ check(f"and 48 kB of it stays under a second ({_t_big:.3f}s)", _t_big < 1.0)
 # The rule for every pattern, so the next one added cannot be quadratic either.
 _slow = []
 for _rx in m._LIT_PATTERNS:
-    _a = _cost(lambda rx=_rx: rx.findall(_small))
-    _b = _cost(lambda rx=_rx: rx.findall(_big))
+    _a, _b = _cost_pair(lambda rx=_rx: rx.findall(_small), lambda rx=_rx: rx.findall(_big))
     if _b > 8 * max(_a, 1e-6):
         #: The RATIO, not only the two times it came from. `0.0001->0.0013` is where the macOS
         #: report stopped, leaving a reader to divide two rounded numbers to learn whether the
@@ -217,6 +242,18 @@ for _rx in m._LIT_PATTERNS:
         _slow.append(f"{_rx.pattern[:40]} {_a:.5f}->{_b:.5f} = {_b / max(_a, 1e-6):.1f}x "
                      f"(linear is 4.0, gate is 8.0)")
 check("no literal pattern is superlinear: " + "; ".join(_slow[:3]), not _slow)
+
+#: The control the gate must keep failing (auditing session, e0e6924): a pattern that IS
+#: quadratic - from every start in a colon-free run it scans to the end - timed by the same
+#: instrument at a size where it costs milliseconds, not seconds (2.4 kB and 9.5 kB: 16.2x
+#: measured, the square of four). An instrument steadied until it can no longer see this would
+#: be a gate reporting on nothing.
+import re  # noqa: E402
+_ctl = re.compile(r"[a-z/.-]+:")
+_ctl_small, _ctl_big = "a/b.c-d" * 340, "a/b.c-d" * 1360
+_ca, _cb = _cost_pair(lambda: _ctl.findall(_ctl_small), lambda: _ctl.findall(_ctl_big))
+check(f"and the instrument still sees a quadratic one ({_cb / max(_ca, 1e-6):.1f}x, gate 8.0)",
+      _cb > 8 * max(_ca, 1e-6))
 
 # And it still finds what it exists for.
 _IMG = m._LIT_PATTERNS[2]
