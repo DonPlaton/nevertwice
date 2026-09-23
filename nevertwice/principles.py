@@ -185,42 +185,86 @@ def _identifier_shaped_words(sentence: str) -> set[str]:
     return words
 
 
-def _identifier_shaped_tokens(sentence: str) -> set[str]:
-    """`_content_tokens`-shaped tokens (lowercased, hyphen/underscore-split, stopword-filtered)
-    that came from an identifier-shaped raw word (`_identifier_shaped_words`) - the SUBSET of a
-    sentence's content tokens `_token_provenance` actually has to corroborate. An ordinary word
-    ("cap", "resource", "workload") is never in this set, however many or few projects'
-    corpora happen to use it - it needs no corroboration at all."""
-    out: set[str] = set()
-    for word in _identifier_shaped_words(sentence):
-        out |= _content_tokens(word)
-    return out
+def _normalize_shaped_word(word: str) -> str:
+    """The identity a compound identifier is corroborated BY (B1, coordinator decision
+    2026-09-24): lowercased, with "-" and "_" UNIFIED - the same name spelled kebab by one
+    project and snake by another ("payments-api" / "payments_api") is still the same name, and
+    treating them as different would let a private identifier cross just by respelling it. "."
+    and "/" are left AS-IS, never unified with "-"/"_": they carry host and path STRUCTURE
+    ("payments-api" is not "payments.api", a different name in a different shape), where a
+    hyphen is not interchangeable with either."""
+    return word.strip(".,;:!?()[]{}\"'").lower().replace("_", "-")
+
+
+def _project_shaped_word_vocabulary(project: str) -> set[str]:
+    """Every identifier-shaped WORD (2026-09-24, H6/B1 - `_identifier_shaped_words`, normalized
+    whole by `_normalize_shaped_word`) across `project`'s own live typed notes - title,
+    description, principle, entities and tags, the same fields `_project_token_vocabulary`
+    reads.
+
+    B1 fix: a compound is corroborated as the WHOLE compound it is, never split into
+    `_content_tokens` parts. The pre-fix code ran a shaped word through `_content_tokens`
+    (`payments-api` -> {"payments", "api"}) and looked each PART up separately in a project's
+    ordinary (also-split) vocabulary - so a project that merely used the words "payments" and
+    "api" somewhere in ordinary prose, and never the compound "payments-api" at all, silently
+    corroborated it. This vocabulary is built from WHOLE normalized shaped words instead, kept
+    in `vocab_cache` under a DISTINCT key from `_project_token_vocabulary`'s (different
+    identity space - a compound and its own parts are not interchangeable lookups).
+
+    FAIL CLOSED (same discipline `_project_token_vocabulary` follows): a note, or a whole
+    project, that cannot be read contributes NOTHING."""
+    vocab: set[str] = set()
+    for ntype in m.TYPED_TYPES:
+        folder = m.VAULT / m.TYPE_FOLDER[ntype]
+        if not folder.exists():
+            continue
+        for p in sorted(folder.glob("*.md")):
+            parsed = m.parse_typed_stem(p.stem)
+            if not parsed or parsed["project"] != project:
+                continue
+            try:
+                text = p.read_text(encoding="utf-8", errors="replace")
+            except OSError:
+                continue
+            fm, body = m._read_frontmatter(text)
+            title, desc, _prevention = m._parse_note_body(body.split("\n"))
+            for field_text in (title, desc):
+                vocab |= {_normalize_shaped_word(w) for w in _identifier_shaped_words(field_text)}
+            principle = fm.get("principle")
+            if isinstance(principle, str):
+                vocab |= {_normalize_shaped_word(w) for w in _identifier_shaped_words(principle)}
+            ents = fm.get("entities")
+            if isinstance(ents, list):
+                for e in ents:
+                    vocab |= {_normalize_shaped_word(w)
+                             for w in _identifier_shaped_words(str(e))}
+            tags = fm.get("tags")
+            if isinstance(tags, list):
+                for t in tags:
+                    vocab |= {_normalize_shaped_word(w)
+                             for w in _identifier_shaped_words(str(t))}
+    return vocab
 
 
 #: NOT a dictionary - none is available without a third-party dependency, and this module is
-#: "standard library + the engine only". A short, evidence-grown list of ordinary English/
-#: technical words common enough that being unique to one project's SMALL corpus is coincidence,
-#: not a private identifier - grown from this project's own test fixtures and the vocabulary
-#: `research/cross_project_bench.py`'s real 100-case run actually produced, the same discipline
-#: `_STOPWORDS` and `_INFRA_HYPHEN_TOKENS` follow. KNOWN LIMITATION, stated plainly rather than
-#: covered silently (owner instruction, 2026-09-24): a genuinely ordinary word missing from this
-#: list, unique to one project's corpus, is still flagged and asked for corroboration it may not
-#: have - the SAME over-cautious failure mode H6 already accepts for identifier-shaped tokens,
-#: now also possible for an ordinary word this list does not contain. Widen it from a real false
-#: positive on a real store, never by guessing more words in.
+#: "standard library + the engine only". A short list of ordinary English words common enough
+#: that being unique to one project's SMALL corpus is coincidence, not a private identifier -
+#: the same discipline `_STOPWORDS` and `_INFRA_HYPHEN_TOKENS` follow, EXCEPT the source: this
+#: list is grown ONLY from this project's own unit-test fixtures (`tests/
+#: _test_principle_promote.py`'s `_VECS`) or from generic vocabulary NOT taken from any
+#: `research/` bench corpus (2026-09-24 correction - the auditor independently confirmed the
+#: first cut was tuned on the evaluation population itself: 100 of its ~140 words occurred >=3
+#: times in `research/cross_project_bench.py`'s own generated cases and artifacts, which
+#: inflates exactly the promotion numbers the G5 gates read). NEVER grown from any `research/`
+#: bench corpus; grow only from a false positive on a REAL store. KNOWN LIMITATION, stated
+#: plainly rather than covered silently (the coordinator's instruction, 2026-09-24): a
+#: genuinely ordinary word missing from this list, unique to one project's corpus, is still
+#: flagged and asked for corroboration it may not have - the SAME over-cautious failure mode H6
+#: already accepts for identifier-shaped tokens, now also possible for an ordinary word this
+#: list does not contain.
 _COMMON_WORDS = frozenset("""
 cap limit bound parameter resource ceiling scaling increasing workload load measure assuming
-bottleneck redact secrets writing anything disk always never write read logs persistent
-storage avoid security related failures sanitize sensitive information data persisting shared
-acquiring lock prevent stale values critical section reading inside outside race conditions
-changes interval acquire hold connection pool queue worker service table index schema column
-config value default fallback check error handle backoff deadline test unit integration mock
-stub fixture assert verify validate boundary edge case memory leak free allocate deallocate
-buffer overflow underflow network request response latency throughput bandwidth socket
-database retry timeout cache migration client side isolation credential durable health check
-mocking mock integration tests instance real genuine ensure surface bugs migrations trace
-traced replica lags behind deploy primary catch drained requests dropped state corrupts
-migrator running silently drops messages split payloads publishing kicked kick draining
+bottleneck redact secrets writing anything disk
 """.split())
 
 
@@ -241,15 +285,21 @@ def _all_live_projects() -> set[str]:
 
 
 def _is_uncorroborated_private_word(tok: str, source_project: str, vocab_cache: dict) -> bool:
-    """Owner's rule (2026-09-24, the second H6 residual): a plain lowercase word ("phoenix") or
-    a hyphenated one whose parts are not infra nouns ("acme-corp") has NO shape this layer can
-    key on at all - `_identifier_shaped_words` cannot flag either. So flag by CORPUS EVIDENCE
-    instead: `tok` counts as a private word when it appears in `source_project`'s OWN
-    vocabulary, appears in NO OTHER live project's vocabulary anywhere in the vault (not only
-    this cluster's members), AND is not on the `_COMMON_WORDS` list. A token failing only the
-    first two conditions but ON `_COMMON_WORDS` is treated as an ordinary word this project's
-    corpus simply happens to be the only one using yet - the same reasoning `_token_provenance`
-    already applies to every non-identifier-shaped token."""
+    """The coordinator's rule (2026-09-24, the second H6 residual): a plain lowercase word
+    ("phoenix") or a hyphenated one whose parts are not infra nouns ("acme-corp") has NO shape
+    this layer can key on at all - `_identifier_shaped_words` cannot flag either. So flag by
+    CORPUS EVIDENCE instead: `tok` counts as a private word when it appears in
+    `source_project`'s OWN vocabulary, appears in NO OTHER live project's vocabulary anywhere in
+    the vault (not only this cluster's members), AND is not on the `_COMMON_WORDS` list. A token
+    failing only the first two conditions but ON `_COMMON_WORDS` is treated as an ordinary word
+    this project's corpus simply happens to be the only one using yet - the same reasoning
+    `_token_provenance` already applies to every non-identifier-shaped token.
+
+    Only called on tokens that are NOT part of any identifier-shaped word (B1) - a shaped
+    compound's own parts ("payments"/"api" from "payments-api") are corroborated as the WHOLE
+    compound by `_project_shaped_word_vocabulary` instead; checking them AGAIN here individually
+    would apply a second, unrelated identity space to the same text and could flag an ordinary
+    word this list happens not to cover for reasons that have nothing to do with the compound."""
     if tok in _COMMON_WORDS:
         return False
     if source_project not in vocab_cache:
@@ -268,37 +318,57 @@ def _is_uncorroborated_private_word(tok: str, source_project: str, vocab_cache: 
 
 def _token_provenance(sentence: str, source_project: str, cluster_projects: set,
                       vocab_cache: dict) -> tuple[bool, list]:
-    """Every token of `sentence` that is EITHER identifier-shaped (2026-09-24, H6 - see
-    `_identifier_shaped_tokens`) OR an uncorroborated private word with no shape at all
-    (`_is_uncorroborated_private_word` - the owner's rule for "phoenix"/"acme-corp", 2026-09-24)
-    must occur in the vocabulary of at least TOKEN_PROVENANCE_MIN_PROJECTS of `cluster_projects`
-    - "repetition proves universality" (the same idea the >=2-project CLUSTER rule already
-    applies to the whole sentence), now applied per flagged token. A client's product name that
-    only ONE project ever wrote cannot pass this, whether or not the extractor happened to
-    declare it as an entity - unlike the write-time scanner (`principle_scan`, gated on declared
-    entities), this check asks the CORPUS, not the extraction, so nothing the extractor did or
-    did not declare can defeat it. `vocab_cache` is built once per `promote()` run and shared
-    across every cluster's checks AND across the whole-vault uniqueness scan (the plan's own
-    "build it once per promote run and cache it by project").
+    """Two independent checks over `sentence`, each against `TOKEN_PROVENANCE_MIN_PROJECTS` of
+    `cluster_projects` - "repetition proves universality" (the same idea the >=2-project CLUSTER
+    rule already applies to the whole sentence):
 
-    BEFORE this fix (H6, 2026-09-24), EVERY content token needed >=2-project corroboration,
-    including the ordinary English words a genuine cross-project PARAPHRASE is full of ("cap",
-    "resource", "workload", "scaling") - each project's own vocabulary is usually just its one
-    note's own wording, so two honest paraphrases of the same rule almost never share enough
-    exact words to pass, and the check rejected the layer's whole PURPOSE along with the
-    identifiers it was built to catch. Measured on the v2 100-case real run
-    (cross_project_v2.json, after 6409070 fixed the rescan self-rejection ahead of this): of the
-    57 cosine>=0.75 pairs, 46 would now actually reach clustering, and the OLD every-token rule
-    rejected effectively all of them - see the recount in this commit's message for the exact
-    numbers and why.
+      1. every identifier-shaped WORD (2026-09-24, H6/B1 - `_identifier_shaped_words`,
+         corroborated as the WHOLE normalized compound via `_project_shaped_word_vocabulary`,
+         never split into parts - see that function's own docstring for why the split version
+         was wrong);
+      2. every OTHER content token (not part of any shaped word) that is an uncorroborated
+         private word with no shape at all (`_is_uncorroborated_private_word` - the
+         coordinator's rule for "phoenix"/"acme-corp", 2026-09-24).
+
+    A client's product name that only ONE project ever wrote cannot pass this, whether or not
+    the extractor happened to declare it as an entity - unlike the write-time scanner
+    (`principle_scan`, gated on declared entities), this check asks the CORPUS, not the
+    extraction, so nothing the extractor did or did not declare can defeat it. `vocab_cache` is
+    built once per `promote()` run and shared across every cluster's checks AND across the
+    whole-vault uniqueness scan (the plan's own "build it once per promote run and cache it by
+    project") - the shaped-word vocabulary is cached under a DISTINCT key
+    (`(project, "shaped")`) from the plain content-token vocabulary, since they are different
+    identity spaces over the same notes.
+
+    BEFORE H6 (2026-09-24), EVERY content token needed >=2-project corroboration, including the
+    ordinary English words a genuine cross-project PARAPHRASE is full of ("cap", "resource",
+    "workload", "scaling") - each project's own vocabulary is usually just its one note's own
+    wording, so two honest paraphrases of the same rule almost never share enough exact words to
+    pass, and the check rejected the layer's whole PURPOSE along with the identifiers it was
+    built to catch.
 
     Returns (passes, offending_tokens) - offending is empty exactly when it passes."""
-    id_tokens = _identifier_shaped_tokens(sentence)
-    offending = []
+    shaped_words = _identifier_shaped_words(sentence)
+    shaped_subtokens = {t for w in shaped_words for t in _content_tokens(w)}
+    offending: list = []
+
+    for word in shaped_words:
+        norm = _normalize_shaped_word(word)
+        seen_in = 0
+        for proj in cluster_projects:
+            cache_key = (proj, "shaped")
+            if cache_key not in vocab_cache:
+                vocab_cache[cache_key] = _project_shaped_word_vocabulary(proj)
+            if norm in vocab_cache[cache_key]:
+                seen_in += 1
+        if seen_in < TOKEN_PROVENANCE_MIN_PROJECTS:
+            offending.append(norm)
+
     for tok in _content_tokens(sentence):
-        if tok not in id_tokens and not _is_uncorroborated_private_word(
-                tok, source_project, vocab_cache):
-            continue          # an ordinary, corroborated-or-common word needs nothing further
+        if tok in shaped_subtokens:
+            continue           # corroborated (or not) as a WHOLE compound above, not again here
+        if not _is_uncorroborated_private_word(tok, source_project, vocab_cache):
+            continue           # an ordinary, corroborated-or-common word needs nothing further
         seen_in = 0
         for proj in cluster_projects:
             if proj not in vocab_cache:

@@ -64,7 +64,7 @@ _VECS = {
     # H6-era update to test (a) below: C's own invented private name, so NEITHER side has a
     # clean fallback the other could be promoted through instead (see that test's own comment).
     "cap a resource-bound parameter before scaling globex-nimbus-array.": [1.0, 0.0, 0.0],
-    # The owner's exact nine-name probe (2026-09-24) - one principle per private name, C always
+    # The auditor's exact nine-name probe (2026-09-24) - one principle per private name, C always
     # poisoned with its own distinct private name (no clean fallback), plus the public
     # "consumer-group" concept pair (H6, promoted, corroborated by both).
     "cap a resource-bound parameter before scaling useauthstore.": [1.0, 0.0, 0.0],
@@ -483,10 +483,12 @@ def test_h_private_shaped_name_blocks_promotion_per_shape() -> None:
     for - A's OWN shape-specific token blocking THAT candidate."""
     print("\n- (b) H6: a private camel/kebab/snake name blocks promotion, token named -")
     c_poisoned = "Cap a resource-bound parameter before scaling globex-nimbus-array."
+    # B1 (2026-09-24): the offending token is the WHOLE normalized compound now, not a split
+    # part - "billing_service" normalizes to "billing-service" ("_" unified with "-").
     cases = [
         ("camel", "cap a resource-bound parameter before scaling UserRepository.", "userrepository"),
-        ("kebab", "cap a resource-bound parameter before scaling payments-api.", "payments"),
-        ("snake", "cap a resource-bound parameter before scaling billing_service.", "billing"),
+        ("kebab", "cap a resource-bound parameter before scaling payments-api.", "payments-api"),
+        ("snake", "cap a resource-bound parameter before scaling billing_service.", "billing-service"),
     ]
     for shape, poisoned, offending_tok in cases:
         make_sandbox(m, f"pp_h6_b_{shape}_", offline=True)
@@ -497,8 +499,11 @@ def test_h_private_shaped_name_blocks_promotion_per_shape() -> None:
         check(f"{shape}: both source notes were written", bool(s_a) and bool(s_c),
               f"{s_a}/{s_c}")
         fm_a = m._read_frontmatter_file(m.VAULT / "Patterns" / f"{s_a}.md")
+        # offending_tok is the NORMALIZED compound (B1: "_" unified to "-"), which does not
+        # literally appear in an underscored source ("billing_service" on disk, "billing-
+        # service" normalized) - check the un-normalized prefix instead, present either way.
         check(f"{shape}: the private name is on disk, undeclared as an entity (write time no "
-             "longer touches this shape)", offending_tok.split()[0] in
+             "longer touches this shape)", offending_tok.split("-")[0] in
              (fm_a.get("principle") or "").lower() and not fm_a.get("entities"), fm_a)
 
         summary = pr.promote(apply=True)
@@ -557,22 +562,26 @@ def test_i2_public_hyphen_concept_in_both_is_promoted() -> None:
           summary["rejected_single_project_token"] == 0, str(summary))
 
 
-def test_h2_owners_nine_name_probe_all_blocked() -> None:
-    """The owner's exact probe (2026-09-24): nine private names, each present in ONE project's
-    vocabulary only, must ALL be NOT promoted, with the token named in the rejection - seven
-    shape-classifiable (camelCase/PascalCase, hyphen-infra) already covered per-shape above,
-    plus "phoenix" (a lone lowercase word) and "acme-corp" (a hyphenated company name, neither
-    part an infra noun) - NEITHER has any shape this layer keys on, so ONLY
-    `_is_uncorroborated_private_word`'s corpus-uniqueness rule catches them. Not covered
-    silently: if this test is red, the uniqueness rule is not doing its job for these two."""
-    print("\n- the owner's nine-name probe: all nine private names blocked, token named -")
+def test_h2_auditors_nine_name_probe_all_blocked() -> None:
+    """The auditor's exact probe (2026-09-24): nine private names, each present in ONE
+    project's vocabulary only, must ALL be NOT promoted, with the token named in the rejection -
+    seven shape-classifiable (camelCase/PascalCase, hyphen-infra) already covered per-shape
+    above, plus "phoenix" (a lone lowercase word) and "acme-corp" (a hyphenated company name,
+    neither part an infra noun) - NEITHER has any shape this layer keys on, so ONLY
+    `_is_uncorroborated_private_word`'s corpus-uniqueness rule (the coordinator's decision)
+    catches them. Not covered silently: if this test is red, the uniqueness rule is not doing
+    its job for these two."""
+    print("\n- the auditor's nine-name probe: all nine private names blocked, token named -")
+    # B1 (2026-09-24): the seven shape-classifiable names are named as the WHOLE normalized
+    # compound now, never a split part - db-primary and kafka-consumer-group used to be named
+    # by a coincidentally-surviving fragment ("primary", "kafka"); now the compound itself is
+    # the identity that is (or is not) corroborated. phoenix/acme-corp are NOT shape-classified
+    # at all, so B1 does not touch them - they still go through the split-token uniqueness path.
     cases = [
-        ("payments-api", "payments"), ("UserRepository", "userrepository"),
+        ("payments-api", "payments-api"), ("UserRepository", "userrepository"),
         ("useAuthStore", "useauthstore"), ("OrderService", "orderservice"),
-        # "db" itself is only 2 chars, below _content_tokens' own _MIN_TOKEN_LEN (3), so it is
-        # never a trackable token at all - "primary" is what actually gets named.
-        ("db-primary", "primary"), ("kafka-consumer-group", "kafka"),
-        ("prod-cluster", "prod"), ("phoenix", "phoenix"), ("acme-corp", "acme"),
+        ("db-primary", "db-primary"), ("kafka-consumer-group", "kafka-consumer-group"),
+        ("prod-cluster", "prod-cluster"), ("phoenix", "phoenix"), ("acme-corp", "acme"),
     ]
     c_poisoned = "Cap a resource-bound parameter before scaling globex-nimbus-array."
     for name, offending_tok in cases:
@@ -598,9 +607,10 @@ def test_h2_owners_nine_name_probe_all_blocked() -> None:
 
 def test_j_mutation_ignoring_camel_shape_reddens_h_camel_case() -> None:
     """(d) Mutation: `m._has_camel_transition` forced to always return False makes
-    `_identifier_shaped_tokens` blind to camelCase/PascalCase entirely.
+    `_identifier_shaped_words` blind to camelCase/PascalCase entirely.
 
-    Isolated from H6's OWN uniqueness backstop (`_is_uncorroborated_private_word`, the owner's
+    Isolated from H6's OWN uniqueness backstop (`_is_uncorroborated_private_word`, the
+    coordinator's
     rule for "phoenix"/"acme-corp") on purpose: that backstop would ALSO flag "userrepository"
     as long as it is absent from every OTHER live project, so a naive mutation test (just A and
     C in the vault) would still redden nothing - it would be proving the BACKSTOP works, not
@@ -643,6 +653,117 @@ def test_j_mutation_ignoring_camel_shape_reddens_h_camel_case() -> None:
          "caught it, not the uniqueness backstop", ok_after, offending_after)
 
 
+# ── B1 (2026-09-24, coordinator review of 1daf871): a compound is corroborated as a WHOLE ──
+# Before this fix, _identifier_shaped_tokens ran a shaped word through _content_tokens
+# ("payments-api" -> {"payments", "api"}) and each PART was looked up separately in a
+# project's ordinary vocabulary - so a project that used "payments" and "api" separately in
+# prose, never the compound itself, silently corroborated it. All four tests below call
+# _token_provenance directly (no clustering/stub-vector plumbing needed for this property).
+
+def test_k_compound_corroborated_as_whole_not_by_parts() -> None:
+    """(1)(2) A compound identifier is corroborated by the WHOLE compound, never by separately-
+    corroborated split parts. Red on 1daf871 (the pre-B1 code would have let C's separate use
+    of "payments"/"api" corroborate "payments-api")."""
+    print("\n- B1 (1)(2): compound corroborated whole, not by separately-used parts -")
+    cases = [
+        ("Cap a resource-bound parameter before scaling payments-api.",
+         "Our payments team owns the api gateway configuration entirely.", "payments-api"),
+        ("Cap a resource-bound parameter before scaling kafka-consumer-group.",
+         "The kafka topic settings and the consumer group settings are managed separately.",
+         "kafka-consumer-group"),
+        ("Cap a resource-bound parameter before scaling billing_service.",
+         "Our billing team owns the service layer configuration entirely.",
+         "billing-service"),
+    ]
+    for principle_a, prose_c, offending_tok in cases:
+        make_sandbox(m, f"pp_h6_k_{offending_tok}_", offline=True)
+        pr = _import_fresh()
+        s_a = _write("project_a", "cap compound", principle_a)
+        s_c = _write("project_c", "cap parts", prose_c)
+        check(f"{offending_tok!r}: both source notes were written", bool(s_a) and bool(s_c),
+              f"{s_a}/{s_c}")
+
+        ok, offending = pr._token_provenance(principle_a, "project_a",
+                                             {"project_a", "project_c"}, {})
+        check(f"{offending_tok!r}: fails provenance (C never used the compound itself)",
+             not ok and offending_tok in offending, offending)
+
+
+def test_l_mutation_corroborating_by_parts_reddens_k_by_name() -> None:
+    """(4) The pre-B1 algorithm, reconstructed inline from the SAME building blocks
+    `_token_provenance` still uses today (`_identifier_shaped_words`, `_content_tokens`,
+    `_project_token_vocabulary` - none of them changed by B1), rather than monkeypatched piece
+    by piece: `_token_provenance`'s whole-compound lookup and the old per-part lookup search
+    for DIFFERENT keys against DIFFERENT vocabularies, so patching only the vocabulary function
+    cannot reproduce the old shape (tried first - the whole-compound key it still searches for
+    never matches a vocabulary of loose parts, so nothing wrongly passed; that itself is not
+    evidence the fix works, just that the two algorithms use incompatible keys). Reddens test
+    (1)'s payments-api case, by name: C's separate use of "payments"/"api" wrongly corroborates
+    it under the reconstructed pre-B1 algorithm, the exact defect (1) is red on 1daf871 for."""
+    print("\n- mutation: the pre-B1 per-part algorithm wrongly passes the payments-api case -")
+    make_sandbox(m, "pp_h6_l_", offline=True)
+    pr = _import_fresh()
+    principle_a = "Cap a resource-bound parameter before scaling payments-api."
+    prose_c = "Our payments team owns the api gateway configuration entirely."
+    s_a = _write("project_a", "cap compound", principle_a)
+    s_c = _write("project_c", "cap parts", prose_c)
+    check("both source notes were written", bool(s_a) and bool(s_c), f"{s_a}/{s_c}")
+
+    def _old_per_part_provenance(sentence, cluster_projects):
+        vocab_cache: dict = {}
+        offending = []
+        shaped = pr._identifier_shaped_words(sentence)
+        id_tokens = {t for w in shaped for t in pr._content_tokens(w)}
+        for tok in pr._content_tokens(sentence):
+            if tok not in id_tokens:
+                continue
+            seen_in = 0
+            for proj in cluster_projects:
+                if proj not in vocab_cache:
+                    vocab_cache[proj] = pr._project_token_vocabulary(proj)
+                if tok in vocab_cache[proj]:
+                    seen_in += 1
+            if seen_in < pr.TOKEN_PROVENANCE_MIN_PROJECTS:
+                offending.append(tok)
+        return not offending, offending
+
+    ok, offending = _old_per_part_provenance(principle_a, {"project_a", "project_c"})
+    check("mutation: the PRE-B1 per-part algorithm wrongly lets payments-api pass (test (1) "
+         "above shows the CURRENT, fixed _token_provenance correctly rejects the same inputs)",
+         ok, offending)
+
+
+def test_m_underscore_and_hyphen_unify_but_dot_does_not() -> None:
+    """B1's normalization addition (coordinator decision, 2026-09-24): "-" and "_" are the SAME
+    identity (5) - the same name spelled kebab by one project and snake by another is still
+    corroboration; "." is NOT unified with either (6) - a dot carries host/path structure a
+    hyphen does not share, so "payments-api" and "payments.api" are different names."""
+    print("\n- B1: '-' and '_' unify (5), but '.' does not unify with either (6) -")
+    principle_a = "Cap a resource-bound parameter before scaling payments-api."
+
+    make_sandbox(m, "pp_h6_m5_", offline=True)
+    pr = _import_fresh()
+    s_a = _write("project_a", "cap kebab", principle_a)
+    s_c = _write("project_c", "cap snake", "Cap a resource-bound parameter before scaling "
+                 "payments_api.")
+    check("(5) both source notes were written", bool(s_a) and bool(s_c), f"{s_a}/{s_c}")
+    ok5, offending5 = pr._token_provenance(principle_a, "project_a",
+                                           {"project_a", "project_c"}, {})
+    check("(5) payments-api / payments_api corroborate each other (same normalized name)",
+         ok5, offending5)
+
+    make_sandbox(m, "pp_h6_m6_", offline=True)
+    pr = _import_fresh()
+    s_a2 = _write("project_a", "cap kebab", principle_a)
+    s_c2 = _write("project_c", "cap dot", "Cap a resource-bound parameter before scaling "
+                  "payments.api.")
+    check("(6) both source notes were written", bool(s_a2) and bool(s_c2), f"{s_a2}/{s_c2}")
+    ok6, offending6 = pr._token_provenance(principle_a, "project_a",
+                                           {"project_a", "project_c"}, {})
+    check("(6) payments-api / payments.api do NOT corroborate each other (dot is not unified)",
+         not ok6 and "payments-api" in offending6, offending6)
+
+
 def test_zz_every_check_passed() -> None:
     """Bare pytest must reach the same verdict as this suite's exit code.
 
@@ -667,10 +788,13 @@ def main() -> int:
                test_d_own_generic_entity_no_longer_self_rejects_at_promotion,
                test_g_ordinary_paraphrase_is_promoted,
                test_h_private_shaped_name_blocks_promotion_per_shape,
-               test_h2_owners_nine_name_probe_all_blocked,
+               test_h2_auditors_nine_name_probe_all_blocked,
                test_i_public_camel_name_in_both_is_promoted,
                test_i2_public_hyphen_concept_in_both_is_promoted,
-               test_j_mutation_ignoring_camel_shape_reddens_h_camel_case):
+               test_j_mutation_ignoring_camel_shape_reddens_h_camel_case,
+               test_k_compound_corroborated_as_whole_not_by_parts,
+               test_l_mutation_corroborating_by_parts_reddens_k_by_name,
+               test_m_underscore_and_hyphen_unify_but_dot_does_not):
         fn()
     print(f"\nprinciple promote: {PASSED} passed, {FAILED} failed")
     return 1 if FAILED else 0
