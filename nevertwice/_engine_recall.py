@@ -813,7 +813,13 @@ def _note_snippet(stem: str, ntype: str, max_chars: int = 220) -> str:
         out = f"{out} → {prevention}" if out else prevention
     if resolved:
         out = ("✅ solved - " + out) if out else "✅ solved"
-    return out[:max_chars].rstrip()
+    # C5 (2026-09-24): a plain `out[:max_chars]` char-slice can cut a word (or an
+    # identifier-shaped token, e.g. "svc-a000.internal") in half - `_cut_word_boundary`
+    # (`_engine_write.py`, shared namespace, A3/Q5's own `principle`-cap helper) either keeps
+    # the whole last word/token or drops it entirely, never a fragment. Word-boundary only
+    # (splits on " "), so a hyphenated/dotted identifier with no space inside it is kept
+    # whole or dropped as one unit - it is never split mid-token either.
+    return _cut_word_boundary(out, max_chars)
 
 
 def _fit_fact_line(line: str, room: int) -> str:

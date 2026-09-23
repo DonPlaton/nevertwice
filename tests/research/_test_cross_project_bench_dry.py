@@ -101,10 +101,21 @@ check("_side_written_description_full is the WHOLE description, no truncation",
       full == long_desc, repr(full))
 check("the full field is longer than the capped snippet on this fixture",
       len(full) > len(snippet), str((len(full), len(snippet))))
-check("the capped snippet is a plain prefix of the full description (proves it's a char-slice)",
+check("the capped snippet is still a prefix of the full description (a boundary-safe cut, "
+     "not an arbitrary one, but a prefix either way)",
       long_desc.startswith(snippet), repr(snippet[-15:]))
-check("the capped snippet, unlike the full field, ends mid-word here (the artifact C2 found)",
-      snippet[-1].isalpha() and long_desc[len(snippet)].isalpha(), repr(snippet[-15:]))
+# C5 (2026-09-24): `_note_snippet` now cuts at a WORD boundary (`_cut_word_boundary`), not a
+# plain char-slice - the artifact C2 found here (this exact fixture used to end "...extended
+# loc") is fixed at the source. The capped snippet is shorter than a plain [:220] slice would
+# be (the straddling word is dropped whole, not fragmented), and full != snippet still holds -
+# `written_description_full` (C2) remains the right field for vocabulary reconstruction
+# because it is untruncated at all, not merely word-safe.
+check("the capped snippet does NOT end mid-word any more (C5 fixed the artifact C2 found)",
+      not (snippet and snippet[-1].isalpha() and long_desc[len(snippet):len(snippet) + 1]
+          and long_desc[len(snippet)].isalpha()), repr(snippet[-15:]))
+check("the capped snippet is strictly shorter than a plain 220-char slice would be here "
+     "(the straddling word was dropped whole, not kept as a fragment)",
+      len(snippet) < 220, str(len(snippet)))
 
 print("\n- --help exits 0 -")
 try:
