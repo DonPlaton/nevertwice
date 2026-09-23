@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 import sys
 import tempfile
 import time
@@ -548,6 +549,61 @@ def test_an_uninstall_that_cannot_write_answers_instead_of_raising() -> None:
                 os.environ.pop("NEVERTWICE_CLAUDE_PROJECTS", None)
 
 
+def test_install_py_uninstall_is_reachable_and_takes_only_ours() -> None:
+    """The reversible uninstall existed in `hosts` with nothing a person could run to reach it.
+
+    The third premortem (2026-09-23) named the likeliest launch failure: the hooks point into the
+    checkout, a trial user removes the package and the clone while they are still wired, every hook
+    command exits 2, and Claude Code treats exit 2 from PreToolUse and UserPromptSubmit as a block -
+    every edit, command and prompt refused. `python install.py --uninstall` is the command the
+    README now tells people to run first. Driven as a real process against a settings file it is
+    pointed at, so the check is of the command a person types, not of the adapter underneath.
+    """
+    print("\n- `install.py --uninstall` reaches the reversible uninstall -")
+    root = Path(__file__).resolve().parent.parent
+    with tempfile.TemporaryDirectory() as tmp:
+        settings = Path(tmp) / "settings.json"
+        mine = {"type": "command", "command": "python D:/gone/nevertwice/memory_hook.py"}
+        theirs = {"type": "command", "command": "python /home/me/my_own_hook.py"}
+        settings.write_text(json.dumps({"hooks": {
+            "PreToolUse": [{"hooks": [mine, theirs]}],
+            "UserPromptSubmit": [{"hooks": [mine]}]}}), encoding="utf-8")
+        #: HOME and USERPROFILE point into the temp dir as well, so the process cannot reach the
+        #: real ~/.claude even when the installer under test is wrong. It was: checking this test
+        #: against the previous install.py - which did not know --uninstall, ran the full install,
+        #: and read only Path.home() - wrote five hooks into the owner's real settings.json
+        #: (2026-09-23, restored from the installer's backup). A test must be safe against the
+        #: code it tests being broken, because that is exactly when it runs against it.
+        env = dict(os.environ, NEVERTWICE_CLAUDE_SETTINGS=str(settings),
+                   HOME=str(tmp), USERPROFILE=str(tmp))
+        before = settings.read_text(encoding="utf-8")
+
+        typo = subprocess.run([sys.executable, str(root / "install.py"), "--unistall"],
+                              capture_output=True, text=True, env=env, timeout=120)
+        check("an unknown flag is refused before anything is written (a typo used to run the "
+              "full install)",
+              typo.returncode == 2 and settings.read_text(encoding="utf-8") == before
+              and not (Path(tmp) / ".claude").exists(),
+              f"exit {typo.returncode}; {(typo.stdout + typo.stderr)[-200:]}")
+
+        dry = subprocess.run([sys.executable, str(root / "install.py"), "--uninstall", "--print"],
+                             capture_output=True, text=True, env=env, timeout=120)
+        check("`--uninstall --print` exits 0 and names both entries it would remove",
+              dry.returncode == 0 and dry.stdout.count("nevertwice/memory_hook.py") == 2,
+              (dry.stdout + dry.stderr)[-300:])
+        check("and writes nothing", settings.read_text(encoding="utf-8") == before)
+
+        real = subprocess.run([sys.executable, str(root / "install.py"), "--uninstall"],
+                              capture_output=True, text=True, env=env, timeout=120)
+        data = json.loads(settings.read_text(encoding="utf-8"))
+        commands = [h.get("command", "") for groups in data.get("hooks", {}).values()
+                    for g in groups for h in g.get("hooks", [])]
+        check("`--uninstall` exits 0", real.returncode == 0, (real.stdout + real.stderr)[-300:])
+        check("no hook command is left pointing at nevertwice - nothing can exit 2 into a block",
+              not any("nevertwice" in c for c in commands), str(commands))
+        check("the user's own hook stays", commands == [theirs["command"]], str(commands))
+
+
 def test_zz_every_check_passed() -> None:
     """Bare pytest must reach the same verdict as this suite's exit code.
 
@@ -559,7 +615,8 @@ def test_zz_every_check_passed() -> None:
 
 
 def main() -> int:
-    for fn in (test_every_adapter_answers_all_five_questions,
+    for fn in (test_install_py_uninstall_is_reachable_and_takes_only_ours,
+               test_every_adapter_answers_all_five_questions,
                test_discovery_never_needs_a_live_agent,
                test_four_hosts_produce_equivalent_events,
                test_codex_scaffolding_is_skipped,

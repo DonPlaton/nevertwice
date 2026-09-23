@@ -152,6 +152,7 @@ python install.py                      # idempotent; backs up ~/.claude/settings
 python install.py --ollama             # also pull the local models (bge-m3 + an extractor)
 python install.py --profile research   # turn on the opt-in Brain layer (research/general)
 python install.py --print              # dry run: shows what it would do, writes nothing
+python install.py --uninstall          # BEFORE removing the package or clone (QUICKSTART §5)
 ```
 
 With no backend at all, extraction pauses loudly (sessions are kept and retried, never dropped) and

@@ -42,7 +42,12 @@ PKG = Path(__file__).resolve().parent / "nevertwice"
 HOOK = PKG / "memory_hook.py"
 MCP = PKG / "mcp_server.py"
 PYTHON = sys.executable.replace("\\", "/")
-SETTINGS = Path.home() / ".claude" / "settings.json"
+#: The same resolution `nevertwice.hosts.ClaudeCodeAdapter.settings_path()` uses. Two definitions
+#: of "which settings.json" is how a test pointed the uninstall at a temporary file while the
+#: installer, reading only Path.home(), wrote five hooks into the owner's real settings.json
+#: (2026-09-23, restored from the installer's own backup). One definition now.
+SETTINGS = Path(os.environ.get("NEVERTWICE_CLAUDE_SETTINGS")
+                or Path.home() / ".claude" / "settings.json")
 # event -> matcher. "" matches all; PreToolUse is scoped to code-writing tools so the guard
 # hook (active memory, axis A) only spawns before an edit/command, never on a Read/Grep.
 EVENTS = {
@@ -393,7 +398,65 @@ def print_next_steps(profile: str | None) -> None:
     print("-" * 64)
 
 
+def uninstall() -> int:
+    """Remove exactly the hook entries this installer added - and nothing the user wrote.
+
+    The hooks point at `nevertwice/memory_hook.py` inside THIS checkout, under the interpreter
+    that ran the installer. Delete the checkout (or `pip uninstall` and the clone with it) while
+    they are still wired, and every hook command fails: `python <missing file>` exits 2, and
+    Claude Code treats exit 2 from PreToolUse and UserPromptSubmit as a BLOCK - every edit, every
+    command and every prompt refused, with no way left to ask the agent to repair
+    settings.json. That was the likeliest failure of the launch in the third premortem
+    (2026-09-23), and the reversible uninstall that prevents it existed in `nevertwice.hosts`
+    with nothing a person could run to reach it. So: `python install.py --uninstall`, BEFORE
+    removing the package or the clone. `--print` shows what would go and writes nothing.
+    """
+    sys.path.insert(0, str(PKG))
+    import hosts                                       # noqa: PLC0415 - the one definition of "ours"
+    result = hosts.get("claude-code").uninstall(dry_run=DRY)
+    removed = result.get("removed") or []
+    print(f"Nevertwice uninstall ({'DRY-RUN' if DRY else 'apply'})")
+    print(f"  settings: {hosts.get('claude-code').settings_path()}")
+    if removed:
+        print(f"  {'would remove' if DRY else 'removed'} {len(removed)} hook entr"
+              f"{'y' if len(removed) == 1 else 'ies'}:")
+        for entry in removed:
+            print(f"    {entry}")
+    else:
+        print(f"  {result.get('detail') or 'no nevertwice hook entries found'}")
+    if not DRY and removed:
+        print("\nDone. The package and the checkout can now be removed safely; "
+              "restart your agent so the hook list reloads.")
+    return 0 if result.get("ok") else 1
+
+
+#: Every flag this installer understands. Anything else is refused BEFORE anything is written: an
+#: unknown flag used to be ignored and the full install ran, so `--unistall` (or `--uninstall`
+#: given to an installer too old to know it) wired hooks instead of removing them.
+KNOWN_FLAGS = {"--print", "--profile", "--uninstall", "--ollama", "--tasks"}
+
+
+def _unknown_flags(argv: list[str]) -> list[str]:
+    out, skip = [], False
+    for arg in argv:
+        if skip:                      # the value after --profile
+            skip = False
+            continue
+        if arg == "--profile":
+            skip = True
+        if arg not in KNOWN_FLAGS:
+            out.append(arg)
+    return out
+
+
 def main() -> int:
+    unknown = _unknown_flags(sys.argv[1:])
+    if unknown:
+        print(f"install.py: unknown argument(s) {unknown} - nothing was written.\n"
+              f"  known: {', '.join(sorted(KNOWN_FLAGS))}", file=sys.stderr)
+        return 2
+    if "--uninstall" in sys.argv:
+        return uninstall()
     print(f"Nevertwice installer ({'DRY-RUN' if DRY else 'apply'}) - python {PYTHON}\n")
     ensure_store()
     wire_hooks()

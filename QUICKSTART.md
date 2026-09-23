@@ -107,3 +107,21 @@ run, including *why* one degraded (Ollama down, cloud key missing). `python -m n
 list` shows the guard ledger with fired/helped counts. And if recall stays silent on a vague
 query, that is the abstention gate doing its job - ask with a more specific phrase rather than
 trusting a confident wrong answer.
+
+## 5. Uninstall: hooks first, then the package
+
+The hooks point at `nevertwice/memory_hook.py`
+inside this checkout. If the checkout or the package goes while the hooks are still wired, every
+hook command fails, and Claude Code treats that failure from PreToolUse and UserPromptSubmit as a
+block: every edit, command and prompt is refused. So:
+
+```bash
+python install.py --uninstall --print  # shows the hook entries it would remove, writes nothing
+python install.py --uninstall          # removes only nevertwice's entries; your own hooks stay
+pip uninstall nevertwice               # now safe, and so is deleting the checkout
+```
+
+Already deleted the checkout and the agent is blocked? Edit `~/.claude/settings.json` by hand and
+remove the entries whose command ends in `nevertwice/memory_hook.py`, or restore the
+`settings.json.bak-nevertwice-*` copy the installer left beside it (that also rolls back any
+settings changed since the install).
