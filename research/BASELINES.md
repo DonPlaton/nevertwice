@@ -48,19 +48,20 @@ for the number has not been ruled out, and a reader is entitled to assume it mig
 <!-- claims:baselines-matrix -->
 | headline claim | `no_memory` | `full_history` | `lexical_recall` | `curated_agents_md` | `llm_session_summary` | `linter_or_test` | `curated_haystack` |
 |---|---|---|---|---|---|---|---|
+| `longmem.hybrid.recall_at_5` | n/a | n/a | **beats** | n/a | not compared | n/a | n/a |
 | `longitudinal.active_vs_inject_token_ratio` | **beats** | **beats** | n/a | not compared | not compared | not compared | n/a |
 <!-- /claims:baselines-matrix -->
 
 <!-- claims:baselines-summary -->
-1 headline claims x 7 baselines = 7 pairs.
+2 headline claims x 7 baselines = 14 pairs.
 
 | verdict | count | what it means |
 |---|---|---|
-| `beats` | 2 | measured, under matched conditions, and the claim wins |
+| `beats` | 3 | measured, under matched conditions, and the claim wins |
 | `ties` | 0 | measured and within the interval of the baseline |
 | `loses_to` | 0 | measured and the baseline wins - the claim must be narrowed or dropped |
-| `not_compared` | 3 | not measured yet; the claim is provisional against this baseline |
-| `not_applicable` | 2 | the baseline cannot be constructed for this metric; a reason is required |
+| `not_compared` | 4 | not measured yet; the claim is provisional against this baseline |
+| `not_applicable` | 7 | the baseline cannot be constructed for this metric; a reason is required |
 <!-- /claims:baselines-summary -->
 
 ## Reading the current state honestly

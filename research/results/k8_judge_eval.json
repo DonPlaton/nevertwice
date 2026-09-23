@@ -174,7 +174,7 @@
     "prompt_mean": 374.6,
     "eval_mean": 40.6
    },
-   "seconds_per_pair": 0.24,
+   "seconds_per_pair": 0.25,
    "unclear_verdicts": {
     "replaces": 4,
     "separate": 1
@@ -193,7 +193,7 @@
    "new_settles": "the HTTP client timeout",
    "prompt_tokens": 382,
    "eval_tokens": 37,
-   "seconds": 0.42
+   "seconds": 0.3
   },
   {
    "stand": "explicit",
@@ -206,7 +206,7 @@
    "new_settles": "PostgreSQL version in production",
    "prompt_tokens": 373,
    "eval_tokens": 39,
-   "seconds": 0.26
+   "seconds": 0.24
   },
   {
    "stand": "explicit",
@@ -219,7 +219,7 @@
    "new_settles": "queue worker retry count",
    "prompt_tokens": 411,
    "eval_tokens": 37,
-   "seconds": 0.25
+   "seconds": 0.21
   },
   {
    "stand": "explicit",
@@ -232,7 +232,7 @@
    "new_settles": "cache entry expiration time",
    "prompt_tokens": 378,
    "eval_tokens": 37,
-   "seconds": 0.25
+   "seconds": 0.23
   },
   {
    "stand": "explicit",
@@ -245,7 +245,7 @@
    "new_settles": "cache expiration timeout",
    "prompt_tokens": 369,
    "eval_tokens": 35,
-   "seconds": 0.23
+   "seconds": 0.2
   },
   {
    "stand": "explicit",
@@ -258,7 +258,7 @@
    "new_settles": "dev server port configuration",
    "prompt_tokens": 385,
    "eval_tokens": 37,
-   "seconds": 0.22
+   "seconds": 0.23
   },
   {
    "stand": "explicit",
@@ -271,7 +271,7 @@
    "new_settles": "service deployment region",
    "prompt_tokens": 383,
    "eval_tokens": 35,
-   "seconds": 0.23
+   "seconds": 0.22
   },
   {
    "stand": "explicit",
@@ -297,7 +297,7 @@
    "new_settles": "API replica count",
    "prompt_tokens": 372,
    "eval_tokens": 35,
-   "seconds": 0.25
+   "seconds": 0.2
   },
   {
    "stand": "explicit",
@@ -310,7 +310,7 @@
    "new_settles": "learning rate value",
    "prompt_tokens": 380,
    "eval_tokens": 35,
-   "seconds": 0.2
+   "seconds": 0.22
   },
   {
    "stand": "explicit",
@@ -323,7 +323,7 @@
    "new_settles": "document chunking token size",
    "prompt_tokens": 350,
    "eval_tokens": 39,
-   "seconds": 0.25
+   "seconds": 0.24
   },
   {
    "stand": "explicit",
@@ -336,7 +336,7 @@
    "new_settles": "the document chunk size for ingestion",
    "prompt_tokens": 365,
    "eval_tokens": 41,
-   "seconds": 0.25
+   "seconds": 0.24
   },
   {
    "stand": "explicit",
@@ -349,7 +349,7 @@
    "new_settles": "cluster quorum requirement",
    "prompt_tokens": 372,
    "eval_tokens": 37,
-   "seconds": 0.24
+   "seconds": 0.22
   },
   {
    "stand": "explicit",
@@ -362,7 +362,7 @@
    "new_settles": "cluster quorum requirement",
    "prompt_tokens": 368,
    "eval_tokens": 36,
-   "seconds": 0.22
+   "seconds": 0.23
   },
   {
    "stand": "explicit",
@@ -375,7 +375,7 @@
    "new_settles": "project license (Apache-2.0)",
    "prompt_tokens": 383,
    "eval_tokens": 46,
-   "seconds": 0.27
+   "seconds": 0.24
   },
   {
    "stand": "explicit",
@@ -388,7 +388,7 @@
    "new_settles": "the default branch name change from master to main",
    "prompt_tokens": 388,
    "eval_tokens": 46,
-   "seconds": 0.25
+   "seconds": 0.27
   },
   {
    "stand": "explicit",
@@ -401,7 +401,7 @@
    "new_settles": "where session data is cached",
    "prompt_tokens": 367,
    "eval_tokens": 34,
-   "seconds": 0.21
+   "seconds": 0.2
   },
   {
    "stand": "explicit",
@@ -427,7 +427,7 @@
    "new_settles": "frontend bundling tool (Vite)",
    "prompt_tokens": 373,
    "eval_tokens": 42,
-   "seconds": 0.25
+   "seconds": 0.27
   },
   {
    "stand": "explicit",
@@ -440,7 +440,7 @@
    "new_settles": "the queue backend for background jobs",
    "prompt_tokens": 366,
    "eval_tokens": 41,
-   "seconds": 0.25
+   "seconds": 0.24
   },
   {
    "stand": "explicit",
@@ -453,7 +453,7 @@
    "new_settles": "deployment pattern used",
    "prompt_tokens": 353,
    "eval_tokens": 35,
-   "seconds": 0.2
+   "seconds": 0.24
   },
   {
    "stand": "explicit",
@@ -466,7 +466,7 @@
    "new_settles": "package build tool (hatchling) and publish method (CI)",
    "prompt_tokens": 335,
    "eval_tokens": 50,
-   "seconds": 0.3
+   "seconds": 0.27
   },
   {
    "stand": "explicit",
@@ -492,7 +492,7 @@
    "new_settles": "schema migration approach and verification process",
    "prompt_tokens": 384,
    "eval_tokens": 38,
-   "seconds": 0.26
+   "seconds": 0.24
   },
   {
    "stand": "explicit",
@@ -505,7 +505,7 @@
    "new_settles": "message serialization format",
    "prompt_tokens": 365,
    "eval_tokens": 30,
-   "seconds": 0.22
+   "seconds": 0.19
   },
   {
    "stand": "explicit",
@@ -518,7 +518,7 @@
    "new_settles": "how secrets are injected at boot time",
    "prompt_tokens": 382,
    "eval_tokens": 44,
-   "seconds": 0.25
+   "seconds": 0.26
   },
   {
    "stand": "explicit",
@@ -531,7 +531,7 @@
    "new_settles": "testing tool for end-to-end tests",
    "prompt_tokens": 340,
    "eval_tokens": 43,
-   "seconds": 0.23
+   "seconds": 0.26
   },
   {
    "stand": "explicit",
@@ -544,7 +544,7 @@
    "new_settles": "removal of beta_dashboard feature flag after unconditional UI release",
    "prompt_tokens": 380,
    "eval_tokens": 47,
-   "seconds": 0.27
+   "seconds": 0.28
   },
   {
    "stand": "explicit",
@@ -557,7 +557,7 @@
    "new_settles": "the beta dashboard feature flag removal",
    "prompt_tokens": 364,
    "eval_tokens": 41,
-   "seconds": 0.24
+   "seconds": 0.26
   },
   {
    "stand": "explicit",
@@ -570,7 +570,7 @@
    "new_settles": "the /v1/export endpoint removal",
    "prompt_tokens": 361,
    "eval_tokens": 39,
-   "seconds": 0.25
+   "seconds": 0.24
   },
   {
    "stand": "explicit",
@@ -583,7 +583,7 @@
    "new_settles": "telemetry system thread continuity",
    "prompt_tokens": 410,
    "eval_tokens": 38,
-   "seconds": 0.24
+   "seconds": 0.23
   },
   {
    "stand": "explicit",
@@ -596,7 +596,7 @@
    "new_settles": "destination of analytics queries",
    "prompt_tokens": 398,
    "eval_tokens": 37,
-   "seconds": 0.23
+   "seconds": 0.22
   },
   {
    "stand": "explicit",
@@ -609,7 +609,7 @@
    "new_settles": "plugin system removal and third-party plugin loading capability",
    "prompt_tokens": 369,
    "eval_tokens": 38,
-   "seconds": 0.23
+   "seconds": 0.22
   },
   {
    "stand": "explicit",
@@ -622,7 +622,7 @@
    "new_settles": "decision to share sync engine based on platform consistency and potential iOS client discontinuation",
    "prompt_tokens": 357,
    "eval_tokens": 53,
-   "seconds": 0.26
+   "seconds": 0.27
   },
   {
    "stand": "explicit",
@@ -635,7 +635,7 @@
    "new_settles": "audit log compaction policy",
    "prompt_tokens": 404,
    "eval_tokens": 41,
-   "seconds": 0.24
+   "seconds": 0.25
   },
   {
    "stand": "explicit",
@@ -648,7 +648,7 @@
    "new_settles": "communication protocol change from gRPC to plain HTTP",
    "prompt_tokens": 397,
    "eval_tokens": 49,
-   "seconds": 0.26
+   "seconds": 0.29
   },
   {
    "stand": "explicit",
@@ -661,7 +661,7 @@
    "new_settles": "Okta SAML integration cancellation and staff account change",
    "prompt_tokens": 388,
    "eval_tokens": 48,
-   "seconds": 0.28
+   "seconds": 0.26
   },
   {
    "stand": "explicit",
@@ -674,7 +674,7 @@
    "new_settles": "partner integration termination and webhook deletion",
    "prompt_tokens": 361,
    "eval_tokens": 36,
-   "seconds": 0.2
+   "seconds": 0.22
   },
   {
    "stand": "explicit",
@@ -687,7 +687,7 @@
    "new_settles": "GPU capacity rental approach",
    "prompt_tokens": 404,
    "eval_tokens": 37,
-   "seconds": 0.24
+   "seconds": 0.25
   },
   {
    "stand": "explicit",
@@ -700,7 +700,7 @@
    "new_settles": "the removal of --legacy flag and its replacement with staged release",
    "prompt_tokens": 368,
    "eval_tokens": 48,
-   "seconds": 0.27
+   "seconds": 0.25
   },
   {
    "stand": "explicit",
@@ -726,7 +726,7 @@
    "new_settles": "admin panel audit tab removal",
    "prompt_tokens": 400,
    "eval_tokens": 34,
-   "seconds": 0.2
+   "seconds": 0.21
   },
   {
    "stand": "explicit",
@@ -739,7 +739,7 @@
    "new_settles": "app localization language support (English-only)",
    "prompt_tokens": 398,
    "eval_tokens": 44,
-   "seconds": 0.25
+   "seconds": 0.26
   },
   {
    "stand": "explicit",
@@ -752,7 +752,7 @@
    "new_settles": "sandbox environment shutdown, partners test against own stubs",
    "prompt_tokens": 403,
    "eval_tokens": 46,
-   "seconds": 0.24
+   "seconds": 0.26
   },
   {
    "stand": "explicit",
@@ -765,7 +765,7 @@
    "new_settles": "HTTP client retry rules",
    "prompt_tokens": 394,
    "eval_tokens": 37,
-   "seconds": 0.21
+   "seconds": 0.24
   },
   {
    "stand": "explicit",
@@ -778,7 +778,7 @@
    "new_settles": "GET responses cached, writes bypass cache",
    "prompt_tokens": 399,
    "eval_tokens": 40,
-   "seconds": 0.24
+   "seconds": 0.25
   },
   {
    "stand": "explicit",
@@ -791,7 +791,7 @@
    "new_settles": "audit log coverage limited to billing tables only",
    "prompt_tokens": 368,
    "eval_tokens": 44,
-   "seconds": 0.24
+   "seconds": 0.26
   },
   {
    "stand": "explicit",
@@ -804,7 +804,7 @@
    "new_settles": "scope of audit changes (billing tables only)",
    "prompt_tokens": 376,
    "eval_tokens": 42,
-   "seconds": 0.22
+   "seconds": 0.23
   },
   {
    "stand": "explicit",
@@ -830,7 +830,7 @@
    "new_settles": "pre-commit hook linting scope (staged files only)",
    "prompt_tokens": 369,
    "eval_tokens": 50,
-   "seconds": 0.27
+   "seconds": 0.28
   },
   {
    "stand": "explicit",
@@ -843,7 +843,7 @@
    "new_settles": "separate alert destinations for production vs staging deploy failures",
    "prompt_tokens": 377,
    "eval_tokens": 44,
-   "seconds": 0.23
+   "seconds": 0.27
   },
   {
    "stand": "explicit",
@@ -869,7 +869,7 @@
    "new_settles": "index document coverage window",
    "prompt_tokens": 378,
    "eval_tokens": 37,
-   "seconds": 0.21
+   "seconds": 0.22
   },
   {
    "stand": "explicit",
@@ -882,7 +882,7 @@
    "new_settles": "database backup scope",
    "prompt_tokens": 367,
    "eval_tokens": 35,
-   "seconds": 0.23
+   "seconds": 0.21
   },
   {
    "stand": "explicit",
@@ -895,7 +895,7 @@
    "new_settles": "backup scope (primary database only)",
    "prompt_tokens": 366,
    "eval_tokens": 40,
-   "seconds": 0.24
+   "seconds": 0.26
   },
   {
    "stand": "explicit",
@@ -921,7 +921,7 @@
    "new_settles": "rename acceptability under review",
    "prompt_tokens": 341,
    "eval_tokens": 32,
-   "seconds": 0.2
+   "seconds": 0.21
   },
   {
    "stand": "explicit",
@@ -934,7 +934,7 @@
    "new_settles": "response compression threshold",
    "prompt_tokens": 390,
    "eval_tokens": 35,
-   "seconds": 0.24
+   "seconds": 0.23
   },
   {
    "stand": "explicit",
@@ -947,7 +947,7 @@
    "new_settles": "MFA enforcement scope for admin accounts only",
    "prompt_tokens": 403,
    "eval_tokens": 44,
-   "seconds": 0.27
+   "seconds": 0.25
   },
   {
    "stand": "explicit",
@@ -960,7 +960,7 @@
    "new_settles": "event log replay behavior on boot",
    "prompt_tokens": 370,
    "eval_tokens": 41,
-   "seconds": 0.25
+   "seconds": 0.26
   },
   {
    "stand": "explicit",
@@ -973,7 +973,7 @@
    "new_settles": "sharding criteria based on record count",
    "prompt_tokens": 397,
    "eval_tokens": 42,
-   "seconds": 0.25
+   "seconds": 0.24
   },
   {
    "stand": "explicit",
@@ -986,7 +986,7 @@
    "new_settles": "tenant sharding rule based on record count",
    "prompt_tokens": 377,
    "eval_tokens": 41,
-   "seconds": 0.26
+   "seconds": 0.23
   },
   {
    "stand": "explicit",
@@ -999,7 +999,7 @@
    "new_settles": "end-to-end request tracing with sampling rate",
    "prompt_tokens": 393,
    "eval_tokens": 43,
-   "seconds": 0.26
+   "seconds": 0.25
   },
   {
    "stand": "explicit",
@@ -1025,7 +1025,7 @@
    "new_settles": "the primary database technology and version",
    "prompt_tokens": 380,
    "eval_tokens": 36,
-   "seconds": 0.27
+   "seconds": 0.24
   },
   {
    "stand": "explicit",
@@ -1051,7 +1051,7 @@
    "new_settles": "the service language (Rust) and integration tests language (Python)",
    "prompt_tokens": 373,
    "eval_tokens": 48,
-   "seconds": 0.25
+   "seconds": 0.26
   },
   {
    "stand": "explicit",
@@ -1064,7 +1064,7 @@
    "new_settles": "staging deployment trigger rule",
    "prompt_tokens": 361,
    "eval_tokens": 39,
-   "seconds": 0.21
+   "seconds": 0.26
   },
   {
    "stand": "explicit",
@@ -1077,7 +1077,7 @@
    "new_settles": "the reranker configuration",
    "prompt_tokens": 384,
    "eval_tokens": 37,
-   "seconds": 0.22
+   "seconds": 0.21
   },
   {
    "stand": "explicit",
@@ -1090,7 +1090,7 @@
    "new_settles": "where database backups are stored",
    "prompt_tokens": 411,
    "eval_tokens": 39,
-   "seconds": 0.26
+   "seconds": 0.25
   },
   {
    "stand": "explicit",
@@ -1103,7 +1103,7 @@
    "new_settles": "where user uploads are stored (S3)",
    "prompt_tokens": 357,
    "eval_tokens": 42,
-   "seconds": 0.24
+   "seconds": 0.25
   },
   {
    "stand": "explicit",
@@ -1142,7 +1142,7 @@
    "new_settles": "README section about CLI distribution changes due to signed installer for desktop app",
    "prompt_tokens": 359,
    "eval_tokens": 51,
-   "seconds": 0.3
+   "seconds": 0.28
   },
   {
    "stand": "explicit",
@@ -1168,7 +1168,7 @@
    "new_settles": "worker runtime Python version",
    "prompt_tokens": 369,
    "eval_tokens": 37,
-   "seconds": 0.2
+   "seconds": 0.25
   },
   {
    "stand": "explicit",
@@ -1194,7 +1194,7 @@
    "new_settles": "queue depth tracking method",
    "prompt_tokens": 369,
    "eval_tokens": 37,
-   "seconds": 0.22
+   "seconds": 0.23
   },
   {
    "stand": "explicit",
@@ -1220,7 +1220,7 @@
    "new_settles": "the HTTP client timeout",
    "prompt_tokens": 390,
    "eval_tokens": 37,
-   "seconds": 0.21
+   "seconds": 0.26
   },
   {
    "stand": "implicit",
@@ -1233,7 +1233,7 @@
    "new_settles": "PostgreSQL version in production",
    "prompt_tokens": 376,
    "eval_tokens": 39,
-   "seconds": 0.21
+   "seconds": 0.24
   },
   {
    "stand": "implicit",
@@ -1246,7 +1246,7 @@
    "new_settles": "the number of retry attempts for failed jobs",
    "prompt_tokens": 409,
    "eval_tokens": 45,
-   "seconds": 0.25
+   "seconds": 0.26
   },
   {
    "stand": "implicit",
@@ -1259,7 +1259,7 @@
    "new_settles": "cache entry expiration time",
    "prompt_tokens": 373,
    "eval_tokens": 37,
-   "seconds": 0.23
+   "seconds": 0.22
   },
   {
    "stand": "implicit",
@@ -1272,7 +1272,7 @@
    "new_settles": "cache expiration timeout",
    "prompt_tokens": 373,
    "eval_tokens": 35,
-   "seconds": 0.21
+   "seconds": 0.23
   },
   {
    "stand": "implicit",
@@ -1285,7 +1285,7 @@
    "new_settles": "dev server port configuration",
    "prompt_tokens": 384,
    "eval_tokens": 37,
-   "seconds": 0.23
+   "seconds": 0.24
   },
   {
    "stand": "implicit",
@@ -1298,7 +1298,7 @@
    "new_settles": "service deployment region",
    "prompt_tokens": 383,
    "eval_tokens": 35,
-   "seconds": 0.22
+   "seconds": 0.24
   },
   {
    "stand": "implicit",
@@ -1311,7 +1311,7 @@
    "new_settles": "Python version pinning",
    "prompt_tokens": 378,
    "eval_tokens": 37,
-   "seconds": 0.23
+   "seconds": 0.24
   },
   {
    "stand": "implicit",
@@ -1324,7 +1324,7 @@
    "new_settles": "API capacity replicas",
    "prompt_tokens": 351,
    "eval_tokens": 30,
-   "seconds": 0.2
+   "seconds": 0.22
   },
   {
    "stand": "implicit",
@@ -1337,7 +1337,7 @@
    "new_settles": "learning rate effect and value",
    "prompt_tokens": 389,
    "eval_tokens": 37,
-   "seconds": 0.22
+   "seconds": 0.23
   },
   {
    "stand": "implicit",
@@ -1350,7 +1350,7 @@
    "new_settles": "the chunk size for document ingestion",
    "prompt_tokens": 364,
    "eval_tokens": 41,
-   "seconds": 0.26
+   "seconds": 0.25
   },
   {
    "stand": "implicit",
@@ -1376,7 +1376,7 @@
    "new_settles": "cluster quorum requirement",
    "prompt_tokens": 371,
    "eval_tokens": 32,
-   "seconds": 0.2
+   "seconds": 0.21
   },
   {
    "stand": "implicit",
@@ -1402,7 +1402,7 @@
    "new_settles": "the tracker note requirement for default branch renaming",
    "prompt_tokens": 421,
    "eval_tokens": 42,
-   "seconds": 0.27
+   "seconds": 0.24
   },
   {
    "stand": "implicit",
@@ -1415,7 +1415,7 @@
    "new_settles": "session data caching destination (in-process LRU cache)",
    "prompt_tokens": 378,
    "eval_tokens": 45,
-   "seconds": 0.27
+   "seconds": 0.26
   },
   {
    "stand": "implicit",
@@ -1428,7 +1428,7 @@
    "new_settles": "authentication method using opaque session cookies",
    "prompt_tokens": 389,
    "eval_tokens": 40,
-   "seconds": 0.23
+   "seconds": 0.24
   },
   {
    "stand": "implicit",
@@ -1441,7 +1441,7 @@
    "new_settles": "frontend bundling tool (Vite)",
    "prompt_tokens": 369,
    "eval_tokens": 42,
-   "seconds": 0.24
+   "seconds": 0.25
   },
   {
    "stand": "implicit",
@@ -1454,7 +1454,7 @@
    "new_settles": "data access approach using SQLAlchemy ORM with emphasis on abstraction, maintainability, and type safety",
    "prompt_tokens": 361,
    "eval_tokens": 52,
-   "seconds": 0.29
+   "seconds": 0.26
   },
   {
    "stand": "implicit",
@@ -1467,7 +1467,7 @@
    "new_settles": "data access approach",
    "prompt_tokens": 358,
    "eval_tokens": 35,
-   "seconds": 0.23
+   "seconds": 0.24
   },
   {
    "stand": "implicit",
@@ -1480,7 +1480,7 @@
    "new_settles": "background job implementation tool",
    "prompt_tokens": 377,
    "eval_tokens": 32,
-   "seconds": 0.22
+   "seconds": 0.23
   },
   {
    "stand": "implicit",
@@ -1493,7 +1493,7 @@
    "new_settles": "CI tool migration and documentation location (GitHub Actions, README)",
    "prompt_tokens": 373,
    "eval_tokens": 47,
-   "seconds": 0.27
+   "seconds": 0.25
   },
   {
    "stand": "implicit",
@@ -1506,7 +1506,7 @@
    "new_settles": "search functionality setup (Postgres full-text search)",
    "prompt_tokens": 383,
    "eval_tokens": 45,
-   "seconds": 0.27
+   "seconds": 0.28
   },
   {
    "stand": "implicit",
@@ -1519,7 +1519,7 @@
    "new_settles": "the package build and publish approach",
    "prompt_tokens": 328,
    "eval_tokens": 36,
-   "seconds": 0.22
+   "seconds": 0.24
   },
   {
    "stand": "implicit",
@@ -1532,7 +1532,7 @@
    "new_settles": "the packaging tool",
    "prompt_tokens": 346,
    "eval_tokens": 30,
-   "seconds": 0.19
+   "seconds": 0.18
   },
   {
    "stand": "implicit",
@@ -1558,7 +1558,7 @@
    "new_settles": "message serialization format",
    "prompt_tokens": 377,
    "eval_tokens": 30,
-   "seconds": 0.21
+   "seconds": 0.2
   },
   {
    "stand": "implicit",
@@ -1571,7 +1571,7 @@
    "new_settles": "how secrets are injected at boot time",
    "prompt_tokens": 363,
    "eval_tokens": 43,
-   "seconds": 0.26
+   "seconds": 0.25
   },
   {
    "stand": "implicit",
@@ -1584,7 +1584,7 @@
    "new_settles": "testing tool for end-to-end tests",
    "prompt_tokens": 352,
    "eval_tokens": 38,
-   "seconds": 0.25
+   "seconds": 0.23
   },
   {
    "stand": "implicit",
@@ -1597,7 +1597,7 @@
    "new_settles": "the beta_dashboard feature flag status",
    "prompt_tokens": 366,
    "eval_tokens": 36,
-   "seconds": 0.23
+   "seconds": 0.24
   },
   {
    "stand": "implicit",
@@ -1610,7 +1610,7 @@
    "new_settles": "the UI gating mechanism",
    "prompt_tokens": 360,
    "eval_tokens": 37,
-   "seconds": 0.22
+   "seconds": 0.24
   },
   {
    "stand": "implicit",
@@ -1623,7 +1623,7 @@
    "new_settles": "the removal of the /v1/export endpoint",
    "prompt_tokens": 339,
    "eval_tokens": 45,
-   "seconds": 0.24
+   "seconds": 0.28
   },
   {
    "stand": "implicit",
@@ -1636,7 +1636,7 @@
    "new_settles": "telemetry reporting status",
    "prompt_tokens": 410,
    "eval_tokens": 37,
-   "seconds": 0.25
+   "seconds": 0.23
   },
   {
    "stand": "implicit",
@@ -1649,7 +1649,7 @@
    "new_settles": "analytics query destination",
    "prompt_tokens": 408,
    "eval_tokens": 35,
-   "seconds": 0.24
+   "seconds": 0.23
   },
   {
    "stand": "implicit",
@@ -1675,7 +1675,7 @@
    "new_settles": "the sync engine sharing decision in context of iOS client discontinuation",
    "prompt_tokens": 349,
    "eval_tokens": 46,
-   "seconds": 0.27
+   "seconds": 0.25
   },
   {
    "stand": "implicit",
@@ -1688,7 +1688,7 @@
    "new_settles": "audit log compaction policy",
    "prompt_tokens": 413,
    "eval_tokens": 39,
-   "seconds": 0.26
+   "seconds": 0.25
   },
   {
    "stand": "implicit",
@@ -1714,7 +1714,7 @@
    "new_settles": "Okta SAML integration cancellation and staff account usage",
    "prompt_tokens": 381,
    "eval_tokens": 47,
-   "seconds": 0.27
+   "seconds": 0.28
   },
   {
    "stand": "implicit",
@@ -1727,7 +1727,7 @@
    "new_settles": "partner integration termination and webhook deletion",
    "prompt_tokens": 351,
    "eval_tokens": 42,
-   "seconds": 0.22
+   "seconds": 0.28
   },
   {
    "stand": "implicit",
@@ -1740,7 +1740,7 @@
    "new_settles": "renting capacity per training run",
    "prompt_tokens": 397,
    "eval_tokens": 40,
-   "seconds": 0.27
+   "seconds": 0.25
   },
   {
    "stand": "implicit",
@@ -1753,7 +1753,7 @@
    "new_settles": "the removal of --legacy flag in version 3.0",
    "prompt_tokens": 360,
    "eval_tokens": 48,
-   "seconds": 0.27
+   "seconds": 0.31
   },
   {
    "stand": "implicit",
@@ -1779,7 +1779,7 @@
    "new_settles": "admin panel audit tab removal",
    "prompt_tokens": 386,
    "eval_tokens": 34,
-   "seconds": 0.2
+   "seconds": 0.22
   },
   {
    "stand": "implicit",
@@ -1792,7 +1792,7 @@
    "new_settles": "app localization setup and English-only status",
    "prompt_tokens": 399,
    "eval_tokens": 39,
-   "seconds": 0.24
+   "seconds": 0.23
   },
   {
    "stand": "implicit",
@@ -1805,7 +1805,7 @@
    "new_settles": "sandbox environment shutdown and partner stub testing",
    "prompt_tokens": 411,
    "eval_tokens": 42,
-   "seconds": 0.23
+   "seconds": 0.28
   },
   {
    "stand": "implicit",
@@ -1818,7 +1818,7 @@
    "new_settles": "HTTP client retry rules",
    "prompt_tokens": 395,
    "eval_tokens": 37,
-   "seconds": 0.21
+   "seconds": 0.24
   },
   {
    "stand": "implicit",
@@ -1831,7 +1831,7 @@
    "new_settles": "GET response caching with write bypass",
    "prompt_tokens": 377,
    "eval_tokens": 39,
-   "seconds": 0.24
+   "seconds": 0.25
   },
   {
    "stand": "implicit",
@@ -1844,7 +1844,7 @@
    "new_settles": "which tables are audited",
    "prompt_tokens": 338,
    "eval_tokens": 39,
-   "seconds": 0.21
+   "seconds": 0.24
   },
   {
    "stand": "implicit",
@@ -1857,7 +1857,7 @@
    "new_settles": "where audit decisions are documented",
    "prompt_tokens": 353,
    "eval_tokens": 39,
-   "seconds": 0.24
+   "seconds": 0.25
   },
   {
    "stand": "implicit",
@@ -1870,7 +1870,7 @@
    "new_settles": "GPU allocation threshold",
    "prompt_tokens": 388,
    "eval_tokens": 35,
-   "seconds": 0.21
+   "seconds": 0.22
   },
   {
    "stand": "implicit",
@@ -1883,7 +1883,7 @@
    "new_settles": "pre-commit hook linting scope (staged files only)",
    "prompt_tokens": 388,
    "eval_tokens": 49,
-   "seconds": 0.27
+   "seconds": 0.31
   },
   {
    "stand": "implicit",
@@ -1896,7 +1896,7 @@
    "new_settles": "alerting destination for deploy failures (environment-specific)",
    "prompt_tokens": 382,
    "eval_tokens": 44,
-   "seconds": 0.25
+   "seconds": 0.26
   },
   {
    "stand": "implicit",
@@ -1909,7 +1909,7 @@
    "new_settles": "encryption scope limited to private bucket files",
    "prompt_tokens": 355,
    "eval_tokens": 42,
-   "seconds": 0.24
+   "seconds": 0.26
   },
   {
    "stand": "implicit",
@@ -1922,7 +1922,7 @@
    "new_settles": "index scope",
    "prompt_tokens": 366,
    "eval_tokens": 33,
-   "seconds": 0.22
+   "seconds": 0.23
   },
   {
    "stand": "implicit",
@@ -1935,7 +1935,7 @@
    "new_settles": "database backup scope",
    "prompt_tokens": 359,
    "eval_tokens": 35,
-   "seconds": 0.22
+   "seconds": 0.21
   },
   {
    "stand": "implicit",
@@ -1948,7 +1948,7 @@
    "new_settles": "backup scope",
    "prompt_tokens": 354,
    "eval_tokens": 33,
-   "seconds": 0.22
+   "seconds": 0.2
   },
   {
    "stand": "implicit",
@@ -1961,7 +1961,7 @@
    "new_settles": "rate limiting scope for unauthenticated callers only",
    "prompt_tokens": 356,
    "eval_tokens": 43,
-   "seconds": 0.24
+   "seconds": 0.27
   },
   {
    "stand": "implicit",
@@ -1974,7 +1974,7 @@
    "new_settles": "rename acceptability under review",
    "prompt_tokens": 341,
    "eval_tokens": 32,
-   "seconds": 0.17
+   "seconds": 0.15
   },
   {
    "stand": "implicit",
@@ -1987,7 +1987,7 @@
    "new_settles": "response compression threshold",
    "prompt_tokens": 388,
    "eval_tokens": 35,
-   "seconds": 0.2
+   "seconds": 0.21
   },
   {
    "stand": "implicit",
@@ -2000,7 +2000,7 @@
    "new_settles": "MFA enforcement scope for admin accounts only",
    "prompt_tokens": 391,
    "eval_tokens": 44,
-   "seconds": 0.25
+   "seconds": 0.24
   },
   {
    "stand": "implicit",
@@ -2013,7 +2013,7 @@
    "new_settles": "event log replay behavior on boot",
    "prompt_tokens": 368,
    "eval_tokens": 36,
-   "seconds": 0.23
+   "seconds": 0.21
   },
   {
    "stand": "implicit",
@@ -2026,7 +2026,7 @@
    "new_settles": "sharding strategy - only large tenants (50k+) get dedicated shards",
    "prompt_tokens": 402,
    "eval_tokens": 53,
-   "seconds": 0.31
+   "seconds": 0.29
   },
   {
    "stand": "implicit",
@@ -2039,7 +2039,7 @@
    "new_settles": "tenant sharding rule based on record count",
    "prompt_tokens": 382,
    "eval_tokens": 41,
-   "seconds": 0.25
+   "seconds": 0.28
   },
   {
    "stand": "implicit",
@@ -2052,7 +2052,7 @@
    "new_settles": "request tracing with sampling rate of one in a hundred",
    "prompt_tokens": 385,
    "eval_tokens": 45,
-   "seconds": 0.26
+   "seconds": 0.28
   },
   {
    "stand": "implicit",
@@ -2065,7 +2065,7 @@
    "new_settles": "request tracing sampling rate",
    "prompt_tokens": 360,
    "eval_tokens": 31,
-   "seconds": 0.22
+   "seconds": 0.2
   },
   {
    "stand": "implicit",
@@ -2091,7 +2091,7 @@
    "new_settles": "the primary database version",
    "prompt_tokens": 353,
    "eval_tokens": 37,
-   "seconds": 0.16
+   "seconds": 0.17
   },
   {
    "stand": "implicit",
@@ -2104,7 +2104,7 @@
    "new_settles": "the service language (Rust) and integration test language (Python)",
    "prompt_tokens": 373,
    "eval_tokens": 48,
-   "seconds": 0.24
+   "seconds": 0.22
   },
   {
    "stand": "implicit",
@@ -2117,7 +2117,7 @@
    "new_settles": "staging deployment trigger rule",
    "prompt_tokens": 361,
    "eval_tokens": 39,
-   "seconds": 0.18
+   "seconds": 0.2
   },
   {
    "stand": "implicit",
@@ -2130,7 +2130,7 @@
    "new_settles": "the reranker configuration",
    "prompt_tokens": 384,
    "eval_tokens": 32,
-   "seconds": 0.17
+   "seconds": 0.16
   },
   {
    "stand": "implicit",
@@ -2156,7 +2156,7 @@
    "new_settles": "where user uploads are stored and the rationale for choosing S3",
    "prompt_tokens": 357,
    "eval_tokens": 46,
-   "seconds": 0.22
+   "seconds": 0.23
   },
   {
    "stand": "implicit",
@@ -2169,7 +2169,7 @@
    "new_settles": "the request rate limit",
    "prompt_tokens": 395,
    "eval_tokens": 37,
-   "seconds": 0.18
+   "seconds": 0.19
   },
   {
    "stand": "implicit",
@@ -2182,7 +2182,7 @@
    "new_settles": "CLI distribution strategy (signed installer)",
    "prompt_tokens": 353,
    "eval_tokens": 41,
-   "seconds": 0.21
+   "seconds": 0.18
   },
   {
    "stand": "implicit",
@@ -2195,7 +2195,7 @@
    "new_settles": "README section about CLI distribution changes due to signed installer",
    "prompt_tokens": 359,
    "eval_tokens": 48,
-   "seconds": 0.2
+   "seconds": 0.21
   },
   {
    "stand": "implicit",
@@ -2208,7 +2208,7 @@
    "new_settles": "ingest queue backend capabilities and features",
    "prompt_tokens": 370,
    "eval_tokens": 41,
-   "seconds": 0.18
+   "seconds": 0.19
   },
   {
    "stand": "implicit",
@@ -2221,7 +2221,7 @@
    "new_settles": "worker runtime Python version",
    "prompt_tokens": 369,
    "eval_tokens": 37,
-   "seconds": 0.18
+   "seconds": 0.17
   },
   {
    "stand": "implicit",
@@ -2234,7 +2234,7 @@
    "new_settles": "TLS termination location and pattern recommendation",
    "prompt_tokens": 350,
    "eval_tokens": 38,
-   "seconds": 0.21
+   "seconds": 0.16
   },
   {
    "stand": "implicit",
@@ -2247,7 +2247,7 @@
    "new_settles": "queue depth tracking method",
    "prompt_tokens": 369,
    "eval_tokens": 37,
-   "seconds": 0.19
+   "seconds": 0.17
   },
   {
    "stand": "implicit",
@@ -2260,7 +2260,7 @@
    "new_settles": "where session state is stored",
    "prompt_tokens": 359,
    "eval_tokens": 34,
-   "seconds": 0.15
+   "seconds": 0.16
   },
   {
    "stand": "asof",
@@ -2286,7 +2286,7 @@
    "new_settles": "postgresql version in production",
    "prompt_tokens": 372,
    "eval_tokens": 37,
-   "seconds": 0.22
+   "seconds": 0.24
   },
   {
    "stand": "asof",
@@ -2299,7 +2299,7 @@
    "new_settles": "training batch size",
    "prompt_tokens": 392,
    "eval_tokens": 30,
-   "seconds": 0.18
+   "seconds": 0.19
   },
   {
    "stand": "asof",
@@ -2312,7 +2312,7 @@
    "new_settles": "the number of job retries in queue worker",
    "prompt_tokens": 407,
    "eval_tokens": 45,
-   "seconds": 0.27
+   "seconds": 0.28
   },
   {
    "stand": "asof",
@@ -2325,7 +2325,7 @@
    "new_settles": "cache expiration time",
    "prompt_tokens": 385,
    "eval_tokens": 35,
-   "seconds": 0.2
+   "seconds": 0.23
   },
   {
    "stand": "asof",
@@ -2338,7 +2338,7 @@
    "new_settles": "cache expiration duration",
    "prompt_tokens": 356,
    "eval_tokens": 35,
-   "seconds": 0.23
+   "seconds": 0.21
   },
   {
    "stand": "asof",
@@ -2364,7 +2364,7 @@
    "new_settles": "Python version pinning (3.13)",
    "prompt_tokens": 366,
    "eval_tokens": 47,
-   "seconds": 0.27
+   "seconds": 0.26
   },
   {
    "stand": "asof",
@@ -2377,7 +2377,7 @@
    "new_settles": "API replica count",
    "prompt_tokens": 351,
    "eval_tokens": 35,
-   "seconds": 0.21
+   "seconds": 0.24
   },
   {
    "stand": "asof",
@@ -2390,7 +2390,7 @@
    "new_settles": "learning rate value and training performance evaluation",
    "prompt_tokens": 411,
    "eval_tokens": 39,
-   "seconds": 0.22
+   "seconds": 0.25
   },
   {
    "stand": "asof",
@@ -2403,7 +2403,7 @@
    "new_settles": "the document chunking token size",
    "prompt_tokens": 375,
    "eval_tokens": 41,
-   "seconds": 0.24
+   "seconds": 0.25
   },
   {
    "stand": "asof",
@@ -2416,7 +2416,7 @@
    "new_settles": "document chunk size for ingestion",
    "prompt_tokens": 372,
    "eval_tokens": 39,
-   "seconds": 0.25
+   "seconds": 0.26
   },
   {
    "stand": "asof",
@@ -2429,7 +2429,7 @@
    "new_settles": "cluster quorum requirement after resize",
    "prompt_tokens": 383,
    "eval_tokens": 34,
-   "seconds": 0.26
+   "seconds": 0.27
   },
   {
    "stand": "asof",
@@ -2442,7 +2442,7 @@
    "new_settles": "project license",
    "prompt_tokens": 357,
    "eval_tokens": 33,
-   "seconds": 0.2
+   "seconds": 0.25
   },
   {
    "stand": "asof",
@@ -2455,7 +2455,7 @@
    "new_settles": "authentication approach (JWT with HS256) and reasoning for choice",
    "prompt_tokens": 393,
    "eval_tokens": 52,
-   "seconds": 0.28
+   "seconds": 0.32
   },
   {
    "stand": "asof",
@@ -2468,7 +2468,7 @@
    "new_settles": "frontend bundling tool",
    "prompt_tokens": 368,
    "eval_tokens": 37,
-   "seconds": 0.24
+   "seconds": 0.23
   },
   {
    "stand": "asof",
@@ -2481,7 +2481,7 @@
    "new_settles": "background job queue backend storage",
    "prompt_tokens": 379,
    "eval_tokens": 38,
-   "seconds": 0.21
+   "seconds": 0.23
   },
   {
    "stand": "asof",
@@ -2494,7 +2494,7 @@
    "new_settles": "deployment pattern (staged release with CI migration to GitHub Actions)",
    "prompt_tokens": 376,
    "eval_tokens": 49,
-   "seconds": 0.26
+   "seconds": 0.28
   },
   {
    "stand": "asof",
@@ -2507,7 +2507,7 @@
    "new_settles": "the package build tool (hatchling) and publishing method (CI)",
    "prompt_tokens": 331,
    "eval_tokens": 52,
-   "seconds": 0.29
+   "seconds": 0.27
   },
   {
    "stand": "asof",
@@ -2520,7 +2520,7 @@
    "new_settles": "the packaging tool (Poetry) with incomplete implementation",
    "prompt_tokens": 358,
    "eval_tokens": 45,
-   "seconds": 0.24
+   "seconds": 0.23
   },
   {
    "stand": "asof",
@@ -2533,7 +2533,7 @@
    "new_settles": "frontend state management tool",
    "prompt_tokens": 357,
    "eval_tokens": 37,
-   "seconds": 0.21
+   "seconds": 0.22
   },
   {
    "stand": "asof",
@@ -2546,7 +2546,7 @@
    "new_settles": "schema migration method (plain SQL files with shell script)",
    "prompt_tokens": 410,
    "eval_tokens": 46,
-   "seconds": 0.25
+   "seconds": 0.28
   },
   {
    "stand": "asof",
@@ -2559,7 +2559,7 @@
    "new_settles": "secret injection via orchestrator environment variables",
    "prompt_tokens": 371,
    "eval_tokens": 42,
-   "seconds": 0.24
+   "seconds": 0.27
   },
   {
    "stand": "asof",
@@ -2585,7 +2585,7 @@
    "new_settles": "beta dashboard UI became unconditional (flag deleted)",
    "prompt_tokens": 363,
    "eval_tokens": 44,
-   "seconds": 0.23
+   "seconds": 0.26
   },
   {
    "stand": "asof",
@@ -2598,7 +2598,7 @@
    "new_settles": "the beta dashboard UI access policy",
    "prompt_tokens": 359,
    "eval_tokens": 41,
-   "seconds": 0.22
+   "seconds": 0.25
   },
   {
    "stand": "asof",
@@ -2611,7 +2611,7 @@
    "new_settles": "the /v1/export endpoint removal",
    "prompt_tokens": 354,
    "eval_tokens": 44,
-   "seconds": 0.23
+   "seconds": 0.24
   },
   {
    "stand": "asof",
@@ -2637,7 +2637,7 @@
    "new_settles": "plugin system removal decision",
    "prompt_tokens": 375,
    "eval_tokens": 38,
-   "seconds": 0.21
+   "seconds": 0.24
   },
   {
    "stand": "asof",
@@ -2650,7 +2650,7 @@
    "new_settles": "ios client discontinuation and web app remaining",
    "prompt_tokens": 358,
    "eval_tokens": 42,
-   "seconds": 0.22
+   "seconds": 0.24
   },
   {
    "stand": "asof",
@@ -2702,7 +2702,7 @@
    "new_settles": "the removal of --legacy flag in version 3.0",
    "prompt_tokens": 356,
    "eval_tokens": 48,
-   "seconds": 0.24
+   "seconds": 0.27
   },
   {
    "stand": "asof",
@@ -2715,7 +2715,7 @@
    "new_settles": "the --legacy flag usage for backward compatibility, acknowledging its removal in 3.0",
    "prompt_tokens": 356,
    "eval_tokens": 57,
-   "seconds": 0.3
+   "seconds": 0.31
   },
   {
    "stand": "asof",
@@ -2728,7 +2728,7 @@
    "new_settles": "removal of audit tab from admin panel",
    "prompt_tokens": 411,
    "eval_tokens": 38,
-   "seconds": 0.21
+   "seconds": 0.22
   },
   {
    "stand": "asof",
@@ -2741,7 +2741,7 @@
    "new_settles": "application localization translations",
    "prompt_tokens": 406,
    "eval_tokens": 35,
-   "seconds": 0.23
+   "seconds": 0.21
   },
   {
    "stand": "asof",
@@ -2767,7 +2767,7 @@
    "new_settles": "HTTP client retry logic for specific status codes",
    "prompt_tokens": 399,
    "eval_tokens": 41,
-   "seconds": 0.26
+   "seconds": 0.25
   },
   {
    "stand": "asof",
@@ -2780,7 +2780,7 @@
    "new_settles": "audit log scope limited to billing tables only",
    "prompt_tokens": 371,
    "eval_tokens": 44,
-   "seconds": 0.28
+   "seconds": 0.26
   },
   {
    "stand": "asof",
@@ -2793,7 +2793,7 @@
    "new_settles": "where audit decisions are documented",
    "prompt_tokens": 380,
    "eval_tokens": 39,
-   "seconds": 0.24
+   "seconds": 0.26
   },
   {
    "stand": "asof",
@@ -2806,7 +2806,7 @@
    "new_settles": "GPU utilization threshold",
    "prompt_tokens": 389,
    "eval_tokens": 35,
-   "seconds": 0.22
+   "seconds": 0.23
   },
   {
    "stand": "asof",
@@ -2819,7 +2819,7 @@
    "new_settles": "pre-commit hook linting scope",
    "prompt_tokens": 367,
    "eval_tokens": 41,
-   "seconds": 0.25
+   "seconds": 0.26
   },
   {
    "stand": "asof",
@@ -2845,7 +2845,7 @@
    "new_settles": "nightly backup database scope",
    "prompt_tokens": 394,
    "eval_tokens": 39,
-   "seconds": 0.22
+   "seconds": 0.25
   },
   {
    "stand": "asof",
@@ -2858,7 +2858,7 @@
    "new_settles": "nightly backup scope includes primary database only",
    "prompt_tokens": 386,
    "eval_tokens": 44,
-   "seconds": 0.28
+   "seconds": 0.24
   },
   {
    "stand": "asof",
@@ -2871,7 +2871,7 @@
    "new_settles": "rate limiting scope",
    "prompt_tokens": 376,
    "eval_tokens": 35,
-   "seconds": 0.22
+   "seconds": 0.24
   },
   {
    "stand": "asof",
@@ -2884,7 +2884,7 @@
    "new_settles": "response compression threshold",
    "prompt_tokens": 379,
    "eval_tokens": 35,
-   "seconds": 0.23
+   "seconds": 0.24
   },
   {
    "stand": "asof",
@@ -2910,7 +2910,7 @@
    "new_settles": "threshold for dedicated shards and dashboard verification",
    "prompt_tokens": 392,
    "eval_tokens": 42,
-   "seconds": 0.23
+   "seconds": 0.24
   },
   {
    "stand": "asof",
@@ -2923,7 +2923,7 @@
    "new_settles": "sharding threshold parameter",
    "prompt_tokens": 356,
    "eval_tokens": 37,
-   "seconds": 0.21
+   "seconds": 0.22
   },
   {
    "stand": "asof",
@@ -2936,7 +2936,7 @@
    "new_settles": "end-to-end request tracing with sampling rate",
    "prompt_tokens": 392,
    "eval_tokens": 43,
-   "seconds": 0.25
+   "seconds": 0.26
   },
   {
    "stand": "asof",
@@ -2949,7 +2949,7 @@
    "new_settles": "request tracing policy",
    "prompt_tokens": 370,
    "eval_tokens": 35,
-   "seconds": 0.21
+   "seconds": 0.22
   },
   {
    "stand": "asof",
@@ -2962,7 +2962,7 @@
    "new_settles": "the primary database version (PostgreSQL 16) and its documentation",
    "prompt_tokens": 346,
    "eval_tokens": 53,
-   "seconds": 0.3
+   "seconds": 0.29
   },
   {
    "stand": "asof",
@@ -2975,7 +2975,7 @@
    "new_settles": "the service language and integration test language",
    "prompt_tokens": 374,
    "eval_tokens": 39,
-   "seconds": 0.22
+   "seconds": 0.24
   },
   {
    "stand": "asof",
@@ -2988,7 +2988,7 @@
    "new_settles": "staging deployment trigger rule",
    "prompt_tokens": 363,
    "eval_tokens": 39,
-   "seconds": 0.25
+   "seconds": 0.24
   },
   {
    "stand": "asof",
@@ -3001,7 +3001,7 @@
    "new_settles": "S3 storage configuration for uploads with staged release approach",
    "prompt_tokens": 373,
    "eval_tokens": 43,
-   "seconds": 0.25
+   "seconds": 0.24
   },
   {
    "stand": "asof",
@@ -3027,7 +3027,7 @@
    "new_settles": "the request rate limit",
    "prompt_tokens": 406,
    "eval_tokens": 37,
-   "seconds": 0.22
+   "seconds": 0.26
   },
   {
    "stand": "asof",
@@ -3040,7 +3040,7 @@
    "new_settles": "CLI distribution method through signed installer",
    "prompt_tokens": 345,
    "eval_tokens": 41,
-   "seconds": 0.24
+   "seconds": 0.25
   },
   {
    "stand": "asof",
@@ -3053,7 +3053,7 @@
    "new_settles": "desktop app distribution method",
    "prompt_tokens": 356,
    "eval_tokens": 36,
-   "seconds": 0.25
+   "seconds": 0.24
   },
   {
    "stand": "asof",
@@ -3069,5 +3069,5 @@
    "seconds": 0.25
   }
  ],
- "seconds": 52.4
+ "seconds": 53.3
 }

@@ -915,6 +915,21 @@ def render_guard_bench(c: Claims) -> str:
     header = ["arm", "recall of the right guard", "precision", "hard-negative false alarms",
               "project-only recall", "tokens / call", "ms / check"]
     rows, missing, none = [], [], []
+    #: The timing column alone can be withdrawn - a bench run inside a campaign on a loaded box
+    #: times the box (2026-09-23) - while the rates beside it stand. As in `render_latency`, the
+    #: withdrawn cells say so and the reason is written under the table, rather than one pending
+    #: timing taking the whole table down with it.
+    timing_gone: dict[str, list[str]] = {}
+
+    def _ms(slug: str, label: str) -> str:
+        cid = f"{fam}.{slug}.ms_per_call"
+        if not c.has(cid):
+            return "-"
+        if c.is_withdrawn(cid):
+            timing_gone.setdefault(c.get(cid)["stale"], []).append(label.strip("*"))
+            return "withdrawn"
+        return _cell(c, cid)
+
     for label, slug in GUARD_ROWS:
         if c.has(f"{fam}.{slug}.recall_all_fire"):
             none.append(label.strip("*"))
@@ -927,7 +942,7 @@ def render_guard_bench(c: Claims) -> str:
                          _cell(c, f"{fam}.{slug}.hard_negative_fpr") if c.has(f"{fam}.{slug}.hard_negative_fpr") else "-",
                          _cell(c, f"{fam}.{slug}.project_recall") if c.has(f"{fam}.{slug}.project_recall") else "-",
                          _cell(c, f"{fam}.{slug}.tokens_per_call") if c.has(f"{fam}.{slug}.tokens_per_call") else "-",
-                         _cell(c, f"{fam}.{slug}.ms_per_call") if c.has(f"{fam}.{slug}.ms_per_call") else "-"])
+                         _ms(slug, label)])
             continue
         if not c.has(f"{fam}.{slug}.recall_at_fpr"):
             missing.append(label.strip("*"))
@@ -936,8 +951,10 @@ def render_guard_bench(c: Claims) -> str:
                      _cell(c, f"{fam}.{slug}.precision_at_fpr") if c.has(f"{fam}.{slug}.precision_at_fpr") else "-",
                      _cell(c, f"{fam}.{slug}.hard_negative_fpr") if c.has(f"{fam}.{slug}.hard_negative_fpr") else "-",
                      _cell(c, f"{fam}.{slug}.project_recall") if c.has(f"{fam}.{slug}.project_recall") else "-",
-                     _cell(c, f"{fam}.{slug}.tokens_per_call"), _cell(c, f"{fam}.{slug}.ms_per_call")])
+                     _cell(c, f"{fam}.{slug}.tokens_per_call"), _ms(slug, label)])
     out = _table(header, rows)
+    for reason, labels in timing_gone.items():
+        out += f"\n\n<sub>**Withdrawn** - ms / check for {', '.join(labels)}: {reason}</sub>"
     notes = []
     if none:
         notes.append("no operating point under the false-alarm budget for " + ", ".join(none)

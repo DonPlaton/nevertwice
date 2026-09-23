@@ -38,9 +38,9 @@ hit is refused, even when there is room for it - the distinction between *does i
 returned no more than 2 points less often. On a miss the default returns to 0.
 
 <!-- claims:abstention-sweep -->
-> **Withdrawn 2026-09.** the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored
+> **Withdrawn 2026-09.** one run of a stochastic extraction model across an engine change, no spread measured; re-measured on the GPU in v2 with --runs 3 so the claim prints mean and spread
 >
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/abstention_ab.py --part all` is what re-measures this one.
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/abstention_ab.py --part all --out research/results/abstention_ab.json` is what re-measures this one.
 <!-- /claims:abstention-sweep -->
 
 Every threshold from 0.30 upward reads the same as the shipped one: one hit is all that is left to

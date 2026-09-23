@@ -231,8 +231,12 @@ print(f"       ({absent} named a file that is not in this clone - third-party co
 print("\n- and the inventory is pinned, so new pins cannot arrive unnoticed -")
 #: Measured 2026-09-22 at `b956966`. A change here is a decision: either a new artifact arrived
 #: with provenance, or one lost it.
-check("the number of pinned artifacts has not moved", len(artifacts) == 163, str(len(artifacts)))
-check("and the number of pin KINDS has not moved", len(kinds) == 145,
+#: 2026-09-23, restore #1 at 358fa75: +1 artifact (research/results/token_floor.json, block A - its
+#: code_sha, measured_by[].code_sha and the oracle corpus sha256) and +2 kinds on locomo_raw.json
+#: (embed_cache.mtime/.sha256, which the stand now records beside its cache). Diffed against a
+#: worktree at HEAD, none lost.
+check("the number of pinned artifacts has not moved", len(artifacts) == 164, str(len(artifacts)))
+check("and the number of pin KINDS has not moved", len(kinds) == 150,
       f"{len(kinds)} kinds over {len(pins)} values")
 
 print(f"\n{'ALL OK' if not FAILS else f'{FAILS} FAILED'}")

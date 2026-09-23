@@ -79,10 +79,32 @@ check("the total has not moved", len(positional) == sum(KNOWN.values()),
 check("and no artifact has gained or lost one", dict(by_artifact) == KNOWN,
       f"{dict(by_artifact)}")
 
-print("\n- none of them is live, which is why the corruption was recoverable -")
+print("\n- a live one is live only through the restore's guards: its shape and pair still hold -")
+#: Until the 2026-09-23 campaign every positional claim was withdrawn or pending, and that was
+#: why the supersession corruption was recoverable. Restore #1 revived four (guard_bench's
+#: `curve[0]` pair) through the pair and shape refusals. The property worth pinning was never
+#: "none is live" - that was a snapshot - but "none is live on a list whose shape moved": each
+#: live positional claim carries a recorded shape and passes, against its artifact as it is on
+#: disk now, the same two refusals the restore applies.
+sys.path.insert(0, str(ROOT / "tools"))
+import remeasure as rm  # noqa: E402
+
 live = [c for c in positional if not (c.get("stale") or c.get("pending_remeasure"))]
-check("every positional-pointer claim is withdrawn or pending", not live,
-      ", ".join(c["id"] for c in live[:4]))
+moved = []
+for c in live:
+    try:
+        data = json.loads((ROOT / c["raw"]).read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        moved.append(f"{c['id']}: unreadable raw ({exc})")
+        continue
+    why = rm.pair_mismatch(c, data) or rm.shape_mismatch(c, data)
+    if why:
+        moved.append(f"{c['id']}: {why}")
+check("every live positional-pointer claim still matches its recorded pair and shape", not moved,
+      "; ".join(moved[:4]))
+check("and every live one HAS a recorded shape - an unshaped one would pass the check above "
+      "vacuously", all(c.get("shape") for c in live),
+      ", ".join(c["id"] for c in live if not c.get("shape")))
 
 print("\n- the self-confirming case is named, not merely counted -")
 by_id = {c["id"]: c for c in claims}

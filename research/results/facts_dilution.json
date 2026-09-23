@@ -10,10 +10,10 @@
  "extract_temperature": "0",
  "k": 5,
  "depth": 50,
- "ingest_seconds": 66.2,
- "notes": 47,
- "notes_with_facts_block": 32,
- "notes_reembedded": 32,
+ "ingest_seconds": 114.2,
+ "notes": 45,
+ "notes_with_facts_block": 31,
+ "notes_reembedded": 31,
  "named_cases": [],
  "named_from": "research/results/supersession_v1_implicit.json",
  "gate": {
@@ -40,18 +40,16 @@
    "rank_with": 1,
    "rank_without": 1,
    "returned_with": [
-    "postgresql-16-primary-database The primary database for the project is configured to use PostgreSQL 16. This decision was documented in the README and aligns with the staged release deployment strategy.",
-    "postgresql-16-as-primary-database PostgreSQL version 16 was chosen as the primary database for the project, likely due to its stability and features.",
-    "staged-release-for-deployment A staged release deployment strategy was adopted for the project, which includes using PostgreSQL 16 as the primary database. | earlier: A staged release approach was chosen for deployment, allowing controlled rollout and minimizing ris…",
-    "redis-cache-layer The cache layer is implemented using Redis version 7, which was documented in the README section that was already stale.  [facts] Redis 7",
-    "staged-release-deployment The deployment was rolled out behind a staged release process, which helps manage risk and ensures gradual rollout of changes.  [facts] Rolled it out behind the usual staged release"
+    "postgresql-16-primary-database The project uses PostgreSQL 16 as the primary database. This was documented in the README section that was already stale.",
+    "postgresql-16-as-primary-database PostgreSQL 16 was chosen as the primary database for the project.",
+    "staged-release-deployment The deployment was rolled out behind a staged release process, which helps in managing risk and ensuring stability during updates.  [facts] Rolled it out behind the usual staged release",
+    "staged-release-for-deployment A staged release approach was chosen for rolling out the deployment, allowing gradual rollout and minimizing potential impact of failures.  [facts] Rolled it out behind the usual staged release"
    ],
    "returned_without": [
-    "postgresql-16-as-primary-database PostgreSQL version 16 was chosen as the primary database for the project, likely due to its stability and features.",
-    "postgresql-16-primary-database The primary database for the project is configured to use PostgreSQL 16. This decision was documented in the README and aligns with the staged release deployment strategy.",
-    "staged-release-for-deployment A staged release deployment strategy was adopted for the project, which includes using PostgreSQL 16 as the primary database. | earlier: A staged release approach was chosen for deployment, allowing controlled rollout and minimizing ris…",
-    "redis-cache-layer The cache layer is implemented using Redis version 7, which was documented in the README section that was already stale.",
-    "staged-release-deployment The deployment was rolled out behind a staged release process, which helps manage risk and ensures gradual rollout of changes."
+    "postgresql-16-primary-database The project uses PostgreSQL 16 as the primary database. This was documented in the README section that was already stale.",
+    "postgresql-16-as-primary-database PostgreSQL 16 was chosen as the primary database for the project.",
+    "staged-release-deployment The deployment was rolled out behind a staged release process, which helps in managing risk and ensuring stability during updates.",
+    "staged-release-for-deployment A staged release approach was chosen for rolling out the deployment, allowing gradual rollout and minimizing potential impact of failures."
    ]
   },
   {
