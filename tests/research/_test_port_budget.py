@@ -222,11 +222,19 @@ def test_t9e_non_windows_is_unchecked_and_never_queries_anything() -> None:
     saved_platform = pb._platform
     saved = (pb._run_netsh_dynamicport, pb._run_netsh_excluded, pb._run_connections_csv)
 
-    def _boom():
-        raise AssertionError("an OS query ran on a platform this check does not apply to")
-    pb._run_netsh_dynamicport = _boom
-    pb._run_netsh_excluded = _boom
-    pb._run_connections_csv = _boom
+    # (в), the auditor's finding on 86fa7a9: a stub that RAISES on call reddens this test
+    # only by CRASHING it (an uncaught AssertionError) if the non-Windows short-circuit
+    # ever breaks - the same "fewer FAIL lines than a real regression should produce"
+    # failure mode K9 fixed in the pacer suite. Count calls instead, and assert the count
+    # is zero as a named check - a broken short-circuit then reddens BY NAME.
+    calls = {"n": 0}
+
+    def _counting_stub():
+        calls["n"] += 1
+        return ""
+    pb._run_netsh_dynamicport = _counting_stub
+    pb._run_netsh_excluded = _counting_stub
+    pb._run_connections_csv = _counting_stub
     pb._platform = "linux"
     try:
         m = pb.measure()
@@ -238,10 +246,92 @@ def test_t9e_non_windows_is_unchecked_and_never_queries_anything() -> None:
         pf = pb.preflight()
         check("preflight() short-circuits to 'unchecked' without ever polling",
               pf["decision"] == "unchecked", str(pf))
+        check("non-Windows makes ZERO subprocess/OS-query calls across measure()/decide()/"
+              "preflight() (counted via a stub, not just asserted by a raising one)",
+              calls["n"] == 0, str(calls))
     finally:
         pb._platform = saved_platform
         (pb._run_netsh_dynamicport, pb._run_netsh_excluded,
          pb._run_connections_csv) = saved
+
+
+# ── T9f: a failed/empty/malformed OS query REFUSES - it never reads as "nothing found" ──
+
+def test_t9f_a_failed_or_malformed_query_refuses_rather_than_reading_as_zero() -> None:
+    print("\n- T9f: K10 - a failed, empty, or malformed OS answer refuses (never silently "
+          "reads as 0 excluded / 0 in use, which is how 86fa7a9 failed OPEN) -")
+    pb._platform = "win32"
+    good_dp = "Start Port      : 50000\nNumber of Ports : 10000\n"
+    good_excluded = "Start Port    End Port\n----------    --------\n"
+    good_csv = _csv([], [])
+
+    def _set(dp=good_dp, excluded=good_excluded, conn=good_csv):
+        pb._run_netsh_dynamicport = lambda: dp
+        pb._run_netsh_excluded = lambda: excluded
+        pb._run_connections_csv = lambda: conn
+
+    try:
+        # the auditor's own probe (1): excludedportrange AND the connections query both
+        # come back EMPTY (a real failure mode - e.g. the command errored before
+        # printing anything) - before K10 this computed excluded=0, in_use=0, free=range
+        # (16,384-equivalent here: 10,000) and decided "go" on a measurement that never
+        # actually ran.
+        _set(excluded="", conn="")
+        d = pb.decide(pb.measure())
+        check("both excludedportrange and connections empty -> 'refuse', NOT 'go' "
+              "(the auditor's probe (1) on 86fa7a9)", d["decision"] == "refuse", str(d))
+        check("... and free is None, never a fabricated full-range number",
+              d.get("free") is None, str(d))
+        check("... reason names the query that failed",
+              d.get("reason") == "measurement failed: excludedportrange", str(d))
+
+        # the auditor's own probe (2): PowerShell answers with an error line instead of
+        # CSV - no "LocalPort","State" header, so the parser would have seen ONE
+        # unparseable row and silently returned [] (0 in use) exactly like an empty answer.
+        _set(conn="Get-NetTCPConnection : Access denied\n")
+        d2 = pb.decide(pb.measure())
+        check("connections query returns an error line, not CSV -> 'refuse' (the "
+              "auditor's probe (2))", d2["decision"] == "refuse", str(d2))
+        check("... reason names the connections query specifically",
+              d2.get("reason") == "measurement failed: connections", str(d2))
+
+        # dynamicport itself malformed/empty (no ': NUMBER' fields at all)
+        _set(dp="")
+        d3 = pb.decide(pb.measure())
+        check("dynamicport query empty -> 'refuse', reason names it",
+              d3["decision"] == "refuse" and
+              d3.get("reason") == "measurement failed: dynamicport", str(d3))
+
+        # the auditor's control (3): every query WORKS and genuinely shows 12,000 busy
+        # (well past NEED here isn't quite the same range, but the point is the SAME
+        # shape refusal via the THRESHOLD, not via a measurement failure) - must still
+        # refuse, and must NOT claim a measurement failure it did not have.
+        _set(conn=_csv([str(50000 + i) for i in range(9600)], []))    # free = 400 < NEED
+        d4 = pb.decide(pb.measure())
+        check("a WORKING measurement showing real congestion still refuses (the "
+              "auditor's control case)", d4["decision"] == "refuse", str(d4))
+        check("... and does NOT claim a measurement failure - this refusal is real data",
+              "measurement_failed" not in d4 and d4.get("free") == 400, str(d4))
+
+        # mutation: restore the pre-K10 swallowing (validators always say "valid")
+        saved_dp_valid = pb._valid_dynamicport_text
+        saved_ex_valid = pb._valid_excluded_text
+        saved_csv_valid = pb._valid_connections_csv_text
+        pb._valid_dynamicport_text = lambda text: True
+        pb._valid_excluded_text = lambda text: True
+        pb._valid_connections_csv_text = lambda text: True
+        try:
+            _set(excluded="", conn="")
+            mutated = pb.decide(pb.measure())
+            check("mutation 'restore the swallowing': the SAME empty-queries case now "
+                  "WRONGLY says 'go' (would FAIL the probe-(1) check above)",
+                  mutated["decision"] == "go", str(mutated))
+        finally:
+            pb._valid_dynamicport_text = saved_dp_valid
+            pb._valid_excluded_text = saved_ex_valid
+            pb._valid_connections_csv_text = saved_csv_valid
+    finally:
+        pb._platform = sys.platform
 
 
 def test_zz_every_check_passed() -> None:
@@ -259,7 +349,8 @@ def main() -> int:
                test_t9b_exact_boundary_8399_refuses_8400_goes,
                test_t9c_time_wait_drainable_waits_then_drains_to_go,
                test_t9d_excluded_range_refuses,
-               test_t9e_non_windows_is_unchecked_and_never_queries_anything):
+               test_t9e_non_windows_is_unchecked_and_never_queries_anything,
+               test_t9f_a_failed_or_malformed_query_refuses_rather_than_reading_as_zero):
         fn()
     print(f"\nport_budget: {PASSED} passed, {FAILED} failed")
     return 1 if FAILED else 0

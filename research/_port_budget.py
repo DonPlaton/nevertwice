@@ -72,9 +72,52 @@ class ParseError(ValueError):
 
 
 def _run(cmd: list[str]) -> str:
-    res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8",
-                         errors="replace", timeout=30)
+    """stdout, or "" on ANY failure (non-zero exit, a spawn error, a timeout) - never the
+    partial/misleading stdout of a command that did not succeed.
+
+    K10 (the auditor's finding on 86fa7a9): this used to return `res.stdout` regardless
+    of `res.returncode`, and `Get-NetTCPConnection -ErrorAction SilentlyContinue` can
+    still fail outright (an access-denied PSSecurityException, say) while printing
+    nothing useful to stdout. A failed measurement and an EMPTY one then read identically
+    to every parser below - `parse_excluded("")` and `parse_connections_csv("")` both
+    return `[]`, not an error - so `free` silently became the FULL range and a real
+    measurement failure printed "go". Collapsing a bad exit code to "" here, on top of
+    `measure()`'s own content validation just below, means both failure modes (a bad
+    exit code, a malformed or empty answer) are the exact same signal to that validation
+    - one code path refuses on either, instead of two paths where only one was ever
+    taught to."""
+    try:
+        res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8",
+                             errors="replace", timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        return ""
+    if res.returncode != 0:
+        return ""
     return res.stdout or ""
+
+
+#: K10: content-shape validators, run BEFORE a query's text is handed to its parser -
+#: purely on the STRING, so a hermetic test can exercise them with canned text alone,
+#: with no subprocess or returncode involved at all (T9f).
+
+def _valid_dynamicport_text(text: str) -> bool:
+    return len(_COLON_NUMBER.findall(text)) >= 2
+
+
+#: netsh draws this dashed table-header separator in plain ASCII regardless of locale -
+#: present even when the exclusion table holds ZERO rows (captured on this machine, both
+#: languages) - so its ABSENCE means the query failed or returned something else
+#: entirely, never "no exclusions today".
+_TABLE_SEPARATOR = re.compile(r"-{4,}\s+-{4,}")
+
+
+def _valid_excluded_text(text: str) -> bool:
+    return bool(_TABLE_SEPARATOR.search(text))
+
+
+def _valid_connections_csv_text(text: str) -> bool:
+    first_line = (text.splitlines() or [""])[0]
+    return "LocalPort" in first_line and "State" in first_line
 
 
 def _run_netsh_dynamicport() -> str:
@@ -157,12 +200,34 @@ def measure() -> dict:
     """One snapshot: the configured dynamic range, what Windows excludes from it, and
     what currently occupies it - split into ports that stay busy on the next check
     (anything but TIME_WAIT) and ports draining (TIME_WAIT, freed by Windows' default
-    ~120s TcpTimedWaitDelay)."""
+    ~120s TcpTimedWaitDelay).
+
+    K10: each of the three OS queries is validated (by shape, not by returncode - see
+    `_run`) BEFORE its text is handed to a parser. A failed or empty answer must never
+    read as "nothing excluded" / "nothing in use", because that is indistinguishable
+    from a genuinely idle machine and free() would then read as the FULL range - the
+    auditor's probe on 86fa7a9: excludedportrange and the connections query both
+    answering empty computed `free = 16,384` (the whole range) and decided "go" on a
+    measurement that never actually ran. `measurement_failed` names WHICH of the three
+    queries could not be trusted, and `free` is left `None` rather than guessed at -
+    `decide()` refuses on `measurement_failed` alone, never reaching the threshold
+    arithmetic with a fabricated free count."""
     if _platform != "win32":
         return {"platform": "unchecked", "free": None}
-    start, count = parse_dynamicport(_run_netsh_dynamicport())
-    excluded = parse_excluded(_run_netsh_excluded())
-    conns = parse_connections_csv(_run_connections_csv())
+    dp_text = _run_netsh_dynamicport()
+    if not _valid_dynamicport_text(dp_text):
+        return {"platform": "win32", "free": None, "measurement_failed": "dynamicport"}
+    start, count = parse_dynamicport(dp_text)
+    ex_text = _run_netsh_excluded()
+    if not _valid_excluded_text(ex_text):
+        return {"platform": "win32", "start": start, "range": count, "free": None,
+                "measurement_failed": "excludedportrange"}
+    excluded = parse_excluded(ex_text)
+    conn_text = _run_connections_csv()
+    if not _valid_connections_csv_text(conn_text):
+        return {"platform": "win32", "start": start, "range": count, "free": None,
+                "measurement_failed": "connections"}
+    conns = parse_connections_csv(conn_text)
     end = start + count
     excluded_in_range = _excluded_ports_in_range(start, count, excluded)
     in_use = time_wait = 0
@@ -180,9 +245,14 @@ def measure() -> dict:
 
 def decide(m: dict) -> dict:
     """`m` (from `measure()`) plus a `decision` in {"unchecked", "go", "wait", "refuse"},
-    and, only when refusing, `pace_that_would_fit` (calls/s, the plan's own formula)."""
+    and, only when refusing, `pace_that_would_fit` (calls/s, the plan's own formula) -
+    except a `measurement_failed` refusal (K10), which carries no pace estimate at all,
+    since there is no reliable `free` to compute one from."""
     if m.get("platform") != "win32":
         return {**m, "decision": "unchecked"}
+    if m.get("measurement_failed"):
+        return {**m, "decision": "refuse",
+                "reason": f"measurement failed: {m['measurement_failed']}"}
     free = m["free"]
     if free >= NEED:
         return {**m, "decision": "go"}
@@ -223,6 +293,11 @@ def _report(d: dict) -> str:
                f"(need {NEED:,})")
     if d["decision"] == "refuse":
         extra = f" - {d['reason']}" if "reason" in d else ""
+        if d.get("measurement_failed"):
+            # K10: no reliable free count to print at all - the whole point of this
+            # branch is that {d['free']:,} would raise (free is None) rather than
+            # silently print a number this measurement never actually produced.
+            return f"port budget: REFUSED{extra}"
         return (f"port budget: REFUSED - only {d['free']:,} of {d['range']:,} dynamic ports "
                f"free (need {NEED:,}){extra}. A pace of "
                f"{d.get('pace_that_would_fit', 0):.2f} calls/s would fit today "
