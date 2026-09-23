@@ -84,6 +84,15 @@ def _run_via_powershell(command: str, *, cwd: Path, env: dict, input_text: str =
     reported explicitly, not guessed at: the four/five exit-code cases below are measured
     THROUGH THIS RELAY, which is the most faithful reproduction this machine can construct,
     and the report this session hands back says so in those words.
+
+    F2, measured directly rather than assumed either way: the `& ` prefix this helper adds is
+    not decorative. `powershell -NoProfile -Command "<python> \\"-c\\" \\"print(123)\\""` -
+    the SAME command, WITHOUT `&` - fails outright: `ParserError`, `FullyQualifiedErrorId:
+    UnexpectedToken`, exit 1, before python ever runs. So this helper tests a TRANSFORMED
+    command (`& ...; exit $LASTEXITCODE`), not necessarily the literal string Claude Code
+    passes to PowerShell - if Claude Code's own invocation omits the `&` (or spells the relay
+    differently, or does not relay at all), what actually happens there is exactly as
+    unestablished as the exit-code relay above, for a related but distinct reason.
     """
     ps = f"& {command}; exit $LASTEXITCODE"
     return subprocess.run(["powershell", "-NoProfile", "-Command", ps], cwd=str(cwd), env=env,
@@ -131,81 +140,214 @@ def _payload_parses(payload: str) -> bool:
         return False
 
 
-def _config_path_env_names() -> set[str]:
-    """Every environment variable `nevertwice/config.py` reads whose value flows into a
-    filesystem PATH (`Path(...)` or `_expand(...)`) - discovered by reading config.py's own
-    AST, not kept as a list by hand here, so a name added there later reddens THIS test
-    instead of leaking through `_wall.walled()` unchanged (the exact shape of the
-    NEVERTWICE_PROJECTS_ROOT gap this pair of functions exists to close: config.py reads it,
-    `hosts.py` separately reads a DIFFERENTLY-NAMED NEVERTWICE_CLAUDE_PROJECTS, and `walled()`
-    pinned only the second - a probe of NEVERTWICE_PROJECTS_ROOT="C:/pretend/real/.claude/
-    projects" passed straight through a walled() env with nothing catching it).
+def _package_env_names() -> dict[str, list[str]]:
+    """Every environment variable name read ANYWHERE in `nevertwice/*.py`, via
+    `os.environ.get(...)`, `os.getenv(...)` or `os.environ[...]` with a literal string name -
+    mapped to the file(s) it is read in. Discovered by AST, not kept as a list by hand, so a
+    NEW name added anywhere in the package later shows up here the next time this runs,
+    instead of silently reaching neither the wall nor the allowlist below (F1, class b: the
+    wall covered every path `config.py` itself resolves, but `hosts.py`'s host adapters and
+    `watch.py`'s daemon read their own sweep roots from OTHER names entirely -
+    `CursorAdapter.roots()` and `watch._vscode_globalstorage_bases()` both resolved to the
+    real `%APPDATA%\\...` on this machine, under a `walled()` that pinned neither).
 
-    Two passes over the whole module (`ast.walk`, which does not care about nesting depth or
-    scope): first, every simple `NAME = <expr>` assignment, keyed by name (config.py is small
-    and flat enough that one merged namespace across module and function scopes is a safe
-    simplification for a discovery tool, not a general-purpose one); second, every call to
-    `Path(...)` or `_expand(...)` - the two ways this module turns a string into a path - with
-    the env names found either directly nested inside that call, or one simple assignment
-    away (`custom = os.environ.get("NEVERTWICE_ENV_FILE")` ... `Path(custom)`, two statements
-    apart, is exactly the shape a direct-nesting-only walk would miss).
+    Does not resolve config.py's own `env(suffix)` helper (`NEVERTWICE_{suffix}` /
+    `CLAUDE_MEMORY_{suffix}`) the way the narrower, now-superseded config.py-only scanner did
+    - that helper is private to config.py and every name it can produce is already covered by
+    STORE_VARS/PROJECTS_ROOT_VARS, which this test checks against directly rather than
+    re-deriving.
     """
-    src = (PKG / "config.py").read_text(encoding="utf-8")
-    tree = ast.parse(src)
-
-    def literal_env_names(node) -> set[str]:
-        names: set[str] = set()
-        for n in ast.walk(node):
-            if not isinstance(n, ast.Call):
-                continue
-            target = n.func
-            is_os_environ_get = (isinstance(target, ast.Attribute) and target.attr == "get"
-                                 and isinstance(target.value, ast.Attribute)
-                                 and target.value.attr == "environ")
-            is_env_helper = isinstance(target, ast.Name) and target.id == "env"
-            if is_os_environ_get and n.args and isinstance(n.args[0], ast.Constant):
-                names.add(n.args[0].value)
-            elif is_env_helper and n.args and isinstance(n.args[0], ast.Constant):
-                suffix = n.args[0].value
-                names.add(f"NEVERTWICE_{suffix}")
-                names.add(f"CLAUDE_MEMORY_{suffix}")
-        return names
-
-    assigns: dict = {}
-    for node in ast.walk(tree):
-        if (isinstance(node, ast.Assign) and len(node.targets) == 1
-                and isinstance(node.targets[0], ast.Name)):
-            assigns[node.targets[0].id] = node.value
-
-    found: set[str] = set()
-    for node in ast.walk(tree):
-        if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
-                and node.func.id in ("Path", "_expand")):
+    found: dict[str, list[str]] = {}
+    for path in sorted(PKG.glob("*.py")):
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+        except SyntaxError:
             continue
-        found |= literal_env_names(node)
-        for n in ast.walk(node):
-            if isinstance(n, ast.Name) and n.id in assigns:
-                found |= literal_env_names(assigns[n.id])
+        for node in ast.walk(tree):
+            name = None
+            if isinstance(node, ast.Call):
+                target = node.func
+                is_environ_get = (isinstance(target, ast.Attribute) and target.attr == "get"
+                                  and isinstance(target.value, ast.Attribute)
+                                  and target.value.attr == "environ"
+                                  and isinstance(target.value.value, ast.Name)
+                                  and target.value.value.id == "os")
+                is_getenv = (isinstance(target, ast.Attribute) and target.attr == "getenv"
+                            and isinstance(target.value, ast.Name) and target.value.id == "os")
+                if (is_environ_get or is_getenv) and node.args \
+                        and isinstance(node.args[0], ast.Constant) \
+                        and isinstance(node.args[0].value, str):
+                    name = node.args[0].value
+            elif isinstance(node, ast.Subscript):
+                val = node.value
+                if (isinstance(val, ast.Attribute) and val.attr == "environ"
+                        and isinstance(val.value, ast.Name) and val.value.id == "os"):
+                    sl = node.slice
+                    if isinstance(sl, ast.Constant) and isinstance(sl.value, str):
+                        name = sl.value
+            if name:
+                found.setdefault(name, []).append(path.name)
     return found
 
 
-def test_walled_covers_every_path_resolving_name_in_config() -> None:
-    print("\n- walled() covers every path-resolving name config.py reads -")
-    discovered = _config_path_env_names()
+#: Every name `_package_env_names()` can discover that is NOT a filesystem path this test
+#: should require `walled()` to pin - or IS one, but deliberately kept out of the wall (see
+#: `tests/_wall.py`'s module docstring for `APPDATA`/`XDG_CONFIG_HOME`). One line each: what
+#: the name actually holds, so extending this allowlist means looking, not copying the shape.
+#: `NEVERTWICE_CLOUD` is not here - it is a non-path value too, but it is already covered by
+#: being in `_wall.PINNED_VARS` (walled() sets it to "none" for an unrelated reason: no real
+#: network calls from a sandboxed run), and the check below treats PINNED as satisfying either
+#: requirement.
+ALLOWLIST: dict[str, str] = {
+    # -- credentials --
+    "CEREBRAS_API_KEY": "a credential string for the Cerebras extraction backend",
+    "DEEPSEEK_API_KEY": "a credential string for the DeepSeek extraction backend",
+    "GEMINI_API_KEY": "a credential string for the Gemini extraction/embed backend",
+    "GROQ_API_KEY": "a credential string for the Groq extraction backend",
+    # -- HTTP endpoints --
+    "CEREBRAS_URL": "an HTTP endpoint URL, not a filesystem path",
+    "DEEPSEEK_URL": "an HTTP endpoint URL, not a filesystem path",
+    "GEMINI_URL": "an HTTP endpoint URL, not a filesystem path",
+    "GROQ_URL": "an HTTP endpoint URL, not a filesystem path",
+    "NEVERTWICE_EMBED_BASE_URL": "an HTTP endpoint URL for a self-hosted embed backend",
+    "OLLAMA_EMBED_URL": "an HTTP endpoint URL, not a filesystem path",
+    "OLLAMA_HOST": "an HTTP host:port string `doctor.py` prints, not a path",
+    "OLLAMA_TAGS_URL": "an HTTP endpoint URL, not a filesystem path",
+    "OLLAMA_URL": "an HTTP endpoint URL, not a filesystem path",
+    # -- model / provider / mode / label names --
+    "NEVERTWICE_AGENT": "the agent label stamped on captured notes, a string",
+    "NEVERTWICE_CEREBRAS_MODEL": "a model name string",
+    "NEVERTWICE_DEEPSEEK_MODEL": "a model name string",
+    "NEVERTWICE_EMBED_MODEL": "a model name string (sandbox_guard.py already scrubs this for the in-process suites)",
+    "NEVERTWICE_EMBED_PROVIDER": "a provider name string (ollama/openai/voyage/cohere/gemini)",
+    "NEVERTWICE_EMBED_QUANT": "a quantization mode string",
+    "NEVERTWICE_GEMINI_MODEL": "a model name string",
+    "NEVERTWICE_GROQ_MODEL": "a model name string",
+    "NEVERTWICE_MODEL": "a model name string (local Ollama extraction model)",
+    "NEVERTWICE_RANKER": "a ranking-mode name string",
+    "NEVERTWICE_USER_MODEL": "a model name string",
+    "NEVERTWICE_WRITE_DEDUP_MODE": "a dedup-mode name string",
+    "NEVERTWICE_XRERANK_MODEL": "a model name string",
+    "NEVERTWICE_TWIN_SPACE": "a calibration SPACE LABEL string, not the calibration file itself (that is NEVERTWICE_TWIN_FILE, which IS pinned)",
+    # -- flags, thresholds, numbers, text prefixes: none are paths --
+    "NEVERTWICE_ADAPTIVE_RECUR": "a boolean flag string",
+    "NEVERTWICE_ATTACH_EARLIER_ALWAYS": "a boolean flag string",
+    "NEVERTWICE_CLOUD_ONLY": "a boolean flag string",
+    "NEVERTWICE_CROSS_PROJECT": "a boolean flag string",
+    "NEVERTWICE_EMBED_DOC_PREFIX": "a text prefix string prepended to embedded documents",
+    "NEVERTWICE_EMBED_PREFIX": "a text prefix string",
+    "NEVERTWICE_EMBED_QUERY_PREFIX": "a text prefix string prepended to embedded queries",
+    "NEVERTWICE_EXPLICIT_RETIRE": "a mode-selector string (write/judge)",
+    "NEVERTWICE_EXTRACT_TEMP": "an LLM sampling temperature (float), not a path",
+    "NEVERTWICE_FUSION": "a boolean/mode flag string for retrieval score fusion",
+    "NEVERTWICE_GIT_PUSH": "a boolean flag string",
+    "NEVERTWICE_GUARDS_HOTPATH": "a boolean flag string",
+    "NEVERTWICE_GUARD_ENFORCE": "a boolean flag string",
+    "NEVERTWICE_GUARD_PACK": "a boolean flag string (seed the universal guard pack)",
+    "NEVERTWICE_INJECT": "a boolean flag string",
+    "NEVERTWICE_INJECT_RECEIPT": "a boolean flag string",
+    "NEVERTWICE_LEXICAL_MORPHOLOGY": "a boolean/mode flag string",
+    "NEVERTWICE_LOCAL_ONLY": "a boolean/list flag string (which agents stay off cloud)",
+    "NEVERTWICE_MAX_DOC_BYTES": "an integer byte cap, not a path",
+    "NEVERTWICE_PROJECT_CARD": "a boolean flag string",
+    "NEVERTWICE_PROMPT_RECALL": "a boolean flag string",
+    "NEVERTWICE_PROMPT_RECALL_MODE": "a mode-selector string",
+    "NEVERTWICE_QUARANTINE": "a boolean flag string",
+    "NEVERTWICE_RERANK": "a boolean flag string",
+    "NEVERTWICE_SERVE_FACTS": "a boolean flag string",
+    "NEVERTWICE_STALE_CHECK": "a boolean flag string",
+    "NEVERTWICE_START_SWEEP_DETACH": "a boolean flag string",
+    "NEVERTWICE_TRACK_ANY_PROJECT": "a boolean flag string",
+    "NEVERTWICE_XRERANK": "a boolean flag string (turn the cross-encoder reranker on/off)",
+    "NEVERTWICE_XRERANK_MAXLEN": "an integer token-length cap, not a path",
+    # -- real Windows system directories used only as text-classification REFERENCE
+    # constants (_engine_text.py's _SYS_DIRS, to exclude them from "is this a project"
+    # matching) - never opened or listed; pinning them to a fake path would break the
+    # exclusion they exist for, not fix a leak --
+    "ProgramData": "a Windows system dir NAME used only to exclude it from project detection - never read/listed",
+    "ProgramFiles": "a Windows system dir NAME used only to exclude it from project detection - never read/listed",
+    "ProgramFiles(x86)": "a Windows system dir NAME used only to exclude it from project detection - never read/listed",
+    "SystemRoot": "a Windows system dir NAME used only to exclude it from project detection - never read/listed",
+    # -- deliberately-not-pinned PATHS: see tests/_wall.py's module docstring --
+    "APPDATA": "a real path, deliberately NOT pinned directly - it also governs Windows user-site package resolution, and pinning it broke `import pytest` in every child process (measured). Mitigated at the adapter level instead: NEVERTWICE_CURSOR_EXPORT and NEVERTWICE_VSCODE_GLOBALSTORAGE_ROOT ARE pinned, and both are checked before this.",
+    "XDG_CONFIG_HOME": "the Linux/macOS analogue of APPDATA above - kept out for the same reason and mitigated the same way, for cross-platform consistency (this session measured the APPDATA breakage on Windows only).",
+}
+
+
+def test_walled_covers_or_allowlists_every_env_name_in_the_package() -> None:
+    print("\n- walled() covers or allowlists every env name the package reads (F1) -")
+    discovered = _package_env_names()
     check("the scan actually found names (a scan over nothing proves nothing)",
-          len(discovered) >= 4, str(sorted(discovered)))
+          len(discovered) >= 50, str(len(discovered)))
+
+    pinned = set(_wall.WALL_VARS) | set(_wall.PINNED_VARS)
+    overlap = pinned & set(ALLOWLIST)
+    check("no name is both pinned and allowlisted (one classification per name)",
+          not overlap, str(overlap))
+
+    unclassified = sorted(set(discovered) - pinned - set(ALLOWLIST))
+    check(f"every discovered name is pinned by walled() or allowlisted with a reason: "
+          f"{len(discovered)} discovered, {len(pinned)} pinned, {len(ALLOWLIST)} allowlisted",
+          not unclassified,
+          f"unclassified: {[(n, discovered[n]) for n in unclassified]}")
+
+    check("every allowlist entry actually carries a one-line reason (not blank/placeholder)",
+          all(isinstance(r, str) and len(r.strip()) >= 8 for r in ALLOWLIST.values()),
+          str([n for n, r in ALLOWLIST.items() if len(r.strip()) < 8]))
+
     with tempfile.TemporaryDirectory() as td:
         tmp = Path(td)
         env = _wall.walled(tmp)
         tmp_r = str(tmp.resolve())
-        missing = [n for n in discovered if not env.get(n)]
-        escaping = [n for n in discovered if env.get(n) and not (
+        discovered_pinned = sorted(set(discovered) & pinned)
+        missing = [n for n in discovered_pinned if n not in env]
+        # NEVERTWICE_CLOUD is pinned for an unrelated reason (no real network calls from a
+        # sandboxed run) and its value ("none") is not path-shaped at all - checking it
+        # against tmp would be asking the wrong question, not catching a leak.
+        path_shaped = [n for n in discovered_pinned if n != "NEVERTWICE_CLOUD"]
+        escaping = [n for n in path_shaped if n in env and env[n] and not (
             str(Path(env[n]).resolve()) == tmp_r
             or str(Path(env[n]).resolve()).startswith(tmp_r + os.sep))]
-        check(f"every name config.py reads is set by walled(): {sorted(discovered)}",
+        check(f"every discovered PINNED name is actually set by walled(): {discovered_pinned}",
               not missing, f"missing: {missing}")
-        check("and every one of them resolves inside the wall", not escaping,
-              f"escaping: {escaping}")
+        check("and every path-shaped one of them (non-empty) resolves inside the wall",
+              not escaping, f"escaping: {escaping}")
+
+    check("APPDATA and XDG_CONFIG_HOME are allowlisted, never pinned directly - the specific "
+          "F1 caution this test exists to hold the line on",
+          "APPDATA" not in pinned and "XDG_CONFIG_HOME" not in pinned
+          and "APPDATA" in ALLOWLIST and "XDG_CONFIG_HOME" in ALLOWLIST)
+
+
+def test_every_host_adapter_and_watch_base_resolves_inside_the_wall() -> None:
+    """F1, end to end - not "is the env var pinned" (the scanner test above) but "does each
+    adapter's roots() and watch's globalstorage bases actually resolve inside the wall". A
+    mis-pinned name, or an adapter reading a DIFFERENT name than the one pinned, would still
+    fail this even though the scanner test passed. Mirrors the auditing session's own
+    `wall_reach_probe.py` (read for the shape, not modified)."""
+    print("\n- every host adapter and watch base resolves inside the wall (F1, end to end) -")
+    with tempfile.TemporaryDirectory() as td:
+        tmp = Path(td)
+        env = _wall.walled(tmp)
+        code = (
+            "import sys;sys.path[:]=[p for p in sys.path if p not in ('','.')];"
+            "sys.path.insert(0,'.');"
+            "from nevertwice import hosts, watch;"
+            "[print(a.name, *a.roots()) for a in (c() for c in hosts._ADAPTERS)];"
+            "print('watch', *watch._vscode_globalstorage_bases()[:2])"
+        )
+        r = subprocess.run([sys.executable, "-c", code], cwd=str(ROOT), env=env,
+                           capture_output=True, text=True, timeout=60)
+        check("the probe process exits 0", r.returncode == 0, f"exit {r.returncode}: {r.stderr[-400:]}")
+        lines = [ln for ln in r.stdout.splitlines() if ln.strip()]
+        check("the probe printed something for every adapter plus watch",
+              len(lines) >= 5, str(lines))
+        # A line with no PATHS after the label (e.g. `generic-jsonl` with nothing configured)
+        # has nothing to leak - only a line that names a real path is checked.
+        with_paths = [ln for ln in lines if len(ln.split()) > 1]
+        outside = [ln for ln in with_paths if str(tmp) not in ln]
+        check(f"every adapter root and watch base resolves inside the wall: {lines}",
+              not outside, f"outside: {outside}")
 
 
 # ------------------------------------------------------------- pure functions (hookwire)
@@ -699,6 +841,8 @@ def test_c_payload_never_shadows_a_stdlib_import_from_cwd() -> None:
     if _git_bash_available():
         shells.append(("Git Bash", _run_via_git_bash))
     if _powershell_available():
+        # F2: _run_via_powershell tests a TRANSFORMED command ("& ...; exit $LASTEXITCODE"),
+        # not necessarily what Claude Code itself passes to PowerShell - see its docstring.
         shells.append(("PowerShell", _run_via_powershell))
     check("at least one shell is available to test through", bool(shells), "none found")
 
@@ -948,7 +1092,8 @@ def test_zz_every_check_passed() -> None:
 
 
 def main() -> int:
-    for fn in (test_walled_covers_every_path_resolving_name_in_config,
+    for fn in (test_walled_covers_or_allowlists_every_env_name_in_the_package,
+               test_every_host_adapter_and_watch_base_resolves_inside_the_wall,
                test_tokens_and_hook_command,
                test_is_ours_and_is_foreign_copy,
                test_dead_reason,

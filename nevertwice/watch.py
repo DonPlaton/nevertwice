@@ -90,14 +90,26 @@ _STOP = False
 
 def _vscode_globalstorage_bases() -> list[Path]:
     """`<editor>/User/globalStorage` for the VSCode-family editors, cross-platform.
-    Cline / Roo Code (and most chat extensions) keep per-task transcripts under here."""
-    home = Path.home()
-    if sys.platform == "win32":
-        root = Path(os.environ.get("APPDATA", home / "AppData" / "Roaming"))
-    elif sys.platform == "darwin":
-        root = home / "Library" / "Application Support"
+    Cline / Roo Code (and most chat extensions) keep per-task transcripts under here.
+
+    `NEVERTWICE_VSCODE_GLOBALSTORAGE_ROOT` overrides the platform default outright - the same
+    shape `hosts.CursorAdapter` already offers via `NEVERTWICE_CURSOR_EXPORT`. Added so a test
+    (or a portable-config setup) can redirect this function without touching `APPDATA` /
+    `XDG_CONFIG_HOME` themselves: those also govern where Python resolves its OWN user site
+    packages on Windows, and pointing `APPDATA` at an empty directory breaks `import pytest`
+    (and anything else installed to user site) in every child process the wall's env reaches -
+    measured directly, not assumed (`tests/_test_hook_shim.py`)."""
+    override = os.environ.get("NEVERTWICE_VSCODE_GLOBALSTORAGE_ROOT")
+    if override:
+        root = Path(override)
     else:
-        root = Path(os.environ.get("XDG_CONFIG_HOME", home / ".config"))
+        home = Path.home()
+        if sys.platform == "win32":
+            root = Path(os.environ.get("APPDATA", home / "AppData" / "Roaming"))
+        elif sys.platform == "darwin":
+            root = home / "Library" / "Application Support"
+        else:
+            root = Path(os.environ.get("XDG_CONFIG_HOME", home / ".config"))
     editors = ["Code", "Code - Insiders", "VSCodium", "Cursor", "Windsurf"]
     return [root / e / "User" / "globalStorage" for e in editors]
 
