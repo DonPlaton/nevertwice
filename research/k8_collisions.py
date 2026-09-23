@@ -86,6 +86,15 @@ def install_recorder(m) -> None:
             _, d_old, p_old = m._parse_note_body(lines)
             old_title = next((m._strip_lead_icon(ln.lstrip("# ").strip())
                               for ln in lines if ln.startswith("# ")), "")
+            supersedes_title = (item.get("supersedes") or "").strip() if isinstance(item, dict) else ""
+            contradicts_title = (item.get("contradicts") or "").strip() if isinstance(item, dict) else ""
+            # A7 (Q3, PLAN-Q3Q5.md): the SAME layer-1 verdict `write_typed_note`'s own call
+            # below is about to reach, called here a second time purely to RECORD it - read-only,
+            # so calling it twice changes nothing the write path does. Joined against the
+            # judge's verdicts (research/ride_along_judge_eval.py, G3.0) this is the share of
+            # pairs K8 layer 1 already decides with no model call at all - an instrumentation
+            # number, not a mechanism (TRIZ-PART2B part 5, candidate 3).
+            rule_ok, rule = m._same_replacement(old, title, desc, supersedes_title, contradicts_title)
             PAIRS.append({
                 "case": CUR["id"], "shape": CUR["shape"], "truth": CUR["truth"],
                 "branch": "d" if old.stem == base_stem else "r",
@@ -105,6 +114,7 @@ def install_recorder(m) -> None:
                 # stated; new: the replacement) - the pair the case is about, not a boilerplate item
                 "old_marked": sb._hit(CUR["old_markers"], f"{old_title} {d_old or ''}"),
                 "new_marked": sb._hit(CUR["new_markers"], f"{title} {desc}"),
+                "rule_ok": rule_ok, "rule": rule,
             })
         return orig(folder, item, project, date, tags, ntype,
                     session_stem_=session_stem_, siblings=siblings, why=why)
