@@ -142,7 +142,7 @@ def _fixed_stub_vector(text: str) -> list[float]:
 
 # ── oracle mode: pre-written ground truth, no extraction at all ────────────────────────────
 
-def build_side_oracle(case: dict, side: str, *, principle_override: str | None = None) -> dict | None:
+def build_side_oracle(case: dict, side: str, *, principle_override: str | None = None) -> dict:
     """Write `side`'s note straight from the dataset's pre-written `description`/`principle` -
     the CONTROL: it never asks a model anything, so a leak or a benefit measured here is purely
     about retrieval and promotion, never about extraction quality.
@@ -156,16 +156,24 @@ def build_side_oracle(case: dict, side: str, *, principle_override: str | None =
     what this control is for."""
     row = case[side]
     principle = principle_override if principle_override is not None else row["principle"]
+    # Oracle mode never "extracts" - it is deterministic ground truth, one item - but the row
+    # shape is kept identical to `build_side_extracted`'s so a diagnostic row reads the same
+    # regardless of `extractor_mode`.
+    items = [{"ntype": "pattern", "title": row["title"],
+             "has_principle": bool(principle.strip()), "principle": principle}]
     stem = m.write_typed_note("Patterns",
                               {"title": row["title"], "description": row["description"],
                                "principle": principle},
                               row["project"], "2026-09-23", [], "pattern")
     if not stem:
-        return None
+        return {"stem": None, "ntype": "pattern", "written_principle": "",
+               "project_relevant": True, "n_items": 1, "items": items,
+               "raw_principle": principle}
     m.update_embeddings([(stem, "pattern", row["project"], row["title"], row["description"], "")])
     fm = m._read_frontmatter_file(m.VAULT / "Patterns" / f"{stem}.md")
     written = fm.get("principle") if isinstance(fm.get("principle"), str) else ""
-    return {"stem": stem, "ntype": "pattern", "written_principle": written}
+    return {"stem": stem, "ntype": "pattern", "written_principle": written,
+           "project_relevant": True, "n_items": 1, "items": items, "raw_principle": principle}
 
 
 # ── --extract mode: the real extraction pipeline over a synthetic transcript ───────────────
@@ -233,14 +241,56 @@ def _classes_present(text: str, planted: dict) -> list[str]:
     return [cls for cls, val in planted.items() if val and val.lower() in low]
 
 
+# ── diagnostic instrumentation (2026-09-24, owner review of the first real `--extract` run) ──
+# leak=0 on `all` (the positive control PREREG G5.1 needs to leak) and an empty universal pool
+# with no promotion line at all, on the SAME run, are both symptoms that could come from several
+# different places - the extractor never proposing a `principle`, the write-time scanner eating
+# it, `promote()` never seeing a candidate, the A/C principles clustering below T_PRINCIPLE, or
+# the identifier never reaching the DESCRIPTION `_cross_line` actually renders in the first
+# place. `rows` (below) is built so each hypothesis has ONE field that settles it, rather than
+# re-running with print statements sprinkled in by hand every time a new guess needs checking.
+
+def _identifier_hits(text: str, planted: dict) -> dict[str, bool]:
+    """Which of the fixed `IDENTIFIER_CLASSES` appear (case-insensitive substring) in `text` -
+    always all four keys, unlike `_classes_present`'s presence-only list, so a row's shape does
+    not depend on which classes happened to fire."""
+    low = (text or "").lower()
+    return {cls: bool(planted.get(cls)) and str(planted[cls]).lower() in low
+           for cls in IDENTIFIER_CLASSES}
+
+
+def _extraction_items(extraction: dict) -> list[dict]:
+    """Every pattern/mistake item a real (or stub) extraction call proposed, title + whether it
+    carries a non-empty `principle` - diagnostic only. `_first_pattern_or_mistake` still decides
+    which ONE item actually gets written; this exists to answer "did a LATER item have a
+    principle the first one lacked" (H1/H2 at the item level, not just the written note's)."""
+    out = []
+    for ntype, key in (("pattern", "patterns"), ("mistake", "mistakes")):
+        items = extraction.get(key)
+        if isinstance(items, list):
+            for it in items:
+                if not isinstance(it, dict):
+                    continue
+                p = it.get("principle") if isinstance(it.get("principle"), str) else ""
+                out.append({"ntype": ntype, "title": it.get("title", ""),
+                           "has_principle": bool(p.strip()), "principle": p})
+    return out
+
+
 def build_side_extracted(case: dict, side: str, *, use_real: bool, poison_class: str | None,
-                         rejections: dict, stub_phrasing: str | None = None) -> dict | None:
+                         rejections: dict, stub_phrasing: str | None = None) -> dict:
     """Write `side`'s note through the REAL write path (`write_typed_note`), sourced from
     either a real model call (`use_real=True`, `--extract`) or the deterministic poisoning stub
     (`--dry`). Compares the raw PROPOSED `principle` against what actually reached disk to
     detect and CLASSIFY a WRITE-time scanner rejection - `write_typed_note` never exposes this
     itself (a rejected principle degrades silently, by design, A3's degradation contract), so
     this comparison is the bench's own instrumentation, not a new engine surface.
+
+    Always returns a dict (never bare `None`) - `stem`/`ntype` are `None` when nothing was
+    written (project_relevant=False, an empty extraction, or a write-time refusal); every other
+    field (`n_items`, `items`, `raw_principle`) is still populated, because "the extractor
+    proposed nothing usable" and "something was proposed but rejected" are different answers to
+    H1/H2 and a diagnostic row has to be able to tell them apart.
 
     `stub_phrasing`, stub mode only: the SHARED base phrasing to use for BOTH project_a and
     project_c (instead of each side's own, naturally-divergent paraphrase from the dataset) -
@@ -254,16 +304,26 @@ def build_side_extracted(case: dict, side: str, *, use_real: bool, poison_class:
     else:
         phrasing = stub_phrasing if stub_phrasing is not None else row["principle"]
         extraction = _stub_poison_extraction(phrasing, planted, poison_class)
+    # H1/H2 diagnostic: EVERY proposed item's principle status, not just whichever one
+    # `_first_pattern_or_mistake` picks below - settles "did the extractor emit `principle` at
+    # all" independently of "did the bench happen to pick the item that had one".
+    items_all = _extraction_items(extraction)
     if not extraction.get("project_relevant", True):
-        return None
+        return {"stem": None, "ntype": None, "written_principle": "",
+               "project_relevant": False, "n_items": len(items_all), "items": items_all,
+               "raw_principle": ""}
     picked = _first_pattern_or_mistake(extraction)
     if not picked:
-        return None
+        return {"stem": None, "ntype": None, "written_principle": "",
+               "project_relevant": True, "n_items": len(items_all), "items": items_all,
+               "raw_principle": ""}
     ntype, item = picked
     raw_principle = item.get("principle") if isinstance(item.get("principle"), str) else ""
     stem = m.write_typed_note(m.TYPE_FOLDER[ntype], item, project, "2026-09-23", [], ntype)
     if not stem:
-        return None
+        return {"stem": None, "ntype": ntype, "written_principle": "",
+               "project_relevant": True, "n_items": len(items_all), "items": items_all,
+               "raw_principle": raw_principle}
     fp = m.VAULT / m.TYPE_FOLDER[ntype] / f"{stem}.md"
     fm = m._read_frontmatter_file(fp)
     written_principle = fm.get("principle") if isinstance(fm.get("principle"), str) else ""
@@ -272,7 +332,9 @@ def build_side_extracted(case: dict, side: str, *, use_real: bool, poison_class:
     if raw_principle and not written_principle:
         for cls in _classes_present(raw_principle, planted):
             rejections[cls] = rejections.get(cls, 0) + 1
-    return {"stem": stem, "ntype": ntype, "written_principle": written_principle}
+    return {"stem": stem, "ntype": ntype, "written_principle": written_principle,
+           "project_relevant": True, "n_items": len(items_all), "items": items_all,
+           "raw_principle": raw_principle}
 
 
 # ── shared: the distractor is always oracle-written (it is noise, not the thing under test) ──
@@ -324,7 +386,92 @@ def run_case(case: dict, arm: str) -> dict:
     noise = (noise_lines / len(lines)) if lines else 0.0
 
     return {"leaked": leaked, "leak_by_class": leak_by_class, "benefit": benefit, "noise": noise,
-           "cross_chars": len(text), "n_hits": len(hits)}
+           "cross_chars": len(text), "n_hits": len(hits),
+           # the raw rendered text - NOT aggregated into `summary` below, only read (per case,
+           # `all` arm only) to build the diagnostic row's cross-section preview, so the arm
+           # summaries stay exactly what they were before this instrumentation existed.
+           "text": text}
+
+
+def _side_written_description(info: dict) -> str:
+    """The text `_cross_line` would actually render for this note - `_note_snippet` reads the
+    note's DESCRIPTION section from disk, never its `principle` frontmatter (H5): a planted
+    identifier can survive all the way into `principle` and still never reach project_b,
+    because the injected line is built from the description, not the principle. `""` when
+    nothing was written for this side."""
+    if not info.get("stem"):
+        return ""
+    return m._note_snippet(info["stem"], info["ntype"])
+
+
+def _principle_cosine(info_a: dict, info_c: dict, project_a: str, project_c: str) -> float | None:
+    """Cosine between what is ACTUALLY on disk for A and C, embedded the same way
+    `principles.py::_embed` embeds a promotion candidate (own project identity, `doc_embed_kind`)
+    - the exact pair `promote()`'s clustering step would see (H4). `None` when either side wrote
+    no principle at all, so "nothing to cluster" (H1/H2) is never read as "clustered below
+    T_PRINCIPLE" (H4) - they are different rows in the report this instruments."""
+    pa, pc = info_a.get("written_principle") or "", info_c.get("written_principle") or ""
+    if not pa or not pc:
+        return None
+    kind = m.doc_embed_kind() if hasattr(m, "doc_embed_kind") else None
+    va = m.embed_text(pa, kind=kind, project=project_a)
+    vc = m.embed_text(pc, kind=kind, project=project_c)
+    if not va or not vc:
+        return None
+    return m.cosine(va, vc)
+
+
+def _cross_preview(project_b: str, query: str, max_chars: int = 300) -> str:
+    """The `all`-arm cross-project section a real injection would render for this query,
+    truncated - built from the retrieval+render PRIMITIVE (`retrieve_cross_project` +
+    `_cross_line`), not by calling `emit_session_start_context`/`emit_prompt_recall` directly.
+    Those two read `CROSS_PROJECT_MODE`/`INJECT_CROSS_PROJECT` off the module globals bound at
+    IMPORT time, not from this bench's per-arm `mode=` override - calling them as-is would
+    silently preview the wrong arm, and mutating those globals per case would be a third thing
+    to save/restore in the `finally` below, alongside `embed_text` and `llm_available`, for a
+    preview that (by design) renders the same lines either way: both real injection paths build
+    their cross section from this exact call, just with a different query and a budget/dedup
+    pass this preview does not simulate."""
+    hits = m.retrieve_cross_project(project_b, query, mode="all")
+    return _hit_text(hits)[:max_chars]
+
+
+def _diagnostic_row(i: int, case: dict, written: dict[str, dict], case_rows: dict[str, dict],
+                    promote_report: dict) -> dict:
+    """One row of `rows` (owner review, 2026-09-24): everything H1-H5 need to be told apart,
+    for A and C plus the promotion step plus what project_b's `all`-arm cross section actually
+    renders - see the module docstring's "Diagnostic instrumentation" section."""
+    project_b = case["project_b"]["project"]
+    prompt = case["project_b"]["prompt"]
+    sides = {}
+    for side in ("project_a", "project_c"):
+        info = written[side]
+        planted = case[side]["planted"] or {}
+        written_desc = _side_written_description(info)
+        sides[side] = {
+            "project": case[side]["project"],
+            "n_extracted_items": info.get("n_items", 0),
+            "items": info.get("items", []),
+            "written": bool(info.get("stem")),
+            "has_principle": bool((info.get("written_principle") or "").strip()),
+            "written_principle": info.get("written_principle") or "",
+            "written_description": written_desc,
+            "description_identifier_hits": _identifier_hits(written_desc, planted),
+        }
+    return {
+        "case_id": case.get("id", i), "case_index": i,
+        "project_a": sides["project_a"], "project_c": sides["project_c"],
+        "principle_cosine": _principle_cosine(written["project_a"], written["project_c"],
+                                              case["project_a"]["project"],
+                                              case["project_c"]["project"]),
+        "promote_report": promote_report,
+        "all_arm": {
+            "session_start_cross_preview": _cross_preview(project_b, project_b),
+            # reuses `all`'s own run_case() call above - the SAME retrieve_cross_project(project_b,
+            # prompt, mode="all") call, not a second one.
+            "prompt_cross_preview": (case_rows["all"].get("text") or "")[:300],
+        },
+    }
 
 
 #: --dry's fixture: 3 cases x 2 sides = 6 slots. The first four cover the write-time classes
@@ -361,6 +508,10 @@ def run_bench(cases: list[dict], *, extractor_mode: str, dry: bool) -> dict:
     per_arm: dict[str, list[dict]] = {arm: [] for arm in ARMS}
     write_rejections: dict[str, int] = {cls: 0 for cls in IDENTIFIER_CLASSES}
     promotion_rejections: dict[str, int] = {cls: 0 for cls in IDENTIFIER_CLASSES}
+    # NOT named `rows`: the summary loop below already uses that name for its own per-arm
+    # iteration variable, and shadowing it would leave this bound to whichever arm's per-case
+    # list the summary loop happened to visit last - a silent, wrong answer, not a crash.
+    diag_rows: list[dict] = []
 
     for i, case in enumerate(cases):
         # A FRESH vault per case, not a shared one: this bench's metrics are per-case (does
@@ -373,7 +524,7 @@ def run_bench(cases: list[dict], *, extractor_mode: str, dry: bool) -> dict:
             saved_embed = m.embed_text
             m.embed_text = lambda text, kind=None, timeout=None, project=None, _e=embed: _e(text)
         try:
-            written: dict[str, dict | None] = {}
+            written: dict[str, dict] = {}
             if extractor_mode == "oracle":
                 # --dry: both sides share project_a's own phrasing (see build_side_oracle's
                 # docstring) so the hash-based stub embedder can still cluster them; a real
@@ -405,7 +556,7 @@ def run_bench(cases: list[dict], *, extractor_mode: str, dry: bool) -> dict:
             saved_llm_available = m.llm_available
             m.llm_available = lambda: False
             try:
-                pr.promote(apply=True)
+                promote_report = pr.promote(apply=True)
             finally:
                 m.llm_available = saved_llm_available
 
@@ -427,6 +578,8 @@ def run_bench(cases: list[dict], *, extractor_mode: str, dry: bool) -> dict:
                 for cls, val in (case[side]["planted"] or {}).items():
                     if val and val.lower() in wp and not universal_leak_by_class[cls]:
                         promotion_rejections[cls] = promotion_rejections.get(cls, 0) + 1
+
+            diag_rows.append(_diagnostic_row(i, case, written, case_rows, promote_report))
         finally:
             if dry:
                 m.embed_text = saved_embed
@@ -447,7 +600,9 @@ def run_bench(cases: list[dict], *, extractor_mode: str, dry: bool) -> dict:
            "write_rejections_by_class": write_rejections,
            "promotion_rejections_by_class": promotion_rejections,
            # kept for anyone still reading the old key name
-           "scanner_rejections_by_class": write_rejections}
+           "scanner_rejections_by_class": write_rejections,
+           # diagnostic instrumentation (2026-09-24): one entry per case - see _diagnostic_row.
+           "rows": diag_rows}
 
 
 def _git_head() -> str:
@@ -465,12 +620,47 @@ def _measured_at() -> dict:
            "utc": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}
 
 
+def _select_case_ids(path: Path, spec: str) -> list[dict]:
+    """A cheap diagnostic subset by case id, falling back to a 0-based index for a token that
+    matches no id - `--case-ids 0,3,7,12,19` instead of `--cases N`'s "first N only", so a
+    diagnostic run can target the cases a FULL sweep already flagged as interesting (a write
+    rejection, an empty principle, whatever the first real run's numbers pointed at), rather
+    than re-running from case 0 every time. Unknown ids/indices are reported and skipped, never
+    silently dropped - a diagnostic run that quietly returned fewer rows than asked would be
+    exactly the kind of "why is this empty" question this instrumentation exists to prevent."""
+    all_cases = load_cases(path, None)
+    by_id = {str(c.get("id")): c for c in all_cases}
+    picked = []
+    for tok in (s.strip() for s in spec.split(",")):
+        if not tok:
+            continue
+        if tok in by_id:
+            picked.append(by_id[tok])
+            continue
+        try:
+            idx = int(tok)
+        except ValueError:
+            print(f"[cross_project_bench] --case-ids: no case id {tok!r}", file=sys.stderr)
+            continue
+        if 0 <= idx < len(all_cases):
+            picked.append(all_cases[idx])
+        else:
+            print(f"[cross_project_bench] --case-ids: index {idx} out of range "
+                 f"(0-{len(all_cases) - 1})", file=sys.stderr)
+    return picked
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--data", default=str(DATA), help="dataset path (default: %(default)s)")
     parser.add_argument("--out", default=str(OUT), help="results artifact path (default: %(default)s)")
     parser.add_argument("--cases", type=int, default=None, help="limit to the first N cases")
+    parser.add_argument("--case-ids", default="",
+                        help="comma-separated case ids (or 0-based indices, for a token that "
+                             "matches no id) - a cheap diagnostic run over exactly these cases "
+                             "instead of the first N; takes precedence over --cases, ignored "
+                             "under --dry (which always uses its own fixed 3-case fixture)")
     parser.add_argument("--oracle-principles", action="store_true",
                         help="control: write each case's pre-written ground-truth principle "
                              "directly, no extraction at all")
@@ -487,8 +677,11 @@ def main(argv: list[str] | None = None) -> int:
     else:
         extractor_mode = "oracle" if args.oracle_principles else "extract"
 
-    n = _DRY_N_CASES if args.dry else args.cases
-    cases = load_cases(Path(args.data), n)
+    if args.case_ids and not args.dry:
+        cases = _select_case_ids(Path(args.data), args.case_ids)
+    else:
+        n = _DRY_N_CASES if args.dry else args.cases
+        cases = load_cases(Path(args.data), n)
     if not cases:
         print("[cross_project_bench] no cases loaded", file=sys.stderr)
         return 1
@@ -505,6 +698,15 @@ def main(argv: list[str] | None = None) -> int:
              f"leak): {result['write_rejections_by_class']}")
         print(f"  rejected at promotion by provenance (principles.py, NOT a leak): "
              f"{result['promotion_rejections_by_class']}")
+    for r in result["rows"]:
+        a, c = r["project_a"], r["project_c"]
+        print(f"  case {r['case_id']}: A items={a['n_extracted_items']} "
+             f"principle={'y' if a['has_principle'] else 'n'}  "
+             f"C items={c['n_extracted_items']} principle={'y' if c['has_principle'] else 'n'}  "
+             f"cosine={r['principle_cosine']}  "
+             f"promote candidates={r['promote_report']['candidates']} "
+             f"clusters={r['promote_report']['clusters']} "
+             f"promoted={r['promote_report']['promoted']}")
 
     if args.dry:
         print("[cross_project_bench] --dry: plumbing exercised, nothing written to disk")
