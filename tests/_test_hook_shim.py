@@ -72,14 +72,91 @@ def check(name: str, condition: bool, detail: str = "") -> None:
 
 
 def _engine_env(tmp: Path) -> dict:
-    """`_wall.walled()` already points NEVERTWICE_HOME/VAULT at a store inside `tmp`; this adds
-    the one thing it does not own - the transcript SWEEP root - because a run against a live
-    `memory_hook.py` with no NEVERTWICE_PROJECTS_ROOT override reads the owner's real
-    ~/.claude/projects (found the hard way while first smoke-testing this shim: it swept real,
-    unrelated project transcripts through a real extractor)."""
-    env = _wall.walled(tmp)
-    env["NEVERTWICE_PROJECTS_ROOT"] = str(tmp / "proj")
-    return env
+    """`_wall.walled()` points NEVERTWICE_HOME/VAULT AND the transcript sweep root
+    (NEVERTWICE_PROJECTS_ROOT/CLAUDE_PROJECTS_ROOT) inside `tmp` - the sweep root was missing
+    from the wall until an auditing pass caught it: a run against a live `memory_hook.py`
+    with no override reads the owner's real ~/.claude/projects (found the hard way while
+    first smoke-testing this shim: it swept real, unrelated project transcripts through a
+    real extractor). Kept as a thin alias so call sites in this file say what they mean."""
+    return _wall.walled(tmp)
+
+
+def _config_path_env_names() -> set[str]:
+    """Every environment variable `nevertwice/config.py` reads whose value flows into a
+    filesystem PATH (`Path(...)` or `_expand(...)`) - discovered by reading config.py's own
+    AST, not kept as a list by hand here, so a name added there later reddens THIS test
+    instead of leaking through `_wall.walled()` unchanged (the exact shape of the
+    NEVERTWICE_PROJECTS_ROOT gap this pair of functions exists to close: config.py reads it,
+    `hosts.py` separately reads a DIFFERENTLY-NAMED NEVERTWICE_CLAUDE_PROJECTS, and `walled()`
+    pinned only the second - a probe of NEVERTWICE_PROJECTS_ROOT="C:/pretend/real/.claude/
+    projects" passed straight through a walled() env with nothing catching it).
+
+    Two passes over the whole module (`ast.walk`, which does not care about nesting depth or
+    scope): first, every simple `NAME = <expr>` assignment, keyed by name (config.py is small
+    and flat enough that one merged namespace across module and function scopes is a safe
+    simplification for a discovery tool, not a general-purpose one); second, every call to
+    `Path(...)` or `_expand(...)` - the two ways this module turns a string into a path - with
+    the env names found either directly nested inside that call, or one simple assignment
+    away (`custom = os.environ.get("NEVERTWICE_ENV_FILE")` ... `Path(custom)`, two statements
+    apart, is exactly the shape a direct-nesting-only walk would miss).
+    """
+    src = (PKG / "config.py").read_text(encoding="utf-8")
+    tree = ast.parse(src)
+
+    def literal_env_names(node) -> set[str]:
+        names: set[str] = set()
+        for n in ast.walk(node):
+            if not isinstance(n, ast.Call):
+                continue
+            target = n.func
+            is_os_environ_get = (isinstance(target, ast.Attribute) and target.attr == "get"
+                                 and isinstance(target.value, ast.Attribute)
+                                 and target.value.attr == "environ")
+            is_env_helper = isinstance(target, ast.Name) and target.id == "env"
+            if is_os_environ_get and n.args and isinstance(n.args[0], ast.Constant):
+                names.add(n.args[0].value)
+            elif is_env_helper and n.args and isinstance(n.args[0], ast.Constant):
+                suffix = n.args[0].value
+                names.add(f"NEVERTWICE_{suffix}")
+                names.add(f"CLAUDE_MEMORY_{suffix}")
+        return names
+
+    assigns: dict = {}
+    for node in ast.walk(tree):
+        if (isinstance(node, ast.Assign) and len(node.targets) == 1
+                and isinstance(node.targets[0], ast.Name)):
+            assigns[node.targets[0].id] = node.value
+
+    found: set[str] = set()
+    for node in ast.walk(tree):
+        if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+                and node.func.id in ("Path", "_expand")):
+            continue
+        found |= literal_env_names(node)
+        for n in ast.walk(node):
+            if isinstance(n, ast.Name) and n.id in assigns:
+                found |= literal_env_names(assigns[n.id])
+    return found
+
+
+def test_walled_covers_every_path_resolving_name_in_config() -> None:
+    print("\n- walled() covers every path-resolving name config.py reads -")
+    discovered = _config_path_env_names()
+    check("the scan actually found names (a scan over nothing proves nothing)",
+          len(discovered) >= 4, str(sorted(discovered)))
+    with tempfile.TemporaryDirectory() as td:
+        tmp = Path(td)
+        env = _wall.walled(tmp)
+        tmp_r = str(tmp.resolve())
+        missing = [n for n in discovered if not env.get(n)]
+        escaping = [n for n in discovered if env.get(n) and not (
+            str(Path(env[n]).resolve()) == tmp_r
+            or str(Path(env[n]).resolve()).startswith(tmp_r + os.sep))]
+        check(f"every name config.py reads is set by walled(): {sorted(discovered)}",
+              not missing, f"missing: {missing}")
+        check("and every one of them resolves inside the wall", not escaping,
+              f"escaping: {escaping}")
+
 
 
 # ------------------------------------------------------------- pure functions (hookwire)
@@ -617,7 +694,8 @@ def test_zz_every_check_passed() -> None:
 
 
 def main() -> int:
-    for fn in (test_tokens_and_hook_command,
+    for fn in (test_walled_covers_every_path_resolving_name_in_config,
+               test_tokens_and_hook_command,
                test_is_ours_and_is_foreign_copy,
                test_dead_reason,
                test_hook_python,

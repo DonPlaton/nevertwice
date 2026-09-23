@@ -47,6 +47,24 @@ WALL_VARS = ("HOME", "USERPROFILE", "NEVERTWICE_CLAUDE_SETTINGS", "NEVERTWICE_CL
 STORE_VARS = ("NEVERTWICE_HOME", "NEVERTWICE_VAULT", "ANAMNESIS_HOME", "ANAMNESIS_VAULT",
              "CLAUDE_MEMORY_HOME", "CLAUDE_MEMORY_VAULT")
 
+#: `nevertwice/config.py`'s OWN name for the transcript sweep root - `NEVERTWICE_CLAUDE_PROJECTS`
+#: above is `hosts.ClaudeCodeAdapter`'s name for the SAME kind of thing and the two are read by
+#: two different consumers (the host adapter vs. the engine's catch-up sweep). Missed on the
+#: first cut of this file: `walled()` pinned only the adapter's name, so `NEVERTWICE_
+#: PROJECTS_ROOT` (and its own legacy alias `CLAUDE_PROJECTS_ROOT`, no NEVERTWICE_ prefix)
+#: passed straight through from the ambient environment into a "walled" subprocess env
+#: unchanged - the exact settings.json-leak shape, one variable over, caught by an auditing
+#: pass rather than by this file's own test. All three names now get the same directory; they
+#: do not have to agree with each other semantically, only each has to stay inside the wall.
+PROJECTS_ROOT_VARS = ("NEVERTWICE_PROJECTS_ROOT", "CLAUDE_PROJECTS_ROOT")
+
+#: Points `load_dotenv()` at a custom `.env` - and a file living there could reintroduce a
+#: real VAULT/HOME/PROJECTS_ROOT that no shell ever exported (`config.load_dotenv` uses
+#: `setdefault`, so a value pinned by this module first always wins - but only for names this
+#: module actually sets before the subprocess imports config). Pinned to a path that does not
+#: exist: `load_dotenv()` silently skips a missing file, which is exactly "no custom .env".
+ENV_FILE_VAR = "NEVERTWICE_ENV_FILE"
+
 
 def _real_settings_path() -> Path:
     return Path(os.environ.get("NEVERTWICE_CLAUDE_SETTINGS")
@@ -92,8 +110,11 @@ def walled(tmp) -> dict:
     env["USERPROFILE"] = str(tmp)
     env["NEVERTWICE_CLAUDE_SETTINGS"] = str(tmp / "settings.json")
     env["NEVERTWICE_CLAUDE_PROJECTS"] = str(tmp / "projects")
+    for name in PROJECTS_ROOT_VARS:
+        env[name] = str(tmp / "projects")
     for name in STORE_VARS:
         env[name] = str(tmp / "store")
+    env[ENV_FILE_VAR] = str(tmp / "no-such-file.env")
     env["NEVERTWICE_CLOUD"] = "none"
     _assert_walled(env, tmp)
     return env
@@ -105,7 +126,8 @@ def walled_in_process(tmp):
     code under test that reads `os.environ` directly in THIS process rather than through a
     subprocess (`hookwire.settings_path()` among it)."""
     tmp = Path(tmp)
-    all_vars = WALL_VARS + STORE_VARS + ("NEVERTWICE_CLOUD",)
+    all_vars = (WALL_VARS + STORE_VARS + PROJECTS_ROOT_VARS
+               + (ENV_FILE_VAR, "NEVERTWICE_CLOUD"))
     saved = {name: os.environ.get(name) for name in all_vars}
     env = walled(tmp)
     for name in all_vars:
