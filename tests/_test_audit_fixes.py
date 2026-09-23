@@ -164,6 +164,20 @@ try:
           and int(str(m._read_frontmatter_file(d4 / "Patterns" / f"{again}.md").get("recurrence"))) >= 3)
     if again == "":
         print(f"         quarantined instead: {[p.name for p in (d4 / 'Patterns').rglob('*.md')]}")
+    # The same override on the SAME day is an absorb, not a retirement - and it carried the
+    # corroborated note's sources as the new statement's own, so a lone explicit override that
+    # happened to share the day and title escaped the rule the next day enforces (fifth review).
+    d5 = sandbox()
+    base = m.write_typed_note("Patterns", {"title": "upload limit", "description": "the upload limit is 25 MB"},
+                              "proj", "2026-06-07", ["t"], "pattern", session_stem_="2026-06-07-0900-proj-s1")
+    fp5 = d5 / "Patterns" / f"{base}.md"
+    fp5.write_text(fp5.read_text(encoding="utf-8").replace("---\n", '---\nrecurrence: 2\nsources: ["s1", "s2"]\n', 1),
+                   encoding="utf-8")
+    over = m.write_typed_note("Patterns", {"title": "upload limit", "description": "the upload limit is 100 MB",
+                                           "supersedes": "upload limit"},
+                              "proj", "2026-06-07", ["t"], "pattern", session_stem_="2026-06-07-1500-proj-lone")
+    check("W7 ON: a same-day explicit override of a corroborated note is quarantined like a next-day one",
+          over == "" and "25 MB" in fp5.read_text(encoding="utf-8"))
 finally:
     m.QUARANTINE_MODE = _q
 

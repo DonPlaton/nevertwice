@@ -217,82 +217,50 @@ def _replacement_guard(old_desc: str, new_desc: str) -> str:
     return ""
 
 
-_WIKILINK_RE = _lazy_re(r"\[\[([^\[\]|]+)(?:\|[^\]]*)?\]\]")
+#: One whole wiki-link and nothing else: `[[stem]]` or `[[stem|alias]]`. Neither part takes a
+#: bracket, so no start position can run past the next `[[` - the pattern is linear on any input
+#: (an alias part that took `[` read 48 kB of unclosed links in 1.7 s - auditing session, ea9272c).
+_LONE_LINK_RE = _lazy_re(r"\[\[([^\[\]|]+)(?:\|[^\[\]]*)?\]\]")
+
+_QUOTES = "\"'"
 
 
 def _list_field(v: object) -> list[str]:
-    """A frontmatter list field as the note meant it, whatever shape it was written in.
+    """A frontmatter list field, read by a small grammar that is stated here in full.
 
-    `_read_frontmatter` reads the JSON list the engine writes as a list, but what a person or
-    Obsidian writes by hand - an unquoted flow list `[a, b]`, a bare `[[link]]`, links in a row
-    `[[a]], [[b]]` - as ONE string, and each reader then guessed: `_contested_of` took the string
-    as one stem, the consolidator iterated it a character at a time (review 2026-09-23, #3 and its
-    follow-ups R7 and R11). The rules, in order:
+    `_read_frontmatter` returns the JSON list the engine writes as a list, and anything written by
+    hand as ONE string. The readers used to guess at that string - `_contested_of` took it as one
+    stem, the consolidator iterated it a character at a time (review 2026-09-23, #3). This reads:
 
-    - links and nothing else (`[[a]]`, `[[a]], [[b]]`, `[[a]] [[b]]`) are their targets;
-    - a bracketed string is a flow list, split on the commas OUTSIDE `[[...]]`, and each item is
-      unwrapped - so `[stem-a, [[stem-b]]]` is two stems and `[[[a|x, y]], b]` is `a` and `b`;
-    - an unbracketed string with a link in it is split the same way (`[[a]], b` is two entries);
-    - any other string is one entry.
+    - a list: each item a string, quotes stripped, and an item that is one whole link its target;
+    - a string that is one whole link (`[[stem]]`, `[[stem|alias]]`): its target;
+    - a string `[a, b]` with no `[[` inside: split on commas, quotes stripped;
+    - any other string: one entry, quotes stripped (`'stem'` is `stem`).
 
-    Every item keeps its plain text beside a link rather than dropping it (third and fourth
-    reviews, 2026-09-23: the stamp writers wrote `contested` back without the dropped stems). A
-    list keeps its items, each unwrapped the same way, so `["[[sess]]"]` and `["sess"]` name the
-    same session. No regex here can backtrack: "links only" is decided by deleting the links and
-    looking at what is left, because the pattern that decided it before took exponential time on
-    a row of twenty links followed by a word. `doctor check_list_fields` still reports the
-    hand-written shape; this only reads it."""
+    Nothing else is parsed - links in a row, links mixed with plain items, other separators. Three
+    review rounds each found new defects in a reader that tried (mixed strings, an exponential and
+    a quadratic pattern, stray whitespace), and on the owner's store there are no hand-written list
+    fields at all; `doctor check_list_fields` reports every shape this does not read cleanly, for
+    a person to rewrite as a JSON list. Linear on any input."""
     if isinstance(v, list):
-        out: list[str] = []
-        for x in v:
-            if isinstance(x, str):
-                out.extend(_unwrap_list_item(x))
-            elif x not in (None, ""):
-                out.append(str(x))
-        return out
-    if not isinstance(v, str) or not v.strip():
+        return [x for x in (_list_item(i) for i in v if i not in (None, "")) if x]
+    if not isinstance(v, str):
         return []
-    s = v.strip()
-    if "[[" in s and not _WIKILINK_RE.sub("", s).strip(" \t,"):
-        return [t.strip() for t in _WIKILINK_RE.findall(s) if t.strip()]
-    if s.startswith("[") and s.endswith("]"):
-        return [y for x in _split_outside_links(s[1:-1]) for y in _unwrap_list_item(x)]
-    if "[[" in s:
-        return [y for x in _split_outside_links(s) for y in _unwrap_list_item(x)]
+    s = v.strip().strip(_QUOTES).strip()
+    if not s:
+        return []
+    if (mt := _LONE_LINK_RE.fullmatch(s)):
+        return [mt.group(1).strip()]
+    if s.startswith("[") and s.endswith("]") and "[[" not in s:
+        return [x for x in (p.strip().strip(_QUOTES).strip() for p in s[1:-1].split(",")) if x]
     return [s]
 
 
-def _unwrap_list_item(x: str) -> list[str]:
-    """One item of a list field: quotes stripped, each link replaced by its target, and any plain
-    text beside a link kept as an entry of its own (`[[a]] x` is `a` and `x`)."""
-    x = x.strip().strip("\"'").strip()
-    if "[[" not in x:
-        return [x] if x else []
-    targets = [t.strip() for t in _WIKILINK_RE.findall(x) if t.strip()]
-    rest = _WIKILINK_RE.sub(" ", x).strip(" \t,\"'")
-    return targets + ([" ".join(rest.split())] if rest else [])
-
-
-def _split_outside_links(inner: str) -> list[str]:
-    """Split a flow list's inside on the commas that are not inside a `[[...]]` link."""
-    out: list[str] = []
-    buf: list[str] = []
-    depth = i = 0
-    while i < len(inner):
-        if inner.startswith("[[", i):
-            depth, i = depth + 1, i + 2
-            buf.append("[[")
-        elif inner.startswith("]]", i) and depth:
-            depth, i = depth - 1, i + 2
-            buf.append("]]")
-        elif inner[i] == "," and not depth:
-            out.append("".join(buf))
-            buf, i = [], i + 1
-        else:
-            buf.append(inner[i])
-            i += 1
-    out.append("".join(buf))
-    return out
+def _list_item(x: object) -> str:
+    """One item of a list: a string, quotes stripped; one whole link read as its target."""
+    s = str(x).strip().strip(_QUOTES).strip()
+    mt = _LONE_LINK_RE.fullmatch(s)
+    return mt.group(1).strip() if mt else s
 
 
 def _contested_of(fm: dict) -> list[str]:
@@ -700,6 +668,10 @@ def write_typed_note(folder: str, item, project: str, date: str,
     # without the retry duplicating notes.
     absorb_into = None
     absorb_recur, absorb_sources = 0, set()
+    #: W7: an absorb decided by an explicit `supersedes`/`contradicts` is an OVERRIDE of the note it
+    #: rewrites, not the same lesson re-encountered - its sources are not the new statement's
+    #: corroboration, exactly as for an explicit retirement on another day (fifth review)
+    absorb_overrides_corroborated = absorb_explicit = False
     contested_olds: list = []           # K8: same-slug notes kept apart as siblings, stamped after the write
     for old in _live_typed_paths(p, project, ntype, slug):
         try:
@@ -740,6 +712,8 @@ def write_typed_note(folder: str, item, project: str, date: str,
             r_old, s_old = _note_recur_sources(old)
             absorb_into = old
             absorb_recur, absorb_sources = r_old, set(s_old)
+            absorb_explicit = _rule == "explicit"
+            absorb_overrides_corroborated = absorb_explicit and r_old >= 2
     if session_stem_ and QUARANTINE_MODE:
         # a crash-retry must not duplicate a note already quarantined this session
         for old in _live_typed_paths(p / "Quarantine", project, ntype, slug):
@@ -771,7 +745,12 @@ def write_typed_note(folder: str, item, project: str, date: str,
     prior_sources: set = set(absorb_sources)
     to_retire: list = []
     retire_via: dict = {}               # J2b: how each retirement was decided (slug|explicit|twin)
-    superseded_corroborated = False
+    superseded_corroborated = absorb_overrides_corroborated
+    #: the sessions of notes that are THIS lesson restated - a same-slug restatement that
+    #: `_same_replacement` proved the same fact. Collected where they are read, not re-read (fifth
+    #: review). Twins are NOT here: the near-duplicate classifier retires them with no value guard,
+    #: and a twin can contradict the note it retires (100 MB against a corroborated 25 MB).
+    restated_sources: set = set()
     for old in _reconcilable_typed_paths(p, project, ntype, slug):
         if absorb_into is not None and old == absorb_into:
             continue                    # the absorb target is refreshed in place, never retired
@@ -803,6 +782,8 @@ def write_typed_note(folder: str, item, project: str, date: str,
                 superseded_corroborated = True
             to_retire.append(old)
             retire_via[old] = "explicit" if _rule == "explicit" else "slug"
+            if _rule != "explicit":
+                restated_sources |= s_old
     _retire_slugs_seen: set = set()
     for other_title in (supersedes_title, contradicts_title):
         if not other_title:
@@ -863,18 +844,13 @@ def write_typed_note(folder: str, item, project: str, date: str,
     dest = p
     quarantine_reason = ""
     if QUARANTINE_MODE:
-        #: What corroborates the NEW statement: its own history when it refreshes itself in place,
-        #: the sessions of the notes that are THIS lesson restated (a same-slug restatement, a
-        #: near-duplicate twin) - and not the sessions of a note it replaces by an explicit
-        #: `supersedes`/`contradicts`, which are evidence for the statement being overturned.
-        #: Counting every retired note's sources made a lone override of corroborated truth look
-        #: corroborated, so that branch never fired on a note whose sources were read (third review);
-        #: counting none of them quarantined every honest restatement by a new session, and a lesson
-        #: could not recur past 2 (fourth review, 2026-09-23). Read only when quarantine is on.
-        same_lesson = set(absorb_sources)
-        for old in to_retire:
-            if retire_via.get(old) in ("slug", "twin"):
-                same_lesson |= _note_recur_sources(old)[1]
+        #: What corroborates the NEW statement: its own in-place history (unless that absorb was an
+        #: explicit override) and the sessions of same-slug restatements `_same_replacement` proved
+        #: the same fact. Not the sources of a note it replaces explicitly - evidence for the
+        #: statement being overturned (third review: counting them made the rule unable to fire) -
+        #: and not a twin's: no value guard stands between a twin and the note it retires (fifth
+        #: review). Counting none quarantined every honest restatement (fourth review).
+        same_lesson = (set() if absorb_explicit else set(absorb_sources)) | restated_sources
         n_sources = len(same_lesson | ({session_stem_} if session_stem_ else set())) or 1
         qconf = _coerce_confidence(confidence)
         if n_sources < 2 and qconf is not None and qconf >= QUARANTINE_CONF:

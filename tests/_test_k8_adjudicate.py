@@ -726,15 +726,20 @@ srcs = set(map(str, fm(n).get("sources") or []))
 check("the retiring note's own hand-written sources reach the winner (R6)",
       {"sess-old1", "sess-old2", "sess-old3", SA, SB} <= srcs, str(sorted(srcs)))
 
-#: R7 / R11 - the one list reader, on every shape the review named.
-for raw, want in (("[[a]], [[b]]", ["a", "b"]), ("[[a]] [[b]]", ["a", "b"]), ("[a, b]", ["a", "b"]),
-                  (["[[sess]]", "sess2"], ["sess", "sess2"]), ("[[a|alias]]", ["a"]),
-                  #: the one shape where splitting on EVERY comma differs from splitting outside
-                  #: the links: a comma inside a link's alias (auditing session's M3 stayed green
-                  #: without it - ['y]]', 'b'])
-                  ("[[[a|x, y]], b]", ["a", "b"]), ("[stem-a, [[stem-b]]]", ["stem-a", "stem-b"]),
-                  ("plain", ["plain"]), ("", []), (None, [])):
-    check(f"_list_field({raw!r}) == {want} (R7)", m._list_field(raw) == want, str(m._list_field(raw)))
+#: R7 / R11 and the fifth review - the one list reader, on its stated grammar. Three rounds grew a
+#: parser for every hand-written shape and each round found new defects in the growth, so the
+#: grammar was cut to what is stated in _list_field's docstring; every other shape reads as ONE
+#: entry and doctor reports it (tests/_test_doctor.py). The quoted scalar and the single-quote
+#: case are the fifth review's regression (YAML keeps single quotes).
+for raw, want in (("[a, b]", ["a", "b"]), ('["a", "b"]', ["a", "b"]), ("[a, , b]", ["a", "b"]),
+                  (["[[sess]]", "sess2", " q ", "'s3'"], ["sess", "sess2", "q", "s3"]),
+                  ("[[a]]", ["a"]), ("[[a|alias]]", ["a"]), ("[[a|x, y]]", ["a"]),
+                  ("'2026-01-10-p-decision-c'", ["2026-01-10-p-decision-c"]), ('"s1"', ["s1"]),
+                  ("plain", ["plain"]), ("[WIP] reviewing", ["[WIP] reviewing"]), ("", []), (None, []),
+                  #: outside the grammar: one entry, untouched - never fragments, never a character
+                  ("[[a]], [[b]]", ["[[a]], [[b]]"]), ("[[a]]" + chr(160) + "[[b]]", ["[[a]]" + chr(160) + "[[b]]"]),
+                  ("[stem-a, [[stem-b]]]", ["[stem-a, [[stem-b]]]"]), ("[[a]]; [[b]]", ["[[a]]; [[b]]"])):
+    check(f"_list_field({raw!r}) == {want}", m._list_field(raw) == want, str(m._list_field(raw)))
 check("and `contested` is read through it: a hand-written flow list names two stems",
       m._contested_of({m.CONTESTED_KEY: "[a, b]"}) == ["a", "b"])
 
@@ -816,10 +821,6 @@ check("every key the doctor exempts is read as a list by the engine's own reader
       set(readers) == set(doctor._READ_AS_LIST) and all(readers.values()), str(readers))
 
 print("\n- fourth review of 2026-09-23 -")
-for raw, want in (("[[a]], b", ["a", "b"]), ("stem-a, [[stem-b]]", ["stem-a", "stem-b"]),
-                  ("[[a]] x", ["a", "x"])):
-    check(f"_list_field({raw!r}) == {want}: an unbracketed mixed string keeps its plain items",
-          m._list_field(raw) == want, str(m._list_field(raw)))
 import time as _time  # noqa: E402
 _row = " ".join(f"[[s{i}]]" for i in range(24)) + " (imported)"
 _t0 = _time.perf_counter()
@@ -828,6 +829,14 @@ _ms = (_time.perf_counter() - _t0) * 1000
 #: 24 links and a word: the pattern that decided "links only" before took ~3 s here (x2.1 a link,
 #: 7.3 ms at 16, no answer in 120 s at 20+), on the write path under the vault lock
 check(f"a row of 24 links and a word is read in linear time ({_ms:.2f} ms, budget 100)", _ms < 100)
+#: and unclosed aliased links: the alias part of the link pattern ran past the next `[[` to the end
+#: of the string from every start - 20 ms at 3 000 characters, 318 ms at 12 000 (auditing
+#: session's probe on ea9272c). 12 000 characters here; the budget is the same 100 ms.
+_t0 = _time.perf_counter()
+m._list_field("[[a|b " * 2000)
+_ms = (_time.perf_counter() - _t0) * 1000
+check(f"12 000 characters of unclosed aliased links are read in linear time ({_ms:.2f} ms, budget 100)",
+      _ms < 100)
 
 d = fresh()
 o, n = pair()
@@ -887,6 +896,80 @@ merged_src = m._read_frontmatter_file(keep_fp).get("sources") or []
 check("the merge counts [[s01]] and s01 once, and keeps the newest CAP sources in sorted order",
       len(merged_src) == min(41, m.RECUR_SOURCES_CAP) and merged_src == sorted(merged_src)
       and "[[s01]]" not in merged_src and merged_src.count("s01") <= 1, f"{len(merged_src)} {merged_src[:4]}")
+
+print("\n- fifth review of 2026-09-23 -")
+#: F4: the old note's absence is not proof of a retirement - a note renamed or deleted during the
+#: judge call leaves the same absence with no Superseded/ copy.
+d = fresh()
+o, n = pair()
+wp = m.VAULT / "Decisions" / f"{n}.md"
+before_bytes = wp.read_bytes()
+op = m.VAULT / "Decisions" / f"{o}.md"
+
+
+def _renamed_by_the_user(p: Path, *a: object, **k: object) -> bool:
+    p.rename(p.with_name("renamed-by-hand.md"))            # Obsidian, during the judge call
+    return False
+
+
+m.supersede_note = _renamed_by_the_user
+try:
+    res = cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(True))
+finally:
+    m.supersede_note = _real_sup
+check("a note that vanished without a Superseded/ copy is not a retirement: carry undone, an error",
+      wp.read_bytes() == before_bytes and res.get("errors") == 1 and res.get("left") == 1, str(res))
+
+#: F12: a retirement that happened is not a reason to stop the week's run, whatever followed it.
+d = fresh()
+o, n = pair()
+o2, n2 = pair(title="queue depth", d1="2026-06-02", d2="2026-06-10",
+              old_desc=f"The queue depth is 10.{F}the queue depth is 10",
+              new_desc=f"The queue depth is 50.{F}the queue depth is 50")
+
+
+def _retired_then_closed_stderr(p: Path, *a: object, **k: object) -> bool:
+    _real_sup(p, *a, **k)
+    raise ValueError("I/O operation on closed file")
+
+
+m.supersede_note = _retired_then_closed_stderr
+try:
+    res = cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(True))
+    stopped = None
+except ValueError as e:
+    res, stopped = {}, e
+finally:
+    m.supersede_note = _real_sup
+check("a non-disk error AFTER a retirement does not stop the run: both pairs retire",
+      stopped is None and res.get("replaces") == 2 and res.get("errors") == 0 and res.get("left") == 0,
+      f"{stopped!r} {res}")
+
+#: F8/F9: the legacy ledger is applied once - an entry that cannot apply is dropped, not kept for
+#: ever; values go through the engine's readers; a landed carry updates the cache's recurrence.
+d = fresh()
+o, n = pair()
+cm._set_contested(m.VAULT / "Decisions" / f"{o}.md", [])
+cache = m.load_embed_cache()
+cache[n] = {"title": "t", "desc": "", "ntype": "decision", "project": "k8p", "vec": [0.1], "recurrence": 1}
+ledger = m.VAULT / ".consolidate_carry_pending.json"
+ledger.write_text(json.dumps([
+    {"stem": n, "ntype": "decision", "recurrence": 1e999, "sources": "s-one", "supersedes": [o]},
+    {"stem": "2026-01-01-k8p-decision-gone", "ntype": "decision", "recurrence": 2, "sources": [], "supersedes": []},
+    {"not": "an entry"}]), encoding="utf-8")
+landed = cm._drain_old_carry_ledger(True, cache)
+win = fm(n)
+check("the drain lands what it can, drops what it cannot, and the file goes - once means once",
+      landed == 1 and not ledger.exists() and "s-one" in (win.get("sources") or [])
+      and "s" not in (win.get("sources") or []), f"{landed} {ledger.exists()} {win.get('sources')}")
+check("an infinite recurrence is read through the engine's bounded reader, not int(float())",
+      1 <= int(str(win.get("recurrence"))) <= m.RECUR_COUNT_CAP, str(win.get("recurrence")))
+check("and the landed carry updates the vector cache's recurrence, as a judged one does",
+      cache[n]["recurrence"] == int(str(win.get("recurrence"))), str(cache[n]))
+ledger.write_text("{not json", encoding="utf-8")
+cm._drain_old_carry_ledger(True, cache)
+check("an unreadable legacy ledger is set aside once - not reported every week, not deleted",
+      not ledger.exists() and (m.VAULT / ".consolidate_carry_pending.unreadable.json").exists())
 
 print(f"\nK8 layer 3: {len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")
 sys.exit(1 if FAILED else 0)

@@ -232,8 +232,14 @@ def _drop_retired_vectors(cache: dict, dry: bool = False) -> int:
 _OLD_CARRY_LEDGER = ".consolidate_carry_pending.json"
 
 
-def _drain_old_carry_ledger(apply: bool) -> int:
-    """Apply what 466a5d4 parked, once; return how many landed. A dry run only says how many."""
+def _drain_old_carry_ledger(apply: bool, cache: dict | None = None) -> int:
+    """Apply what 466a5d4 parked, once; return how many landed. A dry run only says how many.
+
+    Once means once: an entry whose winner is no longer live, or that cannot be read, is dropped
+    with its reason, as 466a5d4 dropped it - kept, it would be reported every week (fifth review).
+    Only a write that fails on a lock is kept for the next run. The values go through the engine's
+    own readers - recurrence through `_coerce_recurrence` (bounded, finite), the lists through
+    `_list_field` - and a landed carry updates the vector cache's recurrence, as a judged one does."""
     import json                                          # noqa: PLC0415 - a legacy path only
     p = m.VAULT / _OLD_CARRY_LEDGER
     if not p.exists():
@@ -242,9 +248,20 @@ def _drain_old_carry_ledger(apply: bool) -> int:
         parked = json.loads(p.read_text(encoding="utf-8"))
         if not isinstance(parked, list):
             raise ValueError(f"a {type(parked).__name__}, not a list")
-    except (OSError, ValueError) as e:
-        print(f"[consolidate] {p.name} from an earlier build is unreadable ({e}) - left in place",
+    except OSError as e:
+        print(f"[consolidate] {p.name} from an earlier build could not be read ({e}) - next run",
               file=sys.stderr)
+        return 0
+    except ValueError as e:
+        #: nothing in it can be applied; set aside once, not reported every week - and not deleted
+        aside = p.with_name(p.stem + ".unreadable.json")
+        try:
+            p.replace(aside)
+            print(f"[consolidate] {p.name} from an earlier build is unreadable ({e}) - moved to "
+                  f"{aside.name}", file=sys.stderr)
+        except OSError as err:
+            print(f"[consolidate] {p.name} is unreadable ({e}) and could not be set aside ({err})",
+                  file=sys.stderr)
         return 0
     if not apply:
         print(f"[consolidate] {p.name}: {len(parked)} carry(s) parked by an earlier build would be applied")
@@ -254,14 +271,19 @@ def _drain_old_carry_ledger(apply: bool) -> int:
         try:
             target = _live_or_archived(m.VAULT / m.TYPE_FOLDER[e["ntype"]], str(e["stem"]))
             if target is None:
-                raise LookupError(f"{e['stem']} is not live")
-            _carry_into(target, target.read_text(encoding="utf-8", errors="replace"),
-                        int(float(e.get("recurrence", 1))), set(map(str, e.get("sources") or [])),
-                        [str(s) for s in e.get("supersedes") or []])
+                raise LookupError(f"{e['stem']} is no longer live")
+            rec = _carry_into(target, target.read_text(encoding="utf-8", errors="replace"),
+                              m._coerce_recurrence(e.get("recurrence")),
+                              set(m._list_field(e.get("sources"))), m._list_field(e.get("supersedes")))
+            if cache is not None and isinstance(cache.get(target.stem), dict):
+                cache[target.stem]["recurrence"] = rec
             landed += 1
-        except (OSError, KeyError, TypeError, ValueError, AttributeError, LookupError) as err:
-            kept.append(e)
-            print(f"[consolidate] a parked carry was not applied ({type(err).__name__}: {err}) - kept",
+        except OSError as err:
+            kept.append(e)                         # a lock: the next run tries again, idempotently
+            print(f"[consolidate] a parked carry was not applied ({err}) - kept for the next run",
+                  file=sys.stderr)
+        except Exception as err:  # noqa: BLE001 - a legacy file; nothing in it may stop the run
+            print(f"[consolidate] a parked carry was dropped ({type(err).__name__}: {err})",
                   file=sys.stderr)
     try:
         if kept:
@@ -519,13 +541,17 @@ def adjudicate_contested(apply: bool, has_llm: bool, cap: int | None = None,
                                                           cache=cache)
                         except Exception as e:  # noqa: BLE001 - what happened is read off the disk below
                             retired_ok, raised = False, e
-                        if not retired_ok and not old_path.exists():
-                            #: the old note left despite the error - the log line after the unlink can
-                            #: raise on a detached stderr, as scheduled runs often have. The
-                            #: retirement happened; undoing the carry now would lose its history
-                            #: (fourth review, 2026-09-23)
-                            retired_ok = True
+                        #: the retirement is read off the disk, and the proof is the Superseded/ copy -
+                        #: not the old note's absence, which is also a note the user renamed or
+                        #: deleted during the judge call (fifth review). With the copy there, an error
+                        #: raised after it (the log line after the unlink, on a detached stderr) does
+                        #: not undo a retirement that happened (fourth review).
+                        retired_copy = old_path.parent / "Superseded" / old_path.name   # supersede_note's rule
+                        retired_ok = retired_ok or (not old_path.exists() and retired_copy.exists())
                         why_not = f" ({raised})" if raised is not None else ""
+                        if raised is not None and retired_ok:
+                            print(f"      retired {old_path.name}, and an error followed{why_not} - "
+                                  "the retirement stands", file=sys.stderr)
                         if not retired_ok:
                             #: the pair is still contested on disk: an error, so `left` counts it -
                             #: "nothing left" over a pair still queued is #4 read the other way
@@ -541,11 +567,10 @@ def adjudicate_contested(apply: bool, has_llm: bool, cap: int | None = None,
                                       f"into {new_path.name} could not be undone ({e}) - the pair stays "
                                       "contested; a replaces next run re-applies the same merge, any "
                                       "other verdict leaves it on the winner", file=sys.stderr)
-                        if raised is not None and not isinstance(raised, OSError):
-                            #: not a lock or a disk error: the run stops, as it always did - after the
-                            #: disk agrees with itself (undone above, or counted as retired below)
-                            if retired_ok:
-                                retired += 1
+                        if raised is not None and not retired_ok and not isinstance(raised, OSError):
+                            #: a retirement that did not happen for a reason that is not a lock or a disk
+                            #: error: the run stops, as it always did - after the carry is undone above.
+                            #: One that did happen is not a reason to stop the week's run (fifth review).
                             raise raised
                         if retired_ok:
                             # the retired stem already left the cache: supersede_note pops it from
@@ -1187,7 +1212,8 @@ def _run_consolidation(apply, mode, has_llm):
     #    to archive one side of a pair K8 deliberately keeps apart before the judge ever ruled on it.
     #    Judging first also means a pair the judge just resolved this run is already off the
     #    contested list by the time the merge's own exclusion set (next) is built.
-    _drain_old_carry_ledger(apply)
+    if _drain_old_carry_ledger(apply, cache) and apply:
+        m.save_embed_cache(cache)
     adj = adjudicate_contested(apply, has_llm, cache=cache)
     print(f"[consolidate] contested pairs: {adj['pairs']} - {adj['judged']} judge call(s), "
           f"{adj['tokens_spent']} of {adj['budget']} tokens (~{adj['budget'] // TOKENS_PER_PAIR_EST} pairs a run "

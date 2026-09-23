@@ -235,16 +235,27 @@ _wrappers = []
 
 
 def _stand_in_problems(fn: ast.AST) -> list[str]:
-    """What a stand-in for the writer gets wrong: a keyword it cannot take, or `why` taken and not
-    handed on to the writer it wraps (fourth review: the sweep only asked the first question)."""
+    """What a stand-in for the writer gets wrong: a keyword it cannot take, or a `why` it takes and
+    drops. Handing on counts in any form - `why=why`, a `**kw` splat, `why` passed positionally -
+    and so does a fake that fills `why` itself (`why.append(...)`). A `def f(*a, **kw)` that calls
+    through without the splat swallows `why` (fifth review: the first sweep let that pass)."""
     args = fn.args
     names = {a.arg for a in args.args + args.kwonlyargs}
     missing = [] if args.kwarg else [k for k in _writer_kw if k not in names]
-    if isinstance(fn, ast.Lambda) or missing or args.kwarg:
-        return missing                     # a **kw lambda/def takes anything and hands on nothing
-    passes = any(isinstance(c, ast.Call) and any(kw.arg == "why" or kw.arg is None for kw in c.keywords)
-                 for c in ast.walk(fn))
-    return [] if passes else ["why accepted but not passed on"]
+    if missing or isinstance(fn, ast.Lambda):
+        return missing                     # a **k lambda is a stub: an empty `why` reads as refused
+    kw_name = args.kwarg.arg if args.kwarg else None
+    for node in ast.walk(fn):
+        if isinstance(node, ast.Call):
+            if any((kw.arg == "why") or (kw.arg is None and isinstance(kw.value, ast.Name)
+                                         and kw.value.id in {kw_name, "why"}) for kw in node.keywords):
+                return []
+            if any(isinstance(a, ast.Name) and a.id == "why" for a in node.args):
+                return []
+            if (isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name)
+                    and node.func.value.id == "why"):
+                return []                  # fills `why` itself
+    return ["why swallowed by **kwargs" if kw_name else "why accepted but not passed on"]
 
 
 for _py in sorted(list((_ROOT / "research").rglob("*.py")) + list((_ROOT / "tools").rglob("*.py"))):

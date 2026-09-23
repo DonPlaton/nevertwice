@@ -366,19 +366,23 @@ def _frontmatter_lines(path: Path) -> list[str] | None:
 
 
 #: The frontmatter keys the engine reads through `_list_field` (see check_list_fields). A claim
-#: about the engine, held by tests/_test_doctor.py: each key is fed `[[stem]]` through the reader
-#: the engine really uses for it, so the day one of them stops going through `_list_field`, the
-#: list here fails instead of silently exempting a real misread (auditing session, 63eb7b2).
+#: about the engine, held by tests/_test_k8_adjudicate.py: each key is fed `[[stem]]` through the
+#: reader the engine really uses for it, so the day one of them stops going through `_list_field`,
+#: the claim fails instead of the doctor silently exempting a real misread (auditing session, 63eb7b2).
 _READ_AS_LIST = ("contested", "disputed", "supersedes", "sources")
+
+
+_NAME_LIKE = re.compile(r"[^\s,;\[\]()]+")
 
 
 def _reads_cleanly(items: list[str], raw: object) -> bool:
     """True when the engine's list reader took `raw` apart cleanly: something came out, the
-    brackets of the raw value balance, and no entry still holds a comma or a bracket - an entry
-    like 'a, b' is one stem that names no note."""
+    brackets of the raw value balance, and every entry looks like the name of a note or a session
+    - no space, comma, semicolon, bracket or parenthesis. 'a, b', 'a; b' and '(manual)' name
+    nothing, and the engine would carry them as if they did (fifth review, 2026-09-23)."""
     text = raw if isinstance(raw, str) else ""
     balanced = text.count("[") == text.count("]")
-    return bool(items) and balanced and not any(set(i) & {",", "[", "]"} for i in items)
+    return bool(items) and balanced and all(_NAME_LIKE.fullmatch(i) for i in items)
 
 
 def check_list_fields(vault: Path) -> dict:
@@ -404,12 +408,13 @@ def check_list_fields(vault: Path) -> dict:
 
     Which keys are then reported: every key the parser does not return as a list, EXCEPT the
     keys in `_READ_AS_LIST` when the engine's own list reader (`_list_field`) takes the value
-    cleanly - since 5961f38/6e96441 contested, disputed, supersedes and sources are read through
-    it, and a link, links in a row or a flow list there is read as meant. "Cleanly" is checked,
-    not assumed: brackets balanced and no entry still holding a comma or a bracket, so
-    `[[a, b]]` or an unclosed `[a, [[b` on those keys is still reported (fourth review,
-    2026-09-23). A block list reads as empty on every key and is always reported. The list of
-    keys is a claim about the engine, held by tests/_test_k8_adjudicate.py.
+    cleanly. That reader's grammar is small and stated in its docstring - a JSON list, one whole
+    link, `[a, b]` without links inside, a quoted scalar - and everything else (links in a row,
+    links mixed with plain items) comes out as one entry that names nothing. "Cleanly" is
+    therefore checked, not assumed: brackets balanced and every entry name-like (no space, comma,
+    semicolon, bracket or parenthesis), so those shapes are still reported on these keys too. A
+    block list reads as empty on every key and is always reported. The list of keys is a claim
+    about the engine, held by tests/_test_k8_adjudicate.py.
     """
     title = "frontmatter lists are in a form the engine reads as lists"
     if not vault.exists():
@@ -470,9 +475,9 @@ def check_list_fields(vault: Path) -> dict:
                   'rewrite a list as a JSON list on one line - tags: ["a", "b"] - which is the '
                   "form the engine writes and reads back. A bare [[link]] reads as text either way. "
                   f"The keys nevertwice reads as note lists - {', '.join(_READ_AS_LIST)} - also take "
-                  "links, links in a row and an unquoted flow list; a block list (- item lines) "
-                  "reads as empty on those keys too, and they are reported only when they would "
-                  'lose an entry. Only for an Obsidian link property, quote it - related: "[[note]]"')
+                  "one whole link or an unquoted flow list of plain names, and are reported only "
+                  "in a shape that would lose an entry (links in a row, a block list). Only for "
+                  'an Obsidian link property, quote it - related: "[[note]]"')
 
 
 def check_package_matches_repo() -> dict:

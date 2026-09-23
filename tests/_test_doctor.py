@@ -590,8 +590,12 @@ def test_a_list_the_engine_cannot_read_is_counted() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         only = Path(tmp) / "store" / "Decisions"
         only.mkdir(parents=True)
+        #: and entries that are not names at all - another separator, an annotation (fifth review)
         for value in ("[[2026-01-01-p-decision-a, 2026-01-01-p-decision-b]]",
-                      "[2026-01-01-p-decision-a, [[2026-01-01-p-decision-b, 2026-01-01-p-decision-c]"):
+                      "[2026-01-01-p-decision-a, [[2026-01-01-p-decision-b, 2026-01-01-p-decision-c]",
+                      "[2026-01-01-p-decision-a; 2026-01-01-p-decision-b]",
+                      "[2026-01-01-p-decision-a, 2026-01-01-p-decision-b (manual)]",
+                      "[[2026-01-01-p-decision-a]], [[2026-01-01-p-decision-b]]"):
             (only / "2026-01-08-p-decision-bad.md").write_text(
                 f"---\ntype: decision\nsupersedes: {value}\n---\n\nbody\n", encoding="utf-8")
             result = check_list_fields(only.parent)
