@@ -1,9 +1,15 @@
-"""`research/cross_project_bench.py` (A9, Q5): the `--dry` path end to end - 2 cases, a stub
-embedder, no model, no Ollama, no GPU. Proves the plumbing (write project_a/project_c/distractor
+"""`research/cross_project_bench.py` (A9, Q5): `--dry --oracle-principles` end to end - 2 cases,
+pre-written ground-truth principles (no extraction at all), a stub embedder, no model, no
+Ollama, no GPU. Proves the RETRIEVAL/PROMOTION plumbing (write project_a/project_c/distractor
 -> seed the universal pool -> retrieve_cross_project under all three arms) wires together AND
 that the metrics actually distinguish the arms: `all` must leak the positive control's planted
 identifiers (proving the metric can see a leak at all), `universal` must not, `off` must inject
 nothing.
+
+This file deliberately isolates retrieval from extraction (the oracle control) - the companion
+suite `tests/research/_test_cross_project_bench_extract_dry.py` covers the OTHER half, the
+extraction-side scanner rejection `--dry`'s stub extractor exists for (the 2026-09-23 widening:
+a pre-written principle alone cannot prove an EXTRACTED one gets caught).
 """
 import sys
 from pathlib import Path
@@ -37,8 +43,8 @@ for c in cases:
         for cls in gcpd.IDENTIFIER_CLASSES:
             check(f"{c['id']} {side} has a planted {cls!r}", bool(planted.get(cls)))
 
-print("\n- --dry runs the full plumbing over 2 cases with a stub embedder, no model -")
-result = cpb.run_bench(cases, dry=True)
+print("\n- --dry --oracle-principles runs the full plumbing over 2 cases, stub embedder, no model -")
+result = cpb.run_bench(cases, extractor_mode="oracle", dry=True)
 check("all three arms reported", set(result["arms"]) == set(cpb.ARMS), str(result["arms"].keys()))
 for arm in cpb.ARMS:
     check(f"{arm} arm covered both cases", result["arms"][arm]["n_cases"] == 2,

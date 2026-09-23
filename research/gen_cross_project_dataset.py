@@ -7,11 +7,14 @@ DIFFERENT project's memory while still letting the underlying lesson travel.
 Each case has three projects and a decoy:
   - project_a, project_c: two DIFFERENT projects that independently learned the SAME
     underlying rule (reused from research/data/principle_twins_v1.json's 40 positive
-    paraphrase pairs, one phrasing per project) - each note's DESCRIPTION carries that
-    project's own planted identifiers of all four classes the plan names (IP, host, path,
-    entity), the way a real extractor's raw prose would; each note's own `principle` field is
-    the clean paraphrase, already de-identified (what A1/A3's write-time gate is supposed to
-    leave behind regardless).
+    paraphrase pairs, one phrasing per project). Each side carries its own planted
+    identifiers of all four classes the plan names (IP, host, path, entity) TWICE, in two
+    shapes: a short synthetic SESSION TRANSCRIPT ('session', ~1-2 kB, an IP in a log line, a
+    hostname in a command, a path in a traceback, an entity/product name in the prose - what
+    `--extract` mode feeds to the real extractor) and a one-line raw 'description' (the
+    cheaper `--oracle-principles` control's note body). Each side's `principle` field is the
+    clean, already de-identified paraphrase - the ground truth `--oracle-principles` writes
+    directly, and what `--extract` asks a real model to reproduce on its own.
   - project_b: the TARGET - a prompt about to repeat the same mistake/pattern, phrased around
     the topic without stating the rule outright (a real user's prompt, not a lesson).
   - a distractor project with an unrelated rule (a different topic entirely), clean, no
@@ -64,6 +67,32 @@ def _raw_description(phrasing: str, planted: dict) -> str:
            f"{planted['path']}, entity {planted['entity']}.")
 
 
+def _synthetic_session(topic: str, phrasing: str, planted: dict) -> str:
+    """A short (~1-2 kB) synthetic session transcript for `--extract` mode: the shared rule is
+    LEARNED IN CONTEXT (a flaky failure gets diagnosed) rather than just stated, so a real
+    extractor has to actually distil it, not copy a given sentence - and each identifier class
+    sits in the natural place the plan names: an IP in a log line, a hostname in a command, a
+    path in a traceback, an entity/product name in the prose. `_raw_description` above plants
+    the same four values in one compact sentence for the (cheaper) oracle/description path;
+    this is the same identifiers, spread across a believable dialogue for the extraction path."""
+    return (
+        f"User: we keep hitting a flaky failure around {topic.replace('-', ' ')} - can you dig "
+        f"into it with me?\n"
+        f"Assistant: pulling the logs first.\n"
+        f"  [2026-09-01 10:14:02] connect timeout to {planted['ip']}:5432 after 3 retries\n"
+        f"Assistant: that host is still up, so let's reproduce it directly:\n"
+        f"  $ ssh {planted['host']} 'systemctl status app'\n"
+        f"  active (running) - not the host itself, then.\n"
+        f"Assistant: here's the traceback from the failing run:\n"
+        f"  Traceback (most recent call last):\n"
+        f'    File "{planted["path"]}", line 42, in run_check\n'
+        f"      raise RuntimeError('{planted['entity']} health check failed')\n"
+        f"Assistant: found it. {phrasing}\n"
+        f"User: good catch - let's make sure this does not bite us again on the next pass.\n"
+        f"Assistant: agreed, writing it down as a lesson so it is not relearned the hard way.\n"
+    )
+
+
 def generate(n_cases: int = N_CASES) -> dict:
     twins = json.loads(TWINS_PATH.read_text(encoding="utf-8"))
     positives = twins["positives"]
@@ -97,6 +126,7 @@ def generate(n_cases: int = N_CASES) -> dict:
                 "description": _raw_description(rule["a"], planted_a),
                 "principle": rule["a"],
                 "planted": planted_a,
+                "session": _synthetic_session(rule["topic"], rule["a"], planted_a),
             },
             "project_c": {
                 "project": proj_c,
@@ -104,6 +134,7 @@ def generate(n_cases: int = N_CASES) -> dict:
                 "description": _raw_description(rule["b"], planted_c),
                 "principle": rule["b"],
                 "planted": planted_c,
+                "session": _synthetic_session(rule["topic"], rule["b"], planted_c),
             },
             "project_b": {
                 "project": proj_b,
@@ -120,10 +151,14 @@ def generate(n_cases: int = N_CASES) -> dict:
     return {
         "_schema": "A9 (Q5) cross-project recall stand. Each case: project_a and project_c "
                    "independently learned the SAME rule (from principle_twins_v1.json), each "
-                   "with its OWN planted identifiers (ip/host/path/entity) in its note's "
-                   "description (never scanned) and a clean principle (always scanned). "
-                   "project_b is the target with a topically-related prompt. distractor is an "
-                   "unrelated rule with no planted identifiers, noise for the ranking.",
+                   "with its OWN planted identifiers (ip/host/path/entity) woven into a short "
+                   "synthetic session transcript ('session', for --extract's real extraction "
+                   "pass) and into a one-line raw description ('description', for the cheaper "
+                   "oracle-principles path) - never scanned - plus a clean, already de-"
+                   "identified 'principle' ground truth (--oracle-principles only; --extract "
+                   "asks a real model to produce its own). project_b is the target with a "
+                   "topically-related prompt. distractor is an unrelated rule with no planted "
+                   "identifiers, noise for the ranking.",
         "identifier_classes": list(IDENTIFIER_CLASSES),
         "n_cases": len(cases),
         "cases": cases,
@@ -148,15 +183,27 @@ def validate(data: dict) -> list[str]:
         else:
             ids.add(cid)
         for side in ("project_a", "project_c"):
-            planted = (c.get(side) or {}).get("planted") or {}
+            row = c.get(side) or {}
+            planted = row.get("planted") or {}
             for cls in IDENTIFIER_CLASSES:
                 if not planted.get(cls):
                     problems.append(f"case {i} {side}: no planted {cls!r}")
-            principle = (c.get(side) or {}).get("principle", "")
+            principle = row.get("principle", "")
             for cls, val in planted.items():
                 if val and val in principle:
                     problems.append(f"case {i} {side}: planted {cls!r} leaked into 'principle' "
                                     f"itself - the fixture is supposed to keep it clean")
+            session = row.get("session", "")
+            if not isinstance(session, str) or not session.strip():
+                problems.append(f"case {i} {side}: missing 'session' transcript")
+                continue
+            if not (500 <= len(session) <= 2500):
+                problems.append(f"case {i} {side}: session is {len(session)} chars, "
+                                f"want roughly 1-2 kB")
+            for cls, val in planted.items():
+                if val and val not in session:
+                    problems.append(f"case {i} {side}: planted {cls!r} ({val!r}) is missing "
+                                    f"from its own session transcript")
     return problems
 
 

@@ -425,6 +425,25 @@ below is read in context:
   this second channel. Not fixed here - it is out of Q5's scope (PLAN-Q3Q5.md's "Вне рамки"
   list, risk R12) - and is recorded so a reader of the cross-project boundary does not assume
   it is the only one.
+- **W17 [KNOWN GAP, Q5/A3] `principle_scan` has no standalone pattern for the "entity" class -
+  an entity/product name is caught ONLY when the extractor also declares it in the item's own
+  `entities` field.** `principle_scan`'s other five identifier classes (IP, URL/FQDN, path,
+  email, host:port/version) are regex-detected regardless of what the extractor declares
+  around them; entity-class protection runs entirely through the FORBIDDEN-TOKEN path - the
+  project slug and `entities`, nothing else. The extraction prompt DOES ask for entities ("2-5
+  key entities of the lesson"), so a well-behaved extraction that mentions a product name in
+  its `principle` text would typically also list it as an entity and get caught - but nothing
+  enforces that pairing, and a model that mentions a name in prose without also declaring it
+  would slip through with no regex fallback to catch it. Surfaced by
+  `research/cross_project_bench.py`'s `--dry` stub extractor
+  (`tests/research/_test_cross_project_bench_extract_dry.py`) while widening A9 to test
+  EXTRACTED principles rather than only pre-written ones (2026-09-23) - the stub's first draft
+  left `entities` empty for its "entity" poison and the class went uncaught; the fixed stub
+  declares the entity (mirroring instruction-following extraction) to demonstrate the
+  mechanism that DOES work, but the "mentioned in prose, never declared" failure mode this
+  found is real and not fixed here - it would need either a second, generic content-shaped
+  pattern (high false-positive risk on ordinary kebab-case technical terms) or a harder
+  requirement that entities be exhaustive, neither decided in this work.
 
 ## Less-traveled-path audit (2026-06-17)
 
