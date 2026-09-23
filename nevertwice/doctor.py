@@ -440,9 +440,11 @@ def check_list_fields(vault: Path) -> dict:
     detail += f", e.g. {'; '.join((bad + links)[:3])}"
     return _check("list_fields", title, WARN, detail,
                   'rewrite a list as a JSON list on one line - tags: ["a", "b"] - which is the '
-                  "form the engine writes and reads back; a bare [[link]] reads as text either way: "
-                  'quote it - related: "[[note]]" - if the key holds one link, or make it a JSON '
-                  'list - supersedes: ["note"] - if it holds several')
+                  "form the engine writes and reads back. A bare [[link]] reads as text either way. "
+                  "If the key names notes for nevertwice (contested, disputed, supersedes, sources), "
+                  'write a JSON list of stems WITHOUT brackets - supersedes: ["note"] - because a '
+                  'quoted "[[note]]" there is a stem that does not exist and the pair is lost; only '
+                  'for an Obsidian link property, quote it - related: "[[note]]"')
 
 
 def check_package_matches_repo() -> dict:

@@ -703,6 +703,18 @@ def test_a_backup_survives_a_file_that_vanishes_under_it() -> None:
               skipped_after == [], str(skipped_after))
         fresh_target()
 
+        # 5. the list reaches the result migrate() returns - the half of review finding 7 that no
+        #    check held: dropping `backup_skipped` from that dict left this suite green (auditing
+        #    session's mutation B2), because every check above called _backup_with_report directly
+        seed()
+        result, doomed = planted(folder, lambda e: e.is_file(),
+                                 lambda: SV.migrate(store, dry_run=False))
+        got = result.get("backup_skipped")
+        check("migrate() returns what its backup skipped, naming the path",
+              bool(doomed) and isinstance(got, list) and any(s.endswith(doomed) for s in got),
+              f"doomed={doomed} backup_skipped={got}")
+        fresh_target()
+
         # the control: the call this code made before any fix, over the same planted listing
         seed()
         raised = None

@@ -558,6 +558,16 @@ def test_a_list_the_engine_cannot_read_is_counted() -> None:
         check("a bare link in `supersedes` alone is reported, and by its key",
               result["status"] == doctor.WARN and "supersedes" in result["detail"],
               f"{result['status']}: {result['detail']}")
+        #: The repair must not lead into the defect it reports. "Quote it" alone sends someone to
+        #: write `supersedes: "[[note]]"`, which the doctor then reads as fine and the engine
+        #: reads as a stem named "[[note]]" that does not exist - the pair is lost silently
+        #: (auditing session's probe on ddaf6f0). The engine's form comes first, and quoting is
+        #: offered only after it, for a link property.
+        r = result["repair"]
+        engine_form, quoted = 'supersedes: ["note"]', '"[[note]]"'
+        check("the repair names the engine's stem form before it offers quotes",
+              engine_form in r and "nevertwice" in r and quoted in r
+              and r.index(engine_form) < r.index(quoted), r)
 
     with tempfile.TemporaryDirectory() as tmp:
         result = check_list_fields(Path(tmp) / "absent")
