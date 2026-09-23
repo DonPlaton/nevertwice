@@ -122,8 +122,16 @@ check("universal: leak is 0.0 - the write-time gate holds", universal["leak"] ==
      str(universal))
 #: leak_by_class is a fraction of the WHOLE slice (16 cases: 8 ip + 4 host + 2 path + 2
 #: entity), not of that class's own subset - every class present must be > 0, not == 1.0.
+#: C3 (2026-09-23): leak_by_class is now keyed off cpb.ALL_CLASSES (the original four
+#: IDENTIFIER_CLASSES plus DIGITFREE_SHAPES) - this population never plants a digit-free
+#: shape, so those 4 extra keys are always 0 here; check ONLY the four classes this
+#: population actually uses, not the shape-only keys it structurally cannot leak.
 check("every identifier class present in this slice leaks under 'all' (each > 0)",
-     all(v > 0 for v in all_arm["leak_by_class"].values()), all_arm["leak_by_class"])
+     all(all_arm["leak_by_class"][cls] > 0 for cls in gcpd.IDENTIFIER_CLASSES),
+     {cls: all_arm["leak_by_class"][cls] for cls in gcpd.IDENTIFIER_CLASSES})
+check("no digit-free shape leaks under 'all' either (this population plants none)",
+     all(all_arm["leak_by_class"][s] == 0 for s in cpb.DIGITFREE_SHAPES),
+     {s: all_arm["leak_by_class"][s] for s in cpb.DIGITFREE_SHAPES})
 
 
 print("\n- bench CLI: --population is wired and documented -")

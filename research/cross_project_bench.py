@@ -108,12 +108,28 @@ DATA = HERE / "data" / "cross_project_v1.json"
 # that this leaves `all`'s positive control nothing real to leak); this population is the
 # opposite by design, kept BESIDE the original, never replacing it.
 IB_DATA = HERE / "data" / "cross_project_ib_v1.json"
+# C3 (2026-09-23), .loop/PREREG-Q5-DIGITFREE-2026-09-23.md: 40 cases, 10 per shape
+# (DIGITFREE_SHAPES below), no digit/dot/slash in any planted identifier - the write-time
+# classifier forbids only digit/dot/slash-shaped tokens, so this is the population that tests
+# everything outside that (billing_service, BillingService, BILLING_CONFIG_FLAG,
+# billing-service). Same "identifier IS the lesson" construction as identifier-bound, kept
+# BESIDE both existing populations.
+DF_DATA = HERE / "data" / "cross_project_df_v1.json"
 # .loop/explore/, not research/results/: an exploratory run must not write where a published,
 # cited claim's artifact lives (research/evidence_manifest.json) - promote it explicitly with
 # --out once the numbers are trusted, the same discipline research/principle_twins.py follows.
 OUT = ROOT / ".loop" / "explore" / "cross_project.json"
 ARMS = ("off", "all", "universal")
 IDENTIFIER_CLASSES = ("ip", "host", "path", "entity")
+# Task B (2026-09-23): the digit-free population plants a CODE-IDENTIFIER shape, not one of
+# IDENTIFIER_CLASSES's four regex-shaped classes - digit/dot/slash is exactly what this
+# population's PREREG excludes by construction. `leak_by_class`/`write_rejections`/
+# `promotion_rejections` are keyed off ALL_CLASSES (the union) everywhere, not
+# IDENTIFIER_CLASSES alone, so a digit-free row's shape gets its own tracked key instead of
+# silently landing nowhere in the per-class breakdown while `leak`/`benefit` (which never
+# iterate a fixed key set) kept working by accident.
+DIGITFREE_SHAPES = ("snake_case", "camel_pascal", "screaming_snake", "kebab")
+ALL_CLASSES = IDENTIFIER_CLASSES + DIGITFREE_SHAPES
 _STOPWORDS = {"the", "a", "an", "of", "to", "in", "on", "for", "and", "or", "is", "it", "its",
              "not", "this", "that", "so", "before", "than", "with", "at", "by", "be", "as"}
 
@@ -259,12 +275,13 @@ def _classes_present(text: str, planted: dict) -> list[str]:
 # re-running with print statements sprinkled in by hand every time a new guess needs checking.
 
 def _identifier_hits(text: str, planted: dict) -> dict[str, bool]:
-    """Which of the fixed `IDENTIFIER_CLASSES` appear (case-insensitive substring) in `text` -
-    always all four keys, unlike `_classes_present`'s presence-only list, so a row's shape does
-    not depend on which classes happened to fire."""
+    """Which of `ALL_CLASSES` (C3, 2026-09-23 - the four regex-shaped IDENTIFIER_CLASSES plus
+    DIGITFREE_SHAPES) appear (case-insensitive substring) in `text` - always every key, unlike
+    `_classes_present`'s presence-only list, so a row's shape does not depend on which classes
+    happened to fire."""
     low = (text or "").lower()
     return {cls: bool(planted.get(cls)) and str(planted[cls]).lower() in low
-           for cls in IDENTIFIER_CLASSES}
+           for cls in ALL_CLASSES}
 
 
 def _extraction_items(extraction: dict) -> list[dict]:
@@ -384,7 +401,7 @@ def run_case(case: dict, arm: str) -> dict:
     text = _hit_text(hits)
     low = text.lower()
 
-    leak_by_class = {cls: False for cls in IDENTIFIER_CLASSES}
+    leak_by_class = {cls: False for cls in ALL_CLASSES}                 # C3: ALL_CLASSES
     for side in ("project_a", "project_c"):
         for cls, val in (case[side]["planted"] or {}).items():
             if val and val.lower() in low:
@@ -417,7 +434,7 @@ def _side_written_description(info: dict) -> str:
     Capped at `_note_snippet`'s 220-char recall-injection budget, plain char-slice, no
     word-boundary awareness - by design, this is a RECALL simulation, and recall really does
     serve exactly this text. Do NOT reuse this field as a vocabulary source: see
-    `_side_written_description_full` below (C2, 2026-09-24)."""
+    `_side_written_description_full` below (C2, 2026-09-23)."""
     if not info.get("stem"):
         return ""
     return m._note_snippet(info["stem"], info["ntype"])
@@ -429,7 +446,7 @@ def _side_written_description_full(info: dict) -> str:
     through `_note_snippet` (which caps at 220 chars for a different purpose, recall injection,
     see `_side_written_description` above). `""` when nothing was written for this side.
 
-    C2 (2026-09-24): the H6 trigger recount (`.loop/explore/h6_recount.py`, a text-only, offline
+    C2 (2026-09-23): the H6 trigger recount (`.loop/explore/h6_recount.py`, a text-only, offline
     reconstruction with no live vault to re-read) had only `written_description` to build with,
     and used it as a stand-in for `_project_token_vocabulary`'s "desc" field - which in
     PRODUCTION is never truncated at all. Six tokens the recount flagged as uncorroborated
@@ -561,7 +578,7 @@ def _diagnostic_row(i: int, case: dict, written: dict[str, dict], case_rows: dic
             "has_principle": bool((info.get("written_principle") or "").strip()),
             "written_principle": info.get("written_principle") or "",
             "written_description": written_desc,
-            # C2 (2026-09-24): the untruncated description - use THIS for any vocabulary/
+            # C2 (2026-09-23): the untruncated description - use THIS for any vocabulary/
             # provenance reconstruction from this row, never `written_description` above (that
             # one is capped at 220 chars for the recall-simulation, H5, and can end mid-word).
             "written_description_full": _side_written_description_full(info),
@@ -629,8 +646,8 @@ def run_bench(cases: list[dict], *, extractor_mode: str, dry: bool) -> dict:
                                         specific identifier never reached project_b)."""
     embed = _fixed_stub_vector if dry else None
     per_arm: dict[str, list[dict]] = {arm: [] for arm in ARMS}
-    write_rejections: dict[str, int] = {cls: 0 for cls in IDENTIFIER_CLASSES}
-    promotion_rejections: dict[str, int] = {cls: 0 for cls in IDENTIFIER_CLASSES}
+    write_rejections: dict[str, int] = {cls: 0 for cls in ALL_CLASSES}       # C3: ALL_CLASSES
+    promotion_rejections: dict[str, int] = {cls: 0 for cls in ALL_CLASSES}
     # NOT named `rows`: the summary loop below already uses that name for its own per-arm
     # iteration variable, and shadowing it would leave this bound to whichever arm's per-case
     # list the summary loop happened to visit last - a silent, wrong answer, not a crash.
@@ -714,7 +731,7 @@ def run_bench(cases: list[dict], *, extractor_mode: str, dry: bool) -> dict:
             "n_cases": len(rows),
             "leak": sum(1 for r in rows if r["leaked"]) / n,
             "leak_by_class": {cls: sum(1 for r in rows if r["leak_by_class"][cls]) / n
-                             for cls in IDENTIFIER_CLASSES},
+                             for cls in ALL_CLASSES},                    # C3: ALL_CLASSES
             "benefit": sum(1 for r in rows if r["benefit"]) / n,
             "noise": sum(r["noise"] for r in rows) / n,
             "cross_chars_mean": sum(r["cross_chars"] for r in rows) / n,
@@ -840,9 +857,9 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--data", default="", help="dataset path override for a SINGLE "
-                        "population (--population original or identifier_bound only; ignored "
-                        "under --population both, where each population uses its own default "
-                        "path)")
+                        "population (--population original, identifier_bound or digit_free "
+                        "only; ignored under --population both, where each population uses "
+                        "its own default path)")
     parser.add_argument("--out", default=str(OUT), help="results artifact path (default: %(default)s)")
     parser.add_argument("--cases", type=int, default=None, help="limit to the first N cases")
     parser.add_argument("--case-ids", default="",
@@ -851,14 +868,18 @@ def main(argv: list[str] | None = None) -> int:
                              "instead of the first N; takes precedence over --cases, ignored "
                              "under --dry (which always uses its own fixed 3-case fixture)")
     parser.add_argument("--population", default="original",
-                        choices=["original", "identifier_bound", "both"],
+                        choices=["original", "identifier_bound", "digit_free", "both"],
                         help="which case population to run (default: %(default)s). "
                              "'identifier_bound' is the 50-case population where the planted "
                              "identifier IS the lesson (.loop/PREREG-Q5-IDENTIFIER-BOUND-"
-                             "2026-09-23.md, finding 3); 'both' runs each separately and "
-                             "reports them under a top-level 'populations' key. Ignored under "
-                             "--dry, which always uses the original population's fixed 3-case "
-                             "stub fixture.")
+                             "2026-09-23.md, finding 3); 'digit_free' is the 40-case population "
+                             "where the planted identifier has no digit, dot or slash - "
+                             "snake_case/camelCase-PascalCase/SCREAMING_SNAKE/kebab, 10 each "
+                             "(.loop/PREREG-Q5-DIGITFREE-2026-09-23.md, C3); 'both' runs "
+                             "'original' and 'identifier_bound' separately and reports them "
+                             "under a top-level 'populations' key (digit_free is NOT included "
+                             "in 'both' - select it on its own). Ignored under --dry, which "
+                             "always uses the original population's fixed 3-case stub fixture.")
     parser.add_argument("--oracle-principles", action="store_true",
                         help="control: write each case's pre-written ground-truth principle "
                              "directly, no extraction at all")
@@ -875,7 +896,7 @@ def main(argv: list[str] | None = None) -> int:
     else:
         extractor_mode = "oracle" if args.oracle_principles else "extract"
 
-    default_path = {"original": DATA, "identifier_bound": IB_DATA}
+    default_path = {"original": DATA, "identifier_bound": IB_DATA, "digit_free": DF_DATA}
     populations = ["original"] if args.dry else (
         ["original", "identifier_bound"] if args.population == "both" else [args.population])
     if args.data and args.population != "both":

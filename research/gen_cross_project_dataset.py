@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import random
 import sys
 from pathlib import Path
 
@@ -266,6 +267,284 @@ def validate_identifier_bound(data: dict) -> list[str]:
     return problems
 
 
+# ── the digit-free identifier sub-population (Q5 G5.1, registered .loop/PREREG-Q5-DIGITFREE-
+# 2026-09-23.md BEFORE any number from it): the write-time classifier (write_typed_note's
+# principle_scan, and its narrowed `_looks_like_identifier`) forbids only tokens with a digit, a
+# dot or a slash - the identifier-bound population above plants exactly such tokens, so a leak of
+# a DIGIT-FREE code identifier (billing_service, UserRepository, STRIPE_SECRET_KEY, payments-api)
+# is outside what G5.1 can observe without a population that plants one. Same "identifier IS the
+# rule" construction as identifier-bound, one shape per case, 10 cases per shape.
+DF_OUT_PATH = HERE / "data" / "cross_project_df_v1.json"
+DF_N_CASES = 40
+DIGITFREE_SHAPES = ("snake_case", "camel_pascal", "screaming_snake", "kebab")
+
+# 10 word pairs, reused across all four shapes with a different template each - distinctness
+# from the original 100-case and identifier-bound 50-case populations comes from WORD CHOICE
+# (none of these words appear in either), not a numeric offset - the same "no shift, no shared
+# derivation" lesson `_ib_planted`'s own docstring already drew from two failed shift attempts.
+_DF_WORD_PAIRS = (
+    ("billing", "invoicing"), ("orders", "checkout"), ("payments", "wallet"),
+    ("sessions", "identity"), ("caching", "buffering"), ("queueing", "piping"),
+    ("search", "indexing"), ("auth", "access"), ("reporting", "insights"),
+    ("metrics", "telemetry"),
+)
+
+
+def _df_planted(i: int, letter: str, shape: str) -> str:
+    """One PURELY ALPHABETIC identifier for digit-free case `i` (1-10 within its shape)'s
+    `letter` side - no digit, dot or slash anywhere, the PREREG's construction rule.
+    `camel_pascal`: `letter="a"` always gets PascalCase, `letter="c"` always gets camelCase -
+    both spellings of the same shape category ("camelCase OR PascalCase") get real coverage
+    across the 10 cases instead of picking one and never exercising the other. `kebab`'s two
+    suffixes ("-service"/"-worker") are both `_INFRA_HYPHEN_TOKENS` members (principles.py) -
+    required for `_hyphen_part_is_infra` to classify the compound as identifier-shaped at all;
+    an arbitrary suffix word would silently NOT be identifier-shaped and defeat the case."""
+    word = _DF_WORD_PAIRS[i - 1][0 if letter == "a" else 1]
+    if shape == "snake_case":
+        return f"{word}_service"
+    if shape == "camel_pascal":
+        return f"{word.capitalize()}Service" if letter == "a" else f"{word}Service"
+    if shape == "screaming_snake":
+        return f"{word.upper()}_CONFIG_FLAG"
+    return f"{word}-service" if letter == "a" else f"{word}-worker"          # kebab
+
+
+_DF_RULE = {
+    "snake_case": "{val} must be drained before every deploy, or in-flight requests get dropped",
+    "camel_pascal": "{val} needs its cache cleared after a schema migration, or reads go stale",
+    "screaming_snake": "{val} rotates automatically every quarter; hardcoding it breaks after "
+                       "the first rotation",
+    "kebab": "{val} silently drops messages over 4 MB; split large payloads before publishing",
+}
+_DF_B_PROMPT = {
+    "snake_case": "About to kick off a deploy - is there a service that needs draining first?",
+    "camel_pascal": "Just ran a schema migration - anything that needs its cache cleared after?",
+    "screaming_snake": "Is there anything that rotates automatically I should know about before "
+                       "hardcoding a value?",
+    "kebab": "I need to publish a larger payload to the queue - anything that could drop it "
+            "silently?",
+}
+_DF_INVESTIGATION = {
+    "snake_case": "  $ ssh {val} 'systemctl status app'\n"
+                 "  active (running), but mid-drain from the last rollout - requests are being "
+                 "dropped.\n",
+    "camel_pascal": "  $ psql -c 'select count(*) from cache_status'\n"
+                    "  ERROR: {val} is stale - the last migration changed the underlying schema\n",
+    "screaming_snake": "  $ grep -rn CONFIG_FLAG .\n"
+                       "  config.py:42: {val} = True  # hardcoded, rotated last quarter\n",
+    "kebab": "Assistant: the publisher logs show {val} silently truncating anything over "
+            "4 MB.\n",
+}
+
+
+def _df_shape_for_index(i: int) -> str:
+    """1-based case index (1-40) -> shape, 10 per shape in DIGITFREE_SHAPES order (.loop/
+    PREREG-Q5-DIGITFREE-2026-09-23.md)."""
+    return DIGITFREE_SHAPES[(i - 1) // 10]
+
+
+#: C3 fix (2026-09-23, the coordinator's finding): shape was CONFOUNDED with rule template in
+#: the first generation - every snake_case case used the "drained before deploy" rule, every
+#: camel_pascal case used "cache cleared", and so on, one template per shape with no crossing.
+#: A per-shape leak number would then also have been a per-TEMPLATE number, indistinguishable
+#: from "the extractor treats the drained-before-deploy wording differently than every other
+#: wording" and "the extractor treats snake_case differently than every other shape" - two
+#: different hypotheses this population cannot tell apart under that design.
+#:
+#: Fix: a circulant (3, 3, 2, 2) rotation - shape S draws TEMPLATE T `counts[S][T]` times, one
+#: rotation step per shape in DIGITFREE_SHAPES order. Every row (shape) sums to 10, every
+#: column (template) ALSO sums to 10, and the minimum cell is 2 - every shape gets every
+#: template at least twice, none is a single-template shape any more:
+#:               snake_case  camel_pascal  screaming_snake  kebab   (template, columns)
+#:   snake_case       3            3              2           2    (row sum 10)
+#:   camel_pascal      2            3              3           2    (row sum 10)
+#:   screaming_snake    2            2              3           3    (row sum 10)
+#:   kebab            3            2              2           3    (row sum 10)
+#:   col sum:         10           10             10          10
+_DF_SHAPE_TEMPLATE_COUNTS: dict[str, dict[str, int]] = {
+    "snake_case":      {"snake_case": 3, "camel_pascal": 3, "screaming_snake": 2, "kebab": 2},
+    "camel_pascal":    {"snake_case": 2, "camel_pascal": 3, "screaming_snake": 3, "kebab": 2},
+    "screaming_snake": {"snake_case": 2, "camel_pascal": 2, "screaming_snake": 3, "kebab": 3},
+    "kebab":           {"snake_case": 3, "camel_pascal": 2, "screaming_snake": 2, "kebab": 3},
+}
+
+
+def _df_template_order_for_shape(shape: str) -> list[str]:
+    """The 10 templates (a `_DF_RULE`/`_DF_B_PROMPT`/`_DF_INVESTIGATION` key each) case i=1..10
+    within `shape` draws from, in counts per `_DF_SHAPE_TEMPLATE_COUNTS`'s row for `shape` -
+    order deterministically shuffled, seeded by the shape's OWN name (never global RNG state,
+    so this is reproducible independent of call order or any other generator's own random use),
+    so WHICH specific word-pair index gets which template also varies shape to shape - the
+    coordinator's second instruction: vary the identifier stems across templates too, so the
+    stem list is not aligned with template any more than shape is."""
+    counts = _DF_SHAPE_TEMPLATE_COUNTS[shape]
+    order: list[str] = []
+    for template in DIGITFREE_SHAPES:
+        order.extend([template] * counts[template])
+    random.Random(f"digitfree-template-order-{shape}").shuffle(order)
+    return order
+
+
+def _df_session(template: str, val: str) -> str:
+    """A short synthetic transcript where the identifier is woven into the INVESTIGATION and
+    the closing lesson line states the rule WITH the identifier in it - same construction as
+    `_ib_session`: here too the identifier IS the lesson. Keyed by TEMPLATE (the rule/prompt/
+    investigation wording), not by the identifier's own syntactic SHAPE - the two are crossed,
+    not the same axis, after the C3 fix above."""
+    rule = _DF_RULE[template].format(val=val)
+    inv = _DF_INVESTIGATION[template].format(val=val)
+    return (
+        "User: we keep running into trouble around this - can you help me get to the bottom "
+        "of it?\n"
+        "Assistant: let me check what's going on.\n"
+        f"{inv}"
+        f"Assistant: found it. {rule}\n"
+        "User: good catch - let's write that down so we don't relearn it the hard way.\n"
+        "Assistant: agreed, noting it now.\n"
+    )
+
+
+def generate_digitfree(n_cases: int = DF_N_CASES) -> dict:
+    """40 new cases, ids `cpv1-df-001`..`-040`, 10 per shape in `DIGITFREE_SHAPES` order - per
+    .loop/PREREG-Q5-DIGITFREE-2026-09-23.md, registered before any number from this population.
+    One identifier PER CASE, purely alphabetic (no digit/dot/slash); project_a and project_c
+    each get their OWN spelling of the SAME shape; project_b's prompt is about the same
+    situation without either spelling.
+
+    C3 fix (2026-09-23, the coordinator's finding): shape (the identifier's syntax) and
+    TEMPLATE (which rule/prompt/investigation wording, `_df_template_order_for_shape`) are
+    CROSSED, not the same axis - each shape draws every template 2 or 3 times
+    (`_DF_SHAPE_TEMPLATE_COUNTS`), so a per-shape leak number is never also a per-template
+    number by construction."""
+    twins = json.loads(TWINS_PATH.read_text(encoding="utf-8"))["positives"]
+    if not twins:
+        raise ValueError(f"{TWINS_PATH}: no positive pairs to draw a distractor rule from")
+
+    template_order = {shape: _df_template_order_for_shape(shape) for shape in DIGITFREE_SHAPES}
+    cases = []
+    for i in range(1, n_cases + 1):
+        shape = _df_shape_for_index(i)
+        i_in_shape = (i - 1) % 10                    # 0-based, indexes template_order directly
+        template = template_order[shape][i_in_shape]
+        case_id = f"cpv1-df-{i:03d}"
+        proj_a, proj_c = f"cpv1_df_{i:03d}_alpha", f"cpv1_df_{i:03d}_gamma"
+        proj_b, proj_d = f"cpv1_df_{i:03d}_beta", f"cpv1_df_{i:03d}_delta"
+
+        val_a = _df_planted(i_in_shape + 1, "a", shape)
+        val_c = _df_planted(i_in_shape + 1, "c", shape)
+        rule_a = f"Lesson: {_DF_RULE[template].format(val=val_a)}."
+        rule_c = f"Lesson: {_DF_RULE[template].format(val=val_c)}."
+        distractor_rule = twins[(i - 1) % len(twins)]
+
+        cases.append({
+            "id": case_id,
+            "topic": f"digitfree-{shape}-{template}",
+            "identifier_shape": shape,
+            "rule_template": template,
+            "project_a": {
+                "project": proj_a, "title": f"digit-free {shape}/{template} - {case_id} - a",
+                "description": rule_a, "principle": rule_a, "planted": {shape: val_a},
+                "session": _df_session(template, val_a),
+            },
+            "project_c": {
+                "project": proj_c, "title": f"digit-free {shape}/{template} - {case_id} - c",
+                "description": rule_c, "principle": rule_c, "planted": {shape: val_c},
+                "session": _df_session(template, val_c),
+            },
+            "project_b": {"project": proj_b, "prompt": _DF_B_PROMPT[template]},
+            "distractor": {"project": proj_d,
+                          "title": f"{distractor_rule['topic']} - unrelated",
+                          "description": distractor_rule["a"],
+                          "principle": distractor_rule["a"]},
+        })
+    return {
+        "_schema": "Q5 G5.1 digit-free population (.loop/PREREG-Q5-DIGITFREE-2026-09-23.md): "
+                   "40 cases, 10 per shape (snake_case, camel_pascal, screaming_snake, kebab), "
+                   "no digit/dot/slash in any planted identifier - the write-time classifier "
+                   "forbids only digit/dot/slash-shaped tokens, so this population tests "
+                   "everything outside that. The identifier IS the lesson, same construction as "
+                   "identifier-bound. project_a and project_c each get their OWN spelling of a "
+                   "same-shape identifier. project_b's prompt is the same situation without "
+                   "either spelling. Kept beside, not replacing, the original 100-case and "
+                   "identifier-bound 50-case populations.",
+        "digitfree_shapes": list(DIGITFREE_SHAPES),
+        "n_cases": len(cases),
+        "cases": cases,
+    }
+
+
+_DF_NO_DIGIT_DOT_SLASH_CHARS = frozenset("0123456789./")
+
+
+def validate_digitfree(data: dict) -> list[str]:
+    problems: list[str] = []
+    cases = data.get("cases")
+    if not isinstance(cases, list) or len(cases) != DF_N_CASES:
+        return [f"expected {DF_N_CASES} cases, got "
+               f"{len(cases) if isinstance(cases, list) else 0!r}"]
+    ids: set = set()
+    shape_counts = {shape: 0 for shape in DIGITFREE_SHAPES}
+    for i, c in enumerate(cases):
+        for key in ("project_a", "project_c", "project_b", "distractor"):
+            if key not in c:
+                problems.append(f"case {i}: missing {key!r}")
+        cid = c.get("id")
+        if not cid or not str(cid).startswith("cpv1-df-"):
+            problems.append(f"case {i}: id {cid!r} does not match cpv1-df-NNN")
+        elif cid in ids:
+            problems.append(f"case {i}: duplicate id {cid!r}")
+        else:
+            ids.add(cid)
+        shape = c.get("identifier_shape")
+        if shape not in DIGITFREE_SHAPES:
+            problems.append(f"case {i}: bad identifier_shape {shape!r}")
+            continue
+        shape_counts[shape] += 1
+        vals = set()
+        for side in ("project_a", "project_c"):
+            row = c.get(side) or {}
+            planted = row.get("planted") or {}
+            if set(planted) != {shape}:
+                problems.append(f"case {i} {side}: planted must carry EXACTLY {{{shape!r}}} "
+                                f"(one identifier per case), got {sorted(planted)}")
+            val = planted.get(shape)
+            if not val:
+                problems.append(f"case {i} {side}: no planted {shape!r}")
+                continue
+            if _DF_NO_DIGIT_DOT_SLASH_CHARS & set(val):
+                problems.append(f"case {i} {side}: planted {shape!r} value {val!r} contains a "
+                                f"digit, dot or slash - the digit-free construction rule is "
+                                f"violated")
+            vals.add(val)
+            # Inverted from the original population's check, same as identifier-bound: here the
+            # identifier MUST survive into 'principle' - the rule cannot be stated without it.
+            principle = row.get("principle", "")
+            if val not in principle:
+                problems.append(f"case {i} {side}: planted {shape!r} ({val!r}) is missing from "
+                                f"'principle' - the rule cannot be stated without it")
+            description = row.get("description", "")
+            if val not in description:
+                problems.append(f"case {i} {side}: planted {shape!r} ({val!r}) is missing from "
+                                f"'description'")
+            session = row.get("session", "")
+            if val not in session:
+                problems.append(f"case {i} {side}: planted {shape!r} ({val!r}) is missing from "
+                                f"'session'")
+        if len(vals) < 2:
+            problems.append(f"case {i}: project_a and project_c must use DIFFERENT spellings "
+                            f"of the {shape!r} identifier (own spelling per project), got {vals}")
+        prompt = ((c.get("project_b") or {}).get("prompt") or "")
+        for side in ("project_a", "project_c"):
+            val = ((c.get(side) or {}).get("planted") or {}).get(shape)
+            if val and val in prompt:
+                problems.append(f"case {i}: project_b's prompt must be WITHOUT the identifier, "
+                                f"found {val!r} in it")
+    for shape in DIGITFREE_SHAPES:
+        if shape_counts[shape] != 10:
+            problems.append(f"shape {shape!r}: expected 10 case(s), got {shape_counts[shape]}")
+    return problems
+
+
 def _planted(case_i: int, project_letter: str) -> dict:
     """One value per identifier class, deterministic and DISTINCT between project_a and
     project_c of the same case - two different projects, two different concrete identifiers,
@@ -441,14 +720,27 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--identifier-bound", action="store_true",
                         help="generate/check the 50-case identifier-bound population "
                              "(cross_project_ib_v1.json) instead of the original 100")
+    parser.add_argument("--digit-free", action="store_true",
+                        help="generate/check the 40-case digit-free identifier population "
+                             "(cross_project_df_v1.json, .loop/PREREG-Q5-DIGITFREE-2026-09-23"
+                             ".md) instead of the original 100 - mutually exclusive with "
+                             "--identifier-bound")
     parser.add_argument("--check", action="store_true",
                         help="validate an existing dataset file instead of generating one")
     args = parser.parse_args(argv)
 
+    if args.identifier_bound and args.digit_free:
+        print("[gen_cross_project_dataset] --identifier-bound and --digit-free are mutually "
+             "exclusive", file=sys.stderr)
+        return 2
     if args.identifier_bound:
         out_path = Path(args.out) if args.out else IB_OUT_PATH
         n = args.n or IB_N_CASES
         gen_fn, val_fn = generate_identifier_bound, validate_identifier_bound
+    elif args.digit_free:
+        out_path = Path(args.out) if args.out else DF_OUT_PATH
+        n = args.n or DF_N_CASES
+        gen_fn, val_fn = generate_digitfree, validate_digitfree
     else:
         out_path = Path(args.out) if args.out else OUT_PATH
         n = args.n or N_CASES

@@ -38,6 +38,16 @@ def check(name, cond, detail=""):
         FAILS += 1
 
 
+# C3 (2026-09-23): write_rejections_by_class/promotion_rejections_by_class are now keyed off
+# cpb.ALL_CLASSES (IDENTIFIER_CLASSES + DIGITFREE_SHAPES), not IDENTIFIER_CLASSES alone - this
+# suite never plants a digit-free shape, so every one of those 4 extra keys is always 0 here;
+# `_wc` (with-digitfree-zeros) extends an expected ip/host/path/entity-only dict with them so
+# the exact-equality checks below still compare against the dict this population actually
+# produces, not a stale 4-key shape.
+def _wc(d: dict) -> dict:
+    return {**d, **{s: 0 for s in cpb.DIGITFREE_SHAPES}}
+
+
 print("\n- --dry's stub poisons one identifier of each class, plus a second undeclared entity -")
 make_sandbox(m, "cpb_extract_dry_", offline=True)
 cases = cpb.load_cases(cpb.DATA, n=cpb._DRY_N_CASES)
@@ -47,9 +57,9 @@ result = cpb.run_bench(cases, extractor_mode="stub", dry=True)
 write_rej = result["write_rejections_by_class"]
 promo_rej = result["promotion_rejections_by_class"]
 check("ip/host/path/entity are each rejected at WRITE time, exactly once",
-      write_rej == {"ip": 1, "host": 1, "path": 1, "entity": 1}, str(write_rej))
+      write_rej == _wc({"ip": 1, "host": 1, "path": 1, "entity": 1}), str(write_rej))
 check("the undeclared entity is rejected at PROMOTION time instead, exactly once",
-      promo_rej == {"ip": 0, "host": 0, "path": 0, "entity": 1}, str(promo_rej))
+      promo_rej == _wc({"ip": 0, "host": 0, "path": 0, "entity": 1}), str(promo_rej))
 
 universal = result["arms"]["universal"]
 check("nothing leaked into the universal arm at all (neither stage let anything through)",
@@ -90,12 +100,12 @@ finally:
 rej_mut = result_mut["write_rejections_by_class"]
 check("(a) WITHOUT principle_scan, NOTHING is rejected at write time any more (would FAIL "
      "'ip/host/path/entity are each rejected at WRITE time, exactly once' above)",
-     rej_mut == {"ip": 0, "host": 0, "path": 0, "entity": 0}, str(rej_mut))
+     rej_mut == _wc({"ip": 0, "host": 0, "path": 0, "entity": 0}), str(rej_mut))
 promo_rej_mut = result_mut["promotion_rejections_by_class"]
 check("(a) promotion-time provenance now rejects ip/host/path exactly once each, PLUS both "
      "entity variants (declared and undeclared - write time had nothing left to catch "
      "either one with) - the counts equal what was planted, not just 'something fired'",
-     promo_rej_mut == {"ip": 1, "host": 1, "path": 1, "entity": 2}, str(promo_rej_mut))
+     promo_rej_mut == _wc({"ip": 1, "host": 1, "path": 1, "entity": 2}), str(promo_rej_mut))
 universal_mut = result_mut["arms"]["universal"]
 check("(a) leak stays 0 - the second layer alone is enough",
      universal_mut["leak"] == 0.0, str(universal_mut))
@@ -135,8 +145,8 @@ finally:
 promo_rej_mut = result_mut2["promotion_rejections_by_class"]
 check("(c) WITHOUT the provenance threshold, the undeclared entity is no longer "
       "rejected at promotion (would FAIL 'the undeclared entity is rejected at PROMOTION "
-      "time instead, exactly once' above)", promo_rej_mut == {"ip": 0, "host": 0, "path": 0,
-                                                              "entity": 0}, str(promo_rej_mut))
+      "time instead, exactly once' above)", promo_rej_mut == _wc({"ip": 0, "host": 0, "path": 0,
+                                                              "entity": 0}), str(promo_rej_mut))
 universal_mut2 = result_mut2["arms"]["universal"]
 check("(c) WITHOUT the provenance threshold, the undeclared entity now leaks into the "
       "universal arm (would FAIL 'nothing leaked into the universal arm at all' above)",
@@ -147,12 +157,12 @@ make_sandbox(m, "cpb_extract_dry_control_", offline=True)
 cases4 = cpb.load_cases(cpb.DATA, n=cpb._DRY_N_CASES)
 result_control = cpb.run_bench(cases4, extractor_mode="stub", dry=True)
 check("write-stage still catches ip/host/path/entity",
-      result_control["write_rejections_by_class"] == {"ip": 1, "host": 1, "path": 1,
-                                                       "entity": 1},
+      result_control["write_rejections_by_class"] == _wc({"ip": 1, "host": 1, "path": 1,
+                                                       "entity": 1}),
       str(result_control["write_rejections_by_class"]))
 check("promotion-stage still catches the undeclared entity",
-      result_control["promotion_rejections_by_class"] == {"ip": 0, "host": 0, "path": 0,
-                                                          "entity": 1},
+      result_control["promotion_rejections_by_class"] == _wc({"ip": 0, "host": 0, "path": 0,
+                                                          "entity": 1}),
       str(result_control["promotion_rejections_by_class"]))
 
 print("\n- main(['--dry']) exits 0 and writes nothing -")
