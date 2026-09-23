@@ -83,6 +83,84 @@ def test_is_dirty_reflects_the_git_diff_returncode() -> None:
         prov.subprocess.run = saved
 
 
+def test_is_dirty_excludes_campaign_outputs() -> None:
+    """C4b (2026-09-23, the auditor's finding on 7f40807): `is_dirty()` used to read ANY
+    changed file under WATCHED_DIRS as dirty, including a campaign's OWN output - with only
+    research/results/guards_pack.json touched it returned True, so from the second stand of a
+    campaign on, every artifact would be stamped dirty on otherwise-clean code. Now excludes
+    research/results/, a research/*.svg or *.png figure, and every claim's own committed `raw`
+    path in research/evidence_manifest.json - all OUTPUTS, never source.
+
+    `subprocess.run` is monkeypatched to return a FIXED changed-file list (`--name-only`'s own
+    output shape), not the real tree's current state - this suite's own outcome must not depend
+    on what happens to be uncommitted right now."""
+    print("\n- is_dirty() excludes campaign OUTPUTS: results/, figures, and every claim's raw "
+         "path (C4b) -")
+    saved = prov.subprocess.run
+    try:
+        prov.subprocess.run = lambda *a, **k: _FakeCompleted(
+            returncode=0, stdout="research/results/guards_pack.json\n")
+        check("(a) only a results JSON modified -> dirty is False", prov.is_dirty() is False)
+
+        prov.subprocess.run = lambda *a, **k: _FakeCompleted(
+            returncode=0, stdout="research/some_chart.svg\n")
+        check("(b) only a figure (research/*.svg) modified -> dirty is False",
+             prov.is_dirty() is False)
+        prov.subprocess.run = lambda *a, **k: _FakeCompleted(
+            returncode=0, stdout="research/another_chart.png\n")
+        check("(b) only a figure (research/*.png) modified -> dirty is False",
+             prov.is_dirty() is False)
+
+        prov.subprocess.run = lambda *a, **k: _FakeCompleted(
+            returncode=0, stdout="research/cross_project_bench.py\n")
+        check("(c) a research/*.py source file modified -> dirty is True",
+             prov.is_dirty() is True)
+        prov.subprocess.run = lambda *a, **k: _FakeCompleted(
+            returncode=0, stdout="nevertwice/principles.py\n")
+        check("(c) a nevertwice/*.py engine file modified -> dirty is True",
+             prov.is_dirty() is True)
+
+        some_raw = sorted(prov._excluded_raw_paths())[0]
+        prov.subprocess.run = lambda *a, **k: _FakeCompleted(
+            returncode=0, stdout=f"{some_raw}\n")
+        check(f"a claim's own committed raw path ({some_raw!r}) modified alone -> dirty is False",
+             prov.is_dirty() is False)
+
+        prov.subprocess.run = lambda *a, **k: _FakeCompleted(
+            returncode=0,
+            stdout="research/results/guards_pack.json\nresearch/cross_project_bench.py\n")
+        check("an output change PLUS a real source change together -> still dirty is True "
+             "(exclusion never hides a genuine change riding along with an output)",
+             prov.is_dirty() is True)
+
+        prov.subprocess.run = lambda *a, **k: _FakeCompleted(
+            returncode=0, stdout="research/sub/chart.svg\n")
+        check("a figure NOT directly under research/ (research/sub/chart.svg) is NOT excluded "
+             "- the wildcard is a single level, not recursive", prov.is_dirty() is True)
+    finally:
+        prov.subprocess.run = saved
+
+
+def test_mutation_removing_the_output_exclusion_reddens_by_name() -> None:
+    """Mutation: `_is_output_path` forced to always return False (as if C4b's exclusion had
+    never been added) - the SAME results-only change from test (a) above now WRONGLY reads as
+    dirty, proving the exclusion is load-bearing."""
+    print("\n- C4b mutation: removing the output exclusion makes a results-only change dirty -")
+    saved_run = prov.subprocess.run
+    saved_excl = prov._is_output_path
+    try:
+        prov.subprocess.run = lambda *a, **k: _FakeCompleted(
+            returncode=0, stdout="research/results/guards_pack.json\n")
+        check("before the mutation: a results-only change is NOT dirty",
+             prov.is_dirty() is False)
+        prov._is_output_path = lambda *a, **k: False
+        check("mutation: WITHOUT the output exclusion, the SAME results-only change now reads "
+             "dirty (would FAIL 'is NOT dirty' above)", prov.is_dirty() is True)
+    finally:
+        prov.subprocess.run = saved_run
+        prov._is_output_path = saved_excl
+
+
 def test_measured_at_shape() -> None:
     print("\n- measured_at() has the three keys, utc in the right format -")
     m = prov.measured_at()
@@ -159,6 +237,8 @@ def main() -> int:
     for fn in (test_git_commit_returns_the_real_head,
                test_git_commit_degrades_on_a_git_failure_without_raising,
                test_is_dirty_reflects_the_git_diff_returncode,
+               test_is_dirty_excludes_campaign_outputs,
+               test_mutation_removing_the_output_exclusion_reddens_by_name,
                test_measured_at_shape,
                test_stamp_mutates_in_place_and_returns_the_same_object,
                test_stamp_does_not_clobber_an_existing_differently_named_provenance_field,

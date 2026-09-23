@@ -101,8 +101,9 @@ if expected_n30 == 0:
     print("       (register is still younger than 30 days: 0 observations, the original case)")
 else:
     print(f"       (register has crossed 30 days: {n30} observation(s), {s30} survivor(s) - "
-         "research/CLAIM_HALFLIFE.md's '30 days | 0 | 0' row is now stale and needs "
-         "re-measurement, not a hand edit)")
+         "research/CLAIM_HALFLIFE.md's '30 days | 0 | 0' row is a snapshot as of `737444c` "
+         "and correct AT that commit; a refresh at HEAD would show "
+         f"{n30} observed, {s30} survivor at 30 days)")
 
 
 def _survival_without_censoring(records: dict, days: int) -> tuple[int, int]:
