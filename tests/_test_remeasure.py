@@ -108,6 +108,100 @@ try:
     m4["claims"][0]["produced_by"] = [raw_rel]              # the artifact itself is untracked = dirty
     restored, left, _ = rm.restore(m4, head=HEAD)
     check("a dirty closure is refused", restored == [] and any("commit first" in x for x in left), str(left))
+
+    #: The ROW, not only the file (2026-09-24, before the v2 campaign). A merging --save writes a
+    #: fresh file around an old row - restore #1 put twelve h2h_pinned.*_full claims back that way,
+    #: rows stamped 2026-09-08 at f0ed080 - and a stand marks its own run invalid, which restore
+    #: never read. The file below is fresh on disk in every case; only the row differs.
+    _head_t = int(subprocess.run(["git", "log", "-1", "--format=%ct", HEAD], cwd=ROOT,
+                                 capture_output=True, text=True, check=True).stdout.strip())
+    import datetime as _dt
+    _utc = lambda t: _dt.datetime.fromtimestamp(t, _dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    _rows = {
+        "old":     {"measured_at": {"commit": "f0ed080", "utc": _utc(_head_t - 86400 * 15)},
+                    "recall@5": 0.834},
+        "fresh":   {"measured_at": {"commit": HEAD, "utc": _utc(_head_t + 60)}, "recall@5": 0.834},
+        "invalid": {"measured_at": {"commit": HEAD, "utc": _utc(_head_t + 60)}, "recall@5": 0.834,
+                    "valid": False, "invalid_reason": "bypassed the pacer via requests: 1 request(s)"},
+        "nostamp": {"recall@5": 0.834},
+    }
+    raw.write_text(json.dumps({"methods": _rows}), encoding="utf-8")
+    os.utime(raw, None)
+
+    def _one(row):
+        m = copy.deepcopy(man)
+        m["claims"][0]["pointer"] = f"methods.{row}.recall@5"
+        return rm.restore(m, head=HEAD)
+
+    restored, left, _ = _one("old")
+    check("a row merged in from an older run is refused although the file is fresh",
+          restored == [] and any("before HEAD" in x and "f0ed080" in x for x in left), str(left))
+    restored, left, _ = _one("invalid")
+    check("a row its own run marked invalid is refused, with the run's reason",
+          restored == [] and any("marked invalid" in x and "requests" in x for x in left), str(left))
+    restored, left, _ = _one("fresh")
+    check("control: a row stamped after HEAD restores", restored == ["r.rate"], str(left))
+    restored, left, _ = _one("nostamp")
+    check("control: a row with no stamp falls back to the file check and restores",
+          restored == ["r.rate"], str(left))
+    raw.write_text(json.dumps({"valid": False, "invalid_reason": "embed failed",
+                               "methods": {"fresh": _rows["fresh"]}}), encoding="utf-8")
+    os.utime(raw, None)
+    restored, left, _ = _one("fresh")
+    check("an artifact marked invalid at its ROOT refuses every row under it",
+          restored == [] and any("embed failed" in x for x in left), str(left))
+
+    #: K15 (the auditor on 3fb1f64). (1) The DEEPEST stamp decides: since f91b7ba twelve stands stamp
+    #: the artifact ROOT, so a fresh root over a merged old row must still refuse the row.
+    raw.write_text(json.dumps({"measured_at": {"commit": HEAD, "utc": _utc(_head_t + 60)},
+                               "methods": {"old": _rows["old"]}}), encoding="utf-8")
+    os.utime(raw, None)
+    restored, left, _ = _one("old")
+    check("a fresh stamp at the ROOT does not vouch for an older merged row under it",
+          restored == [] and any("f0ed080" in x for x in left), str(left))
+    #: (2) A fresh TIME is not fresh CODE: a run started today from an old worktree. The commit
+    #: must be HEAD or leave this claim's closure (produced_by: sandbox_guard.py) unchanged.
+    _git = lambda *a: subprocess.run(["git", *a], cwd=ROOT, capture_output=True, text=True,
+                                      check=True).stdout.strip()
+    _last = _git("log", "--format=%H", "-1", "--", "sandbox_guard.py")
+    _before = _git("rev-parse", f"{_last}^")            # sandbox_guard.py differs from HEAD here
+    _same = _git("rev-parse", "HEAD~1")                 # after its last change: closure identical
+    _k15 = {
+        "oldcode": {"measured_at": {"commit": _before, "utc": _utc(_head_t + 60)}, "recall@5": 0.834},
+        "samecl":  {"measured_at": {"commit": _same, "utc": _utc(_head_t + 60)}, "recall@5": 0.834},
+        "nocommit": {"measured_at": {"utc": _utc(_head_t + 60)}, "recall@5": 0.834},
+    }
+    raw.write_text(json.dumps({"methods": _k15}), encoding="utf-8")
+    os.utime(raw, None)
+    restored, left, _ = _one("oldcode")
+    check("a fresh-dated row measured on code whose closure differs from HEAD is refused",
+          restored == [] and any("sandbox_guard.py" in x for x in left), str(left))
+    restored, left, _ = _one("samecl")
+    check("control: a row at another commit with an identical closure restores",
+          restored == ["r.rate"], str(left))
+    restored, left, _ = _one("nocommit")
+    check("a row with a measurement time but no commit is refused",
+          restored == [] and any("no commit" in x for x in left), str(left))
+    _saved_cm = rm._closure_moved
+    try:
+        rm._closure_moved = lambda *a, **k: None
+        restored, _left, _ = _one("oldcode")
+        check("mutation: without the commit check, the old-code row WOULD be restored",
+              restored == ["r.rate"], str(_left))
+    finally:
+        rm._closure_moved = _saved_cm
+
+    #: The call site, not only the function: with the guard disabled the same old row comes back.
+    raw.write_text(json.dumps({"methods": _rows}), encoding="utf-8")
+    os.utime(raw, None)
+    _saved = rm.row_refusal
+    try:
+        rm.row_refusal = lambda *a, **k: None
+        restored, _left, _ = _one("old")
+        check("mutation: without the row guard, the merged old row WOULD be restored",
+              restored == ["r.rate"], str(_left))
+    finally:
+        rm.row_refusal = _saved
 finally:
     raw.unlink(missing_ok=True)
 
