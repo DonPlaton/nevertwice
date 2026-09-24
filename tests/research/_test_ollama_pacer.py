@@ -18,6 +18,8 @@ import contextlib
 import io
 import json
 import sys
+import threading
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -722,6 +724,84 @@ def test_t8b_calls_by_host_distinguishes_two_recognised_ollama_hosts() -> None:
               ("::1", 11434) not in delta, str(delta))
 
 
+def test_t8c_max_inflight_tracks_real_concurrency() -> None:
+    """R2 (the auditor's finding): `elapsed - pace_sleep_s - retry_sleep_s` (research/
+    head_to_head.py's `_pace_excluded`, research/token_floor.py's `finish_arm`) assumes
+    the pacer's sleeps never overlap - false the moment two callers are paced at once,
+    where the same wall-clock second is double-counted as "pacing time" by each one.
+    `max_inflight` is the real mechanism this suite can drive with actual OS threads
+    (not the fake clock every other test here uses, since overlap is the exact thing
+    under test) - a bounded number, small sleeps, no network."""
+    print("\n- T8c: max_inflight - a real high-water mark under genuine thread "
+          "concurrency, exact only when nothing ever overlapped -")
+    with _isolated():
+        def slow_ok():
+            time.sleep(0.05)
+            return "OK"
+
+        # four REAL threads, each pacing a call at once. PACE_S forced to 0 here: the
+        # default 0.125s min-gap between call STARTS is longer than slow_ok's own 0.05s
+        # body, so at the default rate no two calls are ever actually inflight together
+        # at once (pacing's whole job is to keep starts apart) - found by running this
+        # exact scenario BEFORE disabling PACE_S and watching max_inflight read 1.
+        saved_pace_s = pacer.PACE_S
+        pacer.PACE_S = 0.0
+        try:
+            snap = pacer.snapshot()
+            threads = [threading.Thread(target=pacer._run_paced, args=(slow_ok,),
+                                        kwargs={"host_key": ("127.0.0.1", 11434)})
+                      for _ in range(4)]
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join()
+        finally:
+            pacer.PACE_S = saved_pace_s
+        out: dict = {}
+        pacer.attach(out, since=snap)
+        ot = out["ollama_transport"]
+        check("max_inflight reflects genuine overlap (> 1) under real concurrency",
+              ot["max_inflight"] > 1, str(ot))
+        check("pace_excluded_exact is False once concurrency was ever observed",
+              ot["pace_excluded_exact"] is False, str(ot))
+
+        # a FRESH span, entirely serial (one call at a time, no other thread) - exact
+        pacer._reset_for_tests()
+        snap2 = pacer.snapshot()
+        for _ in range(3):
+            pacer._run_paced(slow_ok, host_key=("127.0.0.1", 11434))
+        out2: dict = {}
+        pacer.attach(out2, since=snap2)
+        ot2 = out2["ollama_transport"]
+        check("max_inflight == 1 for a purely serial span", ot2["max_inflight"] == 1, str(ot2))
+        check("pace_excluded_exact is True for a purely serial span",
+              ot2["pace_excluded_exact"] is True, str(ot2))
+
+        # mutation: _inflight_enter/_inflight_exit never update max_inflight
+        saved_enter = pacer._inflight_enter
+        pacer._inflight_enter = lambda: None            # never bumps _COUNTERS["max_inflight"]
+        try:
+            pacer._reset_for_tests()
+            snap3 = pacer.snapshot()
+            threads2 = [threading.Thread(target=pacer._run_paced, args=(slow_ok,))
+                       for _ in range(4)]
+            pacer.PACE_S = 0.0
+            try:
+                for t in threads2:
+                    t.start()
+                for t in threads2:
+                    t.join()
+            finally:
+                pacer.PACE_S = saved_pace_s
+            out3: dict = {}
+            pacer.attach(out3, since=snap3)
+            check("mutation 'inflight tracking removed': the SAME 4-thread overlap now "
+                  "WRONGLY reads max_inflight<=1 (would FAIL the overlap check above)",
+                  out3["ollama_transport"]["max_inflight"] <= 1, str(out3))
+        finally:
+            pacer._inflight_enter = saved_enter
+
+
 # ── TW1/TW2: the tripwire - requests/aiohttp are COUNTED, never paced or retried ────────
 #
 # R1 (the auditor's review of 717f482, after the empirical arm-symmetry probe found no
@@ -973,6 +1053,7 @@ def main() -> int:
                test_t7_httpx_client_and_asyncclient_are_paced_through_mocktransport,
                test_t8_attach_writes_the_key_only_when_something_ran_through_it,
                test_t8b_calls_by_host_distinguishes_two_recognised_ollama_hosts,
+               test_t8c_max_inflight_tracks_real_concurrency,
                test_tw1_requests_session_send_is_counted_not_paced_and_marks_invalid,
                test_tw2_aiohttp_client_session_request_is_counted_not_paced,
                test_tw3_nested_aiohttp_inside_a_paced_httpx_call_is_not_a_bypass):

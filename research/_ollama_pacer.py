@@ -92,9 +92,21 @@ _LOCK = threading.Lock()
 _INSTALLED = False
 _ORIG: dict = {}
 _PACE_STATE = {"next_at": float("-inf")}
+#: R2 (the auditor's finding): a consumer's own `elapsed - pace_sleep_s - retry_sleep_s`
+#: subtraction (research/head_to_head.py's `_pace_excluded`, research/token_floor.py's
+#: `finish_arm`) assumes the pacer's sleeps never OVERLAP - true for one caller paced
+#: serially, false the moment two threads/tasks are both waiting on `_pace()` or a retry
+#: sleep at once, where the SAME wall-clock second is double-counted as "pacing time" by
+#: each one. `_INFLIGHT_STATE["n"]` is the number of paced calls currently inside their
+#: OWN underlying `call()` (never during a sleep, which is already excluded from
+#: `call_ms` for the same reason); `_COUNTERS["max_inflight"]` is the highest that count
+#: has ever reached in this process. A caller doing `elapsed - paced` can then ask
+#: `max_inflight <= 1` before trusting the subtraction as EXACT rather than a
+#: (conservative, floor-clamped) estimate.
+_INFLIGHT_STATE = {"n": 0}
 _COUNTERS = {"calls": 0, "pace_sleep_s": 0.0, "retries": 0, "retry_sleep_s": 0.0, "gave_up": 0,
             "bypass_requests": 0, "bypass_aiohttp": 0,
-            "nested_requests": 0, "nested_aiohttp": 0}
+            "nested_requests": 0, "nested_aiohttp": 0, "max_inflight": 0}
 _CALL_MS: list = []
 #: R1 (the auditor's finding, 2026-09-24): a probe or a stand can be reachable from MORE
 #: than one recognised Ollama host at once (this dev machine runs a real Ollama on the
@@ -300,6 +312,18 @@ def _percentiles(samples: list) -> dict:
 
 # ── the retry driver: sync and async, identical policy, different sleep primitive ──────
 
+def _inflight_enter() -> None:
+    with _LOCK:
+        _INFLIGHT_STATE["n"] += 1
+        if _INFLIGHT_STATE["n"] > _COUNTERS["max_inflight"]:
+            _COUNTERS["max_inflight"] = _INFLIGHT_STATE["n"]
+
+
+def _inflight_exit() -> None:
+    with _LOCK:
+        _INFLIGHT_STATE["n"] -= 1
+
+
 def _run_paced(call: Callable, host_key: tuple | None = None):
     """`call()` to the Ollama host, paced and retried in place. `call` raises on any
     failure worth classifying (a plain function return is success); `call_ms` records
@@ -313,10 +337,12 @@ def _run_paced(call: Callable, host_key: tuple | None = None):
             _CALLS_BY_HOST[host_key] = _CALLS_BY_HOST.get(host_key, 0) + 1
     attempt = 0
     while True:
+        _inflight_enter()
         t0 = _now()
         try:
             result = call()
         except BaseException as exc:                                  # noqa: BLE001
+            _inflight_exit()
             retry = classify(exc, is_ollama_host=True)
             if retry and attempt < MAX_RETRIES:
                 attempt += 1
@@ -331,6 +357,7 @@ def _run_paced(call: Callable, host_key: tuple | None = None):
                     _COUNTERS["gave_up"] += 1
             raise
         else:
+            _inflight_exit()
             with _LOCK:
                 _CALL_MS.append((_now() - t0) * 1000.0)
             return result
@@ -344,10 +371,12 @@ async def _run_paced_async(call: Callable, host_key: tuple | None = None):
             _CALLS_BY_HOST[host_key] = _CALLS_BY_HOST.get(host_key, 0) + 1
     attempt = 0
     while True:
+        _inflight_enter()
         t0 = _now()
         try:
             result = await call()
         except BaseException as exc:                                  # noqa: BLE001
+            _inflight_exit()
             retry = classify(exc, is_ollama_host=True)
             if retry and attempt < MAX_RETRIES:
                 attempt += 1
@@ -362,6 +391,7 @@ async def _run_paced_async(call: Callable, host_key: tuple | None = None):
                     _COUNTERS["gave_up"] += 1
             raise
         else:
+            _inflight_exit()
             with _LOCK:
                 _CALL_MS.append((_now() - t0) * 1000.0)
             return result
@@ -578,6 +608,7 @@ def snapshot() -> dict:
                 "bypass_aiohttp": _COUNTERS["bypass_aiohttp"],
                 "nested_requests": _COUNTERS["nested_requests"],
                 "nested_aiohttp": _COUNTERS["nested_aiohttp"],
+                "max_inflight": _COUNTERS["max_inflight"],
                 "_call_ms_len": len(_CALL_MS),
                 "_calls_by_host": dict(_CALLS_BY_HOST)}
 
@@ -636,6 +667,14 @@ def attach(out: dict, *, since: dict | None = None) -> None:
         retry_sleep_s = _COUNTERS["retry_sleep_s"] - base["retry_sleep_s"]
         gave_up = _COUNTERS["gave_up"] - base["gave_up"]
         samples = list(_CALL_MS[base["_call_ms_len"]:])
+        #: R2: the PROCESS-WIDE peak, read here rather than as a delta - "max_inflight"
+        #: is a monotonic HIGH-WATER MARK, not a sum, and a delta of two peaks answers
+        #: "did a NEW record get set during this window", not "was there ever overlap
+        #: during it". Conservative in one direction only: once any concurrency has
+        #: EVER happened in this process, every later `pace_excluded_exact` reads False,
+        #: even for a window that was itself perfectly serial - never the other way
+        #: around (a truly concurrent window is never reported as exact).
+        max_inflight = _COUNTERS["max_inflight"]
     out["ollama_transport"] = {
         "calls": calls, "pace_sleep_s": round(pace_sleep_s, 3), "retries": retries,
         "retry_sleep_s": round(retry_sleep_s, 3), "gave_up": gave_up,
@@ -644,6 +683,8 @@ def attach(out: dict, *, since: dict | None = None) -> None:
         "pace_floor_s": round(calls * PACE_S, 3),
         "bypass_calls": {"requests": bypass_requests, "aiohttp": bypass_aiohttp},
         "nested_calls": {"requests": nested_requests, "aiohttp": nested_aiohttp},
+        "max_inflight": max_inflight,
+        "pace_excluded_exact": max_inflight <= 1,
     }
     if bypass_requests > 0 or bypass_aiohttp > 0:
         culprits = [name for name, n in
@@ -665,3 +706,4 @@ def _reset_for_tests() -> None:
             _COUNTERS[k] = 0 if isinstance(_COUNTERS[k], int) else 0.0
         _CALL_MS.clear()
         _CALLS_BY_HOST.clear()
+        _INFLIGHT_STATE["n"] = 0

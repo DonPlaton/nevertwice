@@ -9,6 +9,7 @@ was what made that arm retrieve nothing in the first place.
 import ast
 import collections
 import sys
+import urllib.request
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -17,6 +18,7 @@ import _env_guard  # noqa: E402,F401 - hermetic store before any project import
 ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT / "research"))
 import head_to_head as h2h  # noqa: E402
+import requests  # noqa: E402 - declared in the `research` extra alongside the tripwire
 
 FAILS = 0
 
@@ -93,13 +95,118 @@ check("no ingested_items recorded at all -> nothing to report, no coverage key",
       "coverage" not in h2h.coverage_verdict("mem0", {"ollama_transport": {"calls": 0}}), "")
 
 print("\n- _pace_excluded(): a phase's own elapsed time, minus the pacer's sleep in it -")
-before_snap = {"pace_sleep_s": 1.0, "retry_sleep_s": 0.0}
-after_snap = {"pace_sleep_s": 3.5, "retry_sleep_s": 15.0}
-check("elapsed minus (pace_sleep delta + retry_sleep delta)",
-      h2h._pace_excluded(20.0, before_snap, after_snap) == 20.0 - 2.5 - 15.0,
-      str(h2h._pace_excluded(20.0, before_snap, after_snap)))
-check("zero pacing in the window -> elapsed is untouched",
-      h2h._pace_excluded(5.0, before_snap, before_snap) == 5.0)
+before_snap = {"pace_sleep_s": 1.0, "retry_sleep_s": 0.0, "max_inflight": 1}
+after_snap = {"pace_sleep_s": 3.5, "retry_sleep_s": 15.0, "max_inflight": 1}
+val, exact = h2h._pace_excluded(20.0, before_snap, after_snap)
+check("elapsed minus (pace_sleep delta + retry_sleep delta)", val == 20.0 - 2.5 - 15.0, str(val))
+check("exact is True when max_inflight never exceeded 1", exact is True, str(exact))
+val0, exact0 = h2h._pace_excluded(5.0, before_snap, before_snap)
+check("zero pacing in the window -> elapsed is untouched", val0 == 5.0, str(val0))
+
+print("\n- R2: _pace_excluded() is clamped at 0 and reports inexact under concurrency -")
+concurrent_after = {"pace_sleep_s": 3.5, "retry_sleep_s": 15.0, "max_inflight": 3}
+_, exact_c = h2h._pace_excluded(20.0, before_snap, concurrent_after)
+check("max_inflight > 1 anywhere in the span -> exact is False", exact_c is False, str(exact_c))
+over_after = {"pace_sleep_s": 3.5, "retry_sleep_s": 100.0, "max_inflight": 1}
+val_neg, _ = h2h._pace_excluded(20.0, before_snap, over_after)
+check("pacing sleep exceeding elapsed time is CLAMPED at 0, never negative",
+      val_neg == 0.0, str(val_neg))
+
+print("\n- K12(в)/MG2: the coverage boundary - exactly one call short of full is "
+     "'unobserved', not just 'far short' -")
+boundary = {"ingested_items": 10, "ollama_transport": {"calls": 9}}
+h2h.coverage_verdict("mem0", boundary)
+check("observed == ingested - 1 (one short) -> coverage='unobserved'",
+      boundary.get("coverage") == "unobserved", str(boundary))
+
+print("\n- K12/MG4: run_and_score_arm() attaches EACH arm's OWN pacer delta, never the "
+     "process-wide cumulative counters -")
+
+
+class _FakeUrlResp:
+    def read(self):
+        return b'{"ok": true}'
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+
+class _FakeReqResp:
+    status_code = 200
+
+
+def _fake_urlopen(url_or_req, *a, **k):
+    return _FakeUrlResp()
+
+
+def _fake_requests_send(self, request, **k):
+    return _FakeReqResp()
+
+
+def _k12_arm1(data, pool):
+    for _ in range(3):
+        urllib.request.urlopen("http://127.0.0.1:11434/api/tags")
+    session = requests.Session()
+    req = requests.Request("GET", "http://127.0.0.1:11434/api/tags").prepare()
+    session.send(req)                              # a tripwire bypass, deliberately
+    return {"recall@1": 0.5, "n": 10, "recall@10": 0.5}
+
+
+def _k12_arm2(data, pool):
+    return {"recall@1": 0.5, "n": 10, "recall@10": 0.5}   # makes NO calls at all
+
+
+_saved_adapters = dict(h2h.ADAPTERS)
+_saved_urlopen = urllib.request.urlopen
+_saved_requests_send = requests.Session.send
+urllib.request.urlopen = _fake_urlopen
+requests.Session.send = _fake_requests_send
+h2h.ADAPTERS["k12_arm1"] = _k12_arm1
+h2h.ADAPTERS["k12_arm2"] = _k12_arm2
+try:
+    h2h.pacer.install()
+    try:
+        r1 = h2h.run_and_score_arm("k12_arm1", [], {})
+        r2 = h2h.run_and_score_arm("k12_arm2", [], {})
+    finally:
+        h2h.pacer.uninstall()
+    check("arm 1: calls == 3 (its OWN delta)",
+          r1.get("ollama_transport", {}).get("calls") == 3, str(r1.get("ollama_transport")))
+    check("arm 1: valid is False (the requests bypass)", r1.get("valid") is False, str(r1))
+    check("arm 2: NO ollama_transport at all - it made zero calls of its own",
+          "ollama_transport" not in r2, str(r2))
+    check("arm 2: NO valid key - arm 1's bypass must not leak onto a later arm",
+          "valid" not in r2, str(r2))
+
+    # MG4 (the auditor's own finding): attach() called WITHOUT since= reads the
+    # process-wide CUMULATIVE counters, so a later, innocent arm inherits an earlier
+    # arm's traffic and its bypass.
+    def _broken_run_and_score_arm(name, data, pool):
+        fn = h2h.ADAPTERS[name]
+        r = fn(data, pool)
+        h2h.pacer.attach(r)                         # BUG: no since= - MG4
+        h2h.coverage_verdict(name, r)
+        return r
+    h2h.pacer.install()
+    try:
+        h2h.pacer._reset_for_tests()
+        mr1 = _broken_run_and_score_arm("k12_arm1", [], {})
+        mr2 = _broken_run_and_score_arm("k12_arm2", [], {})
+    finally:
+        h2h.pacer.uninstall()
+    check("mutation MG4 (attach() without since=): arm 2 WRONGLY inherits arm 1's "
+          "bypass - ollama_transport/valid leak across arms (would FAIL the arm-2 "
+          "checks above)",
+          "ollama_transport" in mr2 and mr2.get("valid") is False, str(mr2))
+finally:
+    h2h.ADAPTERS.clear()
+    h2h.ADAPTERS.update(_saved_adapters)
+    urllib.request.urlopen = _saved_urlopen
+    requests.Session.send = _saved_requests_send
+    h2h.pacer._reset_for_tests()
 
 print("\n- the rule is about retrieving nothing at all, not about scoring badly -")
 weak = row(**{"recall@1": 0.0, "recall@3": 0.0, "recall@5": 0.0, "recall@10": 0.002}, mrr=0.0004)

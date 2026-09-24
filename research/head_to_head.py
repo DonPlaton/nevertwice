@@ -160,16 +160,25 @@ def _measured_at() -> dict:
 
 # ── shared stand + metric ─────────────────────────────────────────────────────
 
-def _pace_excluded(elapsed_s: float, before: dict, after: dict) -> float:
-    """`elapsed_s` (a stand's own wall-clock measurement of one phase, e.g. ingest or
-    query) with `_ollama_pacer`'s OWN pacing/retry sleep during that SAME phase
-    subtracted - the phase's cost isolated from the artificial spacing R-v2-ports adds on
-    top of it. `before`/`after` are `pacer.snapshot()`s taken at the phase's own
-    start/end, so this is exact per phase, not an arm-wide estimate split across
-    several timed sections."""
+def _pace_excluded(elapsed_s: float, before: dict, after: dict) -> tuple[float, bool]:
+    """(value, exact). `elapsed_s` (a stand's own wall-clock measurement of one phase,
+    e.g. ingest or query) with `_ollama_pacer`'s OWN pacing/retry sleep during that SAME
+    phase subtracted - the phase's cost isolated from the artificial spacing R-v2-ports
+    adds on top of it. `before`/`after` are `pacer.snapshot()`s taken at the phase's own
+    start/end, so this is exact per phase, not an arm-wide estimate split across several
+    timed sections.
+
+    R2 (the auditor's finding): the subtraction is a SUM of sleeps, which assumes they
+    never overlap - true for one caller paced serially, false the moment two threads are
+    both paced at once, where the same wall-clock second is double-counted as "pacing
+    time" by each one, and the result can even go negative. `exact` is
+    `after["max_inflight"] <= 1` - the pacer's own process-wide high-water mark, so a
+    caller knows whether to trust the number or treat it as a (floor-clamped) estimate.
+    Clamped at 0 either way: a negative "cost" is never a real answer to "how long did
+    this take", exact or not."""
     paced = ((after["pace_sleep_s"] - before["pace_sleep_s"]) +
             (after["retry_sleep_s"] - before["retry_sleep_s"]))
-    return round(elapsed_s - paced, 3)
+    return max(0.0, round(elapsed_s - paced, 3)), after.get("max_inflight", 0) <= 1
 
 
 def coverage_verdict(name: str, r: dict) -> dict:
@@ -188,6 +197,37 @@ def coverage_verdict(name: str, r: dict) -> dict:
     observed = r.get("ollama_transport", {}).get("calls", 0)
     if ingested is not None and observed < ingested:
         r["coverage"] = "unobserved"
+    return r
+
+
+def run_and_score_arm(name: str, data, pool) -> dict:
+    """One arm, end to end: run its adapter, time it, and attach THIS ARM'S OWN pacer
+    delta - never the process-wide cumulative counters.
+
+    K12 (the auditor's finding on ae03975, MG4): `main()`'s loop used to do this inline,
+    and a mutation removing `since=snap` from the `pacer.attach()` call there stayed
+    GREEN, because nothing exercised more than one arm in one test - so per-arm
+    ATTRIBUTION (as opposed to the mere presence of `ollama_transport`) was never
+    actually tested. Reading the CUMULATIVE counters instead of a delta means a bypass
+    in an EARLIER arm marks a LATER, innocent arm invalid too, and that later arm's
+    `calls`/`coverage` would silently include the earlier arm's own traffic. Extracted
+    here, exactly as `coverage_verdict()` was, so a test can drive two arms back to back
+    and assert on each one's OWN numbers directly, without running the whole stand.
+    """
+    fn = ADAPTERS[name]
+    snap = pacer.snapshot()
+    t0 = time.time()
+    r = fn(data, pool)
+    r["_wall_s"] = round(time.time() - t0, 1)
+    pacer.attach(r, since=snap)         # per-arm delta -> r["ollama_transport"]
+    coverage_verdict(name, r)
+    r["version"] = _pkg_ver(name)          # record what we actually compared against
+    r["label"] = ARM_LABEL.get(name, name)
+    r["measured_at"] = _measured_at()
+    if name == "nevertwice":
+        r["morphology"] = bool(m.LEXICAL_MORPHOLOGY)
+    r = accept(name, r)
+    r = accept(name, r)
     return r
 
 
@@ -509,8 +549,10 @@ def run_mem0(data, pool, infer=None) -> dict:
     # added on top of it - named beside each one, not folded silently into a number that
     # looks like pure Mem0 latency.
     sc["timing_includes_pacing"] = True
-    sc["ingest_s_pace_excluded"] = _pace_excluded(ingest_s, snap_ingest0, snap_ingest1)
-    sc["query_s_pace_excluded"] = _pace_excluded(query_s, snap_ingest1, snap_query1)
+    sc["ingest_s_pace_excluded"], sc["ingest_pace_excluded_exact"] = _pace_excluded(
+        ingest_s, snap_ingest0, snap_ingest1)
+    sc["query_s_pace_excluded"], sc["query_pace_excluded_exact"] = _pace_excluded(
+        query_s, snap_ingest1, snap_query1)
     sc["ingested_items"] = len(items)
     sc["mode"] = f"infer={infer} ({'LLM ' + COMP_LLM if infer else 'retrieval-only, 1 memory/session'})"
     sc["sessions_shrunk"] = stats.get("shrunk", 0)
@@ -569,8 +611,10 @@ def run_langmem(data, pool) -> dict:
     sc["ingest_s"] = round(ingest_s, 1)
     sc["query_s"] = round(query_s, 1)
     sc["timing_includes_pacing"] = True
-    sc["ingest_s_pace_excluded"] = _pace_excluded(ingest_s, snap_ingest0, snap_ingest1)
-    sc["query_s_pace_excluded"] = _pace_excluded(query_s, snap_ingest1, snap_query1)
+    sc["ingest_s_pace_excluded"], sc["ingest_pace_excluded_exact"] = _pace_excluded(
+        ingest_s, snap_ingest0, snap_ingest1)
+    sc["query_s_pace_excluded"], sc["query_pace_excluded_exact"] = _pace_excluded(
+        query_s, snap_ingest1, snap_query1)
     sc["ingested_items"] = len(items)
     sc["embedder"] = f"ollama {EMBED_MODEL}"
     sc["mode"] = "store search only: LangGraph InMemoryStore, no memory manager, no LLM"
@@ -635,8 +679,10 @@ def run_langmem_full(data, pool) -> dict:
     sc["ingest_s"] = round(ingest_s, 1)
     sc["query_s"] = round(query_s, 1)
     sc["timing_includes_pacing"] = True
-    sc["ingest_s_pace_excluded"] = _pace_excluded(ingest_s, snap_ingest0, snap_ingest1)
-    sc["query_s_pace_excluded"] = _pace_excluded(query_s, snap_ingest1, snap_query1)
+    sc["ingest_s_pace_excluded"], sc["ingest_pace_excluded_exact"] = _pace_excluded(
+        ingest_s, snap_ingest0, snap_ingest1)
+    sc["query_s_pace_excluded"], sc["query_pace_excluded_exact"] = _pace_excluded(
+        query_s, snap_ingest1, snap_query1)
     sc["ingested_items"] = len(items)
     sc["embedder"] = f"ollama {EMBED_MODEL}"
     sc["extraction_errors"] = errors
@@ -695,8 +741,10 @@ def run_amem(data, pool) -> dict:
     sc["ingest_s"] = round(ingest_s, 1)
     sc["query_s"] = round(query_s, 1)
     sc["timing_includes_pacing"] = True
-    sc["ingest_s_pace_excluded"] = _pace_excluded(ingest_s, snap_ingest0, snap_ingest1)
-    sc["query_s_pace_excluded"] = _pace_excluded(query_s, snap_ingest1, snap_query1)
+    sc["ingest_s_pace_excluded"], sc["ingest_pace_excluded_exact"] = _pace_excluded(
+        ingest_s, snap_ingest0, snap_ingest1)
+    sc["query_s_pace_excluded"], sc["query_pace_excluded_exact"] = _pace_excluded(
+        query_s, snap_ingest1, snap_query1)
     sc["ingested_items"] = len(items)
     sc["embedder"] = f"ollama {EMBED_MODEL}"
     sc["mode"] = "store search only: chromadb cosine, no LLM note construction, no link evolution"
@@ -828,8 +876,10 @@ def run_amem_full(data, pool) -> dict:
     sc["ingest_s"] = round(ingest_s, 1)
     sc["query_s"] = round(query_s, 1)
     sc["timing_includes_pacing"] = True
-    sc["ingest_s_pace_excluded"] = _pace_excluded(ingest_s, snap_ingest0, snap_ingest1)
-    sc["query_s_pace_excluded"] = _pace_excluded(query_s, snap_ingest1, snap_query1)
+    sc["ingest_s_pace_excluded"], sc["ingest_pace_excluded_exact"] = _pace_excluded(
+        ingest_s, snap_ingest0, snap_ingest1)
+    sc["query_s_pace_excluded"], sc["query_pace_excluded_exact"] = _pace_excluded(
+        query_s, snap_ingest1, snap_query1)
     sc["ingested_items"] = len(items)
     sc["embedder"] = f"ollama {EMBED_MODEL} (chroma embedding function over the shared endpoint)"
     sc["silent_analyses"] = silent
@@ -920,24 +970,11 @@ def main():
     results = {"_provenance": provenance, "_questions": len(data), "_pool_sessions": len(pool)}
     pacer.install()          # R-v2-ports: pace/retry every arm's own Ollama traffic
     for name in want:
-        fn = ADAPTERS.get(name)
-        if not fn:
+        if name not in ADAPTERS:
             print(f"\n- {name} - unknown system (have: {', '.join(ADAPTERS)})")
             continue
         print(f"\n- {name} -", flush=True)
-        snap = pacer.snapshot()
-        t0 = time.time()
-        r = fn(data, pool)
-        r["_wall_s"] = round(time.time() - t0, 1)
-        pacer.attach(r, since=snap)         # per-arm delta -> r["ollama_transport"]
-        coverage_verdict(name, r)
-        r["version"] = _pkg_ver(name)          # record what we actually compared against
-        r["label"] = ARM_LABEL.get(name, name)
-        r["measured_at"] = _measured_at()
-        if name == "nevertwice":
-            r["morphology"] = bool(m.LEXICAL_MORPHOLOGY)
-        r = accept(name, r)
-        r = accept(name, r)
+        r = run_and_score_arm(name, data, pool)
         results[name] = r
         if "blocked" in r:
             print(f"  BLOCKED: {r['blocked']}")

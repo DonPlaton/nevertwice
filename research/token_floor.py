@@ -849,14 +849,21 @@ def finish_arm(name: str, res: dict, wall_s: float, snap: dict) -> dict:
     (never our own `nevertwice`, which measures its OWN write path rather than a
     client's) made fewer paced calls than the sessions it says it wrote - a lower
     bound, not a complete measurement, and the row says so rather than implying full
-    coverage it did not have."""
+    coverage it did not have.
+
+    R2 (the auditor's finding): `wall_s - pace_sleep_s - retry_sleep_s` is a SUM of
+    sleeps and assumes they never overlap - false under real concurrency, where the
+    result can go negative. Clamped at 0; `wall_s_pace_excluded_exact` names whether
+    `ollama_transport["max_inflight"]` (the pacer's own process-wide high-water mark)
+    ever exceeded 1, so a reader knows whether to trust the number exactly."""
     res["wall_s"] = round(wall_s, 1)
     pacer.attach(res, since=snap)
     if "ollama_transport" in res:
         res["timing_includes_pacing"] = True
         ot = res["ollama_transport"]
-        res["wall_s_pace_excluded"] = round(
-            res["wall_s"] - ot["pace_sleep_s"] - ot["retry_sleep_s"], 3)
+        res["wall_s_pace_excluded"] = max(0.0, round(
+            res["wall_s"] - ot["pace_sleep_s"] - ot["retry_sleep_s"], 3))
+        res["wall_s_pace_excluded_exact"] = ot.get("max_inflight", 0) <= 1
     if name != "nevertwice" and "blocked" not in res:
         ingested = (res.get("ingest") or {}).get("written")
         observed = res.get("ollama_transport", {}).get("calls", 0)
