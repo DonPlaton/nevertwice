@@ -731,6 +731,83 @@ def test_t8b_calls_by_host_distinguishes_two_recognised_ollama_hosts() -> None:
               ("::1", 11434) not in delta, str(delta))
 
 
+def test_t8b_async_calls_by_host_via_httpx_asyncclient() -> None:
+    print("\n- T8b async (item 8, .loop/HANDOFF-PORTS.md): calls_by_host() tallies the "
+          "ASYNC httpx.AsyncClient.send path per (host, port) too - the sync case above "
+          "never exercises _run_paced_async's OWN host tally (a different code path, a "
+          "different `with _LOCK: _CALLS_BY_HOST[host_key] = ...` line) at all -")
+    try:
+        import httpx
+    except ImportError:
+        check("httpx importable (research extra) - this environment lacks it; every "
+              "other T8b-async assertion is skipped, not failed", True,
+              "install the `research` extra to exercise T8b-async's httpx path")
+        return
+    with _isolated():
+        def handler(request):
+            return httpx.Response(200, json={"ok": True})
+
+        async def _run_two_hosts():
+            client_a = httpx.AsyncClient(transport=httpx.MockTransport(handler),
+                                         base_url="http://127.0.0.1:11434")
+            await client_a.get("/api/tags")
+            await client_a.get("/api/tags")
+            await client_a.aclose()
+            client_b = httpx.AsyncClient(transport=httpx.MockTransport(handler),
+                                         base_url="http://localhost:11434")
+            await client_b.get("/api/tags")
+            await client_b.aclose()
+        pacer.install()
+        snap = pacer.snapshot()
+        with _crash_guard("T8b-async: host A (127.0.0.1:11434) tallied twice via "
+                          "AsyncClient",
+                          "T8b-async: host B (localhost:11434) tallied once via "
+                          "AsyncClient"):
+            asyncio.run(_run_two_hosts())
+            delta = pacer.calls_by_host(since=snap)
+            check("T8b-async: host A (127.0.0.1:11434) tallied twice via AsyncClient",
+                  delta.get(("127.0.0.1", 11434)) == 2, str(delta))
+            check("T8b-async: host B (localhost:11434) tallied once via AsyncClient",
+                  delta.get(("localhost", 11434)) == 1, str(delta))
+
+        # mutation MN2: no per-host tally in _run_paced_async. Wraps the REAL function
+        # (so pacing/retry/counters still behave faithfully) and erases only the
+        # per-host side effect it just made - the precise, OBSERVABLE shape "no per-host
+        # tally" has from calls_by_host()'s own point of view, without duplicating
+        # _run_paced_async's internals (which a copy-pasted reimplementation would drift
+        # from the moment either one changes).
+        pacer._reset_for_tests()
+        real_run_paced_async = pacer._run_paced_async
+
+        async def _no_host_tally(call, host_key=None, is_embed=False):
+            before = dict(pacer._CALLS_BY_HOST)
+            result = await real_run_paced_async(call, host_key=host_key, is_embed=is_embed)
+            with pacer._LOCK:
+                pacer._CALLS_BY_HOST.clear()
+                pacer._CALLS_BY_HOST.update(before)
+            return result
+        pacer._run_paced_async = _no_host_tally
+        try:
+            with _crash_guard(
+                    "mutation MN2 'no per-host tally in _run_paced_async': the SAME "
+                    "two-host traffic is now WRONGLY invisible to calls_by_host() "
+                    "(would FAIL the T8b-async checks above), even though the "
+                    "aggregate calls counter still moved"):
+                snap2 = pacer.snapshot()
+                asyncio.run(_run_two_hosts())
+                delta2 = pacer.calls_by_host(since=snap2)
+                agg2 = pacer.snapshot()["calls"] - snap2["calls"]
+                check("mutation MN2 'no per-host tally in _run_paced_async': the SAME "
+                      "two-host traffic is now WRONGLY invisible to calls_by_host() "
+                      "(would FAIL the T8b-async checks above), even though the "
+                      "aggregate calls counter still moved",
+                      not delta2 and agg2 == 3, str((delta2, agg2)))
+        finally:
+            pacer._run_paced_async = real_run_paced_async
+        check("_run_paced_async is restored to the real function",
+              pacer._run_paced_async is real_run_paced_async)
+
+
 def test_t8c_max_inflight_tracks_real_concurrency() -> None:
     """R2 (the auditor's finding): `elapsed - pace_sleep_s - retry_sleep_s` (research/
     head_to_head.py's `_pace_excluded`, research/token_floor.py's `finish_arm`) assumes
@@ -1450,6 +1527,7 @@ def main() -> int:
                test_t7_httpx_client_and_asyncclient_are_paced_through_mocktransport,
                test_t8_attach_writes_the_key_only_when_something_ran_through_it,
                test_t8b_calls_by_host_distinguishes_two_recognised_ollama_hosts,
+               test_t8b_async_calls_by_host_via_httpx_asyncclient,
                test_t8c_max_inflight_tracks_real_concurrency,
                test_t8d_max_concurrent_paced_covers_the_whole_paced_operation,
                test_f1a_urlopen_embed_failure_marks_the_run_invalid,
