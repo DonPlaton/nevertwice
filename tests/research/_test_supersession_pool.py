@@ -520,5 +520,153 @@ finally:
 check("ARMS is restored to exactly its original registered arms",
       set(sb.ARMS) == set(saved_arms), str(sorted(sb.ARMS)))
 
+print("\n- K18/P1(a): _mem0_cap_verdict() - exactly at the cap vs one over, each axis -")
+check("exactly at the cap (2 supersession, 1 control) is valid",
+      sb._mem0_cap_verdict({"supersession": 2, "control": 1}) is None)
+check("one supersession error OVER the cap (3) is invalid, named by count",
+      sb._mem0_cap_verdict({"supersession": 3, "control": 0}) is not None)
+check("one control error OVER the cap (2) is invalid, named by count",
+      sb._mem0_cap_verdict({"supersession": 0, "control": 2}) is not None)
+reason_sup = sb._mem0_cap_verdict({"supersession": 3, "control": 0})
+check("the reason names both counts and both caps",
+      "3" in reason_sup and str(sb.MEM0_ERR_CAP_SUPERSESSION) in reason_sup and
+      "0" in reason_sup and str(sb.MEM0_ERR_CAP_CONTROL) in reason_sup, reason_sup)
+
+print("\n- K18 mutation: cap +1 - the SAME 3-supersession-error case now WRONGLY reads valid -")
+saved_cap_sup = sb.MEM0_ERR_CAP_SUPERSESSION
+sb.MEM0_ERR_CAP_SUPERSESSION = 3                        # mutation: cap raised by 1
+check("mutation 'cap +1': 3 supersession errors now WRONGLY verdicts valid (would FAIL "
+      "the 'one supersession error OVER the cap' check above)",
+      sb._mem0_cap_verdict({"supersession": 3, "control": 0}) is None)
+sb.MEM0_ERR_CAP_SUPERSESSION = saved_cap_sup
+check("MEM0_ERR_CAP_SUPERSESSION is restored", sb.MEM0_ERR_CAP_SUPERSESSION == saved_cap_sup)
+
+print("\n- K18/P1(a)+(b): the cap is per RUN, never re-applied to pool_other_arm's SUM -")
+# two constituent mem0 runs, EACH exactly at the cap (2 supersession errors, 0 control) so
+# NEITHER run's own result carries valid=False - but their SUM (4) is over the cap.
+mem0_run_a = {"rows": [_row("s1", "explicit", False, True)], **sb.score([_row("s1", "explicit", False, True)]),
+             "errors": 2, "mem0_errors": {"supersession": 2, "control": 0},
+             "seconds": 1.0, "config": "mem0 x"}
+mem0_run_b = {"rows": [_row("s2", "explicit", False, True)], **sb.score([_row("s2", "explicit", False, True)]),
+             "errors": 2, "mem0_errors": {"supersession": 2, "control": 0},
+             "seconds": 1.0, "config": "mem0 x"}
+check("setup: neither constituent run is itself over cap",
+      sb._mem0_cap_verdict(mem0_run_a["mem0_errors"]) is None and
+      sb._mem0_cap_verdict(mem0_run_b["mem0_errors"]) is None)
+pooled_sum = sb.pool_other_arm([mem0_run_a, mem0_run_b])
+check("the pooled SUM is 4, over the per-run cap of 2 (setup: the scenario is real)",
+      pooled_sum["mem0_errors"]["supersession"] == 4, str(pooled_sum["mem0_errors"]))
+check("per_run_mem0_errors carries each constituent's own split beside the sum",
+      pooled_sum["per_run_mem0_errors"] == [mem0_run_a["mem0_errors"], mem0_run_b["mem0_errors"]],
+      str(pooled_sum.get("per_run_mem0_errors")))
+check("the pool STAYS VALID: the cap is per-run, not re-applied to the sum",
+      "valid" not in pooled_sum, str(pooled_sum))
+
+print("\n- K18 mutation: the cap applied to the SUM - the same pool now WRONGLY invalid -")
+def _pool_other_arm_cap_on_sum(results):
+    """Mutation: as `pool_other_arm`, but the P1 cap is (wrongly) re-applied to the
+    pooled SUM, not left per-run only."""
+    out = sb.pool_other_arm(results)
+    reason = sb._mem0_cap_verdict(out["mem0_errors"])
+    if reason is not None:
+        out = dict(out)
+        out["valid"] = False
+        out["invalid_reason"] = reason
+    return out
+mutated_pool = _pool_other_arm_cap_on_sum([mem0_run_a, mem0_run_b])
+check("mutation 'cap applied to the sum': the SAME pool now WRONGLY reads invalid "
+      "(would FAIL the 'the pool STAYS VALID' check above)",
+      mutated_pool.get("valid") is False, str(mutated_pool))
+
+print("\n- K18/P1(c): _double_reading() - a pair where flipping errors flips the sign -")
+# real error rows are BLANK (stale_returned=False, current_returned=False - _blank(case)'s
+# own shape, not a fabricated stale hit): 2 of mem0's 3 cases errored. nevertwice gets the
+# current fact right on 1/3. Failure reading: mem0 current_rate 0/3=0.0, diff -0.333
+# (mem0 WORSE). Success reading: both errors flip to current_returned=True, mem0
+# current_rate 2/3=0.667, diff +0.333 (mem0 BETTER) - the sign flips.
+flip_first = {
+    "nevertwice": {f"c{i}": _row(f"c{i}", "explicit", False, i == 1) for i in range(1, 4)},
+    "mem0": {"c1": _row("c1", "explicit", False, False, error="E1"),
+            "c2": _row("c2", "explicit", False, False, error="E2"),
+            "c3": _row("c3", "explicit", False, False)},
+}
+pf_flip, ps_flip, reason_flip = sb._double_reading(flip_first)
+check("errors-as-failure reading: mem0's current_rate_diff is negative (worse than "
+      "nevertwice)", pf_flip[0]["current_rate_diff"] < 0, str(pf_flip))
+check("errors-as-success reading: the SAME pair's current_rate_diff is now positive "
+      "(better than nevertwice) - the sign flipped",
+      ps_flip[0]["current_rate_diff"] > 0, str(ps_flip))
+check("the pool is marked invalid, naming the disagreement",
+      reason_flip is not None and "sign" in reason_flip and "current_rate_diff" in reason_flip,
+      str(reason_flip))
+
+print("\n- K18/P1(c): _double_reading() - a pair that does NOT flip stays valid -")
+# only ONE of mem0's 3 cases errored, and the other two are ALREADY correct - rescoring
+# the one error can only push current_rate UP, never past nevertwice's own 0 (nevertwice
+# gets nothing right here), so the sign of current_rate_diff (mem0 ahead) cannot flip.
+noflip_first = {
+    "nevertwice": {f"c{i}": _row(f"c{i}", "explicit", False, False) for i in range(1, 4)},
+    "mem0": {"c1": _row("c1", "explicit", False, False, error="E1"),
+            "c2": _row("c2", "explicit", False, True),
+            "c3": _row("c3", "explicit", False, True)},
+}
+pf_no, ps_no, reason_no = sb._double_reading(noflip_first)
+check("both readings agree in sign (mem0 ahead of nevertwice's 0.0 either way)",
+      pf_no[0]["current_rate_diff"] > 0 and ps_no[0]["current_rate_diff"] > 0,
+      str((pf_no, ps_no)))
+check("both readings agree on which side of 0.05 McNemar falls",
+      (pf_no[0]["p_mcnemar"] < 0.05) == (ps_no[0]["p_mcnemar"] < 0.05),
+      str((pf_no[0]["p_mcnemar"], ps_no[0]["p_mcnemar"])))
+check("no disagreement -> the pool stays valid (reason is None)", reason_no is None,
+      str(reason_no))
+
+print("\n- K18 mutation: no double reading - the SAME flip-scenario no longer caught -")
+saved_errors_as_success = sb._mem0_errors_as_success
+sb._mem0_errors_as_success = lambda rows: rows          # mutation: errors never rescored
+_, _, mutated_reason = sb._double_reading(flip_first)
+check("mutation 'no double reading': the SAME flip that FAILED above now reads valid "
+      "(reason is None) - would FAIL the 'the pool is marked invalid' check above",
+      mutated_reason is None, str(mutated_reason))
+sb._mem0_errors_as_success = saved_errors_as_success
+check("_mem0_errors_as_success is restored to the real function",
+      sb._mem0_errors_as_success is saved_errors_as_success)
+
+print("\n- K18 (в) MS4: nevertwice_after_sleep inherits its own row's valid/invalid_reason -")
+def _fake_nevertwice_with_after_sleep(cases, k, sleep=False, third_session=False):
+    res = _arm([_row("c1", "explicit", True, False)])
+    res["valid"] = False
+    res["invalid_reason"] = "synthetic MS4 fixture: simulated bypass on the main reading"
+    after = _arm([_row("c1", "explicit", False, True)])
+    after["adjudication"] = {"pairs": 1, "judged": 1, "tokens_spent": 10, "budget": 100,
+                             "replaces": 0, "separate": 1, "left": 0,
+                             "prompt_tokens": 5, "eval_tokens": 5}
+    res["after_sleep"] = after
+    return res
+
+class _FakeArgsSleep:
+    k = 5
+    sleep = True
+    third_session = False
+
+saved_arms2 = dict(sb.ARMS)
+sb.ARMS["nevertwice"] = _fake_nevertwice_with_after_sleep
+try:
+    with _isolated_pacer():
+        out_sleep = sb._one_run(FAKE_DATA, FAKE_CASE, _FakeArgsSleep(), ["nevertwice"])
+        main_entry = out_sleep["arms"]["nevertwice"]
+        after_entry = out_sleep["arms"]["nevertwice_after_sleep"]
+        check("the main reading's own valid=False survives (unchanged by this fix)",
+              main_entry.get("valid") is False, str(main_entry))
+        check("MS4: nevertwice_after_sleep is a SEPARATE out['arms'] key - a pointer into "
+              "it resolves through THIS container, never the sibling 'nevertwice' one, so "
+              "it must carry its own copy of valid/invalid_reason",
+              after_entry.get("valid") is False and
+              after_entry.get("invalid_reason") == main_entry["invalid_reason"],
+              str(after_entry))
+finally:
+    sb.ARMS.clear()
+    sb.ARMS.update(saved_arms2)
+check("ARMS is restored after the MS4 fixture too", set(sb.ARMS) == set(saved_arms))
+
 print(f"\n{'ALL OK' if not FAILS else f'{FAILS} FAILED'}")
 sys.exit(1 if FAILS else 0)

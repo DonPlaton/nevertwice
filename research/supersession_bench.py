@@ -73,6 +73,17 @@ LLM = os.environ.get("SUPERSESSION_LLM", "qwen3-coder:30b")
 
 DATASET = HERE / "data" / "supersession_v1.json"
 
+#: K18/P1 (.loop/PREREG-V2-2026-09-24.md, sha256 edfca6e6d2ea4a3b...): each corpus has 80
+#: cases, one row per case - 60 supersession and 20 control (verified against
+#: run_mem0's own case loop below). An errored case is scored as an empty return, which
+#: shifts a supersession rate by at most 1/60 and a control rate by at most 1/20 - the
+#: stand's own 10% gate (below, unchanged) lets 8 errors through on an 80-case corpus,
+#: about one whole Wilson interval of drift. P1's own, tighter rule, applied PER CORPUS
+#: PER RUN (never to a pooled/summed count - see pool_other_arm): errors <= 2 among the
+#: supersession cases AND <= 1 among the control cases, or the mem0 row is invalid.
+MEM0_ERR_CAP_SUPERSESSION = 2
+MEM0_ERR_CAP_CONTROL = 1
+
 
 def _code_sha() -> str:
     """One hash over the program a run IS: this stand plus every module of the package.
@@ -594,6 +605,37 @@ def _mem0_errors_by_shape(rows: list[dict]) -> dict:
            "control": sum(1 for r in rows if r.get("error") and r.get("shape") == "control")}
 
 
+def _mem0_cap_verdict(mem0_errors: dict) -> str | None:
+    """K18/P1(a): the P1 cap itself - errors <= MEM0_ERR_CAP_SUPERSESSION among the
+    supersession-shaped cases AND <= MEM0_ERR_CAP_CONTROL among the control-shaped ones,
+    PER CORPUS PER RUN. Returns the invalid_reason string when either is exceeded, else
+    None. Extracted as its own function, independent of `run_mem0`, for the same reason
+    `_mem0_errors_by_shape` is: testable without mem0 installed."""
+    if (mem0_errors["supersession"] > MEM0_ERR_CAP_SUPERSESSION or
+            mem0_errors["control"] > MEM0_ERR_CAP_CONTROL):
+        return (f"P1 (.loop/PREREG-V2-2026-09-24.md): {mem0_errors['supersession']} mem0 "
+               f"error(s) among supersession cases (cap {MEM0_ERR_CAP_SUPERSESSION}) and "
+               f"{mem0_errors['control']} among control cases (cap {MEM0_ERR_CAP_CONTROL})")
+    return None
+
+
+#: K18/P1(c): exactly `classify([], case)`'s shape would produce for a hit list that
+#: cleared every marker BUT current - the same four fields `_row()`/`classify()` compute
+#: for a real hit, so a rescored error row is indistinguishable in shape from a real one.
+_SUCCESS_FIELDS = {"stale_returned": False, "stale_rank": None, "current_returned": True,
+                  "old_value_served": False}
+
+
+def _mem0_errors_as_success(rows: list[dict]) -> list[dict]:
+    """K18/P1(c): the SAME rows, but every row `run_mem0` recorded as an ERROR (a blank
+    row from `{**_blank(case), "error": ...}`) rescored as if mem0 had returned the
+    CORRECT current fact and no stale one - the most favorable outcome the case admits,
+    the "errors counted as successes" reading P1 requires beside the default "errors
+    counted as failures" one. A row with no `error` key passes through unchanged; never
+    mutates the input (a fresh dict per changed row, a shared reference for the rest)."""
+    return [{**r, **_SUCCESS_FIELDS} if r.get("error") else r for r in rows]
+
+
 def run_mem0(cases: list[dict], k: int) -> dict:
     """Mem0 2.0.19 through its documented local configuration.
 
@@ -667,18 +709,41 @@ def run_mem0(cases: list[dict], k: int) -> dict:
     failed = sum(1 for r in rows if r.get("error"))
     # B2 (the auditor's finding): `errors` was already the count, but not SPLIT by case
     # shape - P1 (.loop/PREREG-V2-2026-09-24.md) caps errors separately for supersession
-    # cases (<=2/60) and control cases (<=1/20), applied at campaign READING time, never
-    # here (no new threshold in the stand itself - the existing 10% gate below is
-    # untouched). Surfaced per corpus/run so a reader of THIS run's own artifact can apply
-    # that cap without re-deriving the split from `rows` by hand.
+    # cases (<=2/60) and control cases (<=1/20). Surfaced per corpus/run so a reader of
+    # THIS run's own artifact can see the split without re-deriving it from `rows` by
+    # hand - the existing 10% gate below (a much coarser, pre-existing refusal) is
+    # untouched either way.
     mem0_errors = _mem0_errors_by_shape(rows)
     if failed > len(rows) * 0.1:
         return {"blocked": f"{failed} of {len(rows)} cases errored - "
                            f"first: {next(r['error'] for r in rows if r.get('error'))}",
                 "rows": rows, "errors": failed, "mem0_errors": mem0_errors}
-    return {"rows": rows, **score(rows), "errors": failed, "mem0_errors": mem0_errors,
-            "seconds": round(time.time() - t0, 1),
-            "config": f"mem0 ollama {LLM} + {EMBED_MODEL}, limit={k}"}
+    result = {"rows": rows, **score(rows), "errors": failed, "mem0_errors": mem0_errors,
+             "seconds": round(time.time() - t0, 1),
+             "config": f"mem0 ollama {LLM} + {EMBED_MODEL}, limit={k}"}
+    # K18/P1(a): the cap ITSELF, applied HERE - per corpus, per run, on THIS row - never
+    # re-applied to a pooled/summed count (pool_other_arm sums mem0_errors for
+    # information only; see its own docstring).
+    invalid_reason = _mem0_cap_verdict(mem0_errors)
+    if invalid_reason is not None:
+        result["valid"] = False
+        result["invalid_reason"] = invalid_reason
+    # K18/P1(c): every mem0 figure is computed twice - errors as failures (above, the
+    # default every existing reader already sees) and errors as successes (the most
+    # favorable outcome the case admits) - and the published interval is widened to
+    # [Wilson_lo of the failure reading, Wilson_hi of the success reading]. Computed here,
+    # once, so pool() (which does the SIGN/McNemar side of the double reading, at pair
+    # time) never has to re-derive a single-run rate from raw rows.
+    success_rows = _mem0_errors_as_success(rows)
+    success_score = score(success_rows)
+    widened_ci = {}
+    for metric in ("stale", "current", "control_miss"):
+        lo_hi_fail = result.get(f"{metric}_ci")
+        lo_hi_succ = success_score.get(f"{metric}_ci")
+        if lo_hi_fail is not None and lo_hi_succ is not None:
+            widened_ci[metric] = [lo_hi_fail[0], lo_hi_succ[1]]
+    result["widened_ci"] = widened_ci
+    return result
 
 
 # ── arm: naive append-only markdown + BM25 ────────────────────────────────────────────────
@@ -804,13 +869,81 @@ def compare_arms(loaded: dict[str, dict[str, dict]]) -> list[dict]:
                          if loaded[a][cid]["stale_returned"] and not loaded[b][cid]["stale_returned"])
             b_only = sum(1 for cid in shared
                          if loaded[b][cid]["stale_returned"] and not loaded[a][cid]["stale_returned"])
+            # K18/P1(c): each arm's OWN stale_returned rate over `shared`, and the CURRENT-
+            # returned rate beside it, each with its signed difference - "the sign of a
+            # rate difference in a pair" P1 asks the double reading to check. Both are
+            # published (not just stale): P1(c)'s own "success" imputation sets
+            # `current_returned` and leaves `stale_returned` False on EITHER reading (a
+            # rescored error is never scored as asserting the retracted fact) - so
+            # `stale_rate_diff` cannot move between the two readings by construction, and
+            # `current_rate_diff` is where an error's disposition actually changes what
+            # the pair reports.
+            def _rate(arm_name, field):                                      # noqa: PLC0415
+                return (sum(1 for cid in shared if loaded[arm_name][cid][field]) / len(shared)
+                       if shared else None)
+            stale_a, stale_b = _rate(a, "stale_returned"), _rate(b, "stale_returned")
+            cur_a, cur_b = _rate(a, "current_returned"), _rate(b, "current_returned")
             pairs.append({
                 "a": a, "b": b, "n": len(shared),
                 f"stale_only_{a}": a_only, f"stale_only_{b}": b_only,
                 "discordant": a_only + b_only,
                 "p_mcnemar": mcnemar_exact(a_only, b_only),
+                f"stale_rate_{a}": round(stale_a, 4) if stale_a is not None else None,
+                f"stale_rate_{b}": round(stale_b, 4) if stale_b is not None else None,
+                "stale_rate_diff": (round(stale_a - stale_b, 4)
+                                    if stale_a is not None and stale_b is not None else None),
+                f"current_rate_{a}": round(cur_a, 4) if cur_a is not None else None,
+                f"current_rate_{b}": round(cur_b, 4) if cur_b is not None else None,
+                "current_rate_diff": (round(cur_a - cur_b, 4)
+                                      if cur_a is not None and cur_b is not None else None),
             })
     return pairs
+
+
+def _double_reading(first: dict[str, dict[str, dict]]) -> tuple[list, list, str | None]:
+    """K18/P1(c): "every mem0 figure is computed twice: errors counted as failures, and
+    errors counted as successes. If a pre-registered reading differs between the two
+    (the sign of a difference, or McNemar p on either side of 0.05), the row is invalid
+    whatever the count." `first` maps arm name to {case_id: row}, the SAME shape
+    `compare_arms` already takes - the "failure" reading is the existing `first` as-is,
+    the "success" reading rescores mem0's own errored rows with `_mem0_errors_as_success`.
+    Returns (pairs_as_failure, pairs_as_success, invalid_reason_or_None) - the reason
+    names every pair and pre-registered test that disagreed, or None when they all agree
+    (including trivially, when "mem0" is not one of the arms at all)."""
+    pairs_failure = compare_arms(first)
+    if "mem0" not in first:
+        return pairs_failure, pairs_failure, None
+    first_success = dict(first)
+    first_success["mem0"] = {cid: r for cid, r in
+                             zip(first["mem0"], _mem0_errors_as_success(list(first["mem0"].values())))}
+    pairs_success = compare_arms(first_success)
+    disagreements = []
+    for pf, ps in zip(pairs_failure, pairs_success):
+        if "mem0" not in (pf["a"], pf["b"]):
+            continue
+        label = f"{pf['a']} vs {pf['b']}"
+        sign = lambda x: (x > 0) - (x < 0)                          # noqa: E731
+        # the SIGN of EACH rate difference (positive/negative/zero are the three signs -
+        # a pre-registered claim about DIRECTION, not magnitude). stale_rate_diff cannot
+        # actually move between the two readings (both leave an errored row's
+        # stale_returned False - see compare_arms's own docstring on this), but is
+        # checked anyway in case that ever changes; current_rate_diff is where P1(c)'s
+        # success imputation (current_returned flips True) actually bites.
+        for metric in ("stale_rate_diff", "current_rate_diff"):
+            df, ds_ = pf.get(metric), ps.get(metric)
+            if df is not None and ds_ is not None and sign(df) != sign(ds_):
+                disagreements.append(f"{label}: {metric} sign flips ({df} vs {ds_})")
+        # McNemar p on either side of 0.05
+        pf_side, ps_side = pf["p_mcnemar"] < 0.05, ps["p_mcnemar"] < 0.05
+        if pf_side != ps_side:
+            disagreements.append(f"{label}: p_mcnemar crosses 0.05 ({pf['p_mcnemar']} vs "
+                                 f"{ps['p_mcnemar']})")
+    if disagreements:
+        return (pairs_failure, pairs_success,
+               "P1 (.loop/PREREG-V2-2026-09-24.md): the double reading (mem0's errored "
+               "cases counted as failures vs as successes) disagrees on a pre-registered "
+               "test - " + "; ".join(disagreements))
+    return pairs_failure, pairs_success, None
 
 
 def compare(files: list[Path]) -> dict:
@@ -856,13 +989,19 @@ def pool_other_arm(results: list[dict]) -> dict:
            "per_run_current": [res.get("current_rate") for res in results],
            "per_run_control_miss": [res.get("control_miss_rate") for res in results],
            "errors": sum(int(res.get("errors") or 0) for res in results),
-           # B2: the split summed the same way as the plain count beside it.
+           # B2: the split summed the same way as the plain count beside it. K18/P1(a):
+           # this SUM is informational only - the cap is "per corpus per run" (applied
+           # once, in run_mem0, on EACH constituent's own row, before it ever reaches
+           # here) and is never re-applied to this aggregate. per_run_mem0_errors keeps
+           # each constituent's own split beside the sum, the same shape per_run_stale
+           # etc already use, so a reader can re-derive "was any ONE run over cap" too.
            "mem0_errors": {
                "supersession": sum(int((res.get("mem0_errors") or {}).get("supersession") or 0)
                                    for res in results),
                "control": sum(int((res.get("mem0_errors") or {}).get("control") or 0)
                               for res in results),
            },
+           "per_run_mem0_errors": [res.get("mem0_errors") for res in results],
            "seconds": round(sum(float(res.get("seconds") or 0) for res in results), 1),
            "config": results[0].get("config", "")}
     # K16(2): a constituent run's own invalidity has to survive pooling - an artifact this
@@ -1022,9 +1161,20 @@ def pool(engine_files: list[Path], other_files: list[Path] | None = None) -> dic
             "is the spread this note used to blame on the model."
             + (" ONE RUN: the agreement between runs is not shown here, and "
                "tools/register_supersession.py refuses this artifact." if len(runs) < 2 else ""))
+    # K18/P1(c): every mem0 figure computed twice - errors as failures (pairs_errors_as_failure,
+    # kept under "pairs" too, unchanged, for every existing pointer such as pairs[1].p_mcnemar)
+    # and errors as successes (pairs_errors_as_success) - published side by side. A pair naming
+    # mem0 whose SIGN or McNemar-vs-0.05 side disagrees between the two invalidates this whole
+    # pooled artifact (P2: "one invalid run inside a pool invalidates the whole pool" - the SAME
+    # rule extended to a disagreement discovered only at pool/pair time, never visible per-run).
+    pairs_failure, pairs_success, disagreement = _double_reading(first)
     out = {"arms": arms, "k": meta["k"], "llm": meta["llm"], "embedder": meta["embedder"],
            "dataset": ds, "pooled_nevertwice": pooled, "pooled_note": note,
-           "pairs": compare_arms(first), "pairs_per_engine_run": per_run_pairs}
+           "pairs": pairs_failure, "pairs_errors_as_failure": pairs_failure,
+           "pairs_errors_as_success": pairs_success, "pairs_per_engine_run": per_run_pairs}
+    if disagreement is not None:
+        out["valid"] = False
+        out["invalid_reason"] = disagreement
     if pooled_after is not None:
         # K8: the same fold over the second reading - the store after the sleep-time judge
         pooled_after["adjudication"] = [a.get("adjudication") for a in after_runs]
