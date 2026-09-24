@@ -140,11 +140,105 @@ def _closure_moved(commit: str, head: str, produced_by: list[str]) -> str | None
     return (f"its code differs from HEAD in {out.splitlines()[0]}" if out else None)
 
 
+#: K28 (the auditor's finding, 2026-09-24): nothing read `ollama_transport.mode` before this.
+#: `row_refusal` enforced P0-P0(f) via `"valid": false` and the measured_at/commit checks below,
+#: but a wall-clock TIMING claim restored from an artifact whose pacer ran in the default "pace"
+#: mode (or was never installed at all) bakes this module's own artificial spacing straight into
+#: the published number - exactly what PREREG-V2 P5 rev 5 exists to prevent: "'without the
+#: pacer' means the pacer installed in OBSERVE mode ... A timing run with no transport record
+#: cannot show the silent lexical fallback that makes a call faster, so P0(a) applies to timing
+#: runs exactly as to the others."
+#:
+#: Identified by the pointer's LAST segment - the same walk `resolve`/`row_refusal` already do,
+#: so this is a self-contained, printable rule rather than a hardcoded id list that silently
+#: drifts from the register the moment a claim is renamed or a new one registered. Measured
+#: against the full 861-claim register (2026-09-24): these four suffixes match exactly twelve
+#: claims - four `latency_bench.py` `measurements.<probe>.ms`, six `guard_bench.py`
+#: `arms.<arm>.ms_per_call`, one `k8_judge_eval.py` `pooled.seconds_per_pair`, one
+#: `embed_universal/serving_check.py` `seconds.served` - and zero non-timing pointers.
+_TIMING_POINTER_SUFFIXES = frozenset({"ms_per_call", "seconds_per_pair", "ms", "served"})
+
+
+def is_timing_pointer(pointer: str) -> bool:
+    """True iff `pointer`'s last segment names a wall-clock measurement.
+
+    See `_TIMING_POINTER_SUFFIXES`'s own docstring for the rule and exactly what it matches
+    today. A pointer this cannot walk (an empty string, e.g. a declared/derived claim with no
+    `pointer` at all) is never a timing pointer - `restore` never reaches `row_refusal` for those
+    anyway (no `raw`/`pointer` means "restore by hand", checked before this is ever called).
+    """
+    segs = [quoted or key for quoted, index, key in SEGMENT.findall(pointer or "") if not index]
+    return bool(segs) and segs[-1] in _TIMING_POINTER_SUFFIXES
+
+
+#: The two timing-producing commands P5 rev 5's own reasoning does not reach, named explicitly
+#: (the auditor's instruction: "so the rule does not silently exempt or silently block them")
+#: rather than exempted by some blanket "missing transport is fine" fallback:
+#:
+#: - `research/latency_bench.py` is "Stdlib only ... no model and no network" by its own module
+#:   docstring (`NEVERTWICE_CLOUD=none`, pinned so the seeded child process never dials Ollama
+#:   either) - it cannot produce the silent-lexical-fallback failure P0(a)/P5 exist to catch, and
+#:   `ollama_transport` will never appear in its artifact regardless of mode: neither this module
+#:   nor any other is ever installed there. Requiring `mode == "observe"` from it would refuse
+#:   its claims forever, for a risk the stand structurally cannot have.
+#: - `research/embed_universal/serving_check.py` dials Ollama directly (`_post`'s bare
+#:   `urllib.request.urlopen`, never routed through `_ollama_pacer` - confirmed by reading it,
+#:   2026-09-24) but a failed call RAISES straight out of the stand (no `except` around
+#:   `urlopen`) rather than substituting a faster, silently-wrong answer - there is no fallback
+#:   path for P0(a) to protect against here, unlike `_embed_http`'s own try/except.
+#:
+#: A THIRD timing-producing command is refused by default (not silently exempted) until it is
+#: named here too. `guard_bench.py`/`k8_judge_eval.py` are deliberately NOT in this set: both
+#: measure a stand whose recall silently falls back to lexical on a failed embed - exactly the
+#: case P0(a) exists to catch - and P5 rev 5 requires their `ms_per_call`/`seconds_per_pair`
+#: restored only from an artifact with `ollama_transport.mode == "observe"` on its path.
+_TIMING_TRANSPORT_EXEMPT_RAW = frozenset({
+    "research/latency_bench.json",
+    "research/embed_universal/heldout/serving_check.json",
+})
+
+
+def _timing_mode_refusal(nodes: list, raw: str | None) -> str | None:
+    """None when a timing claim's path proves it was measured under the pacer's observe mode
+    (or the claim is one of the two named exemptions above); otherwise the reason.
+
+    `nodes` is the SAME root-included, value-excluded walk `row_refusal` already built for its
+    own `valid`/`measured_at` checks, so `ollama_transport` is found wherever `attach()` actually
+    wrote it: the artifact root for a single-arm stand, or a per-arm sub-object for one that
+    installs once and runs several arms in a process (`research/head_to_head.py`'s own pattern).
+    EVERY container on the path is checked for `mode == "observe"` before refusing - "a
+    container on its pointer path (root included) carries ... 'observe'" is an existential OR
+    across the whole path, not "the first container found decides it": `attach()` in practice
+    never writes more than one `ollama_transport` per span, so this only matters if some OTHER,
+    unrelated container on the path happens to carry a stale one - which must not shadow a real
+    observe-mode record found deeper (or shallower) on the same path.
+    """
+    if raw in _TIMING_TRANSPORT_EXEMPT_RAW:
+        return None
+    found_modes = []
+    for n in nodes:
+        if not isinstance(n, dict):
+            continue
+        ot = n.get("ollama_transport")
+        if isinstance(ot, dict) and "mode" in ot:
+            mode = ot.get("mode")
+            if mode == "observe":
+                return None
+            found_modes.append(mode)
+    if found_modes:
+        return (f"a timing claim was measured with the pacer in {found_modes[0]!r} mode, not "
+                f"'observe' - PREREG-V2 P5 rev 5 requires ollama_transport.mode == 'observe' "
+                f"for a published timing number")
+    return ("a timing claim's artifact carries no ollama_transport record on its pointer path - "
+            "PREREG-V2 P5 rev 5 requires the pacer installed in observe mode for a published "
+            "timing number (or a named exemption, see _TIMING_TRANSPORT_EXEMPT_RAW)")
+
+
 def row_refusal(data, pointer: str, code_time: int, head: str | None = None,
-                produced_by: list[str] | None = None) -> str | None:
+                produced_by: list[str] | None = None, raw: str | None = None) -> str | None:
     """Would restoring THIS row put a number back that no valid run at HEAD produced?
 
-    Two ways it would, both found before the v2 campaign (2026-09-24):
+    Three ways it would, found before the v2 campaign (2026-09-24) unless noted:
     - a container on the pointer's path says `"valid": false` - the stands mark a run invalid
       when its transport bypassed the pacer or its embeds failed, and `restore` never read it;
     - the nearest `measured_at` on the path is older than HEAD. The file-level mtime check below
@@ -152,6 +246,8 @@ def row_refusal(data, pointer: str, code_time: int, head: str | None = None,
       measured weeks ago. Restore #1 put twelve such claims back as if re-measured
       (`h2h_pinned.{mem0_infer,langmem_full,amem_full}`, rows stamped 2026-09-08 at f0ed080,
       restored at 358fa75).
+    - (K28) the claim is a TIMING pointer (`is_timing_pointer`) and no container on the path
+      carries `ollama_transport.mode == "observe"` - see `_timing_mode_refusal`.
     Every container on the path is asked, the artifact root included; the deepest `measured_at`
     wins, because that is the stamp of the row the value was read from."""
     nodes, node = [data], data
@@ -187,6 +283,10 @@ def row_refusal(data, pointer: str, code_time: int, head: str | None = None,
             moved = _closure_moved(commit, head, list(produced_by or []))
             if moved:
                 return f"the row was measured at commit {commit[:7]}, and {moved}"
+    if is_timing_pointer(pointer):
+        refusal = _timing_mode_refusal(nodes[:-1], raw)
+        if refusal:
+            return refusal
     return None
 
 
@@ -434,7 +534,7 @@ def restore(manifest: dict, select: set[str] | None = None, head: str | None = N
         #: ...and so must the ROW, which a merging --save can carry over from an older run, and
         #: the row must not be one its own run marked invalid (see `row_refusal`).
         refusal = row_refusal(data, c["pointer"], code_time, head=head,
-                              produced_by=c.get("produced_by") or [])
+                              produced_by=c.get("produced_by") or [], raw=raw)
         if refusal:
             left.append(f"{c['id']}: {refusal}")
             continue

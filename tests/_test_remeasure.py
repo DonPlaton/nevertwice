@@ -210,6 +210,143 @@ try:
 finally:
     raw.unlink(missing_ok=True)
 
+
+print("\n- K28 (the auditor's finding, 2026-09-24): a TIMING claim needs the pacer in "
+      "observe mode to restore - PREREG-V2 P5 rev 5 -")
+#: `is_timing_pointer` on real pointer strings straight out of research/evidence_manifest.json
+#: (2026-09-24): guard_bench's `ms_per_call`, k8_judge_eval's `seconds_per_pair`, latency_bench's
+#: `measurements.<probe>.ms`, and embed_universal/serving_check's `seconds.served` - measured
+#: against the full register, these four suffixes match exactly twelve claims, zero collisions.
+check("is_timing_pointer recognises guard_bench's real ms_per_call pointer",
+      rm.is_timing_pointer("arms.guards_deterministic.ms_per_call"))
+check("is_timing_pointer recognises k8_judge_eval's real seconds_per_pair pointer",
+      rm.is_timing_pointer("pooled.seconds_per_pair"))
+check("is_timing_pointer recognises latency_bench's real .ms pointer",
+      rm.is_timing_pointer("measurements.cold_import.ms"))
+check("is_timing_pointer recognises serving_check's real seconds.served pointer",
+      rm.is_timing_pointer("seconds.served"))
+check("is_timing_pointer does NOT flag a non-timing pointer from the same artifact",
+      not rm.is_timing_pointer("arms.guards_deterministic.recall"))
+check("is_timing_pointer matches the LAST SEGMENT only, not a bare substring "
+      "('mistakes' contains 'ms' but is not it)",
+      not rm.is_timing_pointer("corpus.counts.mistakes"))
+
+#: `row_refusal` directly, on those same real pointers and real raw paths, with hand-built
+#: artifacts - never reading or writing the real committed research/*.json files, which this
+#: worktree does not own (other implementers' stands write them).
+_gb_raw = "research/results/guard_bench_v1.json"
+_kj_raw = "research/results/k8_judge_eval.json"
+_lat_raw = "research/latency_bench.json"
+_srv_raw = "research/embed_universal/heldout/serving_check.json"
+
+_gb_pace = {"arms": {"guards_deterministic": {"ms_per_call": 12.3}},
+           "ollama_transport": {"mode": "pace", "calls": 40}}
+_r = rm.row_refusal(_gb_pace, "arms.guards_deterministic.ms_per_call", 0, raw=_gb_raw)
+check("K28: a PACE-mode artifact refuses a timing claim (guard_bench's real pointer)",
+      _r is not None and "observe" in _r, str(_r))
+
+_gb_observe = {"arms": {"guards_deterministic": {"ms_per_call": 12.3}},
+              "ollama_transport": {"mode": "observe", "calls": 40}}
+_r = rm.row_refusal(_gb_observe, "arms.guards_deterministic.ms_per_call", 0, raw=_gb_raw)
+check("K28: an OBSERVE-mode artifact is allowed (same real pointer)", _r is None, str(_r))
+
+_kj_no_transport = {"pooled": {"seconds_per_pair": 0.8}}
+_r = rm.row_refusal(_kj_no_transport, "pooled.seconds_per_pair", 0, raw=_kj_raw)
+check("K28: no ollama_transport at all refuses a timing claim (k8_judge_eval's real "
+      "pointer, NOT a named exemption)", _r is not None and "no ollama_transport" in _r,
+      str(_r))
+
+#: the two named exemptions (latency_bench: stdlib-only, no network at all; serving_check: a
+#: failed call RAISES rather than silently falling back) - no transport, still restorable.
+_lat_data = {"measurements": {"cold_import": {"ms": 12.0}}}
+_r = rm.row_refusal(_lat_data, "measurements.cold_import.ms", 0, raw=_lat_raw)
+check("K28: latency_bench's real pointer is a NAMED exemption - restores with no "
+      "ollama_transport record", _r is None, str(_r))
+
+_srv_data = {"seconds": {"served": 1.2}}
+_r = rm.row_refusal(_srv_data, "seconds.served", 0, raw=_srv_raw)
+check("K28: serving_check's real pointer is a NAMED exemption - restores with no "
+      "ollama_transport record", _r is None, str(_r))
+
+#: a non-timing pointer from the SAME artifact is untouched by any of this, even with no
+#: transport recorded anywhere - K28 must not become a blanket "every artifact needs a
+#: transport" rule.
+_normal = {"arms": {"guards_deterministic": {"recall": 0.9}}}
+_r = rm.row_refusal(_normal, "arms.guards_deterministic.recall", 0, raw=_gb_raw)
+check("K28: a non-timing pointer is unaffected - no ollama_transport requirement at all",
+      _r is None, str(_r))
+
+#: multi-arm shape (research/head_to_head.py's own pattern: attach() per arm, not at the root)
+#: - a container ANYWHERE on the pointer's path with mode == 'observe' is enough, the root's
+#: own stale/unrelated record must not shadow the specific arm's real one.
+_h2h_nested_observe = {"ollama_transport": {"mode": "pace", "calls": 5},   # root: stale/unrelated
+                      "arms": {"nevertwice": {"ms_per_call": 4.1,
+                                              "ollama_transport": {"mode": "observe",
+                                                                   "calls": 12}}}}
+_r = rm.row_refusal(_h2h_nested_observe, "arms.nevertwice.ms_per_call", 0, raw=_gb_raw)
+check("K28: a nested per-arm ollama_transport.mode == 'observe' is enough, even if the "
+      "ROOT carries a stale/unrelated 'pace' record", _r is None, str(_r))
+
+print("\n- K28: and `restore()` itself refuses it, not merely the row_refusal helper -")
+_traw_rel = "tests/_tmp_remeasure_timing.json"
+_traw = ROOT / _traw_rel
+try:
+    _tman = {"claims": [{
+        "id": "guards.guards_deterministic.ms_per_call", "value": 12.3,
+        "printed": ["12.3 ms"], "unit": "ms",
+        "statement": "the deterministic guard costs 12.3 ms per call",
+        "cited_in": [], "cited_in_pending": ["docs/BENCHMARKS.md"],
+        "stale": "timed on a loaded machine; the re-run needs the idle window",
+        "withdrawn_on": "2026-09-23", "pending_remeasure": True,
+        "produced_by": ["sandbox_guard.py"],           # tracked and clean, same as the block above
+        "commit": "0" * 40, "raw": _traw_rel,
+        "pointer": "arms.guards_deterministic.ms_per_call"}]}
+
+    _traw.write_text(json.dumps({"arms": {"guards_deterministic": {"ms_per_call": 12.3}},
+                                 "ollama_transport": {"mode": "pace", "calls": 40}}),
+                     encoding="utf-8")
+    os.utime(_traw, None)
+    _m1 = copy.deepcopy(_tman)
+    _restored, _left, _ = rm.restore(_m1, head=HEAD)
+    check("K28: restore() refuses a pace-mode timing artifact (call site, not just the "
+          "helper)", _restored == [] and any("observe" in x for x in _left), str(_left))
+
+    _traw.write_text(json.dumps({"arms": {"guards_deterministic": {"ms_per_call": 11.9}},
+                                 "ollama_transport": {"mode": "observe", "calls": 40}}),
+                     encoding="utf-8")
+    os.utime(_traw, None)
+    _m2 = copy.deepcopy(_tman)
+    _restored, _left, _ = rm.restore(_m2, head=HEAD)
+    check("K28: restore() allows an observe-mode timing artifact",
+          _restored == ["guards.guards_deterministic.ms_per_call"], str(_left))
+    check("... and the value follows the artifact", _m2["claims"][0]["value"] == 11.9,
+          str(_m2["claims"][0]["value"]))
+
+    # mutation: the K28 check removed - `is_timing_pointer` stubbed to never recognise a
+    # timing pointer, so `row_refusal`'s own K28 branch never fires (the real function is
+    # looked up by name from row_refusal's own module globals at call time, so patching the
+    # module attribute reaches the check INSIDE row_refusal, not a copy of it).
+    _traw.write_text(json.dumps({"arms": {"guards_deterministic": {"ms_per_call": 12.3}},
+                                 "ollama_transport": {"mode": "pace", "calls": 40}}),
+                     encoding="utf-8")
+    os.utime(_traw, None)
+    _saved_itp = rm.is_timing_pointer
+    rm.is_timing_pointer = lambda p: False
+    try:
+        _m3 = copy.deepcopy(_tman)
+        _restored, _left, _ = rm.restore(_m3, head=HEAD)
+        check("mutation 'K28 check removed (is_timing_pointer stubbed False)': the SAME "
+              "pace-mode timing artifact now WRONGLY restores (would FAIL the pace-mode "
+              "refusal check above)",
+              _restored == ["guards.guards_deterministic.ms_per_call"], str(_left))
+    finally:
+        rm.is_timing_pointer = _saved_itp
+    check("is_timing_pointer is restored to the real function",
+          rm.is_timing_pointer is _saved_itp)
+finally:
+    _traw.unlink(missing_ok=True)
+
+
 print("\n- a positional pointer must still address the pair the claim is about -")
 #: Measured, not supposed. Running the two supersession commands exactly as the register records
 #: them produced three arms instead of seven - `--arms nevertwice,naive` cannot make the mem0 and
