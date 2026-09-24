@@ -140,7 +140,7 @@ print("- the endpoint is recognised however the URL was built -")
 #: pure arithmetic. Found by a reviewing agent over the shift diff, 2026-09-22.
 _tracked = subprocess.run(["git", "ls-files", "*.py"], cwd=T.ROOT, capture_output=True,
                           text=True, encoding="utf-8").stdout.split()
-_src = [f for f in _tracked if T.MODEL_CALL.search(
+_src = [f for f in _tracked if f not in T.CLOSURE_EXCLUDED_FILES and T.MODEL_CALL.search(
         (T.ROOT / f).read_text(encoding="utf-8", errors="replace"))]
 #: Sixteen, of which eleven CALL the endpoint and five only quote it: this suite, the tool
 #: itself, `_test_audit_fixes.py`, `tests/research/_test_ollama_pacer.py` (R-v2-ports' T7
@@ -151,6 +151,11 @@ _src = [f for f in _tracked if T.MODEL_CALL.search(
 #: deterministic group, which is the safe side for a campaign plan. The count is pinned so
 #: that narrowing the rule again reddens here instead of quietly returning it to the one
 #: file it used to see.
+#: K33 (item 9D, 2026-09-24): `research/_ollama_pacer.py` NOW also matches MODEL_CALL (its own
+#: bounded LLM retry names /api/generate and /api/chat), a SEVENTEENTH match by raw text - kept
+#: out of this listing via `T.CLOSURE_EXCLUDED_FILES`, the same exact-path skip `triage()`'s own
+#: closure walk uses, so the population this check pins stays the files whose mention is
+#: evidence a CALLER (not shared transport) touches a model.
 check("sixteen tracked sources name a generation endpoint, so the rule has a population",
       len(_src) == 16, str(len(_src)))
 check("and the generators it could not see before are among them",
@@ -161,6 +166,33 @@ check("a corpus generator that interpolates the URL is seen as calling a model",
 check("and it is not mistaken for a stand that writes notes", not _door)
 check("a path that merely starts the same way is not an endpoint",
       not T.MODEL_CALL.search("/api/chatter"))
+
+print("")
+print("- K33 (item 9D, 2026-09-24): the pacer is shared transport, not a door or a caller - "
+      "excluded from the closure walk the same reasoning already excludes nevertwice/ -")
+check("research/_ollama_pacer.py is excluded, by its exact path (never a prefix or pattern)",
+      T.CLOSURE_EXCLUDED_FILES == frozenset({"research/_ollama_pacer.py"}),
+      str(T.CLOSURE_EXCLUDED_FILES))
+_pacer_only_claim = {"pointer": "arms.nevertwice.both_correct_rate",
+                     "produced_by": ["research/_ollama_pacer.py"],
+                     "command": "python research/asof_bench.py --save"}
+check("a claim whose closure holds the pacer (and nothing else that calls a model or a door) "
+      "stays deterministic", T.triage(_pacer_only_claim)[0] == "A",
+      str(T.triage(_pacer_only_claim)))
+
+# mutation: the exclusion removed - the SAME claim now WRONGLY reads noisy, the shape of the
+# 226-claim A->D regression this skip exists to prevent (measured 2026-09-24, before the skip:
+# A 271->45, D 335->561, own/comp split 211/60->45/0).
+_saved_excluded = T.CLOSURE_EXCLUDED_FILES
+T.CLOSURE_EXCLUDED_FILES = frozenset()
+try:
+    check("mutation 'pacer exclusion removed': the SAME claim now WRONGLY reads noisy "
+          "(would FAIL the deterministic check above)",
+          T.triage(_pacer_only_claim)[0] != "A", str(T.triage(_pacer_only_claim)))
+finally:
+    T.CLOSURE_EXCLUDED_FILES = _saved_excluded
+check("CLOSURE_EXCLUDED_FILES is restored to the real set",
+      T.CLOSURE_EXCLUDED_FILES == _saved_excluded)
 
 
 print("")

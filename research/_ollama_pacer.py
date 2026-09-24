@@ -69,6 +69,19 @@ PACE_S = float(os.environ.get("NEVERTWICE_OLLAMA_PACE_S", "0.125"))
 RETRY_INTERVAL_S = 15.0
 MAX_RETRIES = 16
 
+#: K33 (the auditor's finding, 2026-09-24): a failed LLM call (a fake Ollama's /api/generate
+#: answering 500 "model runner has unexpectedly stopped") was scored as the SYSTEM's own
+#: failure - never counted, never invalidated - because failed_outcomes only ever asked about
+#: embed traffic. A SEPARATE, shorter retry policy from the port-exhaustion one above: at most
+#: 2 retries, 15s then 30s apart (not a uniform interval), PACE mode only (never observe - see
+#: `_llm_retryable`'s callers), because the engine's OWN retry logic (nevertwice/
+#: consolidate_memory.py's own /api/generate hang-handling) already recovers from a transient
+#: model-runner hiccup or a timeout/reset/refused-class transport failure, and counting one as
+#: a failure the pacer never gave the engine a chance to recover from would trigger a needless
+#: P2 re-run for something that was never actually lost.
+LLM_RETRY_INTERVALS_S = (15.0, 30.0)
+LLM_MAX_RETRIES = len(LLM_RETRY_INTERVALS_S)
+
 #: The two Windows socket messages this module treats as "the port budget, not the
 #: endpoint, refused this call". Matched as an exact phrase, never a bare substring like
 #: "buffer" - a model that legitimately refuses a too-long prompt also says "buffer" in
@@ -145,7 +158,8 @@ _CONCURRENT_STATE = {"n": 0}
 _COUNTERS = {"calls": 0, "pace_sleep_s": 0.0, "retries": 0, "retry_sleep_s": 0.0, "gave_up": 0,
             "bypass_requests": 0, "bypass_aiohttp": 0,
             "nested_requests": 0, "nested_aiohttp": 0, "max_inflight": 0,
-            "max_concurrent_paced": 0}
+            "max_concurrent_paced": 0,
+            "llm_retries": 0, "llm_retry_sleep_s": 0.0}
 _CALL_MS: list = []
 #: F1 (.loop/PREREG-V2-2026-09-24.md, P0(a)): a genuine, non-retried (or retried-and-
 #: gave-up) failure on an EMBED endpoint - counted separately from `_COUNTERS["gave_up"]`
@@ -155,6 +169,13 @@ _CALL_MS: list = []
 #: or exception class name -> count), never scalars, so they live here rather than in
 #: `_COUNTERS` (whose own `_reset_for_tests` assumes every value is an int or a float).
 _EMBED_FAILURES = {"by_status": {}, "by_exception_type": {}, "gave_up": 0}
+#: K33 (the auditor's finding, 2026-09-24): the SAME shape as `_EMBED_FAILURES`, for the LLM
+#: generation endpoints (`_is_llm_path`) instead of the embed ones - a SEPARATE bucket so the
+#: embed rule's own record is unchanged. `gave_up` here means the SAME thing it means for
+#: embed: gave up on the PORT-EXHAUSTION retry above, never on the K33 5xx/transport-exception
+#: retry below (whose own exhaustion falls through to `by_status`/`by_exception_type` instead,
+#: exactly the way a non-port-exhaustion embed failure already does).
+_LLM_FAILURES = {"by_status": {}, "by_exception_type": {}, "gave_up": 0}
 #: R1 (the auditor's finding, 2026-09-24): a probe or a stand can be reachable from MORE
 #: than one recognised Ollama host at once (this dev machine runs a real Ollama on the
 #: default 127.0.0.1:11434 AND a fake one on a random port during
@@ -255,6 +276,31 @@ def _is_embed_path(url: str) -> bool:
         return False
     path = path.rstrip("/")
     return any(path.endswith(p) for p in _EMBED_PATHS)
+
+
+#: K33: the LLM generation endpoints a stand can reach on the LOCAL Ollama host - its native
+#: surface (`/api/generate` - k8_judge_eval.py, token_ab.py's own OLLAMA_URL default; `/api/chat`
+#: - litellm's `ollama_chat/...` provider per _ollama_symmetry_probe.py's own comment on
+#: 623a1df ["ollama_chat/... never calls /api/generate at all"], frontier_eval.py and
+#: gen_code_sessions.py both post here directly) and the OpenAI-compatible surface Ollama ALSO
+#: serves (`/v1/chat/completions`, `/v1/completions` - what a client library pointed at Ollama
+#: through its OpenAI-compatible shim, rather than its native one, would hit). Never the embed
+#: endpoints above - the two sets are disjoint by construction, so a call is counted on at most
+#: one of `_is_embed_path`/`_is_llm_path`.
+_LLM_PATHS = ("/api/generate", "/api/chat", "/v1/chat/completions", "/v1/completions")
+
+
+def _is_llm_path(url: str) -> bool:
+    """True iff `url`'s path names an LLM generation endpoint (K33, the auditor's finding,
+    2026-09-24): a failed extraction/generation call was scored as the SYSTEM's own failure,
+    with no record anywhere - the pacer only ever asked this question of embed traffic.
+    Matched loosely (a trailing slash, a query string), exactly like `_is_embed_path`."""
+    try:
+        path = urllib.parse.urlsplit(url).path
+    except Exception:                                                # noqa: BLE001
+        return False
+    path = path.rstrip("/")
+    return any(path.endswith(p) for p in _LLM_PATHS)
 
 
 # ── classification: the one signature this module ever retries ─────────────────────────
@@ -368,6 +414,88 @@ def _record_embed_failure(exc) -> None:
                 _EMBED_FAILURES["by_exception_type"].get(name, 0) + 1)
 
 
+def _llm_status_of(obj) -> int | None:
+    """The same status-extraction `_record_embed_failure` already does, factored out so
+    `_llm_retryable` can ask "is this a 5xx" without duplicating it. Works on an exception
+    (`.code`, `.status_code`, `.response.status_code`) or a bare `httpx.Response` (`.status_code`
+    alone - K33's own F1b-style gap, an httpx 5xx that was never raised)."""
+    status = getattr(obj, "code", None)
+    if status is None:
+        status = getattr(obj, "status_code", None)
+    if status is None:
+        resp = getattr(obj, "response", None)
+        status = getattr(resp, "status_code", None)
+    return status
+
+
+def _is_llm_retryable_transport_exc(obj) -> bool:
+    """K33 (the coordinator's scope addition, 2026-09-24): True iff `obj` (or its wrapped
+    cause/context/reason - the same unwrapping `_winerror_of` already does for a port-exhaustion
+    WinError, plus `urllib.error.URLError.reason`) is a TIMEOUT / CONNECTION-RESET /
+    CONNECTION-REFUSED class transport failure - the class of exception the engine's OWN retry
+    logic (nevertwice/consolidate_memory.py's own /api/generate hang-handling) already recovers
+    from, so leaving the pacer blind to it would count a failure the caller never actually sees.
+    Never a bare "the call raised SOMETHING", which would retry a programming error as if it
+    were transient; never an HTTP status (`_llm_status_of` is asked FIRST by `_llm_retryable`,
+    and a status-bearing object never matches these types anyway)."""
+    candidates = (obj, getattr(obj, "reason", None), getattr(obj, "__cause__", None),
+                 getattr(obj, "__context__", None))
+    types: tuple = (TimeoutError, ConnectionResetError, ConnectionRefusedError)
+    try:
+        import httpx
+        types = types + (httpx.TimeoutException, httpx.ConnectError)
+    except ImportError:
+        pass
+    return any(isinstance(c, types) for c in candidates if c is not None)
+
+
+def _llm_retryable(exc) -> bool:
+    """K33: True iff `exc` (an exception this module caught, or a bare httpx.Response it did
+    not - both duck-typed identically via `_llm_status_of`) is worth this module's OWN bounded
+    LLM retry - a 5xx HTTP status, or (the coordinator's scope addition) a timeout/
+    connection-reset/connection-refused class transport exception. A STATUS is checked first and
+    decides it ALONE: a 4xx is NEVER retried (returns False immediately, never falling through
+    to the transport-exception check, which a status-bearing object would not match anyway)."""
+    status = _llm_status_of(exc)
+    if status is not None:
+        return 500 <= status < 600
+    return _is_llm_retryable_transport_exc(exc)
+
+
+def _llm_retry_allowed() -> bool:
+    """PACE mode only, never observe (K33) - mirrors `_effective_max_retries`'s own
+    `_MODE`-gating for the port-exhaustion retry, factored out the same way so a test can
+    monkeypatch this ONE seam to simulate "the mode guard was removed" without touching
+    `_MODE` itself or reimplementing the retry loop around it."""
+    return _MODE == "pace"
+
+
+def _record_llm_retry(wait: float) -> None:
+    """K33: bump `llm_retries`/`llm_retry_sleep_s` - factored out (the same reasoning as
+    `_llm_retry_allowed`) so a test can monkeypatch this ONE seam to simulate "the retry ran
+    but was never counted" without touching the retry itself (the sleep+continue stays in
+    `_run_paced`/`_run_paced_async`, unaffected by this mutation)."""
+    with _LOCK:
+        _COUNTERS["llm_retries"] += 1
+        _COUNTERS["llm_retry_sleep_s"] += wait
+
+
+def _record_llm_failure(exc) -> None:
+    """K33: the LLM-endpoint counterpart of `_record_embed_failure` - same shape, same
+    status-then-exception-type rule, a SEPARATE dict (`_LLM_FAILURES`) so the embed rule's own
+    record is unchanged. Called both when a failure was never retryable at all (a 4xx, or a
+    transport exception outside the timeout/reset/refused class) and when the bounded K33 retry
+    above was exhausted without recovering."""
+    status = _llm_status_of(exc)
+    with _LOCK:
+        if status is not None:
+            _LLM_FAILURES["by_status"][status] = _LLM_FAILURES["by_status"].get(status, 0) + 1
+        else:
+            name = type(exc).__name__
+            _LLM_FAILURES["by_exception_type"][name] = (
+                _LLM_FAILURES["by_exception_type"].get(name, 0) + 1)
+
+
 # ── pacing: one process-wide schedule, reserved under the lock, slept outside it ────────
 
 def _reserve_slot() -> float:
@@ -458,7 +586,8 @@ def _concurrent_exit() -> None:
         _CONCURRENT_STATE["n"] -= 1
 
 
-def _run_paced(call: Callable, host_key: tuple | None = None, is_embed: bool = False):
+def _run_paced(call: Callable, host_key: tuple | None = None, is_embed: bool = False,
+               is_llm: bool = False):
     """`call()` to the Ollama host, paced and retried in place. `call` raises on any
     failure worth classifying (a plain function return is success); `call_ms` records
     only a SUCCESSFUL attempt's wall time, never a failed attempt's, and never a sleep -
@@ -466,7 +595,10 @@ def _run_paced(call: Callable, host_key: tuple | None = None, is_embed: bool = F
     is tallied in `_CALLS_BY_HOST` alongside the aggregate `calls` counter. `is_embed`
     (F1): when the call ultimately fails - never classified as port-exhaustion, or
     retried and given up on - and was to an embed endpoint, the failure is tallied into
-    `_EMBED_FAILURES` (never for a call this function itself successfully retried past)."""
+    `_EMBED_FAILURES` (never for a call this function itself successfully retried past).
+    `is_llm` (K33): the same, into `_LLM_FAILURES`, AFTER a bounded LLM-specific retry
+    (`_llm_retryable`, `LLM_RETRY_INTERVALS_S`) has had its own chance - PACE mode only,
+    never observe (`_MODE` read fresh on every attempt, guarding the retry branch below)."""
     _concurrent_enter()                 # K14: before _pace() - the WHOLE operation
     try:
         _pace()
@@ -475,6 +607,7 @@ def _run_paced(call: Callable, host_key: tuple | None = None, is_embed: bool = F
             if host_key is not None:
                 _CALLS_BY_HOST[host_key] = _CALLS_BY_HOST.get(host_key, 0) + 1
         attempt = 0
+        llm_attempt = 0
         while True:
             _inflight_enter()
             t0 = _now()
@@ -491,14 +624,29 @@ def _run_paced(call: Callable, host_key: tuple | None = None, is_embed: bool = F
                     with _LOCK:
                         _COUNTERS["retry_sleep_s"] += RETRY_INTERVAL_S
                     continue
+                #: K33: a SEPARATE bounded retry, PACE mode only, never for a failure the
+                #: port-exhaustion classifier already claimed (`not retry`).
+                if (not retry and is_llm and _llm_retry_allowed()
+                        and llm_attempt < LLM_MAX_RETRIES and _llm_retryable(exc)):
+                    wait = LLM_RETRY_INTERVALS_S[llm_attempt]
+                    llm_attempt += 1
+                    _record_llm_retry(wait)
+                    _sleep(wait)
+                    continue
                 if retry:
                     with _LOCK:
                         _COUNTERS["gave_up"] += 1
                     if is_embed:
                         with _LOCK:
                             _EMBED_FAILURES["gave_up"] += 1
-                elif is_embed:
-                    _record_embed_failure(exc)
+                    if is_llm:
+                        with _LOCK:
+                            _LLM_FAILURES["gave_up"] += 1
+                else:
+                    if is_embed:
+                        _record_embed_failure(exc)
+                    if is_llm:
+                        _record_llm_failure(exc)
                 raise
             else:
                 _inflight_exit()
@@ -510,7 +658,9 @@ def _run_paced(call: Callable, host_key: tuple | None = None, is_embed: bool = F
 
 
 async def _run_paced_async(call: Callable, host_key: tuple | None = None,
-                           is_embed: bool = False):
+                           is_embed: bool = False, is_llm: bool = False):
+    """Async counterpart of `_run_paced` - identical policy, `await`ed sleeps. See
+    `_run_paced`'s own docstring for `is_embed`/`is_llm` (K33)."""
     _concurrent_enter()                 # K14: before _pace() - the WHOLE operation
     try:
         await _pace_async()
@@ -519,6 +669,7 @@ async def _run_paced_async(call: Callable, host_key: tuple | None = None,
             if host_key is not None:
                 _CALLS_BY_HOST[host_key] = _CALLS_BY_HOST.get(host_key, 0) + 1
         attempt = 0
+        llm_attempt = 0
         while True:
             _inflight_enter()
             t0 = _now()
@@ -535,14 +686,29 @@ async def _run_paced_async(call: Callable, host_key: tuple | None = None,
                     with _LOCK:
                         _COUNTERS["retry_sleep_s"] += RETRY_INTERVAL_S
                     continue
+                #: K33: a SEPARATE bounded retry, PACE mode only, never for a failure the
+                #: port-exhaustion classifier already claimed (`not retry`).
+                if (not retry and is_llm and _llm_retry_allowed()
+                        and llm_attempt < LLM_MAX_RETRIES and _llm_retryable(exc)):
+                    wait = LLM_RETRY_INTERVALS_S[llm_attempt]
+                    llm_attempt += 1
+                    _record_llm_retry(wait)
+                    await _async_sleep(wait)
+                    continue
                 if retry:
                     with _LOCK:
                         _COUNTERS["gave_up"] += 1
                     if is_embed:
                         with _LOCK:
                             _EMBED_FAILURES["gave_up"] += 1
-                elif is_embed:
-                    _record_embed_failure(exc)
+                    if is_llm:
+                        with _LOCK:
+                            _LLM_FAILURES["gave_up"] += 1
+                else:
+                    if is_embed:
+                        _record_embed_failure(exc)
+                    if is_llm:
+                        _record_llm_failure(exc)
                 raise
             else:
                 _inflight_exit()
@@ -563,7 +729,8 @@ def _paced_urlopen(*args, **kwargs):
     if not is_ollama_host(host, port):
         return orig(*args, **kwargs)
     return _run_paced(lambda: _mark_paced(lambda: orig(*args, **kwargs)),
-                      host_key=(host, port), is_embed=_is_embed_path(url))
+                      host_key=(host, port), is_embed=_is_embed_path(url),
+                      is_llm=_is_llm_path(url))
 
 
 # ── httpx.Client.send / httpx.AsyncClient.send ───────────────────────────────────────
@@ -582,6 +749,19 @@ class _PortExhaustionResponse(Exception):
         self.status_code = response.status_code
         self.text = response.text
         super().__init__(f"ollama port exhaustion: HTTP {response.status_code}")
+
+
+class _LLMRetryableResponse(Exception):
+    """K33: the LLM counterpart of `_PortExhaustionResponse` - routes an httpx 5xx RESPONSE on
+    an LLM endpoint, in PACE mode only, through the same exception-driven retry loop (httpx
+    does not raise on a non-2xx status by itself). Carries the same `.status_code` shape
+    `_llm_status_of` reads. `.response` is the ORIGINAL httpx.Response, handed back to the
+    caller once retries are exhausted, restoring httpx's own contract."""
+
+    def __init__(self, response):
+        self.response = response
+        self.status_code = response.status_code
+        super().__init__(f"llm 5xx retry: HTTP {response.status_code}")
 
 
 def _classify_httpx_response(response, *, stream: bool) -> bool:
@@ -622,6 +802,16 @@ def _maybe_record_embed_response_failure(response, *, is_embed: bool) -> None:
         _record_embed_failure(response)
 
 
+def _maybe_record_llm_response_failure(response, *, is_llm: bool) -> None:
+    """K33's F1b/F1c-equivalent for LLM endpoints: httpx does NOT raise on a non-2xx response by
+    itself, so a 4xx (never retried) or a 5xx that arrived outside PACE mode must still be
+    tallied here - a 5xx IN pace mode that this call's own retry routed through
+    `_LLMRetryableResponse` never reaches this function at all (that path raises past it).
+    Reads only `.status_code`, safe on a streamed response too."""
+    if is_llm and response.status_code >= 400:
+        _record_llm_failure(response)
+
+
 def _paced_httpx_send(self, request, **kwargs):
     import httpx  # noqa: PLC0415 - only reachable when httpx installed this got patched
     host, port = (request.url.host or "").lower(), (
@@ -631,17 +821,25 @@ def _paced_httpx_send(self, request, **kwargs):
         return orig(self, request, **kwargs)
     stream = bool(kwargs.get("stream", False))
     is_embed = _is_embed_path(str(request.url))
+    is_llm = _is_llm_path(str(request.url))
 
     def _attempt():
         response = _mark_paced(lambda: orig(self, request, **kwargs))
         if _classify_httpx_response(response, stream=stream):
             raise _PortExhaustionResponse(response)
+        #: K33: httpx does not raise on a 5xx by itself - route it through the SAME
+        #: exception-driven retry loop `_PortExhaustionResponse` already uses, PACE mode only.
+        if is_llm and _llm_retry_allowed() and _llm_retryable(response):
+            raise _LLMRetryableResponse(response)
         _maybe_record_embed_response_failure(response, is_embed=is_embed)  # F1b
+        _maybe_record_llm_response_failure(response, is_llm=is_llm)        # K33
         return response
     try:
-        return _run_paced(_attempt, host_key=(host, port), is_embed=is_embed)
+        return _run_paced(_attempt, host_key=(host, port), is_embed=is_embed, is_llm=is_llm)
     except _PortExhaustionResponse as marker:
         return marker.response          # retries exhausted; hand back the last 400 as-is
+    except _LLMRetryableResponse as marker:
+        return marker.response          # K33: retries exhausted; hand back the last 5xx as-is
     except httpx.HTTPError:
         raise
 
@@ -654,16 +852,23 @@ async def _paced_httpx_async_send(self, request, **kwargs):
         return await orig(self, request, **kwargs)
     stream = bool(kwargs.get("stream", False))
     is_embed = _is_embed_path(str(request.url))
+    is_llm = _is_llm_path(str(request.url))
 
     async def _attempt():
         response = await _mark_paced_async(lambda: orig(self, request, **kwargs))
         if _classify_httpx_response(response, stream=stream):
             raise _PortExhaustionResponse(response)
+        if is_llm and _llm_retry_allowed() and _llm_retryable(response):
+            raise _LLMRetryableResponse(response)
         _maybe_record_embed_response_failure(response, is_embed=is_embed)  # F1b
+        _maybe_record_llm_response_failure(response, is_llm=is_llm)        # K33
         return response
     try:
-        return await _run_paced_async(_attempt, host_key=(host, port), is_embed=is_embed)
+        return await _run_paced_async(_attempt, host_key=(host, port), is_embed=is_embed,
+                                      is_llm=is_llm)
     except _PortExhaustionResponse as marker:
+        return marker.response
+    except _LLMRetryableResponse as marker:
         return marker.response
 
 
@@ -832,11 +1037,16 @@ def snapshot() -> dict:
                 "nested_aiohttp": _COUNTERS["nested_aiohttp"],
                 "max_inflight": _COUNTERS["max_inflight"],
                 "max_concurrent_paced": _COUNTERS["max_concurrent_paced"],
+                "llm_retries": _COUNTERS["llm_retries"],
+                "llm_retry_sleep_s": _COUNTERS["llm_retry_sleep_s"],
                 "_call_ms_len": len(_CALL_MS),
                 "_calls_by_host": dict(_CALLS_BY_HOST),
                 "_embed_failures": {"by_status": dict(_EMBED_FAILURES["by_status"]),
                                     "by_exception_type": dict(_EMBED_FAILURES["by_exception_type"]),
-                                    "gave_up": _EMBED_FAILURES["gave_up"]}}
+                                    "gave_up": _EMBED_FAILURES["gave_up"]},
+                "_llm_failures": {"by_status": dict(_LLM_FAILURES["by_status"]),
+                                  "by_exception_type": dict(_LLM_FAILURES["by_exception_type"]),
+                                  "gave_up": _LLM_FAILURES["gave_up"]}}
 
 
 def calls_by_host(since: dict | None = None) -> dict:
@@ -885,9 +1095,12 @@ def attach(out: dict, *, since: dict | None = None) -> None:
     run is invalid for every reason this call found, not just the last one checked."""
     base = since or {"calls": 0, "pace_sleep_s": 0.0, "retries": 0, "retry_sleep_s": 0.0,
                      "gave_up": 0, "bypass_requests": 0, "bypass_aiohttp": 0,
-                     "nested_requests": 0, "nested_aiohttp": 0, "_call_ms_len": 0}
+                     "nested_requests": 0, "nested_aiohttp": 0, "_call_ms_len": 0,
+                     "llm_retries": 0, "llm_retry_sleep_s": 0.0}
     base_ef = base.get("_embed_failures") or {"by_status": {}, "by_exception_type": {},
                                               "gave_up": 0}
+    base_lf = base.get("_llm_failures") or {"by_status": {}, "by_exception_type": {},
+                                            "gave_up": 0}
     with _LOCK:
         calls = _COUNTERS["calls"] - base["calls"]
         bypass_requests = _COUNTERS["bypass_requests"] - base.get("bypass_requests", 0)
@@ -898,14 +1111,23 @@ def attach(out: dict, *, since: dict | None = None) -> None:
         failed_by_exc = _dict_delta(_EMBED_FAILURES["by_exception_type"],
                                     base_ef["by_exception_type"])
         failed_gave_up = _EMBED_FAILURES["gave_up"] - base_ef["gave_up"]
+        #: K33: the LLM-endpoint counterparts, computed the same way.
+        failed_by_status_llm = _dict_delta(_LLM_FAILURES["by_status"], base_lf["by_status"])
+        failed_by_exc_llm = _dict_delta(_LLM_FAILURES["by_exception_type"],
+                                        base_lf["by_exception_type"])
+        failed_gave_up_llm = _LLM_FAILURES["gave_up"] - base_lf["gave_up"]
         if (calls <= 0 and bypass_requests <= 0 and bypass_aiohttp <= 0
                 and nested_requests <= 0 and nested_aiohttp <= 0
-                and not failed_by_status and not failed_by_exc and failed_gave_up <= 0):
+                and not failed_by_status and not failed_by_exc and failed_gave_up <= 0
+                and not failed_by_status_llm and not failed_by_exc_llm
+                and failed_gave_up_llm <= 0):
             return
         pace_sleep_s = _COUNTERS["pace_sleep_s"] - base["pace_sleep_s"]
         retries = _COUNTERS["retries"] - base["retries"]
         retry_sleep_s = _COUNTERS["retry_sleep_s"] - base["retry_sleep_s"]
         gave_up = _COUNTERS["gave_up"] - base["gave_up"]
+        llm_retries = _COUNTERS["llm_retries"] - base.get("llm_retries", 0)
+        llm_retry_sleep_s = _COUNTERS["llm_retry_sleep_s"] - base.get("llm_retry_sleep_s", 0.0)
         samples = list(_CALL_MS[base["_call_ms_len"]:])
         #: R2/K14: the PROCESS-WIDE peak, read here rather than as a delta - a monotonic
         #: HIGH-WATER MARK, not a sum, and a delta of two peaks answers "did a NEW record
@@ -936,6 +1158,13 @@ def attach(out: dict, *, since: dict | None = None) -> None:
         "pace_excluded_exact": max_concurrent_paced <= 1,
         "failed_outcomes": {"by_status": failed_by_status, "by_exception_type": failed_by_exc,
                             "gave_up": failed_gave_up},
+        #: K33: llm_retry_sleep_s is excluded from call_ms the same way pace_sleep_s/
+        #: retry_sleep_s already are - t0 is reset fresh after every sleep in _run_paced/
+        #: _run_paced_async, so only a successful attempt's own wall time is ever appended.
+        "llm_retries": llm_retries, "llm_retry_sleep_s": round(llm_retry_sleep_s, 3),
+        "failed_outcomes_llm": {"by_status": failed_by_status_llm,
+                                "by_exception_type": failed_by_exc_llm,
+                                "gave_up": failed_gave_up_llm},
     }
     reasons = []
     if bypass_requests > 0 or bypass_aiohttp > 0:
@@ -952,6 +1181,14 @@ def attach(out: dict, *, since: dict | None = None) -> None:
             f"{n_failed} embed call(s) failed (by_status={failed_by_status}, "
             f"by_exception_type={failed_by_exc}, gave_up={failed_gave_up}) - "
             f"a note or query may have silently fallen back to lexical recall")
+    if failed_by_status_llm or failed_by_exc_llm or failed_gave_up_llm > 0:
+        n_failed_llm = (sum(failed_by_status_llm.values()) + sum(failed_by_exc_llm.values())
+                       + failed_gave_up_llm)
+        reasons.append(
+            f"{n_failed_llm} llm call(s) failed (by_status={failed_by_status_llm}, "
+            f"by_exception_type={failed_by_exc_llm}, gave_up={failed_gave_up_llm}) - "
+            f"K33: a failed extraction/generation call is scored as the system's own "
+            f"failure, with no record, unless this fires")
     if reasons:
         out["valid"] = False
         out["invalid_reason"] = "; ".join(reasons)
@@ -972,3 +1209,6 @@ def _reset_for_tests() -> None:
         _EMBED_FAILURES["by_status"].clear()
         _EMBED_FAILURES["by_exception_type"].clear()
         _EMBED_FAILURES["gave_up"] = 0
+        _LLM_FAILURES["by_status"].clear()
+        _LLM_FAILURES["by_exception_type"].clear()
+        _LLM_FAILURES["gave_up"] = 0
