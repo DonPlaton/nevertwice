@@ -51,6 +51,56 @@ check("the numbers are kept under `refused`, not thrown away",
 check("the provenance of the run survives",
       out["version"] == "1.2.3" and out["measured_at"]["commit"] == "abc" and out["label"] == "Some product")
 
+# R-v2-ports: a refused row still carries what the pacer/coverage checks recorded - a run
+# that ALSO bypassed the pacer, or under-observed a competitor's own traffic, is worth
+# knowing about even (especially) on a row this stand is about to refuse to score.
+print("\n- a refused row still carries the pacer's own findings about that run -")
+flagged = row(**{f"recall@{k}": 0.0 for k in h2h.KS}, mrr=0.0,
+             ollama_transport={"calls": 3, "bypass_calls": {"requests": 1, "aiohttp": 0}},
+             valid=False, invalid_reason="bypassed the pacer via requests: 1 request(s)",
+             coverage="unobserved")
+out2 = h2h.accept("mem0", flagged)
+check("ollama_transport survives onto the refused row",
+      out2.get("ollama_transport") == flagged["ollama_transport"], str(out2))
+check("valid/invalid_reason survive onto the refused row",
+      out2.get("valid") is False and out2.get("invalid_reason") == flagged["invalid_reason"],
+      str(out2))
+check("coverage survives onto the refused row", out2.get("coverage") == "unobserved", str(out2))
+check("the raw recall numbers still moved under `refused`, not kept at the top level",
+      "recall@10" not in out2 and out2["refused"]["recall@10"] == 0.0, str(out2))
+
+print("\n- coverage_verdict(): a competitor arm under-observed by the pacer says so -")
+under = {"ingested_items": 10, "ollama_transport": {"calls": 4}}
+h2h.coverage_verdict("mem0", under)
+check("fewer paced calls than ingested items -> coverage='unobserved'",
+      under.get("coverage") == "unobserved", str(under))
+full = {"ingested_items": 10, "ollama_transport": {"calls": 10}}
+h2h.coverage_verdict("mem0", full)
+check("calls == ingested items -> no coverage key at all",
+      "coverage" not in full, str(full))
+over = {"ingested_items": 10, "ollama_transport": {"calls": 12}}
+h2h.coverage_verdict("mem0", over)
+check("MORE calls than ingested items (batching, retries) -> no coverage key",
+      "coverage" not in over, str(over))
+check("our OWN arm is never flagged, even with the same shortfall",
+      "coverage" not in h2h.coverage_verdict(
+          "nevertwice", {"ingested_items": 10, "ollama_transport": {"calls": 4}}), "")
+check("a blocked arm is never flagged",
+      "coverage" not in h2h.coverage_verdict(
+          "mem0", {"blocked": "x", "ingested_items": 10,
+                  "ollama_transport": {"calls": 4}}), "")
+check("no ingested_items recorded at all -> nothing to report, no coverage key",
+      "coverage" not in h2h.coverage_verdict("mem0", {"ollama_transport": {"calls": 0}}), "")
+
+print("\n- _pace_excluded(): a phase's own elapsed time, minus the pacer's sleep in it -")
+before_snap = {"pace_sleep_s": 1.0, "retry_sleep_s": 0.0}
+after_snap = {"pace_sleep_s": 3.5, "retry_sleep_s": 15.0}
+check("elapsed minus (pace_sleep delta + retry_sleep delta)",
+      h2h._pace_excluded(20.0, before_snap, after_snap) == 20.0 - 2.5 - 15.0,
+      str(h2h._pace_excluded(20.0, before_snap, after_snap)))
+check("zero pacing in the window -> elapsed is untouched",
+      h2h._pace_excluded(5.0, before_snap, before_snap) == 5.0)
+
 print("\n- the rule is about retrieving nothing at all, not about scoring badly -")
 weak = row(**{"recall@1": 0.0, "recall@3": 0.0, "recall@5": 0.0, "recall@10": 0.002}, mrr=0.0004)
 check("a run that found one answer in five hundred is still a row", h2h.accept("langmem", weak) == weak)

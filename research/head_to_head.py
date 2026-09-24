@@ -40,6 +40,7 @@ sandbox_guard.isolate()  # throwaway store, verified, before any project import
 import corpus_pin
 import memory_hook as m
 import longmem_eval as le
+import _ollama_pacer as pacer  # noqa: E402 - R-v2-ports: pace/retry/count every arm's own traffic
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -159,6 +160,37 @@ def _measured_at() -> dict:
 
 # ── shared stand + metric ─────────────────────────────────────────────────────
 
+def _pace_excluded(elapsed_s: float, before: dict, after: dict) -> float:
+    """`elapsed_s` (a stand's own wall-clock measurement of one phase, e.g. ingest or
+    query) with `_ollama_pacer`'s OWN pacing/retry sleep during that SAME phase
+    subtracted - the phase's cost isolated from the artificial spacing R-v2-ports adds on
+    top of it. `before`/`after` are `pacer.snapshot()`s taken at the phase's own
+    start/end, so this is exact per phase, not an arm-wide estimate split across
+    several timed sections."""
+    paced = ((after["pace_sleep_s"] - before["pace_sleep_s"]) +
+            (after["retry_sleep_s"] - before["retry_sleep_s"]))
+    return round(elapsed_s - paced, 3)
+
+
+def coverage_verdict(name: str, r: dict) -> dict:
+    """Mutates and returns `r`: a COMPETITOR arm (never our own `nevertwice`, which
+    re-scores from a cache and ingests nothing live) that made FEWER paced calls than it
+    ingested items did not route every one of its own requests through the pacer (a
+    client this module does not patch, a cached/skipped item, ...) - `r["ollama_transport"]`
+    for that arm is then a LOWER BOUND, not a complete measurement, and `r["coverage"]` is
+    set to `"unobserved"` rather than letting the row imply full coverage it did not
+    have. A no-op (leaves `r` untouched) when the arm is blocked, is our own, or never
+    recorded `ingested_items` at all - `coverage` is only ever ADDED, never asserted
+    absent, so a caller checking `"coverage" not in r` still means "nothing to report"."""
+    if name == "nevertwice" or "blocked" in r:
+        return r
+    ingested = r.get("ingested_items")
+    observed = r.get("ollama_transport", {}).get("calls", 0)
+    if ingested is not None and observed < ingested:
+        r["coverage"] = "unobserved"
+    return r
+
+
 def _too_long(exc: BaseException) -> bool:
     """The embedder refused the text for its length (Ollama: 'exceeds the context length').
 
@@ -258,7 +290,13 @@ def accept(name: str, row: dict) -> dict:
     what happened."""
     if "blocked" in row or not row.get("n") or row.get(f"recall@{max(KS)}"):
         return row
-    keep = {k: row[k] for k in ("version", "label", "measured_at", "_wall_s") if k in row}
+    # R-v2-ports: a refused row still carries what the pacer/coverage checks recorded -
+    # a run that also bypassed the pacer, or under-observed a competitor's own traffic,
+    # is worth knowing about even (especially) on a row this stand is about to refuse to
+    # score.
+    keep = {k: row[k] for k in ("version", "label", "measured_at", "_wall_s",
+                                "ollama_transport", "valid", "invalid_reason", "coverage")
+           if k in row}
     return {**keep, "blocked": f"{name}: every query returned nothing over {row['n']} questions "
                                "- the stand refuses to score a run that retrieved nothing",
             "refused": {k: v for k, v in row.items() if k not in keep}}
@@ -432,6 +470,7 @@ def run_mem0(data, pool, infer=None) -> dict:
     stats: dict = {}
     silent = 0
     try:
+        snap_ingest0 = pacer.snapshot()
         t0 = time.time()
         for sid, txt in items:
             res = _shrinking(lambda t, sid=sid: mem.add(t, user_id="lme",
@@ -441,6 +480,7 @@ def run_mem0(data, pool, infer=None) -> dict:
             if infer and not written:
                 silent += 1            # its extractor failed or extracted nothing: no memory
         ingest_s = time.time() - t0
+        snap_ingest1 = pacer.snapshot()
         named_or_raise(mem.search, "top_k", "filters")
         t1 = time.time()
         ranked = {}
@@ -453,6 +493,7 @@ def run_mem0(data, pool, infer=None) -> dict:
             res = r.get("results", r) if isinstance(r, dict) else r
             ranked[e["question_id"]] = [(x.get("metadata") or {}).get("session_id") for x in res]
         query_s = time.time() - t1
+        snap_query1 = pacer.snapshot()
     except Exception as e:
         return {"blocked": f"Mem0 run failed ({type(e).__name__}: {e})"}
     if infer and items and silent > 0.1 * len(items):
@@ -464,6 +505,13 @@ def run_mem0(data, pool, infer=None) -> dict:
         sc["silent_extractions"] = silent
     sc["ingest_s"] = round(ingest_s, 1)
     sc["query_s"] = round(query_s, 1)
+    # R2: every published time metric here includes whatever the pacer's own spacing
+    # added on top of it - named beside each one, not folded silently into a number that
+    # looks like pure Mem0 latency.
+    sc["timing_includes_pacing"] = True
+    sc["ingest_s_pace_excluded"] = _pace_excluded(ingest_s, snap_ingest0, snap_ingest1)
+    sc["query_s_pace_excluded"] = _pace_excluded(query_s, snap_ingest1, snap_query1)
+    sc["ingested_items"] = len(items)
     sc["mode"] = f"infer={infer} ({'LLM ' + COMP_LLM if infer else 'retrieval-only, 1 memory/session'})"
     sc["sessions_shrunk"] = stats.get("shrunk", 0)
     sc["embedder"] = f"ollama {EMBED_MODEL}"
@@ -502,21 +550,28 @@ def run_langmem(data, pool) -> dict:
         if ARGS.sessions:
             items = items[:ARGS.sessions]
         stats: dict = {}
+        snap_ingest0 = pacer.snapshot()
         t0 = time.time()
         for sid, txt in items:
             _shrinking(lambda t, sid=sid: store.put(("lme",), sid, {"text": t}), txt, stats)
         ingest_s = time.time() - t0
+        snap_ingest1 = pacer.snapshot()
         t1 = time.time()
         ranked = {}
         for e in data:
             res = store.search(("lme",), query=e["question"], limit=max(KS))
             ranked[e["question_id"]] = [it.key for it in res]
         query_s = time.time() - t1
+        snap_query1 = pacer.snapshot()
     except Exception as e:
         return {"blocked": f"LangMem run failed ({type(e).__name__}: {e})"}
     sc = score(ranked, data, list(pool))
     sc["ingest_s"] = round(ingest_s, 1)
     sc["query_s"] = round(query_s, 1)
+    sc["timing_includes_pacing"] = True
+    sc["ingest_s_pace_excluded"] = _pace_excluded(ingest_s, snap_ingest0, snap_ingest1)
+    sc["query_s_pace_excluded"] = _pace_excluded(query_s, snap_ingest1, snap_query1)
+    sc["ingested_items"] = len(items)
     sc["embedder"] = f"ollama {EMBED_MODEL}"
     sc["mode"] = "store search only: LangGraph InMemoryStore, no memory manager, no LLM"
     sc["sessions_shrunk"] = stats.get("shrunk", 0)
@@ -546,6 +601,7 @@ def run_langmem_full(data, pool) -> dict:
         if ARGS.sessions:
             items = items[:ARGS.sessions]
         errors = 0
+        snap_ingest0 = pacer.snapshot()
         t0 = time.time()
         for sid, txt in items:
             try:
@@ -556,6 +612,7 @@ def run_langmem_full(data, pool) -> dict:
                 if errors <= 3:
                     print(f"  langmem_full: {sid[:12]} {type(e).__name__}: {str(e)[:120]}")
         ingest_s = time.time() - t0
+        snap_ingest1 = pacer.snapshot()
         n_mem = sum(1 for _ in store.search(("memories",), limit=10 ** 6))
         t1 = time.time()
         ranked = {}
@@ -568,6 +625,7 @@ def run_langmem_full(data, pool) -> dict:
                     sids.append(ns[1])
             ranked[e["question_id"]] = sids[:max(KS)]
         query_s = time.time() - t1
+        snap_query1 = pacer.snapshot()
     except Exception as e:
         return {"blocked": f"LangMem pipeline failed ({type(e).__name__}: {e})"}
     if items and errors > 0.1 * len(items):
@@ -576,6 +634,10 @@ def run_langmem_full(data, pool) -> dict:
     sc = score(ranked, data, list(pool))
     sc["ingest_s"] = round(ingest_s, 1)
     sc["query_s"] = round(query_s, 1)
+    sc["timing_includes_pacing"] = True
+    sc["ingest_s_pace_excluded"] = _pace_excluded(ingest_s, snap_ingest0, snap_ingest1)
+    sc["query_s_pace_excluded"] = _pace_excluded(query_s, snap_ingest1, snap_query1)
+    sc["ingested_items"] = len(items)
     sc["embedder"] = f"ollama {EMBED_MODEL}"
     sc["extraction_errors"] = errors
     sc["memories_written"] = n_mem
@@ -609,6 +671,7 @@ def run_amem(data, pool) -> dict:
         if ARGS.sessions:
             items = items[:ARGS.sessions]
         stats: dict = {}
+        snap_ingest0 = pacer.snapshot()
         t0 = time.time()
         B = 64
         for i in range(0, len(items), B):
@@ -617,6 +680,7 @@ def run_amem(data, pool) -> dict:
                     embeddings=[_shrinking(embed, t, stats) for _, t in chunk],
                     metadatas=[{"session_id": s} for s, _ in chunk])
         ingest_s = time.time() - t0
+        snap_ingest1 = pacer.snapshot()
         t1 = time.time()
         ranked = {}
         for e in data:
@@ -624,11 +688,16 @@ def run_amem(data, pool) -> dict:
             metas = (qr.get("metadatas") or [[]])[0]
             ranked[e["question_id"]] = [(md or {}).get("session_id") for md in metas]
         query_s = time.time() - t1
+        snap_query1 = pacer.snapshot()
     except Exception as e:
         return {"blocked": f"A-MEM/Chroma run failed ({type(e).__name__}: {e})"}
     sc = score(ranked, data, list(pool))
     sc["ingest_s"] = round(ingest_s, 1)
     sc["query_s"] = round(query_s, 1)
+    sc["timing_includes_pacing"] = True
+    sc["ingest_s_pace_excluded"] = _pace_excluded(ingest_s, snap_ingest0, snap_ingest1)
+    sc["query_s_pace_excluded"] = _pace_excluded(query_s, snap_ingest1, snap_query1)
+    sc["ingested_items"] = len(items)
     sc["embedder"] = f"ollama {EMBED_MODEL}"
     sc["mode"] = "store search only: chromadb cosine, no LLM note construction, no link evolution"
     sc["sessions_shrunk"] = stats.get("shrunk", 0)
@@ -725,6 +794,7 @@ def run_amem_full(data, pool) -> dict:
         if ARGS.sessions:
             items = items[:ARGS.sessions]
         note_to_sid, silent = {}, 0
+        snap_ingest0 = pacer.snapshot()
         t0 = time.time()
         for sid, txt in items:
             nid = sysm.add_note(txt[:MAXCHARS])
@@ -735,6 +805,7 @@ def run_amem_full(data, pool) -> dict:
             if note is not None and not note.keywords and note.context == "General":
                 silent += 1
         ingest_s = time.time() - t0
+        snap_ingest1 = pacer.snapshot()
         t1 = time.time()
         ranked = {}
         for e in data:
@@ -746,6 +817,7 @@ def run_amem_full(data, pool) -> dict:
                     sids.append(sid)
             ranked[e["question_id"]] = sids[:max(KS)]
         query_s = time.time() - t1
+        snap_query1 = pacer.snapshot()
     except Exception as e:
         return {"blocked": f"A-MEM pipeline failed ({type(e).__name__}: {e})"}
     if items and silent > 0.1 * len(items):
@@ -755,6 +827,10 @@ def run_amem_full(data, pool) -> dict:
     sc = score(ranked, data, list(pool))
     sc["ingest_s"] = round(ingest_s, 1)
     sc["query_s"] = round(query_s, 1)
+    sc["timing_includes_pacing"] = True
+    sc["ingest_s_pace_excluded"] = _pace_excluded(ingest_s, snap_ingest0, snap_ingest1)
+    sc["query_s_pace_excluded"] = _pace_excluded(query_s, snap_ingest1, snap_query1)
+    sc["ingested_items"] = len(items)
     sc["embedder"] = f"ollama {EMBED_MODEL} (chroma embedding function over the shared endpoint)"
     sc["silent_analyses"] = silent
     sc["mode"] = (f"full pipeline: agentic_memory with {COMP_LLM} via litellm (Ollama's own "
@@ -842,15 +918,19 @@ def main():
 
     out_path = Path(ARGS.out) if getattr(ARGS, "out", "") else (HERE / "head_to_head.json")
     results = {"_provenance": provenance, "_questions": len(data), "_pool_sessions": len(pool)}
+    pacer.install()          # R-v2-ports: pace/retry every arm's own Ollama traffic
     for name in want:
         fn = ADAPTERS.get(name)
         if not fn:
             print(f"\n- {name} - unknown system (have: {', '.join(ADAPTERS)})")
             continue
         print(f"\n- {name} -", flush=True)
+        snap = pacer.snapshot()
         t0 = time.time()
         r = fn(data, pool)
         r["_wall_s"] = round(time.time() - t0, 1)
+        pacer.attach(r, since=snap)         # per-arm delta -> r["ollama_transport"]
+        coverage_verdict(name, r)
         r["version"] = _pkg_ver(name)          # record what we actually compared against
         r["label"] = ARM_LABEL.get(name, name)
         r["measured_at"] = _measured_at()
@@ -867,6 +947,11 @@ def main():
             extra = {k: r[k] for k in ("ingest_s", "query_s", "mode", "setup", "version") if k in r}
             if extra:
                 print("  " + "  ".join(f"{k}={v}" for k, v in extra.items()))
+            if r.get("coverage") == "unobserved":
+                print(f"  coverage: unobserved - {r.get('ollama_transport', {}).get('calls', 0)} "
+                      f"paced call(s) for {r.get('ingested_items')} ingested item(s)")
+            if r.get("valid") is False:
+                print(f"  INVALID: {r.get('invalid_reason')}")
 
     # honest verdict
     print("\n- VERDICT -")
