@@ -9700,6 +9700,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "sandbox_guard.py"
    ],
    "cited_in_pending": [
@@ -9780,6 +9781,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "sandbox_guard.py"
    ],
    "note": "Statement and printed forms carry the fraction the artifact stores; a percent form here was reformatted as a fraction by two restores (J0, 2026-09-10), so the percent lives in the page prose only.",
@@ -9859,6 +9861,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "sandbox_guard.py"
    ],
    "note": "Statement and printed forms carry the fraction the artifact stores; a percent form here was reformatted as a fraction by two restores (J0, 2026-09-10), so the percent lives in the page prose only.",
@@ -9940,6 +9943,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "sandbox_guard.py"
    ],
    "note": "Statement and printed forms carry the fraction the artifact stores; a percent form here was reformatted as a fraction by two restores (J0, 2026-09-10), so the percent lives in the page prose only.",
@@ -10003,6 +10007,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "sandbox_guard.py"
    ],
    "cited_in_pending": [],
@@ -26525,6 +26530,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -26606,6 +26612,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -26688,6 +26695,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -26753,6 +26761,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -26821,6 +26830,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -26884,6 +26894,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -26947,6 +26958,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -27010,6 +27022,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -27075,6 +27088,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -27140,6 +27154,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -27208,6 +27223,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -27271,6 +27287,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -27334,6 +27351,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -27397,6 +27415,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -27462,6 +27481,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -27527,6 +27547,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -27595,6 +27616,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -27659,6 +27681,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -27723,6 +27746,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -27787,6 +27811,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -27853,6 +27878,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -27918,6 +27944,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -27986,6 +28013,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -28049,6 +28077,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -28112,6 +28141,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -28177,6 +28207,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -28242,6 +28273,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -28310,6 +28342,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -28391,6 +28424,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -28473,6 +28507,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -28538,6 +28573,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -28602,6 +28638,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -28665,6 +28702,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -28728,6 +28766,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -28791,6 +28830,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -33356,6 +33396,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "sandbox_guard.py"
    ],
    "ci": null,
@@ -33434,6 +33475,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "sandbox_guard.py"
    ],
    "ci": null,
@@ -33512,6 +33554,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "sandbox_guard.py"
    ],
    "ci": null,
@@ -33592,6 +33635,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "sandbox_guard.py"
    ],
    "ci": null,
@@ -33672,6 +33716,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "sandbox_guard.py"
    ],
    "ci": null,
@@ -33750,6 +33795,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "sandbox_guard.py"
    ],
    "ci": null,
@@ -33828,6 +33874,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "sandbox_guard.py"
    ],
    "ci": null,
@@ -33906,6 +33953,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "sandbox_guard.py"
    ],
    "ci": null,
@@ -33986,6 +34034,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "sandbox_guard.py"
    ],
    "ci": null,
@@ -34066,6 +34115,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "sandbox_guard.py"
    ],
    "ci": null,
@@ -34144,6 +34194,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "sandbox_guard.py"
    ],
    "ci": null,
@@ -34222,6 +34273,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "sandbox_guard.py"
    ],
    "ci": null,
@@ -34300,6 +34352,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "sandbox_guard.py"
    ],
    "ci": null,
@@ -34380,6 +34433,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "sandbox_guard.py"
    ],
    "ci": null,
@@ -34460,6 +34514,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "sandbox_guard.py"
    ],
    "ci": null,
@@ -34538,6 +34593,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "sandbox_guard.py"
    ],
    "ci": null,
@@ -34616,6 +34672,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "sandbox_guard.py"
    ],
    "ci": null,
@@ -34694,6 +34751,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "sandbox_guard.py"
    ],
    "ci": null,
@@ -34774,6 +34832,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "sandbox_guard.py"
    ],
    "ci": null,
@@ -34854,6 +34913,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "sandbox_guard.py"
    ],
    "ci": null,
@@ -34932,6 +34992,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "sandbox_guard.py"
    ],
    "ci": null,
@@ -35010,6 +35071,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "sandbox_guard.py"
    ],
    "ci": null,
@@ -35088,6 +35150,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "sandbox_guard.py"
    ],
    "ci": null,
@@ -35168,6 +35231,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "sandbox_guard.py"
    ],
    "ci": null,
@@ -35248,6 +35312,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "sandbox_guard.py"
    ],
    "ci": null,
@@ -35326,6 +35391,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "sandbox_guard.py"
    ],
    "ci": null,
@@ -35404,6 +35470,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "sandbox_guard.py"
    ],
    "ci": null,
@@ -35482,6 +35549,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "sandbox_guard.py"
    ],
    "ci": null,
@@ -35562,6 +35630,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "sandbox_guard.py"
    ],
    "ci": null,
@@ -35642,6 +35711,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "sandbox_guard.py"
    ],
    "ci": null,
@@ -35720,6 +35790,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "sandbox_guard.py"
    ],
    "ci": null,
@@ -35783,6 +35854,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "sandbox_guard.py"
    ],
    "ci": null,
@@ -35846,6 +35918,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "sandbox_guard.py"
    ],
    "ci": null,
@@ -35909,6 +35982,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "sandbox_guard.py"
    ],
    "ci": null,
@@ -35972,6 +36046,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "sandbox_guard.py"
    ],
    "ci": null,
@@ -56978,6 +57053,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/k8_skeleton.py",
     "sandbox_guard.py"
@@ -57037,6 +57113,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/k8_skeleton.py",
     "sandbox_guard.py"
@@ -57095,6 +57172,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/k8_skeleton.py",
     "sandbox_guard.py"
@@ -57153,6 +57231,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/k8_skeleton.py",
     "sandbox_guard.py"
@@ -57211,6 +57290,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/k8_skeleton.py",
     "sandbox_guard.py"
@@ -57269,6 +57349,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/k8_skeleton.py",
     "sandbox_guard.py"
@@ -57322,6 +57403,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/k8_skeleton.py",
     "sandbox_guard.py"
@@ -57374,6 +57456,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/k8_skeleton.py",
     "sandbox_guard.py"
@@ -57907,6 +57990,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -57970,6 +58054,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -58033,6 +58118,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -58096,6 +58182,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -58159,6 +58246,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -58223,6 +58311,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -58287,6 +58376,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -58351,6 +58441,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -58415,6 +58506,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -58478,6 +58570,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -58541,6 +58634,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -58604,6 +58698,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -58667,6 +58762,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -58730,6 +58826,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -58793,6 +58890,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
@@ -58856,6 +58954,7 @@
     "nevertwice/store_state.py",
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
+    "research/_ollama_pacer.py",
     "research/_provenance.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"

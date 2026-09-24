@@ -10,10 +10,14 @@ process, no model, no store), then one real end-to-end pass through `--part remi
 - the one part of this stand that touches no model and no store at all, so it is safe to run
 for real under the no-Ollama/no-GPU rule.
 """
+import contextlib
+import io
 import json
 import subprocess
 import sys
 import tempfile
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -23,6 +27,12 @@ import _env_guard  # noqa: E402,F401 - hermetic store before any project import
 
 sys.path.insert(0, str(ROOT / "research"))
 import abstention_ab as ab  # noqa: E402
+import _ollama_pacer as pacer  # noqa: E402
+sys.path.insert(0, str(ROOT / "nevertwice"))
+import memory_hook as m  # noqa: E402
+from nevertwice import api as nt_api  # noqa: E402
+sys.path.insert(0, str(ROOT / "tools"))
+import remeasure as remeasure_mod  # noqa: E402 - K16(2): row_refusal on the RESULT artifact
 
 FAILS = 0
 
@@ -171,5 +181,167 @@ with tempfile.TemporaryDirectory() as tmp:
           d1.get("remine") == d2.get("remine"))
 
 
-print(f"\nabstention_ab --runs (stub / --part remine only): {FAILS} failure(s)")
+# ── R-v2-ports item 9A: the pacer is wired into this stand's own Ollama traffic ────────
+
+class _JsonResp:
+    def __init__(self, payload):
+        self._p = json.dumps(payload).encode("utf-8")
+
+    def read(self):
+        return self._p
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+
+def _fake_urlopen_failing_embed(*a, **kw):
+    """Every `/api/embed` call fails with a genuine (non-port-exhaustion) 500 - the F1
+    failure P0(a) exists to catch. Any other endpoint succeeds, so the run itself does not
+    crash on something unrelated to embedding."""
+    req = a[0] if a else kw.get("url")
+    url = req.full_url if hasattr(req, "full_url") else str(req)
+    if pacer._is_embed_path(url):
+        raise urllib.error.HTTPError(url, 500, "Internal Server Error", {}, io.BytesIO(b"busy"))
+    return _JsonResp({"models": []})
+
+
+def _fake_capture_session(text, project=None, session_id=None, trigger=None):
+    """Stands in for the real (LLM-driven) extractor: writes ONE note directly via the
+    store's own API. `write_typed_note` itself calls `embed_text` once per note, which is
+    the traffic this suite exists to prove gets paced - `build_store` calls this once per
+    session (two per case), so two embed attempts happen before `capture_hits`'s own
+    `api.recall` (a third) even runs."""
+    m.write_typed_note(m.TYPE_FOLDER["pattern"],
+                       {"title": f"t-{session_id}", "description": f"note for {session_id}",
+                        "principle": "a fake principle, hermetic test only"},
+                       project or "abstention_test", "2026-09-24", [], "pattern")
+
+
+MINI_CASE = {"id": "mini-case", "shape": "value_replaced",
+            "sessions": [["Settled it: the timeout is 30 seconds."],
+                        ["Came back to it. The timeout is 5 seconds."]],
+            "query": "what is the timeout", "current": ["5 second"], "superseded": ["30 second"]}
+MINI_DATASET = {"name": "mini", "cases": [MINI_CASE]}
+
+
+@contextlib.contextmanager
+def _isolated_pacer():
+    # (в)/MX3: check(), not a bare assert - a real regression here must redden by name, not
+    # crash the whole suite with an uncaught Traceback.
+    check("pacer starts uninstalled entering this block", not pacer.installed())
+    if pacer.installed():
+        pacer.uninstall()
+    saved_urlopen = urllib.request.urlopen
+    pacer._reset_for_tests()
+    try:
+        yield
+    finally:
+        if pacer.installed():
+            pacer.uninstall()
+        urllib.request.urlopen = saved_urlopen
+        pacer._reset_for_tests()
+
+
+def _run_mini(out_path: Path) -> dict:
+    """Runs `ab.main()` for real (`--part recall --out ...`) against MINI_DATASET - `ab.DATASET`
+    is patched directly (this stand has no `--dataset` CLI flag, unlike asof_bench.py)."""
+    saved_argv = sys.argv
+    saved_dataset = ab.DATASET
+    saved_capture = nt_api.capture_session
+    nt_api.capture_session = _fake_capture_session
+    try:
+
+        class _MiniPath:
+            """A drop-in for `ab.DATASET` (a `Path`): only `.read_text()` is ever called on
+            it inside `main()`'s `--part recall/inject` branch."""
+
+            def read_text(self, encoding="utf-8"):
+                return json.dumps(MINI_DATASET)
+
+        ab.DATASET = _MiniPath()
+        sys.argv = ["abstention_ab.py", "--part", "recall", "--k", "3", "--out", str(out_path)]
+        rc = ab.main()
+        return {"rc": rc, "artifact": (json.loads(out_path.read_text(encoding="utf-8"))
+                                       if out_path.exists() else {})}
+    finally:
+        sys.argv = saved_argv
+        ab.DATASET = saved_dataset
+        nt_api.capture_session = saved_capture
+
+
+print("\n- item 9A: the real run wires pacer.install()/attach() around this stand's own "
+      "Ollama traffic; a failed embed marks the artifact invalid and "
+      "tools/remeasure.row_refusal refuses a REAL claim pointer -")
+with _isolated_pacer():
+    urllib.request.urlopen = _fake_urlopen_failing_embed
+    with tempfile.TemporaryDirectory() as td:
+        out_path = Path(td) / "out.json"
+        result = _run_mini(out_path)
+    check("main() exits 0 on the mini dataset", result["rc"] == 0, str(result["rc"]))
+    art = result["artifact"]
+    check("ollama_transport is written on the artifact (install() wrapped the embedder call)",
+          "ollama_transport" in art, str(sorted(art)))
+    check("the artifact is marked invalid - every /api/embed call failed",
+          art.get("valid") is False and "embed" in (art.get("invalid_reason") or ""),
+          str(art.get("invalid_reason")))
+    reason = remeasure_mod.row_refusal(art, "recall_sweep[0].mean_chars", 0)
+    check("tools/remeasure.row_refusal refuses a REAL claim pointer "
+          "(abstention.recall.sweep.t0_0.mean_chars) on this invalid result",
+          reason is not None and "invalid" in reason, str(reason))
+
+print("\n- item 9A mutations: install()/attach() removed from the real run (in-process, "
+      "ab.pacer IS the _ollama_pacer module - reassigning its attribute simulates the call "
+      "site being deleted without editing the file) -")
+saved_install, saved_attach = ab.pacer.install, ab.pacer.attach
+ab.pacer.install = lambda: None                        # mutation: install() removed
+with _isolated_pacer():
+    urllib.request.urlopen = _fake_urlopen_failing_embed
+    with tempfile.TemporaryDirectory() as td2:
+        out_path2 = Path(td2) / "out.json"
+        result_no_install = _run_mini(out_path2)
+    check("mutation 'install() removed': no ollama_transport is written at all (nothing "
+          "ever got paced - would FAIL the 'ollama_transport is written' check above)",
+          "ollama_transport" not in result_no_install["artifact"],
+          str(sorted(result_no_install["artifact"])))
+ab.pacer.install = saved_install
+
+ab.pacer.attach = lambda *a, **k: None                  # mutation: attach() removed
+with _isolated_pacer():
+    urllib.request.urlopen = _fake_urlopen_failing_embed
+    with tempfile.TemporaryDirectory() as td3:
+        out_path3 = Path(td3) / "out.json"
+        result_no_attach = _run_mini(out_path3)
+    check("mutation 'attach() removed': no ollama_transport is written and the artifact "
+          "stays WRONGLY valid (the pacer paced the call but the artifact never learns it - "
+          "would FAIL the same checks above)",
+          "ollama_transport" not in result_no_attach["artifact"]
+          and "valid" not in result_no_attach["artifact"],
+          str(sorted(result_no_attach["artifact"])))
+ab.pacer.attach = saved_attach
+
+check("ab.pacer.install/attach are restored to the real functions after the mutations",
+      ab.pacer.install is saved_install and ab.pacer.attach is saved_attach)
+
+print("\n- G5 (the auditor's surviving mutation): _pool_runs carries a LATER run's valid:false - run 1 clean, run 2 invalid, the pooled artifact is invalid and row_refusal refuses the real pointer -")
+import copy as _copy  # noqa: E402
+_g5_base = json.loads((ROOT / "research" / "results" / "abstention_ab.json").read_text(encoding="utf-8"))
+_g5_clean = _copy.deepcopy(_g5_base)
+_g5_bad = _copy.deepcopy(_g5_base)
+_g5_bad["valid"] = False
+_g5_bad["invalid_reason"] = "ollama_transport.failed_outcomes=2 on /api/embed"
+_g5_pooled = ab._pool_runs([_g5_clean, _g5_bad])
+check("G5: the pooled artifact is invalid, naming run 2",
+      _g5_pooled.get("valid") is False and "run 2" in (_g5_pooled.get("invalid_reason") or ""),
+      str(_g5_pooled.get("invalid_reason")))
+_g5_reason = remeasure_mod.row_refusal(_g5_pooled, "recall_sweep[0].mean_chars", 0)
+check("G5: row_refusal refuses the real pointer recall_sweep[0].mean_chars "
+      "(abstention.recall.sweep.t0_0.mean_chars)", _g5_reason is not None, str(_g5_reason))
+_g5_clean_pool = ab._pool_runs([_copy.deepcopy(_g5_base), _copy.deepcopy(_g5_base)])
+check("G5: two clean runs pool to a restorable artifact",
+      _g5_clean_pool.get("valid") is not False, str(_g5_clean_pool.get("valid")))
+
+print(f"\nabstention_ab --runs (stub / --part remine only) + item 9A pacer wiring: {FAILS} failure(s)")
 sys.exit(1 if FAILS else 0)

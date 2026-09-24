@@ -43,6 +43,8 @@ sys.path.insert(0, str(ROOT))
 import sandbox_guard  # noqa: E402 - must precede any nevertwice import
 
 sandbox_guard.isolate(prefix="nevertwice_abstention_")
+sys.path.insert(0, str(HERE))
+import _ollama_pacer as pacer  # noqa: E402 - R-v2-ports item 9A: pace/retry/count this stand's own traffic
 
 DATASET = HERE / "data" / "supersession_v1.json"
 
@@ -344,6 +346,16 @@ def _pool_runs(runs: list[dict]) -> dict:
                          "not a repeat of one program")
     pooled = _pool_dict(runs)
     pooled["runs"] = len(runs)
+    # R-v2-ports/K16(2): a constituent run's own invalidity has to survive pooling - `_pool_dict`
+    # only ever walks the KEYS run 1 happens to have (`_pool_leaf`'s "not a measurement; keep run
+    # 1's" rule), so a `valid: False` that only run 2 wrote (run 1's own traffic was clean) would
+    # be silently dropped rather than pooled, exactly the failure mode asof_bench.merge_arm's own
+    # K16(2) fix exists to close.
+    invalid = [(i, r) for i, r in enumerate(runs) if r.get("valid") is False]
+    if invalid:
+        pooled["valid"] = False
+        pooled["invalid_reason"] = "; ".join(
+            f"run {i + 1}: {r.get('invalid_reason') or 'no reason recorded'}" for i, r in invalid)
     return pooled
 
 
@@ -399,6 +411,8 @@ def main() -> int:
         print("wrote", args.out)
         return 0
 
+    pacer.install()          # R-v2-ports item 9A: pace/retry/count this stand's own traffic
+    snap = pacer.snapshot()
     out: dict = {"store": str(sandbox_guard.store()),
                 "code_sha": _git_head(), "measured_at": time.strftime("%Y-%m-%dT%H:%M:%S")}
 
@@ -434,6 +448,10 @@ def main() -> int:
             out["inject_sweep"] = rows
             _print_sweep(f"C2  session start - capped at {args.inject_budget} chars", rows)
 
+    # R-v2-ports/K16(2): attached at the artifact's own root - this stand writes exactly ONE
+    # artifact per process (`--runs N` pools one such artifact per subprocess, above), so this
+    # IS the container every registered claim's pointer resolves through.
+    pacer.attach(out, since=snap)
     if args.out:
         Path(args.out).write_text(json.dumps(out, indent=1, ensure_ascii=False), encoding="utf-8", newline="\n")
         print("\nwrote", args.out)

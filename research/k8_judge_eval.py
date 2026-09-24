@@ -39,6 +39,10 @@ import memory_hook as m  # noqa: E402
 sys.path.insert(0, str(HERE))
 from k8_skeleton import label_pairs  # noqa: E402
 import _provenance as prov  # noqa: E402 - measured_at: {commit, utc, dirty} on the artifact
+import _ollama_pacer as pacer  # noqa: E402 - R-v2-ports item 9A (K39: observe only with --timing) - this
+# stand publishes a raw wall-clock claim (seconds_per_pair, PREREG-V2-2026-09-24 P5) that must
+# never include this module's own artificial pacing, while a bypass or a failed embed (P0(a))
+# still marks the run invalid exactly as in the default "pace" mode.
 
 MODEL = os.environ.get("SUPERSESSION_LLM", "qwen3-coder:30b")
 URL = os.environ.get("OLLAMA_URL", "http://localhost:11434") + "/api/generate"
@@ -103,7 +107,14 @@ def main() -> int:
     ap.add_argument("files", nargs="+")
     ap.add_argument("--out", default="")
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--timing", action="store_true",
+                    help="the owner-declared idle-window run (PLAN step 15): the pacer in OBSERVE "
+                         "mode, so seconds_per_pair carries no artificial sleep (PREREG P5). Without "
+                         "it the run is paced and retried, as an accuracy run should be (K39)")
     a = ap.parse_args()
+    # K39: observe only for the timing run; an accuracy run is paced and retried (WSAENOBUFS, K33)
+    pacer.install(mode="observe" if a.timing else "pace")
+    snap = pacer.snapshot()
     corpus: dict = {}
     stands: dict = {}
     for f in a.files:
@@ -144,6 +155,10 @@ def main() -> int:
            "engine_commit": next(iter(stands.values())).get("engine_commit"),
            "pooled": summarise(all_rows), "per_stand": per_stand, "rows": all_rows,
            "seconds": round(time.time() - t0, 1)}
+    # R-v2-ports/K16(2): attached at the artifact's own root - this stand writes exactly ONE
+    # artifact (research/results/k8_judge_eval.json), every registered claim's pointer
+    # (pooled.*) resolves through it, and there is no per-arm structure to attach to instead.
+    pacer.attach(out, since=snap)
     print(json.dumps({"pooled": out["pooled"], "per_stand": {k: {kk: vv for kk, vv in v.items() if kk != "confusion"}
                                                              for k, v in per_stand.items()}}, indent=1))
     if a.out:

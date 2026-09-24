@@ -56,6 +56,10 @@ import memory_hook as m  # noqa: E402
 import guards as G  # noqa: E402
 import matched_conditions as MC  # noqa: E402 - confusion / rates / matched-rate machinery
 import _provenance as prov  # noqa: E402 - measured_at: {commit, utc, dirty} on the artifact
+import _ollama_pacer as pacer  # noqa: E402 - R-v2-ports item 9A (K39: observe only with --timing) - this
+# stand publishes a raw wall-clock claim (ms_per_call, PREREG-V2-2026-09-24 P5) that must never
+# include this module's own artificial pacing, while a bypass or a failed embed (P0(a)) still
+# marks the run invalid exactly as in the default "pace" mode.
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -324,6 +328,20 @@ def score_arm(preds: list, calls: list[dict], info: dict) -> dict:
     return out
 
 
+def _propagate_root_invalidity(out: dict) -> None:
+    """K25 (asof_bench.py's own finding, applied here per the item 9A hand-off): a registered
+    claim can point OUTSIDE any single arm's own dict - `guards.dataset.mistakes` reads
+    `corpus.counts.mistakes`, a ROOT field no `arms.<name>` attach ever touches. Marking only the
+    arm invalid is not enough: `tools/remeasure.row_refusal` would still resolve a claim on the
+    corpus block, or on a DIFFERENT, otherwise-clean arm, as valid. If ANY arm here ends up
+    invalid, the WHOLE artifact is marked invalid too, every arm's own reason joined."""
+    invalid = [(name, a) for name, a in out.get("arms", {}).items() if a.get("valid") is False]
+    if invalid:
+        out["valid"] = False
+        out["invalid_reason"] = "; ".join(
+            f"{name}: {a.get('invalid_reason') or 'no reason recorded'}" for name, a in invalid)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--corpus", default=str(CORPUS))
@@ -332,6 +350,11 @@ def main() -> int:
     ap.add_argument("--no-embed", action="store_true", help="prompt_recall on a text-only store")
     ap.add_argument("--limit", type=int, default=0, help="first N mistakes only (a smoke run)")
     ap.add_argument("--save", action="store_true")
+    ap.add_argument("--timing", action="store_true",
+                    help="the owner-declared idle-window run (PLAN step 15): the pacer in OBSERVE "
+                         "mode - no pacing, no retry, every failure still recorded - so ms_per_call "
+                         "carries no artificial sleep (PREREG P5). Without it the run is paced and "
+                         "retried, as an accuracy run should be (K39)")
     ap.add_argument("--out", default=str(OUT))
     args = ap.parse_args()
     corpus = load_corpus(Path(args.corpus))
@@ -347,20 +370,30 @@ def main() -> int:
                       "counts": corpus["counts"]},
            "target_fpr": TARGET_FPR, "recall_k": RECALL_K, "tokens_per_word": TOKENS_PER_WORD,
            "llm": LLM if args.llm else None, "embedder": None if args.no_embed else EMBED_MODEL, "arms": {}}
+    # K39: observe only for the timing run; an accuracy run is paced and retried (WSAENOBUFS, K33)
+    pacer.install(mode="observe" if args.timing else "pace")
     for name in names:
         fn = ARMS.get(name)
         if fn is None:
             print(f"- {name}: unknown arm (have: {', '.join(ARMS)})")
             continue
         t0 = time.time()
+        snap = pacer.snapshot()
         preds, info = fn(corpus, notes, embed=not args.no_embed) if name == "prompt_recall" else fn(corpus, notes)
         if info.get("blocked"):
-            out["arms"][name] = {"blocked": info["blocked"], **{k: v for k, v in info.items() if k != "blocked"}}
+            blocked = {"blocked": info["blocked"], **{k: v for k, v in info.items() if k != "blocked"}}
+            # R-v2-ports/K16(2): attached at THIS arm's OWN dict even when it blocked itself
+            # (arm_guards_llm's LLM calls to write the patterns already happened above).
+            pacer.attach(blocked, since=snap)
+            out["arms"][name] = blocked
             print(f"- {name}: BLOCKED - {info['blocked']}\n")
             continue
         sc = score_arm(preds, corpus["calls"], info)
         sc["info"] = {k: v for k, v in info.items() if k not in ("tokens_total", "ms_total")}
         sc["seconds"] = round(time.time() - t0, 1)
+        # R-v2-ports/K16(2): attached at THIS arm's OWN dict - `out["arms"][name]` is a
+        # container on the path of any claim pointer that reads this arm.
+        pacer.attach(sc, since=snap)
         out["arms"][name] = sc
         mt = sc.get(f"at_fpr_{TARGET_FPR}")
         hn = sc.get("hard_negatives") or {}
@@ -373,6 +406,7 @@ def main() -> int:
             print(f"  no operating point reaches FPR<={TARGET_FPR}")
         print(f"  tokens/call {sc['tokens_per_call']}  ms/call {sc['ms_per_call']}  "
               + (f"guards {info.get('n_guards')}" if "n_guards" in info else "") + "\n")
+    _propagate_root_invalidity(out)   # K25: any invalid arm invalidates the whole artifact
     if args.save:
         prov.stamp(out)
         Path(args.out).write_text(json.dumps(out, indent=1, ensure_ascii=False), encoding="utf-8", newline="\n")

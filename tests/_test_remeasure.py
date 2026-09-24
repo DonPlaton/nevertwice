@@ -542,7 +542,18 @@ try:
         "pointer": "recall_sweep[4].threshold",
         #: five rows when it was registered, six on disk now: one threshold inserted
         "shape": [{"at": "recall_sweep", "len": 5, "keys": ["recall", "threshold"]}]}]}
-    _restored, _left, _ = rm.restore(_man, head=HEAD)
+    #: Same reason as the pair_mismatch block above: the claim names a REAL stand
+    #: (research/abstention_ab.py) in produced_by, so an uncommitted edit to that stand makes
+    #: restore refuse it for "commit first" instead of the shape mismatch this block is about
+    #: (found on stands/ports, 2026-09-24, wiring the pacer into abstention_ab.py itself - the
+    #: pair_mismatch block already carries this stub, this one never got it). This block tests
+    #: the shape guard, so the working tree is held clean for it.
+    _saved_dirty = rm._dirty_files
+    rm._dirty_files = lambda: set()
+    try:
+        _restored, _left, _ = rm.restore(_man, head=HEAD)
+    finally:
+        rm._dirty_files = _saved_dirty
     check("restore refuses a claim whose list grew a row under it",
           _restored == [] and any("held 5 rows" in x for x in _left), str(_left))
     check("and the claim keeps 0.35 rather than taking the neighbouring threshold",
