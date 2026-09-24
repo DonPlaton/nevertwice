@@ -11,6 +11,7 @@ suite `tests/research/_test_cross_project_bench_extract_dry.py` covers the OTHER
 extraction-side scanner rejection `--dry`'s stub extractor exists for (the 2026-09-23 widening:
 a pre-written principle alone cannot prove an EXTRACTED one gets caught).
 """
+import json
 import re
 import subprocess
 import sys
@@ -195,5 +196,89 @@ except SystemExit as e:
     help_rc = e.code
 check("--help exits 0", help_rc == 0, str(help_rc))
 
-print(f"\ncross project bench (--dry only, no embedder): {FAILS} failure(s)")
+# item 4 (R-v2-ports): the real (non-dry) oracle run wires pacer.install()/attach() around
+# its own embedder traffic. "oracle" mode needs no LLM extraction at all (a pre-written
+# principle is written directly) and dry=False means m.embed_text is NOT stubbed the way
+# --dry stubs it - so this is the cheapest real (non-dry) path through run_bench that still
+# needs no model, only a fake urlopen.
+print("\n- item 4: the real (non-dry) oracle run wires pacer.install()/attach() around its "
+      "own traffic -")
+import contextlib
+import urllib.request
+sys.path.insert(0, str(ROOT / "research"))
+import _ollama_pacer as pacer  # noqa: E402
+
+
+class _JsonResp:
+    def __init__(self, payload):
+        self._p = json.dumps(payload).encode("utf-8")
+
+    def read(self):
+        return self._p
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+
+def _fake_urlopen(*a, **kw):
+    return _JsonResp({"embedding": [0.1, 0.2, 0.3]})
+
+
+@contextlib.contextmanager
+def _isolated_pacer():
+    assert not pacer.installed(), "a previous check left the pacer installed"
+    saved_urlopen = urllib.request.urlopen
+    pacer._reset_for_tests()
+    try:
+        yield
+    finally:
+        if pacer.installed():
+            pacer.uninstall()
+        urllib.request.urlopen = saved_urlopen
+        pacer._reset_for_tests()
+
+
+ORACLE_CASES = cpb.load_cases(cpb.DATA, n=2)
+
+with _isolated_pacer():
+    urllib.request.urlopen = _fake_urlopen
+    result = cpb.run_bench(ORACLE_CASES, extractor_mode="oracle", dry=False)
+    check("ollama_transport is written (install() actually wrapped the embedder calls)",
+          "ollama_transport" in result, str(sorted(result)))
+    check("calls > 0 (write-time + retrieval-time embeds over 2 real cases)",
+          result.get("ollama_transport", {}).get("calls", 0) > 0,
+          str(result.get("ollama_transport")))
+    check("the run still covered both cases per arm despite the fake transport",
+          all(result["arms"][arm]["n_cases"] == 2 for arm in cpb.ARMS), str(result["arms"]))
+
+print("\n- item 4 mutations: install()/attach() removed from the real oracle run "
+      "(in-process, cpb.pacer IS the _ollama_pacer module - reassigning its attribute "
+      "simulates the call site being deleted without editing the file) -")
+saved_install, saved_attach = cpb.pacer.install, cpb.pacer.attach
+cpb.pacer.install = lambda: None                      # mutation: install() removed
+with _isolated_pacer():
+    urllib.request.urlopen = _fake_urlopen
+    result_no_install = cpb.run_bench(ORACLE_CASES, extractor_mode="oracle", dry=False)
+    check("mutation 'install() removed': no ollama_transport is written at all (nothing "
+          "ever got paced - would FAIL the 'ollama_transport is written' check above)",
+          "ollama_transport" not in result_no_install, str(sorted(result_no_install)))
+cpb.pacer.install = saved_install
+
+cpb.pacer.attach = lambda *a, **k: None                # mutation: attach() removed
+with _isolated_pacer():
+    urllib.request.urlopen = _fake_urlopen
+    result_no_attach = cpb.run_bench(ORACLE_CASES, extractor_mode="oracle", dry=False)
+    check("mutation 'attach() removed': no ollama_transport is written (the pacer paced "
+          "the calls but the artifact never learns it - would FAIL the same check above)",
+          "ollama_transport" not in result_no_attach, str(sorted(result_no_attach)))
+cpb.pacer.attach = saved_attach
+
+check("cpb.pacer.install/attach are restored to the real functions after the mutations",
+      cpb.pacer.install is saved_install and cpb.pacer.attach is saved_attach)
+
+print(f"\ncross project bench (--dry, and item 4's real (non-dry) oracle pacer wiring): "
+     f"{FAILS} failure(s)")
 sys.exit(1 if FAILS else 0)

@@ -99,6 +99,7 @@ os.environ["NEVERTWICE_CLOUD"] = "none"        # local only: nothing billed, not
 sys.path.insert(0, str(ROOT / "nevertwice"))
 import memory_hook as m  # noqa: E402
 import principles as pr  # noqa: E402
+import _ollama_pacer as pacer  # noqa: E402 - R-v2-ports: pace/retry/count this run's own traffic
 import _provenance as prov  # noqa: E402 - C4(a): the shared measured_at/stamp helper, ported
                             # from q3/ride-along 901f3b1 (research/ is already on sys.path -
                             # whatever caller imported THIS module put it there)
@@ -715,6 +716,16 @@ def run_bench(cases: list[dict], *, extractor_mode: str, dry: bool) -> dict:
                                         by rejecting the whole cluster, or by promoting a
                                         clean fallback candidate instead - either way this
                                         specific identifier never reached project_b)."""
+    # R-v2-ports: pace/retry/count this run's own traffic. Gated on `not dry` - --dry stubs
+    # the embedder and never reaches Ollama at all, and install() stays installed for the
+    # REST OF THE PROCESS once called (it is never uninstalled, same as every other wired
+    # stand) - calling it here unconditionally would leave a --dry-only test process with
+    # the pacer installed after a call that touched no network, surprising any later code
+    # in the same process that assumes an uninstalled pacer.
+    snap = None
+    if not dry:
+        pacer.install()
+        snap = pacer.snapshot()
     embed = _fixed_stub_vector if dry else None
     per_arm: dict[str, list[dict]] = {arm: [] for arm in ARMS}
     write_rejections: dict[str, int] = {cls: 0 for cls in ALL_CLASSES}       # C3: ALL_CLASSES
@@ -853,19 +864,27 @@ def run_bench(cases: list[dict], *, extractor_mode: str, dry: bool) -> dict:
             "noise": sum(r["noise"] for r in rows) / n,
             "cross_chars_mean": sum(r["cross_chars"] for r in rows) / n,
         }
-    return {"arms": summary, "n_cases": len(cases), "extractor_mode": extractor_mode,
-           "write_rejections_by_class": write_rejections,
-           "promotion_rejections_by_class": promotion_rejections,
-           # kept for anyone still reading the old key name
-           "scanner_rejections_by_class": write_rejections,
-           # C4(d): totals across every pair reaching provenance in this population - the same
-           # "narrow (2 live projects) vs wide (the whole run)" comparison the ADDENDUM's own
-           # cold-start reading used, computed here from this run's OWN data, not reused numbers.
-           "cold_start": {"narrow_flagged_total": cold_start_narrow_total,
-                         "wide_flagged_total": cold_start_wide_total},
-           # diagnostic instrumentation (2026-09-23): one entry per case - see _diagnostic_row.
-           # C4(c): each row's own "token_provenance_pairs" carries U/S/cold_start per pair.
-           "rows": diag_rows}
+    result = {"arms": summary, "n_cases": len(cases), "extractor_mode": extractor_mode,
+             "write_rejections_by_class": write_rejections,
+             "promotion_rejections_by_class": promotion_rejections,
+             # kept for anyone still reading the old key name
+             "scanner_rejections_by_class": write_rejections,
+             # C4(d): totals across every pair reaching provenance in this population - the same
+             # "narrow (2 live projects) vs wide (the whole run)" comparison the ADDENDUM's own
+             # cold-start reading used, computed here from this run's OWN data, not reused numbers.
+             "cold_start": {"narrow_flagged_total": cold_start_narrow_total,
+                           "wide_flagged_total": cold_start_wide_total},
+             # diagnostic instrumentation (2026-09-23): one entry per case - see _diagnostic_row.
+             # C4(c): each row's own "token_provenance_pairs" carries U/S/cold_start per pair.
+             "rows": diag_rows}
+    # R-v2-ports/K16(2): attached at THIS dict's root - it flows unchanged into
+    # _run_population()'s `result`/`results[label]` and main()'s `artifact`, so a claim's
+    # pointer resolving through it (root-level for a single population, one level under
+    # `populations.<label>` for --population both) always walks a container this stand's
+    # OWN run actually marked, never an intermediate cache the pointer never reads.
+    if snap is not None:
+        pacer.attach(result, since=snap)
+    return result
 
 
 def _measured_at() -> dict:
