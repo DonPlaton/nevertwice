@@ -854,8 +854,10 @@ def finish_arm(name: str, res: dict, wall_s: float, snap: dict) -> dict:
     R2 (the auditor's finding): `wall_s - pace_sleep_s - retry_sleep_s` is a SUM of
     sleeps and assumes they never overlap - false under real concurrency, where the
     result can go negative. Clamped at 0; `wall_s_pace_excluded_exact` names whether
-    `ollama_transport["max_inflight"]` (the pacer's own process-wide high-water mark)
-    ever exceeded 1, so a reader knows whether to trust the number exactly."""
+    `ollama_transport["max_concurrent_paced"]` (the pacer's own process-wide high-water
+    mark over the WHOLE paced operation, K14 - pacing/retry WAITS overlap even when the
+    calls themselves never do, which the narrower `max_inflight` - call-only - cannot
+    see) ever exceeded 1, so a reader knows whether to trust the number exactly."""
     res["wall_s"] = round(wall_s, 1)
     pacer.attach(res, since=snap)
     if "ollama_transport" in res:
@@ -863,7 +865,7 @@ def finish_arm(name: str, res: dict, wall_s: float, snap: dict) -> dict:
         ot = res["ollama_transport"]
         res["wall_s_pace_excluded"] = max(0.0, round(
             res["wall_s"] - ot["pace_sleep_s"] - ot["retry_sleep_s"], 3))
-        res["wall_s_pace_excluded_exact"] = ot.get("max_inflight", 0) <= 1
+        res["wall_s_pace_excluded_exact"] = ot.get("max_concurrent_paced", 0) <= 1
     if name != "nevertwice" and "blocked" not in res:
         ingested = (res.get("ingest") or {}).get("written")
         observed = res.get("ollama_transport", {}).get("calls", 0)

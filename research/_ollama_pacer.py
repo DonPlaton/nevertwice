@@ -100,13 +100,32 @@ _PACE_STATE = {"next_at": float("-inf")}
 #: each one. `_INFLIGHT_STATE["n"]` is the number of paced calls currently inside their
 #: OWN underlying `call()` (never during a sleep, which is already excluded from
 #: `call_ms` for the same reason); `_COUNTERS["max_inflight"]` is the highest that count
-#: has ever reached in this process. A caller doing `elapsed - paced` can then ask
-#: `max_inflight <= 1` before trusting the subtraction as EXACT rather than a
-#: (conservative, floor-clamped) estimate.
+#: has ever reached in this process - a narrower diagnostic than the one a caller doing
+#: `elapsed - paced` actually needs (K14, immediately below: that caller asks
+#: `max_concurrent_paced`, not this).
 _INFLIGHT_STATE = {"n": 0}
+#: K14 (the auditor's review of 8450a74): `_INFLIGHT_STATE`/`max_inflight` above tracks
+#: concurrency ONLY during the underlying `call()` - deliberately, since `call_ms` needs
+#: that same narrow window excluded from any sleep. But `pace_excluded_exact` uses that
+#: SAME number to answer a DIFFERENT question: "is it safe to subtract this module's
+#: summed `pace_sleep_s`/`retry_sleep_s` from a caller's own wall-clock elapsed time as
+#: if those sleeps never overlapped." They can overlap even when no two calls ever do:
+#: four real threads, the DEFAULT pacing floor (0.125 s) and a 0.05 s call body measured
+#: wall 0.426 s, pace_sleep_s SUMMED to 0.749 s across the four - the pacer spaces each
+#: thread's call START apart (so `call()` itself never overlaps, `max_inflight` reads 1,
+#: "exact") while each thread's own PACING WAIT overlaps every other thread's wait AND
+#: call, because spacing calls apart while other callers keep arriving is this module's
+#: entire job. `_CONCURRENT_STATE`/`max_concurrent_paced` tracks the WHOLE paced
+#: operation instead - from the moment a caller enters `_run_paced`/`_run_paced_async`,
+#: BEFORE `_pace()`, until it returns or gives up - exactly the span a caller's own
+#: subtraction assumes is serial. `pace_excluded_exact` is driven by THIS counter alone;
+#: `max_inflight` is kept, unchanged, as the narrower "did two calls physically overlap"
+#: diagnostic it always was.
+_CONCURRENT_STATE = {"n": 0}
 _COUNTERS = {"calls": 0, "pace_sleep_s": 0.0, "retries": 0, "retry_sleep_s": 0.0, "gave_up": 0,
             "bypass_requests": 0, "bypass_aiohttp": 0,
-            "nested_requests": 0, "nested_aiohttp": 0, "max_inflight": 0}
+            "nested_requests": 0, "nested_aiohttp": 0, "max_inflight": 0,
+            "max_concurrent_paced": 0}
 _CALL_MS: list = []
 #: R1 (the auditor's finding, 2026-09-24): a probe or a stand can be reachable from MORE
 #: than one recognised Ollama host at once (this dev machine runs a real Ollama on the
@@ -324,77 +343,99 @@ def _inflight_exit() -> None:
         _INFLIGHT_STATE["n"] -= 1
 
 
+def _concurrent_enter() -> None:
+    """K14: entered BEFORE `_pace()`, for the WHOLE paced operation - see
+    `_CONCURRENT_STATE`'s own docstring above."""
+    with _LOCK:
+        _CONCURRENT_STATE["n"] += 1
+        if _CONCURRENT_STATE["n"] > _COUNTERS["max_concurrent_paced"]:
+            _COUNTERS["max_concurrent_paced"] = _CONCURRENT_STATE["n"]
+
+
+def _concurrent_exit() -> None:
+    with _LOCK:
+        _CONCURRENT_STATE["n"] -= 1
+
+
 def _run_paced(call: Callable, host_key: tuple | None = None):
     """`call()` to the Ollama host, paced and retried in place. `call` raises on any
     failure worth classifying (a plain function return is success); `call_ms` records
     only a SUCCESSFUL attempt's wall time, never a failed attempt's, and never a sleep -
     the timing window opens after `_pace()` has already returned. `host_key`, when given,
     is tallied in `_CALLS_BY_HOST` alongside the aggregate `calls` counter."""
-    _pace()
-    with _LOCK:
-        _COUNTERS["calls"] += 1
-        if host_key is not None:
-            _CALLS_BY_HOST[host_key] = _CALLS_BY_HOST.get(host_key, 0) + 1
-    attempt = 0
-    while True:
-        _inflight_enter()
-        t0 = _now()
-        try:
-            result = call()
-        except BaseException as exc:                                  # noqa: BLE001
-            _inflight_exit()
-            retry = classify(exc, is_ollama_host=True)
-            if retry and attempt < MAX_RETRIES:
-                attempt += 1
+    _concurrent_enter()                 # K14: before _pace() - the WHOLE operation
+    try:
+        _pace()
+        with _LOCK:
+            _COUNTERS["calls"] += 1
+            if host_key is not None:
+                _CALLS_BY_HOST[host_key] = _CALLS_BY_HOST.get(host_key, 0) + 1
+        attempt = 0
+        while True:
+            _inflight_enter()
+            t0 = _now()
+            try:
+                result = call()
+            except BaseException as exc:                              # noqa: BLE001
+                _inflight_exit()
+                retry = classify(exc, is_ollama_host=True)
+                if retry and attempt < MAX_RETRIES:
+                    attempt += 1
+                    with _LOCK:
+                        _COUNTERS["retries"] += 1
+                    _sleep(RETRY_INTERVAL_S)
+                    with _LOCK:
+                        _COUNTERS["retry_sleep_s"] += RETRY_INTERVAL_S
+                    continue
+                if retry:
+                    with _LOCK:
+                        _COUNTERS["gave_up"] += 1
+                raise
+            else:
+                _inflight_exit()
                 with _LOCK:
-                    _COUNTERS["retries"] += 1
-                _sleep(RETRY_INTERVAL_S)
-                with _LOCK:
-                    _COUNTERS["retry_sleep_s"] += RETRY_INTERVAL_S
-                continue
-            if retry:
-                with _LOCK:
-                    _COUNTERS["gave_up"] += 1
-            raise
-        else:
-            _inflight_exit()
-            with _LOCK:
-                _CALL_MS.append((_now() - t0) * 1000.0)
-            return result
+                    _CALL_MS.append((_now() - t0) * 1000.0)
+                return result
+    finally:
+        _concurrent_exit()
 
 
 async def _run_paced_async(call: Callable, host_key: tuple | None = None):
-    await _pace_async()
-    with _LOCK:
-        _COUNTERS["calls"] += 1
-        if host_key is not None:
-            _CALLS_BY_HOST[host_key] = _CALLS_BY_HOST.get(host_key, 0) + 1
-    attempt = 0
-    while True:
-        _inflight_enter()
-        t0 = _now()
-        try:
-            result = await call()
-        except BaseException as exc:                                  # noqa: BLE001
-            _inflight_exit()
-            retry = classify(exc, is_ollama_host=True)
-            if retry and attempt < MAX_RETRIES:
-                attempt += 1
+    _concurrent_enter()                 # K14: before _pace() - the WHOLE operation
+    try:
+        await _pace_async()
+        with _LOCK:
+            _COUNTERS["calls"] += 1
+            if host_key is not None:
+                _CALLS_BY_HOST[host_key] = _CALLS_BY_HOST.get(host_key, 0) + 1
+        attempt = 0
+        while True:
+            _inflight_enter()
+            t0 = _now()
+            try:
+                result = await call()
+            except BaseException as exc:                              # noqa: BLE001
+                _inflight_exit()
+                retry = classify(exc, is_ollama_host=True)
+                if retry and attempt < MAX_RETRIES:
+                    attempt += 1
+                    with _LOCK:
+                        _COUNTERS["retries"] += 1
+                    await _async_sleep(RETRY_INTERVAL_S)
+                    with _LOCK:
+                        _COUNTERS["retry_sleep_s"] += RETRY_INTERVAL_S
+                    continue
+                if retry:
+                    with _LOCK:
+                        _COUNTERS["gave_up"] += 1
+                raise
+            else:
+                _inflight_exit()
                 with _LOCK:
-                    _COUNTERS["retries"] += 1
-                await _async_sleep(RETRY_INTERVAL_S)
-                with _LOCK:
-                    _COUNTERS["retry_sleep_s"] += RETRY_INTERVAL_S
-                continue
-            if retry:
-                with _LOCK:
-                    _COUNTERS["gave_up"] += 1
-            raise
-        else:
-            _inflight_exit()
-            with _LOCK:
-                _CALL_MS.append((_now() - t0) * 1000.0)
-            return result
+                    _CALL_MS.append((_now() - t0) * 1000.0)
+                return result
+    finally:
+        _concurrent_exit()
 
 
 # ── urllib.request.urlopen ───────────────────────────────────────────────────────────
@@ -609,6 +650,7 @@ def snapshot() -> dict:
                 "nested_requests": _COUNTERS["nested_requests"],
                 "nested_aiohttp": _COUNTERS["nested_aiohttp"],
                 "max_inflight": _COUNTERS["max_inflight"],
+                "max_concurrent_paced": _COUNTERS["max_concurrent_paced"],
                 "_call_ms_len": len(_CALL_MS),
                 "_calls_by_host": dict(_CALLS_BY_HOST)}
 
@@ -667,14 +709,17 @@ def attach(out: dict, *, since: dict | None = None) -> None:
         retry_sleep_s = _COUNTERS["retry_sleep_s"] - base["retry_sleep_s"]
         gave_up = _COUNTERS["gave_up"] - base["gave_up"]
         samples = list(_CALL_MS[base["_call_ms_len"]:])
-        #: R2: the PROCESS-WIDE peak, read here rather than as a delta - "max_inflight"
-        #: is a monotonic HIGH-WATER MARK, not a sum, and a delta of two peaks answers
-        #: "did a NEW record get set during this window", not "was there ever overlap
-        #: during it". Conservative in one direction only: once any concurrency has
-        #: EVER happened in this process, every later `pace_excluded_exact` reads False,
-        #: even for a window that was itself perfectly serial - never the other way
-        #: around (a truly concurrent window is never reported as exact).
+        #: R2/K14: the PROCESS-WIDE peak, read here rather than as a delta - a monotonic
+        #: HIGH-WATER MARK, not a sum, and a delta of two peaks answers "did a NEW record
+        #: get set during this window", not "was there ever overlap during it".
+        #: Conservative in one direction only: once any concurrency has EVER happened in
+        #: this process, every later `pace_excluded_exact` reads False, even for a window
+        #: that was itself perfectly serial - never the other way around (a truly
+        #: concurrent window is never reported as exact). `pace_excluded_exact` is driven
+        #: by `max_concurrent_paced` (the WHOLE paced operation, K14), never by the
+        #: narrower `max_inflight` (call-only) - see `_CONCURRENT_STATE`'s docstring.
         max_inflight = _COUNTERS["max_inflight"]
+        max_concurrent_paced = _COUNTERS["max_concurrent_paced"]
     out["ollama_transport"] = {
         "calls": calls, "pace_sleep_s": round(pace_sleep_s, 3), "retries": retries,
         "retry_sleep_s": round(retry_sleep_s, 3), "gave_up": gave_up,
@@ -684,7 +729,8 @@ def attach(out: dict, *, since: dict | None = None) -> None:
         "bypass_calls": {"requests": bypass_requests, "aiohttp": bypass_aiohttp},
         "nested_calls": {"requests": nested_requests, "aiohttp": nested_aiohttp},
         "max_inflight": max_inflight,
-        "pace_excluded_exact": max_inflight <= 1,
+        "max_concurrent_paced": max_concurrent_paced,
+        "pace_excluded_exact": max_concurrent_paced <= 1,
     }
     if bypass_requests > 0 or bypass_aiohttp > 0:
         culprits = [name for name, n in
@@ -707,3 +753,4 @@ def _reset_for_tests() -> None:
         _CALL_MS.clear()
         _CALLS_BY_HOST.clear()
         _INFLIGHT_STATE["n"] = 0
+        _CONCURRENT_STATE["n"] = 0

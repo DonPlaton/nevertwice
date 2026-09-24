@@ -172,13 +172,15 @@ def _pace_excluded(elapsed_s: float, before: dict, after: dict) -> tuple[float, 
     never overlap - true for one caller paced serially, false the moment two threads are
     both paced at once, where the same wall-clock second is double-counted as "pacing
     time" by each one, and the result can even go negative. `exact` is
-    `after["max_inflight"] <= 1` - the pacer's own process-wide high-water mark, so a
-    caller knows whether to trust the number or treat it as a (floor-clamped) estimate.
+    `after["max_concurrent_paced"] <= 1` - the pacer's own process-wide high-water mark
+    over the WHOLE paced operation (K14: pacing/retry WAITS overlap even when the calls
+    themselves never do, which the narrower `max_inflight` - call-only - cannot see), so
+    a caller knows whether to trust the number or treat it as a (floor-clamped) estimate.
     Clamped at 0 either way: a negative "cost" is never a real answer to "how long did
     this take", exact or not."""
     paced = ((after["pace_sleep_s"] - before["pace_sleep_s"]) +
             (after["retry_sleep_s"] - before["retry_sleep_s"]))
-    return max(0.0, round(elapsed_s - paced, 3)), after.get("max_inflight", 0) <= 1
+    return max(0.0, round(elapsed_s - paced, 3)), after.get("max_concurrent_paced", 0) <= 1
 
 
 def coverage_verdict(name: str, r: dict) -> dict:
@@ -226,8 +228,9 @@ def run_and_score_arm(name: str, data, pool) -> dict:
     r["measured_at"] = _measured_at()
     if name == "nevertwice":
         r["morphology"] = bool(m.LEXICAL_MORPHOLOGY)
-    r = accept(name, r)
-    r = accept(name, r)
+    r = accept(name, r)          # (в): was called twice - the second call was always a
+                                  # no-op (accept() short-circuits once "blocked" is set,
+                                  # or the row already had a real recall@max(KS))
     return r
 
 

@@ -802,6 +802,89 @@ def test_t8c_max_inflight_tracks_real_concurrency() -> None:
             pacer._inflight_enter = saved_enter
 
 
+def test_t8d_max_concurrent_paced_covers_the_whole_paced_operation() -> None:
+    """K14 (the auditor's review of 8450a74): T8c above forces `PACE_S = 0.0` for its
+    overlap scenario BECAUSE, in its own words, "the default 0.125s min-gap between call
+    STARTS is longer than slow_ok's own 0.05s body, so at the default rate no two calls
+    are ever actually inflight together" - so `max_inflight`/`pace_excluded_exact` reads
+    "exact" at the DEFAULT pacing floor even under real 4-thread concurrency, because it
+    only ever watches the call body, never the pacing WAIT. Measured (the auditor's own
+    probe): 4 threads, default PACE_S, a 0.05s call body - wall 0.426s, pace_sleep_s
+    SUMMED to 0.749s across the four. `max_concurrent_paced` watches the WHOLE paced
+    operation (entry, before `_pace()`, to return) and must catch this."""
+    print("\n- T8d: K14 - max_concurrent_paced covers the WHOLE paced operation (pacing "
+          "wait + call), not just the call body; exact at the DEFAULT PACE_S -")
+    with _isolated():
+        def slow_ok():
+            time.sleep(0.05)
+            return "OK"
+        # DEFAULT PACE_S this time - no override. The exact scenario T8c's own comment
+        # says would (wrongly) read "exact" under the old, call-only tracking.
+        snap = pacer.snapshot()
+        threads = [threading.Thread(target=pacer._run_paced, args=(slow_ok,),
+                                    kwargs={"host_key": ("127.0.0.1", 11434)})
+                  for _ in range(4)]
+        t_start = pacer._now()
+        with _crash_guard("max_inflight (call-only) stays <= 1 at the default pacing "
+                          "floor - unchanged by this fix",
+                          "max_concurrent_paced (whole operation) reads > 1 - the "
+                          "pacing WAITS overlapped even though the calls did not",
+                          "pace_excluded_exact is False - the naive elapsed - "
+                          "pace_sleep_s - retry_sleep_s subtraction is NOT trustworthy "
+                          "here",
+                          "the naive subtraction would have gone negative before the "
+                          "clamp: pace_sleep_s summed across 4 threads exceeds the "
+                          "real wall time"):
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join()
+            wall = pacer._now() - t_start
+            out: dict = {}
+            pacer.attach(out, since=snap)
+            ot = out["ollama_transport"]
+            check("max_inflight (call-only) stays <= 1 at the default pacing floor - "
+                  "unchanged by this fix", ot["max_inflight"] <= 1, str(ot))
+            check("max_concurrent_paced (whole operation) reads > 1 - the pacing WAITS "
+                  "overlapped even though the calls did not",
+                  ot["max_concurrent_paced"] > 1, str(ot))
+            check("pace_excluded_exact is False - the naive elapsed - pace_sleep_s - "
+                  "retry_sleep_s subtraction is NOT trustworthy here",
+                  ot["pace_excluded_exact"] is False, str(ot))
+            check("the naive subtraction would have gone negative before the clamp: "
+                  "pace_sleep_s summed across 4 threads exceeds the real wall time",
+                  ot["pace_sleep_s"] > wall, f"pace_sleep_s={ot['pace_sleep_s']} "
+                  f"wall={wall:.3f}")
+
+        # mutation: go back to the call-only window - K14's own regression, simulated by
+        # never entering/exiting the WHOLE-operation tracker
+        saved_enter, saved_exit = pacer._concurrent_enter, pacer._concurrent_exit
+        pacer._concurrent_enter = lambda: None
+        pacer._concurrent_exit = lambda: None
+        try:
+            pacer._reset_for_tests()
+            snap2 = pacer.snapshot()
+            threads2 = [threading.Thread(target=pacer._run_paced, args=(slow_ok,))
+                       for _ in range(4)]
+            with _crash_guard("mutation 'go back to the call-only window': the SAME "
+                              "default-pace, 4-thread overlap now WRONGLY reads "
+                              "pace_excluded_exact=True (would FAIL the exact-is-False "
+                              "check above)"):
+                for t in threads2:
+                    t.start()
+                for t in threads2:
+                    t.join()
+                out2: dict = {}
+                pacer.attach(out2, since=snap2)
+                check("mutation 'go back to the call-only window': the SAME "
+                      "default-pace, 4-thread overlap now WRONGLY reads "
+                      "pace_excluded_exact=True (would FAIL the exact-is-False check "
+                      "above)", out2["ollama_transport"]["pace_excluded_exact"] is True,
+                      str(out2))
+        finally:
+            pacer._concurrent_enter, pacer._concurrent_exit = saved_enter, saved_exit
+
+
 # ── TW1/TW2: the tripwire - requests/aiohttp are COUNTED, never paced or retried ────────
 #
 # R1 (the auditor's review of 717f482, after the empirical arm-symmetry probe found no
@@ -1054,6 +1137,7 @@ def main() -> int:
                test_t8_attach_writes_the_key_only_when_something_ran_through_it,
                test_t8b_calls_by_host_distinguishes_two_recognised_ollama_hosts,
                test_t8c_max_inflight_tracks_real_concurrency,
+               test_t8d_max_concurrent_paced_covers_the_whole_paced_operation,
                test_tw1_requests_session_send_is_counted_not_paced_and_marks_invalid,
                test_tw2_aiohttp_client_session_request_is_counted_not_paced,
                test_tw3_nested_aiohttp_inside_a_paced_httpx_call_is_not_a_bypass):

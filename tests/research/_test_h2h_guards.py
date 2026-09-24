@@ -95,22 +95,47 @@ check("no ingested_items recorded at all -> nothing to report, no coverage key",
       "coverage" not in h2h.coverage_verdict("mem0", {"ollama_transport": {"calls": 0}}), "")
 
 print("\n- _pace_excluded(): a phase's own elapsed time, minus the pacer's sleep in it -")
-before_snap = {"pace_sleep_s": 1.0, "retry_sleep_s": 0.0, "max_inflight": 1}
-after_snap = {"pace_sleep_s": 3.5, "retry_sleep_s": 15.0, "max_inflight": 1}
+# K14: exact is driven by max_concurrent_paced (the WHOLE paced operation), never by the
+# narrower max_inflight (call-only) - carried here too, to prove the synthetic dicts
+# below are not accidentally passing because a STALE key happens to still be read.
+before_snap = {"pace_sleep_s": 1.0, "retry_sleep_s": 0.0, "max_inflight": 1,
+              "max_concurrent_paced": 1}
+after_snap = {"pace_sleep_s": 3.5, "retry_sleep_s": 15.0, "max_inflight": 1,
+             "max_concurrent_paced": 1}
 val, exact = h2h._pace_excluded(20.0, before_snap, after_snap)
 check("elapsed minus (pace_sleep delta + retry_sleep delta)", val == 20.0 - 2.5 - 15.0, str(val))
-check("exact is True when max_inflight never exceeded 1", exact is True, str(exact))
+check("exact is True when max_concurrent_paced never exceeded 1", exact is True, str(exact))
 val0, exact0 = h2h._pace_excluded(5.0, before_snap, before_snap)
 check("zero pacing in the window -> elapsed is untouched", val0 == 5.0, str(val0))
 
-print("\n- R2: _pace_excluded() is clamped at 0 and reports inexact under concurrency -")
-concurrent_after = {"pace_sleep_s": 3.5, "retry_sleep_s": 15.0, "max_inflight": 3}
+print("\n- R2/K14: _pace_excluded() is clamped at 0 and reports inexact under concurrency -")
+concurrent_after = {"pace_sleep_s": 3.5, "retry_sleep_s": 15.0, "max_inflight": 1,
+                    "max_concurrent_paced": 3}
 _, exact_c = h2h._pace_excluded(20.0, before_snap, concurrent_after)
-check("max_inflight > 1 anywhere in the span -> exact is False", exact_c is False, str(exact_c))
-over_after = {"pace_sleep_s": 3.5, "retry_sleep_s": 100.0, "max_inflight": 1}
+check("max_concurrent_paced > 1 anywhere in the span -> exact is False (max_inflight "
+      "alone staying at 1 must NOT be enough to read exact - the K14 regression)",
+      exact_c is False, str(exact_c))
+over_after = {"pace_sleep_s": 3.5, "retry_sleep_s": 100.0, "max_inflight": 1,
+             "max_concurrent_paced": 1}
 val_neg, _ = h2h._pace_excluded(20.0, before_snap, over_after)
 check("pacing sleep exceeding elapsed time is CLAMPED at 0, never negative",
       val_neg == 0.0, str(val_neg))
+
+# mutation: read max_inflight instead of max_concurrent_paced (K14's own regression) -
+# the SAME concurrent_after (max_inflight=1, max_concurrent_paced=3) now WRONGLY exact
+_saved_pace_excluded = h2h._pace_excluded
+def _pace_excluded_old_key(elapsed_s, before, after):
+    paced = ((after["pace_sleep_s"] - before["pace_sleep_s"]) +
+            (after["retry_sleep_s"] - before["retry_sleep_s"]))
+    return max(0.0, round(elapsed_s - paced, 3)), after.get("max_inflight", 0) <= 1
+h2h._pace_excluded = _pace_excluded_old_key
+try:
+    _, exact_mut = h2h._pace_excluded(20.0, before_snap, concurrent_after)
+    check("mutation 'read max_inflight instead of max_concurrent_paced': the SAME "
+          "concurrent span now WRONGLY reads exact=True (would FAIL the exact-is-False "
+          "check above)", exact_mut is True, str(exact_mut))
+finally:
+    h2h._pace_excluded = _saved_pace_excluded
 
 print("\n- K12(в)/MG2: the coverage boundary - exactly one call short of full is "
      "'unobserved', not just 'far short' -")
