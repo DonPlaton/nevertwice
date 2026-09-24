@@ -51,6 +51,7 @@ import memory_hook as m  # noqa: E402
 import qa_eval as qa  # noqa: E402 - the reader / judge prompts
 import frontier_eval as fe  # noqa: E402 - ollama_chat, wilson, the caches' shape
 import _provenance as prov  # noqa: E402 - measured_at: {commit, utc, dirty} on the final artifacts
+import _ollama_pacer as pacer  # noqa: E402 - item 9B/P0(a): pace/retry/count this stand's own traffic
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -276,12 +277,22 @@ def situation_hit(items: list[dict], prevention: str, top: int = TOP_SITUATION) 
 
 def answer_stage(arms: list[str], qs: list[dict], pool: dict, reader: str) -> dict:
     cache = fe._load(_cache_path("answers"))
+    snap = pacer.snapshot()          # item 9B/P0(a): this stage's own reader traffic
     changed = 0
+    blocked_now = []
+    unblocked_now = []
     for arm in list(arms) + list(BRACKETS):
         ctx = {} if arm in BRACKETS else fe._load(_ctx_path(arm))
         if arm not in BRACKETS and not ctx:
-            print(f"- {arm}: no contexts - skipped")
+            # P0(f)/K23: no bare skip - recorded into the answers cache (a `_`-prefixed key, the
+            # only durable record a LATER `judge`/`summary` process, in its own separate
+            # invocation, can read) so `summarise()` turns this into a named refusal in the
+            # artifact (blocked + valid:false), never a vanished arm.
+            print(f"- {arm}: no contexts - blocked, recorded as a named refusal in the artifact")
+            blocked_now.append(arm)
             continue
+        if arm not in BRACKETS:
+            unblocked_now.append(arm)     # (в): this run found contexts for it - not blocked
         n_done = 0
         for q in qs:
             if q["type"] == "situation":
@@ -305,12 +316,23 @@ def answer_stage(arms: list[str], qs: list[dict], pool: dict, reader: str) -> di
             stale = fe._find_akey(cache, reader, arm, K, q["id"])
             if stale:
                 del cache[stale]
-            cache[key] = {"answer": str(ans)[:600], "prompt_tokens": r["prompt_tokens"], "context_chars": len(context)}
+            # K30: stamp every NEW answer with the commit and utc it was produced at -
+            # `summarise()` refuses a point whose answers/verdicts are not provably current.
+            cache[key] = {"answer": str(ans)[:600], "prompt_tokens": r["prompt_tokens"],
+                          "context_chars": len(context), "commit": fe.git_head(), "utc": fe._utc_now_iso()}
             changed += 1
             n_done += 1
             if changed % 20 == 0:
                 fe._save(_cache_path("answers"), cache)
         print(f"- {arm}: {n_done} new answers", flush=True)
+    # (в) (the auditor, 2026-09-24): `_blocked_arms` used to only GROW - unblocked here whenever
+    # THIS run actually found contexts for it.
+    still_blocked = (set(cache.get("_blocked_arms") or []) | set(blocked_now)) - set(unblocked_now)
+    if still_blocked:
+        cache["_blocked_arms"] = sorted(still_blocked)
+    else:
+        cache.pop("_blocked_arms", None)
+    fe._attach_prefixed_transport(cache, "_transport", snap)
     fe._save(_cache_path("answers"), cache)
     return cache
 
@@ -318,6 +340,7 @@ def answer_stage(arms: list[str], qs: list[dict], pool: dict, reader: str) -> di
 def judge_stage(arms: list[str], qs: list[dict], reader: str, judge: str) -> dict:
     answers = fe._load(_cache_path("answers"))
     verdicts = fe._load(_cache_path("verdicts"))
+    snap = pacer.snapshot()          # item 9B/P0(a): this stage's own judge traffic
     changed = 0
     for arm in list(arms) + list(BRACKETS):
         for q in qs:
@@ -331,16 +354,29 @@ def judge_stage(arms: list[str], qs: list[dict], reader: str, judge: str) -> dic
             if v is None:
                 continue
             verdicts[vkey] = v
+            verdicts.setdefault("_meta", {})[vkey] = {"commit": fe.git_head(), "utc": fe._utc_now_iso()}
             changed += 1
             if changed % 25 == 0:
                 fe._save(_cache_path("verdicts"), verdicts)
+    fe._attach_prefixed_transport(verdicts, "_transport", snap)
     fe._save(_cache_path("verdicts"), verdicts)
     return verdicts
 
 
-def score_answers(qs: list[dict], answers: dict, verdicts: dict, ctx: dict, reader: str, arm: str, judge: str) -> dict:
-    """Per type: the rate and its interval, tokens, and for `current` the stale rate."""
+def score_answers(qs: list[dict], answers: dict, verdicts: dict, ctx: dict, reader: str, arm: str, judge: str,
+                  *, head: str | None = None, closure: list[str] | None = None) -> dict:
+    """Per type: the rate and its interval, tokens, and for `current` the stale rate.
+
+    `head`/`closure` (K30): passed by `summarise()` (computed once there); a direct/test call
+    computes its own so the signature stays usable standalone. `situation` is retrieval-only
+    (no answer/verdict cache involved, so K30 does not apply to it - it is never a drop, P0(f))
+    and is always counted, matching the stand's own scope: it is never sent to the reader."""
+    head = head if head is not None else fe.git_head()
+    closure = closure if closure is not None else fe.engine_closure("python research/code_sessions_eval.py")
     by = {}
+    missing_by_type: dict = {}
+    stale_ans_by_type: dict = {}
+    stale_vd_by_type: dict = {}
     for q in qs:
         t = q["type"]
         d = by.setdefault(t, {"n": 0, "correct": 0, "stale": 0, "tokens": []})
@@ -353,38 +389,92 @@ def score_answers(qs: list[dict], answers: dict, verdicts: dict, ctx: dict, read
             continue
         akey = fe._find_akey(answers, reader, arm, K, q["id"])
         if akey is None:
+            missing_by_type.setdefault(t, []).append(q["id"])       # P0(f)/K23: no answer
             continue
-        ans = answers[akey]["answer"]
-        d["n"] += 1
-        d["tokens"].append(answers[akey]["prompt_tokens"])
+        ans_entry = answers[akey]
+        ans = ans_entry["answer"]
+        a_current = fe._stamp_current(ans_entry, head, closure)
         if t == "lesson":
-            v = verdicts.get(f"{judge}|{akey}")
+            vkey = f"{judge}|{akey}"
+            v = verdicts.get(vkey)
             if v is None:
-                d["n"] -= 1
-                d["tokens"].pop()
+                missing_by_type.setdefault(t, []).append(q["id"])   # P0(f)/K23: no verdict
                 continue
+            d["n"] += 1
+            d["tokens"].append(ans_entry["prompt_tokens"])
             d["correct"] += int(bool(v))
+            v_stamp = (verdicts.get("_meta") or {}).get(vkey)
+            if not fe._stamp_current(v_stamp, head, closure):
+                stale_vd_by_type.setdefault(t, []).append(q["id"])
         else:
+            d["n"] += 1
+            d["tokens"].append(ans_entry["prompt_tokens"])
             got = hit(q["markers"], ans)
             d["correct"] += int(got)
             if t == "current" and hit(q["stale_markers"], ans) and not got:
                 d["stale"] += 1
+        if not a_current:
+            stale_ans_by_type.setdefault(t, []).append(q["id"])
+    type_counts: dict = {}
+    for q in qs:
+        type_counts[q["type"]] = type_counts.get(q["type"], 0) + 1
     out = {}
-    for t, d in by.items():
-        if not d["n"]:
-            continue
-        row = {"n": d["n"], "accuracy": round(d["correct"] / d["n"], 4), "ci": fe.wilson(d["correct"], d["n"])}
-        if d["tokens"]:
-            row["mean_prompt_tokens"] = round(sum(d["tokens"]) / len(d["tokens"]), 1)
-        if t == "current":
-            row["stale_rate"] = round(d["stale"] / d["n"], 4)
-            row["stale_ci"] = fe.wilson(d["stale"], d["n"])
+    #: K37 (the auditor, 2026-09-24): a type the stand asks about used to vanish entirely when
+    #: its `n` came out 0 (`if not d["n"]: continue`) - every lesson verdict missing dropped the
+    #: "lesson" row and `core` was silently REDEFINED over fact+current alone, still looking
+    #: valid. Iterated over `type_counts` (every type asked about, not just the ones `by`
+    #: happened to accumulate anything for) so a fully-empty type still gets a row.
+    for t, n_expected in type_counts.items():
+        d = by.get(t, {"n": 0, "correct": 0, "stale": 0, "tokens": []})
+        if d["n"]:
+            row = {"n": d["n"], "accuracy": round(d["correct"] / d["n"], 4), "ci": fe.wilson(d["correct"], d["n"])}
+            if d["tokens"]:
+                row["mean_prompt_tokens"] = round(sum(d["tokens"]) / len(d["tokens"]), 1)
+            if t == "current":
+                row["stale_rate"] = round(d["stale"] / d["n"], 4)
+                row["stale_ci"] = fe.wilson(d["stale"], d["n"])
+        else:
+            row = {"n": 0, "accuracy": None, "ci": fe.wilson(0, 0)}
+            if t == "current":
+                row["stale_rate"] = None
+                row["stale_ci"] = fe.wilson(0, 0)
+        missing = missing_by_type.get(t, [])
+        stale_a = stale_ans_by_type.get(t, [])
+        stale_v = stale_vd_by_type.get(t, [])
+        reasons = []
+        # P0(f) item 2: a question with no answer or no verdict was silently left out of n.
+        if d["n"] != n_expected or missing:
+            row["missing_count"] = len(missing)
+            row["missing_question_ids"] = missing
+            reasons.append(f"{len(missing)} of {n_expected} {t!r} question(s) have no answer "
+                           f"or no verdict for arm {arm!r}")
+        if stale_a:
+            row["stale_answers_count"] = len(stale_a)
+            row["stale_answer_ids"] = stale_a
+            reasons.append(f"K30: {len(stale_a)} answer(s) not stamped at a commit current with "
+                           f"HEAD for arm {arm!r} type {t!r}: {stale_a[:20]}")
+        if stale_v:
+            row["stale_verdicts_count"] = len(stale_v)
+            row["stale_verdict_ids"] = stale_v
+            reasons.append(f"K30: {len(stale_v)} verdict(s) not stamped at a commit current with "
+                           f"HEAD for arm {arm!r} type {t!r}: {stale_v[:20]}")
+        if reasons:
+            row["valid"] = False
+            row["invalid_reason"] = "; ".join(reasons)
         out[t] = row
     core = [t for t in ("fact", "current", "lesson") if t in out]
     if core:
         n = sum(out[t]["n"] for t in core)
-        c = sum(int(round(out[t]["accuracy"] * out[t]["n"])) for t in core)
-        out["core"] = {"n": n, "accuracy": round(c / n, 4), "ci": fe.wilson(c, n)}
+        c = sum(int(round((out[t]["accuracy"] or 0) * out[t]["n"])) for t in core)
+        out["core"] = {"n": n, "accuracy": round(c / n, 4) if n else None, "ci": fe.wilson(c, n)}
+        # K37/K25: core is invalid unless ALL THREE folded types are present with n == asked -
+        # a claim on `core` reads outside any single folded type's own dict, so a type that is
+        # itself incomplete (n != n_expected) or stale must taint the fold, not just vanish from
+        # the arithmetic the way a silently-redefined `core` used to.
+        invalid_core = [t for t in core if out[t].get("valid") is False]
+        if invalid_core:
+            out["core"]["valid"] = False
+            out["core"]["invalid_reason"] = "a folded type has missing/stale data: " + ", ".join(invalid_core)
     return out
 
 
@@ -413,13 +503,27 @@ def fact_survival(qs: list[dict], ctx: dict, arm: str) -> dict:
 def summarise(arms: list[str], qs: list[dict], corpus: dict, reader: str, judge: str) -> dict:
     answers = fe._load(_cache_path("answers"))
     verdicts = fe._load(_cache_path("verdicts"))
+    head = fe.git_head()             # K30: computed once, same HEAD/closure for every arm/type
+    closure = fe.engine_closure("python research/code_sessions_eval.py")
     out = {"corpus": {"name": corpus["name"], "sha256": corpus["sha256"], "generator_model": corpus.get("generator_model"),
                       "counts": corpus.get("counts")},
            "reader": reader, "judge": judge, "extractor": EXTRACTOR, "k": K, "top_situation": TOP_SITUATION,
            "arms": {}, "brackets": {}, "ingest": {}}
+    #: P0(f)/K23: `answer_stage`'s own record of a requested arm it found no contexts for - the
+    #: only durable trace a LATER `judge`/`summary` process (its own separate invocation) can
+    #: read; `summarise()` never loaded a contexts cache of its own before this.
+    blocked_arms = set(answers.get("_blocked_arms") or [])
     for arm in list(arms) + list(BRACKETS):
+        if arm in blocked_arms:
+            out["arms"][arm] = {
+                "blocked": f"no contexts cached for requested arm {arm!r} - run: "
+                           f"python research/code_sessions_eval.py contexts --arm {arm}",
+                "valid": False,
+                "invalid_reason": f"{arm}: requested arm has no cached contexts",
+            }
+            continue
         ctx = {} if arm in BRACKETS else fe._load(_ctx_path(arm))
-        sc = score_answers(qs, answers, verdicts, ctx, reader, arm, judge)
+        sc = score_answers(qs, answers, verdicts, ctx, reader, arm, judge, head=head, closure=closure)
         if sc and arm not in BRACKETS:
             fs = fact_survival(qs, ctx, arm)
             if fs["n"]:
@@ -428,6 +532,47 @@ def summarise(arms: list[str], qs: list[dict], corpus: dict, reader: str, judge:
             (out["brackets"] if arm in BRACKETS else out["arms"])[arm] = sc
         if ctx.get("_ingest"):
             out["ingest"][arm] = ctx["_ingest"]
+        if arm in BRACKETS:
+            continue
+        node = out["arms"].get(arm)
+        # item 1: fold this arm's own contexts-stage transport in - the flag lands on the arm
+        # the claim's pointer actually reads (K16(2)/K25).
+        fe._fold_arm_context_provenance(arm, node, ctx, out)
+        gap = fe.ctx_coverage_gap(ctx, [q["id"] for q in qs])
+        if gap:
+            # P0(f) item 2: a partial competitor cache (contexts for only some questions) is a
+            # mismatch, not present - `answer_stage` still answers the missing ones from an
+            # empty context, invisible to the n-vs-expected gate in `score_answers`.
+            if node is not None:
+                node["valid"] = False
+                node["missing_contexts_count"] = len(gap)
+                node["missing_contexts_ids"] = gap
+                node["invalid_reason"] = "; ".join(r for r in (
+                    node.get("invalid_reason"),
+                    f"{len(gap)} of {len(qs)} question(s) have no cached context at all for "
+                    f"arm {arm!r} (a partial cache counts as a mismatch, not as present)") if r)
+        if arm not in ENGINE_ARMS:
+            # RN5 (item 3): a competitor arm's contexts may have been cached well before this
+            # run - "declared per P3" made checkable against the file on disk.
+            prov_entry = fe._ctx_file_provenance(_ctx_path(arm))
+            if prov_entry:
+                out.setdefault("competitor_cache", {})[arm] = prov_entry
+    # item 1: the answer/judge stages' own transport - a bypass or failed embed there taints
+    # every arm's numbers, not just one, so it is folded straight into the root.
+    ans_transport = answers.get("_transport")
+    jdg_transport = verdicts.get("_transport")
+    stage_reasons = []
+    if ans_transport:
+        out["answer_transport"] = ans_transport
+        if ans_transport.get("valid") is False:
+            stage_reasons.append(f"answer stage: {ans_transport.get('invalid_reason')}")
+    if jdg_transport:
+        out["judge_transport"] = jdg_transport
+        if jdg_transport.get("valid") is False:
+            stage_reasons.append(f"judge stage: {jdg_transport.get('invalid_reason')}")
+    if stage_reasons:
+        out["valid"] = False
+        out["invalid_reason"] = "; ".join(stage_reasons)
     # the corpus gates, read here so the artifact says whether the corpus separates
     none_ = (out["brackets"].get("none") or {}).get("core", {}).get("accuracy")
     orac = (out["brackets"].get("oracle") or {}).get("core", {}).get("accuracy")
@@ -437,6 +582,7 @@ def summarise(arms: list[str], qs: list[dict], corpus: dict, reader: str, judge:
              "naive_le_oracle_minus_0.20": None if (naive is None or orac is None) else naive <= orac - 0.20}
     gates["corpus_separates"] = all(v is True for v in gates.values())
     out["corpus_gates"] = gates
+    fe._propagate_root_invalidity(out)   # K25: any invalid arm/bracket invalidates the whole artifact
     return out
 
 
@@ -464,12 +610,15 @@ def main() -> int:
     qs, pool = questions(corpus), pool_of(corpus)
     arms = [a for a in args.arms.split(",") if a]
     print(f"code sessions: {len(corpus['projects'])} projects, {len(qs)} questions, reader {READER}, judge {JUDGE}, stage {args.stage}")
+    pacer.install()          # item 9B/P0(a): pace/retry/count every stage's own Ollama traffic
     if args.stage == "contexts":
         fn = CONTEXT_FNS.get(args.arm)
         if fn is None:
             print(f"unknown arm {args.arm!r}; have {', '.join(CONTEXT_FNS)}")
             return 2
+        snap = pacer.snapshot()
         ctx = fn(corpus, seed_pairs=args.seed_pairs) if args.arm == "nevertwice_full" else fn(corpus)
+        fe._attach_prefixed_transport(ctx, "_transport", snap)
         if args.arm in ENGINE_ARMS:
             fe.stamp_engine_commit(ctx)
         fe._save(_ctx_path(args.arm), ctx)

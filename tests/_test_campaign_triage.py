@@ -142,22 +142,26 @@ _tracked = subprocess.run(["git", "ls-files", "*.py"], cwd=T.ROOT, capture_outpu
                           text=True, encoding="utf-8").stdout.split()
 _src = [f for f in _tracked if f not in T.CLOSURE_EXCLUDED_FILES and T.MODEL_CALL.search(
         (T.ROOT / f).read_text(encoding="utf-8", errors="replace"))]
-#: Sixteen, of which eleven CALL the endpoint and five only quote it: this suite, the tool
+#: Seventeen, of which eleven CALL the endpoint and six only quote it: this suite, the tool
 #: itself, `_test_audit_fixes.py`, `tests/research/_test_ollama_pacer.py` (R-v2-ports' T7
 #: names `/api/generate` as a `httpx.MockTransport` path for its streaming-response case),
 #: and `research/_ollama_symmetry_probe.py` (its fake Ollama SERVES `/api/chat` and
-#: `/api/generate` - it answers those paths, it never calls them). That is the declared
+#: `/api/generate` - it answers those paths, it never calls them), and
+#: `tests/research/_test_frontier.py` (item 9B's K35 check sends one request to `/api/chat`
+#: through a FAKED `urllib.request.urlopen`, so the pacer counts one clean paced call - it never
+#: reaches a real endpoint). That is the declared
 #: false-positive direction - a file wrongly read as touching a model is kept out of the
 #: deterministic group, which is the safe side for a campaign plan. The count is pinned so
 #: that narrowing the rule again reddens here instead of quietly returning it to the one
 #: file it used to see.
 #: K33 (item 9D, 2026-09-24): `research/_ollama_pacer.py` NOW also matches MODEL_CALL (its own
-#: bounded LLM retry names /api/generate and /api/chat), a SEVENTEENTH match by raw text - kept
+#: bounded LLM retry names /api/generate and /api/chat), one MORE match by raw text - kept
 #: out of this listing via `T.CLOSURE_EXCLUDED_FILES`, the same exact-path skip `triage()`'s own
 #: closure walk uses, so the population this check pins stays the files whose mention is
-#: evidence a CALLER (not shared transport) touches a model.
-check("sixteen tracked sources name a generation endpoint, so the rule has a population",
-      len(_src) == 16, str(len(_src)))
+#: evidence a CALLER (not shared transport) touches a model. Merge of stands/9d + stands/9b
+#: (2026-09-24): 16 + the _test_frontier.py quote enumerated above = 17; the pacer is not counted.
+check("seventeen tracked sources name a generation endpoint, so the rule has a population",
+      len(_src) == 17, str(len(_src)))
 check("and the generators it could not see before are among them",
       {"research/gen_code_sessions.py", "research/frontier_eval.py",
        "research/token_ab.py"} <= set(_src))

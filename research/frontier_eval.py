@@ -34,6 +34,7 @@ from __future__ import annotations
 
 import argparse
 import collections
+import datetime
 import hashlib
 import json
 import math
@@ -55,6 +56,8 @@ import memory_hook as m  # noqa: E402
 import longmem_eval as le  # noqa: E402
 import _provenance as prov  # noqa: E402 - measured_at: {commit, utc, dirty} on the final artifact
 import qa_eval as qa  # noqa: E402 - the reader / judge prompts, the same rubric as the QA study
+import _ollama_pacer as pacer  # noqa: E402 - item 9B/P0(a): pace/retry/count this stand's own traffic
+import corpus_pin  # noqa: E402 - m2_check: the pinned corpus's own sha256, the way longmem_eval records it
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -216,6 +219,220 @@ def _save(p: Path, d: dict) -> None:
     os.replace(tmp, p)
 
 
+# ── item 9B/P0(a): the pacer's own transport record, folded into a cache safely ────────
+
+#: K35 (the auditor, 2026-09-24): counters this merge sums across runs - additive by
+#: construction (a count, a summed duration). `max_inflight`/`max_concurrent_paced` are their
+#: own high-water marks and are merged by MAX, not sum, below.
+_TRANSPORT_SUM_KEYS = ("calls", "pace_sleep_s", "retries", "retry_sleep_s", "gave_up", "pace_floor_s")
+_TRANSPORT_MAX_KEYS = ("max_inflight", "max_concurrent_paced")
+
+
+def _merge_count_dict(a: dict, b: dict) -> dict:
+    return {k: (a.get(k, 0) or 0) + (b.get(k, 0) or 0) for k in set(a) | set(b)}
+
+
+def _merge_ollama_transport(old: dict, new: dict) -> dict:
+    if not old:
+        return new
+    if not new:
+        return old
+    out = dict(new)       # keep the newest call_ms/mode/timing_includes_pacing
+    for k in _TRANSPORT_SUM_KEYS:
+        out[k] = round((old.get(k, 0) or 0) + (new.get(k, 0) or 0), 6)
+    for k in _TRANSPORT_MAX_KEYS:
+        out[k] = max(old.get(k, 0) or 0, new.get(k, 0) or 0)
+    out["pace_excluded_exact"] = bool(old.get("pace_excluded_exact", True)) and bool(
+        new.get("pace_excluded_exact", True))
+    out["bypass_calls"] = _merge_count_dict(old.get("bypass_calls") or {}, new.get("bypass_calls") or {})
+    out["nested_calls"] = _merge_count_dict(old.get("nested_calls") or {}, new.get("nested_calls") or {})
+    old_fo, new_fo = old.get("failed_outcomes") or {}, new.get("failed_outcomes") or {}
+    out["failed_outcomes"] = {
+        "by_status": _merge_count_dict(old_fo.get("by_status") or {}, new_fo.get("by_status") or {}),
+        "by_exception_type": _merge_count_dict(old_fo.get("by_exception_type") or {},
+                                               new_fo.get("by_exception_type") or {}),
+        "gave_up": (old_fo.get("gave_up", 0) or 0) + (new_fo.get("gave_up", 0) or 0),
+    }
+    return out
+
+
+def _transport_runs(d: dict) -> list:
+    """K35: `d["runs"]` when this dict was itself written by `_attach_prefixed_transport`; for
+    one written before K35 (or seeded directly, as a probe or a legacy artifact does), its own
+    `invalid_reason` is treated as an implicit prior run so a merge can never lose it."""
+    runs = list(d.get("runs") or [])
+    if not runs and (d.get("valid") is False or d.get("invalid_reason")):
+        runs = [{"utc": None, "valid": d.get("valid"), "reason": d.get("invalid_reason")}]
+    return runs
+
+
+def _attach_prefixed_transport(cache: dict, key: str, since: dict) -> None:
+    """`pacer.attach()`'s own fixed keys (`ollama_transport`, `valid`, `invalid_reason`) are
+    never `_`-prefixed - writing them at a cache dict's own top level would corrupt a
+    consumer that counts real entries by filtering `not k.startswith('_')` (this module's
+    own contexts-stage printout) or crash one that assumes every value is a list/dict (a
+    bare `False` under `cache["valid"]`, `len()`-ed by that same filter). Captured on a
+    scratch dict and folded in, NESTED, under `cache[key]` (a single new `_`-prefixed key,
+    e.g. `ctx["_transport"]`) instead - HANDOFF-PORTS gotcha 5, checked here rather than
+    assumed. Writes nothing when the window paced zero calls and saw zero bypasses (mirrors
+    `pacer.attach()`'s own "a clean run says nothing" rule) - unless `cache[key]` already
+    exists, in which case it is left exactly as it was (a run that made no NEW calls must not
+    erase an earlier run's own record).
+
+    K35 (the auditor, 2026-09-24): `cache[key] = scratch` used to overwrite outright - a second
+    stage run (a resume, judge after answer, a re-run of contexts) with a clean window silently
+    LAUNDERED an earlier invalid transport (a bypass, a failed embed). Now MERGED: counters are
+    summed (`_merge_ollama_transport`), `valid:false` is STICKY (once set, stays set across every
+    later merge), and every run's own reason survives, each tagged with the utc it was recorded
+    at (`runs`), so `invalid_reason` is always the join of every run that ever saw a problem -
+    never just the most recent one."""
+    scratch: dict = {}
+    pacer.attach(scratch, since=since)
+    if not scratch:
+        return
+    scratch["runs"] = [{"utc": _utc_now_iso(), "valid": scratch.get("valid", True),
+                        "reason": scratch.get("invalid_reason")}]
+    existing = cache.get(key)
+    if not existing:
+        cache[key] = scratch
+        return
+    merged = dict(existing)
+    merged["ollama_transport"] = _merge_ollama_transport(
+        existing.get("ollama_transport") or {}, scratch.get("ollama_transport") or {})
+    merged["runs"] = _transport_runs(existing) + _transport_runs(scratch)
+    sticky_invalid = existing.get("valid") is False or scratch.get("valid") is False
+    if sticky_invalid:
+        merged["valid"] = False
+        merged["invalid_reason"] = "; ".join(
+            f"[{r['utc']}] {r['reason']}" for r in merged["runs"] if r.get("reason"))
+    else:
+        merged.pop("valid", None)
+        merged.pop("invalid_reason", None)
+    cache[key] = merged
+
+
+def _longmem_vector_cache_provenance() -> dict:
+    """P0(a) item 1, bullet 2: `nevertwice_whole`/`nevertwice_snippet` never call Ollama at the
+    contexts stage themselves - `head_to_head.run_nevertwice` (via `_capture_rankings`) reads
+    longmem's own pre-built VECTOR cache (`le._emb_path()`) and does cosine similarity over
+    vectors already sitting in it. That cache's own validity (a failed embed, dropped
+    sessions/questions - B1/K21, `.loop/HANDOFF-PORTS.md`) lives on THAT file, invisible to
+    anything this stand's own `pacer.install()` can see and invisible to
+    `tools/remeasure.row_refusal`, which only ever walks the RESULT artifact a claim's pointer
+    resolves through (K16(2)/K25) - never a cache sitting beside it. Copied here, at contexts
+    time, so `summarise()` can fold it into the arm the claim actually points at."""
+    p = le._emb_path()
+    if not p.exists():
+        return {}
+    try:
+        cache = json.loads(p.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    return {k: cache[k] for k in
+           ("valid", "invalid_reason", "ollama_transport", "dropped_sessions", "dropped_questions")
+           if k in cache}
+
+
+def _utc_now_iso() -> str:
+    return datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+
+def _stamp_current(stamp: dict | None, head: str, closure: list[str]) -> bool:
+    """K30 (the auditor, 2026-09-24): a cached ANSWER or VERDICT is current only if its own
+    recorded commit IS head, or nothing in the reader/judge closure has changed since it -
+    reusing F6's own `git_diff_quiet`/closure idea, one level down from the contexts cache it
+    was built for. Missing entirely (no `commit` recorded at all - a legacy answer/verdict
+    from before this stamp existed, or the 09-09 competitor caches K30 exists to catch) counts
+    as NOT current: an unprovable freshness is refused, never assumed."""
+    if not stamp or not stamp.get("commit"):
+        return False
+    commit = stamp["commit"]
+    return commit == head or git_diff_quiet(commit, closure)
+
+
+def ctx_coverage_gap(ctx: dict, ids: list[str]) -> list[str]:
+    """P0(f) item 2: a partial cache (contexts for only SOME of the requested questions -
+    plausible for a competitor cache built before the question set grew, or one that only
+    partly transferred) counts as a MISMATCH, not as present. `answer_stage` would still
+    generate an answer from an EMPTY context for a question missing here (`ctx.get(qid, [])`
+    defaults to `[]`, never a KeyError), which the n-vs-expected answer/verdict gate alone
+    cannot see - every question still gets an answer, just a meaningless one from nothing.
+    `ids` is every question id this arm is asked about (`_`-prefixed metadata keys in `ctx`
+    are never question ids and are excluded on both sides)."""
+    have = {k for k in ctx if not str(k).startswith("_")}
+    return sorted(i for i in ids if i not in have)
+
+
+def _fold_arm_context_provenance(arm: str, node: dict | None, ctx: dict, out: dict) -> None:
+    """item 1: fold an arm's own contexts-stage transport (`ctx["_transport"]`, gotcha 5) and,
+    for `nevertwice_whole`/`nevertwice_snippet`, the longmem vector-cache provenance
+    (`ctx["_cache_provenance"]`) into the RESULT artifact - both land on the arm `node` a
+    claim's pointer actually reads (K16(2)/K25), never left sitting on the contexts cache
+    beside it where `tools/remeasure.row_refusal` cannot see them. A standalone, named
+    function (not inlined into `summarise()`) so a test can monkeypatch it to a no-op and show
+    the ctx's own `valid:false` silently fails to reach the arm without it."""
+    transport = (ctx or {}).get("_transport")
+    if transport:
+        out.setdefault("contexts_transport", {})[arm] = transport
+        if node is not None and transport.get("valid") is False:
+            node["valid"] = False
+            node["invalid_reason"] = "; ".join(
+                r for r in (node.get("invalid_reason"), transport.get("invalid_reason")) if r)
+    cache_prov = (ctx or {}).get("_cache_provenance")
+    if cache_prov and node is not None:
+        node["cache_provenance"] = cache_prov
+        if cache_prov.get("valid") is False:
+            node["valid"] = False
+            node["invalid_reason"] = "; ".join(
+                r for r in (node.get("invalid_reason"),
+                           "longmem vector cache: " + (cache_prov.get("invalid_reason") or ""))
+                if r)
+
+
+def _ctx_file_provenance(path: Path) -> dict | None:
+    """RN5 (item 3): for a competitor arm whose contexts cache may have been produced well
+    before this run (P3: "the date of any cached competitor contexts ... are declared"), the
+    file's own sha256, mtime (ISO, UTC) and key count - so "declared per P3" is something a
+    reader can actually check against the file on disk, not a claim taken on faith."""
+    if not path.exists():
+        return None
+    raw = path.read_bytes()
+    try:
+        d = json.loads(raw.decode("utf-8"))
+        keys = len([k for k in d if not str(k).startswith("_")])
+    except (OSError, ValueError):
+        keys = None
+    mtime = datetime.datetime.fromtimestamp(path.stat().st_mtime, tz=datetime.timezone.utc).isoformat()
+    return {"sha256": hashlib.sha256(raw).hexdigest(), "mtime": mtime, "keys": keys}
+
+
+def _propagate_root_invalidity(out: dict) -> None:
+    """K25 (the auditor's finding, carried over from item 9A's asof_bench fix): a claim can
+    point at the artifact's ROOT or at a field OUTSIDE any one arm's own dict (judge_agreement,
+    corpus_gates) - marking only the arm `"valid": false` is not enough, `row_refusal` would
+    still resolve a claim on a different, otherwise-clean arm clean. Scans every arm (both the
+    flat "blocked" shape and the keyed-by-k / keyed-by-type shape), every bracket, and any
+    reason already set at the root (the stage-transport check in `summarise()` runs first) -
+    if anything is invalid, the WHOLE artifact is marked invalid too, every reason joined."""
+    reasons = []
+    if out.get("invalid_reason"):
+        reasons.append(out["invalid_reason"])
+    for arm, node in out.get("arms", {}).items():
+        if not isinstance(node, dict):
+            continue
+        if node.get("valid") is False:
+            reasons.append(f"{arm}: {node.get('invalid_reason') or 'no reason recorded'}")
+        for sub, pt in node.items():
+            if isinstance(pt, dict) and pt.get("valid") is False:
+                reasons.append(f"{arm}[{sub}]: {pt.get('invalid_reason') or 'no reason recorded'}")
+    for name, pt in out.get("brackets", {}).items():
+        if isinstance(pt, dict) and pt.get("valid") is False:
+            reasons.append(f"{name}: {pt.get('invalid_reason') or 'no reason recorded'}")
+    if reasons:
+        out["valid"] = False
+        out["invalid_reason"] = "; ".join(dict.fromkeys(reasons))
+
+
 def wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
     if not n:
         return (0.0, 0.0)
@@ -287,6 +504,9 @@ def contexts_nevertwice(data, pool, snippet: bool) -> dict:
         else:
             items = [{"id": s, "text": pool[s]} for s in sids]
         out[qid] = items
+    cache_prov = _longmem_vector_cache_provenance()
+    if cache_prov:
+        out["_cache_provenance"] = cache_prov
     return out
 
 
@@ -453,12 +673,23 @@ def _context_text(items: list[dict], k: int, budget: int) -> str:
 
 def answer_stage(arms: list[str], data: list, pool: dict, reader: str, budget: int) -> dict:
     cache = _load(_cache_path("answers"))
+    snap = pacer.snapshot()          # item 9B/P0(a): this stage's own reader traffic
     changed = 0
+    blocked_now = []
+    unblocked_now = []
     for arm in list(arms) + list(BRACKETS):
         ctx = {} if arm in BRACKETS else _load(_ctx_path(arm))
         if arm not in BRACKETS and not ctx:
-            print(f"- {arm}: no contexts (run the contexts stage in the right venv) - skipped")
+            # P0(f)/K23: no bare skip - recorded into the answers cache (a `_`-prefixed key,
+            # the only durable record a LATER `judge`/`summary` process, in its own separate
+            # invocation, can read) so `summarise()` turns this into a named refusal in the
+            # artifact (blocked + valid:false), never a vanished arm.
+            print(f"- {arm}: no contexts (run the contexts stage in the right venv) - "
+                  f"blocked, recorded as a named refusal in the artifact")
+            blocked_now.append(arm)
             continue
+        if arm not in BRACKETS:
+            unblocked_now.append(arm)     # (в): this run found contexts for it - not blocked
         ks = (0,) if arm == "none" else ((99,) if arm == "oracle" else KS)
         for k in ks:
             n_done = 0
@@ -484,13 +715,25 @@ def answer_stage(arms: list[str], data: list, pool: dict, reader: str, budget: i
                 stale = _find_akey(cache, reader, arm, k, qid)
                 if stale:                # the context moved; its answer is not this run's answer
                     del cache[stale]
+                # K30 (the auditor, 2026-09-24): stamp every NEW answer with the commit and utc
+                # it was produced at - `summarise()` refuses a point whose answers/verdicts are
+                # not provably current with HEAD, the same idea F6 already applies to contexts.
                 cache[key] = {"answer": str(ans)[:600], "prompt_tokens": r["prompt_tokens"],
-                              "context_chars": len(context)}
+                              "context_chars": len(context), "commit": git_head(), "utc": _utc_now_iso()}
                 changed += 1
                 n_done += 1
                 if changed % 20 == 0:
                     _save(_cache_path("answers"), cache)
             print(f"- {arm} k={k}: {n_done} new answers", flush=True)
+    # (в) (the auditor, 2026-09-24): `_blocked_arms` used to only GROW - an arm blocked on a
+    # past run stayed named forever even after a later run found its contexts. Unblocked here
+    # whenever THIS run actually found contexts for it.
+    still_blocked = (set(cache.get("_blocked_arms") or []) | set(blocked_now)) - set(unblocked_now)
+    if still_blocked:
+        cache["_blocked_arms"] = sorted(still_blocked)
+    else:
+        cache.pop("_blocked_arms", None)
+    _attach_prefixed_transport(cache, "_transport", snap)
     _save(_cache_path("answers"), cache)
     return cache
 
@@ -509,9 +752,18 @@ def judge_one(judge: str, e: dict, pred: str) -> bool | None:
         return True if '"correct": true' in low or "correct: true" in low else (False if "false" in low else None)
 
 
+def _stamp_verdict(verdicts: dict, vkey: str) -> None:
+    """K30: verdicts are plain bools (`verdicts[vkey] = True/False`), so a stamp cannot live on
+    the value itself without changing a shape every existing reader assumes - a parallel
+    `_`-prefixed meta map instead (HANDOFF-PORTS gotcha 5: `_meta` never matches a `judge|...`
+    prefix, so every existing consumer that filters or iterates verdicts skips it unchanged)."""
+    verdicts.setdefault("_meta", {})[vkey] = {"commit": git_head(), "utc": _utc_now_iso()}
+
+
 def judge_stage(arms: list[str], data: list, reader: str, judge: str, judge2: str, agree_n: int) -> dict:
     answers = _load(_cache_path("answers"))
     verdicts = _load(_cache_path("verdicts"))
+    snap = pacer.snapshot()          # item 9B/P0(a): this stage's own judge traffic
     by_qid = {e["question_id"]: e for e in data}
     changed = 0
     for arm in list(arms) + list(BRACKETS):
@@ -526,6 +778,7 @@ def judge_stage(arms: list[str], data: list, reader: str, judge: str, judge2: st
                 if v is None:
                     continue
                 verdicts[vkey] = v
+                _stamp_verdict(verdicts, vkey)
                 changed += 1
                 if changed % 25 == 0:
                     _save(_cache_path("verdicts"), verdicts)
@@ -540,6 +793,8 @@ def judge_stage(arms: list[str], data: list, reader: str, judge: str, judge2: st
         v2 = judge_one(judge2, by_qid[qid], answers[akey]["answer"])
         if v2 is not None:
             verdicts[v2key] = v2
+            _stamp_verdict(verdicts, v2key)
+    _attach_prefixed_transport(verdicts, "_transport", snap)
     _save(_cache_path("verdicts"), verdicts)
     return verdicts
 
@@ -548,35 +803,139 @@ def summarise(arms: list[str], data: list, reader: str, judge: str, judge2: str)
     answers = _load(_cache_path("answers"))
     verdicts = _load(_cache_path("verdicts"))
     qids = [e["question_id"] for e in data]
+    n_expected = len(qids)
+    #: K30: computed ONCE - the freshness check every point below runs against the SAME
+    #: HEAD/closure, mirroring F6's own `check_engine_freshness` one level down (answers and
+    #: verdicts, not contexts).
+    head = git_head()
+    closure = engine_closure("python research/frontier_eval.py")
     out = {"reader": READER, "judge": judge, "second_judge": judge2, "num_ctx": NUM_CTX,
            "char_budget": CHAR_BUDGET, "questions": len(qids), "extractor": EXTRACTOR,
-           "corpus": "longmemeval_oracle", "arms": {}, "brackets": {}}
+           "corpus": "longmemeval_oracle",
+           # m2_check: the pinned corpus's own sha256, the way longmem_eval.evaluate() records
+           # it (research/longmem_eval.py's own `--save` block) - m2 compares provenance.sha256
+           # against the pin, and this stand named only the corpus's STRING before this.
+           "provenance": corpus_pin.record("longmemeval_oracle"),
+           "arms": {}, "brackets": {}}
 
     def point(arm: str, k: int) -> dict | None:
-        vs, toks = [], []
+        vs, toks, missing = [], [], []
+        stale_answers, stale_verdicts = [], []
         for qid in qids:
             akey = _find_akey(answers, reader, arm, k, qid)
-            vkey = f"{judge}|{akey}"
+            vkey = f"{judge}|{akey}" if akey is not None else None
             if akey is not None and vkey in verdicts:
                 vs.append(1 if verdicts[vkey] else 0)
                 toks.append(answers[akey]["prompt_tokens"])
-        if not vs:
-            return None
+                # K30: an answer or a verdict found in cache but not stamped current with HEAD
+                # is exactly what lets a run measure nothing while stamping the anchor.
+                if not _stamp_current(answers[akey], head, closure):
+                    stale_answers.append(qid)
+                v_stamp = (verdicts.get("_meta") or {}).get(vkey)
+                if not _stamp_current(v_stamp, head, closure):
+                    stale_verdicts.append(qid)
+            else:
+                missing.append(qid)          # P0(f)/K23: no answer, or no verdict
+        if not qids:
+            return None          # K34: nothing was ever asked for this point at all (n_expected == 0)
         n = len(vs)
-        acc = sum(vs) / n
-        toks_sorted = sorted(toks)
-        return {"n": n, "accuracy": round(acc, 4), "ci": wilson(sum(vs), n),
-                "mean_prompt_tokens": round(sum(toks) / n, 1),
-                "median_prompt_tokens": toks_sorted[n // 2]}
+        #: K34 (the auditor, 2026-09-24): an arm with answers but ZERO verdicts (or a k with none
+        #: at all) used to return None here, and `any(pts.values())` then dropped the arm
+        #: entirely - the root stayed valid and row_refusal restored every OTHER arm. A point is
+        #: now ALWAYS a dict whenever it was asked for at all (n_expected > 0), so the pointer
+        #: stays walkable and the refusal names the reason instead of "cannot be walked".
+        if n:
+            acc = sum(vs) / n
+            toks_sorted = sorted(toks)
+            pt = {"n": n, "accuracy": round(acc, 4), "ci": wilson(sum(vs), n),
+                  "mean_prompt_tokens": round(sum(toks) / n, 1),
+                  "median_prompt_tokens": toks_sorted[n // 2],
+                  "answers_stamp": {"current": n - len(stale_answers), "stale": len(stale_answers)},
+                  "verdicts_stamp": {"current": n - len(stale_verdicts), "stale": len(stale_verdicts)}}
+        else:
+            pt = {"n": 0, "accuracy": None, "ci": wilson(0, 0)}
+        # P0(f) item 2: n compared against the number of questions the stand asks for this
+        # point - previously a question with no answer or no verdict was silently left out.
+        reasons = []
+        if n != n_expected:
+            pt["missing_count"] = len(missing)
+            pt["missing_question_ids"] = missing
+            reasons.append(f"{len(missing)} of {n_expected} question(s) have no answer or no "
+                           f"verdict for arm {arm!r} k={k}")
+        if stale_answers:
+            pt["stale_answers_count"] = len(stale_answers)
+            pt["stale_answer_ids"] = stale_answers
+            reasons.append(f"K30: {len(stale_answers)} answer(s) are not stamped at a commit "
+                           f"current with HEAD for arm {arm!r} k={k}: {stale_answers[:20]}")
+        if stale_verdicts:
+            pt["stale_verdicts_count"] = len(stale_verdicts)
+            pt["stale_verdict_ids"] = stale_verdicts
+            reasons.append(f"K30: {len(stale_verdicts)} verdict(s) are not stamped at a commit "
+                           f"current with HEAD for arm {arm!r} k={k}: {stale_verdicts[:20]}")
+        if reasons:
+            pt["valid"] = False
+            pt["invalid_reason"] = "; ".join(reasons)
+        return pt
 
+    #: P0(f)/K23: `answer_stage`'s own record of a requested arm it found no contexts for - the
+    #: only durable trace a LATER `judge`/`summary` process (its own separate invocation) can
+    #: read; `summarise()` never loaded a contexts cache of its own before this.
+    blocked_arms = set(answers.get("_blocked_arms") or [])
     for arm in arms:
+        if arm in blocked_arms:
+            # a named refusal instead of a vanished arm.
+            out["arms"][arm] = {
+                "blocked": f"no contexts cached for requested arm {arm!r} - run: "
+                           f"python research/frontier_eval.py contexts --arm {arm}",
+                "valid": False,
+                "invalid_reason": f"{arm}: requested arm has no cached contexts",
+            }
+            continue
+        ctx = {} if arm in BRACKETS else _load(_ctx_path(arm))
         pts = {str(k): point(arm, k) for k in KS}
         if any(pts.values()):
             out["arms"][arm] = pts
+        _fold_arm_context_provenance(arm, out["arms"].get(arm), ctx, out)
+        gap = ctx_coverage_gap(ctx, qids)
+        if gap:
+            # P0(f) item 2: a partial cache (contexts for only some questions) is a mismatch,
+            # not present - `answer_stage` still answers the missing ones from an empty
+            # context, invisible to the n-vs-expected gate above.
+            node = out["arms"].get(arm)
+            if node is not None:
+                node["valid"] = False
+                node["missing_contexts_count"] = len(gap)
+                node["missing_contexts_ids"] = gap
+                node["invalid_reason"] = "; ".join(r for r in (
+                    node.get("invalid_reason"),
+                    f"{len(gap)} of {len(qids)} question(s) have no cached context at all for "
+                    f"arm {arm!r} (a partial cache counts as a mismatch, not as present)") if r)
+        if arm not in ENGINE_ARMS:
+            # RN5 (item 3): a competitor arm's contexts may have been cached well before this
+            # run - "declared per P3" made checkable against the file on disk.
+            prov_entry = _ctx_file_provenance(_ctx_path(arm))
+            if prov_entry:
+                out.setdefault("competitor_cache", {})[arm] = prov_entry
     for arm, k in (("none", 0), ("oracle", 99)):
         pt = point(arm, k)
         if pt:
             out["brackets"][arm] = pt
+    # item 1: the answer/judge stages' own transport - a bypass or failed embed there taints
+    # every arm's numbers, not just one, so it is folded straight into the root.
+    ans_transport = answers.get("_transport")
+    jdg_transport = verdicts.get("_transport")
+    stage_reasons = []
+    if ans_transport:
+        out["answer_transport"] = ans_transport
+        if ans_transport.get("valid") is False:
+            stage_reasons.append(f"answer stage: {ans_transport.get('invalid_reason')}")
+    if jdg_transport:
+        out["judge_transport"] = jdg_transport
+        if jdg_transport.get("valid") is False:
+            stage_reasons.append(f"judge stage: {jdg_transport.get('invalid_reason')}")
+    if stage_reasons:
+        out["valid"] = False
+        out["invalid_reason"] = "; ".join(stage_reasons)
     # agreement between the two judges on the shipped arm's k=5 answers
     agree = tot = 0
     for qid in qids:
@@ -601,6 +960,7 @@ def summarise(arms: list[str], data: list, reader: str, judge: str, judge2: str)
             "sessions_with_zero_notes": int(ingest.get("sessions_with_zero_notes", 0)),
             "sessions": int(ingest.get("sessions", 0)),
         }
+    _propagate_root_invalidity(out)      # K25: any invalid arm/bracket invalidates the whole artifact
     return out
 
 
@@ -626,6 +986,7 @@ def main() -> int:
         pool = {sid: txt for sid, txt in pool.items() if sid in wanted}
     arms = [a for a in args.arms.split(",") if a]
     print(f"frontier: {len(data)} questions, reader {READER}, judge {JUDGE}, stage {args.stage}")
+    pacer.install()          # item 9B/P0(a): pace/retry/count every stage's own Ollama traffic
 
     if args.stage == "contexts":
         fn = CONTEXT_FNS.get(args.arm)
@@ -633,7 +994,9 @@ def main() -> int:
             print(f"unknown arm {args.arm!r}; have {', '.join(CONTEXT_FNS)} (langmem_full is a blocker: "
                   f"its memories live in process and are not retained after the head-to-head run)")
             return 2
+        snap = pacer.snapshot()
         ctx = fn(data, pool)
+        _attach_prefixed_transport(ctx, "_transport", snap)
         if args.arm in ENGINE_ARMS:
             stamp_engine_commit(ctx)
         _save(_ctx_path(args.arm), ctx)
