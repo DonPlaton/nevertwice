@@ -275,6 +275,72 @@ finally:
     _restore_paths()
 
 
+print("\n- item 9B/K37: every lesson verdict missing - the lesson row does not vanish, core is "
+      "invalid (not silently redefined over fact+current), and row_refusal refuses the REAL "
+      "core pointer -")
+_k37_head = fe.git_head()
+_k37_closure = fe.engine_closure("python research/code_sessions_eval.py")
+_k37_arm = "nevertwice_full"
+_k37_qs = ([{"id": f"f{i}", "type": "fact", "markers": ["x"], "stale_markers": []} for i in range(3)]
+          + [{"id": f"c{i}", "type": "current", "markers": ["x"], "stale_markers": ["y"]} for i in range(3)]
+          + [{"id": f"l{i}", "type": "lesson", "markers": [], "stale_markers": []} for i in range(4)])
+_k37_answers, _k37_verdicts = {}, {"_meta": {}}
+for q in _k37_qs:
+    key = fe._akey("r", _k37_arm, cse.K, q["id"], "ctx")
+    _k37_answers[key] = {"answer": "x", "prompt_tokens": 5, "commit": _k37_head, "utc": fe._utc_now_iso()}
+    # every lesson verdict is missing entirely - the judge returned None for all of them
+out = cse.score_answers(_k37_qs, _k37_answers, _k37_verdicts, {}, "r", _k37_arm, "j",
+                        head=_k37_head, closure=_k37_closure)
+check("the lesson row does NOT vanish - it is present at n=0, naming every missing question",
+      "lesson" in out and out["lesson"]["n"] == 0
+      and sorted(out["lesson"].get("missing_question_ids") or []) == ["l0", "l1", "l2", "l3"],
+      str(out.get("lesson")))
+check("K37: core is invalid - not silently redefined over fact+current alone",
+      out["core"].get("valid") is False, str(out.get("core")))
+_k37_art = {"arms": {_k37_arm: out}}
+fe._propagate_root_invalidity(_k37_art)
+check("the root is invalid too", _k37_art.get("valid") is False, str(_k37_art.get("valid")))
+reason = rm.row_refusal(_k37_art, "arms.nevertwice_full.core.accuracy", 0)
+check("row_refusal refuses the REAL claim pointer (code_sessions.nevertwice_full.core)",
+      reason is not None and "invalid" in reason, str(reason))
+
+print("\n- item 9B/K37 mutation: the type-vanishing bug restored (skip when n==0, core "
+      "redefined over the survivors) -")
+
+
+def _legacy_score_by_type(qs, answers, arm):
+    """The PRE-FIX shape: `if not d['n']: continue` drops a fully-empty type, and `core` folds
+    only whatever survived - written out, not monkeypatched, matching mut_c2a.py's own probe."""
+    by = {}
+    for q in qs:
+        t = q["type"]
+        d = by.setdefault(t, {"n": 0, "correct": 0})
+        if t == "lesson":
+            continue                    # every verdict missing: nothing ever increments n
+        akey = fe._find_akey(answers, "r", arm, cse.K, q["id"])
+        if akey is None:
+            continue
+        d["n"] += 1
+        d["correct"] += 1               # every fact/current "answer" ("x") hits its marker
+    legacy = {}
+    for t, d in by.items():
+        if not d["n"]:
+            continue
+        legacy[t] = {"n": d["n"], "accuracy": round(d["correct"] / d["n"], 4)}
+    core = [t for t in ("fact", "current", "lesson") if t in legacy]
+    if core:
+        n = sum(legacy[t]["n"] for t in core)
+        c = sum(int(round(legacy[t]["accuracy"] * legacy[t]["n"])) for t in core)
+        legacy["core"] = {"n": n, "accuracy": round(c / n, 4)}
+    return legacy
+
+
+_legacy = _legacy_score_by_type(_k37_qs, _k37_answers, _k37_arm)
+check("mutation 'type-vanishing bug restored': the lesson row is ABSENT and core is silently "
+      "redefined over fact+current alone, looking perfectly valid (would FAIL the checks above)",
+      "lesson" not in _legacy and "valid" not in _legacy.get("core", {}), str(_legacy))
+
+
 print("\n- item 9B/P0(f): a partial cache (contexts for only SOME questions) is a mismatch, "
       "not present -")
 _use_scratch("partial")
@@ -308,13 +374,16 @@ try:
     check("K25: the root is invalid too", res.get("valid") is False, str(res.get("valid")))
 
     print("\n- item 9B mutation: the 'no contexts - skipped' bug restored (no _blocked_arms "
-          "recorded) - the requested arm VANISHES instead of appearing blocked -")
+          "recorded) - K37's n-vs-asked gate still keeps the arm present and invalid (defense "
+          "in depth), but loses the SPECIFIC 'no contexts cached' diagnosis -")
     fe._save(cse._cache_path("answers"), {})     # the OLD bug: nothing records the block at all
     fe._save(cse._cache_path("verdicts"), {})
     res_mut = cse.summarise(["mem0_infer"], MINI_QS, MINI_CORPUS, cse.READER, cse.JUDGE)
-    check("mutation 'skip restored': the requested arm is silently ABSENT from the artifact "
-          "(would FAIL the two checks above)", "mem0_infer" not in res_mut["arms"],
-          str(res_mut["arms"]))
+    check("mutation 'skip restored': the arm no longer names itself 'blocked' (only the "
+          "generic n-vs-asked gate still catches it)",
+          "mem0_infer" in res_mut["arms"] and "blocked" not in res_mut["arms"]["mem0_infer"]
+          and res_mut["arms"]["mem0_infer"].get("valid") is False,
+          str(res_mut["arms"].get("mem0_infer")))
 finally:
     _restore_paths()
 
@@ -391,6 +460,78 @@ finally:
     _restore_paths()
 check("fe._propagate_root_invalidity is restored to the real function",
       fe._propagate_root_invalidity is saved_propagate)
+
+
+# ── item 9B/K36 (the auditor's mut_c2a.py, 2026-09-24): source mutations that survived the
+# first pass - Y1/Y3/Y4/Y5 covered above (K37); Y2/Y6/Y7 get their own direct test; Y8 too ──
+
+print("\n- item 9B/K36 Y2: a lesson verdict that is never stamped (or stamped stale) is caught "
+      "independently of the answer's own stamp -")
+_y2_head = fe.git_head()
+_y2_closure = fe.engine_closure("python research/code_sessions_eval.py")
+_y2_arm = "nevertwice_full"
+_y2_qs = [{"id": "ly0", "type": "lesson", "markers": [], "stale_markers": []}]
+_y2_akey = fe._akey("r", _y2_arm, cse.K, "ly0", "ctx")
+_y2_answers = {_y2_akey: {"answer": "the lesson", "prompt_tokens": 5,
+                          "commit": _y2_head, "utc": fe._utc_now_iso()}}
+_y2_vkey = f"j|{_y2_akey}"
+_y2_verdicts = {_y2_vkey: True, "_meta": {}}          # the verdict exists but was never stamped
+_y2_out = cse.score_answers(_y2_qs, _y2_answers, _y2_verdicts, {}, "r", _y2_arm, "j",
+                            head=_y2_head, closure=_y2_closure)
+check("Y2: the lesson row is invalid - its verdict is not stamped current, though the answer is",
+      _y2_out["lesson"].get("valid") is False and _y2_out["lesson"].get("stale_answers_count", 0) == 0
+      and _y2_out["lesson"].get("stale_verdicts_count") == 1, str(_y2_out.get("lesson")))
+
+print("\n- item 9B/K36 Y6: the answer/judge stage-level transport marks the ROOT for "
+      "code_sessions too -")
+_use_scratch("y6")
+try:
+    with _isolated_pacer():
+        _seed_ctx_cs()
+        urllib.request.urlopen = _fake_chat_factory()
+        cse.answer_stage([MINI_ARM], MINI_QS, MINI_POOL, cse.READER)
+        cse.judge_stage([MINI_ARM], MINI_QS, cse.READER, cse.JUDGE)
+        cache_y6 = fe._load(cse._cache_path("answers"))
+        cache_y6["_transport"] = {"valid": False, "invalid_reason": "bypass_calls.requests=1"}
+        fe._save(cse._cache_path("answers"), cache_y6)
+        res_y6 = cse.summarise([MINI_ARM], MINI_QS, MINI_CORPUS, cse.READER, cse.JUDGE)
+    check("Y6: the root is invalid, naming the answer-stage transport",
+          res_y6.get("valid") is False and "answer stage" in (res_y6.get("invalid_reason") or ""),
+          str(res_y6.get("invalid_reason")))
+finally:
+    _restore_paths()
+
+print("\n- item 9B/K36 Y7: a failed embed while building nevertwice_full's OWN contexts "
+      "reaches the arm (fe._fold_arm_context_provenance is actually called in summarise()) -")
+_use_scratch("y7")
+try:
+    ctx_y7 = {q["id"]: [{"id": "s0", "text": "ctx"}] for q in MINI_QS}
+    ctx_y7["_transport"] = {"valid": False, "invalid_reason": "2 embed call(s) failed"}
+    fe._save(cse._ctx_path(MINI_ARM), ctx_y7)
+    fe._save(cse._cache_path("answers"), {})
+    fe._save(cse._cache_path("verdicts"), {})
+    res_y7 = cse.summarise([MINI_ARM], MINI_QS, MINI_CORPUS, cse.READER, cse.JUDGE)
+    check("Y7: the arm's own node is marked invalid, naming the failed embed",
+          res_y7["arms"][MINI_ARM].get("valid") is False
+          and "embed" in (res_y7["arms"][MINI_ARM].get("invalid_reason") or ""),
+          str(res_y7["arms"].get(MINI_ARM)))
+finally:
+    _restore_paths()
+
+print("\n- item 9B/K36 Y8: the RN5 competitor_cache record is written for a non-engine arm -")
+_use_scratch("y8")
+try:
+    _seed_ctx_cs(arm="mem0_infer")
+    with _isolated_pacer():
+        urllib.request.urlopen = _fake_chat_factory()
+        cse.answer_stage(["mem0_infer"], MINI_QS, MINI_POOL, cse.READER)
+        cse.judge_stage(["mem0_infer"], MINI_QS, cse.READER, cse.JUDGE)
+        res_y8 = cse.summarise(["mem0_infer"], MINI_QS, MINI_CORPUS, cse.READER, cse.JUDGE)
+    check("Y8: a non-engine (competitor) arm's contexts cache file provenance is recorded",
+          "mem0_infer" in (res_y8.get("competitor_cache") or {})
+          and "sha256" in res_y8["competitor_cache"]["mem0_infer"], str(res_y8.get("competitor_cache")))
+finally:
+    _restore_paths()
 
 
 print(f"\n{'ALL OK' if not FAILS else f'{FAILS} FAILED'}")

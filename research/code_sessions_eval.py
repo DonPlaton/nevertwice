@@ -280,6 +280,7 @@ def answer_stage(arms: list[str], qs: list[dict], pool: dict, reader: str) -> di
     snap = pacer.snapshot()          # item 9B/P0(a): this stage's own reader traffic
     changed = 0
     blocked_now = []
+    unblocked_now = []
     for arm in list(arms) + list(BRACKETS):
         ctx = {} if arm in BRACKETS else fe._load(_ctx_path(arm))
         if arm not in BRACKETS and not ctx:
@@ -290,6 +291,8 @@ def answer_stage(arms: list[str], qs: list[dict], pool: dict, reader: str) -> di
             print(f"- {arm}: no contexts - blocked, recorded as a named refusal in the artifact")
             blocked_now.append(arm)
             continue
+        if arm not in BRACKETS:
+            unblocked_now.append(arm)     # (в): this run found contexts for it - not blocked
         n_done = 0
         for q in qs:
             if q["type"] == "situation":
@@ -322,8 +325,13 @@ def answer_stage(arms: list[str], qs: list[dict], pool: dict, reader: str) -> di
             if changed % 20 == 0:
                 fe._save(_cache_path("answers"), cache)
         print(f"- {arm}: {n_done} new answers", flush=True)
-    if blocked_now:
-        cache["_blocked_arms"] = sorted(set(cache.get("_blocked_arms") or []) | set(blocked_now))
+    # (в) (the auditor, 2026-09-24): `_blocked_arms` used to only GROW - unblocked here whenever
+    # THIS run actually found contexts for it.
+    still_blocked = (set(cache.get("_blocked_arms") or []) | set(blocked_now)) - set(unblocked_now)
+    if still_blocked:
+        cache["_blocked_arms"] = sorted(still_blocked)
+    else:
+        cache.pop("_blocked_arms", None)
     fe._attach_prefixed_transport(cache, "_transport", snap)
     fe._save(_cache_path("answers"), cache)
     return cache
@@ -411,16 +419,25 @@ def score_answers(qs: list[dict], answers: dict, verdicts: dict, ctx: dict, read
     for q in qs:
         type_counts[q["type"]] = type_counts.get(q["type"], 0) + 1
     out = {}
-    for t, d in by.items():
-        if not d["n"]:
-            continue
-        row = {"n": d["n"], "accuracy": round(d["correct"] / d["n"], 4), "ci": fe.wilson(d["correct"], d["n"])}
-        if d["tokens"]:
-            row["mean_prompt_tokens"] = round(sum(d["tokens"]) / len(d["tokens"]), 1)
-        if t == "current":
-            row["stale_rate"] = round(d["stale"] / d["n"], 4)
-            row["stale_ci"] = fe.wilson(d["stale"], d["n"])
-        n_expected = type_counts.get(t, d["n"])
+    #: K37 (the auditor, 2026-09-24): a type the stand asks about used to vanish entirely when
+    #: its `n` came out 0 (`if not d["n"]: continue`) - every lesson verdict missing dropped the
+    #: "lesson" row and `core` was silently REDEFINED over fact+current alone, still looking
+    #: valid. Iterated over `type_counts` (every type asked about, not just the ones `by`
+    #: happened to accumulate anything for) so a fully-empty type still gets a row.
+    for t, n_expected in type_counts.items():
+        d = by.get(t, {"n": 0, "correct": 0, "stale": 0, "tokens": []})
+        if d["n"]:
+            row = {"n": d["n"], "accuracy": round(d["correct"] / d["n"], 4), "ci": fe.wilson(d["correct"], d["n"])}
+            if d["tokens"]:
+                row["mean_prompt_tokens"] = round(sum(d["tokens"]) / len(d["tokens"]), 1)
+            if t == "current":
+                row["stale_rate"] = round(d["stale"] / d["n"], 4)
+                row["stale_ci"] = fe.wilson(d["stale"], d["n"])
+        else:
+            row = {"n": 0, "accuracy": None, "ci": fe.wilson(0, 0)}
+            if t == "current":
+                row["stale_rate"] = None
+                row["stale_ci"] = fe.wilson(0, 0)
         missing = missing_by_type.get(t, [])
         stale_a = stale_ans_by_type.get(t, [])
         stale_v = stale_vd_by_type.get(t, [])
@@ -448,9 +465,12 @@ def score_answers(qs: list[dict], answers: dict, verdicts: dict, ctx: dict, read
     core = [t for t in ("fact", "current", "lesson") if t in out]
     if core:
         n = sum(out[t]["n"] for t in core)
-        c = sum(int(round(out[t]["accuracy"] * out[t]["n"])) for t in core)
-        out["core"] = {"n": n, "accuracy": round(c / n, 4), "ci": fe.wilson(c, n)}
-        # K25: a claim on `core` reads outside any single folded type's own dict.
+        c = sum(int(round((out[t]["accuracy"] or 0) * out[t]["n"])) for t in core)
+        out["core"] = {"n": n, "accuracy": round(c / n, 4) if n else None, "ci": fe.wilson(c, n)}
+        # K37/K25: core is invalid unless ALL THREE folded types are present with n == asked -
+        # a claim on `core` reads outside any single folded type's own dict, so a type that is
+        # itself incomplete (n != n_expected) or stale must taint the fold, not just vanish from
+        # the arithmetic the way a silently-redefined `core` used to.
         invalid_core = [t for t in core if out[t].get("valid") is False]
         if invalid_core:
             out["core"]["valid"] = False

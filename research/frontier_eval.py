@@ -57,6 +57,7 @@ import longmem_eval as le  # noqa: E402
 import _provenance as prov  # noqa: E402 - measured_at: {commit, utc, dirty} on the final artifact
 import qa_eval as qa  # noqa: E402 - the reader / judge prompts, the same rubric as the QA study
 import _ollama_pacer as pacer  # noqa: E402 - item 9B/P0(a): pace/retry/count this stand's own traffic
+import corpus_pin  # noqa: E402 - m2_check: the pinned corpus's own sha256, the way longmem_eval records it
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -220,6 +221,51 @@ def _save(p: Path, d: dict) -> None:
 
 # ── item 9B/P0(a): the pacer's own transport record, folded into a cache safely ────────
 
+#: K35 (the auditor, 2026-09-24): counters this merge sums across runs - additive by
+#: construction (a count, a summed duration). `max_inflight`/`max_concurrent_paced` are their
+#: own high-water marks and are merged by MAX, not sum, below.
+_TRANSPORT_SUM_KEYS = ("calls", "pace_sleep_s", "retries", "retry_sleep_s", "gave_up", "pace_floor_s")
+_TRANSPORT_MAX_KEYS = ("max_inflight", "max_concurrent_paced")
+
+
+def _merge_count_dict(a: dict, b: dict) -> dict:
+    return {k: (a.get(k, 0) or 0) + (b.get(k, 0) or 0) for k in set(a) | set(b)}
+
+
+def _merge_ollama_transport(old: dict, new: dict) -> dict:
+    if not old:
+        return new
+    if not new:
+        return old
+    out = dict(new)       # keep the newest call_ms/mode/timing_includes_pacing
+    for k in _TRANSPORT_SUM_KEYS:
+        out[k] = round((old.get(k, 0) or 0) + (new.get(k, 0) or 0), 6)
+    for k in _TRANSPORT_MAX_KEYS:
+        out[k] = max(old.get(k, 0) or 0, new.get(k, 0) or 0)
+    out["pace_excluded_exact"] = bool(old.get("pace_excluded_exact", True)) and bool(
+        new.get("pace_excluded_exact", True))
+    out["bypass_calls"] = _merge_count_dict(old.get("bypass_calls") or {}, new.get("bypass_calls") or {})
+    out["nested_calls"] = _merge_count_dict(old.get("nested_calls") or {}, new.get("nested_calls") or {})
+    old_fo, new_fo = old.get("failed_outcomes") or {}, new.get("failed_outcomes") or {}
+    out["failed_outcomes"] = {
+        "by_status": _merge_count_dict(old_fo.get("by_status") or {}, new_fo.get("by_status") or {}),
+        "by_exception_type": _merge_count_dict(old_fo.get("by_exception_type") or {},
+                                               new_fo.get("by_exception_type") or {}),
+        "gave_up": (old_fo.get("gave_up", 0) or 0) + (new_fo.get("gave_up", 0) or 0),
+    }
+    return out
+
+
+def _transport_runs(d: dict) -> list:
+    """K35: `d["runs"]` when this dict was itself written by `_attach_prefixed_transport`; for
+    one written before K35 (or seeded directly, as a probe or a legacy artifact does), its own
+    `invalid_reason` is treated as an implicit prior run so a merge can never lose it."""
+    runs = list(d.get("runs") or [])
+    if not runs and (d.get("valid") is False or d.get("invalid_reason")):
+        runs = [{"utc": None, "valid": d.get("valid"), "reason": d.get("invalid_reason")}]
+    return runs
+
+
 def _attach_prefixed_transport(cache: dict, key: str, since: dict) -> None:
     """`pacer.attach()`'s own fixed keys (`ollama_transport`, `valid`, `invalid_reason`) are
     never `_`-prefixed - writing them at a cache dict's own top level would corrupt a
@@ -229,11 +275,40 @@ def _attach_prefixed_transport(cache: dict, key: str, since: dict) -> None:
     scratch dict and folded in, NESTED, under `cache[key]` (a single new `_`-prefixed key,
     e.g. `ctx["_transport"]`) instead - HANDOFF-PORTS gotcha 5, checked here rather than
     assumed. Writes nothing when the window paced zero calls and saw zero bypasses (mirrors
-    `pacer.attach()`'s own "a clean run says nothing" rule)."""
+    `pacer.attach()`'s own "a clean run says nothing" rule) - unless `cache[key]` already
+    exists, in which case it is left exactly as it was (a run that made no NEW calls must not
+    erase an earlier run's own record).
+
+    K35 (the auditor, 2026-09-24): `cache[key] = scratch` used to overwrite outright - a second
+    stage run (a resume, judge after answer, a re-run of contexts) with a clean window silently
+    LAUNDERED an earlier invalid transport (a bypass, a failed embed). Now MERGED: counters are
+    summed (`_merge_ollama_transport`), `valid:false` is STICKY (once set, stays set across every
+    later merge), and every run's own reason survives, each tagged with the utc it was recorded
+    at (`runs`), so `invalid_reason` is always the join of every run that ever saw a problem -
+    never just the most recent one."""
     scratch: dict = {}
     pacer.attach(scratch, since=since)
-    if scratch:
+    if not scratch:
+        return
+    scratch["runs"] = [{"utc": _utc_now_iso(), "valid": scratch.get("valid", True),
+                        "reason": scratch.get("invalid_reason")}]
+    existing = cache.get(key)
+    if not existing:
         cache[key] = scratch
+        return
+    merged = dict(existing)
+    merged["ollama_transport"] = _merge_ollama_transport(
+        existing.get("ollama_transport") or {}, scratch.get("ollama_transport") or {})
+    merged["runs"] = _transport_runs(existing) + _transport_runs(scratch)
+    sticky_invalid = existing.get("valid") is False or scratch.get("valid") is False
+    if sticky_invalid:
+        merged["valid"] = False
+        merged["invalid_reason"] = "; ".join(
+            f"[{r['utc']}] {r['reason']}" for r in merged["runs"] if r.get("reason"))
+    else:
+        merged.pop("valid", None)
+        merged.pop("invalid_reason", None)
+    cache[key] = merged
 
 
 def _longmem_vector_cache_provenance() -> dict:
@@ -601,6 +676,7 @@ def answer_stage(arms: list[str], data: list, pool: dict, reader: str, budget: i
     snap = pacer.snapshot()          # item 9B/P0(a): this stage's own reader traffic
     changed = 0
     blocked_now = []
+    unblocked_now = []
     for arm in list(arms) + list(BRACKETS):
         ctx = {} if arm in BRACKETS else _load(_ctx_path(arm))
         if arm not in BRACKETS and not ctx:
@@ -612,6 +688,8 @@ def answer_stage(arms: list[str], data: list, pool: dict, reader: str, budget: i
                   f"blocked, recorded as a named refusal in the artifact")
             blocked_now.append(arm)
             continue
+        if arm not in BRACKETS:
+            unblocked_now.append(arm)     # (в): this run found contexts for it - not blocked
         ks = (0,) if arm == "none" else ((99,) if arm == "oracle" else KS)
         for k in ks:
             n_done = 0
@@ -647,8 +725,14 @@ def answer_stage(arms: list[str], data: list, pool: dict, reader: str, budget: i
                 if changed % 20 == 0:
                     _save(_cache_path("answers"), cache)
             print(f"- {arm} k={k}: {n_done} new answers", flush=True)
-    if blocked_now:
-        cache["_blocked_arms"] = sorted(set(cache.get("_blocked_arms") or []) | set(blocked_now))
+    # (в) (the auditor, 2026-09-24): `_blocked_arms` used to only GROW - an arm blocked on a
+    # past run stayed named forever even after a later run found its contexts. Unblocked here
+    # whenever THIS run actually found contexts for it.
+    still_blocked = (set(cache.get("_blocked_arms") or []) | set(blocked_now)) - set(unblocked_now)
+    if still_blocked:
+        cache["_blocked_arms"] = sorted(still_blocked)
+    else:
+        cache.pop("_blocked_arms", None)
     _attach_prefixed_transport(cache, "_transport", snap)
     _save(_cache_path("answers"), cache)
     return cache
@@ -727,7 +811,12 @@ def summarise(arms: list[str], data: list, reader: str, judge: str, judge2: str)
     closure = engine_closure("python research/frontier_eval.py")
     out = {"reader": READER, "judge": judge, "second_judge": judge2, "num_ctx": NUM_CTX,
            "char_budget": CHAR_BUDGET, "questions": len(qids), "extractor": EXTRACTOR,
-           "corpus": "longmemeval_oracle", "arms": {}, "brackets": {}}
+           "corpus": "longmemeval_oracle",
+           # m2_check: the pinned corpus's own sha256, the way longmem_eval.evaluate() records
+           # it (research/longmem_eval.py's own `--save` block) - m2 compares provenance.sha256
+           # against the pin, and this stand named only the corpus's STRING before this.
+           "provenance": corpus_pin.record("longmemeval_oracle"),
+           "arms": {}, "brackets": {}}
 
     def point(arm: str, k: int) -> dict | None:
         vs, toks, missing = [], [], []
@@ -747,16 +836,24 @@ def summarise(arms: list[str], data: list, reader: str, judge: str, judge2: str)
                     stale_verdicts.append(qid)
             else:
                 missing.append(qid)          # P0(f)/K23: no answer, or no verdict
-        if not vs:
-            return None
+        if not qids:
+            return None          # K34: nothing was ever asked for this point at all (n_expected == 0)
         n = len(vs)
-        acc = sum(vs) / n
-        toks_sorted = sorted(toks)
-        pt = {"n": n, "accuracy": round(acc, 4), "ci": wilson(sum(vs), n),
-              "mean_prompt_tokens": round(sum(toks) / n, 1),
-              "median_prompt_tokens": toks_sorted[n // 2],
-              "answers_stamp": {"current": n - len(stale_answers), "stale": len(stale_answers)},
-              "verdicts_stamp": {"current": n - len(stale_verdicts), "stale": len(stale_verdicts)}}
+        #: K34 (the auditor, 2026-09-24): an arm with answers but ZERO verdicts (or a k with none
+        #: at all) used to return None here, and `any(pts.values())` then dropped the arm
+        #: entirely - the root stayed valid and row_refusal restored every OTHER arm. A point is
+        #: now ALWAYS a dict whenever it was asked for at all (n_expected > 0), so the pointer
+        #: stays walkable and the refusal names the reason instead of "cannot be walked".
+        if n:
+            acc = sum(vs) / n
+            toks_sorted = sorted(toks)
+            pt = {"n": n, "accuracy": round(acc, 4), "ci": wilson(sum(vs), n),
+                  "mean_prompt_tokens": round(sum(toks) / n, 1),
+                  "median_prompt_tokens": toks_sorted[n // 2],
+                  "answers_stamp": {"current": n - len(stale_answers), "stale": len(stale_answers)},
+                  "verdicts_stamp": {"current": n - len(stale_verdicts), "stale": len(stale_verdicts)}}
+        else:
+            pt = {"n": 0, "accuracy": None, "ci": wilson(0, 0)}
         # P0(f) item 2: n compared against the number of questions the stand asks for this
         # point - previously a question with no answer or no verdict was silently left out.
         reasons = []

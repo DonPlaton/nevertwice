@@ -25,6 +25,21 @@ import _ollama_pacer as pacer  # noqa: E402
 sys.path.insert(0, str(ROOT / "tools"))
 import remeasure as rm  # noqa: E402 - K16(2)/K25/K30: row_refusal on the RESULT artifact
 
+#: m2_check addition: `summarise()` now calls `corpus_pin.record("longmemeval_oracle")`, which
+#: hashes the real (third-party, uncommitted, ~15MB) corpus file - absent in a hermetic test
+#: environment. Faked here to return exactly what the real function would on a MATCHING file
+#: (the pinned sha256 straight from `corpus_pin.CORPORA`), so every `fe.summarise()` call in
+#: this suite stays hermetic while still exercising the real wiring: does `summarise()` copy
+#: `corpus_pin.record()`'s own result into `out["provenance"]` faithfully.
+def _fake_corpus_record(name):
+    spec = fe.corpus_pin.CORPORA[name]
+    return {"corpus": name, "sha256": spec["sha256"], "bytes": spec["bytes"],
+            "questions": spec["questions"], "pool_sessions": spec["pool_sessions"],
+            "url": spec["url"], "licence": spec["licence"], "citation": spec["citation"]}
+
+
+fe.corpus_pin.record = _fake_corpus_record
+
 FAILS = 0
 
 
@@ -84,6 +99,9 @@ try:
     check("tokens come from the reader's own count, averaged", nt5["mean_prompt_tokens"] == round((500 * 6 + 15) / 6, 1))
     check("the other arm at another k", res["arms"]["mem0"]["1"]["accuracy"] == 0.5)
     check("brackets: none and oracle", res["brackets"]["none"]["accuracy"] == 0.0 and res["brackets"]["oracle"]["accuracy"] == 1.0)
+    check("m2_check: the artifact carries provenance.sha256 equal to corpus_pin's pinned hash",
+          res.get("provenance", {}).get("sha256")
+          == fe.corpus_pin.CORPORA["longmemeval_oracle"]["sha256"], str(res.get("provenance")))
     ja = res["judge_agreement"]
     check("judge agreement over the doubly judged answers", ja["n"] == 4 and ja["rate"] == 0.75, str(ja))
     check("the artifact names reader, judge and second judge",
@@ -306,6 +324,18 @@ try:
             vkey = f"{fe.JUDGE}|{akey}"
             verdicts[vkey] = True
             verdicts.setdefault("_meta", {})[vkey] = {"commit": head, "utc": fe._utc_now_iso()}
+    # K34: point() no longer returns None for an unscored point - the "none"/"oracle" brackets
+    # are ALWAYS scored too (summarise()'s own separate bracket loop), so isolating "is a fresh
+    # nevertwice_whole point clean" from "are the brackets clean" needs both seeded here.
+    for arm, k in (("none", 0), ("oracle", 99)):
+        for q in MINI_DATA:
+            ctx_text = "(no memory available)" if arm == "none" else "oracle ctx"
+            akey = fe._akey(fe.READER, arm, k, q["question_id"], ctx_text)
+            answers[akey] = {"answer": q["answer"], "prompt_tokens": 10, "context_chars": len(ctx_text),
+                             "commit": head, "utc": fe._utc_now_iso()}
+            vkey = f"{fe.JUDGE}|{akey}"
+            verdicts[vkey] = True
+            verdicts.setdefault("_meta", {})[vkey] = {"commit": head, "utc": fe._utc_now_iso()}
     fe._save(fe._cache_path("answers"), answers)
     fe._save(fe._cache_path("verdicts"), verdicts)
     res = fe.summarise([MINI_ARM], MINI_DATA, fe.READER, fe.JUDGE, fe.JUDGE2)
@@ -342,12 +372,37 @@ try:
     check("K25: the root is invalid too", res.get("valid") is False, str(res.get("valid")))
 
     print("\n- item 9B mutation: the 'no contexts - skipped' bug restored (no _blocked_arms "
-          "recorded) - the requested arm VANISHES instead of appearing blocked -")
+          "recorded) - K34 still keeps the arm present and invalid (defense in depth), but "
+          "loses the SPECIFIC 'no contexts cached' diagnosis -")
     fe._save(fe._cache_path("answers"), {})    # the OLD bug: nothing records the block at all
     fe._save(fe._cache_path("verdicts"), {})
     res_mut = fe.summarise(["mem0"], MINI_DATA, fe.READER, fe.JUDGE, fe.JUDGE2)
-    check("mutation 'skip restored': the requested arm is silently ABSENT from the artifact "
-          "(would FAIL the two checks above)", "mem0" not in res_mut["arms"], str(res_mut["arms"]))
+    check("mutation 'skip restored': the arm no longer names itself 'blocked' (the specific "
+          "diagnosis is lost - only K34's generic n-vs-asked gate still catches it)",
+          "mem0" in res_mut["arms"] and "blocked" not in res_mut["arms"]["mem0"]
+          and res_mut["arms"]["mem0"].get("valid") is False, str(res_mut["arms"].get("mem0")))
+finally:
+    fe.DATA = saved_DATA
+
+
+print("\n- item 9B/(в): an arm blocked on one answer_stage run is UNBLOCKED once a later run "
+      "finds its contexts - _blocked_arms does not only grow -")
+fe.DATA = Path(tempfile.mkdtemp(prefix="frontier_test_9b_unblock_"))
+try:
+    with _isolated_pacer():
+        urllib.request.urlopen = _fake_chat_factory()
+        fe.answer_stage(["mem0"], MINI_DATA, MINI_POOL, fe.READER, fe.CHAR_BUDGET)  # no ctx yet
+        cache1 = fe._load(fe._cache_path("answers"))
+        check("run 1: mem0 is recorded as blocked", "mem0" in (cache1.get("_blocked_arms") or []),
+              str(cache1.get("_blocked_arms")))
+        _seed_ctx("mem0")                                         # contexts now exist for mem0
+        fe.answer_stage(["mem0"], MINI_DATA, MINI_POOL, fe.READER, fe.CHAR_BUDGET)
+        cache2 = fe._load(fe._cache_path("answers"))
+    check("(в): run 2 found contexts - mem0 is REMOVED from _blocked_arms, not left there forever",
+          "mem0" not in (cache2.get("_blocked_arms") or []), str(cache2.get("_blocked_arms")))
+    res2 = fe.summarise(["mem0"], MINI_DATA, fe.READER, fe.JUDGE, fe.JUDGE2)
+    check("mem0 is no longer reported blocked in the artifact",
+          "blocked" not in res2["arms"].get("mem0", {}), str(res2["arms"].get("mem0")))
 finally:
     fe.DATA = saved_DATA
 
@@ -374,6 +429,51 @@ check("a 500 on /api/embed marks the ctx's `_transport` invalid",
       ctx_embed.get("_transport", {}).get("valid") is False, str(ctx_embed.get("_transport")))
 check("the reason names the embed failure",
       "embed" in (ctx_embed["_transport"].get("invalid_reason") or ""))
+
+
+print("\n- item 9B/K35: a later, CLEAN stage run must not launder an earlier invalid transport - "
+      "_attach_prefixed_transport MERGES (sticky valid:false, counters summed, every run's own "
+      "reason survives) -")
+with _isolated_pacer():
+    # run 1: a bypass (simulated the way mut_bfd.py's own auditor probe does - a pre-seeded
+    # invalid entry, exactly what a first stage run would have written).
+    v = {"_transport": {"valid": False, "invalid_reason": "bypass_calls.aiohttp=1 (run 1)",
+                        "ollama_transport": {"calls": 5}}}
+    # run 2: a genuinely clean window - one real, unbypassed call.
+    urllib.request.urlopen = _fake_chat_factory()
+    pacer.install()
+    snap2 = pacer.snapshot()
+    urllib.request.urlopen(urllib.request.Request("http://127.0.0.1:11434/api/chat", data=b"{}")).read()
+    fe._attach_prefixed_transport(v, "_transport", snap2)
+check("K35: valid:false is STICKY across a later clean run",
+      v["_transport"].get("valid") is False, str(v["_transport"]))
+check("K35: run 1's own reason text survives the merge",
+      "run 1" in json.dumps(v), str(v["_transport"].get("invalid_reason")))
+check("K35: the counters are SUMMED, not overwritten (5 + the new run's own calls)",
+      v["_transport"]["ollama_transport"]["calls"] > 5, str(v["_transport"]["ollama_transport"]))
+
+print("\n- item 9B/K35 mutation: the merge dropped (overwrite restored) - a clean second run "
+      "LAUNDERS the first run's own bypass -")
+def _attach_overwrite(cache, key, since):
+    scratch = {}
+    pacer.attach(scratch, since=since)
+    if scratch:
+        cache[key] = scratch          # the pre-K35 shape: overwrite, not merge
+
+
+with _isolated_pacer():
+    v_mut = {"_transport": {"valid": False, "invalid_reason": "bypass_calls.aiohttp=1 (run 1)",
+                            "ollama_transport": {"calls": 5}}}
+    urllib.request.urlopen = _fake_chat_factory()
+    pacer.install()
+    snap3 = pacer.snapshot()
+    urllib.request.urlopen(urllib.request.Request("http://127.0.0.1:11434/api/chat", data=b"{}")).read()
+    _attach_overwrite(v_mut, "_transport", snap3)
+check("mutation 'merge dropped': the clean run WRONGLY erases run 1's own bypass "
+      "(would FAIL the two checks above)",
+      v_mut["_transport"].get("valid") is not False and "run 1" not in json.dumps(v_mut),
+      str(v_mut["_transport"]))
+
 
 print("\n- item 9B mutation: install() removed - no `_transport` is ever written (blind to "
       "P0(a) entirely) -")
@@ -448,6 +548,115 @@ finally:
 check("fe._propagate_root_invalidity is restored to the real function",
       fe._propagate_root_invalidity is saved_propagate)
 
+
+# ── item 9B/K36 (the auditor's mut_bfd.py, 2026-09-24): source mutations that survived the
+# first pass - X4 already covered incidentally above; X5-X8 get their own direct test here ──
+
+print("\n- item 9B/K36 X5: nevertwice_whole/_snippet's contexts stage copies longmem's vector-"
+      "cache flags into ctx['_cache_provenance'] -")
+import head_to_head as hh  # noqa: E402
+saved_run_nevertwice = hh.run_nevertwice
+saved_emb_path = fe.le._emb_path
+
+
+def _fake_run_nevertwice(data, pool):
+    ranked = {q["question_id"]: list(pool)[:5] for q in data}
+    return hh.score(ranked, data, list(pool))
+
+
+hh.run_nevertwice = _fake_run_nevertwice
+fake_emb = Path(tempfile.mkdtemp(prefix="frontier_test_x5_")) / "emb.json"
+fake_emb.write_text(json.dumps({
+    "sessions": {}, "questions": {}, "valid": False,
+    "invalid_reason": "3 embed call(s) failed", "ollama_transport": {"calls": 9},
+    "dropped_sessions": ["s9"], "dropped_questions": ["q9"],
+}), encoding="utf-8")
+fe.le._emb_path = lambda *a, **k: fake_emb
+try:
+    ctx_x5 = fe.contexts_nevertwice(MINI_DATA, MINI_POOL, snippet=False)
+finally:
+    hh.run_nevertwice = saved_run_nevertwice
+    fe.le._emb_path = saved_emb_path
+check("X5: ctx['_cache_provenance'] carries the vector cache's own valid/invalid_reason/"
+      "ollama_transport/dropped_*", ctx_x5.get("_cache_provenance", {}).get("valid") is False
+      and ctx_x5["_cache_provenance"].get("dropped_sessions") == ["s9"], str(ctx_x5.get("_cache_provenance")))
+
+print("\n- item 9B/K36 X6: an invalid cache_provenance folds into the arm (the P0(a)/(b) path "
+      "for the MAIN arms nevertwice_whole/_snippet) -")
+node_x6 = {"1": {"n": 2, "accuracy": 1.0}}
+ctx_x6 = {"_cache_provenance": {"valid": False, "invalid_reason": "3 embed call(s) failed"}}
+fe._fold_arm_context_provenance("nevertwice_whole", node_x6, ctx_x6, {})
+check("X6: the arm's own node is marked invalid, naming the vector-cache reason",
+      node_x6.get("valid") is False and "embed" in (node_x6.get("invalid_reason") or ""),
+      str(node_x6))
+
+print("\n- item 9B/K36 X7: the answer/judge stage-level transport (answer_transport/"
+      "judge_transport valid:false) marks the ROOT, not just itself -")
+fe.DATA = Path(tempfile.mkdtemp(prefix="frontier_test_x7_"))
+try:
+    with _isolated_pacer():
+        _seed_ctx()
+        urllib.request.urlopen = _fake_chat_factory()
+        fe.answer_stage([MINI_ARM], MINI_DATA, MINI_POOL, fe.READER, fe.CHAR_BUDGET)
+        fe.judge_stage([MINI_ARM], MINI_DATA, fe.READER, fe.JUDGE, fe.JUDGE2, 100)
+        cache_x7 = fe._load(fe._cache_path("answers"))
+        cache_x7["_transport"] = {"valid": False, "invalid_reason": "bypass_calls.requests=1"}
+        fe._save(fe._cache_path("answers"), cache_x7)
+        res_x7 = fe.summarise([MINI_ARM], MINI_DATA, fe.READER, fe.JUDGE, fe.JUDGE2)
+    check("X7: the root is invalid, naming the answer-stage transport",
+          res_x7.get("valid") is False and "answer stage" in (res_x7.get("invalid_reason") or ""),
+          str(res_x7.get("invalid_reason")))
+finally:
+    fe.DATA = saved_DATA
+
+print("\n- item 9B/K36 X8: the RN5 competitor_cache record is written for a non-engine arm -")
+fe.DATA = Path(tempfile.mkdtemp(prefix="frontier_test_x8_"))
+try:
+    _seed_ctx("mem0")
+    with _isolated_pacer():
+        urllib.request.urlopen = _fake_chat_factory()
+        fe.answer_stage(["mem0"], MINI_DATA, MINI_POOL, fe.READER, fe.CHAR_BUDGET)
+        fe.judge_stage(["mem0"], MINI_DATA, fe.READER, fe.JUDGE, fe.JUDGE2, 100)
+        res_x8 = fe.summarise(["mem0"], MINI_DATA, fe.READER, fe.JUDGE, fe.JUDGE2)
+    check("X8: a non-engine (competitor) arm's contexts cache file provenance is recorded",
+          "mem0" in (res_x8.get("competitor_cache") or {})
+          and "sha256" in res_x8["competitor_cache"]["mem0"], str(res_x8.get("competitor_cache")))
+finally:
+    fe.DATA = saved_DATA
+
+print("\n- item 9B/K36 X4 (direct, the auditor's request): a PARTIAL competitor cache - contexts for only "
+      "some of the asked questions - is a mismatch, not 'present' (PREREG P0(f)), and row_refusal refuses "
+      "the real pointer arms.mem0.1.accuracy -")
+fe.DATA = Path(tempfile.mkdtemp(prefix="frontier_test_x4_"))
+try:
+    fe._save(fe._ctx_path("mem0"), {MINI_DATA[0]["question_id"]: [{"id": "s0", "text": "some context text"}]})
+    with _isolated_pacer():
+        urllib.request.urlopen = _fake_chat_factory()
+        fe.answer_stage(["mem0"], MINI_DATA, MINI_POOL, fe.READER, fe.CHAR_BUDGET)
+        fe.judge_stage(["mem0"], MINI_DATA, fe.READER, fe.JUDGE, fe.JUDGE2, 100)
+        res_x4 = fe.summarise(["mem0"], MINI_DATA, fe.READER, fe.JUDGE, fe.JUDGE2)
+    node_x4 = res_x4.get("arms", {}).get("mem0") or {}
+    check("X4: the arm names the questions its cache lacks",
+          node_x4.get("missing_contexts_count") == len(MINI_DATA) - 1
+          and node_x4.get("missing_contexts_ids") == [q["question_id"] for q in MINI_DATA[1:]], str(node_x4)[:300])
+    check("X4: the arm and the root are invalid",
+          node_x4.get("valid") is False and res_x4.get("valid") is False, str(res_x4.get("invalid_reason")))
+    why_x4 = rm.row_refusal(res_x4, "arms.mem0.1.accuracy", 0)
+    check("X4: row_refusal refuses the real pointer arms.mem0.1.accuracy", why_x4 is not None, str(why_x4))
+    saved_gap = fe.ctx_coverage_gap
+    fe.ctx_coverage_gap = lambda ctx, ids: []                    # mutation X4: the gap ignored
+    try:
+        with _isolated_pacer():
+            urllib.request.urlopen = _fake_chat_factory()
+            res_x4m = fe.summarise(["mem0"], MINI_DATA, fe.READER, fe.JUDGE, fe.JUDGE2)
+    finally:
+        fe.ctx_coverage_gap = saved_gap
+    check("mutation X4 'gap ignored' is caught: the arm then carries no missing_contexts record",
+          "missing_contexts_count" not in ((res_x4m.get("arms") or {}).get("mem0") or {}),
+          str((res_x4m.get("arms") or {}).get("mem0"))[:200])
+    check("fe.ctx_coverage_gap is restored", fe.ctx_coverage_gap is saved_gap)
+finally:
+    fe.DATA = saved_DATA
 
 print(f"\n{'ALL OK' if not FAILS else f'{FAILS} FAILED'}")
 sys.exit(1 if FAILS else 0)
