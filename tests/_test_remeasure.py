@@ -261,7 +261,17 @@ with _tf.TemporaryDirectory() as _td:
             "stale": "withdrawn for the re-measure", "pending_remeasure": True,
             "commit": "0" * 40, "raw": "research/results/_pairmove_probe.json",
             "pointer": "pairs[0].p_mcnemar"}]}
-        _restored, _left, _ = rm.restore(_man, head=HEAD)
+        #: The claim names a REAL stand in produced_by, so an uncommitted edit to that stand made
+        #: restore refuse it for "commit first" instead of the pair move this block is about - every
+        #: staged change to supersession_bench.py turned this red before its commit (found twice on
+        #: stands/ports, 2026-09-24). This block tests the pair guard, so the working tree is held
+        #: clean for it; the dirty-closure refusal has its own check above.
+        _saved_dirty = rm._dirty_files
+        rm._dirty_files = lambda: set()
+        try:
+            _restored, _left, _ = rm.restore(_man, head=HEAD)
+        finally:
+            rm._dirty_files = _saved_dirty
         check("restore refuses a claim whose index moved to another pair",
               _restored == [] and any("another pair" in x for x in _left), str(_left))
         check("and the claim keeps its own value rather than taking the neighbour's",
