@@ -28,6 +28,7 @@ asked for, not a registered claim: no `evidence_manifest.json` entry, no `produc
 """
 from __future__ import annotations
 
+import asyncio
 import http.server
 import json
 import os
@@ -109,8 +110,10 @@ def _ndjson_chunks(path: str) -> list:
              "prompt_eval_count": 1, "eval_count": 1},
         ]
     return [                                               # /api/generate
-        {"model": "probe-model", "response": "ok ", "done": False},
-        {"model": "probe-model", "response": "", "done": True, "total_duration": 1,
+        {"model": "probe-model", "created_at": "2026-01-01T00:00:00Z",
+         "response": "ok ", "done": False},
+        {"model": "probe-model", "created_at": "2026-01-01T00:00:00Z",
+         "response": "", "done": True, "total_duration": 1,
          "load_duration": 1, "prompt_eval_count": 1, "eval_count": 1},
     ]
 
@@ -145,9 +148,19 @@ def _response_for(path: str) -> dict:
                 "done_reason": "stop", "total_duration": 1, "load_duration": 1,
                 "prompt_eval_count": 1, "eval_count": 1}
     if path.startswith("/api/generate"):
-        return {"model": "probe-model", "response": "ok", "done": True,
-                "total_duration": 1, "load_duration": 1, "prompt_eval_count": 1,
-                "eval_count": 1}
+        # item 8 (.loop/HANDOFF-PORTS.md): the SAME six fields (response, done,
+        # prompt_eval_count, eval_count, model, created_at) real Ollama's /api/generate
+        # returns - `created_at` was missing here (present on /api/chat above the whole
+        # time). Diagnostic finding (this commit): A-MEM's OllamaController
+        # (litellm.completion(model="ollama_chat/...")) never calls /api/generate at all
+        # - traced under the amem_eval venv with litellm.set_verbose=True, server.counts
+        # showed /api/show x3 + /api/chat x1 per logical call, /api/generate x0 - so this
+        # completeness fix does not change A-MEM's own call count (still 20 for n=5, not
+        # 5); recorded so the shape is correct for whichever future stack DOES exercise
+        # this endpoint (litellm's non-chat "ollama/" provider, `ollama.Client.generate`).
+        return {"model": "probe-model", "created_at": "2026-01-01T00:00:00Z",
+                "response": "ok", "done": True, "total_duration": 1, "load_duration": 1,
+                "prompt_eval_count": 1, "eval_count": 1}
     return {"ok": True}
 
 
@@ -352,6 +365,38 @@ def drive_langchain_ollama_chat(port: int, n: int = N) -> dict:
     return {"attempted": n, "errors": errors}
 
 
+def drive_langchain_ollama_chat_async(port: int, n: int = N) -> dict:
+    """item 8 (.loop/HANDOFF-PORTS.md): every OTHER stack in this probe drives its client
+    SYNCHRONOUSLY - `_ollama_pacer.py` patches `httpx.AsyncClient.send`
+    (`_paced_httpx_async_send`) exactly as it patches `httpx.Client.send`, and nothing
+    here had ever exercised that code path with a REAL competitor client. `ChatOllama.
+    ainvoke` - the same client (`langchain_ollama`, already exercised synchronously
+    above) with its async entry point - resolves through `httpx.AsyncClient` under the
+    hood, unlike `litellm.acompletion` (A-MEM's own stack), which would additionally
+    reintroduce the /api/show model-info multiplier this probe's A-MEM line already
+    covers; this keeps the async case isolated to the transport question T8b asks."""
+    try:
+        from langchain_ollama import ChatOllama               # noqa: PLC0415
+    except ImportError as e:
+        return {"skipped": f"langchain_ollama ChatOllama not importable in this "
+                           f"interpreter ({e})"}
+    try:
+        chat = ChatOllama(model="probe-model", base_url=f"http://127.0.0.1:{port}")
+    except Exception as e:                                 # noqa: BLE001
+        return {"skipped": f"ChatOllama init failed ({type(e).__name__}: {e})"}
+    errors = 0
+
+    async def _run() -> None:
+        nonlocal errors
+        for i in range(n):
+            try:
+                await chat.ainvoke(f"probe prompt {i}")
+            except Exception:                              # noqa: BLE001
+                errors += 1
+    asyncio.run(_run())
+    return {"attempted": n, "errors": errors}
+
+
 STACKS = {
     "engine_embed (urllib.request.urlopen)": drive_engine_embed,
     "ollama-python Client.embed (httpx)": drive_ollama_python,
@@ -361,6 +406,8 @@ STACKS = {
     "ollama-python Client.chat stream=True (httpx)": drive_ollama_python_chat_stream,
     "mem0 OllamaLLM.generate_response (ollama-python/httpx)": drive_mem0_llm,
     "langchain_ollama ChatOllama.invoke (ollama-python/httpx)": drive_langchain_ollama_chat,
+    "langchain_ollama ChatOllama.ainvoke (ollama-python/httpx, ASYNC)":
+        drive_langchain_ollama_chat_async,
 }
 
 

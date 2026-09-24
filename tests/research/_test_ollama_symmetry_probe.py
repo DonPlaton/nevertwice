@@ -188,6 +188,89 @@ def test_run_excludes_other_host_leaks_from_the_symmetric_verdict() -> None:
                 os.environ[k] = v
 
 
+def test_async_stack_is_symmetric_with_a_real_fake_ollama() -> None:
+    print("\n- item 8 (.loop/HANDOFF-PORTS.md): an ASYNC stack is paced/counted through "
+          "_paced_httpx_async_send exactly like the sync engine stack above - every "
+          "OTHER hermetic check in this suite only ever drives urllib.request.urlopen "
+          "or a sync httpx path; the REAL probe's own new async stack "
+          "(drive_langchain_ollama_chat_async, ChatOllama.ainvoke) needs the mem0_eval "
+          "polygon venv, so a synthetic httpx.AsyncClient - no competitor package "
+          "needed - covers the transport mechanism hermetically here -")
+    try:
+        import httpx
+    except ImportError:
+        check("httpx importable (research extra) - this environment lacks it; every "
+              "other item-8 async-symmetry assertion is skipped, not failed", True,
+              "install the `research` extra to exercise this async path")
+        return
+    saved_env = {k: os.environ.get(k) for k in _ENV_KEYS}
+    server, port = probe.start_fake_ollama()
+
+    async def _async_stack(base_url: str, n: int) -> None:
+        client = httpx.AsyncClient(base_url=base_url)
+        try:
+            for _i in range(n):
+                await client.get("/api/tags")
+        finally:
+            await client.aclose()
+
+    def _drive_async(port_: int, n: int = 5) -> dict:
+        import asyncio                                       # noqa: PLC0415
+        asyncio.run(_async_stack(f"http://127.0.0.1:{port_}", n))
+        return {"attempted": n, "errors": 0}
+
+    try:
+        probe._point_env_at(port)
+        pacer.install()
+
+        snap = pacer.snapshot()
+        before = _total(server)
+        r = _drive_async(port, n=5)
+        server_calls = _server_delta(server, before)
+        out: dict = {}
+        pacer.attach(out, since=snap)
+        pacer_calls = out.get("ollama_transport", {}).get("calls", 0)
+
+        check("the async stack made 5 attempts with no errors",
+              r == {"attempted": 5, "errors": 0}, str(r))
+        check("the fake server received exactly 5 requests", server_calls == 5,
+              str(server_calls))
+        check("the pacer counted the SAME 5 calls via _paced_httpx_async_send (arm "
+              "symmetry holds for an ASYNC stack too, not just the sync ones every "
+              "other check here exercises)",
+              pacer_calls == server_calls,
+              f"server={server_calls} pacer={pacer_calls}")
+
+        # mutation: the same bypass this suite's sync test already proves catches a
+        # regression - is_ollama_host forced False - reddens the async path identically.
+        saved_is_ollama_host = pacer.is_ollama_host
+        pacer.is_ollama_host = lambda host, port: False
+        try:
+            snap2 = pacer.snapshot()
+            before2 = _total(server)
+            _drive_async(port, n=5)
+            server_calls2 = _server_delta(server, before2)
+            out2: dict = {}
+            pacer.attach(out2, since=snap2)
+            pacer_calls2 = out2.get("ollama_transport", {}).get("calls", 0)
+            check("mutation 'bypass' on the ASYNC path (is_ollama_host -> always "
+                  "False): the server still sees all 5 requests but the pacer counts "
+                  "ZERO of them - the same detection the sync engine stack's own "
+                  "mutation proves, now shown for _paced_httpx_async_send",
+                  server_calls2 == 5 and pacer_calls2 == 0,
+                  f"server={server_calls2} pacer={pacer_calls2}")
+        finally:
+            pacer.is_ollama_host = saved_is_ollama_host
+    finally:
+        pacer.uninstall()
+        probe.stop_fake_ollama(server)
+        for k, v in saved_env.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+
+
 def test_zz_every_check_passed() -> None:
     """Bare pytest must reach the same verdict as this suite's exit code.
 
@@ -201,6 +284,7 @@ def test_zz_every_check_passed() -> None:
 def main() -> int:
     test_engine_stack_is_symmetric_with_a_real_fake_ollama()
     test_run_excludes_other_host_leaks_from_the_symmetric_verdict()
+    test_async_stack_is_symmetric_with_a_real_fake_ollama()
     print(f"\nollama_symmetry_probe: {PASSED} passed, {FAILED} failed")
     return 1 if FAILED else 0
 
