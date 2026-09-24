@@ -42,6 +42,8 @@ import sandbox_guard  # noqa: E402 - one store sandbox for every research script
 sandbox_guard.isolate(prefix="nevertwice_principle_twins_")
 sys.path.insert(0, str(ROOT / "nevertwice"))
 import memory_hook as m  # noqa: E402
+sys.path.insert(0, str(ROOT / "research"))
+import _ollama_pacer as pacer  # noqa: E402 - R-v2-ports: pace/retry/count this sweep's own traffic
 
 DATA = HERE / "data" / "principle_twins_v1.json"
 # .loop/explore/, not research/results/: a calibration sweep is exploratory - T_PRINCIPLE stays
@@ -177,6 +179,8 @@ def main(argv: list[str] | None = None) -> int:
         print("[principle_twins] refusing to embed a malformed dataset", file=sys.stderr)
         return 2
 
+    pacer.install()          # R-v2-ports: pace/retry/count this sweep's own traffic
+    snap = pacer.snapshot()
     if not m.embedder_available(4):
         print("[principle_twins] embedder not reachable - nothing to measure", file=sys.stderr)
         return 3
@@ -201,6 +205,7 @@ def main(argv: list[str] | None = None) -> int:
                "sweep_range": [T_SWEEP[0], T_SWEEP[-1]], "chosen_T": chosen,
                "n_positives": result["n_positives"], "n_negatives": result["n_negatives"],
                "sweep": result["sweep"], "measured_at": _measured_at()}
+    pacer.attach(artifact, since=snap)
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(artifact, ensure_ascii=False, indent=1) + "\n",
