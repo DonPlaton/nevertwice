@@ -714,22 +714,52 @@ async def _paced_aiohttp_request(self, method, str_or_url, **kwargs):
 
 # ── install / uninstall (idempotent) ─────────────────────────────────────────────────
 
+#: K27 (the auditor's finding, 2026-09-24): the only two modes this module knows about -
+#: see `_MODE`'s own docstring. `install()` used to accept ANY string here (a typo like
+#: `"obsrve"` was stored verbatim and `attach()` reported it back the same way, neither
+#: `"pace"` nor `"observe"` to a reader checking PREREG-V2 P5's own rule) and a second
+#: `install()` call while already installed was ALWAYS a silent no-op regardless of mode -
+#: `install()` then `install(mode="observe")` left the pacer stuck paced, sleeping, while
+#: the caller believed it had switched to observe.
+VALID_MODES = frozenset({"pace", "observe"})
+
+
 def install(mode: str = "pace") -> None:
     """Patch `urllib.request.urlopen` and, when importable, `httpx.Client.send` /
     `httpx.AsyncClient.send` (paced and retried), plus `requests.Session.send` /
     `aiohttp.ClientSession._request` (the tripwire - counted only, never paced or
-    retried). A second call while already installed is a no-op - it does NOT re-capture
-    `_ORIG` (which would point the "original" at THIS module's own wrapper) and does NOT
-    reset counters (a stand may call `install()` defensively more than once in one
-    process), and it does NOT change an already-installed `mode` either.
+    retried). A second call while already installed IN THE SAME MODE is a no-op - it does
+    NOT re-capture `_ORIG` (which would point the "original" at THIS module's own wrapper)
+    and does NOT reset counters (a stand may call `install()` defensively more than once in
+    one process).
 
     `mode="observe"` (item 9A addendum, see `_MODE`'s own docstring): the identical hooks,
     with pacing and retry both disabled - for a stand (`guard_bench.py`, `k8_judge_eval.py`)
     whose published claim IS a wall-clock time and must never include this module's own
-    artificial spacing, while still catching a bypass or a failed embed (P0(a))."""
+    artificial spacing, while still catching a bypass or a failed embed (P0(a)).
+
+    K27: `mode` outside `VALID_MODES` raises `ValueError` - it used to be accepted and
+    silently misreported. A second call while already installed in a DIFFERENT mode raises
+    `RuntimeError` - it used to be a silent no-op that left the FIRST mode in force; call
+    `uninstall()` first to actually switch modes. The same mode twice stays the pre-existing
+    idempotent no-op, unchanged - a stand that defensively calls `install()` more than once
+    with its own, consistent mode is not affected by either new check."""
+    if mode not in VALID_MODES:
+        raise ValueError(
+            f"_ollama_pacer.install(mode={mode!r}): mode must be one of "
+            f"{sorted(VALID_MODES)} - a mode outside this set used to be accepted and "
+            f"stored verbatim, reported back the same way by attach(), neither 'pace' nor "
+            f"'observe' to a reader checking PREREG-V2 P5's own rule (K27)")
     global _INSTALLED, _MODE
     with _LOCK:
         if _INSTALLED:
+            if mode != _MODE:
+                raise RuntimeError(
+                    f"_ollama_pacer.install(mode={mode!r}): already installed in mode "
+                    f"{_MODE!r} - a second install() in a DIFFERENT mode used to be a "
+                    f"silent no-op that left the FIRST mode in force (K27). Call "
+                    f"uninstall() first to switch modes, or pass mode={_MODE!r} to stay "
+                    f"the pre-existing idempotent no-op.")
             return
         _MODE = mode
         _ORIG["urlopen"] = urllib.request.urlopen

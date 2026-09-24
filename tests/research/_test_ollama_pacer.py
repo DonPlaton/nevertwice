@@ -1648,6 +1648,249 @@ def test_t9_observe_mode_paces_nothing_retries_nothing_still_counts_failures() -
               pacer._effective_max_retries is saved_eff)
 
 
+# ── T9b: K26 (the auditor's finding, 2026-09-24) - three gaps in T9's own coverage ──────
+#
+# The auditor's `mut82.py` mutates `research/_ollama_pacer.py` at 82013e4 four ways (M1-M4)
+# and reruns this whole file as a subprocess. Before the checks below existed, M1-M3
+# survived (this suite stayed green under each): T9 only ever drives observe mode through
+# `_pace()` (the SYNC urllib path), never `_pace_async()` (M1); nothing here calls
+# `uninstall()` after an `install(mode="observe")` and checks `_MODE` afterward (M2); and
+# T8's "shape carries every documented field" check does not even list `mode` among the
+# keys it requires, let alone its VALUE in "pace" mode (M3). M4 already dies on T9's own
+# "attach() writes timing_includes_pacing == False in observe mode" check.
+
+def test_t9b_async_observe_mode_and_mode_bookkeeping() -> None:
+    print("\n- T9b (K26): async observe mode paces nothing either; uninstall() resets "
+          "_MODE so a later install() is NOT stuck in 'observe'; a PACE-mode attach() "
+          "names its own mode too -")
+    try:
+        import httpx
+    except ImportError:
+        check("httpx importable (research extra) - this environment lacks it; every "
+              "other T9b assertion is skipped, not failed", True,
+              "install the `research` extra to exercise T9b's httpx path")
+        return
+    with _isolated():
+        # (a) K26: the ASYNC httpx.AsyncClient path through observe mode - a SEPARATE code
+        # path from T9's sync urllib coverage (`_pace_async`, not `_pace`), with its own
+        # `if _MODE == "observe": return` guard (mut82.py's M1 removes exactly this one).
+        clock = FakeClock()
+        pacer._now, pacer._sleep, pacer._async_sleep = (clock.now, clock.sleep,
+                                                         clock.async_sleep)
+        saved_pace_s = pacer.PACE_S
+        pacer.PACE_S = 0.125          # hermetic regardless of NEVERTWICE_OLLAMA_PACE_S in env
+
+        async def _ten_async_calls():
+            async def handler(request):
+                return httpx.Response(200, json={"ok": True})
+            client = httpx.AsyncClient(transport=httpx.MockTransport(handler),
+                                       base_url="http://127.0.0.1:11434")
+            for _ in range(10):
+                await client.get("/api/tags")
+            await client.aclose()
+        try:
+            pacer.install(mode="observe")
+            with _crash_guard("T9b: 10 async observe-mode calls give pace_sleep_s == 0",
+                              "T9b: 10 async observe-mode calls are still counted (calls "
+                              "== 10)"):
+                asyncio.run(_ten_async_calls())
+                snap = pacer.snapshot()
+                check("T9b: 10 async observe-mode calls give pace_sleep_s == 0",
+                      snap["pace_sleep_s"] == 0.0, str(snap))
+                check("T9b: 10 async observe-mode calls are still counted (calls == 10)",
+                      snap["calls"] == 10, str(snap))
+        finally:
+            pacer.uninstall()
+            pacer.PACE_S = saved_pace_s
+
+        # (b) K26: install(mode="observe") -> uninstall() -> install() gives mode "pace".
+        # Before this check existed, mut82.py's M2 (uninstall() drops its own
+        # `_MODE = "pace"` reset) survived: a stand that calls `install(mode="observe")`
+        # and later, in the SAME process, `uninstall()` then a plain `install()` (the exact
+        # sequence a test suite or a multi-stand campaign driver performs) would silently
+        # inherit "observe" pacing-off behaviour for a caller that asked for the default.
+        #
+        # The FIRST check below (right after `uninstall()`, before any second `install()`
+        # call) is the one that actually distinguishes M2: `install()` unconditionally
+        # re-derives `_MODE = mode` whenever `_INSTALLED` is False, so a SECOND install()
+        # call masks a leaked `_MODE` regardless of whether uninstall() reset it - checking
+        # only after the second install() (as the practical consequence reads) would pass
+        # under M2 too, and miss it entirely.
+        pacer._reset_for_tests()
+        pacer.install(mode="observe")
+        pacer.uninstall()
+        with _crash_guard("T9b: uninstall() itself resets _MODE to 'pace' (checked "
+                          "BEFORE any second install() call, which would mask this)"):
+            check("T9b: uninstall() itself resets _MODE to 'pace' (checked BEFORE any "
+                  "second install() call, which would mask this)",
+                  pacer._MODE == "pace", pacer._MODE)
+        pacer.install()
+        with _crash_guard("T9b: ... and the practical consequence holds too: a later "
+                          "plain install() gives mode 'pace'"):
+            check("T9b: ... and the practical consequence holds too: a later plain "
+                  "install() gives mode 'pace'", pacer._MODE == "pace", pacer._MODE)
+        pacer.uninstall()
+
+        # (c) K26: a PACE-mode attach() names its own mode too. T8's "shape carries every
+        # documented field" check never listed `mode` among the required keys, so mut82.py's
+        # M3 (attach() always writes "mode": "observe", even in pace mode) survived: a
+        # reader trusting `ollama_transport.mode == "pace"` to mean "no artificial spacing
+        # was excluded" would be told the OPPOSITE of what actually happened.
+        pacer._reset_for_tests()
+        pacer.install()
+
+        def ok():
+            return "ok"
+        pacer._run_paced(ok)
+        out: dict = {}
+        pacer.attach(out)
+        with _crash_guard("T9b: a PACE-mode attach() writes ollama_transport.mode == "
+                          "'pace'"):
+            check("T9b: a PACE-mode attach() writes ollama_transport.mode == 'pace'",
+                  out.get("ollama_transport", {}).get("mode") == "pace", str(out))
+        pacer.uninstall()
+
+
+# ── T10: K27 (the auditor's finding, 2026-09-24) - install() rejects a bad mode, and a ──
+# second install() in a DIFFERENT mode, instead of silently accepting either ────────────
+#
+# Before this: `install(mode="obsrve")` (a typo) was accepted and stored verbatim, and
+# `attach()` reported `"mode": "obsrve"` back - neither "pace" nor "observe" to a reader
+# checking PREREG-V2 P5's own rule. And `install()` then `install(mode="observe")` (the
+# auditor's own `observe_probe.py` reproduction) was ALWAYS a silent no-op regardless of
+# mode - the pacer stayed stuck in "pace", sleeping and retrying, while the caller believed
+# it had switched to observe.
+
+def test_t10_install_rejects_bad_mode_and_silent_mode_switch() -> None:
+    print("\n- T10 (K27): install() raises ValueError on a mode outside {'pace','observe'}; "
+          "raises RuntimeError on a second install() in a DIFFERENT mode; the SAME mode "
+          "twice stays the pre-existing idempotent no-op -")
+    with _isolated():
+        # (a) an invalid mode is refused outright - never installed, nothing patched.
+        with _crash_guard("T10: install(mode='obsrve') (a typo) raises ValueError",
+                          "T10: the pacer is NOT installed after the rejected call"):
+            raised = None
+            try:
+                pacer.install(mode="obsrve")
+            except ValueError as e:
+                raised = e
+            check("T10: install(mode='obsrve') (a typo) raises ValueError",
+                  raised is not None, str(raised))
+            check("T10: the pacer is NOT installed after the rejected call",
+                  not pacer.installed())
+
+        # (b) install() then install(mode="observe") - the exact sequence observe_probe.py
+        # (the auditor's own reproduction) showed as a silent no-op - now raises, and the
+        # pacer stays in its ORIGINAL mode rather than ending up half-switched.
+        pacer.install()
+        with _crash_guard("T10: install() then install(mode='observe') raises RuntimeError",
+                          "T10: ... and the pacer stays in its ORIGINAL mode ('pace'), not "
+                          "half-switched"):
+            raised2 = None
+            try:
+                pacer.install(mode="observe")
+            except RuntimeError as e:
+                raised2 = e
+            check("T10: install() then install(mode='observe') raises RuntimeError",
+                  raised2 is not None, str(raised2))
+            check("T10: ... and the pacer stays in its ORIGINAL mode ('pace'), not "
+                  "half-switched", pacer._MODE == "pace", pacer._MODE)
+        pacer.uninstall()
+
+        # (c) control: the SAME mode twice is still the pre-existing idempotent no-op -
+        # neither new check may make a defensively-repeated install() start raising.
+        pacer.install(mode="observe")
+        with _crash_guard("T10: control - install(mode='observe') twice in a row does NOT "
+                          "raise (still idempotent for the SAME mode)"):
+            try:
+                pacer.install(mode="observe")
+                ok_twice = True
+            except (ValueError, RuntimeError):
+                ok_twice = False
+            check("T10: control - install(mode='observe') twice in a row does NOT raise "
+                  "(still idempotent for the SAME mode)", ok_twice)
+        pacer.uninstall()
+        pacer.install()
+        with _crash_guard("T10: control - install() (mode='pace') twice in a row does NOT "
+                          "raise either"):
+            try:
+                pacer.install()
+                ok_twice2 = True
+            except (ValueError, RuntimeError):
+                ok_twice2 = False
+            check("T10: control - install() (mode='pace') twice in a row does NOT raise "
+                  "either", ok_twice2)
+        pacer.uninstall()
+
+        # mutation (rule 1 removed): a minimal reimplementation that drops ONLY the
+        # mode-membership check, keeping the different-mode guard intact - the same
+        # "reimplement, don't monkeypatch a helper that does not exist" style TW1's own
+        # `_install_without_tripwire` uses above for `install()`'s tripwire half.
+        def _install_without_mode_validation(mode: str = "pace") -> None:
+            with pacer._LOCK:
+                if pacer._INSTALLED:
+                    if mode != pacer._MODE:
+                        raise RuntimeError(f"already installed in mode {pacer._MODE!r}")
+                    return
+                pacer._MODE = mode
+                pacer._ORIG["urlopen"] = urllib.request.urlopen
+                urllib.request.urlopen = pacer._paced_urlopen
+                pacer._INSTALLED = True
+        saved_install = pacer.install
+        pacer.install = _install_without_mode_validation
+        try:
+            with _crash_guard("mutation 'rule 1 removed': install(mode='obsrve') no "
+                              "longer raises ValueError (would FAIL the ValueError check "
+                              "above)"):
+                raised3 = None
+                try:
+                    pacer.install(mode="obsrve")
+                except ValueError as e:
+                    raised3 = e
+                check("mutation 'rule 1 removed': install(mode='obsrve') no longer raises "
+                      "ValueError (would FAIL the ValueError check above)", raised3 is None,
+                      str(raised3))
+        finally:
+            pacer.uninstall()
+            pacer.install = saved_install
+        check("install is restored to the real function", pacer.install is saved_install)
+
+        # mutation (rule 2 removed): a minimal reimplementation that drops ONLY the
+        # already-installed-in-a-different-mode guard, keeping the mode-membership check.
+        def _install_without_mode_switch_guard(mode: str = "pace") -> None:
+            if mode not in pacer.VALID_MODES:
+                raise ValueError(f"bad mode {mode!r}")
+            with pacer._LOCK:
+                if pacer._INSTALLED:
+                    return                                    # the different-mode check removed
+                pacer._MODE = mode
+                pacer._ORIG["urlopen"] = urllib.request.urlopen
+                urllib.request.urlopen = pacer._paced_urlopen
+                pacer._INSTALLED = True
+        pacer.install = _install_without_mode_switch_guard
+        try:
+            pacer.install()
+            with _crash_guard("mutation 'rule 2 removed': install() then "
+                              "install(mode='observe') is WRONGLY a silent no-op again "
+                              "(would FAIL the RuntimeError check above), and _MODE stays "
+                              "stuck at 'pace'"):
+                raised4 = None
+                try:
+                    pacer.install(mode="observe")
+                except RuntimeError as e:
+                    raised4 = e
+                check("mutation 'rule 2 removed': install() then install(mode='observe') "
+                      "is WRONGLY a silent no-op again (would FAIL the RuntimeError check "
+                      "above), and _MODE stays stuck at 'pace'",
+                      raised4 is None and pacer._MODE == "pace",
+                      f"raised4={raised4!r} _MODE={pacer._MODE!r}")
+        finally:
+            pacer.uninstall()
+            pacer.install = saved_install
+        check("install is restored to the real function (again)",
+              pacer.install is saved_install)
+
+
 def test_zz_every_check_passed() -> None:
     """Bare pytest must reach the same verdict as this suite's exit code.
 
@@ -1677,7 +1920,9 @@ def main() -> int:
                test_tw1_requests_session_send_is_counted_not_paced_and_marks_invalid,
                test_tw2_aiohttp_client_session_request_is_counted_not_paced,
                test_tw3_nested_aiohttp_inside_a_paced_httpx_call_is_not_a_bypass,
-               test_t9_observe_mode_paces_nothing_retries_nothing_still_counts_failures):
+               test_t9_observe_mode_paces_nothing_retries_nothing_still_counts_failures,
+               test_t9b_async_observe_mode_and_mode_bookkeeping,
+               test_t10_install_rejects_bad_mode_and_silent_mode_switch):
         fn()
     print(f"\nollama_pacer: {PASSED} passed, {FAILED} failed")
     return 1 if FAILED else 0
