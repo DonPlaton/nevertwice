@@ -1214,19 +1214,26 @@ def pool(engine_files: list[Path], other_files: list[Path] | None = None) -> dic
             "is the spread this note used to blame on the model."
             + (" ONE RUN: the agreement between runs is not shown here, and "
                "tools/register_supersession.py refuses this artifact." if len(runs) < 2 else ""))
-    # K18/P1(c), corrected by K19: every mem0 figure computed twice - errors as failures
-    # (pairs_errors_as_failure, kept under "pairs" too - the same KEY every existing
-    # pointer such as pairs[1].p_mcnemar reads, though K19 changed what fills it: the
-    # properly-defined worst case, `_mem0_errors_as_failure`, not K18's own blank-row
-    # bug) and errors as successes (pairs_errors_as_success) - published side by side. A
-    # pair naming mem0 whose SIGN or McNemar-vs-0.05 side disagrees between the two
-    # invalidates this whole pooled artifact (P2: "one invalid run inside a pool
-    # invalidates the whole pool" - the SAME rule extended to a disagreement discovered
-    # only at pool/pair time, never visible per-run).
+    # K18/P1(c), corrected by K19, corrected again by K20 (the auditor, on 55452f7): every
+    # mem0 figure is computed twice for the DOUBLE READING that decides validity - errors
+    # as failures (pairs_errors_as_failure, K19's properly-defined worst case,
+    # `_mem0_errors_as_failure`) and errors as successes (pairs_errors_as_success) -
+    # published side by side. A pair naming mem0 whose SIGN or McNemar-vs-0.05 side
+    # disagrees between the two invalidates this whole pooled artifact (P2: "one invalid
+    # run inside a pool invalidates the whole pool" - the SAME rule extended to a
+    # disagreement discovered only at pool/pair time, never visible per-run).
+    # K20: "pairs" itself - the KEY every existing pointer such as pairs[1].p_mcnemar
+    # reads - is NEITHER rescored reading. PREREG-V2 rev 3 P1's point estimate is the
+    # RECORDED form: an errored mem0 case is scored as what the call actually delivered
+    # (its own blank row), not the worst-case rescoring K19 fixed the FAILURE reading to
+    # be. K19's own code (a bug the auditor's K20 caught) published `pairs_failure` under
+    # "pairs" - the worst case, not what was recorded. `pairs_recorded` is `first`,
+    # unmodified, straight through `compare_arms`.
+    pairs_recorded = compare_arms(first)
     pairs_failure, pairs_success, disagreement = _double_reading(first)
     out = {"arms": arms, "k": meta["k"], "llm": meta["llm"], "embedder": meta["embedder"],
            "dataset": ds, "pooled_nevertwice": pooled, "pooled_note": note,
-           "pairs": pairs_failure, "pairs_errors_as_failure": pairs_failure,
+           "pairs": pairs_recorded, "pairs_errors_as_failure": pairs_failure,
            "pairs_errors_as_success": pairs_success, "pairs_per_engine_run": per_run_pairs}
     if disagreement is not None:
         out["valid"] = False

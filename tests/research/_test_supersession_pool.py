@@ -128,6 +128,48 @@ with tempfile.TemporaryDirectory() as tmp:
     check("k, llm and embedder travel from the first run",
           (res["k"], res["llm"], res["embedder"]) == (5, "llm", "emb"))
 
+    print("\n- K20 (the auditor's correction of K19): pool()'s 'pairs' is computed from "
+          "the RECORDED rows (an errored mem0 case = its own blank row, what it actually "
+          "returned), NOT from pairs_errors_as_failure -")
+    with tempfile.TemporaryDirectory() as tmp_k20:
+        # nevertwice reads stale on s0 only; mem0's s0 case ERRORED and is recorded as
+        # the blank row `run_mem0` actually writes for an error (stale_returned=False,
+        # current_returned=False - see `_blank`), never the rescored worst case
+        # (`_mem0_errors_as_failure` would flip it to stale_returned=True).
+        k20_engine_rows = engine_rows({"s0"})
+        k20_mem0_rows = [_row("s0", "value_replaced", False, False, error="TimeoutError: x"),
+                         _row("s1", "value_replaced", False, True),
+                         _row("s2", "value_replaced", False, True),
+                         _row("s3", "value_replaced", False, True),
+                         _row("c0", "control", False, True),
+                         _row("c1", "control", False, True)]
+        k20_engine_file = _write(tmp_k20, "engine.json",
+                                 _blob({"nevertwice": _arm(k20_engine_rows, 260.0)}))
+        k20_mem0_file = _write(tmp_k20, "mem0.json",
+                               _blob({"mem0": _arm(k20_mem0_rows, 450.0)}))
+        k20_res = sb.pool([k20_engine_file], [k20_mem0_file])
+        k20_first = {"nevertwice": {r["id"]: r for r in k20_engine_rows},
+                    "mem0": {r["id"]: r for r in k20_mem0_rows}}
+        k20_expected_pairs = sb.compare_arms(k20_first)
+        check("K20: pairs == compare_arms(recorded rows) exactly",
+              k20_res["pairs"] == k20_expected_pairs, str(k20_res["pairs"]))
+        k20_mem0_nv = next(p for p in k20_res["pairs"] if {p["a"], p["b"]} == {"mem0", "nevertwice"})
+        k20_failure_nv = next(p for p in k20_res["pairs_errors_as_failure"]
+                              if {p["a"], p["b"]} == {"mem0", "nevertwice"})
+        check("K20: pairs genuinely differs from pairs_errors_as_failure on the errored "
+              "case (setup check: this scenario is real, not vacuous)",
+              k20_mem0_nv != k20_failure_nv, str((k20_mem0_nv, k20_failure_nv)))
+
+        print("\n- K20 mutation: pairs <- the failure reading (K19's own bug pattern, "
+              "reintroduced) -")
+        # no exception risk here (plain dict/list comparison) - no _crash_guard needed,
+        # and it is defined later in this file anyway.
+        mutated_k20_pairs = k20_res["pairs_errors_as_failure"]
+        check("mutation 'pairs <- failure reading': pairs no longer equals "
+              "compare_arms(recorded rows) (would FAIL the K20 exact-equality check "
+              "above)",
+              mutated_k20_pairs != k20_expected_pairs, str(mutated_k20_pairs))
+
     print("\n- refusals -")
     other_ds = _write(tmp, "other.json", _blob({"mem0": _arm(mem0_rows())}, sha="zzz"))
     try:
@@ -544,7 +586,12 @@ check("one control error OVER the cap (2) is invalid, named by count",
       sb._mem0_cap_verdict({"supersession": 0, "control": 2}) is not None)
 reason_sup = sb._mem0_cap_verdict({"supersession": 3, "control": 0})
 check("the reason names both counts and both caps",
-      "3" in reason_sup and str(sb.MEM0_ERR_CAP_SUPERSESSION) in reason_sup and
+      # MK18a (the auditor's finding): `reason_sup` can be None under a plausible
+      # regression (e.g. the cap check itself broken) - "3" in None raises TypeError
+      # OUTSIDE check(), which would crash the whole suite process and silently skip
+      # every check after it. `reason_sup is not None` short-circuits before that.
+      reason_sup is not None and "3" in reason_sup and
+      str(sb.MEM0_ERR_CAP_SUPERSESSION) in reason_sup and
       "0" in reason_sup and str(sb.MEM0_ERR_CAP_CONTROL) in reason_sup, reason_sup)
 
 print("\n- K18 mutation: cap +1 - the SAME 3-supersession-error case now WRONGLY reads valid -")
@@ -643,6 +690,35 @@ check("stale's widened interval genuinely widens (lo strictly < hi)",
       wci["stale"][0] < wci["stale"][1], str(wci.get("stale")))
 check("current's widened interval also widens", wci["current"][0] < wci["current"][1],
       str(wci.get("current")))
+
+print("\n- K19b (the auditor's finding): widened_ci is EXACT per direction, not just "
+      "lo<hi - stale (lower-is-better) takes its lo from the SUCCESS reading and its hi "
+      "from the FAILURE reading; current (higher-is-better) the other way round -")
+k19b_failure_score = sb.score(sb._mem0_errors_as_failure(widened_rows))
+k19b_success_score = sb.score(sb._mem0_errors_as_success(widened_rows))
+check("stale: lo == Wilson_lo(success reading), hi == Wilson_hi(failure reading)",
+      wci["stale"] == [k19b_success_score["stale_ci"][0], k19b_failure_score["stale_ci"][1]],
+      str((wci["stale"], k19b_success_score["stale_ci"], k19b_failure_score["stale_ci"])))
+check("current (opposite direction): lo == Wilson_lo(failure reading), "
+      "hi == Wilson_hi(success reading)",
+      wci["current"] == [k19b_failure_score["current_ci"][0], k19b_success_score["current_ci"][1]],
+      str((wci["current"], k19b_failure_score["current_ci"], k19b_success_score["current_ci"])))
+
+print("\n- K19b mutation: direction ignored (stale wrongly read as higher-is-better, "
+      "like current) -")
+saved_direction = dict(sb._WIDENED_CI_DIRECTION)
+sb._WIDENED_CI_DIRECTION["stale"] = "higher"            # mutation: direction ignored/flipped
+with _crash_guard("mutation 'stale direction flipped': widened_ci['stale'] no longer "
+                  "matches the exact per-direction formula (would FAIL the K19b "
+                  "exact-match check above)"):
+    wci_dir_mut = sb._mem0_widened_ci(widened_rows)
+    check("mutation 'stale direction flipped': widened_ci['stale'] no longer matches "
+          "the exact per-direction formula (would FAIL the K19b exact-match check above)",
+          wci_dir_mut["stale"] != [k19b_success_score["stale_ci"][0], k19b_failure_score["stale_ci"][1]],
+          str(wci_dir_mut["stale"]))
+sb._WIDENED_CI_DIRECTION.clear()
+sb._WIDENED_CI_DIRECTION.update(saved_direction)
+check("_WIDENED_CI_DIRECTION is restored", sb._WIDENED_CI_DIRECTION == saved_direction)
 
 print("\n- _double_reading() - a pair that does NOT flip stays valid (nevertwice reads "
       "stale on EVERY case, so mem0's own error handling never moves it out ahead) -")
