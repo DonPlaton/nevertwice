@@ -625,15 +625,74 @@ def _mem0_cap_verdict(mem0_errors: dict) -> str | None:
 _SUCCESS_FIELDS = {"stale_returned": False, "stale_rank": None, "current_returned": True,
                   "old_value_served": False}
 
+#: K19 (the auditor's correction of K18): the WORST plausible outcome a supersession-
+#: shaped case admits, by the SAME shape `classify()` produces for a real hit that
+#: asserts the retracted fact alone. Never applied to a control-shaped row - see
+#: `_mem0_errors_as_failure`'s own docstring for why control needs no change at all.
+_FAILURE_FIELDS = {"stale_returned": True, "stale_rank": 1, "current_returned": False,
+                  "old_value_served": True}
+
 
 def _mem0_errors_as_success(rows: list[dict]) -> list[dict]:
     """K18/P1(c): the SAME rows, but every row `run_mem0` recorded as an ERROR (a blank
     row from `{**_blank(case), "error": ...}`) rescored as if mem0 had returned the
     CORRECT current fact and no stale one - the most favorable outcome the case admits,
-    the "errors counted as successes" reading P1 requires beside the default "errors
-    counted as failures" one. A row with no `error` key passes through unchanged; never
-    mutates the input (a fresh dict per changed row, a shared reference for the rest)."""
+    the "errors counted as successes" reading P1 requires beside "errors counted as
+    failures" (`_mem0_errors_as_failure`). A row with no `error` key passes through
+    unchanged; never mutates the input (a fresh dict per changed row, a shared reference
+    for the rest)."""
     return [{**r, **_SUCCESS_FIELDS} if r.get("error") else r for r in rows]
+
+
+def _mem0_errors_as_failure(rows: list[dict]) -> list[dict]:
+    """K19 (the auditor's correction of K18, on 8eb148d): the errors-as-FAILURE reading,
+    defined by metric DIRECTION, not by the blank/as-recorded shape `run_mem0` leaves an
+    errored case in. K18's own code used the blank row (`stale_returned=False,
+    current_returned=False`) AS the failure reading - but a blank reads as a SUCCESS on
+    `stale_rate` (lower is better: not asserting the retracted fact IS the good outcome),
+    so scoring an error as blank was never "counted as a failure" on that axis; it was
+    silently the BEST possible reading. That is why K18's own flip test could never move
+    `stale_rate_diff` at all - not a structural fact about the metric, a bug in which
+    reading "failure" pointed at (the auditor's probe: 60 cases, 10 stale + 45 clean + 5
+    errors read stale_rate 0.1667 under EITHER of K18's two readings, against a true
+    worst case of 15/60 = 0.25).
+
+    A supersession-shaped error becomes the worst case on every axis it can move at once:
+    stale_returned=True (served the retracted fact), current_returned=False (did not
+    serve the replacement), old_value_served=True. A CONTROL-shaped error needs no
+    change at all: `current_returned=False` is ALREADY "counted as a control miss" -
+    `control_miss_rate`'s own definition (`score()`: `missed = sum(1 for r in ctl if not
+    r["current_returned"])`) - in the blank shape `run_mem0` already leaves it in, so
+    there is no worse reading to move it to."""
+    return [{**r, **_FAILURE_FIELDS} if r.get("error") and r.get("shape") != "control" else r
+           for r in rows]
+
+
+#: K19: which side of the interval each reading fills in, by metric DIRECTION - a
+#: LOWER-is-better metric (stale, control_miss) is widened [Wilson_lo(success),
+#: Wilson_hi(failure)] (the optimistic reading gives the low end, the pessimistic one the
+#: high end); a HIGHER-is-better metric (current) is the other way around.
+_WIDENED_CI_DIRECTION = {"stale": "lower", "control_miss": "lower", "current": "higher"}
+
+
+def _mem0_widened_ci(rows: list[dict]) -> dict:
+    """K18/P1(c), corrected by K19: every mem0 figure is computed twice - errors as
+    failures (`_mem0_errors_as_failure` - the WORST plausible outcome; never the blank/
+    as-recorded `rows` a run's own top-level rates are published from, which reads as a
+    SUCCESS on stale_rate, not a failure) and errors as successes
+    (`_mem0_errors_as_success`, the most favorable outcome). Returns
+    {metric: [lo, hi]} per `_WIDENED_CI_DIRECTION`. Extracted as its own function, same
+    reason as `_mem0_cap_verdict`: testable without mem0 installed."""
+    failure_score = score(_mem0_errors_as_failure(rows))
+    success_score = score(_mem0_errors_as_success(rows))
+    widened_ci = {}
+    for metric, direction in _WIDENED_CI_DIRECTION.items():
+        lo_hi_fail = failure_score.get(f"{metric}_ci")
+        lo_hi_succ = success_score.get(f"{metric}_ci")
+        if lo_hi_fail is not None and lo_hi_succ is not None:
+            widened_ci[metric] = ([lo_hi_succ[0], lo_hi_fail[1]] if direction == "lower"
+                                  else [lo_hi_fail[0], lo_hi_succ[1]])
+    return widened_ci
 
 
 def run_mem0(cases: list[dict], k: int) -> dict:
@@ -728,21 +787,7 @@ def run_mem0(cases: list[dict], k: int) -> dict:
     if invalid_reason is not None:
         result["valid"] = False
         result["invalid_reason"] = invalid_reason
-    # K18/P1(c): every mem0 figure is computed twice - errors as failures (above, the
-    # default every existing reader already sees) and errors as successes (the most
-    # favorable outcome the case admits) - and the published interval is widened to
-    # [Wilson_lo of the failure reading, Wilson_hi of the success reading]. Computed here,
-    # once, so pool() (which does the SIGN/McNemar side of the double reading, at pair
-    # time) never has to re-derive a single-run rate from raw rows.
-    success_rows = _mem0_errors_as_success(rows)
-    success_score = score(success_rows)
-    widened_ci = {}
-    for metric in ("stale", "current", "control_miss"):
-        lo_hi_fail = result.get(f"{metric}_ci")
-        lo_hi_succ = success_score.get(f"{metric}_ci")
-        if lo_hi_fail is not None and lo_hi_succ is not None:
-            widened_ci[metric] = [lo_hi_fail[0], lo_hi_succ[1]]
-    result["widened_ci"] = widened_ci
+    result["widened_ci"] = _mem0_widened_ci(rows)
     return result
 
 
@@ -901,21 +946,30 @@ def compare_arms(loaded: dict[str, dict[str, dict]]) -> list[dict]:
 
 
 def _double_reading(first: dict[str, dict[str, dict]]) -> tuple[list, list, str | None]:
-    """K18/P1(c): "every mem0 figure is computed twice: errors counted as failures, and
-    errors counted as successes. If a pre-registered reading differs between the two
-    (the sign of a difference, or McNemar p on either side of 0.05), the row is invalid
-    whatever the count." `first` maps arm name to {case_id: row}, the SAME shape
-    `compare_arms` already takes - the "failure" reading is the existing `first` as-is,
-    the "success" reading rescores mem0's own errored rows with `_mem0_errors_as_success`.
-    Returns (pairs_as_failure, pairs_as_success, invalid_reason_or_None) - the reason
-    names every pair and pre-registered test that disagreed, or None when they all agree
-    (including trivially, when "mem0" is not one of the arms at all)."""
-    pairs_failure = compare_arms(first)
+    """K18/P1(c), corrected by K19: "every mem0 figure is computed twice: errors counted
+    as failures, and errors counted as successes. If a pre-registered reading differs
+    between the two (the sign of a difference, or McNemar p on either side of 0.05), the
+    row is invalid whatever the count." `first` maps arm name to {case_id: row}, the SAME
+    shape `compare_arms` already takes.
+
+    K19: the "failure" reading is NOT `first` as-is (K18's own bug - the blank/as-
+    recorded row an error leaves mem0's OWN rows in is a SUCCESS on stale_rate, not a
+    failure - see `_mem0_errors_as_failure`'s docstring). Both readings are built HERE,
+    explicitly, by rescoring mem0's own errored rows with `_mem0_errors_as_failure` /
+    `_mem0_errors_as_success` respectively. Returns (pairs_as_failure, pairs_as_success,
+    invalid_reason_or_None) - the reason names every pair and pre-registered test that
+    disagreed, or None when they all agree (including trivially, when "mem0" is not one
+    of the arms at all - `first` is used AS-IS then, since there is nothing to rescore)."""
     if "mem0" not in first:
-        return pairs_failure, pairs_failure, None
+        pairs = compare_arms(first)
+        return pairs, pairs, None
+    first_failure = dict(first)
+    first_failure["mem0"] = {cid: r for cid, r in
+                             zip(first["mem0"], _mem0_errors_as_failure(list(first["mem0"].values())))}
     first_success = dict(first)
     first_success["mem0"] = {cid: r for cid, r in
                              zip(first["mem0"], _mem0_errors_as_success(list(first["mem0"].values())))}
+    pairs_failure = compare_arms(first_failure)
     pairs_success = compare_arms(first_success)
     disagreements = []
     for pf, ps in zip(pairs_failure, pairs_success):
@@ -924,11 +978,10 @@ def _double_reading(first: dict[str, dict[str, dict]]) -> tuple[list, list, str 
         label = f"{pf['a']} vs {pf['b']}"
         sign = lambda x: (x > 0) - (x < 0)                          # noqa: E731
         # the SIGN of EACH rate difference (positive/negative/zero are the three signs -
-        # a pre-registered claim about DIRECTION, not magnitude). stale_rate_diff cannot
-        # actually move between the two readings (both leave an errored row's
-        # stale_returned False - see compare_arms's own docstring on this), but is
-        # checked anyway in case that ever changes; current_rate_diff is where P1(c)'s
-        # success imputation (current_returned flips True) actually bites.
+        # a pre-registered claim about DIRECTION, not magnitude). K19: with the failure
+        # reading properly defined (stale_returned=True for an errored supersession
+        # case), stale_rate_diff is now LIVE - it can genuinely move between the two
+        # readings, not just current_rate_diff.
         for metric in ("stale_rate_diff", "current_rate_diff"):
             df, ds_ = pf.get(metric), ps.get(metric)
             if df is not None and ds_ is not None and sign(df) != sign(ds_):
@@ -1161,12 +1214,15 @@ def pool(engine_files: list[Path], other_files: list[Path] | None = None) -> dic
             "is the spread this note used to blame on the model."
             + (" ONE RUN: the agreement between runs is not shown here, and "
                "tools/register_supersession.py refuses this artifact." if len(runs) < 2 else ""))
-    # K18/P1(c): every mem0 figure computed twice - errors as failures (pairs_errors_as_failure,
-    # kept under "pairs" too, unchanged, for every existing pointer such as pairs[1].p_mcnemar)
-    # and errors as successes (pairs_errors_as_success) - published side by side. A pair naming
-    # mem0 whose SIGN or McNemar-vs-0.05 side disagrees between the two invalidates this whole
-    # pooled artifact (P2: "one invalid run inside a pool invalidates the whole pool" - the SAME
-    # rule extended to a disagreement discovered only at pool/pair time, never visible per-run).
+    # K18/P1(c), corrected by K19: every mem0 figure computed twice - errors as failures
+    # (pairs_errors_as_failure, kept under "pairs" too - the same KEY every existing
+    # pointer such as pairs[1].p_mcnemar reads, though K19 changed what fills it: the
+    # properly-defined worst case, `_mem0_errors_as_failure`, not K18's own blank-row
+    # bug) and errors as successes (pairs_errors_as_success) - published side by side. A
+    # pair naming mem0 whose SIGN or McNemar-vs-0.05 side disagrees between the two
+    # invalidates this whole pooled artifact (P2: "one invalid run inside a pool
+    # invalidates the whole pool" - the SAME rule extended to a disagreement discovered
+    # only at pool/pair time, never visible per-run).
     pairs_failure, pairs_success, disagreement = _double_reading(first)
     out = {"arms": arms, "k": meta["k"], "llm": meta["llm"], "embedder": meta["embedder"],
            "dataset": ds, "pooled_nevertwice": pooled, "pooled_note": note,
