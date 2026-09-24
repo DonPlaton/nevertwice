@@ -1097,11 +1097,21 @@ def pool(engine_files: list[Path], other_files: list[Path] | None = None) -> dic
     engine_code: list[str | None] = []
     after_runs: list[dict] = []
     other_runs: dict[str, list[dict]] = {}
+    #: K25: a run FILE's own ROOT can carry `valid: False` too, not only its arms - when the
+    #: file being pooled is itself a previously pooled artifact (this function's own output has
+    #: `arms.nevertwice`, so it is a legal `--pool`/`--with` input). row_refusal walks every
+    #: container on a pointer's path, root included; a root flag this function drops on the
+    #: floor is exactly the P0 "invisible to row_refusal" failure mode K24 fixes on the other
+    #: stand. Named by the file so the reason is traceable to which input carried it.
+    file_root_invalid: list[str] = []
     meta: dict | None = None
     shas: set[str] = set()
     for f in [Path(p) for p in engine_files]:
         blob = json.loads(f.read_text(encoding="utf-8"))
         shas.add(blob["dataset"]["sha256"])
+        if blob.get("valid") is False:
+            file_root_invalid.append(f"{f.name} (file root): "
+                                     f"{blob.get('invalid_reason') or 'no reason recorded'}")
         arm = blob["arms"].get(ENGINE_ARM)
         if not arm or arm.get("blocked"):
             raise ValueError(f"{f}: no {ENGINE_ARM} arm to pool")
@@ -1119,6 +1129,9 @@ def pool(engine_files: list[Path], other_files: list[Path] | None = None) -> dic
     for f in [Path(p) for p in (other_files or [])]:
         blob = json.loads(f.read_text(encoding="utf-8"))
         shas.add(blob["dataset"]["sha256"])
+        if blob.get("valid") is False:
+            file_root_invalid.append(f"{f.name} (file root): "
+                                     f"{blob.get('invalid_reason') or 'no reason recorded'}")
         for name, res in blob["arms"].items():
             if name.startswith(ENGINE_ARM) or res.get("blocked"):
                 continue
@@ -1166,6 +1179,27 @@ def pool(engine_files: list[Path], other_files: list[Path] | None = None) -> dic
             "one bit for four endings, and only one of them is 'already processed'.")
     assert meta is not None
     others: dict[str, dict] = {name: pool_other_arm(rs) for name, rs in other_runs.items()}
+
+    #: K25 (the auditor): only `arms.nevertwice` / `arms.mem0` / ... ever carried a
+    #: constituent's own `valid: false` before this - claims point at
+    #: `pooled_nevertwice(_after_sleep).*` and `pairs[*]`, both of which sit OUTSIDE any single
+    #: arm's own dict, so they stayed restorable no matter which constituent was invalid (P2:
+    #: "one invalid run inside a --pool invalidates the whole pool"). Every constituent this
+    #: function actually pools is checked here: each engine run, each after-sleep run, every
+    #: `--with`/other arm (already carrying its OWN constituents' invalidity via
+    #: `pool_other_arm`), and each run FILE's own root (`file_root_invalid`, above).
+    constituent_invalid: list[str] = list(file_root_invalid)
+    for i, r in enumerate(runs, start=1):
+        if r.get("valid") is False:
+            label = ENGINE_ARM if i == 1 else f"{ENGINE_ARM}_run{i}"
+            constituent_invalid.append(f"{label}: {r.get('invalid_reason') or 'no reason recorded'}")
+    for i, a in enumerate(after_runs, start=1):
+        if a.get("valid") is False:
+            label = f"{ENGINE_ARM}_after_sleep" if i == 1 else f"{ENGINE_ARM}_after_sleep_run{i}"
+            constituent_invalid.append(f"{label}: {a.get('invalid_reason') or 'no reason recorded'}")
+    for name, o in others.items():
+        if o.get("valid") is False:
+            constituent_invalid.append(f"{name}: {o.get('invalid_reason') or 'no reason recorded'}")
 
     pooled = _fold_engine_runs(runs)
     arms: dict[str, dict] = {ENGINE_ARM: runs[0]}
@@ -1235,9 +1269,15 @@ def pool(engine_files: list[Path], other_files: list[Path] | None = None) -> dic
            "dataset": ds, "pooled_nevertwice": pooled, "pooled_note": note,
            "pairs": pairs_recorded, "pairs_errors_as_failure": pairs_failure,
            "pairs_errors_as_success": pairs_success, "pairs_per_engine_run": per_run_pairs}
+    # K25: the double-reading disagreement (existing) plus every constituent's own invalidity
+    # (new), combined into ONE root flag - the root sits on the path of every pointer this
+    # artifact's claims use, pooled_nevertwice(_after_sleep).* and pairs[*] included.
+    root_reasons = list(constituent_invalid)
     if disagreement is not None:
+        root_reasons.append(disagreement)
+    if root_reasons:
         out["valid"] = False
-        out["invalid_reason"] = disagreement
+        out["invalid_reason"] = "; ".join(root_reasons)
     if pooled_after is not None:
         # K8: the same fold over the second reading - the store after the sleep-time judge
         pooled_after["adjudication"] = [a.get("adjudication") for a in after_runs]
