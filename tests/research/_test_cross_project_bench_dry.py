@@ -229,7 +229,16 @@ def _fake_urlopen(*a, **kw):
 
 @contextlib.contextmanager
 def _isolated_pacer():
-    assert not pacer.installed(), "a previous check left the pacer installed"
+    # (в)/MX3: a bare `assert` here means a real regression (the `not dry` gate removed
+    # from run_bench, so --dry itself leaves the pacer installed) reddens this suite with
+    # an uncaught Traceback - a crash, not a named FAIL line. check() first (non-fatal),
+    # then self-heal (uninstall) so the block that follows still runs on its own merits
+    # instead of cascading into more crashes.
+    check("pacer starts uninstalled entering this block (a --dry run earlier in this "
+          "file must never have left run_bench()'s pacer.install() gate installed)",
+          not pacer.installed())
+    if pacer.installed():
+        pacer.uninstall()
     saved_urlopen = urllib.request.urlopen
     pacer._reset_for_tests()
     try:

@@ -449,7 +449,13 @@ def _fake_arm(cases, k):
 
 @contextlib.contextmanager
 def _isolated_pacer():
-    assert not pacer.installed(), "a previous check left the pacer installed"
+    # (в)/MX3: a bare `assert` here means any regression that leaves the pacer installed
+    # across a block boundary reddens this suite with an uncaught Traceback, not a named
+    # FAIL line. check() first (non-fatal), then self-heal so the block that follows still
+    # runs on its own merits instead of cascading into more crashes.
+    check("pacer starts uninstalled entering this block", not pacer.installed())
+    if pacer.installed():
+        pacer.uninstall()
     saved_urlopen = urllib.request.urlopen
     pacer._reset_for_tests()
     try:
