@@ -111,10 +111,16 @@ def embed_all(convs: list[dict]) -> dict:
     cache = json.loads(EMB.read_text(encoding="utf-8")) if EMB.exists() else {}
     cache.setdefault("turns", {})
     cache.setdefault("questions", {})
+    cache.setdefault("dropped_turns", [])
     todo_t = [(d, t) for c in convs for d, t in c["pool"].items() if d not in cache["turns"]]
     todo_q = [q["question"] for c in convs for q in c["qa"] if q["question"] not in cache["questions"]]
     pacer.install()          # R-v2-ports: pace/retry/count this --embed run's own traffic
     snap = pacer.snapshot()
+    #: B1 (.loop/HANDOFF-PORTS.md, item 6, "same for locomo if the same pattern exists" -
+    #: it does): a turn whose embed FAILS never lands in `cache["turns"]` - `main()`'s own
+    #: `ids = [d for d in c["pool"] if d in tvec]` then drops it from that conversation's
+    #: pool, silently. A retry that later succeeds clears it here.
+    dropped = set(cache["dropped_turns"])
     t0 = time.time()
     for i, (did, text) in enumerate(todo_t, 1):
         # `le.embed_full`: the engine's endpoint, model and prefix without the 2,000-char
@@ -123,8 +129,12 @@ def embed_all(convs: list[dict]) -> dict:
         v = le.embed_full(text, kind=m.doc_embed_kind())
         if v:
             cache["turns"][did] = v
+            dropped.discard(did)
+        else:
+            dropped.add(did)
         if i % 500 == 0:
             print(f"  turns {i}/{len(todo_t)}  ({time.time() - t0:.0f}s)", flush=True)
+            cache["dropped_turns"] = sorted(dropped)
             pacer.attach(cache, since=snap)
             EMB.write_text(json.dumps(cache), encoding="utf-8", newline="\n")
     for i, q in enumerate(dict.fromkeys(todo_q), 1):
@@ -133,6 +143,7 @@ def embed_all(convs: list[dict]) -> dict:
             cache["questions"][q] = v
         if i % 500 == 0:
             print(f"  questions {i}  ({time.time() - t0:.0f}s)", flush=True)
+    cache["dropped_turns"] = sorted(dropped)
     pacer.attach(cache, since=snap)
     EMB.write_text(json.dumps(cache), encoding="utf-8", newline="\n")
     print(f"[embed] done in {time.time() - t0:.0f}s -> {EMB.name}")
@@ -181,8 +192,10 @@ def main() -> int:
     agg = {mth: ({k: 0.0 for k in KS}, [0.0]) for mth in methods}
     by_cat: dict = {}
     n = 0
+    pool_used = 0            # B1: turns actually in a conversation's pool (embed succeeded)
     for c in convs:
         ids = [d for d in c["pool"] if d in tvec]
+        pool_used += len(ids)
         toks = {d: m._token_list(c["pool"][d]) for d in ids}
         bm_tf, bm_dl, bm_df, bm_avgdl = le.build_bm25(ids, toks)
         for q in c["qa"]:
@@ -255,6 +268,9 @@ def main() -> int:
                #: .gitignore:11` - so recording its identity is the only way a reader can tell
                #: which vectors a number came from.
                "embed_cache": _cache_identity()}
+        le.copy_cache_provenance(res, cache, "dropped_turns",
+                                 sorted(cache.get("dropped_turns") or []),
+                                 pool_used, n_turns, "turns")
         target = Path(args.out) if args.out else (HERE / "results" / "locomo.json")
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")

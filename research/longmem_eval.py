@@ -261,6 +261,36 @@ def load():
     return data, pool
 
 
+def copy_cache_provenance(res: dict, cache: dict, dropped_key: str, dropped: list,
+                          pool_used: int, pool_pinned: int, item_word: str) -> None:
+    """K16(2)/B1 (.loop/HANDOFF-PORTS.md, item 6): the pacer's transport record - and B1's
+    own dropped-item count - live on the vector CACHE (where `embed_all()`'s own
+    `pacer.install()`/`attach()` and its drop-tracking actually write them), never on the
+    RESULT artifact a claim's pointer resolves through. `tools/remeasure.row_refusal`
+    walks every container on the pointer's OWN path (root included) and never the cache
+    sitting beside it - so an invalid embed run, or a session/turn silently dropped from
+    the pool, was invisible to it before this. Shared with `locomo_eval.py` (`le.
+    copy_cache_provenance`), whose turn pool has the identical shape.
+
+    B1's own gate: the pool actually SCORED must equal the pinned corpus's own pool size,
+    or a method row was computed over fewer items than the corpus actually has - silently,
+    since `evaluate()`/`main()`'s own `[... if s in svec/tvec]` filter raises nothing."""
+    if "ollama_transport" in cache:
+        res["ollama_transport"] = cache["ollama_transport"]
+    reasons = []
+    if cache.get("valid") is False:
+        reasons.append(cache.get("invalid_reason") or "the embed run was marked invalid")
+    res[dropped_key] = dropped
+    if dropped or pool_used != pool_pinned:
+        reasons.append(
+            f"{pool_used} of the pinned corpus's {pool_pinned} {item_word} are in the pool "
+            f"({len(dropped)} dropped: embed failed, never entered the cache, silently left "
+            f"out of every method's pool)")
+    if reasons:
+        res["valid"] = False
+        res["invalid_reason"] = "; ".join(reasons)
+
+
 def embed_all():
     data, pool = load()
     cache = {"sessions": {}, "questions": {}, "meta": cache_meta()}
@@ -273,6 +303,7 @@ def embed_all():
     cache.setdefault("sessions", {})
     cache.setdefault("questions", {})
     cache.setdefault("shrunk", {})          # sid -> characters that fit, when the whole did not
+    cache.setdefault("dropped_sessions", [])
     cache["meta"] = cache_meta()
     sids = [s for s in pool if s not in cache["sessions"]]
     qs = [e for e in data if e["question_id"] not in cache["questions"]]
@@ -280,18 +311,28 @@ def embed_all():
           f"(cached: {len(cache['sessions'])} / {len(cache['questions'])})", file=sys.stderr)
     pacer.install()          # R-v2-ports: pace/retry/count this --embed run's own traffic
     snap = pacer.snapshot()
+    #: B1 (.loop/HANDOFF-PORTS.md, item 6): a session whose embed FAILS never lands in
+    #: `cache["sessions"]` - `evaluate()`'s own `pool_ids = [s for s in pool if s in svec]`
+    #: then drops it from the pool of every method, silently, with no trace anywhere. A
+    #: retry that later succeeds clears it here (`.discard`) - only a session still
+    #: missing when this run ends is a genuine drop.
+    dropped = set(cache["dropped_sessions"])
     t0 = time.time()
     for i, sid in enumerate(sids):
         v = embed_full(pool[sid], kind=m.doc_embed_kind())
         if v:
             cache["sessions"][sid] = v
+            dropped.discard(sid)
             if LAST_EMBED_CHARS < len(pool[sid][:MAXCHARS]):
                 cache["shrunk"][sid] = LAST_EMBED_CHARS
+        else:
+            dropped.add(sid)
         if (i + 1) % 50 == 0:
             print(f"  sessions {i+1}/{len(sids)}  ({time.time()-t0:.0f}s)", file=sys.stderr)
             #: cache["ollama_transport"] lives OUTSIDE cache["meta"] on purpose - cache_ok()
             #: checks meta's own keys only, but a second source of truth inside meta would
             #: still be one more thing to keep in sync for no reason.
+            cache["dropped_sessions"] = sorted(dropped)
             pacer.attach(cache, since=snap)
             EMB.write_text(json.dumps(cache), encoding="utf-8", newline="\n")   # checkpoint
     for i, e in enumerate(qs):
@@ -300,6 +341,7 @@ def embed_all():
             cache["questions"][e["question_id"]] = v
         if (i + 1) % 100 == 0:
             print(f"  questions {i+1}/{len(qs)}  ({time.time()-t0:.0f}s)", file=sys.stderr)
+    cache["dropped_sessions"] = sorted(dropped)
     pacer.attach(cache, since=snap)
     EMB.write_text(json.dumps(cache), encoding="utf-8", newline="\n")
     print(f"[embed] done in {time.time()-t0:.0f}s → {EMB.name}", file=sys.stderr)
@@ -475,6 +517,9 @@ def evaluate():
             res["rerank"] = rerank_cost
         if xrerank_cost:
             res["xrerank"] = xrerank_cost
+        copy_cache_provenance(res, cache, "dropped_sessions",
+                              sorted(cache.get("dropped_sessions") or []),
+                              len(pool_ids), len(pool), "sessions")
         target = Path(OUT) if OUT else (HERE / "longmem_results.json")
         target.write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
         print(f"  saved → {target}")
