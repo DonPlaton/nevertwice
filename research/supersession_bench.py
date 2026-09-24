@@ -62,6 +62,7 @@ import sandbox_guard  # noqa: E402 - must precede any nevertwice import
 sandbox_guard.isolate(prefix="nevertwice_supersession_")
 sys.path.insert(0, str(HERE))
 import _provenance as prov  # noqa: E402 - measured_at: {commit, utc, dirty} on every write
+import _ollama_pacer as pacer  # noqa: E402 - R-v2-ports: pace/retry/count every arm's own traffic
 
 OLLAMA_BASE = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
 EMBED_MODEL = os.environ.get("NEVERTWICE_EMBED_MODEL", "bge-m3")
@@ -582,6 +583,17 @@ def _state_from_texts(case: dict, live_texts: list[str], retired_texts: list[str
 
 # ── arm: mem0 ─────────────────────────────────────────────────────────────────────────────
 
+def _mem0_errors_by_shape(rows: list[dict]) -> dict:
+    """B2: how many of `run_mem0`'s own per-case error rows (`{**_blank(case), "error": ...}`,
+    each carrying `case["shape"]`) belong to a supersession case versus a control case -
+    P1 (.loop/PREREG-V2-2026-09-24.md) caps the two separately, and reading them apart from
+    a single `errors` count would mean re-deriving this split by hand from `rows` every time.
+    Extracted as its own function so it is testable without mem0 installed - a `run_mem0`
+    call this environment cannot make at all (the package is not a hard dependency here)."""
+    return {"supersession": sum(1 for r in rows if r.get("error") and r.get("shape") != "control"),
+           "control": sum(1 for r in rows if r.get("error") and r.get("shape") == "control")}
+
+
 def run_mem0(cases: list[dict], k: int) -> dict:
     """Mem0 2.0.19 through its documented local configuration.
 
@@ -653,11 +665,18 @@ def run_mem0(cases: list[dict], k: int) -> dict:
               f"  stale={rows[-1]['stale_returned']}@{rows[-1]['stale_rank']}", flush=True)
     shutil.rmtree(base, ignore_errors=True)
     failed = sum(1 for r in rows if r.get("error"))
+    # B2 (the auditor's finding): `errors` was already the count, but not SPLIT by case
+    # shape - P1 (.loop/PREREG-V2-2026-09-24.md) caps errors separately for supersession
+    # cases (<=2/60) and control cases (<=1/20), applied at campaign READING time, never
+    # here (no new threshold in the stand itself - the existing 10% gate below is
+    # untouched). Surfaced per corpus/run so a reader of THIS run's own artifact can apply
+    # that cap without re-deriving the split from `rows` by hand.
+    mem0_errors = _mem0_errors_by_shape(rows)
     if failed > len(rows) * 0.1:
         return {"blocked": f"{failed} of {len(rows)} cases errored - "
                            f"first: {next(r['error'] for r in rows if r.get('error'))}",
-                "rows": rows}
-    return {"rows": rows, **score(rows), "errors": failed,
+                "rows": rows, "errors": failed, "mem0_errors": mem0_errors}
+    return {"rows": rows, **score(rows), "errors": failed, "mem0_errors": mem0_errors,
             "seconds": round(time.time() - t0, 1),
             "config": f"mem0 ollama {LLM} + {EMBED_MODEL}, limit={k}"}
 
@@ -837,8 +856,22 @@ def pool_other_arm(results: list[dict]) -> dict:
            "per_run_current": [res.get("current_rate") for res in results],
            "per_run_control_miss": [res.get("control_miss_rate") for res in results],
            "errors": sum(int(res.get("errors") or 0) for res in results),
+           # B2: the split summed the same way as the plain count beside it.
+           "mem0_errors": {
+               "supersession": sum(int((res.get("mem0_errors") or {}).get("supersession") or 0)
+                                   for res in results),
+               "control": sum(int((res.get("mem0_errors") or {}).get("control") or 0)
+                              for res in results),
+           },
            "seconds": round(sum(float(res.get("seconds") or 0) for res in results), 1),
            "config": results[0].get("config", "")}
+    # K16(2): a constituent run's own invalidity has to survive pooling - an artifact this
+    # function assembles is exactly what a claim's pointer reads, and it must never look
+    # clean just because pooling built a fresh dict around an invalid run's numbers.
+    invalid = next((res for res in results if res.get("valid") is False), None)
+    if invalid is not None:
+        out["valid"] = False
+        out["invalid_reason"] = invalid.get("invalid_reason")
     if any("graphiti" in res for res in results):
         out["graphiti"] = results[0].get("graphiti")
         out["graphiti_per_run"] = [res.get("graphiti") for res in results]
@@ -1098,6 +1131,7 @@ def _print_pooled(res: dict) -> None:
 def _one_run(data: dict, cases: list[dict], args, arm_names: list[str]) -> dict:
     """One pass of the requested arms over the corpus: the shape `--out` writes and
     `--pool` reads. Split out of `main` so `--runs N` can call it N times."""
+    pacer.install()          # R-v2-ports: pace/retry/count every arm's own Ollama traffic
     out = {"dataset": {k: data[k] for k in ("name", "sha256", "path")},
            "n_cases": len(cases), "k": args.k, "llm": LLM, "embedder": EMBED_MODEL,
            # Which sandbox this pass wrote into. `pool` refuses two engine runs that share one,
@@ -1113,8 +1147,15 @@ def _one_run(data: dict, cases: list[dict], args, arm_names: list[str]) -> dict:
             print(f"- {name}: unknown arm (have: {', '.join(ARMS)})")
             continue
         print(f"- {name}")
+        snap = pacer.snapshot()
         res = (fn(cases, args.k, sleep=args.sleep, third_session=args.third_session)
               if name == "nevertwice" else fn(cases, args.k))
+        # R-v2-ports/K16(2): attached at THIS arm's OWN dict - `out["arms"][name]` is a
+        # container on the path of any claim pointer that reads this arm (e.g.
+        # `arms.nevertwice.stale_rate`), and `pool()` below carries the SAME dict object
+        # (by reference, from the first file loaded) into a pooled artifact unchanged, so
+        # the flag survives pooling too, never just the single-run artifact.
+        pacer.attach(res, since=snap)
         out["arms"][name] = res
         if res.get("blocked"):
             print(f"  BLOCKED: {res['blocked']}\n")
@@ -1131,6 +1172,17 @@ def _one_run(data: dict, cases: list[dict], args, arm_names: list[str]) -> dict:
                   f"third sessions all silent: {nxt['all_third_sessions_silent']}")
         if res.get("after_sleep"):
             after = res.pop("after_sleep")
+            # The after-sleep judge's own LLM calls happened INSIDE this same fn() call, so
+            # they are already part of `res`'s just-attached delta above - `after` becomes
+            # its own top-level `out["arms"]` entry (a container a pointer into
+            # `arms.nevertwice_after_sleep.X` walks INSTEAD OF `arms.nevertwice`, never
+            # alongside it), so the SAME finding has to be visible there too, not only on
+            # the sibling entry a that pointer never resolves through.
+            if "ollama_transport" in res:
+                after.setdefault("ollama_transport", res["ollama_transport"])
+            if res.get("valid") is False:
+                after["valid"] = False
+                after["invalid_reason"] = res.get("invalid_reason")
             out["arms"]["nevertwice_after_sleep"] = after
             adj = after["adjudication"]
             print(f"  after sleep: stale {after['stale_rate']} (old value served {after.get('old_value_served_rate')}) | "

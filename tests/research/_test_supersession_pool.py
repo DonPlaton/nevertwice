@@ -367,5 +367,152 @@ with tempfile.TemporaryDirectory() as tmp5:
     check("the sort key is the string that is hashed, so the order is platform-free",
           rels == sorted(rels))
 
+print("\n- B2: _mem0_errors_by_shape() splits run_mem0's own error rows by case shape -")
+# `mem0` is not installed in this environment (checked: ModuleNotFoundError), so run_mem0()
+# itself always short-circuits to the "not installed" blocker here - the split logic is
+# extracted into its own function specifically so it is testable without the package.
+b2_rows = [sb._blank({"id": "s1", "shape": "explicit"}) | {"error": "TimeoutError: x"},
+          sb._blank({"id": "s2", "shape": "implicit"}) | {"error": "ValueError: y"},
+          sb._blank({"id": "s3", "shape": "explicit"}),                     # no error
+          sb._blank({"id": "c1", "shape": "control"}) | {"error": "KeyError: z"},
+          sb._blank({"id": "c2", "shape": "control"})]                      # no error
+split = sb._mem0_errors_by_shape(b2_rows)
+check("2 supersession-shaped rows (explicit/implicit, both non-'control') errored",
+      split["supersession"] == 2, str(split))
+check("1 control-shaped row errored", split["control"] == 1, str(split))
+check("rows with no 'error' key are never counted either way",
+      split["supersession"] + split["control"] == sum(1 for r in b2_rows if r.get("error")),
+      str(split))
+
+print("\n- B2/K16(2): pool_other_arm sums mem0_errors and propagates a constituent run's "
+      "'valid: false' onto the pooled artifact -")
+mem0_run1 = {"rows": [_row("c1", "control", False, True)], **sb.score([_row("c1", "control", False, True)]),
+            "errors": 2, "mem0_errors": {"supersession": 1, "control": 1},
+            "seconds": 1.0, "config": "mem0 x"}
+mem0_run2 = {"rows": [_row("c2", "control", False, True)], **sb.score([_row("c2", "control", False, True)]),
+            "errors": 0, "mem0_errors": {"supersession": 0, "control": 0},
+            "seconds": 1.0, "config": "mem0 x",
+            "valid": False, "invalid_reason": "bypassed the pacer via requests: 1 request(s)"}
+pooled_mem0 = sb.pool_other_arm([mem0_run1, mem0_run2])
+check("mem0_errors sums across the pooled runs the same way 'errors' does",
+      pooled_mem0["mem0_errors"] == {"supersession": 1, "control": 1}, str(pooled_mem0))
+check("K16(2): a constituent run's own 'valid: false' survives pooling into the SAME "
+      "container a claim's pointer resolves through (arms.mem0.X, never an untouched copy)",
+      pooled_mem0.get("valid") is False and
+      pooled_mem0.get("invalid_reason") == mem0_run2["invalid_reason"], str(pooled_mem0))
+pooled_clean = sb.pool_other_arm([mem0_run1, {k: v for k, v in mem0_run2.items()
+                                              if k not in ("valid", "invalid_reason")}])
+check("no constituent run invalid -> 'valid' is never added (a caller checking "
+      "'valid' not in pooled still means nothing to report)",
+      "valid" not in pooled_clean, str(pooled_clean))
+
+print("\n- item 4/K16(2): _one_run wires pacer.install()/attach() around EVERY arm, per "
+      "arm, on the dict a claim's own pointer (arms.<name>.X) resolves through -")
+import contextlib
+import json as _json
+import urllib.request
+
+sys.path.insert(0, str(ROOT / "research"))
+import _ollama_pacer as pacer  # noqa: E402
+
+
+class _JsonResp:
+    def __init__(self, payload):
+        self._p = _json.dumps(payload).encode("utf-8")
+
+    def read(self):
+        return self._p
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+
+def _fake_urlopen(*a, **kw):
+    return _JsonResp({"models": []})
+
+
+def _fake_arm(cases, k):
+    """Stands in for a real arm (nevertwice/mem0/naive/zep all need a model, a store or a
+    package this environment may not have) - makes exactly ONE call through the paced
+    urllib.request.urlopen, the same transport every real arm's own client eventually
+    resolves through (F2), and returns a `blocked` row so `_one_run`'s detailed printing
+    (which reads keys like `stale_rate` a fake arm has no reason to fabricate) is skipped -
+    `pacer.attach` runs BEFORE that check either way."""
+    import urllib.request as ur
+    with ur.urlopen("http://127.0.0.1:11434/api/tags") as r:
+        r.read()
+    return {"blocked": "fake arm - pacer wiring test only, not a real measurement"}
+
+
+@contextlib.contextmanager
+def _isolated_pacer():
+    assert not pacer.installed(), "a previous check left the pacer installed"
+    saved_urlopen = urllib.request.urlopen
+    pacer._reset_for_tests()
+    try:
+        yield
+    finally:
+        if pacer.installed():
+            pacer.uninstall()
+        urllib.request.urlopen = saved_urlopen
+        pacer._reset_for_tests()
+
+
+class _FakeArgs:
+    k = 5
+    sleep = False
+    third_session = False
+
+
+FAKE_CASE = [{"id": "f1", "shape": "control", "sessions": [["x"]], "query": "x",
+             "current": []}]
+FAKE_DATA = {"name": "fake", "sha256": "0" * 64, "path": "fake.json"}
+
+saved_arms = dict(sb.ARMS)
+sb.ARMS["fakearm"] = _fake_arm
+try:
+    with _isolated_pacer():
+        urllib.request.urlopen = _fake_urlopen
+        out = sb._one_run(FAKE_DATA, FAKE_CASE, _FakeArgs(), ["fakearm"])
+        arm_out = out["arms"]["fakearm"]
+        check("ollama_transport is written on THIS arm's own dict (install() actually "
+              "wrapped the call, attach() actually recorded it)",
+              "ollama_transport" in arm_out, str(sorted(arm_out)))
+        check("calls == 1 (the fake arm's one urlopen call)",
+              arm_out.get("ollama_transport", {}).get("calls") == 1, str(arm_out))
+
+    print("\n- item 4 mutations: install()/attach() removed from _one_run (in-process, "
+          "sb.pacer IS the _ollama_pacer module) -")
+    saved_install, saved_attach = sb.pacer.install, sb.pacer.attach
+    sb.pacer.install = lambda: None                    # mutation: install() removed
+    with _isolated_pacer():
+        urllib.request.urlopen = _fake_urlopen
+        out_no_install = sb._one_run(FAKE_DATA, FAKE_CASE, _FakeArgs(), ["fakearm"])
+        check("mutation 'install() removed': no ollama_transport at all on the arm's own "
+              "dict (nothing ever got paced - would FAIL the presence check above)",
+              "ollama_transport" not in out_no_install["arms"]["fakearm"],
+              str(sorted(out_no_install["arms"]["fakearm"])))
+    sb.pacer.install = saved_install
+
+    sb.pacer.attach = lambda *a, **k: None              # mutation: attach() removed
+    with _isolated_pacer():
+        urllib.request.urlopen = _fake_urlopen
+        out_no_attach = sb._one_run(FAKE_DATA, FAKE_CASE, _FakeArgs(), ["fakearm"])
+        check("mutation 'attach() removed': no ollama_transport on the arm's own dict "
+              "(the pacer paced the call but the artifact never learns it)",
+              "ollama_transport" not in out_no_attach["arms"]["fakearm"],
+              str(sorted(out_no_attach["arms"]["fakearm"])))
+    sb.pacer.attach = saved_attach
+    check("sb.pacer.install/attach are restored to the real functions after the mutations",
+          sb.pacer.install is saved_install and sb.pacer.attach is saved_attach)
+finally:
+    sb.ARMS.clear()
+    sb.ARMS.update(saved_arms)
+check("ARMS is restored to exactly its original registered arms",
+      set(sb.ARMS) == set(saved_arms), str(sorted(sb.ARMS)))
+
 print(f"\n{'ALL OK' if not FAILS else f'{FAILS} FAILED'}")
 sys.exit(1 if FAILS else 0)
