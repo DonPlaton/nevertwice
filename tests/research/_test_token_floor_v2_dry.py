@@ -196,6 +196,60 @@ try:
     blocked_arm = {"blocked": "x", "ingest": {"written": 5}}
     tf.finish_arm("mem0", blocked_arm, 10.0, snap0)
     check("a blocked arm is never flagged", "coverage" not in blocked_arm, str(blocked_arm))
+
+    # K13 (the auditor's finding): every check above uses an ALL-ZERO `since` (snap0) and
+    # a ZERO retry_sleep_s - so a regression that dropped `since=snap` from finish_arm's
+    # own `pacer.attach(res, since=snap)` call (MT1), or that stopped subtracting
+    # retry_sleep_s from wall_s_pace_excluded (MT2), would pass every check above
+    # unnoticed: 0 - 0 == 0 either way. Pinned here against NON-ZERO values instead.
+    tf.pacer._reset_for_tests()
+    tf.pacer._COUNTERS["calls"] = 10
+    tf.pacer._COUNTERS["pace_sleep_s"] = 1.25
+    tf.pacer._COUNTERS["retries"] = 2
+    tf.pacer._COUNTERS["retry_sleep_s"] = 30.0
+    snap_base = {"calls": 10, "pace_sleep_s": 1.25, "retries": 2, "retry_sleep_s": 30.0,
+                "gave_up": 0, "bypass_requests": 0, "bypass_aiohttp": 0,
+                "nested_requests": 0, "nested_aiohttp": 0, "_call_ms_len": 0}
+    # THIS arm's own traffic, layered on top of the non-zero base above (+4 calls,
+    # +0.5s pacing, +1 retry, +15s retry wait - of its own)
+    tf.pacer._COUNTERS["calls"] = 14
+    tf.pacer._COUNTERS["pace_sleep_s"] = 1.75
+    tf.pacer._COUNTERS["retries"] = 3
+    tf.pacer._COUNTERS["retry_sleep_s"] = 45.0
+    nonzero_arm = {"recall@1": 0.5, "ingest": {"written": 4}}
+    tf.finish_arm("mem0", nonzero_arm, 100.0, snap_base)
+    ot = nonzero_arm["ollama_transport"]
+    check("MT1: finish_arm deltas against the NON-ZERO base it was given (4 calls of "
+          "its own, not 14 - the process-wide cumulative including the prior arm's 10)",
+          ot["calls"] == 4, str(ot))
+    check("MT1: pace_sleep_s/retries/retry_sleep_s are also deltas, not cumulative totals",
+          abs(ot["pace_sleep_s"] - 0.5) < 1e-9 and ot["retries"] == 1 and
+          abs(ot["retry_sleep_s"] - 15.0) < 1e-9, str(ot))
+    check("MT2: wall_s_pace_excluded subtracts retry_sleep_s too (100 - 0.5 - 15 = "
+          "84.5), not just pace_sleep_s (which alone would leave ~99.5)",
+          nonzero_arm["wall_s_pace_excluded"] == round(100.0 - 0.5 - 15.0, 3),
+          str(nonzero_arm))
+    check("full coverage (4 calls of its own for 4 written) -> no coverage key",
+          "coverage" not in nonzero_arm, str(nonzero_arm))
+
+    # MI4 (the auditor's finding): the clamp at 0 in finish_arm's own
+    # `max(0.0, round(wall_s - pace_sleep_s - retry_sleep_s, 3))` is never exercised by
+    # any check above - every scenario so far has pace_sleep_s + retry_sleep_s far under
+    # wall_s. Here the sleeps EXCEED wall_s (a real shape under real concurrency, R2/K14:
+    # several callers' own pacing/retry waits overlap, so their SUM can outrun any one
+    # caller's elapsed time) - the clamp must read exactly 0.0, never a negative number.
+    tf.pacer._reset_for_tests()
+    snap_zero = {"calls": 0, "pace_sleep_s": 0.0, "retries": 0, "retry_sleep_s": 0.0,
+                "gave_up": 0, "bypass_requests": 0, "bypass_aiohttp": 0,
+                "nested_requests": 0, "nested_aiohttp": 0, "_call_ms_len": 0}
+    tf.pacer._COUNTERS["calls"] = 2
+    tf.pacer._COUNTERS["pace_sleep_s"] = 3.0
+    tf.pacer._COUNTERS["retry_sleep_s"] = 15.0
+    overrun_arm = {"recall@1": 0.5}
+    tf.finish_arm("mem0", overrun_arm, 5.0, snap_zero)          # 3.0 + 15.0 > 5.0
+    check("MI4: wall_s_pace_excluded is clamped at 0.0, never negative, when the "
+          "pacer's own sleeps (summed) exceed the arm's wall clock",
+          overrun_arm["wall_s_pace_excluded"] == 0.0, str(overrun_arm))
 finally:
     tf.pacer.uninstall()
     tf.pacer._reset_for_tests()
