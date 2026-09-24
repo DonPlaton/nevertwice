@@ -4,7 +4,15 @@ A case is correct only when the old day returns the old fact without the new one
 day returns the new fact; the dateless floor answers both days with one ranking; the pooled
 score keeps per-run rates; the Mem0 blocker is recorded, never a zero.
 """
+import contextlib
+import hashlib
+import io
+import json
+import shutil
 import sys
+import tempfile
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -13,6 +21,12 @@ import _env_guard  # noqa: E402,F401 - hermetic store before any project import
 ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT / "research"))
 import asof_bench as ab  # noqa: E402
+import _ollama_pacer as pacer  # noqa: E402
+sys.path.insert(0, str(ROOT / "nevertwice"))
+import memory_hook as m  # noqa: E402
+from nevertwice import api as nt_api  # noqa: E402
+sys.path.insert(0, str(ROOT / "tools"))
+import remeasure as rm  # noqa: E402 - K16(2): row_refusal on the RESULT artifact
 
 FAILS = 0
 
@@ -103,6 +117,268 @@ check("every first-session note absorbed -> the old-day miss is `absorbed`, not 
 sc3 = ab.old_fail_kind({"old_day_correct": False, "old_items": 1, "leak": False},
                        {"s0": {"written": 2, "absorbed": 1}})
 check("one absorbed note beside one served -> the miss is read from the answer, not the absorb", sc3 == "paraphrase", str(sc3))
+
+# ── R-v2-ports item 9A: the pacer is wired into every arm's own Ollama traffic ─────────
+
+class _JsonResp:
+    def __init__(self, payload):
+        self._p = json.dumps(payload).encode("utf-8")
+
+    def read(self):
+        return self._p
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+
+def _fake_urlopen_failing_embed(*a, **kw):
+    """Every `/api/embed` call fails with a genuine (non-port-exhaustion) 500 - the F1
+    failure P0(a) exists to catch. Any other endpoint succeeds, so the run itself does not
+    crash on something unrelated to embedding."""
+    req = a[0] if a else kw.get("url")
+    url = req.full_url if hasattr(req, "full_url") else str(req)
+    if pacer._is_embed_path(url):
+        raise urllib.error.HTTPError(url, 500, "Internal Server Error", {}, io.BytesIO(b"busy"))
+    return _JsonResp({"models": []})
+
+
+def _fake_capture_session(text, project=None, session_id=None, trigger=None, date=None):
+    """Stands in for the real (LLM-driven) extractor: writes ONE note directly via the
+    store's own API. `write_typed_note` itself calls `embed_text` once per note (the same
+    wiring `_test_facts_dilution_probe.py` relies on), which is the traffic this suite
+    exists to prove gets paced - `run_nevertwice` calls this twice per case (session 0 and
+    session 1), so two embed attempts happen before `api.as_of` even runs."""
+    m.write_typed_note(m.TYPE_FOLDER["pattern"],
+                       {"title": f"t-{session_id}", "description": f"note for {session_id}",
+                        "principle": "a fake principle, hermetic test only"},
+                       project or "asof_test", "2026-09-24", [], "pattern")
+
+
+MINI_CASE = {"id": "mini-case", "shape": "value_replaced",
+            "sessions": [["Settled it: the timeout is 30 seconds."],
+                        ["Came back to it. The timeout is 5 seconds."]],
+            "query": "what is the timeout", "current": ["5 second"], "superseded": ["30 second"]}
+MINI_DATASET = {"name": "mini", "cases": [MINI_CASE]}
+
+
+@contextlib.contextmanager
+def _isolated_pacer():
+    # (в)/MX3: check(), not a bare assert - a real regression here must redden by name,
+    # not crash the whole suite with an uncaught Traceback.
+    check("pacer starts uninstalled entering this block", not pacer.installed())
+    if pacer.installed():
+        pacer.uninstall()
+    saved_urlopen = urllib.request.urlopen
+    pacer._reset_for_tests()
+    try:
+        yield
+    finally:
+        if pacer.installed():
+            pacer.uninstall()
+        urllib.request.urlopen = saved_urlopen
+        pacer._reset_for_tests()
+
+
+def _run_mini(out_path: Path, with_files: list | None = None) -> dict:
+    """Runs `ab.main()` for real (`--runs 1 --out ...`) against MINI_DATASET, inside a
+    scratch directory under the repo root. `with_files` (K25) is passed through as
+    `--with FILE...` unchanged."""
+    scratch_dir = ab.ROOT / ".loop" / "explore" / "_test_asof_bench_scratch"
+    scratch_dir.mkdir(parents=True, exist_ok=True)
+    data_path = scratch_dir / "mini.json"
+    data_path.write_text(json.dumps(MINI_DATASET), encoding="utf-8")
+    saved_argv = sys.argv
+    saved_capture = nt_api.capture_session
+    nt_api.capture_session = _fake_capture_session
+    try:
+        argv = ["asof_bench.py", "--dataset", str(data_path), "--arms", "nevertwice",
+               "--runs", "1", "--out", str(out_path)]
+        if with_files:
+            argv += ["--with", *[str(f) for f in with_files]]
+        sys.argv = argv
+        rc = ab.main()
+        return {"rc": rc, "artifact": (json.loads(out_path.read_text(encoding="utf-8"))
+                                       if out_path.exists() else {})}
+    finally:
+        sys.argv = saved_argv
+        nt_api.capture_session = saved_capture
+        shutil.rmtree(scratch_dir, ignore_errors=True)
+
+
+def _mini_dataset_sha256() -> str:
+    return hashlib.sha256(json.dumps(MINI_DATASET).encode("utf-8")).hexdigest()
+
+
+def _fake_urlopen_embeds_ok(*a, **kw):
+    """Every `/api/embed` call succeeds - the K25 scenario needs the `nevertwice` arm
+    itself CLEAN, so the only invalid arm in the artifact comes from the `--with` file."""
+    req = a[0] if a else kw.get("url")
+    url = req.full_url if hasattr(req, "full_url") else str(req)
+    if pacer._is_embed_path(url):
+        return _JsonResp({"embeddings": [[0.1, 0.2, 0.3]]})
+    return _JsonResp({"models": []})
+
+
+print("\n- item 9A: the real run wires pacer.install()/attach() around every arm's own "
+      "Ollama traffic; a failed embed marks the arm invalid and "
+      "tools/remeasure.row_refusal refuses a REAL claim pointer on it -")
+with _isolated_pacer():
+    urllib.request.urlopen = _fake_urlopen_failing_embed
+    with tempfile.TemporaryDirectory() as td:
+        out_path = Path(td) / "out.json"
+        result = _run_mini(out_path)
+    check("main() exits 0 on the mini dataset", result["rc"] == 0, str(result["rc"]))
+    art = result["artifact"]
+    arm = art.get("arms", {}).get("nevertwice", {})
+    check("ollama_transport is written on the nevertwice arm (install() wrapped the "
+          "embedder call)", "ollama_transport" in arm, str(sorted(arm)))
+    check("the arm is marked invalid - every /api/embed call failed",
+          arm.get("valid") is False and "embed" in (arm.get("invalid_reason") or ""),
+          str(arm.get("invalid_reason")))
+    reason = rm.row_refusal(art, 'arms["nevertwice"].both_correct_rate', 0)
+    check("tools/remeasure.row_refusal refuses a REAL claim pointer "
+          "(asof.nevertwice.both_correct) on this invalid result",
+          reason is not None and "invalid" in reason, str(reason))
+
+print("\n- item 9A mutations: install()/attach() removed from the real run (in-process, "
+      "ab.pacer IS the _ollama_pacer module - reassigning its attribute simulates the "
+      "call site being deleted without editing the file) -")
+saved_install, saved_attach = ab.pacer.install, ab.pacer.attach
+ab.pacer.install = lambda: None                        # mutation: install() removed
+with _isolated_pacer():
+    urllib.request.urlopen = _fake_urlopen_failing_embed
+    with tempfile.TemporaryDirectory() as td2:
+        out_path2 = Path(td2) / "out.json"
+        result_no_install = _run_mini(out_path2)
+    arm2 = result_no_install["artifact"].get("arms", {}).get("nevertwice", {})
+    check("mutation 'install() removed': no ollama_transport is written at all (nothing "
+          "ever got paced - would FAIL the 'ollama_transport is written' check above)",
+          "ollama_transport" not in arm2, str(sorted(arm2)))
+ab.pacer.install = saved_install
+
+ab.pacer.attach = lambda *a, **k: None                  # mutation: attach() removed
+with _isolated_pacer():
+    urllib.request.urlopen = _fake_urlopen_failing_embed
+    with tempfile.TemporaryDirectory() as td3:
+        out_path3 = Path(td3) / "out.json"
+        result_no_attach = _run_mini(out_path3)
+    arm3 = result_no_attach["artifact"].get("arms", {}).get("nevertwice", {})
+    check("mutation 'attach() removed': no ollama_transport is written and the arm stays "
+          "WRONGLY valid (the pacer paced the call but the artifact never learns it - "
+          "would FAIL the same checks above)",
+          "ollama_transport" not in arm3 and "valid" not in arm3, str(sorted(arm3)))
+ab.pacer.attach = saved_attach
+
+check("ab.pacer.install/attach are restored to the real functions after the mutations",
+      ab.pacer.install is saved_install and ab.pacer.attach is saved_attach)
+
+
+print("\n- item 9A(c): merge_arm() carries a constituent's own invalidity into the pooled "
+      "arm (K16(2)) - a version without that fix would WRONGLY drop it -")
+_invalid_run = {"rows": [{"id": "x", "shape": "value_replaced", "both_correct": False,
+                         "old_day_correct": False, "new_day_correct": False}],
+               "n_cases": 1, "both_correct_rate": 0.0, "both_correct_ci": [0.0, 1.0],
+               "old_day_rate": 0.0, "new_day_rate": 0.0, "errors": 0, "seconds": 1.0,
+               "config": "zep test", "valid": False, "invalid_reason": "embed calls failed"}
+_valid_run = {"rows": [{"id": "y", "shape": "value_replaced", "both_correct": True,
+                       "old_day_correct": True, "new_day_correct": True}],
+             "n_cases": 1, "both_correct_rate": 1.0, "both_correct_ci": [0.0, 1.0],
+             "old_day_rate": 1.0, "new_day_rate": 1.0, "errors": 0, "seconds": 1.0,
+             "config": "zep test"}
+_merged = ab.merge_arm([_invalid_run, _valid_run])
+check("merge_arm() propagates a constituent's valid:false into the merged arm",
+      _merged.get("valid") is False and _merged.get("invalid_reason") == "embed calls failed",
+      str(_merged))
+
+
+def _merge_arm_without_k16(results):
+    """The pre-fix shape of `merge_arm`: the identical merge, minus the K16(2) invalidity
+    propagation - written out rather than monkeypatched, since the real fix is a few
+    inline lines inside `merge_arm`, not a separable helper this suite could swap out."""
+    live = [r for r in results if not r.get("blocked")]
+    if not live:
+        return results[0]
+    if len(live) == 1:
+        return live[0]
+    rows = [dict(r, run=i) for i, res in enumerate(live) for r in res["rows"]]
+    out = {"rows": rows, **ab.score(rows), "runs": len(live),
+          "per_run": [res["both_correct_rate"] for res in live],
+          "seconds": round(sum(float(res.get("seconds") or 0) for res in live), 1),
+          "config": live[0].get("config", "")}
+    if any("graphiti" in res for res in live):
+        out["graphiti"] = live[0].get("graphiti")
+        out["graphiti_per_run"] = [res.get("graphiti") for res in live]
+    return out
+
+
+_mutated_merge = _merge_arm_without_k16([_invalid_run, _valid_run])
+check("mutation 'merge_arm dropping valid:false': the pooled arm stays WRONGLY valid "
+      "(would FAIL the propagation check above)",
+      "valid" not in _mutated_merge, str(_mutated_merge))
+
+
+print("\n- item 9A/K25: an invalid --with arm invalidates the WHOLE artifact at the root, "
+      "so tools/remeasure.row_refusal refuses a claim pointer on a DIFFERENT, otherwise-"
+      "clean arm too -")
+with _isolated_pacer():
+    urllib.request.urlopen = _fake_urlopen_embeds_ok
+    with tempfile.TemporaryDirectory() as td:
+        zep_path = Path(td) / "zep.json"
+        zep_path.write_text(json.dumps({
+            "dataset": {"sha256": _mini_dataset_sha256()},
+            "arms": {"zep": {"rows": [], "n_cases": 0, "both_correct_rate": 0.0,
+                             "both_correct_ci": [0.0, 1.0], "old_day_rate": 0.0,
+                             "new_day_rate": 0.0, "errors": 0, "seconds": 0.0,
+                             "config": "graphiti test", "valid": False,
+                             "invalid_reason": "graphiti embed calls bypassed the pacer"}}}),
+            encoding="utf-8")
+        out_path = Path(td) / "out.json"
+        result = _run_mini(out_path, with_files=[zep_path])
+    check("main() exits 0 with a --with file merged in", result["rc"] == 0, str(result["rc"]))
+    art = result["artifact"]
+    arms = art.get("arms", {})
+    check("the nevertwice arm itself is clean (embeds succeeded)",
+          arms.get("nevertwice", {}).get("valid") is not False, str(arms.get("nevertwice")))
+    check("the merged zep arm carries its own invalidity",
+          arms.get("zep", {}).get("valid") is False, str(arms.get("zep")))
+    check("K25: the ROOT of the artifact is ALSO marked invalid, naming zep",
+          art.get("valid") is False and "zep" in (art.get("invalid_reason") or ""),
+          str(art.get("invalid_reason")))
+    reason = rm.row_refusal(art, 'arms["nevertwice"].both_correct_rate', 0)
+    check("K25: tools/remeasure.row_refusal refuses a REAL claim pointer on the CLEAN "
+          "nevertwice arm too (asof.nevertwice.both_correct), because the root is invalid",
+          reason is not None and "invalid" in reason, str(reason))
+
+print("\n- item 9A/K25 mutation: root propagation removed -")
+saved_propagate = ab._propagate_root_invalidity
+ab._propagate_root_invalidity = lambda out: None
+with _isolated_pacer():
+    urllib.request.urlopen = _fake_urlopen_embeds_ok
+    with tempfile.TemporaryDirectory() as td2:
+        zep_path2 = Path(td2) / "zep.json"
+        zep_path2.write_text(json.dumps({
+            "dataset": {"sha256": _mini_dataset_sha256()},
+            "arms": {"zep": {"rows": [], "n_cases": 0, "both_correct_rate": 0.0,
+                             "both_correct_ci": [0.0, 1.0], "old_day_rate": 0.0,
+                             "new_day_rate": 0.0, "errors": 0, "seconds": 0.0,
+                             "config": "graphiti test", "valid": False,
+                             "invalid_reason": "graphiti embed calls bypassed the pacer"}}}),
+            encoding="utf-8")
+        out_path2 = Path(td2) / "out.json"
+        result_mut = _run_mini(out_path2, with_files=[zep_path2])
+    art_mut = result_mut["artifact"]
+    reason_mut = rm.row_refusal(art_mut, 'arms["nevertwice"].both_correct_rate', 0)
+    check("mutation 'root propagation removed': the root stays WRONGLY valid, and "
+          "row_refusal no longer refuses the clean-looking nevertwice arm either (would "
+          "FAIL the K25 checks above)",
+          "valid" not in art_mut and reason_mut is None,
+          str((art_mut.get("valid"), reason_mut)))
+ab._propagate_root_invalidity = saved_propagate
+check("ab._propagate_root_invalidity is restored to the real function",
+      ab._propagate_root_invalidity is saved_propagate)
 
 print(f"\n{'ALL OK' if not FAILS else f'{FAILS} FAILED'}")
 sys.exit(1 if FAILS else 0)

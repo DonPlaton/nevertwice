@@ -63,6 +63,7 @@ sandbox_guard.isolate(prefix="nevertwice_asof_")
 sys.path.insert(0, str(HERE))
 import supersession_bench as sb  # noqa: E402 - the cases, the markers, the naive floor
 import _provenance as prov  # noqa: E402 - measured_at: {commit, utc, dirty} on every write
+import _ollama_pacer as pacer  # noqa: E402 - R-v2-ports item 9A: pace/retry/count this stand's own traffic
 
 DATASET = HERE / "data" / "supersession_v1.json"
 # Shipped dating: session one 193 days before 2026-09-10, archived before session two arrives.
@@ -357,10 +358,34 @@ def merge_arm(results: list[dict]) -> dict:
            "per_run": [res["both_correct_rate"] for res in live],
            "seconds": round(sum(float(res.get("seconds") or 0) for res in live), 1),
            "config": live[0].get("config", "")}
+    # R-v2-ports/K16(2): a constituent run's own invalidity has to survive pooling, exactly
+    # as supersession_bench.pool_other_arm does for its own merged arms - an artifact this
+    # function assembles is what a claim's pointer reads, and it must never look clean just
+    # because merging built a fresh dict around an invalid run's numbers.
+    invalid = next((res for res in live if res.get("valid") is False), None)
+    if invalid is not None:
+        out["valid"] = False
+        out["invalid_reason"] = invalid.get("invalid_reason")
     if any("graphiti" in res for res in live):
         out["graphiti"] = live[0].get("graphiti")
         out["graphiti_per_run"] = [res.get("graphiti") for res in live]
     return out
+
+
+def _propagate_root_invalidity(out: dict) -> None:
+    """K25 (the auditor's finding on this item, 2026-09-24): a claim can point at the
+    artifact's ROOT or at a field outside any one arm's own dict - marking only the arm
+    `"valid": False` is not enough, `tools/remeasure.row_refusal` would still resolve a
+    claim on a DIFFERENT, otherwise-clean arm clean. If ANY arm here ends up invalid
+    (this run's own, an after-sleep reading, or a `--with` constituent `merge_arm`
+    propagated - K16(2), above), the WHOLE artifact is marked invalid too, every arm's own
+    reason joined - the root sits on every pointer's own path, so it has to carry the
+    finding regardless of which arm a given claim actually reads."""
+    invalid = [(name, a) for name, a in out.get("arms", {}).items() if a.get("valid") is False]
+    if invalid:
+        out["valid"] = False
+        out["invalid_reason"] = "; ".join(
+            f"{name}: {a.get('invalid_reason') or 'no reason recorded'}" for name, a in invalid)
 
 
 def main() -> int:
@@ -394,16 +419,33 @@ def main() -> int:
            "days": {"first": DAY_FIRST, "between": DAY_BETWEEN, "second": DAY_SECOND, "after": DAY_AFTER},
            "recent": bool(args.recent),
            "k": args.k, "llm": sb.LLM, "embedder": sb.EMBED_MODEL, "arms": {}}
+    pacer.install()          # R-v2-ports item 9A: pace/retry/count every arm's own Ollama traffic
     for name in [a.strip() for a in args.arms.split(",") if a.strip()]:
         fn = ARMS.get(name)
         if fn is None:
             print(f"- {name}: unknown arm (have: {', '.join(ARMS)})")
             continue
         print(f"- {name}")
+        snap = pacer.snapshot()
         res = fn(cases, args.k, args.runs, sleep=args.sleep) if name == "nevertwice" else fn(cases, args.k)
+        # R-v2-ports/K16(2): attached at THIS arm's OWN dict - `out["arms"][name]` is a
+        # container on the path of any claim pointer that reads this arm (e.g.
+        # `arms["nevertwice"].both_correct_rate`), the same pattern supersession_bench's
+        # `_one_run` uses.
+        pacer.attach(res, since=snap)
         out["arms"][name] = res
         if res.get("after_sleep"):
             after = res.pop("after_sleep")
+            # The after-sleep judge's own LLM calls happened INSIDE this same fn() call, so
+            # they are already part of `res`'s just-attached delta above - `after` becomes
+            # its own top-level `out["arms"]` entry (a pointer into
+            # `arms.nevertwice_after_sleep.X` walks INSTEAD OF `arms.nevertwice`, never
+            # alongside it), so the SAME finding has to be visible there too.
+            if "ollama_transport" in res:
+                after.setdefault("ollama_transport", res["ollama_transport"])
+            if res.get("valid") is False:
+                after["valid"] = False
+                after["invalid_reason"] = res.get("invalid_reason")
             out["arms"]["nevertwice_after_sleep"] = after
             adj = after["adjudication"]
             print(f"  after sleep: both {after['both_correct_rate']} old {after['old_day_rate']} new {after['new_day_rate']} "
@@ -436,6 +478,7 @@ def main() -> int:
     out["arms"]["mem0"] = {"blocked": "Mem0 stamps a memory with the wall-clock time of the add() call and its "
                                       "search has no as-of filter; facts cannot be placed in the past without "
                                       "patching the product"}
+    _propagate_root_invalidity(out)          # K25: any invalid arm invalidates the whole artifact
     if args.out:
         prov.stamp(out)
         Path(args.out).write_text(json.dumps(out, indent=1, ensure_ascii=False), encoding="utf-8", newline="\n")
