@@ -13,6 +13,8 @@ plan) to prove the parser reads by POSITION, not by matching an English label.
 """
 from __future__ import annotations
 
+import contextlib
+import subprocess
 import sys
 from pathlib import Path
 
@@ -33,6 +35,24 @@ def check(name: str, condition: bool, detail: str = "") -> None:
     print(("  ok   " if condition else "  FAIL ") + name + suffix)
     PASSED += int(condition)
     FAILED += int(not condition)
+
+
+@contextlib.contextmanager
+def _crash_guard(*names: str):
+    """(в), the auditor's finding on 73a6e81 (K10): a mutation that makes `decide()`
+    ignore `measurement_failed` falls through to `free = m["free"]` where `free` is
+    `None` - `None >= NEED` raises `TypeError`, UNCAUGHT, crashing this whole suite and
+    silently skipping every check after it (the same defect class K9 fixed in the pacer
+    suite). Wrap a risky `decide()`/`measure()` call in `with _crash_guard("name of every
+    check the block would otherwise make"): ...` - on ANY exception, every name is
+    reported as a FAIL carrying the exception's repr, the exception is swallowed, and
+    `main()`'s loop moves on to the next test exactly as if this block had simply failed
+    its assertions."""
+    try:
+        yield
+    except Exception as exc:                                          # noqa: BLE001
+        for n in names:
+            check(n, False, repr(exc))
 
 
 # ── canned OS output, English and this machine's own ru-RU locale ──────────────────────
@@ -276,42 +296,57 @@ def test_t9f_a_failed_or_malformed_query_refuses_rather_than_reading_as_zero() -
         # printing anything) - before K10 this computed excluded=0, in_use=0, free=range
         # (16,384-equivalent here: 10,000) and decided "go" on a measurement that never
         # actually ran.
+        # K9-style crash guards throughout: (в) the auditor's finding on 73a6e81 - a
+        # mutation that makes decide() ignore measurement_failed falls through to
+        # `None >= NEED`, an uncaught TypeError, without one of these.
         _set(excluded="", conn="")
-        d = pb.decide(pb.measure())
-        check("both excludedportrange and connections empty -> 'refuse', NOT 'go' "
-              "(the auditor's probe (1) on 86fa7a9)", d["decision"] == "refuse", str(d))
-        check("... and free is None, never a fabricated full-range number",
-              d.get("free") is None, str(d))
-        check("... reason names the query that failed",
-              d.get("reason") == "measurement failed: excludedportrange", str(d))
+        with _crash_guard("both excludedportrange and connections empty -> 'refuse', "
+                          "NOT 'go' (the auditor's probe (1) on 86fa7a9)",
+                          "... and free is None, never a fabricated full-range number",
+                          "... reason names the query that failed"):
+            d = pb.decide(pb.measure())
+            check("both excludedportrange and connections empty -> 'refuse', NOT 'go' "
+                  "(the auditor's probe (1) on 86fa7a9)", d["decision"] == "refuse", str(d))
+            check("... and free is None, never a fabricated full-range number",
+                  d.get("free") is None, str(d))
+            check("... reason names the query that failed",
+                  d.get("reason") == "measurement failed: excludedportrange", str(d))
 
         # the auditor's own probe (2): PowerShell answers with an error line instead of
         # CSV - no "LocalPort","State" header, so the parser would have seen ONE
         # unparseable row and silently returned [] (0 in use) exactly like an empty answer.
         _set(conn="Get-NetTCPConnection : Access denied\n")
-        d2 = pb.decide(pb.measure())
-        check("connections query returns an error line, not CSV -> 'refuse' (the "
-              "auditor's probe (2))", d2["decision"] == "refuse", str(d2))
-        check("... reason names the connections query specifically",
-              d2.get("reason") == "measurement failed: connections", str(d2))
+        with _crash_guard("connections query returns an error line, not CSV -> 'refuse' "
+                          "(the auditor's probe (2))",
+                          "... reason names the connections query specifically"):
+            d2 = pb.decide(pb.measure())
+            check("connections query returns an error line, not CSV -> 'refuse' (the "
+                  "auditor's probe (2))", d2["decision"] == "refuse", str(d2))
+            check("... reason names the connections query specifically",
+                  d2.get("reason") == "measurement failed: connections", str(d2))
 
         # dynamicport itself malformed/empty (no ': NUMBER' fields at all)
         _set(dp="")
-        d3 = pb.decide(pb.measure())
-        check("dynamicport query empty -> 'refuse', reason names it",
-              d3["decision"] == "refuse" and
-              d3.get("reason") == "measurement failed: dynamicport", str(d3))
+        with _crash_guard("dynamicport query empty -> 'refuse', reason names it"):
+            d3 = pb.decide(pb.measure())
+            check("dynamicport query empty -> 'refuse', reason names it",
+                  d3["decision"] == "refuse" and
+                  d3.get("reason") == "measurement failed: dynamicport", str(d3))
 
         # the auditor's control (3): every query WORKS and genuinely shows 12,000 busy
         # (well past NEED here isn't quite the same range, but the point is the SAME
         # shape refusal via the THRESHOLD, not via a measurement failure) - must still
         # refuse, and must NOT claim a measurement failure it did not have.
         _set(conn=_csv([str(50000 + i) for i in range(9600)], []))    # free = 400 < NEED
-        d4 = pb.decide(pb.measure())
-        check("a WORKING measurement showing real congestion still refuses (the "
-              "auditor's control case)", d4["decision"] == "refuse", str(d4))
-        check("... and does NOT claim a measurement failure - this refusal is real data",
-              "measurement_failed" not in d4 and d4.get("free") == 400, str(d4))
+        with _crash_guard("a WORKING measurement showing real congestion still refuses "
+                          "(the auditor's control case)",
+                          "... and does NOT claim a measurement failure - this refusal "
+                          "is real data"):
+            d4 = pb.decide(pb.measure())
+            check("a WORKING measurement showing real congestion still refuses (the "
+                  "auditor's control case)", d4["decision"] == "refuse", str(d4))
+            check("... and does NOT claim a measurement failure - this refusal is real data",
+                  "measurement_failed" not in d4 and d4.get("free") == 400, str(d4))
 
         # mutation: restore the pre-K10 swallowing (validators always say "valid")
         saved_dp_valid = pb._valid_dynamicport_text
@@ -322,15 +357,108 @@ def test_t9f_a_failed_or_malformed_query_refuses_rather_than_reading_as_zero() -
         pb._valid_connections_csv_text = lambda text: True
         try:
             _set(excluded="", conn="")
-            mutated = pb.decide(pb.measure())
-            check("mutation 'restore the swallowing': the SAME empty-queries case now "
-                  "WRONGLY says 'go' (would FAIL the probe-(1) check above)",
-                  mutated["decision"] == "go", str(mutated))
+            with _crash_guard("mutation 'restore the swallowing': the SAME "
+                              "empty-queries case now WRONGLY says 'go' (would FAIL "
+                              "the probe-(1) check above)"):
+                mutated = pb.decide(pb.measure())
+                check("mutation 'restore the swallowing': the SAME empty-queries case now "
+                      "WRONGLY says 'go' (would FAIL the probe-(1) check above)",
+                      mutated["decision"] == "go", str(mutated))
         finally:
             pb._valid_dynamicport_text = saved_dp_valid
             pb._valid_excluded_text = saved_ex_valid
             pb._valid_connections_csv_text = saved_csv_valid
     finally:
+        pb._platform = sys.platform
+
+
+# ── T9g: _run() ITSELF (below the seams) collapses any subprocess failure to "" ────────
+
+def test_t9g_run_itself_collapses_any_subprocess_failure_to_empty() -> None:
+    print("\n- T9g: K10b - _run() itself (not the higher _run_netsh_* seams T9f stubs) "
+          "returns \"\" on a bad exit code, an OSError, or a timeout -")
+    pb._platform = "win32"
+    good_dp = "Start Port      : 50000\nNumber of Ports : 10000\n"
+    #: PLAUSIBLE netsh-shaped stdout - proves the exit code alone decides this, not
+    #: whether the text happens to look real.
+    plausible_excluded_table = (
+        "Start Port    End Port\n----------    --------\n      50000       50100\n")
+
+    class _FakeCompleted:
+        def __init__(self, returncode=0, stdout=""):
+            self.returncode = returncode
+            self.stdout = stdout
+
+    saved_subprocess_run = pb.subprocess.run
+    try:
+        pb._run_netsh_dynamicport = lambda: good_dp
+        pb._run_connections_csv = lambda: _csv([], [])
+
+        # (a) rc=1 with plausible-looking stdout
+        pb.subprocess.run = lambda *a, **k: _FakeCompleted(returncode=1,
+                                                            stdout=plausible_excluded_table)
+        # every direct pb._run(...) call below is exactly what a broken _run() (MK10d:
+        # returncode never checked, or its try/except removed) could raise THROUGH -
+        # each gets its own guard, not just the decide()/measure() calls after it.
+        with _crash_guard("_run() with returncode=1 returns \"\" even though stdout "
+                          "LOOKS like a real netsh table"):
+            check("_run() with returncode=1 returns \"\" even though stdout LOOKS like a "
+                  "real netsh table", pb._run(["netsh", "int", "ipv4", "show",
+                                               "excludedportrange"]) == "")
+        pb._run_netsh_excluded = lambda: pb._run(["netsh", "int", "ipv4", "show",
+                                                  "excludedportrange"])
+        with _crash_guard("... and measure()/decide() refuse because of it (rc=1)"):
+            d = pb.decide(pb.measure())
+            check("... and measure()/decide() refuse because of it (rc=1)",
+                  d["decision"] == "refuse" and
+                  d.get("reason") == "measurement failed: excludedportrange", str(d))
+
+        # (b) OSError (e.g. netsh/powershell missing from PATH)
+        def _raise_oserror(*a, **k):
+            raise OSError("no such file or directory: netsh")
+        pb.subprocess.run = _raise_oserror
+        with _crash_guard("_run() swallows an OSError and returns \"\""):
+            check("_run() swallows an OSError and returns \"\"",
+                  pb._run(["netsh", "int", "ipv4", "show", "excludedportrange"]) == "")
+        with _crash_guard("... and measure()/decide() refuse because of it (OSError)"):
+            d2 = pb.decide(pb.measure())
+            check("... and measure()/decide() refuse because of it (OSError)",
+                  d2["decision"] == "refuse" and
+                  d2.get("reason") == "measurement failed: excludedportrange", str(d2))
+
+        # (c) subprocess.TimeoutExpired
+        def _raise_timeout(*a, **k):
+            raise subprocess.TimeoutExpired(cmd="netsh", timeout=30)
+        pb.subprocess.run = _raise_timeout
+        with _crash_guard("_run() swallows a TimeoutExpired and returns \"\""):
+            check("_run() swallows a TimeoutExpired and returns \"\"",
+                  pb._run(["netsh", "int", "ipv4", "show", "excludedportrange"]) == "")
+        with _crash_guard("... and measure()/decide() refuse because of it (timeout)"):
+            d3 = pb.decide(pb.measure())
+            check("... and measure()/decide() refuse because of it (timeout)",
+                  d3["decision"] == "refuse" and
+                  d3.get("reason") == "measurement failed: excludedportrange", str(d3))
+
+        # mutation MK10d: _run ignores returncode (the pre-K10 bug, one level lower than
+        # T9f's mutation, which only ever touched the _valid_*_text validators)
+        pb.subprocess.run = lambda *a, **k: _FakeCompleted(returncode=1,
+                                                            stdout=plausible_excluded_table)
+
+        def _bad_run(cmd):
+            res = pb.subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8",
+                                    errors="replace", timeout=30)
+            return res.stdout or ""                      # returncode never checked
+        saved_run = pb._run
+        pb._run = _bad_run
+        try:
+            got = pb._run(["netsh", "int", "ipv4", "show", "excludedportrange"])
+            check("mutation MK10d ('_run ignores returncode'): the SAME rc=1 case now "
+                  "WRONGLY returns the plausible stdout (would FAIL the first check "
+                  "above)", got == plausible_excluded_table, repr(got))
+        finally:
+            pb._run = saved_run
+    finally:
+        pb.subprocess.run = saved_subprocess_run
         pb._platform = sys.platform
 
 
@@ -350,7 +478,8 @@ def main() -> int:
                test_t9c_time_wait_drainable_waits_then_drains_to_go,
                test_t9d_excluded_range_refuses,
                test_t9e_non_windows_is_unchecked_and_never_queries_anything,
-               test_t9f_a_failed_or_malformed_query_refuses_rather_than_reading_as_zero):
+               test_t9f_a_failed_or_malformed_query_refuses_rather_than_reading_as_zero,
+               test_t9g_run_itself_collapses_any_subprocess_failure_to_empty):
         fn()
     print(f"\nport_budget: {PASSED} passed, {FAILED} failed")
     return 1 if FAILED else 0
