@@ -64,6 +64,15 @@ def load() -> list[dict]:
         # the ten, so a bare id names ten different lines; keying anything by it merges them.
         sid = conv.get("sample_id")
         pool: dict[str, str] = {}
+        #: K21 (.loop/HANDOFF-PORTS.md, PREREG-V2 rev 4 P0(b)) - the SAME shape longmem_eval's
+        #: own `load()` excludes: a turn with no text is a corpus property, not a failure,
+        #: excluded from `pool` before embedding is ever attempted. Empirically zero for the
+        #: real locomo10.json (checked read-only, on the RAW speaker/text fields - the
+        #: templated "speaker: text" string is never "" even when both are blank, since the
+        #: ": " itself survives `.strip()`; checking the templated form would silently never
+        #: catch anything), but the mechanism exists for the same reason the gate does - a
+        #: corpus edit or a future one could introduce it silently.
+        empty_skipped: list[str] = []
         for key, val in conv["conversation"].items():
             if not key.startswith("session_") or key.endswith("_date_time"):
                 continue
@@ -72,6 +81,16 @@ def load() -> list[dict]:
             for turn in val:
                 did = turn.get("dia_id")
                 if not did:
+                    continue
+                # Emptiness is checked on the RAW fields, before the "speaker: text"
+                # template - the template's own ": " survives `.strip()` even when both
+                # fields are blank (a turn with speaker="" and text="" joins to ":", not
+                # "", so checking the TEMPLATED string never catches it - the bug this
+                # comment exists to prevent a regression back into).
+                speaker = (turn.get("speaker") or "").strip()
+                content = (turn.get("text") or "").strip()
+                if not speaker and not content and not turn.get("blip_caption"):
+                    empty_skipped.append(f"{sid}:{did}")
                     continue
                 text = f"{turn.get('speaker', '')}: {turn.get('text', '')}".strip()
                 if turn.get("blip_caption"):
@@ -88,7 +107,8 @@ def load() -> list[dict]:
                 continue                        # unanswerable / adversarial: no retrieval target
             qa.append({"question": q["question"], "evidence": ev,
                        "category": q.get("category"), "sample_id": sid})
-        out.append({"sample_id": sid, "pool": pool, "qa": qa})
+        out.append({"sample_id": sid, "pool": pool, "qa": qa,
+                    "empty_skipped": sorted(empty_skipped)})
     return out
 
 
@@ -112,6 +132,9 @@ def embed_all(convs: list[dict]) -> dict:
     cache.setdefault("turns", {})
     cache.setdefault("questions", {})
     cache.setdefault("dropped_turns", [])
+    cache.setdefault("dropped_questions", [])
+    #: K21(1): `c["pool"]` already excludes `empty_skipped` turns (load()'s own job) - an
+    #: empty turn is never even attempted here.
     todo_t = [(d, t) for c in convs for d, t in c["pool"].items() if d not in cache["turns"]]
     todo_q = [q["question"] for c in convs for q in c["qa"] if q["question"] not in cache["questions"]]
     pacer.install()          # R-v2-ports: pace/retry/count this --embed run's own traffic
@@ -121,6 +144,10 @@ def embed_all(convs: list[dict]) -> dict:
     #: `ids = [d for d in c["pool"] if d in tvec]` then drops it from that conversation's
     #: pool, silently. A retry that later succeeds clears it here.
     dropped = set(cache["dropped_turns"])
+    #: K21(4): the SAME shape for a question - its own embed failing leaves it out of
+    #: `cache["questions"]` and `main()`'s scoring loop skips it (`q["question"] not in
+    #: qvec`) with no trace either.
+    dropped_q = set(cache["dropped_questions"])
     t0 = time.time()
     for i, (did, text) in enumerate(todo_t, 1):
         # `le.embed_full`: the engine's endpoint, model and prefix without the 2,000-char
@@ -141,9 +168,13 @@ def embed_all(convs: list[dict]) -> dict:
         v = le.embed_full(q, kind=m.query_embed_kind())
         if v:
             cache["questions"][q] = v
+            dropped_q.discard(q)
+        else:
+            dropped_q.add(q)
         if i % 500 == 0:
             print(f"  questions {i}  ({time.time() - t0:.0f}s)", flush=True)
     cache["dropped_turns"] = sorted(dropped)
+    cache["dropped_questions"] = sorted(dropped_q)
     pacer.attach(cache, since=snap)
     EMB.write_text(json.dumps(cache), encoding="utf-8", newline="\n")
     print(f"[embed] done in {time.time() - t0:.0f}s -> {EMB.name}")
@@ -256,6 +287,11 @@ def main() -> int:
                "by_category_recall_at_5": {c: {k: (v[0] / v[1] if v[1] else 0.0)
                                                for k, v in s.items()}
                                            for c, s in sorted(by_cat.items())},
+               #: K21(1)/PREREG-V2 rev 4 P0(b): a turn with no text is a corpus property
+               #: (empirically 0 on the real locomo10.json, checked read-only), excluded
+               #: from `pool`/`n_turns` at `load()` time - never against `n_turns` and
+               #: never as a drop.
+               "empty_skipped": sum(len(c.get("empty_skipped") or []) for c in convs),
                "provenance": corpus_pin.record(CORPUS),
                #: The corpus is pinned by hash and the VECTORS were pinned by nothing. This
                #: stand's claims close over thirty files including all nine engine parts, so any
@@ -268,9 +304,16 @@ def main() -> int:
                #: .gitignore:11` - so recording its identity is the only way a reader can tell
                #: which vectors a number came from.
                "embed_cache": _cache_identity()}
-        le.copy_cache_provenance(res, cache, "dropped_turns",
-                                 sorted(cache.get("dropped_turns") or []),
-                                 pool_used, n_turns, "turns")
+        # K21(4): the question axis, pinned to `n_qa` - the SCORABLE count `load()` itself
+        # already computed (its own filter drops LoCoMo's 9 unanswerable/adversarial
+        # questions as a CORPUS property, never a failure; the auditor's rev-4 note: this
+        # must be the load()-filtered count, 1,977, never the raw 1,986, or K21 recurs here).
+        le.copy_cache_provenance(res, cache, [
+            ("dropped_turns", sorted(cache.get("dropped_turns") or []),
+             pool_used, n_turns, "turns"),
+            ("dropped_questions", sorted(cache.get("dropped_questions") or []),
+             n, n_qa, "questions"),
+        ])
         target = Path(args.out) if args.out else (HERE / "results" / "locomo.json")
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")

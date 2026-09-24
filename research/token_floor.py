@@ -185,7 +185,7 @@ def load_corpus(name: str) -> tuple[list, dict, dict | None]:
     """
     if name == "longmemeval_oracle":
         corpus_pin.verify(name)                      # before reading a byte
-        data, pool = le.load()
+        data, pool, _empty_skipped = le.load()
         rows = [{"question_id": e.get("question_id"), "question": e["question"],
                  #: fix 4 (auditor's addition): the oracle's reachability marker is the TEXT of
                  #: LongMemEval's own `answer` field, not the gold session id - a note never

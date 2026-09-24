@@ -252,47 +252,73 @@ def load():
     data = json.loads(ORACLE.read_text(encoding="utf-8"))
     if LIMIT:
         data = data[:LIMIT]
-    pool = {}                                   # session_id -> text
+    pool = {}                                   # session_id -> text (NON-EMPTY only)
+    #: K21 (the auditor's finding on 026d64c, PREREG-V2 rev 4 P0(b)): 623 of LongMemEval-S's
+    #: 19,829 unique sessions have EMPTY text (every turn's role+content joins to nothing) -
+    #: a CORPUS property, not a failure, and B1's own pool-size gate could not tell the two
+    #: apart: `pool_used` (sessions actually embedded) could never reach `pool_pinned`
+    #: (every session `load()` returned) while empty ones sat in `pool` never even attempted,
+    #: so every real longmem_s run would read `valid: false` on the corpus alone. Excluded
+    #: from `pool` HERE, before embedding is ever attempted (an empty embed call is not a
+    #: failure worth pacing/retrying either) - `empty_skipped` names them, kept OUT of both
+    #: `pool` and any per-run drop count.
+    empty_skipped: list[str] = []
+    seen: set[str] = set()
     for e in data:
         for sid, turns in zip(e["haystack_session_ids"], e["haystack_sessions"]):
-            if sid not in pool:
-                pool[sid] = "\n".join(f"{t.get('role','')}: {t.get('content','')}"
-                                      for t in turns)[:MAXCHARS]
-    return data, pool
+            if sid in seen:
+                continue
+            seen.add(sid)
+            text = "\n".join(f"{t.get('role','')}: {t.get('content','')}"
+                             for t in turns)[:MAXCHARS]
+            if text.strip():
+                pool[sid] = text
+            else:
+                empty_skipped.append(sid)
+    return data, pool, sorted(empty_skipped)
 
 
-def copy_cache_provenance(res: dict, cache: dict, dropped_key: str, dropped: list,
-                          pool_used: int, pool_pinned: int, item_word: str) -> None:
-    """K16(2)/B1 (.loop/HANDOFF-PORTS.md, item 6): the pacer's transport record - and B1's
-    own dropped-item count - live on the vector CACHE (where `embed_all()`'s own
-    `pacer.install()`/`attach()` and its drop-tracking actually write them), never on the
-    RESULT artifact a claim's pointer resolves through. `tools/remeasure.row_refusal`
-    walks every container on the pointer's OWN path (root included) and never the cache
-    sitting beside it - so an invalid embed run, or a session/turn silently dropped from
-    the pool, was invisible to it before this. Shared with `locomo_eval.py` (`le.
-    copy_cache_provenance`), whose turn pool has the identical shape.
+def copy_cache_provenance(res: dict, cache: dict,
+                          pools: list[tuple[str, list, int, int, str]]) -> None:
+    """K16(2)/B1 (.loop/HANDOFF-PORTS.md, item 6), extended by K21 (item 4) for a SECOND
+    gated axis: the pacer's transport record - and every axis's own dropped-item count -
+    live on the vector CACHE (where `embed_all()`'s own `pacer.install()`/`attach()` and
+    its drop-tracking actually write them), never on the RESULT artifact a claim's
+    pointer resolves through. `tools/remeasure.row_refusal` walks every container on the
+    pointer's OWN path (root included) and never the cache sitting beside it - so an
+    invalid embed run, or an item silently dropped from a pool, was invisible to it
+    before this. Shared with `locomo_eval.py` (`le.copy_cache_provenance`), whose turn
+    and question pools have the identical shape.
 
-    B1's own gate: the pool actually SCORED must equal the pinned corpus's own pool size,
-    or a method row was computed over fewer items than the corpus actually has - silently,
-    since `evaluate()`/`main()`'s own `[... if s in svec/tvec]` filter raises nothing."""
+    `pools`: one `(dropped_key, dropped_items, count_used, count_pinned, item_word)` per
+    gated axis - sessions/turns AND questions, K21(4): a question whose OWN embed failed
+    has no vector and `evaluate()`/`main()` silently skips it too, the same shape B1
+    found for sessions. `count_pinned` for the session/turn axis MUST already exclude
+    empty items (K21(1)); for the question axis it is the corpus's SCORABLE count (the
+    stand's own `load()` filter - LongMemEval 500, LoCoMo 1,977 - never the raw total,
+    which for LoCoMo includes unanswerable/adversarial questions `load()` drops itself as
+    a corpus property, not a failure). Each axis's own dropped list is written to
+    `res[dropped_key]`; a mismatch on ANY axis contributes its own reason, and ALL
+    reasons are folded into one `invalid_reason` together with the cache's own."""
     if "ollama_transport" in cache:
         res["ollama_transport"] = cache["ollama_transport"]
     reasons = []
     if cache.get("valid") is False:
         reasons.append(cache.get("invalid_reason") or "the embed run was marked invalid")
-    res[dropped_key] = dropped
-    if dropped or pool_used != pool_pinned:
-        reasons.append(
-            f"{pool_used} of the pinned corpus's {pool_pinned} {item_word} are in the pool "
-            f"({len(dropped)} dropped: embed failed, never entered the cache, silently left "
-            f"out of every method's pool)")
+    for dropped_key, dropped, pool_used, pool_pinned, item_word in pools:
+        res[dropped_key] = dropped
+        if dropped or pool_used != pool_pinned:
+            reasons.append(
+                f"{pool_used} of the pinned corpus's {pool_pinned} {item_word} are in the "
+                f"pool ({len(dropped)} dropped: embed failed, never entered the cache, "
+                f"silently left out of every method's pool)")
     if reasons:
         res["valid"] = False
         res["invalid_reason"] = "; ".join(reasons)
 
 
 def embed_all():
-    data, pool = load()
+    data, pool, _empty_skipped = load()
     cache = {"sessions": {}, "questions": {}, "meta": cache_meta()}
     if EMB.exists():
         cache = json.loads(EMB.read_text(encoding="utf-8"))
@@ -304,6 +330,7 @@ def embed_all():
     cache.setdefault("questions", {})
     cache.setdefault("shrunk", {})          # sid -> characters that fit, when the whole did not
     cache.setdefault("dropped_sessions", [])
+    cache.setdefault("dropped_questions", [])
     cache["meta"] = cache_meta()
     sids = [s for s in pool if s not in cache["sessions"]]
     qs = [e for e in data if e["question_id"] not in cache["questions"]]
@@ -315,8 +342,13 @@ def embed_all():
     #: `cache["sessions"]` - `evaluate()`'s own `pool_ids = [s for s in pool if s in svec]`
     #: then drops it from the pool of every method, silently, with no trace anywhere. A
     #: retry that later succeeds clears it here (`.discard`) - only a session still
-    #: missing when this run ends is a genuine drop.
+    #: missing when this run ends is a genuine drop. `pool` (and so `sids`) already
+    #: excludes K21's `empty_skipped` sessions - an empty session is never even attempted.
     dropped = set(cache["dropped_sessions"])
+    #: K21(4): the SAME shape for a question - its own embed failing leaves it out of
+    #: `cache["questions"]` and `evaluate()`'s scoring loop skips it (`qid not in qvec`)
+    #: with no trace either.
+    dropped_q = set(cache["dropped_questions"])
     t0 = time.time()
     for i, sid in enumerate(sids):
         v = embed_full(pool[sid], kind=m.doc_embed_kind())
@@ -339,9 +371,13 @@ def embed_all():
         v = embed_full(e["question"], kind=m.query_embed_kind())
         if v:
             cache["questions"][e["question_id"]] = v
+            dropped_q.discard(e["question_id"])
+        else:
+            dropped_q.add(e["question_id"])
         if (i + 1) % 100 == 0:
             print(f"  questions {i+1}/{len(qs)}  ({time.time()-t0:.0f}s)", file=sys.stderr)
     cache["dropped_sessions"] = sorted(dropped)
+    cache["dropped_questions"] = sorted(dropped_q)
     pacer.attach(cache, since=snap)
     EMB.write_text(json.dumps(cache), encoding="utf-8", newline="\n")
     print(f"[embed] done in {time.time()-t0:.0f}s → {EMB.name}", file=sys.stderr)
@@ -358,7 +394,7 @@ def _recall_mrr(ranked, relevant):
 
 
 def evaluate():
-    data, pool = load()
+    data, pool, empty_skipped = load()
     if not EMB.exists():
         print("No embeddings - run: python research/longmem_eval.py --embed", file=sys.stderr)
         sys.exit(1)
@@ -512,14 +548,25 @@ def evaluate():
                "sessions_shrunk": len(cache.get("shrunk") or {}),
                "embed_chars": MAXCHARS, "morphology": bool(m.LEXICAL_MORPHOLOGY),
                "methods": out, "recur_inert": inert,
+               #: K21(1)/PREREG-V2 rev 4 P0(b): a session with no text is a corpus
+               #: property (LongMemEval-S: 623 of 19,829), excluded from `pool` at
+               #: `load()` time and counted here - never against `pool_pinned` (already
+               #: non-empty-only) and never as a drop.
+               "empty_skipped": len(empty_skipped),
                "provenance": corpus_pin.record(CORPUS)}
         if rerank_cost:
             res["rerank"] = rerank_cost
         if xrerank_cost:
             res["xrerank"] = xrerank_cost
-        copy_cache_provenance(res, cache, "dropped_sessions",
-                              sorted(cache.get("dropped_sessions") or []),
-                              len(pool_ids), len(pool), "sessions")
+        # K21(4): the question axis, pinned to `len(data)` - every question this stand's
+        # OWN load() returns (LongMemEval never filters questions the way LoCoMo's load()
+        # drops unanswerable ones, so this IS the scorable count already).
+        copy_cache_provenance(res, cache, [
+            ("dropped_sessions", sorted(cache.get("dropped_sessions") or []),
+             len(pool_ids), len(pool), "sessions"),
+            ("dropped_questions", sorted(cache.get("dropped_questions") or []),
+             n, len(data), "questions"),
+        ])
         target = Path(OUT) if OUT else (HERE / "longmem_results.json")
         target.write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
         print(f"  saved → {target}")

@@ -126,7 +126,7 @@ def longmem_ab():
     if not le.ORACLE.exists():
         print(f"[token_ab] no dataset at {le.ORACLE} - see data/README.md", file=sys.stderr)
         return None
-    data, pool = le.load()
+    data, pool, _empty_skipped = le.load()
     sess_tok = {s: toks(pool[s]) for s in pool}
     svec, qvec = {}, {}
     have_vecs = le.EMB.exists() and not LEXICAL
@@ -209,7 +209,7 @@ def vault_distillation_ab():
 
 def _ranked_cache():
     """(data, pool, ranker fn, sess_tok) shared by the distillation + live arms."""
-    data, pool = le.load()
+    data, pool, _empty_skipped = le.load()
     sess_tok = {s: toks(pool[s]) for s in pool}
     svec, qvec = {}, {}
     have_vecs = le.EMB.exists() and not LEXICAL

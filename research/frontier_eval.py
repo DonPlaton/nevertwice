@@ -229,7 +229,7 @@ def wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
 # ── the corpus ────────────────────────────────────────────────────────────────
 
 def corpus():
-    data, pool = le.load()
+    data, pool, _empty_skipped = le.load()
     return data, pool
 
 

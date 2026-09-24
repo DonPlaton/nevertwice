@@ -320,7 +320,7 @@ def _model_name() -> str:
 
 
 def run():
-    data, pool = le.load()                       # full 940-session pool (le.LIMIT is None on import)
+    data, pool, _empty_skipped = le.load()                       # full 940-session pool (le.LIMIT is None on import)
     if LIMIT:
         data = data[:LIMIT]                      # answer only the first N questions; pool stays full
     if STRATIFY:                                 # N per type - a balanced sample, pool still full
