@@ -834,6 +834,97 @@ def test_tw2_aiohttp_client_session_request_is_counted_not_paced() -> None:
             aiohttp.ClientSession._request = saved_aiohttp_request
 
 
+# ── TW3: a bypass NESTED inside an already-paced call is not double-flagged (K11) ──────
+
+def test_tw3_nested_aiohttp_inside_a_paced_httpx_call_is_not_a_bypass() -> None:
+    print("\n- TW3: K11 - litellm 1.100.0's async path routes httpx.AsyncClient through "
+          "an aiohttp-backed transport; the resulting NESTED aiohttp call must be counted "
+          "separately, never flagged as an independent bypass -")
+    try:
+        import httpx
+        import aiohttp
+    except ImportError as e:
+        check("httpx and aiohttp importable - this environment lacks one; every other "
+              "TW3 assertion is skipped, not failed", True, repr(e))
+        return
+    with _isolated():
+        class _FakeAiohttpResp:
+            status = 200
+
+        async def fake_aiohttp_request(self, method, str_or_url, **kwargs):
+            return _FakeAiohttpResp()
+        saved_aiohttp_request = aiohttp.ClientSession._request
+        aiohttp.ClientSession._request = fake_aiohttp_request
+
+        class _AiohttpBackedTransport(httpx.AsyncBaseTransport):
+            """Stands in for litellm's own `LiteLLMAiohttpTransport`: an httpx transport
+            whose `handle_async_request` reaches Ollama through `aiohttp.ClientSession`
+            rather than a raw socket - so the SAME logical call is seen twice by this
+            module: once as the outer, PACED httpx.AsyncClient.send, and once as the
+            inner aiohttp._request it delegates to."""
+
+            async def handle_async_request(self, request):
+                async with aiohttp.ClientSession() as session:
+                    await session._request("GET", str(request.url))
+                return httpx.Response(200, request=request)
+        try:
+            pacer.install()
+            with _crash_guard("paced calls == 1 (the outer httpx.AsyncClient.send)",
+                              "bypass_calls.aiohttp == 0 (nested inside a paced call, "
+                              "not an independent bypass)",
+                              "nested_calls.aiohttp == 1 (the inner aiohttp call, "
+                              "counted separately)",
+                              "the arm's record is NOT marked invalid - the call was "
+                              "correctly paced"):
+                async def _drive():
+                    client = httpx.AsyncClient(transport=_AiohttpBackedTransport(),
+                                               base_url="http://127.0.0.1:11434")
+                    r = await client.get("/api/tags")
+                    await client.aclose()
+                    return r
+                resp = asyncio.run(_drive())
+                check("the fake response comes back untouched", resp.status_code == 200)
+                out: dict = {}
+                pacer.attach(out)
+                ot = out.get("ollama_transport", {})
+                check("paced calls == 1 (the outer httpx.AsyncClient.send)",
+                      ot.get("calls") == 1, str(ot))
+                check("bypass_calls.aiohttp == 0 (nested inside a paced call, not an "
+                      "independent bypass)", ot.get("bypass_calls", {}).get("aiohttp") == 0,
+                      str(ot))
+                check("nested_calls.aiohttp == 1 (the inner aiohttp call, counted "
+                      "separately)", ot.get("nested_calls", {}).get("aiohttp") == 1,
+                      str(ot))
+                check("the arm's record is NOT marked invalid - the call was correctly "
+                      "paced", "valid" not in out, str(out))
+
+            # mutation: drop the contextvar check - every hit counts as a bypass
+            async def _no_context_check_aiohttp(self, method, str_or_url, **kwargs):
+                orig = pacer._ORIG["aiohttp_request"]
+                host, port = pacer._host_port(str(str_or_url))
+                if pacer.is_ollama_host(host, port):
+                    with pacer._LOCK:
+                        pacer._COUNTERS["bypass_aiohttp"] += 1   # _PACED_CONTEXT never read
+                return await orig(self, method, str_or_url, **kwargs)
+            aiohttp.ClientSession._request = _no_context_check_aiohttp
+            try:
+                with _crash_guard("mutation 'drop the contextvar check': the SAME "
+                                  "nested call is now WRONGLY counted as a bypass "
+                                  "(would FAIL the bypass_calls check above)"):
+                    resp2 = asyncio.run(_drive())
+                    out2: dict = {}
+                    pacer.attach(out2)
+                    check("mutation 'drop the contextvar check': the SAME nested call "
+                          "is now WRONGLY counted as a bypass (would FAIL the "
+                          "bypass_calls check above)",
+                          out2.get("ollama_transport", {}).get("bypass_calls", {})
+                          .get("aiohttp") == 1 and out2.get("valid") is False, str(out2))
+            finally:
+                aiohttp.ClientSession._request = fake_aiohttp_request
+        finally:
+            aiohttp.ClientSession._request = saved_aiohttp_request
+
+
 def test_zz_every_check_passed() -> None:
     """Bare pytest must reach the same verdict as this suite's exit code.
 
@@ -854,7 +945,8 @@ def main() -> int:
                test_t7_httpx_client_and_asyncclient_are_paced_through_mocktransport,
                test_t8_attach_writes_the_key_only_when_something_ran_through_it,
                test_tw1_requests_session_send_is_counted_not_paced_and_marks_invalid,
-               test_tw2_aiohttp_client_session_request_is_counted_not_paced):
+               test_tw2_aiohttp_client_session_request_is_counted_not_paced,
+               test_tw3_nested_aiohttp_inside_a_paced_httpx_call_is_not_a_bypass):
         fn()
     print(f"\nollama_pacer: {PASSED} passed, {FAILED} failed")
     return 1 if FAILED else 0

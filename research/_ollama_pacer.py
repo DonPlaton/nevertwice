@@ -44,6 +44,7 @@ netsh/PowerShell output is `_port_budget.py`'s concern, not this module's (R4).
 from __future__ import annotations
 
 import asyncio
+import contextvars
 import io
 import os
 import threading
@@ -92,8 +93,43 @@ _INSTALLED = False
 _ORIG: dict = {}
 _PACE_STATE = {"next_at": float("-inf")}
 _COUNTERS = {"calls": 0, "pace_sleep_s": 0.0, "retries": 0, "retry_sleep_s": 0.0, "gave_up": 0,
-            "bypass_requests": 0, "bypass_aiohttp": 0}
+            "bypass_requests": 0, "bypass_aiohttp": 0,
+            "nested_requests": 0, "nested_aiohttp": 0}
 _CALL_MS: list = []
+
+#: K11 (the auditor's finding on 623a1df): litellm 1.100.0's ASYNC path (amem_eval's own
+#: dependency) routes its httpx.AsyncClient through a custom transport backed by aiohttp
+#: (`LiteLLMAiohttpTransport`) - so a call already paced through `_paced_httpx_async_send`
+#: reaches `aiohttp.ClientSession._request` a SECOND time, INSIDE that same paced send,
+#: and the tripwire counted it as an independent bypass (attach() then said `valid: False`
+#: on a call that was, in fact, paced). Set True for the exact duration of the underlying
+#: `orig(...)` call in the urllib/httpx paced paths (never around the pacing sleep or the
+#: retry loop itself, so a concurrent, genuinely independent task's own call - which could
+#: run while THIS call's asyncio sleep yields control - is never mistaken for "nested
+#: inside this one"). `contextvars.ContextVar` propagates through nested `await`s in the
+#: SAME coroutine chain but each `asyncio.Task` gets its own copy at creation, which is
+#: exactly the boundary "nested inside this specific paced call" needs.
+_PACED_CONTEXT: contextvars.ContextVar[bool] = contextvars.ContextVar(
+    "_nevertwice_pacer_in_paced_call", default=False)
+
+
+def _mark_paced(fn):
+    """Run the zero-arg `fn` with `_PACED_CONTEXT` True for its exact duration."""
+    token = _PACED_CONTEXT.set(True)
+    try:
+        return fn()
+    finally:
+        _PACED_CONTEXT.reset(token)
+
+
+async def _mark_paced_async(coro_fn):
+    """Async counterpart of `_mark_paced`: `coro_fn` is a zero-arg callable returning an
+    awaitable."""
+    token = _PACED_CONTEXT.set(True)
+    try:
+        return await coro_fn()
+    finally:
+        _PACED_CONTEXT.reset(token)
 
 
 # ── host recognition ─────────────────────────────────────────────────────────────────
@@ -326,7 +362,7 @@ def _paced_urlopen(*args, **kwargs):
     orig = _ORIG["urlopen"]
     if not is_ollama_host(host, port):
         return orig(*args, **kwargs)
-    return _run_paced(lambda: orig(*args, **kwargs))
+    return _run_paced(lambda: _mark_paced(lambda: orig(*args, **kwargs)))
 
 
 # ── httpx.Client.send / httpx.AsyncClient.send ───────────────────────────────────────
@@ -370,7 +406,7 @@ def _paced_httpx_send(self, request, **kwargs):
     stream = bool(kwargs.get("stream", False))
 
     def _attempt():
-        response = orig(self, request, **kwargs)
+        response = _mark_paced(lambda: orig(self, request, **kwargs))
         if _classify_httpx_response(response, stream=stream):
             raise _PortExhaustionResponse(response)
         return response
@@ -391,7 +427,7 @@ async def _paced_httpx_async_send(self, request, **kwargs):
     stream = bool(kwargs.get("stream", False))
 
     async def _attempt():
-        response = await orig(self, request, **kwargs)
+        response = await _mark_paced_async(lambda: orig(self, request, **kwargs))
         if _classify_httpx_response(response, stream=stream):
             raise _PortExhaustionResponse(response)
         return response
@@ -410,15 +446,27 @@ async def _paced_httpx_async_send(self, request, **kwargs):
 # request a second time, unlike the urllib/httpx paths where the caller's own object is
 # reused verbatim (T2). So neither is retried; both are only COUNTED when the destination
 # is the Ollama host, and `attach()` marks the arm's record `"valid": False` if either
-# count is nonzero - a stand that reaches Ollama through one of these bypassed the pacer
-# entirely, and a paced-looking number that never was is worse than an honest refusal.
+# BYPASS count is nonzero - a stand that reaches Ollama through one of these bypassed the
+# pacer entirely, and a paced-looking number that never was is worse than an honest
+# refusal.
+#
+# K11: a hit is a bypass ONLY when `_PACED_CONTEXT` is False - a hit while it is True is
+# NESTED inside a call this module ALREADY paced (litellm 1.100.0's async path routes its
+# httpx.AsyncClient through a custom aiohttp-backed transport, so `_paced_httpx_async_send`
+# calls `orig(...)`, which calls `aiohttp.ClientSession._request` a second time, INSIDE the
+# same paced send - the auditor's finding on 623a1df: this counted as an independent
+# bypass and marked a correctly-paced call `invalid`). Counted separately as
+# `nested_requests`/`nested_aiohttp` - informational, never affects `valid`.
 
 def _paced_requests_send(self, request, **kwargs):
     orig = _ORIG["requests_send"]
     host, port = _host_port(str(getattr(request, "url", "") or ""))
     if is_ollama_host(host, port):
         with _LOCK:
-            _COUNTERS["bypass_requests"] += 1
+            if _PACED_CONTEXT.get():
+                _COUNTERS["nested_requests"] += 1
+            else:
+                _COUNTERS["bypass_requests"] += 1
     return orig(self, request, **kwargs)
 
 
@@ -427,7 +475,10 @@ async def _paced_aiohttp_request(self, method, str_or_url, **kwargs):
     host, port = _host_port(str(str_or_url))
     if is_ollama_host(host, port):
         with _LOCK:
-            _COUNTERS["bypass_aiohttp"] += 1
+            if _PACED_CONTEXT.get():
+                _COUNTERS["nested_aiohttp"] += 1
+            else:
+                _COUNTERS["bypass_aiohttp"] += 1
     return await orig(self, method, str_or_url, **kwargs)
 
 
@@ -510,6 +561,8 @@ def snapshot() -> dict:
                 "gave_up": _COUNTERS["gave_up"],
                 "bypass_requests": _COUNTERS["bypass_requests"],
                 "bypass_aiohttp": _COUNTERS["bypass_aiohttp"],
+                "nested_requests": _COUNTERS["nested_requests"],
+                "nested_aiohttp": _COUNTERS["nested_aiohttp"],
                 "_call_ms_len": len(_CALL_MS)}
 
 
@@ -520,21 +573,28 @@ def attach(out: dict, *, since: dict | None = None) -> None:
     a run that never reached this module) must not claim a transport it never used, and a
     reader can treat the KEY's presence as proof traffic passed through here at all.
 
-    When the tripwire counted anything (`bypass_requests`/`bypass_aiohttp` > 0 - a stand
-    reached Ollama through `requests` or `aiohttp`, which this module counts but never
-    paces or retries), `out["valid"]` is set to `False` and `out["invalid_reason"]` names
-    which client(s) bypassed it - even if `calls` itself is zero, i.e. even a run that
-    bypassed the pacer ENTIRELY is flagged, never silently left unmarked because "nothing
-    went through the paced path". `out["valid"]` is never set to `True` here: a clean run
-    says nothing, so a stand's own, unrelated validity semantics are never overwritten."""
+    When the tripwire counted a genuine BYPASS (`bypass_requests`/`bypass_aiohttp` > 0 - a
+    stand reached Ollama through `requests` or `aiohttp` OUTSIDE any paced call), out
+    `["valid"]` is set to `False` and `out["invalid_reason"]` names which client(s)
+    bypassed it - even if `calls` itself is zero, i.e. even a run that bypassed the pacer
+    ENTIRELY is flagged, never silently left unmarked because "nothing went through the
+    paced path". `out["valid"]` is never set to `True` here: a clean run says nothing, so
+    a stand's own, unrelated validity semantics are never overwritten.
+
+    `nested_requests`/`nested_aiohttp` (K11) are a hit INSIDE an already-paced urllib/httpx
+    call (litellm's async path routes through an aiohttp-backed httpx transport) -
+    informational only, reported alongside `bypass_calls` but never affecting `valid`."""
     base = since or {"calls": 0, "pace_sleep_s": 0.0, "retries": 0, "retry_sleep_s": 0.0,
                      "gave_up": 0, "bypass_requests": 0, "bypass_aiohttp": 0,
-                     "_call_ms_len": 0}
+                     "nested_requests": 0, "nested_aiohttp": 0, "_call_ms_len": 0}
     with _LOCK:
         calls = _COUNTERS["calls"] - base["calls"]
         bypass_requests = _COUNTERS["bypass_requests"] - base.get("bypass_requests", 0)
         bypass_aiohttp = _COUNTERS["bypass_aiohttp"] - base.get("bypass_aiohttp", 0)
-        if calls <= 0 and bypass_requests <= 0 and bypass_aiohttp <= 0:
+        nested_requests = _COUNTERS["nested_requests"] - base.get("nested_requests", 0)
+        nested_aiohttp = _COUNTERS["nested_aiohttp"] - base.get("nested_aiohttp", 0)
+        if (calls <= 0 and bypass_requests <= 0 and bypass_aiohttp <= 0
+                and nested_requests <= 0 and nested_aiohttp <= 0):
             return
         pace_sleep_s = _COUNTERS["pace_sleep_s"] - base["pace_sleep_s"]
         retries = _COUNTERS["retries"] - base["retries"]
@@ -548,6 +608,7 @@ def attach(out: dict, *, since: dict | None = None) -> None:
         "timing_includes_pacing": True,
         "pace_floor_s": round(calls * PACE_S, 3),
         "bypass_calls": {"requests": bypass_requests, "aiohttp": bypass_aiohttp},
+        "nested_calls": {"requests": nested_requests, "aiohttp": nested_aiohttp},
     }
     if bypass_requests > 0 or bypass_aiohttp > 0:
         culprits = [name for name, n in
