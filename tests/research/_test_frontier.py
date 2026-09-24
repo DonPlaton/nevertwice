@@ -658,5 +658,151 @@ try:
 finally:
     fe.DATA = saved_DATA
 
+print("\nK42: a competitor store that returns NOTHING for every question refuses (the smoke at 64011bb "
+      "read an empty, freshly CREATED store and exited 0), and a populated one records its provenance -")
+import types as _types  # noqa: E402
+import os as _os  # noqa: E402
+
+
+class _FakeMem:
+    def __init__(self, results):
+        self._results = results
+
+    def search(self, query, filters=None, top_k=10):
+        return {"results": list(self._results)}
+
+
+class _FakeMemory:
+    results: list = []
+
+    @classmethod
+    def from_config(cls, cfg):
+        return _FakeMem(cls.results)
+
+
+class _FakeAMem:
+    hits: list = []
+
+    def __init__(self, **kw):
+        pass
+
+    def search_agentic(self, q, k=10):
+        return list(self.hits)
+
+
+_saved_mods = {k: sys.modules.get(k) for k in ("mem0", "agentic_memory", "agentic_memory.retrievers",
+                                              "agentic_memory.memory_system")}
+_saved_h2h = _os.environ.get("H2H_DATA")
+sys.modules["mem0"] = _types.SimpleNamespace(Memory=_FakeMemory)
+_am = _types.ModuleType("agentic_memory")
+_am_r = _types.ModuleType("agentic_memory.retrievers")
+_am_r.SentenceTransformerEmbeddingFunction = None
+_am_ms = _types.ModuleType("agentic_memory.memory_system")
+_am_ms.AgenticMemorySystem = _FakeAMem
+_am.retrievers, _am.memory_system = _am_r, _am_ms
+sys.modules["agentic_memory"] = _am
+sys.modules["agentic_memory.retrievers"] = _am_r
+sys.modules["agentic_memory.memory_system"] = _am_ms
+try:
+    with tempfile.TemporaryDirectory() as td_k42:
+        _os.environ["H2H_DATA"] = td_k42
+        def _mark(sub, **over):
+            marker = {"argv": ["research/head_to_head.py", "--only=" + sub.split("_", 1)[1]],
+                      "commit": fe.git_head(), "utc": "2026-09-24T20:00:00Z", "limit": None,
+                      "sessions": None, "n_items": 40}
+            marker.update(over)
+            (Path(td_k42) / sub / ".populated_by.json").write_text(json.dumps(marker), encoding="utf-8")
+
+        for sub in ("qdrant_mem0_infer", "chroma_amem_full"):
+            (Path(td_k42) / sub).mkdir()
+            (Path(td_k42) / sub / "data.bin").write_bytes(b"x")
+            _mark(sub)
+        _FakeMemory.results = []
+        try:
+            fe.contexts_mem0_infer(MINI_DATA, MINI_POOL)
+            check("K42: an EMPTY mem0_infer store refuses (RuntimeError naming the store)", False)
+        except RuntimeError as e:
+            check("K42: an EMPTY mem0_infer store refuses (RuntimeError naming the store)",
+                  "never populated" in str(e) and "qdrant_mem0_infer" in str(e), str(e))
+        _FakeAMem.hits = []
+        try:
+            fe.contexts_amem_full(MINI_DATA, MINI_POOL)
+            check("K42: an EMPTY amem_full store refuses", False)
+        except RuntimeError as e:
+            check("K42: an EMPTY amem_full store refuses", "never populated" in str(e), str(e))
+        _FakeMemory.results = [{"memory": "the api uses port 8080", "metadata": {"session_id": "s0"}}]
+        ctx_ok = fe.contexts_mem0_infer(MINI_DATA, MINI_POOL)
+        check("K42: a populated store reads normally and records its provenance",
+              all(len(ctx_ok[q["question_id"]]) == 1 for q in MINI_DATA)
+              and ctx_ok.get("_store_provenance", {}).get("n_items") == len(MINI_DATA)
+              and "qdrant_mem0_infer" in ctx_ok["_store_provenance"]["path"], str(ctx_ok.get("_store_provenance")))
+        _FakeAMem.hits = [{"id": "n1", "content": "note"}]
+        ctx_am = fe.contexts_amem_full(MINI_DATA, MINI_POOL)
+        check("K42: a populated A-MEM store reads normally and records its provenance",
+              ctx_am.get("_store_provenance", {}).get("n_items") == len(MINI_DATA))
+        check("K42: the provenance names the full run that built the store, at this commit",
+              "--limit" not in ctx_ok["_store_provenance"]["populated_by"]
+              and ctx_ok["_store_provenance"]["built_at_commit"] == fe.git_head(), str(ctx_ok["_store_provenance"]))
+        _FakeMemory.results = [{"memory": "x", "metadata": {"session_id": "s0"}}]
+        for label, over, needle in (("a PARTIAL (--limit) store refuses", {"limit": 2,
+                                     "argv": ["research/head_to_head.py", "--limit", "2"]}, "PARTIAL"),
+                                    ("a store built at another commit refuses", {"commit": "0" * 40}, "rebuild it"),):
+            _mark("qdrant_mem0_infer", **over)
+            try:
+                fe.contexts_mem0_infer(MINI_DATA, MINI_POOL)
+                check("K42: " + label, False)
+            except RuntimeError as e:
+                check("K42: " + label, needle in str(e), str(e))
+        (Path(td_k42) / "qdrant_mem0_infer" / ".populated_by.json").unlink()
+        try:
+            fe.contexts_mem0_infer(MINI_DATA, MINI_POOL)
+            check("K42: a store with NO marker refuses", False)
+        except RuntimeError as e:
+            check("K42: a store with NO marker refuses", ".populated_by.json" in str(e), str(e))
+        _mark("qdrant_mem0_infer")
+        _saved_refuse = fe._refuse_empty_store
+        fe._refuse_empty_store = lambda arm, store, out, populate: out          # mutation: no refusal
+        _FakeMemory.results = []
+        try:
+            ctx_mut = fe.contexts_mem0_infer(MINI_DATA, MINI_POOL)
+            mut_ok = sum(len(v) for k, v in ctx_mut.items() if not k.startswith("_")) == 0
+        except RuntimeError:
+            mut_ok = False
+        finally:
+            fe._refuse_empty_store = _saved_refuse
+        check("mutation K42 'no refusal' is caught: the empty store then reads WRONGLY as 0 items",
+              mut_ok)
+        check("fe._refuse_empty_store is restored", fe._refuse_empty_store is _saved_refuse)
+finally:
+    for k, v in _saved_mods.items():
+        if v is None:
+            sys.modules.pop(k, None)
+        else:
+            sys.modules[k] = v
+    if _saved_h2h is None:
+        _os.environ.pop("H2H_DATA", None)
+    else:
+        _os.environ["H2H_DATA"] = _saved_h2h
+
+print("\nK42: the store provenance reaches the ARTIFACT (competitor_cache[arm].store), where m2_check "
+      "reads it -")
+fe.DATA = Path(tempfile.mkdtemp(prefix="frontier_test_k42fold_"))
+try:
+    _ctx_fold = {q["question_id"]: [{"id": "s0", "text": "some context text"}] for q in MINI_DATA}
+    _ctx_fold["_store_provenance"] = {"path": "P", "newest_file_mtime": 1.0, "n_items": 2,
+                                      "populated_by": "research/head_to_head.py --only=mem0_infer",
+                                      "built_at_commit": fe.git_head()}
+    fe._save(fe._ctx_path("mem0_infer"), _ctx_fold)
+    with _isolated_pacer():
+        urllib.request.urlopen = _fake_chat_factory()
+        fe.answer_stage(["mem0_infer"], MINI_DATA, MINI_POOL, fe.READER, fe.CHAR_BUDGET)
+        fe.judge_stage(["mem0_infer"], MINI_DATA, fe.READER, fe.JUDGE, fe.JUDGE2, 100)
+        res_fold = fe.summarise(["mem0_infer"], MINI_DATA, fe.READER, fe.JUDGE, fe.JUDGE2)
+    check("K42: frontier.json carries competitor_cache['mem0_infer'].store with the building command",
+          ((res_fold.get("competitor_cache") or {}).get("mem0_infer") or {}).get("store", {}).get("populated_by")
+          == "research/head_to_head.py --only=mem0_infer", str(res_fold.get("competitor_cache"))[:300])
+finally:
+    fe.DATA = saved_DATA
+
 print(f"\n{'ALL OK' if not FAILS else f'{FAILS} FAILED'}")
 sys.exit(1 if FAILS else 0)

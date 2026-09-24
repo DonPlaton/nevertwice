@@ -485,6 +485,22 @@ def _bench_dir() -> Path:
 
 # ── Mem0 (LOCAL: Ollama LLM + bge-m3 embedder + embedded qdrant) ──────────────
 
+def mark_store(store: Path, n_items: int) -> None:
+    """K42: write `.populated_by.json` into a pipeline store this run just built - the argv, the
+    commit, --limit/--sessions and the item count - so a stand that READS the store back
+    (frontier_eval's mem0_infer/amem_full contexts) can refuse one a smoke or a partial run left
+    behind instead of trusting whatever sits at the path."""
+    try:
+        store.mkdir(parents=True, exist_ok=True)
+        (store / ".populated_by.json").write_text(json.dumps({
+            "argv": list(sys.argv), "commit": _git_head(),
+            "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "limit": getattr(ARGS, "limit", None), "sessions": getattr(ARGS, "sessions", None),
+            "n_items": n_items}, indent=1), encoding="utf-8", newline="\n")
+    except OSError as e:                                           # the reader then refuses: no marker
+        print(f"  could not mark {store}: {type(e).__name__}: {e}", file=sys.stderr)
+
+
 def run_mem0(data, pool, infer=None) -> dict:
     try:
         from mem0 import Memory
@@ -569,6 +585,8 @@ def run_mem0(data, pool, infer=None) -> dict:
     except ImportError:
         sc["search"] = "dense cosine only (fastembed absent)"
     sc["setup"] = "pip install mem0ai ollama fastembed; embedded qdrant (no server)"
+    if infer:
+        mark_store(store, len(items))                              # K42: frontier reads this store back
     return sc
 
 
@@ -889,6 +907,7 @@ def run_amem_full(data, pool) -> dict:
     sc["mode"] = (f"full pipeline: agentic_memory with {COMP_LLM} via litellm (Ollama's own "
                   f"context default); search_agentic over its notes")
     sc["setup"] = "pip install a-mem (litellm, chromadb, sentence-transformers); Ollama LLM + embeddings"
+    mark_store(store, len(items))                                  # K42: frontier reads this store back
     return sc
 
 

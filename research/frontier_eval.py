@@ -517,6 +517,45 @@ def contexts_mem0_store(data, pool) -> dict:
             for e in data}
 
 
+def _refuse_empty_store(arm: str, store: Path, out: dict, populate: str) -> dict:
+    """K42: a competitor store that returns NOTHING for every question is not a measurement.
+
+    `contexts_mem0_infer`/`contexts_amem_full` READ BACK the store a head-to-head pipeline run
+    left on disk; they ingest nothing themselves. At 64011bb the smoke's frontier stage ran with
+    no such run behind it: `Memory.from_config` / A-MEM silently CREATED an empty store at the
+    expected path, the read returned 0 items for every question, the stage exited 0, and the
+    reader would then have answered every question from an empty context - a competitor arm
+    published as a real, very low score. An all-empty read now refuses, naming the store and
+    the run that populates it; a populated store records its own provenance for m2_check."""
+    # K42 (auditor): a PARTIAL store passes an emptiness check - one a smoke left
+    # (`--limit 2 --sessions 20`) or a run that died mid-ingest. The store must carry the marker
+    # head_to_head.mark_store() writes, from a full run (no --limit/--sessions) at this commit.
+    marker_p = store / ".populated_by.json"
+    try:
+        marker = json.loads(marker_p.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        raise RuntimeError(f"{arm}: the store at {store} carries no .populated_by.json - it was not "
+                           f"built by a head-to-head run of this code; run: {populate}") from None
+    if marker.get("limit") or marker.get("sessions") or any(
+            str(a).startswith(("--limit", "--sessions")) for a in marker.get("argv") or []):
+        raise RuntimeError(f"{arm}: the store at {store} was built by a PARTIAL run "
+                           f"({' '.join(map(str, marker.get('argv') or []))}) - run: {populate}")
+    if marker.get("commit") != git_head():
+        raise RuntimeError(f"{arm}: the store at {store} was built at {str(marker.get('commit'))[:12]}, "
+                           f"HEAD is {git_head()[:12]} - rebuild it at this commit; run: {populate}")
+    n_items = sum(len(v) for k, v in out.items() if not k.startswith("_"))
+    if n_items == 0:
+        raise RuntimeError(f"{arm}: the store at {store} returned no memories for any of "
+                           f"{len([k for k in out if not k.startswith('_')])} questions - it was never "
+                           f"populated for this corpus; run: {populate}")
+    newest = max((f.stat().st_mtime for f in store.rglob("*") if f.is_file()), default=store.stat().st_mtime)
+    out["_store_provenance"] = {"path": str(store), "newest_file_mtime": newest, "n_items": n_items,
+                                "populated_by": " ".join(map(str, marker.get("argv") or [])),
+                                "built_at_commit": marker.get("commit"), "built_utc": marker.get("utc"),
+                                "store_items": marker.get("n_items")}
+    return out
+
+
 def contexts_mem0_infer(data, pool) -> dict:
     """Read back the memories Mem0's pipeline run left in its on-disk store (head_to_head.py,
     `--only=mem0_infer`): what it would inject, no re-ingest."""
@@ -539,7 +578,8 @@ def contexts_mem0_infer(data, pool) -> dict:
         res = r.get("results", r) if isinstance(r, dict) else r
         out[e["question_id"]] = [{"id": (x.get("metadata") or {}).get("session_id") or x.get("id"),
                                   "text": x.get("memory") or x.get("text") or ""} for x in res]
-    return out
+    return _refuse_empty_store("mem0_infer", store, out,
+                               "python research/head_to_head.py --only=mem0_infer (same H2H_DATA)")
 
 
 def contexts_amem_full(data, pool) -> dict:
@@ -557,7 +597,8 @@ def contexts_amem_full(data, pool) -> dict:
     for e in data:
         hits = sysm.search_agentic(e["question"], k=10)
         out[e["question_id"]] = [{"id": h.get("id"), "text": h.get("content") or ""} for h in hits]
-    return out
+    return _refuse_empty_store("amem_full", store, out,
+                               "python research/head_to_head.py --only=amem_full (same H2H_DATA)")
 
 
 def contexts_nevertwice_full(data, pool) -> dict:
@@ -915,6 +956,10 @@ def summarise(arms: list[str], data: list, reader: str, judge: str, judge2: str)
             # run - "declared per P3" made checkable against the file on disk.
             prov_entry = _ctx_file_provenance(_ctx_path(arm))
             if prov_entry:
+                # K42: the store the contexts were read from travels into the ARTIFACT, where
+                # m2_check reads it (built at the anchor, by the full b9 command)
+                if isinstance(ctx, dict) and ctx.get("_store_provenance"):
+                    prov_entry["store"] = ctx["_store_provenance"]
                 out.setdefault("competitor_cache", {})[arm] = prov_entry
     for arm, k in (("none", 0), ("oracle", 99)):
         pt = point(arm, k)

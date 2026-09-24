@@ -330,5 +330,22 @@ for _t, _name in (_tree(n) for n in _STANDS):
 check("no name in a stand is defined twice", not _dupes, "; ".join(_dupes))
 
 
+print("\n- K42: mark_store writes the marker a reader (frontier_eval) checks - argv, commit, --limit/--sessions, item count -")
+import json as _json  # noqa: E402
+import tempfile as _tempfile  # noqa: E402
+_saved_argv, _saved_args = sys.argv, h2h.ARGS
+try:
+    sys.argv = ["research/head_to_head.py", "--only=mem0_infer", "--limit", "2"]
+    h2h.ARGS = type(h2h.ARGS)(**{**vars(h2h.ARGS), "limit": 2, "sessions": None})
+    with _tempfile.TemporaryDirectory() as _td:
+        _store = Path(_td) / "qdrant_mem0_infer"
+        h2h.mark_store(_store, 7)
+        _mk = _json.loads((_store / ".populated_by.json").read_text(encoding="utf-8"))
+        check("K42: the marker records argv, the commit, the --limit and the item count",
+              _mk["argv"] == sys.argv and _mk["commit"] == h2h._git_head() and _mk["limit"] == 2
+              and _mk["n_items"] == 7, str(_mk))
+finally:
+    sys.argv, h2h.ARGS = _saved_argv, _saved_args
+
 print(f"\n{'ALL OK' if not FAILS else f'{FAILS} FAILED'}")
 sys.exit(1 if FAILS else 0)
