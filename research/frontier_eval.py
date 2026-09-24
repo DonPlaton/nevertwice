@@ -840,7 +840,8 @@ def judge_stage(arms: list[str], data: list, reader: str, judge: str, judge2: st
     return verdicts
 
 
-def summarise(arms: list[str], data: list, reader: str, judge: str, judge2: str) -> dict:
+def summarise(arms: list[str], data: list, reader: str, judge: str, judge2: str,
+              declared_blocked: dict | None = None) -> dict:
     answers = _load(_cache_path("answers"))
     verdicts = _load(_cache_path("verdicts"))
     qids = [e["question_id"] for e in data]
@@ -961,6 +962,12 @@ def summarise(arms: list[str], data: list, reader: str, judge: str, judge2: str)
                 if isinstance(ctx, dict) and ctx.get("_store_provenance"):
                     prov_entry["store"] = ctx["_store_provenance"]
                 out.setdefault("competitor_cache", {})[arm] = prov_entry
+    # K43 / PREREG P3: a competitor arm the campaign declares blocked (its own pipeline blocked in
+    # b9 - e.g. Mem0's >10% silent extractions) is printed as "blocked (reason)", never absent and
+    # never a number; it was not requested, so the run's validity is untouched and our own arms'
+    # numbers stand. A requested arm that fails for any other reason still invalidates (P0(f)).
+    for arm_b, why in (declared_blocked or {}).items():
+        out["arms"][arm_b] = {"blocked": why, "declared_by_runner": True}
     for arm, k in (("none", 0), ("oracle", 99)):
         pt = point(arm, k)
         if pt:
@@ -1019,7 +1026,24 @@ def main() -> int:
     ap.add_argument("--agree-n", type=int, default=100)
     ap.add_argument("--save", action="store_true")
     ap.add_argument("--out", default=str(OUT))
+    ap.add_argument("--blocked", action="append", default=[], metavar="ARM:REASON",
+                    help="K43: a COMPETITOR arm the campaign declares blocked by its own pipeline "
+                         "(PREREG P3: printed 'blocked (reason)', its pairs stay pending) - it is not "
+                         "requested, so it cannot invalidate the run the way a requested arm with no "
+                         "contexts does (P0(f)); never one of our own arms")
     args = ap.parse_args()
+    declared_blocked: dict[str, str] = {}
+    for spec in args.blocked:
+        arm_b, _, why = spec.partition(":")
+        declared_blocked[arm_b.strip()] = why.strip() or "blocked (no reason given)"
+    arms = [a for a in args.arms.split(",") if a]
+    # K43: the declaration is checked BEFORE anything loads - a bad --blocked refuses on its own
+    # terms, never behind a corpus or cache error
+    bad_decl = [a for a in declared_blocked if a in arms or a in ENGINE_ARMS or a not in ARMS]
+    if bad_decl:
+        print(f"--blocked {bad_decl}: only a known COMPETITOR arm that is NOT also in --arms can be "
+              f"declared blocked (our own arms never)")
+        return 2
     data, pool = corpus()
     if args.stratify:
         data = stratified(data, args.stratify)
@@ -1029,7 +1053,6 @@ def main() -> int:
         # run keeps the whole pool, the same store composition the competitor pipelines saw
         wanted = {s for e in data for s in e.get("haystack_session_ids", [])}
         pool = {sid: txt for sid, txt in pool.items() if sid in wanted}
-    arms = [a for a in args.arms.split(",") if a]
     print(f"frontier: {len(data)} questions, reader {READER}, judge {JUDGE}, stage {args.stage}")
     pacer.install()          # item 9B/P0(a): pace/retry/count every stage's own Ollama traffic
 
@@ -1062,7 +1085,7 @@ def main() -> int:
         return 2
     if args.stage == "judge":
         judge_stage(arms, data, READER, JUDGE, JUDGE2, args.agree_n)
-    res = summarise(arms, data, READER, JUDGE, JUDGE2)
+    res = summarise(arms, data, READER, JUDGE, JUDGE2, declared_blocked=declared_blocked)
     for arm, pts in res["arms"].items():
         for k, pt in pts.items():
             if pt:

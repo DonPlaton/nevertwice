@@ -804,5 +804,43 @@ try:
 finally:
     fe.DATA = saved_DATA
 
+print("\nK43: a competitor arm the runner DECLARES blocked (its own pipeline blocked in b9) is printed "
+      "'blocked (reason)' and leaves the run valid (P3); the same arm REQUESTED without contexts "
+      "invalidates it (P0(f)) -")
+fe.DATA = Path(tempfile.mkdtemp(prefix="frontier_test_k43_"))
+try:
+    with _isolated_pacer():
+        _seed_ctx()
+        urllib.request.urlopen = _fake_chat_factory()
+        fe.answer_stage([MINI_ARM], MINI_DATA, MINI_POOL, fe.READER, fe.CHAR_BUDGET)
+        fe.judge_stage([MINI_ARM], MINI_DATA, fe.READER, fe.JUDGE, fe.JUDGE2, 100)
+        _why = "Mem0 pipeline: 120 of 940 sessions yielded no memory - not a measurement of Mem0"
+        res_decl = fe.summarise([MINI_ARM], MINI_DATA, fe.READER, fe.JUDGE, fe.JUDGE2,
+                                declared_blocked={"mem0_infer": _why})
+    check("K43: the declared arm is PRESENT as blocked, naming the reason (P3: never absent)",
+          (res_decl.get("arms") or {}).get("mem0_infer", {}).get("blocked") == _why, str(res_decl.get("arms", {}).get("mem0_infer")))
+    check("K43: the run stays valid - a declared block is not a requested arm with no contexts",
+          res_decl.get("valid") is not False, str(res_decl.get("invalid_reason")))
+    check("K43: our own arm's real pointer still restores",
+          rm.row_refusal(res_decl, "arms.nevertwice_whole.1.accuracy", 0) is None)
+    check("K43: the blocked arm's pointer does not restore (its pair claims stay pending)",
+          rm.row_refusal(res_decl, "arms.mem0_infer.1.accuracy", 0) is not None)
+    _saved_argv = sys.argv
+    for bad, label in ((["--arms", "mem0", "--blocked", "nevertwice_full:x"], "one of our OWN arms (not requested)"),
+                       (["--arms", MINI_ARM + ",mem0_infer", "--blocked", "mem0_infer:x"], "an arm that is also requested")):
+        try:
+            sys.argv = ["frontier_eval.py", "summary", "--stratify", "0"] + bad
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc_bad = fe.main()
+        except SystemExit as e:
+            rc_bad = e.code
+        except Exception as e:                   # noqa: BLE001 - a named red, not a crash
+            rc_bad = f"crash: {type(e).__name__}"
+        finally:
+            sys.argv = _saved_argv
+        check(f"K43: main() refuses --blocked for {label} (exit 2)", rc_bad == 2, str(rc_bad))
+finally:
+    fe.DATA = saved_DATA
+
 print(f"\n{'ALL OK' if not FAILS else f'{FAILS} FAILED'}")
 sys.exit(1 if FAILS else 0)

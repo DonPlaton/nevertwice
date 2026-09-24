@@ -152,7 +152,7 @@ def test_both_scripts_are_wired_to_refuse_before_judge_and_summary() -> None:
     print("\n- the guard is wired in main(), before judge_stage/summarise, in both files -")
     for path, judge_call, summarise_call in (
             (Path(fe.__file__), "judge_stage(arms, data, READER, JUDGE, JUDGE2, args.agree_n)",
-             "res = summarise(arms, data, READER, JUDGE, JUDGE2)"),
+             "res = summarise(arms, data, READER, JUDGE, JUDGE2"),
             (Path(cse.__file__), "judge_stage(arms, qs, READER, JUDGE)",
              "res = summarise(arms, qs, corpus, READER, JUDGE)")):
         src = path.read_text(encoding="utf-8")
