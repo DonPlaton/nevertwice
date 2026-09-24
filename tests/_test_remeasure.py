@@ -347,6 +347,110 @@ finally:
     _traw.unlink(missing_ok=True)
 
 
+print("\n- K28 follow-up (1) (the auditor's audit of 5acb609): restore() itself must pass "
+      "raw= into row_refusal, not merely row_refusal() driven in isolation - R4 -")
+#: The two named exemptions (_TIMING_TRANSPORT_EXEMPT_RAW) were only ever driven through a
+#: DIRECT row_refusal() call above - restore()'s own `raw=raw` wiring at its call site was
+#: never exercised end to end, so a mutation dropping it there (R4) went unnoticed: every
+#: existing restore()-level K28 test above uses a NON-exempt raw path. A TEMP fixture stands
+#: in for the two real exempt files here (monkeypatching _TIMING_TRANSPORT_EXEMPT_RAW to
+#: include it), rather than overwriting the real committed research/latency_bench.json or
+#: research/embed_universal/heldout/serving_check.json, which this worktree does not own.
+_exempt_raw_rel = "tests/_tmp_remeasure_exempt.json"
+_exempt_raw = ROOT / _exempt_raw_rel
+try:
+    _exempt_raw.write_text(json.dumps({"measurements": {"cold_import": {"ms": 12.0}}}),
+                           encoding="utf-8")
+    os.utime(_exempt_raw, None)
+    _eman = {"claims": [{
+        "id": "k28f1.exempt_timing", "value": 12.0, "printed": ["12 ms"], "unit": "ms",
+        "statement": "cold import costs 12 ms",
+        "cited_in": [], "cited_in_pending": ["docs/BENCHMARKS.md"],
+        "stale": "needs the idle window", "withdrawn_on": "2026-09-23",
+        "pending_remeasure": True, "produced_by": ["sandbox_guard.py"],
+        "commit": "0" * 40, "raw": _exempt_raw_rel, "pointer": "measurements.cold_import.ms"}]}
+    _saved_exempt = rm._TIMING_TRANSPORT_EXEMPT_RAW
+    rm._TIMING_TRANSPORT_EXEMPT_RAW = _saved_exempt | {_exempt_raw_rel}
+    try:
+        _e1 = copy.deepcopy(_eman)
+        _restored, _left, _ = rm.restore(_e1, head=HEAD)
+        check("K28 follow-up (1): a temp exempt-raw timing claim with NO transport record "
+              "restores via restore() itself (not merely row_refusal in isolation)",
+              _restored == ["k28f1.exempt_timing"], str(_left))
+
+        # mutation R4: restore() drops its own raw=raw wiring into row_refusal - simulated by
+        # replacing row_refusal itself with a wrapper that calls the REAL function but drops
+        # whatever `raw` it was handed, the same observable effect as the call site losing it.
+        _saved_row_refusal2 = rm.row_refusal
+
+        def _row_refusal_dropping_raw(data, pointer, code_time, head=None, produced_by=None,
+                                      raw=None):
+            return _saved_row_refusal2(data, pointer, code_time, head=head,
+                                       produced_by=produced_by)          # raw=raw DROPPED (R4)
+        rm.row_refusal = _row_refusal_dropping_raw
+        try:
+            _e2 = copy.deepcopy(_eman)
+            _restored2, _left2, _ = rm.restore(_e2, head=HEAD)
+            check("mutation R4 'restore() drops raw=raw': the SAME exempt-raw claim now "
+                  "WRONGLY refuses (would FAIL the restores-with-no-transport check above)",
+                  _restored2 == [] and any("observe" in x for x in _left2), str(_left2))
+        finally:
+            rm.row_refusal = _saved_row_refusal2
+        check("row_refusal is restored to the real function",
+              rm.row_refusal is _saved_row_refusal2)
+    finally:
+        rm._TIMING_TRANSPORT_EXEMPT_RAW = _saved_exempt
+finally:
+    _exempt_raw.unlink(missing_ok=True)
+
+
+print("\n- K28 follow-up (2): a drift guard - a claim whose pointer LOOKS time-like but "
+      "matches none of the four accepted suffixes, and is not explicitly allowlisted, is a "
+      "claim that could silently bypass K28's observe-mode gate -")
+#: Broader than is_timing_pointer's own four accepted suffixes ON PURPOSE - this exists to
+#: catch a FUTURE claim shaped like a timing field (query_s, wall_s, latency_ms, any
+#: *_seconds/*_ms name) that a new stand registers without anyone routing it through K28's
+#: gate. The two patterns beyond a bare time-unit word - `_per_call$`/`_ratio$` - exist
+#: because they are the STRUCTURAL SHAPE of two already-accepted/real timing names
+#: (`ms_per_call`, `embed.serving.latency_ratio`'s own claim id), so a claim of the same
+#: shape is worth a human's eyes even on the (common) day it turns out not to be timing.
+_TIME_LIKE_PATTERN = re.compile(
+    r"(^|_)(ms|s|sec|secs|second|seconds|msec|msecs|latency|wall|elapsed|duration|clock)"
+    r"($|_)|_per_call$|_ratio$", re.I)
+#: Known non-timing names that happen to match the pattern above - reviewed by hand, not
+#: timing: `tokens_per_call` (a token COUNT rate, the same `_per_call` shape as
+#: `ms_per_call` without being one), `distill_ratio` (a token-count ratio, the same
+#: `_ratio` shape as `latency_ratio` without being one).
+_TIME_LIKE_ALLOWLIST = frozenset({"tokens_per_call", "distill_ratio"})
+
+
+def _drift_scan(claims: list) -> list:
+    out = []
+    for c in claims:
+        segs = [q or k for q, i, k in rm.SEGMENT.findall(c.get("pointer") or "") if not i]
+        seg = segs[-1] if segs else ""
+        if (seg and _TIME_LIKE_PATTERN.search(seg)
+                and not rm.is_timing_pointer(c.get("pointer") or "")
+                and seg not in _TIME_LIKE_ALLOWLIST):
+            out.append((c.get("id"), seg))
+    return out
+
+
+_manifest = json.loads((ROOT / "research" / "evidence_manifest.json").read_text(encoding="utf-8"))
+_drifted = _drift_scan(_manifest["claims"])
+check("no claim's pointer looks time-like while matching none of the four accepted "
+      "suffixes and sitting outside the allowlist (today's manifest)",
+      not _drifted, str(_drifted[:5]))
+
+# mutation: a fake claim with a time-like, unaccepted, unallowlisted pointer segment, added
+# to a COPY of the real register - the SAME scan must catch it, by name.
+_fake_drift_claim = {"id": "k28f2.fake_drift", "pointer": "x.wall_s", "value": 1.0}
+_drifted2 = _drift_scan(_manifest["claims"] + [_fake_drift_claim])
+check("mutation 'a fake claim with pointer x.wall_s added to the register': the drift "
+      "guard catches it BY NAME (would FAIL the no-drift check above)",
+      _drifted2 == [("k28f2.fake_drift", "wall_s")], str(_drifted2))
+
+
 print("\n- a positional pointer must still address the pair the claim is about -")
 #: Measured, not supposed. Running the two supersession commands exactly as the register records
 #: them produced three arms instead of seven - `--arms nevertwice,naive` cannot make the mem0 and
