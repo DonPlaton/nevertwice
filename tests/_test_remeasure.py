@@ -170,6 +170,8 @@ try:
         "oldcode": {"measured_at": {"commit": _before, "utc": _utc(_head_t + 60)}, "recall@5": 0.834},
         "samecl":  {"measured_at": {"commit": _same, "utc": _utc(_head_t + 60)}, "recall@5": 0.834},
         "nocommit": {"measured_at": {"utc": _utc(_head_t + 60)}, "recall@5": 0.834},
+        #: the auditor's MK15c: a commit git has never seen cannot vouch for anything
+        "ghost":    {"measured_at": {"commit": "a" * 40, "utc": _utc(_head_t + 60)}, "recall@5": 0.834},
     }
     raw.write_text(json.dumps({"methods": _k15}), encoding="utf-8")
     os.utime(raw, None)
@@ -182,6 +184,9 @@ try:
     restored, left, _ = _one("nocommit")
     check("a row with a measurement time but no commit is refused",
           restored == [] and any("no commit" in x for x in left), str(left))
+    restored, left, _ = _one("ghost")
+    check("a row stamped with a commit git cannot resolve is refused",
+          restored == [] and any("not one git can resolve" in x for x in left), str(left))
     _saved_cm = rm._closure_moved
     try:
         rm._closure_moved = lambda *a, **k: None

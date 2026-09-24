@@ -205,9 +205,19 @@ if ART.exists():
               f"artifact says {was['survived']}/{was['observed']}")
 
 print("\n- what survives is a frozen artefact, which is the finding rather than the rate -")
+#: Asked of the SNAPSHOT the page is addressed to (`at_head`/`head_at`, the artifact's own pinned
+#: commit), not of today's HEAD. At the live HEAD the two-week set changes with the calendar: a
+#: frontier claim born 2026-09-10 06:26 crossed fourteen days at 2026-09-24 06:26 and turned this
+#: check red for every commit made after that minute, whatever it contained (found on stands/ports
+#: 316b518, 2026-09-24) - the same shape as the thirty-day check K4 fixed. The page's finding is a
+#: statement about its snapshot; the live curve is the next campaign's page, not this assertion.
 horizon = dt.timedelta(days=14)
-long = [cid for cid, r in records.items()
-        if head - r["born"] >= horizon and (r["died"] is None or r["died"] - r["born"] >= horizon)]
+_recs, _at = (at_head, head_at) if ART.exists() else (records, head)
+long = [cid for cid, r in _recs.items()
+        if _at - r["born"] >= horizon and (r["died"] is None or r["died"] - r["born"] >= horizon)]
+_live = {cid.split(".")[0] for cid, r in records.items()
+         if head - r["born"] >= horizon and (r["died"] is None or r["died"] - r["born"] >= horizon)}
+print(f"       (at today's HEAD, for information: two-week families {sorted(_live)})")
 fams = {cid.split(".")[0] for cid in long}
 check("the two-week survivors are the embedder and the simulation", fams <= {"embed", "longitudinal"},
       str(sorted(fams)))
