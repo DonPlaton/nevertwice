@@ -127,7 +127,21 @@ def _utc_epoch(stamp: str) -> int | None:
         return None
 
 
-def row_refusal(data, pointer: str, code_time: int) -> str | None:
+def _closure_moved(commit: str, head: str, produced_by: list[str]) -> str | None:
+    """None when `commit` IS `head` or none of `produced_by` differs between them; otherwise a
+    reason. A commit git cannot resolve is a reason too - it cannot be vouched for."""
+    if commit == head:
+        return None
+    try:
+        out = subprocess.run(["git", "diff", "--name-only", commit, head, "--", *produced_by],
+                             cwd=ROOT, capture_output=True, text=True, check=True).stdout.strip()
+    except (subprocess.CalledProcessError, OSError):
+        return f"commit {commit[:7]} is not one git can resolve"
+    return (f"its code differs from HEAD in {out.splitlines()[0]}" if out else None)
+
+
+def row_refusal(data, pointer: str, code_time: int, head: str | None = None,
+                produced_by: list[str] | None = None) -> str | None:
     """Would restoring THIS row put a number back that no valid run at HEAD produced?
 
     Two ways it would, both found before the v2 campaign (2026-09-24):
@@ -163,6 +177,16 @@ def row_refusal(data, pointer: str, code_time: int) -> str | None:
             return (f"the row was measured at {stamp['utc']} (commit "
                     f"{str(stamp.get('commit') or '?')[:7]}), before HEAD - a row merged in from an "
                     f"older run, not a re-measurement")
+        #: A fresh time is not fresh code: a run started today from an old worktree stamps a new
+        #: utc on old code (the auditor's K15, 2026-09-24). The commit must be HEAD, or the
+        #: claim's own closure must be identical between them - m2_check's commit_ok, per closure.
+        if head is not None:
+            commit = str(stamp.get("commit") or "")
+            if not commit or commit == "?":
+                return "the row carries a measurement time but no commit - it cannot be vouched for"
+            moved = _closure_moved(commit, head, list(produced_by or []))
+            if moved:
+                return f"the row was measured at commit {commit[:7]}, and {moved}"
     return None
 
 
@@ -409,7 +433,8 @@ def restore(manifest: dict, select: set[str] | None = None, head: str | None = N
         code_time = int(_git("log", "-1", "--format=%ct", head))
         #: ...and so must the ROW, which a merging --save can carry over from an older run, and
         #: the row must not be one its own run marked invalid (see `row_refusal`).
-        refusal = row_refusal(data, c["pointer"], code_time)
+        refusal = row_refusal(data, c["pointer"], code_time, head=head,
+                              produced_by=c.get("produced_by") or [])
         if refusal:
             left.append(f"{c['id']}: {refusal}")
             continue
