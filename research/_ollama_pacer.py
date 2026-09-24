@@ -91,7 +91,8 @@ _LOCK = threading.Lock()
 _INSTALLED = False
 _ORIG: dict = {}
 _PACE_STATE = {"next_at": float("-inf")}
-_COUNTERS = {"calls": 0, "pace_sleep_s": 0.0, "retries": 0, "retry_sleep_s": 0.0, "gave_up": 0}
+_COUNTERS = {"calls": 0, "pace_sleep_s": 0.0, "retries": 0, "retry_sleep_s": 0.0, "gave_up": 0,
+            "bypass_requests": 0, "bypass_aiohttp": 0}
 _CALL_MS: list = []
 
 
@@ -400,14 +401,46 @@ async def _paced_httpx_async_send(self, request, **kwargs):
         return marker.response
 
 
+# ── tripwire: requests / aiohttp - COUNT-ONLY, never paced or retried ──────────────────
+#
+# R1 (the auditor's review): "symmetry becomes a property of every RUN", not just this
+# one-off probe (research/_ollama_symmetry_probe.py). `requests` and `aiohttp` are NOT
+# safe to pace/retry the way urllib and httpx are here - a `requests.PreparedRequest`'s
+# body may already be a consumed stream, and re-sending it silently would not be the same
+# request a second time, unlike the urllib/httpx paths where the caller's own object is
+# reused verbatim (T2). So neither is retried; both are only COUNTED when the destination
+# is the Ollama host, and `attach()` marks the arm's record `"valid": False` if either
+# count is nonzero - a stand that reaches Ollama through one of these bypassed the pacer
+# entirely, and a paced-looking number that never was is worse than an honest refusal.
+
+def _paced_requests_send(self, request, **kwargs):
+    orig = _ORIG["requests_send"]
+    host, port = _host_port(str(getattr(request, "url", "") or ""))
+    if is_ollama_host(host, port):
+        with _LOCK:
+            _COUNTERS["bypass_requests"] += 1
+    return orig(self, request, **kwargs)
+
+
+async def _paced_aiohttp_request(self, method, str_or_url, **kwargs):
+    orig = _ORIG["aiohttp_request"]
+    host, port = _host_port(str(str_or_url))
+    if is_ollama_host(host, port):
+        with _LOCK:
+            _COUNTERS["bypass_aiohttp"] += 1
+    return await orig(self, method, str_or_url, **kwargs)
+
+
 # ── install / uninstall (idempotent) ─────────────────────────────────────────────────
 
 def install() -> None:
     """Patch `urllib.request.urlopen` and, when importable, `httpx.Client.send` /
-    `httpx.AsyncClient.send`. A second call while already installed is a no-op - it does
-    NOT re-capture `_ORIG` (which would point the "original" at THIS module's own
-    wrapper) and does NOT reset counters (a stand may call `install()` defensively more
-    than once in one process)."""
+    `httpx.AsyncClient.send` (paced and retried), plus `requests.Session.send` /
+    `aiohttp.ClientSession._request` (the tripwire - counted only, never paced or
+    retried). A second call while already installed is a no-op - it does NOT re-capture
+    `_ORIG` (which would point the "original" at THIS module's own wrapper) and does NOT
+    reset counters (a stand may call `install()` defensively more than once in one
+    process)."""
     global _INSTALLED
     with _LOCK:
         if _INSTALLED:
@@ -423,6 +456,20 @@ def install() -> None:
             _ORIG["httpx_async_send"] = httpx.AsyncClient.send
             httpx.Client.send = _paced_httpx_send
             httpx.AsyncClient.send = _paced_httpx_async_send
+        try:
+            import requests
+        except ImportError:
+            requests = None
+        if requests is not None:
+            _ORIG["requests_send"] = requests.Session.send
+            requests.Session.send = _paced_requests_send
+        try:
+            import aiohttp
+        except ImportError:
+            aiohttp = None
+        if aiohttp is not None:
+            _ORIG["aiohttp_request"] = aiohttp.ClientSession._request
+            aiohttp.ClientSession._request = _paced_aiohttp_request
         _INSTALLED = True
 
 
@@ -437,6 +484,12 @@ def uninstall() -> None:
             import httpx  # noqa: PLC0415 - only present if install() found it importable
             httpx.Client.send = _ORIG.pop("httpx_send")
             httpx.AsyncClient.send = _ORIG.pop("httpx_async_send")
+        if "requests_send" in _ORIG:
+            import requests  # noqa: PLC0415
+            requests.Session.send = _ORIG.pop("requests_send")
+        if "aiohttp_request" in _ORIG:
+            import aiohttp  # noqa: PLC0415
+            aiohttp.ClientSession._request = _ORIG.pop("aiohttp_request")
         _INSTALLED = False
 
 
@@ -454,20 +507,34 @@ def snapshot() -> dict:
     with _LOCK:
         return {"calls": _COUNTERS["calls"], "pace_sleep_s": _COUNTERS["pace_sleep_s"],
                 "retries": _COUNTERS["retries"], "retry_sleep_s": _COUNTERS["retry_sleep_s"],
-                "gave_up": _COUNTERS["gave_up"], "_call_ms_len": len(_CALL_MS)}
+                "gave_up": _COUNTERS["gave_up"],
+                "bypass_requests": _COUNTERS["bypass_requests"],
+                "bypass_aiohttp": _COUNTERS["bypass_aiohttp"],
+                "_call_ms_len": len(_CALL_MS)}
 
 
 def attach(out: dict, *, since: dict | None = None) -> None:
     """Write `out["ollama_transport"]` with this process's counters (or, with `since`, the
-    DELTA against an earlier `snapshot()`). Writes NOTHING when the span covers zero calls
-    - `install()` with no traffic (an LLM-only arm, `--dry`, a run that never reached this
-    module) must not claim a transport it never used, and a reader can treat the KEY's
-    presence as proof traffic passed through here at all."""
+    DELTA against an earlier `snapshot()`). Writes NOTHING when the span covers zero paced
+    calls AND zero tripwire hits - `install()` with no traffic (an LLM-only arm, `--dry`,
+    a run that never reached this module) must not claim a transport it never used, and a
+    reader can treat the KEY's presence as proof traffic passed through here at all.
+
+    When the tripwire counted anything (`bypass_requests`/`bypass_aiohttp` > 0 - a stand
+    reached Ollama through `requests` or `aiohttp`, which this module counts but never
+    paces or retries), `out["valid"]` is set to `False` and `out["invalid_reason"]` names
+    which client(s) bypassed it - even if `calls` itself is zero, i.e. even a run that
+    bypassed the pacer ENTIRELY is flagged, never silently left unmarked because "nothing
+    went through the paced path". `out["valid"]` is never set to `True` here: a clean run
+    says nothing, so a stand's own, unrelated validity semantics are never overwritten."""
     base = since or {"calls": 0, "pace_sleep_s": 0.0, "retries": 0, "retry_sleep_s": 0.0,
-                     "gave_up": 0, "_call_ms_len": 0}
+                     "gave_up": 0, "bypass_requests": 0, "bypass_aiohttp": 0,
+                     "_call_ms_len": 0}
     with _LOCK:
         calls = _COUNTERS["calls"] - base["calls"]
-        if calls <= 0:
+        bypass_requests = _COUNTERS["bypass_requests"] - base.get("bypass_requests", 0)
+        bypass_aiohttp = _COUNTERS["bypass_aiohttp"] - base.get("bypass_aiohttp", 0)
+        if calls <= 0 and bypass_requests <= 0 and bypass_aiohttp <= 0:
             return
         pace_sleep_s = _COUNTERS["pace_sleep_s"] - base["pace_sleep_s"]
         retries = _COUNTERS["retries"] - base["retries"]
@@ -480,7 +547,16 @@ def attach(out: dict, *, since: dict | None = None) -> None:
         "call_ms": _percentiles(samples),
         "timing_includes_pacing": True,
         "pace_floor_s": round(calls * PACE_S, 3),
+        "bypass_calls": {"requests": bypass_requests, "aiohttp": bypass_aiohttp},
     }
+    if bypass_requests > 0 or bypass_aiohttp > 0:
+        culprits = [name for name, n in
+                   (("requests", bypass_requests), ("aiohttp", bypass_aiohttp)) if n > 0]
+        out["valid"] = False
+        out["invalid_reason"] = (
+            f"bypassed the pacer via {' and '.join(culprits)}: "
+            f"{bypass_requests + bypass_aiohttp} request(s) reached the Ollama host "
+            f"directly - unpaced, unretried, uncounted by the paced transports")
 
 
 def _reset_for_tests() -> None:

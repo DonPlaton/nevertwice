@@ -58,7 +58,15 @@ research = ["networkx>=3", "numpy>=1.26", "scipy>=1.11", "statsmodels>=0.14",
             # exercises that path through `httpx.MockTransport`; without this extra it
             # degrades to a printed note rather than a hard failure (the suite's own guard),
             # but CI's research job installs it so T7 actually runs somewhere.
-            "httpx>=0.27"]  # local checks, wheel
+            "httpx>=0.27",
+            # R1 tripwire (2026-09-24, the auditor's review): the pacer also COUNTS (never
+            # paces or retries) `requests.Session.send` calls to the Ollama host, so a
+            # stand that bypasses the paced urllib/httpx transports through `requests` is
+            # flagged rather than silently unmeasured. `requests` is declared here so CI's
+            # research job actually exercises that tripwire test; `aiohttp` is NOT declared
+            # (heavier, and the tripwire test degrades to a printed note without it, the
+            # same guard T7 already uses for httpx).
+            "requests>=2.31"]  # local checks, wheel
 # hypothesis is used by tests/_test_properties.py when present and never required: the
 # core CI matrix installs nothing, so every property there also has a deterministic
 # corpus. A suite that only runs for people who installed an extra stops running.

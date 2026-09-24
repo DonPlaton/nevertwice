@@ -128,6 +128,18 @@ def _isolated():
     except ImportError:
         _httpx = None
         saved_httpx_send = saved_httpx_async_send = None
+    try:
+        import requests as _requests
+        saved_requests_send = _requests.Session.send
+    except ImportError:
+        _requests = None
+        saved_requests_send = None
+    try:
+        import aiohttp as _aiohttp
+        saved_aiohttp_request = _aiohttp.ClientSession._request
+    except ImportError:
+        _aiohttp = None
+        saved_aiohttp_request = None
     pacer._reset_for_tests()
     try:
         yield
@@ -139,7 +151,7 @@ def _isolated():
         # as "the original" for the duration of the test. Peeked from `_ORIG` here, right
         # before `uninstall()` pops it, so the check verifies uninstall()'s own fidelity
         # to what install() saved - independent of what any given test's pre-install
-        # stub happened to be. `saved_urlopen`/`saved_httpx_send` (captured at entry,
+        # stub happened to be. `saved_urlopen`/`saved_httpx_send`/etc (captured at entry,
         # before the test touched anything) are still what this function forcibly
         # restores to afterward, for full isolation regardless of whether uninstall()
         # itself is the one under test right now.
@@ -147,6 +159,8 @@ def _isolated():
         pre_orig_urlopen = pacer._ORIG.get("urlopen")
         pre_orig_httpx_send = pacer._ORIG.get("httpx_send")
         pre_orig_httpx_async_send = pacer._ORIG.get("httpx_async_send")
+        pre_orig_requests_send = pacer._ORIG.get("requests_send")
+        pre_orig_aiohttp_request = pacer._ORIG.get("aiohttp_request")
         pacer.uninstall()
         if was_installed:
             urlopen_ok = urllib.request.urlopen is pre_orig_urlopen
@@ -158,13 +172,25 @@ def _isolated():
                 detail += (f", Client.send restored={_httpx.Client.send is pre_orig_httpx_send}, "
                           f"AsyncClient.send restored="
                           f"{_httpx.AsyncClient.send is pre_orig_httpx_async_send}")
+            requests_ok = True
+            if _requests is not None and pre_orig_requests_send is not None:
+                requests_ok = _requests.Session.send is pre_orig_requests_send
+                detail += f", requests.Session.send restored={requests_ok}"
+            aiohttp_ok = True
+            if _aiohttp is not None and pre_orig_aiohttp_request is not None:
+                aiohttp_ok = _aiohttp.ClientSession._request is pre_orig_aiohttp_request
+                detail += f", aiohttp.ClientSession._request restored={aiohttp_ok}"
             check("uninstall restores urllib.request.urlopen, httpx.Client.send, "
                   "httpx.AsyncClient.send (identity against the saved originals)",
-                  urlopen_ok and httpx_ok, detail)
+                  urlopen_ok and httpx_ok and requests_ok and aiohttp_ok, detail)
         urllib.request.urlopen = saved_urlopen
         if _httpx is not None:
             _httpx.Client.send = saved_httpx_send
             _httpx.AsyncClient.send = saved_httpx_async_send
+        if _requests is not None:
+            _requests.Session.send = saved_requests_send
+        if _aiohttp is not None:
+            _aiohttp.ClientSession._request = saved_aiohttp_request
         pacer._now, pacer._sleep, pacer._async_sleep = saved_now, saved_sleep, saved_async_sleep
         pacer._reset_for_tests()
 
@@ -668,6 +694,146 @@ def test_t8_attach_writes_the_key_only_when_something_ran_through_it() -> None:
               "ollama_transport" not in out5, str(out5))
 
 
+# ── TW1/TW2: the tripwire - requests/aiohttp are COUNTED, never paced or retried ────────
+#
+# R1 (the auditor's review of 717f482, after the empirical arm-symmetry probe found no
+# bypass among the httpx/urllib-based stacks): "symmetry becomes a property of every
+# run". `requests` and `aiohttp` are declared dependencies of neither `dev` nor (aiohttp)
+# `research` - `requests` WAS added to the `research` extra alongside this commit
+# specifically so CI's research job exercises TW1 for real; `aiohttp` was not (heavier),
+# so TW2 degrades to a printed note there, the same guard T7 already uses for httpx.
+
+def test_tw1_requests_session_send_is_counted_not_paced_and_marks_invalid() -> None:
+    print("\n- TW1: requests.Session.send to the Ollama host is COUNTED (never paced or "
+          "retried); a non-Ollama host is not counted; the arm's record is marked invalid -")
+    try:
+        import requests
+    except ImportError:
+        check("requests importable (declared in the `research` extra) - this "
+              "environment lacks it; every other TW1 assertion is skipped, not failed",
+              True, "install the `research` extra to exercise TW1")
+        return
+    with _isolated():
+        class _FakeResp:
+            status_code = 200
+
+        def fake_send(self, request, **kwargs):
+            return _FakeResp()
+        saved_requests_send = requests.Session.send
+        requests.Session.send = fake_send
+        try:
+            pacer.install()
+            with _crash_guard("an Ollama-host requests.Session.send is counted as a "
+                              "bypass, not raised through"):
+                session = requests.Session()
+                ollama_req = requests.Request(
+                    "GET", "http://127.0.0.1:11434/api/tags").prepare()
+                resp = session.send(ollama_req)
+                check("the fake response still comes back untouched (count-only, never "
+                      "intercepted or blocked)", resp.status_code == 200)
+                out: dict = {}
+                pacer.attach(out)
+                ot = out.get("ollama_transport", {})
+                check("bypass_calls.requests == 1 for the Ollama-host request",
+                      ot.get("bypass_calls", {}).get("requests") == 1, str(ot))
+                check("the arm's record is marked invalid, naming 'requests'",
+                      out.get("valid") is False and "requests" in out.get(
+                          "invalid_reason", ""), str(out))
+                check("calls (the PACED count) stays 0 - requests is counted, never paced",
+                      ot.get("calls") == 0, str(ot))
+
+            with _crash_guard("a non-Ollama-host requests.Session.send is NOT counted"):
+                other_req = requests.Request("GET", "http://example.com/").prepare()
+                session.send(other_req)
+                out2: dict = {}
+                pacer.attach(out2)
+                check("a non-Ollama-host request does not bump bypass_calls.requests "
+                      "(still 1, from the Ollama-host call above only)",
+                      out2.get("ollama_transport", {}).get("bypass_calls", {})
+                      .get("requests") == 1, str(out2))
+        finally:
+            requests.Session.send = saved_requests_send
+            pacer.uninstall()          # end the normal-behaviour section cleanly
+
+        # mutation: "remove the tripwire" - install() that never patches requests at all.
+        # A FRESH snapshot is taken right after the uninstall above, so this section's
+        # delta cannot be inflated by the requests already counted in the block above.
+        def _install_without_tripwire():
+            with pacer._LOCK:
+                if pacer._INSTALLED:
+                    return
+                pacer._ORIG["urlopen"] = urllib.request.urlopen
+                urllib.request.urlopen = pacer._paced_urlopen
+                pacer._INSTALLED = True
+        requests.Session.send = fake_send
+        try:
+            with _crash_guard("mutation 'remove the tripwire': the SAME Ollama-host "
+                              "request is now WRONGLY not counted (would FAIL the "
+                              "bypass_calls check above)"):
+                snap = pacer.snapshot()
+                _install_without_tripwire()
+                session2 = requests.Session()
+                ollama_req2 = requests.Request(
+                    "GET", "http://127.0.0.1:11434/api/tags").prepare()
+                session2.send(ollama_req2)
+                out3: dict = {}
+                pacer.attach(out3, since=snap)
+                check("mutation 'remove the tripwire': the SAME Ollama-host request is "
+                      "now WRONGLY not counted (would FAIL the bypass_calls check above)",
+                      out3.get("ollama_transport", {}).get("bypass_calls", {})
+                      .get("requests", 0) == 0, str(out3))
+        finally:
+            requests.Session.send = saved_requests_send
+
+
+def test_tw2_aiohttp_client_session_request_is_counted_not_paced() -> None:
+    print("\n- TW2: aiohttp.ClientSession._request to the Ollama host is COUNTED (never "
+          "paced or retried) -")
+    try:
+        import aiohttp
+    except ImportError:
+        check("aiohttp importable - this environment lacks it (not a declared "
+              "dependency); every other TW2 assertion is skipped, not failed", True,
+              "aiohttp is not in the `research` extra - install it manually to "
+              "exercise TW2")
+        return
+    with _isolated():
+        class _FakeAResp:
+            status = 200
+
+        async def fake_request(self, method, str_or_url, **kwargs):
+            return _FakeAResp()
+        saved_aiohttp_request = aiohttp.ClientSession._request
+        aiohttp.ClientSession._request = fake_request
+        try:
+            pacer.install()
+
+            async def _drive():
+                async with aiohttp.ClientSession() as session:
+                    r = await session._request("GET", "http://127.0.0.1:11434/api/tags")
+                    await session._request("GET", "http://example.com/")
+                    return r
+            with _crash_guard("an Ollama-host aiohttp request is counted as a bypass",
+                              "a non-Ollama-host aiohttp request is NOT counted",
+                              "calls (the PACED count) stays 0 for aiohttp too"):
+                r = asyncio.run(_drive())
+                check("the fake response still comes back untouched", r.status == 200)
+                out: dict = {}
+                pacer.attach(out)
+                ot = out.get("ollama_transport", {})
+                check("an Ollama-host aiohttp request is counted as a bypass",
+                      ot.get("bypass_calls", {}).get("aiohttp") == 1, str(ot))
+                check("a non-Ollama-host aiohttp request is NOT counted (still 1)",
+                      ot.get("bypass_calls", {}).get("aiohttp") == 1, str(ot))
+                check("calls (the PACED count) stays 0 for aiohttp too",
+                      ot.get("calls") == 0, str(ot))
+                check("the arm's record is marked invalid, naming 'aiohttp'",
+                      out.get("valid") is False and "aiohttp" in out.get(
+                          "invalid_reason", ""), str(out))
+        finally:
+            aiohttp.ClientSession._request = saved_aiohttp_request
+
+
 def test_zz_every_check_passed() -> None:
     """Bare pytest must reach the same verdict as this suite's exit code.
 
@@ -686,7 +852,9 @@ def main() -> int:
                test_t5_pacing_enforces_the_floor_gap_and_call_ms_excludes_sleep,
                test_t6_engine_embed_text_transparently_survives_two_port_failures,
                test_t7_httpx_client_and_asyncclient_are_paced_through_mocktransport,
-               test_t8_attach_writes_the_key_only_when_something_ran_through_it):
+               test_t8_attach_writes_the_key_only_when_something_ran_through_it,
+               test_tw1_requests_session_send_is_counted_not_paced_and_marks_invalid,
+               test_tw2_aiohttp_client_session_request_is_counted_not_paced):
         fn()
     print(f"\nollama_pacer: {PASSED} passed, {FAILED} failed")
     return 1 if FAILED else 0
