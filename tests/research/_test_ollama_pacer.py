@@ -1070,6 +1070,135 @@ def test_f1b_httpx_embed_failure_marks_the_run_invalid() -> None:
               pacer._record_embed_failure is saved_record)
 
 
+def test_f1c_httpx_non2xx_response_without_raising_marks_the_run_invalid() -> None:
+    print("\n- F1c/F1b-gap (the auditor's reproduction, .loop/HANDOFF-PORTS.md): httpx "
+          "does NOT raise on a non-2xx response by itself - a fake Ollama answering 500 "
+          "on /api/embed WITHOUT raising (the shape ollama-python's Client.embed sees "
+          "before it calls raise_for_status() on its OWN, outside this module) must "
+          "still be tallied -")
+    try:
+        import httpx
+    except ImportError:
+        check("httpx importable (research extra) - this environment lacks it; every "
+              "other F1c assertion is skipped, not failed", True,
+              "install the `research` extra to exercise F1c's httpx path")
+        return
+    with _isolated():
+        pacer.install()
+
+        def handler_500(request):
+            return httpx.Response(500, json={"error": "model busy"})
+        with _crash_guard("F1c: run marked invalid (by_status, a 500 that was never "
+                          "raised)",
+                          "by_status tallies the 500 for /api/embed even though httpx "
+                          "returned it as a normal response"):
+            client = httpx.Client(transport=httpx.MockTransport(handler_500),
+                                  base_url="http://127.0.0.1:11434")
+            resp = client.post("/api/embed", json={"model": "x", "input": "y"})
+            client.close()
+            check("httpx itself never raised - the response came back normally",
+                  resp.status_code == 500)
+            out: dict = {}
+            pacer.attach(out)
+            ot = out.get("ollama_transport", {})
+            check("by_status tallies the 500 for /api/embed even though httpx returned "
+                  "it as a normal response",
+                  ot.get("failed_outcomes", {}).get("by_status") == {500: 1}, str(ot))
+            check("F1c: run marked invalid (by_status, a 500 that was never raised)",
+                  out.get("valid") is False and "embed" in out.get("invalid_reason", ""),
+                  str(out))
+
+        # (в): the LEGACY /api/embeddings endpoint tallies the same way - _is_embed_path
+        # must recognise it too, not just the current /api/embed.
+        pacer._reset_for_tests()
+        with _crash_guard("(в): by_status tallies the 500 for the LEGACY /api/embeddings "
+                          "endpoint too"):
+            client_legacy = httpx.Client(transport=httpx.MockTransport(handler_500),
+                                         base_url="http://127.0.0.1:11434")
+            client_legacy.post("/api/embeddings", json={"model": "x", "prompt": "y"})
+            client_legacy.close()
+            out_legacy: dict = {}
+            pacer.attach(out_legacy)
+            check("(в): by_status tallies the 500 for the LEGACY /api/embeddings "
+                  "endpoint too",
+                  out_legacy.get("ollama_transport", {}).get("failed_outcomes", {})
+                  .get("by_status") == {500: 1}, str(out_legacy))
+
+        # async counterpart: _paced_httpx_async_send got the identical fix
+        pacer._reset_for_tests()
+
+        async def _run_async():
+            aclient = httpx.AsyncClient(transport=httpx.MockTransport(handler_500),
+                                        base_url="http://127.0.0.1:11434")
+            r = await aclient.post("/api/embed", json={"model": "x", "input": "y"})
+            await aclient.aclose()
+            return r
+        with _crash_guard("F1c async: by_status tallies the 500 for /api/embed via "
+                          "AsyncClient too"):
+            aresp = asyncio.run(_run_async())
+            check("async response also came back normally (no raise)",
+                  aresp.status_code == 500)
+            out_async: dict = {}
+            pacer.attach(out_async)
+            check("F1c async: by_status tallies the 500 for /api/embed via AsyncClient "
+                  "too",
+                  out_async.get("ollama_transport", {}).get("failed_outcomes", {})
+                  .get("by_status") == {500: 1}, str(out_async))
+
+        # a genuine port-exhaustion 400 is NOT double-counted by this new check (already
+        # routed through the retry loop / gave_up path - T7/F1a own that accounting)
+        pacer._reset_for_tests()
+        port_calls = {"n": 0}
+
+        def handler_port(request):
+            port_calls["n"] += 1
+            return httpx.Response(400, text=pacer.SOCKET_ADDR_MSG)
+        with _crash_guard("a port-exhaustion 400 is retried, not tallied as a failed "
+                          "outcome (no double count with the existing gave_up path)"):
+            saved_retries, saved_sleep = pacer.MAX_RETRIES, pacer._sleep
+            pacer.MAX_RETRIES = 1
+            pacer._sleep = lambda s: None
+            try:
+                client_port = httpx.Client(transport=httpx.MockTransport(handler_port),
+                                           base_url="http://127.0.0.1:11434")
+                resp_port = client_port.post("/api/embed", json={"model": "x", "input": "y"})
+                client_port.close()
+            finally:
+                pacer.MAX_RETRIES, pacer._sleep = saved_retries, saved_sleep
+            check("the port-exhaustion 400 is handed back as-is after retries exhaust",
+                  resp_port.status_code == 400 and port_calls["n"] == 2, str(port_calls))
+            out_port: dict = {}
+            pacer.attach(out_port)
+            fo_port = out_port.get("ollama_transport", {}).get("failed_outcomes", {})
+            check("no double count: by_status carries no 400 entry (this is the "
+                  "existing gave_up/retry accounting, not F1b's)",
+                  not fo_port.get("by_status"), str(out_port))
+
+        # mutation: F1b removed - _maybe_record_embed_response_failure replaced with a no-op
+        pacer._reset_for_tests()
+        saved_maybe = pacer._maybe_record_embed_response_failure
+        pacer._maybe_record_embed_response_failure = lambda response, *, is_embed: None
+        try:
+            with _crash_guard("mutation 'F1b removed': the SAME 500-without-raising on "
+                              "/api/embed is now WRONGLY never tallied - run stays "
+                              "valid (would FAIL the F1c 'run marked invalid' check "
+                              "above)"):
+                client3 = httpx.Client(transport=httpx.MockTransport(handler_500),
+                                       base_url="http://127.0.0.1:11434")
+                client3.post("/api/embed", json={"model": "x", "input": "y"})
+                client3.close()
+                out3: dict = {}
+                pacer.attach(out3)
+                check("mutation 'F1b removed': the SAME 500-without-raising on /api/embed "
+                      "is now WRONGLY never tallied - run stays valid (would FAIL the "
+                      "F1c 'run marked invalid' check above)",
+                      "valid" not in out3, str(out3))
+        finally:
+            pacer._maybe_record_embed_response_failure = saved_maybe
+        check("_maybe_record_embed_response_failure is restored to the real function",
+              pacer._maybe_record_embed_response_failure is saved_maybe)
+
+
 # ── TW1/TW2: the tripwire - requests/aiohttp are COUNTED, never paced or retried ────────
 #
 # R1 (the auditor's review of 717f482, after the empirical arm-symmetry probe found no
@@ -1325,6 +1454,7 @@ def main() -> int:
                test_t8d_max_concurrent_paced_covers_the_whole_paced_operation,
                test_f1a_urlopen_embed_failure_marks_the_run_invalid,
                test_f1b_httpx_embed_failure_marks_the_run_invalid,
+               test_f1c_httpx_non2xx_response_without_raising_marks_the_run_invalid,
                test_tw1_requests_session_send_is_counted_not_paced_and_marks_invalid,
                test_tw2_aiohttp_client_session_request_is_counted_not_paced,
                test_tw3_nested_aiohttp_inside_a_paced_httpx_call_is_not_a_bypass):

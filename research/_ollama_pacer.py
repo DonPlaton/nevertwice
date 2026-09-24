@@ -214,19 +214,27 @@ def is_ollama_host(host: str, port: int) -> bool:
     return ((host or "").lower(), port) in _ollama_hosts()
 
 
+#: (в) (the coordinator's reproduction, .loop/HANDOFF-PORTS.md): `/api/embed` is Ollama's
+#: current endpoint; `/api/embeddings` is its LEGACY one, still what `ollama-python`'s
+#: `Client.embed` falls back to internally on an older server (`_client.py:442`) - both
+#: route through this module's is_embed accounting, or a failure on the legacy path is as
+#: invisible to F1/F1b as it was before either existed.
+_EMBED_PATHS = ("/api/embed", "/api/embeddings")
+
+
 def _is_embed_path(url: str) -> bool:
-    """True iff `url`'s path names an embedding endpoint. F1 (.loop/PREREG-V2-2026-09-24.md,
-    P0(a)): `nevertwice/_engine_store.py`'s `_embed_http` returns None on ANY failure and
-    the caller falls back to lexical recall, silently - the one failure class this module
-    could see (it sits below every caller) but never counted. `/api/embed` is Ollama's own
-    endpoint - the only one this module's host-scoped traffic (F2: the local Ollama host
-    only) can ever carry - matched loosely (a trailing slash, a query string) rather than
-    an exact string compare."""
+    """True iff `url`'s path names an embedding endpoint (current or legacy - see
+    `_EMBED_PATHS`). F1 (.loop/PREREG-V2-2026-09-24.md, P0(a)): `nevertwice/_engine_store.py`'s
+    `_embed_http` returns None on ANY failure and the caller falls back to lexical recall,
+    silently - the one failure class this module could see (it sits below every caller)
+    but never counted. Matched loosely (a trailing slash, a query string) rather than an
+    exact string compare."""
     try:
         path = urllib.parse.urlsplit(url).path
     except Exception:                                                # noqa: BLE001
         return False
-    return path.rstrip("/").endswith("/api/embed")
+    path = path.rstrip("/")
+    return any(path.endswith(p) for p in _EMBED_PATHS)
 
 
 # ── classification: the one signature this module ever retries ─────────────────────────
@@ -312,16 +320,19 @@ def classify(obj, *, is_ollama_host: bool) -> bool:
     return _is_port_exhaustion_text(_body_of(obj))
 
 
-def _record_embed_failure(exc: BaseException) -> None:
+def _record_embed_failure(exc) -> None:
     """F1: a genuine failure on an EMBED endpoint - never classified as port-exhaustion
     (so never retried), or retried and given up on (see the `is_embed` branch in
-    `_run_paced`/`_run_paced_async`, which is the only caller). `by_status`: the
-    exception carries an HTTP status - `urllib.error.HTTPError`'s `.code`, an
-    `ollama.ResponseError`-shaped `.status_code`, or an `httpx.HTTPStatusError`'s
-    `.response.status_code` - the server answered, just badly. `by_exception_type`: no
-    status anywhere - a pure transport failure (a timeout, a refused connection) that
-    never got a response to read a status from. The two are mutually exclusive per call:
-    a status, when found, is trusted over the exception's own class name."""
+    `_run_paced`/`_run_paced_async`, one caller; `_maybe_record_embed_response_failure`,
+    F1b, is the other). `by_status`: the exception (or, since F1b, a bare `httpx.Response`
+    that was never raised at all - it has no `.code`, only `.status_code`) carries an HTTP
+    status - `urllib.error.HTTPError`'s `.code`, an `ollama.ResponseError`-shaped
+    `.status_code`, or an `httpx.HTTPStatusError`'s `.response.status_code` - the server
+    answered, just badly. `by_exception_type`: no status anywhere - a pure transport
+    failure (a timeout, a refused connection) that never got a response to read a status
+    from. The two are mutually exclusive per call: a status, when found, is trusted over
+    the exception's own class name. `exc` is typed loosely on purpose - it is duck-typed
+    across four different shapes, not one exception hierarchy."""
     status = getattr(exc, "code", None)
     if status is None:
         status = getattr(exc, "status_code", None)
@@ -555,6 +566,31 @@ def _classify_httpx_response(response, *, stream: bool) -> bool:
     return classify(response, is_ollama_host=True)
 
 
+def _maybe_record_embed_response_failure(response, *, is_embed: bool) -> None:
+    """F1b (.loop/HANDOFF-PORTS.md, the auditor's reproduction against a fake Ollama
+    answering 500 on /api/embed): httpx does NOT raise on a non-2xx response by itself -
+    `Client.send`/`AsyncClient.send` hand the caller a `Response` with `.status_code` set
+    and it is up to the caller to read it. `ollama-python`'s `Client.embed` DOES call
+    `response.raise_for_status()`, but only AFTER `Client.send` has already RETURNED -
+    outside `_run_paced`'s own try/except, the only place `_record_embed_failure` was
+    ever called from before this. A 500 (or a non-port-exhaustion 400 - wrong shape,
+    wrong body) was therefore recorded as a plain SUCCESSFUL call: `failed_outcomes`
+    stayed empty and `valid` stayed unset, exactly the silent-lexical-fallback P0(a)
+    exists to catch.
+
+    Called from `_attempt()` in `_paced_httpx_send`/`_paced_httpx_async_send`, AFTER
+    `_classify_httpx_response` has already had its chance to route the SAME response
+    through the retry loop as `_PortExhaustionResponse` - that path raises before
+    reaching this call, so a port-exhaustion 400 is never double-counted here (it is
+    counted as a retry, and on `gave_up`, by the exception path in `_run_paced`
+    instead). Reads only `.status_code`, never `.text`/`.read()`, so this is safe to call
+    on a STREAMED response too - R3's stream exclusion in `_classify_httpx_response` is
+    about not consuming a lazy BODY, and a status line is already on the wire regardless
+    of streaming."""
+    if is_embed and response.status_code >= 400:
+        _record_embed_failure(response)
+
+
 def _paced_httpx_send(self, request, **kwargs):
     import httpx  # noqa: PLC0415 - only reachable when httpx installed this got patched
     host, port = (request.url.host or "").lower(), (
@@ -569,6 +605,7 @@ def _paced_httpx_send(self, request, **kwargs):
         response = _mark_paced(lambda: orig(self, request, **kwargs))
         if _classify_httpx_response(response, stream=stream):
             raise _PortExhaustionResponse(response)
+        _maybe_record_embed_response_failure(response, is_embed=is_embed)  # F1b
         return response
     try:
         return _run_paced(_attempt, host_key=(host, port), is_embed=is_embed)
@@ -591,6 +628,7 @@ async def _paced_httpx_async_send(self, request, **kwargs):
         response = await _mark_paced_async(lambda: orig(self, request, **kwargs))
         if _classify_httpx_response(response, stream=stream):
             raise _PortExhaustionResponse(response)
+        _maybe_record_embed_response_failure(response, is_embed=is_embed)  # F1b
         return response
     try:
         return await _run_paced_async(_attempt, host_key=(host, port), is_embed=is_embed)
