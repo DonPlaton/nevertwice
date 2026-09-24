@@ -354,7 +354,7 @@ with _isolated_pacer():
 
 print("\n- item 9A/K25 mutation: root propagation removed -")
 saved_propagate = ab._propagate_root_invalidity
-ab._propagate_root_invalidity = lambda out: None
+ab._propagate_root_invalidity = lambda out, extra_reasons=None: None
 with _isolated_pacer():
     urllib.request.urlopen = _fake_urlopen_embeds_ok
     with tempfile.TemporaryDirectory() as td2:
@@ -379,6 +379,202 @@ with _isolated_pacer():
 ab._propagate_root_invalidity = saved_propagate
 check("ab._propagate_root_invalidity is restored to the real function",
       ab._propagate_root_invalidity is saved_propagate)
+
+print("\n- K29 (the auditor, item 9C): a BLOCKED constituent is no longer dropped silently -")
+
+
+def _blocked(reason="FalkorDB down"):
+    return {"blocked": reason}
+
+
+def _live(rate=1.0):
+    return {"rows": [{"id": "z", "shape": "value_replaced", "both_correct": True,
+                     "old_day_correct": True, "new_day_correct": True}],
+           "n_cases": 1, "both_correct_rate": rate, "both_correct_ci": [0.0, 1.0],
+           "old_day_rate": rate, "new_day_rate": rate, "errors": 0, "seconds": 1.0,
+           "config": "zep test"}
+
+
+print("\n- merge_arm(): every constituent blocked -> the arm stays PRESENT as blocked, not "
+      "silently absent (P3: 'blocked (reason)', never absent) -")
+merged_all_blocked = ab.merge_arm([_blocked("FalkorDB down")], ["a.json"])
+check("merge_arm() returns a blocked-shaped dict, not results[0] bare",
+      merged_all_blocked == {"blocked": "FalkorDB down (a.json)"}, str(merged_all_blocked))
+
+print("\n- merge_arm(): one live + one blocked -> the live one is still pooled, but the "
+      "merged arm is marked invalid, naming the file and the block reason -")
+merged_mixed = ab.merge_arm([_live(1.0), _blocked("timeout")], ["live.json", "bad.json"])
+check("merge_arm() mixed: the arm is marked invalid", merged_mixed.get("valid") is False,
+      str(merged_mixed))
+check("merge_arm() mixed: the reason names the file and the block reason",
+      "bad.json" in (merged_mixed.get("invalid_reason") or "")
+      and "timeout" in (merged_mixed.get("invalid_reason") or ""),
+      str(merged_mixed.get("invalid_reason")))
+check("merge_arm() mixed: the live constituent's own rate is still published (not thrown "
+      "away just because a sibling was blocked)",
+      merged_mixed.get("both_correct_rate") == 1.0 and merged_mixed.get("runs") == 1,
+      str(merged_mixed))
+
+print("\n- merge_arm(): a single LIVE result always writes 'runs' (used to return live[0] "
+      "bare, no 'runs' key) -")
+single_live = _live(0.75)
+check("setup: the raw fixture itself carries no 'runs' key", "runs" not in single_live)
+merged_single = ab.merge_arm([single_live])
+check("merge_arm() on a single live result sets runs=1",
+      merged_single.get("runs") == 1 and merged_single.get("both_correct_rate") == 0.75,
+      str(merged_single))
+
+print("\n- K29 mutation 'the merged arm not ALWAYS writing runs': reverted to bare live[0] -")
+
+
+def _merge_arm_no_runs_key(results, files=None):
+    live = [r for r in results if not r.get("blocked")]
+    if not live:
+        return results[0]
+    if len(live) == 1:
+        return live[0]                     # mutation: no runs key set
+    return ab.merge_arm(results, files)
+
+
+mutated_single = _merge_arm_no_runs_key([_live(0.75)])
+check("mutation 'runs not always written': 'runs' is now WRONGLY absent (would FAIL the "
+      "single-live 'runs=1' check above)", "runs" not in mutated_single, str(mutated_single))
+
+print("\n- K29 mutation 'every constituent blocked -> dropped instead of kept as blocked' -")
+
+
+def _merge_arm_drop_all_blocked(results, files=None):
+    live = [r for r in results if not r.get("blocked")]
+    if not live:
+        return None                        # mutation: nothing to merge into - caller drops it
+    return ab.merge_arm(results, files)
+
+
+mutated_all_blocked = _merge_arm_drop_all_blocked([_blocked("FalkorDB down")], ["a.json"])
+check("mutation 'all-blocked dropped': merge_arm now WRONGLY returns None instead of a "
+      "present {'blocked': ...} arm (would FAIL the 'stays PRESENT as blocked' check above)",
+      mutated_all_blocked is None, str(mutated_all_blocked))
+
+print("\n- K29 mutation 'a mixed blocked constituent not checked': the blocked sibling is "
+      "silently ignored, the pool stays wrongly valid -")
+
+
+def _merge_arm_ignore_blocked_in_mix(results, files=None):
+    live = [r for r in results if not r.get("blocked")]
+    if not live:
+        return results[0]
+    if len(results) == 1:
+        out = dict(results[0]); out.setdefault("runs", 1)
+        return out
+    rows = [dict(r, run=i) for i, res in enumerate(live) for r in res["rows"]]
+    out = {"rows": rows, **ab.score(rows), "runs": len(live),
+          "per_run": [res["both_correct_rate"] for res in live],
+          "seconds": round(sum(float(res.get("seconds") or 0) for res in live), 1),
+          "config": live[0].get("config", "")}
+    invalid = next((res for res in live if res.get("valid") is False), None)
+    if invalid is not None:
+        out["valid"] = False
+        out["invalid_reason"] = invalid.get("invalid_reason")
+    # mutation: the `blocked` list is computed but never folded into `out["valid"]`
+    return out
+
+
+mutated_mixed = _merge_arm_ignore_blocked_in_mix([_live(1.0), _blocked("timeout")],
+                                                 ["live.json", "bad.json"])
+check("mutation 'mixed blocked constituent not checked': the merged arm stays WRONGLY "
+      "valid (would FAIL the merge_arm() mixed 'marked invalid' check above)",
+      "valid" not in mutated_mixed, str(mutated_mixed))
+
+print("\n- end-to-end: main()'s --with loop no longer drops a blocked constituent silently -"
+      " a --with file whose ONLY mention of an arm is blocked still reaches the artifact, "
+      "and a --with file's own ROOT valid:false (clean arm) invalidates the whole run too -")
+with _isolated_pacer():
+    urllib.request.urlopen = _fake_urlopen_embeds_ok
+    with tempfile.TemporaryDirectory() as td_k29:
+        # scenario: two --with files for 'zep' - one BLOCKED, one clean. Before K29 this arm
+        # would come back with runs=1 (the clean one only) and no trace of the blocked file.
+        blocked_zep = Path(td_k29, "blocked.json")
+        blocked_zep.write_text(json.dumps({"dataset": {"sha256": _mini_dataset_sha256()},
+                                           "arms": {"zep": {"blocked": "FalkorDB down"}}}),
+                               encoding="utf-8")
+        clean_zep = Path(td_k29, "clean.json")
+        clean_zep.write_text(json.dumps({"dataset": {"sha256": _mini_dataset_sha256()},
+                                         "arms": {"zep": _live(1.0)}}), encoding="utf-8")
+        out_path_k29 = Path(td_k29) / "out.json"
+        result_k29 = _run_mini(out_path_k29, with_files=[blocked_zep, clean_zep])
+    art_k29 = result_k29["artifact"]
+    zep_k29 = art_k29.get("arms", {}).get("zep", {})
+    check("K29: the zep arm is present (not silently dropped) with the blocked constituent named",
+          "blocked.json" in (zep_k29.get("invalid_reason") or ""), str(zep_k29))
+    check("K29: the zep arm is marked invalid, not silently clean",
+          zep_k29.get("valid") is False, str(zep_k29))
+    check("K29: root propagation reaches this too - a claim on the clean nevertwice arm is "
+          "refused via the root",
+          art_k29.get("valid") is False, str(art_k29.get("valid")))
+    reason_k29 = rm.row_refusal(art_k29, 'arms["nevertwice"].both_correct_rate', 0)
+    check("K29: tools/remeasure.row_refusal refuses the real claim pointer "
+          "(asof.nevertwice.both_correct) via the root",
+          reason_k29 is not None, str(reason_k29))
+
+    # scenario: EVERY constituent for 'zep' is blocked across all --with files
+    with tempfile.TemporaryDirectory() as td_k29b:
+        blocked_only = Path(td_k29b, "blocked_only.json")
+        blocked_only.write_text(json.dumps({"dataset": {"sha256": _mini_dataset_sha256()},
+                                            "arms": {"zep": {"blocked": "FalkorDB down"}}}),
+                                encoding="utf-8")
+        out_path_k29b = Path(td_k29b) / "out.json"
+        result_k29b = _run_mini(out_path_k29b, with_files=[blocked_only])
+    art_k29b = result_k29b["artifact"]
+    check("K29 (all blocked): the zep arm is PRESENT, not absent from arms",
+          "zep" in art_k29b.get("arms", {}), str(sorted(art_k29b.get("arms", {}))))
+    check("K29 (all blocked): the zep arm is exactly {'blocked': reason}",
+          art_k29b["arms"]["zep"].get("blocked") == "FalkorDB down (blocked_only.json)",
+          str(art_k29b["arms"].get("zep")))
+    check("K29 (all blocked): the root stays VALID - a wholly-blocked arm is a declared "
+          "absence (P3), not an invalid measurement",
+          "valid" not in art_k29b, str(art_k29b.get("valid")))
+
+print("\n- K29: a --with file's own ROOT valid:false, with a CLEAN arm, still invalidates -")
+with _isolated_pacer():
+    urllib.request.urlopen = _fake_urlopen_embeds_ok
+    with tempfile.TemporaryDirectory() as td_k29c:
+        root_bad_zep = Path(td_k29c, "root_bad.json")
+        root_bad_zep.write_text(json.dumps({
+            "dataset": {"sha256": _mini_dataset_sha256()}, "valid": False,
+            "invalid_reason": "synthetic: this FILE's own root is invalid, not the zep arm",
+            "arms": {"zep": _live(1.0)}}), encoding="utf-8")
+        out_path_k29c = Path(td_k29c) / "out.json"
+        result_k29c = _run_mini(out_path_k29c, with_files=[root_bad_zep])
+    art_k29c = result_k29c["artifact"]
+    check("K29: the zep ARM itself stays clean (only the FILE's root was invalid)",
+          art_k29c.get("arms", {}).get("zep", {}).get("valid") is not False,
+          str(art_k29c.get("arms", {}).get("zep")))
+    check("K29: the ROOT is invalid anyway, naming the file",
+          art_k29c.get("valid") is False and "root_bad.json" in (art_k29c.get("invalid_reason") or ""),
+          str(art_k29c.get("invalid_reason")))
+    reason_k29c = rm.row_refusal(art_k29c, 'arms["nevertwice"].both_correct_rate', 0)
+    check("K29: row_refusal refuses the clean nevertwice arm too, via the root",
+          reason_k29c is not None, str(reason_k29c))
+
+    print("\n- K29 mutation 'a --with file's own root not checked' -")
+    saved_propagate_k29 = ab._propagate_root_invalidity
+    ab._propagate_root_invalidity = lambda out, extra_reasons=None: (
+        saved_propagate_k29(out, None))     # mutation: extra_reasons (file roots) dropped
+    with tempfile.TemporaryDirectory() as td_k29d:
+        root_bad_zep2 = Path(td_k29d, "root_bad2.json")
+        root_bad_zep2.write_text(json.dumps({
+            "dataset": {"sha256": _mini_dataset_sha256()}, "valid": False,
+            "invalid_reason": "synthetic: file root invalid",
+            "arms": {"zep": _live(1.0)}}), encoding="utf-8")
+        out_path_k29d = Path(td_k29d) / "out.json"
+        result_k29d = _run_mini(out_path_k29d, with_files=[root_bad_zep2])
+    art_k29d = result_k29d["artifact"]
+    check("mutation 'file root not checked': the root now WRONGLY stays valid (would FAIL "
+          "the 'ROOT is invalid anyway' check above)",
+          "valid" not in art_k29d, str(art_k29d.get("valid")))
+    ab._propagate_root_invalidity = saved_propagate_k29
+    check("ab._propagate_root_invalidity restored after the K29 mutation",
+          ab._propagate_root_invalidity is saved_propagate_k29)
 
 print(f"\n{'ALL OK' if not FAILS else f'{FAILS} FAILED'}")
 sys.exit(1 if FAILS else 0)

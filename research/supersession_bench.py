@@ -1029,19 +1029,44 @@ def _r4(pair) -> list[float]:
     return [round(x, 4) for x in pair]
 
 
-def pool_other_arm(results: list[dict]) -> dict:
+def pool_other_arm(results: list[dict], files: list[str] | None = None) -> dict:
     """One non-engine arm from several result files: rows concatenated and tagged with their run,
     the rates re-scored over the case-runs, per-run stale and current kept beside them, seconds
-    summed, the first run's config and Graphiti stats carried with the per-run stats beside them.
-    A single file is returned as it is."""
+    summed, the first live run's config and Graphiti stats carried with the per-run stats beside
+    them. A single file is returned as it is, `runs` filled in.
+
+    `files`: the originating filename for each entry of `results`, same order and length - used
+    only to name a BLOCKED constituent's own reason (K29); omit it where no file identity is
+    available (a caller pooling in-memory results has nothing to blame).
+
+    K29 (P0(d): "the stand refused or blocked" is an invalidity condition; P3: "a blocked arm is
+    printed 'blocked (reason)', never 0"): a constituent whose OWN result is `{"blocked": ...}`
+    (`run_mem0`/`run_zep`'s early return, which carries no `rows` at all) used to be filtered out
+    before it ever reached this function - a pool with one live mem0 run and one blocked one
+    published as if the blocked one had never been asked for. Now:
+    - every constituent still blocked -> the ARM stays present, `{"blocked": <reason>}`, never
+      silently absent (P3's own asymmetric-arm rule: this is a known, declared absence, not an
+      invalid measurement, so the pool otherwise stays valid);
+    - some live, some blocked -> the live ones are still pooled (published, not thrown away),
+      but the pooled arm - and, via `pool()`'s own constituent check, the whole artifact's root -
+      is marked invalid, naming which file's constituent was blocked and why.
+    """
+    files = list(files or [None] * len(results))
+    blocked = [(r, fn) for r, fn in zip(results, files) if r.get("blocked")]
+    live = [r for r in results if not r.get("blocked")]
+    if not live:
+        first, fn = blocked[0]
+        return {"blocked": first["blocked"] + (f" ({fn})" if fn else "")}
     if len(results) == 1:
-        return results[0]
-    rows = [dict(r, run=i) for i, res in enumerate(results) for r in res["rows"]]
-    out = {"rows": rows, **score(rows), "runs": len(results),
-           "per_run_stale": [res.get("stale_rate") for res in results],
-           "per_run_current": [res.get("current_rate") for res in results],
-           "per_run_control_miss": [res.get("control_miss_rate") for res in results],
-           "errors": sum(int(res.get("errors") or 0) for res in results),
+        out = dict(results[0])
+        out.setdefault("runs", 1)          # K29: the merged/single arm always writes 'runs'
+        return out
+    rows = [dict(r, run=i) for i, res in enumerate(live) for r in res["rows"]]
+    out = {"rows": rows, **score(rows), "runs": len(live),
+           "per_run_stale": [res.get("stale_rate") for res in live],
+           "per_run_current": [res.get("current_rate") for res in live],
+           "per_run_control_miss": [res.get("control_miss_rate") for res in live],
+           "errors": sum(int(res.get("errors") or 0) for res in live),
            # B2: the split summed the same way as the plain count beside it. K18/P1(a):
            # this SUM is informational only - the cap is "per corpus per run" (applied
            # once, in run_mem0, on EACH constituent's own row, before it ever reaches
@@ -1050,23 +1075,31 @@ def pool_other_arm(results: list[dict]) -> dict:
            # etc already use, so a reader can re-derive "was any ONE run over cap" too.
            "mem0_errors": {
                "supersession": sum(int((res.get("mem0_errors") or {}).get("supersession") or 0)
-                                   for res in results),
+                                   for res in live),
                "control": sum(int((res.get("mem0_errors") or {}).get("control") or 0)
-                              for res in results),
+                              for res in live),
            },
-           "per_run_mem0_errors": [res.get("mem0_errors") for res in results],
-           "seconds": round(sum(float(res.get("seconds") or 0) for res in results), 1),
-           "config": results[0].get("config", "")}
+           "per_run_mem0_errors": [res.get("mem0_errors") for res in live],
+           "seconds": round(sum(float(res.get("seconds") or 0) for res in live), 1),
+           "config": live[0].get("config", "")}
     # K16(2): a constituent run's own invalidity has to survive pooling - an artifact this
     # function assembles is exactly what a claim's pointer reads, and it must never look
     # clean just because pooling built a fresh dict around an invalid run's numbers.
-    invalid = next((res for res in results if res.get("valid") is False), None)
+    reasons = []
+    invalid = next((res for res in live if res.get("valid") is False), None)
     if invalid is not None:
+        reasons.append(invalid.get("invalid_reason") or "no reason recorded")
+    if blocked:
+        reasons.append("; ".join(
+            f"a constituent run blocked ({fn}): {r['blocked']}" if fn
+            else f"a constituent run blocked: {r['blocked']}"
+            for r, fn in blocked))
+    if reasons:
         out["valid"] = False
-        out["invalid_reason"] = invalid.get("invalid_reason")
-    if any("graphiti" in res for res in results):
-        out["graphiti"] = results[0].get("graphiti")
-        out["graphiti_per_run"] = [res.get("graphiti") for res in results]
+        out["invalid_reason"] = "; ".join(reasons)
+    if any("graphiti" in res for res in live):
+        out["graphiti"] = live[0].get("graphiti")
+        out["graphiti_per_run"] = [res.get("graphiti") for res in live]
     return out
 
 
@@ -1097,6 +1130,10 @@ def pool(engine_files: list[Path], other_files: list[Path] | None = None) -> dic
     engine_code: list[str | None] = []
     after_runs: list[dict] = []
     other_runs: dict[str, list[dict]] = {}
+    #: K29: which FILE each `other_runs[name]` constituent came from, same order and length -
+    #: named in a blocked constituent's own `invalid_reason` (K29's "naming the file and the
+    #: block reason"), never persisted onto a result dict itself.
+    other_run_files: dict[str, list[str]] = {}
     #: K25: a run FILE's own ROOT can carry `valid: False` too, not only its arms - when the
     #: file being pooled is itself a previously pooled artifact (this function's own output has
     #: `arms.nevertwice`, so it is a legal `--pool`/`--with` input). row_refusal walks every
@@ -1124,8 +1161,14 @@ def pool(engine_files: list[Path], other_files: list[Path] | None = None) -> dic
         if meta is None:
             meta = blob
         for name, res in blob["arms"].items():
-            if not name.startswith(ENGINE_ARM) and not res.get("blocked") and name not in other_runs:
+            # K29 (P0(d)/P3): a BLOCKED other arm is a constituent too, not a reason to pretend
+            # it was never requested - `not res.get("blocked")` used to gate it straight out of
+            # `other_runs` here, so a pool where the ONLY engine-file mention of e.g. mem0 was
+            # blocked never carried mem0 at all, silently, same as if it had never been asked
+            # for. `pool_other_arm` below decides what a blocked constituent means for the pool.
+            if not name.startswith(ENGINE_ARM) and name not in other_runs:
                 other_runs[name] = [res]
+                other_run_files[name] = [f.name]
     for f in [Path(p) for p in (other_files or [])]:
         blob = json.loads(f.read_text(encoding="utf-8"))
         shas.add(blob["dataset"]["sha256"])
@@ -1133,12 +1176,15 @@ def pool(engine_files: list[Path], other_files: list[Path] | None = None) -> dic
             file_root_invalid.append(f"{f.name} (file root): "
                                      f"{blob.get('invalid_reason') or 'no reason recorded'}")
         for name, res in blob["arms"].items():
-            if name.startswith(ENGINE_ARM) or res.get("blocked"):
+            if name.startswith(ENGINE_ARM):
                 continue
             # Until 2026-09-11 a second file carrying the same arm was refused ("which one?"). It
             # is now what the K2 parity run produces on purpose: the arm's runs are pooled over
-            # case-runs with the per-run values kept, exactly as the engine arm is.
+            # case-runs with the per-run values kept, exactly as the engine arm is. K29: a
+            # BLOCKED entry is appended too (see the engine-file loop's own comment above), so a
+            # `--with` file that names an arm as blocked is not silently dropped either.
             other_runs.setdefault(name, []).append(res)
+            other_run_files.setdefault(name, []).append(f.name)
     if len(shas) != 1:
         raise ValueError(f"result files come from different datasets: {sorted(shas)}")
     #: Two engine runs that wrote into ONE store are not two runs of the same commit: the second
@@ -1178,7 +1224,8 @@ def pool(engine_files: list[Path], other_files: list[Path] | None = None) -> dic
             "session(s) and accepted none. The cause is not in the artifact: the engine returns "
             "one bit for four endings, and only one of them is 'already processed'.")
     assert meta is not None
-    others: dict[str, dict] = {name: pool_other_arm(rs) for name, rs in other_runs.items()}
+    others: dict[str, dict] = {name: pool_other_arm(rs, other_run_files.get(name))
+                               for name, rs in other_runs.items()}
 
     #: K25 (the auditor): only `arms.nevertwice` / `arms.mem0` / ... ever carried a
     #: constituent's own `valid: false` before this - claims point at
@@ -1213,13 +1260,20 @@ def pool(engine_files: list[Path], other_files: list[Path] | None = None) -> dic
             arms[f"{ENGINE_ARM}_after_sleep_run{i}"] = a
     arms.update(others)
 
-    # the paired tests are computed on each arm's FIRST run, where the arms saw identical cases
+    # the paired tests are computed on each arm's FIRST LIVE run, where the arms saw identical
+    # cases - K29: `other_runs[name]` can now include a BLOCKED constituent (no "rows" at all),
+    # so this is the first entry that ISN'T blocked, never blindly index 0. An arm with no live
+    # run at all contributes no pairs (P3: a blocked arm's pair claims stay pending).
     first = {ENGINE_ARM: {r["id"]: r for r in runs[0]["rows"]}}
-    first.update({n: {r["id"]: r for r in rs[0]["rows"]} for n, rs in other_runs.items()})
+    first.update({n: {r["id"]: r for r in live0["rows"]}
+                 for n, rs in other_runs.items()
+                 for live0 in [next((r for r in rs if not r.get("blocked")), None)]
+                 if live0 is not None})
 
     per_run_pairs = []
-    if "mem0" in other_runs:
-        m0 = {r["id"]: r for r in other_runs["mem0"][0]["rows"]}
+    mem0_live0 = next((r for r in other_runs.get("mem0", []) if not r.get("blocked")), None)
+    if mem0_live0 is not None:
+        m0 = {r["id"]: r for r in mem0_live0["rows"]}
         for a in runs:
             rows = {r["id"]: r for r in a["rows"]}
             ids = [i for i, r in rows.items() if r["shape"] != "control" and i in m0]

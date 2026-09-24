@@ -343,16 +343,38 @@ ARMS = {"nevertwice": run_nevertwice, "naive": run_naive, "zep": run_zep}
 RUNS = 1
 
 
-def merge_arm(results: list[dict]) -> dict:
+def merge_arm(results: list[dict], files: list[str] | None = None) -> dict:
     """One arm's result from several files: rows concatenated and tagged with their run, the rates
     re-scored over the case-runs, the per-run values kept beside them - the shape `run_nevertwice`
     gives our own arm when `--runs` is more than one. Ledger K2: the competitor arm is pooled and
-    published with its spread exactly as ours is, instead of standing on one run."""
+    published with its spread exactly as ours is, instead of standing on one run.
+
+    `files`: the originating filename for each entry of `results`, same order and length - named
+    only in a BLOCKED constituent's own reason (K29); omit where no file identity is available.
+
+    K29 (P0(d): "the stand refused or blocked" is an invalidity condition; P3: "a blocked arm is
+    printed 'blocked (reason)', never 0"): a constituent whose own result is `{"blocked": ...}`
+    used to be silently invisible to this function's caller in TWO different ways - `main()`'s
+    `--with` loop filtered it out before it ever reached here, and even a constituent that DID
+    arrive here vanished without a trace whenever exactly one LIVE result was left beside it
+    (`if len(live) == 1: return live[0]` - the blocked sibling's existence never touched the
+    result). Now:
+    - every constituent blocked -> the ARM stays present, `{"blocked": <reason>}`, never
+      silently absent;
+    - some live, some blocked -> the live ones are still merged and published, but the merged
+      arm (and, via `_propagate_root_invalidity`, the whole artifact's root) is marked invalid,
+      naming which file's constituent was blocked and why.
+    """
+    files = list(files or [None] * len(results))
+    blocked = [(r, fn) for r, fn in zip(results, files) if r.get("blocked")]
     live = [r for r in results if not r.get("blocked")]
     if not live:
-        return results[0]
-    if len(live) == 1:
-        return live[0]
+        first, fn = blocked[0]
+        return {"blocked": first["blocked"] + (f" ({fn})" if fn else "")}
+    if len(results) == 1:
+        out = dict(results[0])
+        out.setdefault("runs", 1)          # K29: the merged arm always writes 'runs'
+        return out
     rows = [dict(r, run=i) for i, res in enumerate(live) for r in res["rows"]]
     out = {"rows": rows, **score(rows), "runs": len(live),
            "per_run": [res["both_correct_rate"] for res in live],
@@ -362,17 +384,27 @@ def merge_arm(results: list[dict]) -> dict:
     # as supersession_bench.pool_other_arm does for its own merged arms - an artifact this
     # function assembles is what a claim's pointer reads, and it must never look clean just
     # because merging built a fresh dict around an invalid run's numbers.
+    reasons = []
     invalid = next((res for res in live if res.get("valid") is False), None)
     if invalid is not None:
+        reasons.append(invalid.get("invalid_reason") or "no reason recorded")
+    if blocked:
+        # K29: a blocked constituent alongside live ones is dropped from the pooled NUMBERS
+        # (there is nothing to pool it INTO) but must not be dropped from the RECORD.
+        reasons.append("; ".join(
+            f"a constituent run blocked ({fn}): {r['blocked']}" if fn
+            else f"a constituent run blocked: {r['blocked']}"
+            for r, fn in blocked))
+    if reasons:
         out["valid"] = False
-        out["invalid_reason"] = invalid.get("invalid_reason")
+        out["invalid_reason"] = "; ".join(reasons)
     if any("graphiti" in res for res in live):
         out["graphiti"] = live[0].get("graphiti")
         out["graphiti_per_run"] = [res.get("graphiti") for res in live]
     return out
 
 
-def _propagate_root_invalidity(out: dict) -> None:
+def _propagate_root_invalidity(out: dict, extra_reasons: list[str] | None = None) -> None:
     """K25 (the auditor's finding on this item, 2026-09-24): a claim can point at the
     artifact's ROOT or at a field outside any one arm's own dict - marking only the arm
     `"valid": False` is not enough, `tools/remeasure.row_refusal` would still resolve a
@@ -380,12 +412,18 @@ def _propagate_root_invalidity(out: dict) -> None:
     (this run's own, an after-sleep reading, or a `--with` constituent `merge_arm`
     propagated - K16(2), above), the WHOLE artifact is marked invalid too, every arm's own
     reason joined - the root sits on every pointer's own path, so it has to carry the
-    finding regardless of which arm a given claim actually reads."""
+    finding regardless of which arm a given claim actually reads.
+
+    `extra_reasons` (K29): a `--with` file can itself carry `valid: false` at its OWN root,
+    symmetrically with a CLEAN arm inside it (`pool()`'s own K25 fix in supersession_bench.py
+    checks this too) - `main()` collects those while reading `--with` files, since by the time
+    this function runs the file identity is gone."""
     invalid = [(name, a) for name, a in out.get("arms", {}).items() if a.get("valid") is False]
-    if invalid:
+    reasons = list(extra_reasons or [])
+    reasons += [f"{name}: {a.get('invalid_reason') or 'no reason recorded'}" for name, a in invalid]
+    if reasons:
         out["valid"] = False
-        out["invalid_reason"] = "; ".join(
-            f"{name}: {a.get('invalid_reason') or 'no reason recorded'}" for name, a in invalid)
+        out["invalid_reason"] = "; ".join(reasons)
 
 
 def main() -> int:
@@ -460,25 +498,43 @@ def main() -> int:
     # other arms measured in their own environments (the Zep arm runs under the graphiti venv):
     # an arm present in several files is pooled over its runs, like ours
     others: dict[str, list[dict]] = {}
+    other_files_by_name: dict[str, list[str]] = {}
+    #: K29: a `--with` file's own ROOT can be marked invalid even when the arm(s) it carries
+    #: read clean (symmetric to K25's pool() fix in supersession_bench.py) - this used to be
+    #: ignored entirely. The file's own name travels in the reason.
+    with_file_root_invalid: list[str] = []
     for f in args.others:
         blob = json.loads(Path(f).read_text(encoding="utf-8"))
         if blob.get("dataset", {}).get("sha256") != out["dataset"]["sha256"]:
             print(f"  {f}: measured on another dataset - not merged")
             continue
+        if blob.get("valid") is False:
+            with_file_root_invalid.append(
+                f"{Path(f).name} (file root): {blob.get('invalid_reason') or 'no reason recorded'}")
         for name, res in blob.get("arms", {}).items():
-            if name in out["arms"] or name == "mem0" or res.get("blocked"):
+            # K29 (P0(d)/P3): a BLOCKED constituent is a constituent too - `res.get("blocked")`
+            # used to filter it out right here, so a `--with` file whose only mention of an arm
+            # was blocked never contributed that arm at all, silently, same as never asked for.
+            if name in out["arms"] or name == "mem0":
                 continue
             others.setdefault(name, []).append(res)
+            other_files_by_name.setdefault(name, []).append(Path(f).name)
     for name, results in others.items():
-        out["arms"][name] = merge_arm(results)
+        out["arms"][name] = merge_arm(results, other_files_by_name.get(name))
         res = out["arms"][name]
+        if res.get("blocked"):
+            # K29/P3: "a blocked arm is printed 'blocked (reason)', never 0" - every constituent
+            # for this name was blocked, so there is nothing to print a rate for.
+            print(f"- {name}: BLOCKED ({res['blocked']})")
+            continue
         print(f"- {name} (merged from {len(results)} file(s), {res.get('runs', 1)} run(s)): "
               f"both-correct {res['both_correct_rate']} {res['both_correct_ci']} | old day {res['old_day_rate']} "
               f"| new day {res['new_day_rate']}" + (f" | per run {res['per_run']}" if res.get("per_run") else ""))
     out["arms"]["mem0"] = {"blocked": "Mem0 stamps a memory with the wall-clock time of the add() call and its "
                                       "search has no as-of filter; facts cannot be placed in the past without "
                                       "patching the product"}
-    _propagate_root_invalidity(out)          # K25: any invalid arm invalidates the whole artifact
+    # K25: any invalid arm invalidates the whole artifact; K29 adds a --with file's own root.
+    _propagate_root_invalidity(out, with_file_root_invalid)
     if args.out:
         prov.stamp(out)
         Path(args.out).write_text(json.dumps(out, indent=1, ensure_ascii=False), encoding="utf-8", newline="\n")

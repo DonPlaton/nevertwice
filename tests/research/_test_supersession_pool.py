@@ -195,8 +195,70 @@ with tempfile.TemporaryDirectory() as tmp:
         check("a file without the engine arm cannot be pooled", "no nevertwice arm" in str(e))
     blocked = _write(tmp, "blocked.json", _blob({"mem0": {"blocked": "not installed"}}))
     res2 = sb.pool([run1], [blocked])
-    check("a blocked arm is left out rather than carried as a number", "mem0" not in res2["arms"])
+    # K29 (the auditor, item 9C): a blocked arm used to be left out entirely - P3 says "a
+    # blocked arm is printed 'blocked (reason)', never 0" (and, by the same logic, never
+    # absent either). It now stays present, as a declared absence rather than a silent one,
+    # and - being wholly blocked, no live constituent at all - does not invalidate the pool.
+    check("a blocked arm stays PRESENT, not left out (K29: never silently absent)",
+          "mem0" in res2["arms"], str(sorted(res2["arms"])))
+    check("...as a blocked-shaped dict naming the file",
+          res2["arms"]["mem0"] == {"blocked": "not installed (blocked.json)"},
+          str(res2["arms"]["mem0"]))
+    check("a wholly-blocked arm does not invalidate the pool (P3: a declared absence)",
+          "valid" not in res2, str(res2.get("valid")))
     check("without mem0 there is no per-run pairing", res2["pairs_per_engine_run"] == [])
+
+    print("\n- K29: pool_other_arm() - a single LIVE result always writes 'runs' -")
+    single_mem0 = sb.pool_other_arm([_arm(mem0_rows(), 450.0)])
+    check("pool_other_arm() on a single live result sets runs=1", single_mem0.get("runs") == 1,
+          str(single_mem0))
+
+    print("\n- K29: pool_other_arm() - one live + one blocked constituent - the live one is "
+          "still pooled, but the arm is marked invalid, naming the file and the reason -")
+    mem0_live_run = {"rows": mem0_rows(), **sb.score(mem0_rows()), "seconds": 1.0, "config": "mem0 x"}
+    mem0_blocked_run = {"blocked": "qdrant lock timeout"}
+    mixed = sb.pool_other_arm([mem0_live_run, mem0_blocked_run], ["live.json", "bad.json"])
+    check("K29 mixed: the live constituent is still pooled (rows present, runs=1)",
+          "rows" in mixed and mixed.get("runs") == 1, str(mixed))
+    check("K29 mixed: the arm is marked invalid",
+          mixed.get("valid") is False, str(mixed))
+    check("K29 mixed: the reason names the file and the block reason",
+          "bad.json" in (mixed.get("invalid_reason") or "")
+          and "qdrant lock timeout" in (mixed.get("invalid_reason") or ""),
+          mixed.get("invalid_reason"))
+
+    print("\n- K29: pool_other_arm() - every constituent blocked -> stays present as blocked -")
+    all_blocked = sb.pool_other_arm([{"blocked": "not installed"}], ["only.json"])
+    check("K29: pool_other_arm() with every constituent blocked returns a blocked dict",
+          all_blocked == {"blocked": "not installed (only.json)"}, str(all_blocked))
+
+    print("\n- K29 mutation 'a mixed blocked constituent not checked in pool_other_arm': the "
+          "blocked sibling silently ignored, the pooled arm stays wrongly valid -")
+
+    def _pool_other_arm_ignore_blocked(results, files=None):
+        live = [r for r in results if not r.get("blocked")]
+        if not live:
+            return results[0]
+        if len(results) == 1:
+            out = dict(results[0]); out.setdefault("runs", 1)
+            return out
+        rows = [dict(r, run=i) for i, res in enumerate(live) for r in res["rows"]]
+        out = {"rows": rows, **sb.score(rows), "runs": len(live),
+              "seconds": round(sum(float(res.get("seconds") or 0) for res in live), 1),
+              "config": live[0].get("config", "")}
+        invalid = next((res for res in live if res.get("valid") is False), None)
+        if invalid is not None:
+            out["valid"] = False
+            out["invalid_reason"] = invalid.get("invalid_reason")
+        # mutation: `blocked` constituents are computed (live/not-live split) but never
+        # folded into out["valid"]/out["invalid_reason"]
+        return out
+
+    mutated_mixed = _pool_other_arm_ignore_blocked([mem0_live_run, mem0_blocked_run],
+                                                    ["live.json", "bad.json"])
+    check("mutation 'mixed blocked constituent not checked': the pooled arm stays WRONGLY "
+          "valid (would FAIL the K29 mixed 'marked invalid' check above)",
+          "valid" not in mutated_mixed, str(mutated_mixed))
 
     print("\n- compare() still reads files and pairs in name order -")
     cmp_ = sb.compare([run1, mem0])
@@ -918,6 +980,37 @@ with tempfile.TemporaryDirectory() as tmp_k25:
     check("mutation 'the run-file root not checked': pooled_nevertwice.stale.rate is now "
           "WRONGLY restorable (would FAIL the file-root check above)",
           _refused(res_root_mut, PTR_STALE) is None, str(_refused(res_root_mut, PTR_STALE)))
+
+    print("\n- K25/P5.2 (the auditor): the file-root check at the --WITH-file site "
+          "specifically - `k25_root_bad` above went through engine_files (the FIRST "
+          "`if blob.get('valid') is False` block in pool()); a --with file's own root is a "
+          "SEPARATE block, and a mutation removing only THAT one was not caught by any "
+          "existing check -")
+    # a --with file whose ROOT is invalid but whose ARM (zep - not used by k25_run1/run2, so
+    # this is its only constituent) is perfectly clean - the ONLY possible source of root
+    # invalidity in this scenario is the --with-file-root check.
+    k25_with_root_bad = _write(
+        tmp_k25, "with_root_bad.json",
+        dict(_blob({"zep": _arm(naive_rows(), 200.0)}),
+            valid=False, invalid_reason="synthetic: this --WITH FILE's own root is invalid"))
+    res_p52 = sb.pool([k25_run1, k25_run2_clean], [k25_with_root_bad])
+    check("P5.2 setup: the zep arm carried by the --with file is itself clean",
+          res_p52["arms"]["zep"].get("valid") is not False, str(res_p52["arms"]["zep"]))
+    check("P5.2: the pool's root is invalid anyway, from the --with file's own root",
+          res_p52.get("valid") is False, str(res_p52.get("valid")))
+    check("P5.2: the reason names the --with file",
+          "with_root_bad.json" in (res_p52.get("invalid_reason") or ""),
+          res_p52.get("invalid_reason"))
+    check("P5.2: pooled_nevertwice.stale.rate is refused via the root",
+          _refused(res_p52, PTR_STALE) is not None, str(_refused(res_p52, PTR_STALE)))
+    res_p52_mut = json.loads(json.dumps(res_p52))
+    del res_p52_mut["valid"]
+    del res_p52_mut["invalid_reason"]
+    check("P5.2 mutation 'the --with-file-root check removed': pooled_nevertwice.stale.rate "
+          "is now WRONGLY restorable (would FAIL the P5.2 checks above) - this is the "
+          "mutation the auditor found surviving, on the --with-file site specifically, not "
+          "the engine-file one the earlier 'run-file root not checked' mutation covers",
+          _refused(res_p52_mut, PTR_STALE) is None, str(_refused(res_p52_mut, PTR_STALE)))
 
 print(f"\n{'ALL OK' if not FAILS else f'{FAILS} FAILED'}")
 sys.exit(1 if FAILS else 0)
