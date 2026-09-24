@@ -801,6 +801,212 @@ def test_locomo_a_question_dropped_by_loads_own_filter_does_not_count_against_th
           mutated_res.get("valid") is False, str(mutated_res))
 
 
+# ── K21b (the auditor's finding on a37a136): MK21a stays GREEN under the existing K21(1)
+# checks, because those mock `le.load`/`lc.load` entirely - a fake urlopen that "embeds"
+# anything cannot tell "excluded" from "included and coincidentally matched", so a
+# regression back INSIDE load() itself (empty sessions/turns put back into the pool, no
+# emptiness check) leaves the gate (pool_used == pool_pinned) satisfied either way. A
+# DIRECT invariant is needed: through the REAL load(), the empty item is never in the
+# pool, never in the cache, and never even SENT to the embedder - checked on the request
+# LOG, not inferred from a count that a mock could not have moved.
+
+def test_longmem_empty_session_is_never_sent_to_the_embedder_at_all() -> None:
+    print("\n- K21b/MK21a (the auditor's finding): a DIRECT invariant through the REAL "
+          "load() (not a mock of its output) - the empty session is in empty_skipped, "
+          "NOT in the pool load() returns, NOT in cache['sessions'], and NEVER SENT to "
+          "the embedder at all -")
+    raw = [{"question_id": "q0", "question": "question 0", "answer_session_ids": ["s0"],
+           "haystack_session_ids": ["s0", "s_empty"],
+           "haystack_sessions": [[{"role": "user", "content": "session zero content"}],
+                                 []]}]
+    with _isolated():
+        with tempfile.TemporaryDirectory(dir=str(ROOT)) as tmp:
+            raw_path = Path(tmp) / "raw_longmem_mk21a.json"
+            raw_path.write_text(json.dumps(raw), encoding="utf-8")
+            requests_sent: list[str] = []
+
+            def _logging_urlopen(req, *a, **kw):
+                requests_sent.append(req.data.decode("utf-8") if req.data else "")
+                return _JsonResp({"embedding": [0.1, 0.2, 0.3]})
+            urllib.request.urlopen = _logging_urlopen
+
+            emb_path = Path(tmp) / "cache.json"
+            saved_verify, saved_oracle, saved_emb = (le.corpus_pin.verify, le.ORACLE,
+                                                     le.EMB)
+            le.corpus_pin.verify = lambda name: {"present": True}
+            le.ORACLE = raw_path
+            le.EMB = emb_path
+            try:
+                data, pool, empty_skipped = le.load()
+                le.embed_all()
+                cache = json.loads(emb_path.read_text(encoding="utf-8"))
+            finally:
+                le.corpus_pin.verify, le.ORACLE, le.EMB = (saved_verify, saved_oracle,
+                                                            saved_emb)
+
+            with _crash_guard(
+                    "K21b/MK21a: the empty session is in empty_skipped",
+                    "K21b/MK21a: the empty session is NOT in the pool load() returns",
+                    "K21b/MK21a: the empty session is NOT in cache['sessions']",
+                    "K21b/MK21a: NO request sent to the fake embedder ever named the "
+                    "empty session (1 real session + 1 question = 2 requests total)"):
+                check("K21b/MK21a: the empty session is in empty_skipped",
+                      empty_skipped == ["s_empty"], str(empty_skipped))
+                check("K21b/MK21a: the empty session is NOT in the pool load() "
+                      "returns", "s_empty" not in pool and "s0" in pool,
+                      str(sorted(pool)))
+                check("K21b/MK21a: the empty session is NOT in cache['sessions']",
+                      "s_empty" not in cache.get("sessions", {}) and
+                      "s0" in cache.get("sessions", {}),
+                      str(sorted(cache.get("sessions", {}))))
+                check("K21b/MK21a: NO request sent to the fake embedder ever named "
+                      "the empty session (1 real session + 1 question = 2 requests "
+                      "total)", len(requests_sent) == 2, str(requests_sent))
+
+            # mutation MK21a: load() puts the empty session back into the pool with NO
+            # emptiness check - reimplemented directly (the real load()'s exclusion is
+            # inline, no separate seam to patch without editing source).
+            def _load_mk21a():
+                data2 = json.loads(raw_path.read_text(encoding="utf-8"))
+                pool2, seen2 = {}, set()
+                for e in data2:
+                    for sid, turns in zip(e["haystack_session_ids"], e["haystack_sessions"]):
+                        if sid in seen2:
+                            continue
+                        seen2.add(sid)
+                        text = "\n".join(f"{t.get('role','')}: {t.get('content','')}"
+                                        for t in turns)[:le.MAXCHARS]
+                        pool2[sid] = text                      # MK21a: NO emptiness check
+                return data2, pool2, []                        # empty_skipped never tracked
+
+            requests_sent2: list[str] = []
+
+            def _logging_urlopen2(req, *a, **kw):
+                requests_sent2.append(req.data.decode("utf-8") if req.data else "")
+                return _JsonResp({"embedding": [0.1, 0.2, 0.3]})
+            urllib.request.urlopen = _logging_urlopen2
+            emb_path2 = Path(tmp) / "cache_mk21a.json"
+            saved_load = le.load
+            le.load = _load_mk21a
+            le.EMB = emb_path2
+            try:
+                le.embed_all()
+                cache2 = json.loads(emb_path2.read_text(encoding="utf-8"))
+            finally:
+                le.load, le.EMB = saved_load, saved_emb
+            check("mutation MK21a: the empty session is now WRONGLY sent to the "
+                  "embedder too (2 sessions + 1 question = 3 requests, not 2) and "
+                  "WRONGLY present in cache['sessions'] - the fake urlopen 'embeds' it "
+                  "successfully since it never inspects content (would FAIL the "
+                  "'NOT in cache[sessions]'/'2 requests total' checks above)",
+                  len(requests_sent2) == 3 and "s_empty" in cache2.get("sessions", {}),
+                  f"requests={requests_sent2} sessions={sorted(cache2.get('sessions', {}))}")
+
+
+def test_locomo_empty_turn_is_never_sent_to_the_embedder_at_all() -> None:
+    print("\n- K21b/MK21a locomo: the SAME direct invariant through the REAL load() - "
+          "an empty turn (raw speaker AND text both blank) is in empty_skipped, NOT in "
+          "the pool load() returns, NOT in cache['turns'], and NEVER SENT to the "
+          "embedder -")
+    raw = [{"sample_id": "c0",
+           "conversation": {"session_1": [
+               {"dia_id": "D1:1", "speaker": "A", "text": "hello there"},
+               {"dia_id": "D1:2", "speaker": "", "text": ""}]},
+           "qa": []}]
+    with _isolated():
+        with tempfile.TemporaryDirectory(dir=str(ROOT)) as tmp:
+            raw_path = Path(tmp) / "raw_locomo_mk21a.json"
+            raw_path.write_text(json.dumps(raw), encoding="utf-8")
+            requests_sent: list[str] = []
+
+            def _logging_urlopen(req, *a, **kw):
+                requests_sent.append(req.data.decode("utf-8") if req.data else "")
+                return _JsonResp({"embedding": [0.1, 0.2, 0.3]})
+            urllib.request.urlopen = _logging_urlopen
+
+            emb_path = Path(tmp) / "cache.json"
+            saved_verify, saved_path_of, saved_emb = (lc.corpus_pin.verify,
+                                                       lc.corpus_pin.path_of, lc.EMB)
+            lc.corpus_pin.verify = lambda name: {"present": True}
+            lc.corpus_pin.path_of = lambda name: raw_path
+            lc.EMB = emb_path
+            try:
+                convs = lc.load()
+                lc.embed_all(convs)
+                cache = json.loads(emb_path.read_text(encoding="utf-8"))
+            finally:
+                lc.corpus_pin.verify, lc.corpus_pin.path_of, lc.EMB = (
+                    saved_verify, saved_path_of, saved_emb)
+
+            with _crash_guard(
+                    "K21b/MK21a locomo: the empty turn is in empty_skipped",
+                    "K21b/MK21a locomo: the empty turn is NOT in the pool load() "
+                    "returns",
+                    "K21b/MK21a locomo: the empty turn is NOT in cache['turns']",
+                    "K21b/MK21a locomo: NO request sent to the fake embedder ever "
+                    "named the empty turn (1 real turn, no questions = 1 request "
+                    "total)"):
+                check("K21b/MK21a locomo: the empty turn is in empty_skipped",
+                      convs[0].get("empty_skipped") == ["c0:D1:2"],
+                      str(convs[0].get("empty_skipped")))
+                check("K21b/MK21a locomo: the empty turn is NOT in the pool load() "
+                      "returns",
+                      "c0:D1:2" not in convs[0]["pool"] and "c0:D1:1" in convs[0]["pool"],
+                      str(sorted(convs[0]["pool"])))
+                check("K21b/MK21a locomo: the empty turn is NOT in cache['turns']",
+                      "c0:D1:2" not in cache.get("turns", {}) and
+                      "c0:D1:1" in cache.get("turns", {}),
+                      str(sorted(cache.get("turns", {}))))
+                check("K21b/MK21a locomo: NO request sent to the fake embedder ever "
+                      "named the empty turn (1 real turn, no questions = 1 request "
+                      "total)", len(requests_sent) == 1, str(requests_sent))
+
+            # mutation MK21a: load() puts the empty turn back into the pool with NO
+            # emptiness check.
+            def _load_mk21a():
+                raw2 = json.loads(raw_path.read_text(encoding="utf-8"))
+                out2 = []
+                for conv in raw2:
+                    sid = conv.get("sample_id")
+                    pool2: dict[str, str] = {}
+                    for key, val in conv["conversation"].items():
+                        if not key.startswith("session_") or key.endswith("_date_time"):
+                            continue
+                        if not isinstance(val, list):
+                            continue
+                        for turn in val:
+                            did = turn.get("dia_id")
+                            if not did:
+                                continue
+                            text = f"{turn.get('speaker', '')}: {turn.get('text', '')}".strip()
+                            pool2[f"{sid}:{did}"] = text[:lc.MAXCHARS]  # MK21a: no check
+                    out2.append({"sample_id": sid, "pool": pool2, "qa": [],
+                                "empty_skipped": []})
+                return out2
+
+            requests_sent2: list[str] = []
+
+            def _logging_urlopen2(req, *a, **kw):
+                requests_sent2.append(req.data.decode("utf-8") if req.data else "")
+                return _JsonResp({"embedding": [0.1, 0.2, 0.3]})
+            urllib.request.urlopen = _logging_urlopen2
+            emb_path2 = Path(tmp) / "cache_mk21a.json"
+            saved_load = lc.load
+            lc.load = _load_mk21a
+            lc.EMB = emb_path2
+            try:
+                convs2 = lc.load()
+                lc.embed_all(convs2)
+                cache2 = json.loads(emb_path2.read_text(encoding="utf-8"))
+            finally:
+                lc.load, lc.EMB = saved_load, saved_emb
+            check("mutation MK21a locomo: the empty turn is now WRONGLY sent to the "
+                  "embedder too (2 requests, not 1) and WRONGLY present in "
+                  "cache['turns'] (would FAIL the checks above)",
+                  len(requests_sent2) == 2 and "c0:D1:2" in cache2.get("turns", {}),
+                  f"requests={requests_sent2} turns={sorted(cache2.get('turns', {}))}")
+
+
 def test_zz_every_check_passed() -> None:
     """Bare pytest must reach the same verdict as this suite's exit code.
 
@@ -823,7 +1029,9 @@ def main() -> int:
                test_copy_cache_provenance_invalid_without_any_dropped_item,
                test_longmem_a_successful_retry_clears_the_drop,
                test_longmem_dropped_questions_gate_marks_the_run_invalid,
-               test_locomo_a_question_dropped_by_loads_own_filter_does_not_count_against_the_gate):
+               test_locomo_a_question_dropped_by_loads_own_filter_does_not_count_against_the_gate,
+               test_longmem_empty_session_is_never_sent_to_the_embedder_at_all,
+               test_locomo_empty_turn_is_never_sent_to_the_embedder_at_all):
         fn()
     print(f"\nlongmem/locomo pacer wiring: {PASSED} passed, {FAILED} failed")
     return 1 if FAILED else 0
