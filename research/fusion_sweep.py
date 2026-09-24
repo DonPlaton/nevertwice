@@ -50,6 +50,15 @@ STANDS = {
 }
 
 
+#: K24 (the auditor, item 9C): the fields on the INNER harness's own --save artifact
+#: (longmem_results.json / locomo_results.json's shape) that P0's invalidity rules can set at
+#: ITS root - `valid`/`invalid_reason` (K21/B1's `copy_cache_provenance`), the per-axis drop
+#: lists, and the transport record. `blob` lives in the `TemporaryDirectory` this function runs
+#: inside and is gone the moment `main()`'s `with` block exits, so anything not copied onto the
+#: point HERE never reaches the artifact a claim's pointer reads (PREREG-V2 P0's last bullet).
+_CARRY_KEYS = ("dropped_questions", "dropped_sessions", "dropped_turns", "ollama_transport")
+
+
 def run_point(stand: str, weight: float, tmp: Path) -> dict:
     out = tmp / f"{stand}_w{weight}.json"
     env = {**os.environ, "NEVERTWICE_FUSION_SEM_WEIGHT": str(weight), "PYTHONIOENCODING": "utf-8"}
@@ -59,8 +68,31 @@ def run_point(stand: str, weight: float, tmp: Path) -> dict:
         raise RuntimeError(f"{stand} at {weight}: exit {r.returncode}\n{r.stderr[-800:]}")
     blob = json.loads(out.read_text(encoding="utf-8"))
     row = dict(blob["methods"]["hybrid"])
+    #: The SCORED count, not the pinned corpus size: `evaluate()`'s own loop in longmem_eval.py
+    #: / locomo_eval.py increments `n` only past every `continue` (a dropped question, or one
+    #: whose answer session fell out of the pool), so `blob["questions"]` already IS the number
+    #: of questions this point's recall/MRR were computed over. Never re-derived from a pinned
+    #: constant here - that would silently paper over exactly the shortfall `dropped_questions`
+    #: and `valid: false` are reporting below.
     row["n"] = blob["questions"]
+    if blob.get("valid") is False:
+        row["valid"] = False
+        row["invalid_reason"] = blob.get("invalid_reason")
+    for key in _CARRY_KEYS:
+        if key in blob:
+            row[key] = blob[key]
     return row
+
+
+def root_invalid_reasons(points: dict) -> list[str]:
+    """K24: every point across every stand and weight that carries its own `valid: false`,
+    named `<stand> w=<weight>: <reason>` - the single source `main()` reads to decide whether
+    the WHOLE sweep artifact is invalid (PREREG-V2 P2: "one invalid run inside a --pool
+    invalidates the whole pool", the same rule applied to a sweep of points). Extracted as its
+    own function so it is testable without spawning `longmem_eval.py` / `locomo_eval.py`
+    subprocesses - the same reason `supersession_bench.py`'s `_mem0_cap_verdict` is."""
+    return [f"{s} w={w}: {row.get('invalid_reason') or 'no reason recorded'}"
+           for s, ws in points.items() for w, row in ws.items() if row.get("valid") is False]
 
 
 def main() -> int:
@@ -88,6 +120,13 @@ def main() -> int:
         if base[s]:
             for w, row in res["points"][s].items():
                 row["delta_recall@5_vs_0.5"] = round(row["recall@5"] - base[s]["recall@5"], 4)
+    #: K24: one invalid point invalidates the whole sweep artifact - the root is on the path of
+    #: EVERY pointer this stand's claims use (`points.oracle["0.5"].recall@5`, ...), so this is
+    #: where `row_refusal` (tools/remeasure.py) actually finds it.
+    reasons = root_invalid_reasons(res["points"])
+    if reasons:
+        res["valid"] = False
+        res["invalid_reason"] = "; ".join(reasons)
     if args.save:
         prov.stamp(res)
         Path(args.out).write_text(json.dumps(res, indent=1), encoding="utf-8", newline="\n")

@@ -194,9 +194,78 @@ with tempfile.TemporaryDirectory() as tmp:
     except ValueError as e:
         check("a file without the engine arm cannot be pooled", "no nevertwice arm" in str(e))
     blocked = _write(tmp, "blocked.json", _blob({"mem0": {"blocked": "not installed"}}))
-    res2 = sb.pool([run1], [blocked])
-    check("a blocked arm is left out rather than carried as a number", "mem0" not in res2["arms"])
-    check("without mem0 there is no per-run pairing", res2["pairs_per_engine_run"] == [])
+    # W4: guarded, so that a regression to "the first constituent by index" reddens by NAME
+    # here instead of killing the suite with KeyError 'rows' before any later check runs.
+    try:
+        res2 = sb.pool([run1], [blocked])
+        res2_err = None
+    except Exception as e:                                # noqa: BLE001
+        res2, res2_err = {"arms": {}}, f"{type(e).__name__}: {e}"
+    check("W4: pool() survives a wholly-blocked --with arm (pairs never read a blocked constituent's rows)", res2_err is None, str(res2_err))
+    # K29 (the auditor, item 9C): a blocked arm used to be left out entirely - P3 says "a
+    # blocked arm is printed 'blocked (reason)', never 0" (and, by the same logic, never
+    # absent either). It now stays present, as a declared absence rather than a silent one,
+    # and - being wholly blocked, no live constituent at all - does not invalidate the pool.
+    check("a blocked arm stays PRESENT, not left out (K29: never silently absent)",
+          "mem0" in res2["arms"], str(sorted(res2["arms"])))
+    check("...as a blocked-shaped dict naming the file",
+          res2["arms"].get("mem0") == {"blocked": "not installed (blocked.json)"},
+          str(res2["arms"].get("mem0")))
+    check("a wholly-blocked arm does not invalidate the pool (P3: a declared absence)",
+          "valid" not in res2, str(res2.get("valid")))
+    check("without mem0 there is no per-run pairing", res2.get("pairs_per_engine_run") == [])
+
+    print("\n- K29: pool_other_arm() - a single LIVE result always writes 'runs' -")
+    single_mem0 = sb.pool_other_arm([_arm(mem0_rows(), 450.0)])
+    check("pool_other_arm() on a single live result sets runs=1", single_mem0.get("runs") == 1,
+          str(single_mem0))
+
+    print("\n- K29: pool_other_arm() - one live + one blocked constituent - the live one is "
+          "still pooled, but the arm is marked invalid, naming the file and the reason -")
+    mem0_live_run = {"rows": mem0_rows(), **sb.score(mem0_rows()), "seconds": 1.0, "config": "mem0 x"}
+    mem0_blocked_run = {"blocked": "qdrant lock timeout"}
+    mixed = sb.pool_other_arm([mem0_live_run, mem0_blocked_run], ["live.json", "bad.json"])
+    check("K29 mixed: the live constituent is still pooled (rows present, runs=1)",
+          "rows" in mixed and mixed.get("runs") == 1, str(mixed))
+    check("K29 mixed: the arm is marked invalid",
+          mixed.get("valid") is False, str(mixed))
+    check("K29 mixed: the reason names the file and the block reason",
+          "bad.json" in (mixed.get("invalid_reason") or "")
+          and "qdrant lock timeout" in (mixed.get("invalid_reason") or ""),
+          mixed.get("invalid_reason"))
+
+    print("\n- K29: pool_other_arm() - every constituent blocked -> stays present as blocked -")
+    all_blocked = sb.pool_other_arm([{"blocked": "not installed"}], ["only.json"])
+    check("K29: pool_other_arm() with every constituent blocked returns a blocked dict",
+          all_blocked == {"blocked": "not installed (only.json)"}, str(all_blocked))
+
+    print("\n- K29 mutation 'a mixed blocked constituent not checked in pool_other_arm': the "
+          "blocked sibling silently ignored, the pooled arm stays wrongly valid -")
+
+    def _pool_other_arm_ignore_blocked(results, files=None):
+        live = [r for r in results if not r.get("blocked")]
+        if not live:
+            return results[0]
+        if len(results) == 1:
+            out = dict(results[0]); out.setdefault("runs", 1)
+            return out
+        rows = [dict(r, run=i) for i, res in enumerate(live) for r in res["rows"]]
+        out = {"rows": rows, **sb.score(rows), "runs": len(live),
+              "seconds": round(sum(float(res.get("seconds") or 0) for res in live), 1),
+              "config": live[0].get("config", "")}
+        invalid = next((res for res in live if res.get("valid") is False), None)
+        if invalid is not None:
+            out["valid"] = False
+            out["invalid_reason"] = invalid.get("invalid_reason")
+        # mutation: `blocked` constituents are computed (live/not-live split) but never
+        # folded into out["valid"]/out["invalid_reason"]
+        return out
+
+    mutated_mixed = _pool_other_arm_ignore_blocked([mem0_live_run, mem0_blocked_run],
+                                                    ["live.json", "bad.json"])
+    check("mutation 'mixed blocked constituent not checked': the pooled arm stays WRONGLY "
+          "valid (would FAIL the K29 mixed 'marked invalid' check above)",
+          "valid" not in mutated_mixed, str(mutated_mixed))
 
     print("\n- compare() still reads files and pairs in name order -")
     cmp_ = sb.compare([run1, mem0])
@@ -794,6 +863,184 @@ finally:
     sb.ARMS.clear()
     sb.ARMS.update(saved_arms2)
 check("ARMS is restored after the MS4 fixture too", set(sb.ARMS) == set(saved_arms))
+
+print("\n- K25 (the auditor, item 9C): a constituent's own 'valid: false' reaches the ROOT, "
+      "not only its own arm - pooled_nevertwice(_after_sleep).* and pairs[*] sit OUTSIDE "
+      "any single arm's dict and used to stay restorable no matter which constituent was "
+      "invalid (P2: 'one invalid run inside a --pool invalidates the whole pool') -")
+sys.path.insert(0, str(ROOT / "tools"))
+import remeasure as rm  # noqa: E402
+
+# real pointers from research/evidence_manifest.json (raw: research/results/supersession_v1.json)
+PTR_STALE = "pooled_nevertwice.stale.rate"                    # supersession.nevertwice.stale_rate
+PTR_PAIR_MEM0_NV = "pairs[1].p_mcnemar"                        # supersession.mem0_vs_nevertwice.p_mcnemar
+PTR_AFTER_SLEEP_STALE = "pooled_nevertwice_after_sleep.stale.rate"  # supersession.nevertwice_after_sleep.stale_rate
+
+
+def _refused(res, ptr):
+    return rm.row_refusal(res, ptr, code_time=0, head=None, produced_by=[])
+
+
+with tempfile.TemporaryDirectory() as tmp_k25:
+    # (d) a clean pool - baseline, no constituent invalid anywhere
+    k25_run1 = _write(tmp_k25, "run1.json",
+                      _blob({"nevertwice": _arm(engine_rows({"s0"}), 260.0),
+                            "naive": _arm(naive_rows(), 200.0)}))
+    k25_run2_clean = _write(tmp_k25, "run2.json",
+                            _blob({"nevertwice": _arm(engine_rows({"s0", "s1"}), 240.0)}))
+    k25_mem0_clean = _write(tmp_k25, "mem0.json", _blob({"mem0": _arm(mem0_rows(), 450.0)}))
+    res_d = sb.pool([k25_run1, k25_run2_clean], [k25_mem0_clean])
+    check("(d) clean pool: root carries no 'valid'", "valid" not in res_d, str(res_d.get("valid")))
+    check("(d) clean pool: pooled_nevertwice.stale.rate restorable",
+          _refused(res_d, PTR_STALE) is None, str(_refused(res_d, PTR_STALE)))
+    check("(d) clean pool: pairs[1].p_mcnemar (mem0 vs nevertwice) restorable",
+          _refused(res_d, PTR_PAIR_MEM0_NV) is None, str(_refused(res_d, PTR_PAIR_MEM0_NV)))
+    check("(d) setup: pairs[1] really is mem0 vs nevertwice",
+          {res_d["pairs"][1]["a"], res_d["pairs"][1]["b"]} == {"mem0", "nevertwice"},
+          str(res_d["pairs"][1]))
+
+    # (a) an invalid engine run2
+    k25_run2_bad = _write(
+        tmp_k25, "run2_bad.json",
+        _blob({"nevertwice": dict(_arm(engine_rows({"s0", "s1"}), 240.0), valid=False,
+                                  invalid_reason="ollama_transport.bypass_calls=1")}))
+    res_a = sb.pool([k25_run1, k25_run2_bad], [k25_mem0_clean])
+    check("(a) engine run2 invalid: root is marked invalid",
+          res_a.get("valid") is False, str(res_a.get("valid")))
+    check("(a) engine run2 invalid: pooled_nevertwice.stale.rate is refused",
+          _refused(res_a, PTR_STALE) is not None, str(_refused(res_a, PTR_STALE)))
+    check("(a) engine run2 invalid: pairs[1].p_mcnemar is refused too",
+          _refused(res_a, PTR_PAIR_MEM0_NV) is not None, str(_refused(res_a, PTR_PAIR_MEM0_NV)))
+
+    # (b) an invalid mem0 --with file
+    k25_mem0_bad = _write(
+        tmp_k25, "mem0_bad.json",
+        _blob({"mem0": dict(_arm(mem0_rows(), 450.0), valid=False,
+                            invalid_reason="P1 (.loop/PREREG-V2-2026-09-24.md): 3 mem0 error(s) "
+                                          "among supersession cases (cap 2)")}))
+    res_b = sb.pool([k25_run1, k25_run2_clean], [k25_mem0_bad])
+    check("(b) mem0 invalid: root is marked invalid", res_b.get("valid") is False, str(res_b.get("valid")))
+    check("(b) mem0 invalid: pooled_nevertwice.stale.rate is refused",
+          _refused(res_b, PTR_STALE) is not None, str(_refused(res_b, PTR_STALE)))
+    check("(b) mem0 invalid: pairs[1].p_mcnemar is refused too",
+          _refused(res_b, PTR_PAIR_MEM0_NV) is not None, str(_refused(res_b, PTR_PAIR_MEM0_NV)))
+
+    # (c) an invalid after-sleep run
+    k25_run1_after = _write(
+        tmp_k25, "run1_after.json",
+        _blob({"nevertwice": _arm(engine_rows({"s0"}), 260.0),
+              "nevertwice_after_sleep": dict(_arm(engine_rows({"s0", "s1"}), 220.0), valid=False,
+                                             invalid_reason="ollama_transport.failed_outcomes=2")}))
+    res_c = sb.pool([k25_run1_after, k25_run2_clean])
+    check("(c) after-sleep invalid: root is marked invalid", res_c.get("valid") is False, str(res_c.get("valid")))
+    check("(c) after-sleep invalid: pooled_nevertwice_after_sleep.stale.rate is refused",
+          _refused(res_c, PTR_AFTER_SLEEP_STALE) is not None,
+          str(_refused(res_c, PTR_AFTER_SLEEP_STALE)))
+    check("(c) setup: the main-reading pointer is untouched by the after-sleep invalidity "
+          "(the row itself, not root-independent) - pooled_nevertwice.stale.rate is refused "
+          "too, but via ROOT propagation, since root propagation does not distinguish readings",
+          _refused(res_c, PTR_STALE) is not None)
+
+    print("\n- K25 mutation 'root propagation removed': the constituent-invalidity block "
+          "(everything computed into constituent_invalid) skipped entirely -")
+    # Simpler and more faithful than re-deriving pool()'s whole body: call the REAL pool() on
+    # the (a) scenario, then strip exactly what K25's root-propagation block added (root
+    # 'valid'/'invalid_reason' - nothing else on the artifact changes), and show the SAME
+    # checks that passed above now fail. This is exactly the artifact a reverted
+    # `constituent_invalid`/root-write block would have produced, since every OTHER field is
+    # untouched by that block.
+    res_a_mut = json.loads(json.dumps(res_a))
+    del res_a_mut["valid"]
+    del res_a_mut["invalid_reason"]
+    check("mutation 'root propagation removed': pooled_nevertwice.stale.rate is now WRONGLY "
+          "restorable (would FAIL the (a) 'pooled_nevertwice.stale.rate is refused' check "
+          "above)", _refused(res_a_mut, PTR_STALE) is None, str(_refused(res_a_mut, PTR_STALE)))
+    check("mutation 'root propagation removed': pairs[1].p_mcnemar is now WRONGLY "
+          "restorable (would FAIL the (a) 'pairs[1].p_mcnemar is refused too' check above)",
+          _refused(res_a_mut, PTR_PAIR_MEM0_NV) is None, str(_refused(res_a_mut, PTR_PAIR_MEM0_NV)))
+
+    print("\n- K25 mutation 'the --with constituents not checked': pool() built with mem0's "
+          "own constituent invalidity ignored -")
+    # Same idea, isolated to the --with axis: strip the root flag from the (b) scenario (mem0
+    # invalid via --with) specifically, showing (b)'s own checks would go red without it.
+    res_b_mut = json.loads(json.dumps(res_b))
+    del res_b_mut["valid"]
+    del res_b_mut["invalid_reason"]
+    check("mutation 'the --with constituents not checked': pooled_nevertwice.stale.rate is "
+          "now WRONGLY restorable (would FAIL the (b) checks above)",
+          _refused(res_b_mut, PTR_STALE) is None, str(_refused(res_b_mut, PTR_STALE)))
+
+    print("\n- K25 mutation 'the run-file root not checked': a file's OWN root valid:false "
+          "(not nested in any arm) never propagated -")
+    k25_root_bad = _write(
+        tmp_k25, "root_bad.json",
+        dict(_blob({"nevertwice": _arm(engine_rows({"s0", "s1"}), 240.0)}),
+            valid=False, invalid_reason="synthetic: this FILE's own root is invalid, not any arm"))
+    res_root = sb.pool([k25_run1, k25_root_bad], [k25_mem0_clean])
+    check("K25 catches a file-root-level valid:false too: the pool's root is invalid",
+          res_root.get("valid") is False, str(res_root.get("valid")))
+    check("K25 catches a file-root-level valid:false too: pooled_nevertwice.stale.rate refused",
+          _refused(res_root, PTR_STALE) is not None, str(_refused(res_root, PTR_STALE)))
+    res_root_mut = json.loads(json.dumps(res_root))
+    del res_root_mut["valid"]
+    del res_root_mut["invalid_reason"]
+    check("mutation 'the run-file root not checked': pooled_nevertwice.stale.rate is now "
+          "WRONGLY restorable (would FAIL the file-root check above)",
+          _refused(res_root_mut, PTR_STALE) is None, str(_refused(res_root_mut, PTR_STALE)))
+
+    print("\n- K25/P5.2 (the auditor): the file-root check at the --WITH-file site "
+          "specifically - `k25_root_bad` above went through engine_files (the FIRST "
+          "`if blob.get('valid') is False` block in pool()); a --with file's own root is a "
+          "SEPARATE block, and a mutation removing only THAT one was not caught by any "
+          "existing check -")
+    # a --with file whose ROOT is invalid but whose ARM (zep - not used by k25_run1/run2, so
+    # this is its only constituent) is perfectly clean - the ONLY possible source of root
+    # invalidity in this scenario is the --with-file-root check.
+    k25_with_root_bad = _write(
+        tmp_k25, "with_root_bad.json",
+        dict(_blob({"zep": _arm(naive_rows(), 200.0)}),
+            valid=False, invalid_reason="synthetic: this --WITH FILE's own root is invalid"))
+    res_p52 = sb.pool([k25_run1, k25_run2_clean], [k25_with_root_bad])
+    check("P5.2 setup: the zep arm carried by the --with file is itself clean",
+          res_p52["arms"]["zep"].get("valid") is not False, str(res_p52["arms"]["zep"]))
+    check("P5.2: the pool's root is invalid anyway, from the --with file's own root",
+          res_p52.get("valid") is False, str(res_p52.get("valid")))
+    check("P5.2: the reason names the --with file",
+          "with_root_bad.json" in (res_p52.get("invalid_reason") or ""),
+          res_p52.get("invalid_reason"))
+    check("P5.2: pooled_nevertwice.stale.rate is refused via the root",
+          _refused(res_p52, PTR_STALE) is not None, str(_refused(res_p52, PTR_STALE)))
+    res_p52_mut = json.loads(json.dumps(res_p52))
+    del res_p52_mut["valid"]
+    del res_p52_mut["invalid_reason"]
+    check("P5.2 mutation 'the --with-file-root check removed': pooled_nevertwice.stale.rate "
+          "is now WRONGLY restorable (would FAIL the P5.2 checks above) - this is the "
+          "mutation the auditor found surviving, on the --with-file site specifically, not "
+          "the engine-file one the earlier 'run-file root not checked' mutation covers",
+          _refused(res_p52_mut, PTR_STALE) is None, str(_refused(res_p52_mut, PTR_STALE)))
+
+print("\n- W4 (the auditor's (в) on 7b2e0bf): the FIRST mem0 constituent is blocked, the second "
+      "live - the pairs are computed from the live one (never index 0), and the pool is invalid -")
+with tempfile.TemporaryDirectory() as tmp_w4:
+    w4_run1 = _write(tmp_w4, "run1.json", _blob({"nevertwice": _arm(engine_rows({"s0"}), 260.0),
+                                                 "naive": _arm(naive_rows(), 200.0)}))
+    w4_blocked = _write(tmp_w4, "mem0_blocked.json", _blob({"mem0": {"blocked": "qdrant lock timeout"}}))
+    w4_live = _write(tmp_w4, "mem0_live.json", _blob({"mem0": _arm(mem0_rows(), 450.0)}))
+    try:
+        res_w4 = sb.pool([w4_run1], [w4_blocked, w4_live])
+        w4_err = None
+    except Exception as e:                                    # noqa: BLE001 - a named red, not a crash
+        res_w4, w4_err = {}, f"{type(e).__name__}: {e}"
+    check("W4: pool() survives a blocked FIRST mem0 constituent (no KeyError on 'rows')",
+          w4_err is None, str(w4_err))
+    w4_pair = next((p for p in (res_w4.get("pairs") or []) if {p.get("a"), p.get("b")} == {"mem0", "nevertwice"}), None)
+    check("W4: the mem0-vs-nevertwice pair is computed from the LIVE constituent (4 supersession cases)",
+          w4_pair is not None and w4_pair.get("n") == 4, str(w4_pair))
+    check("W4: the per-engine-run pairs are computed too",
+          len(res_w4.get("pairs_per_engine_run") or []) == 1, str(res_w4.get("pairs_per_engine_run")))
+    check("W4: the pool is invalid at the root, naming the blocked file (P0(d) + P2)",
+          res_w4.get("valid") is False and "mem0_blocked.json" in (res_w4.get("invalid_reason") or ""),
+          str(res_w4.get("invalid_reason")))
 
 print(f"\n{'ALL OK' if not FAILS else f'{FAILS} FAILED'}")
 sys.exit(1 if FAILS else 0)
