@@ -142,15 +142,17 @@ _tracked = subprocess.run(["git", "ls-files", "*.py"], cwd=T.ROOT, capture_outpu
                           text=True, encoding="utf-8").stdout.split()
 _src = [f for f in _tracked if T.MODEL_CALL.search(
         (T.ROOT / f).read_text(encoding="utf-8", errors="replace"))]
-#: Fifteen, of which eleven CALL the endpoint and four only quote it: this suite, the tool
-#: itself, `_test_audit_fixes.py`, and `tests/research/_test_ollama_pacer.py` (R-v2-ports'
-#: T7 names `/api/generate` as a `httpx.MockTransport` path for its streaming-response
-#: case - a hermetic test double, never a real endpoint). That is the declared false-positive
-#: direction - a file wrongly read as touching a model is kept out of the deterministic group,
-#: which is the safe side for a campaign plan. The count is pinned so that narrowing the rule
-#: again reddens here instead of quietly returning it to the one file it used to see.
-check("fifteen tracked sources name a generation endpoint, so the rule has a population",
-      len(_src) == 15, str(len(_src)))
+#: Sixteen, of which eleven CALL the endpoint and five only quote it: this suite, the tool
+#: itself, `_test_audit_fixes.py`, `tests/research/_test_ollama_pacer.py` (R-v2-ports' T7
+#: names `/api/generate` as a `httpx.MockTransport` path for its streaming-response case),
+#: and `research/_ollama_symmetry_probe.py` (its fake Ollama SERVES `/api/chat` and
+#: `/api/generate` - it answers those paths, it never calls them). That is the declared
+#: false-positive direction - a file wrongly read as touching a model is kept out of the
+#: deterministic group, which is the safe side for a campaign plan. The count is pinned so
+#: that narrowing the rule again reddens here instead of quietly returning it to the one
+#: file it used to see.
+check("sixteen tracked sources name a generation endpoint, so the rule has a population",
+      len(_src) == 16, str(len(_src)))
 check("and the generators it could not see before are among them",
       {"research/gen_code_sessions.py", "research/frontier_eval.py",
        "research/token_ab.py"} <= set(_src))
