@@ -36,6 +36,7 @@ sandbox_guard.isolate()
 
 import supersession_bench as sb  # noqa: E402
 import _provenance as prov  # noqa: E402 - measured_at: {commit, utc, dirty} on the artifact
+import _ollama_pacer as pacer  # noqa: E402 - R-v2-ports item 9A: pace/retry/count this stand's own traffic
 
 ASOF = ROOT / "research" / "results" / "asof_v1.json"
 DATASET = ROOT / "research" / "data" / "supersession_v1.json"
@@ -63,6 +64,9 @@ def main() -> int:
     os.environ.setdefault("NEVERTWICE_EXTRACT_TEMP", "0")
     from nevertwice import api                                   # noqa: PLC0415
     import memory_hook as m                                      # noqa: PLC0415
+
+    pacer.install()          # R-v2-ports item 9A: pace/retry/count this stand's own traffic
+    snap = pacer.snapshot()
 
     raw = Path(args.dataset).read_bytes()
     data = json.loads(raw.decode("utf-8"))
@@ -133,6 +137,10 @@ def main() -> int:
                "dataset": {"name": data["name"], "sha256": hashlib.sha256(raw).hexdigest()},
                "llm": sb.LLM, "extract_temperature": os.environ.get("NEVERTWICE_EXTRACT_TEMP"),
                "silent_cases": len(ids), "by_kind": kinds, "rows": rows}
+        # R-v2-ports/K16(2): attached at the artifact's own root - this stand writes exactly
+        # ONE artifact (research/results/silence_probe.json), so this IS the container every
+        # registered claim's pointer (`by_kind[...]`, `silent_cases`) resolves through.
+        pacer.attach(out, since=snap)
         prov.stamp(out)
         Path(args.out).write_text(json.dumps(out, indent=1, ensure_ascii=False), encoding="utf-8", newline="\n")
         print("wrote", args.out)
