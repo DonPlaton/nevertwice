@@ -50,6 +50,7 @@ import collections
 import hashlib
 import json
 import os
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -426,6 +427,85 @@ def _propagate_root_invalidity(out: dict, extra_reasons: list[str] | None = None
         out["invalid_reason"] = "; ".join(reasons)
 
 
+ENGINE_ARM = "nevertwice"
+
+
+def spawn_runs(args, arm_names: list[str]) -> list[tuple[str, dict]] | None:
+    """K41: `--runs N` as N FRESH PROCESSES, never a loop in one - the same fix
+    `supersession_bench.py` took on 2026-09-22. `sandbox_guard.isolate()` binds ONE store to the
+    process that imports it, so the old in-process loop wrote run 2 into the store run 1 had
+    already filled (and, with `--sleep`, made both runs compete for one adjudication budget).
+    Measured at 64011bb, temperature 0, all 60 cases, `--runs 2 --sleep` in one process: session
+    one never written 3 vs 8 cases, both-correct 52 vs 44, 10 cases discordant - exactly the gap
+    the committed asof_v1.json carried (per_run 0.8667 vs 0.7333). Run 1 measures every requested
+    arm; later runs only the engine arm, the only one that goes through the extractor.
+
+    Returns [(file name, blob)] per run, or None when a run failed (nothing is pooled)."""
+    stem = Path(args.out)
+    stem.parent.mkdir(parents=True, exist_ok=True)
+    base = [sys.executable, str(Path(__file__).resolve()), "--dataset", args.dataset,
+            "--k", str(args.k), "--runs", "1"]
+    if args.limit:
+        base += ["--limit", str(args.limit)]
+    if args.sleep:
+        base += ["--sleep"]
+    if args.recent:
+        base += ["--recent"]
+    got: list[tuple[str, dict]] = []
+    for i in range(1, args.runs + 1):
+        names = arm_names if i == 1 else [ENGINE_ARM]
+        q = stem.with_name(f"{stem.stem}.run{i}{stem.suffix or '.json'}")
+        print(f"=== run {i} of {args.runs} ({', '.join(names)}), fresh process ===", flush=True)
+        rc = subprocess.run(base + ["--arms", ",".join(names), "--out", str(q)],
+                            cwd=str(ROOT)).returncode
+        if rc != 0 or not q.exists():
+            print(f"run {i} failed (exit {rc}); nothing pooled")
+            return None
+        got.append((q.name, json.loads(q.read_text(encoding="utf-8"))))
+    return got
+
+
+def pool_engine_runs(runs: list[tuple[str, dict]]) -> dict:
+    """The engine arm (and its after-sleep reading) pooled over case-runs from N run files, the
+    per-run values beside it - the shape the in-process loop used to produce - plus every other
+    arm from run 1. Refuses runs that are not repeats of one program (different commits, or a
+    shared store). Any run's own invalidity - its arm, its after-sleep arm, or its file root -
+    makes the pooled arm invalid, naming the file (PREREG P2)."""
+    commits = {(b.get("measured_at") or {}).get("commit") for _, b in runs} - {None}
+    if len(commits) > 1:
+        raise ValueError(f"runs came from different commits {sorted(commits)}: not a repeat of one program")
+    stores = [b.get("store") for _, b in runs if b.get("store")]
+    if len(stores) != len(set(stores)):
+        raise ValueError(f"two runs share one store {sorted(set(stores))}: not a repeat of one commit")
+    arms: dict[str, dict] = {}
+    for key in (ENGINE_ARM, f"{ENGINE_ARM}_after_sleep"):
+        parts = [(f, b["arms"].get(key)) for f, b in runs]
+        if any(a is None for _, a in parts):
+            if key == ENGINE_ARM:
+                raise ValueError("a run file carries no engine arm")
+            continue
+        rows = [dict(r, run=i) for i, (_, a) in enumerate(parts) for r in (a.get("rows") or [])]
+        res = {"rows": rows, **score(rows), "runs": len(parts),
+               "per_run": [a.get("both_correct_rate") for _, a in parts],
+               "seconds": round(sum(float(a.get("seconds") or 0) for _, a in parts), 1),
+               "config": parts[0][1].get("config", ""), "run_files": [f for f, _ in parts],
+               "ollama_transport_per_run": [a.get("ollama_transport") for _, a in parts]}
+        if key != ENGINE_ARM:
+            res["adjudication_per_run"] = [a.get("adjudication") for _, a in parts]
+        reasons = [f"{f}: {a.get('invalid_reason') or 'no reason recorded'}"
+                   for f, a in parts if a.get("valid") is False]
+        reasons += [f"{f} (file root): {b.get('invalid_reason') or 'no reason recorded'}"
+                    for f, b in runs if b.get("valid") is False]
+        if reasons:
+            res["valid"] = False
+            res["invalid_reason"] = "; ".join(reasons)
+        arms[key] = res
+    for name, res in runs[0][1]["arms"].items():
+        if not name.startswith(ENGINE_ARM) and name != "mem0":
+            arms[name] = res
+    return arms
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--dataset", default=str(DATASET))
@@ -456,9 +536,30 @@ def main() -> int:
                        "supersession_cases": len(cases)},
            "days": {"first": DAY_FIRST, "between": DAY_BETWEEN, "second": DAY_SECOND, "after": DAY_AFTER},
            "recent": bool(args.recent),
-           "k": args.k, "llm": sb.LLM, "embedder": sb.EMBED_MODEL, "arms": {}}
+           "k": args.k, "llm": sb.LLM, "embedder": sb.EMBED_MODEL, "arms": {},
+           "store": str(sandbox_guard.store())}
+    arm_names = [a.strip() for a in args.arms.split(",") if a.strip()]
+    if args.runs < 1:
+        print(f"--runs {args.runs}: a run count below 1 measures nothing")
+        return 2
+    if args.runs > 1 and ENGINE_ARM in arm_names:
+        if not args.out:
+            print("--runs N needs --out: the per-run artifacts are written beside the pooled one")
+            return 2
+        got = spawn_runs(args, arm_names)
+        if got is None:
+            return 2
+        try:
+            out["arms"].update(pool_engine_runs(got))
+        except (ValueError, KeyError) as e:
+            print(f"pool: {e}")
+            return 2
+        eng = out["arms"][ENGINE_ARM]
+        print(f"- {ENGINE_ARM} pooled over {eng['runs']} fresh processes: both-correct "
+              f"{eng['both_correct_rate']} {eng['both_correct_ci']} | per run {eng['per_run']}")
+        arm_names = []                       # every requested arm was measured in the runs
     pacer.install()          # R-v2-ports item 9A: pace/retry/count every arm's own Ollama traffic
-    for name in [a.strip() for a in args.arms.split(",") if a.strip()]:
+    for name in arm_names:
         fn = ARMS.get(name)
         if fn is None:
             print(f"- {name}: unknown arm (have: {', '.join(ARMS)})")

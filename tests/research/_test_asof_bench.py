@@ -576,5 +576,148 @@ with _isolated_pacer():
     check("ab._propagate_root_invalidity restored after the K29 mutation",
           ab._propagate_root_invalidity is saved_propagate_k29)
 
+print("\nK41: --runs N is N FRESH PROCESSES (supersession's 2026-09-22 fix) - measured at 64011bb, "
+      "the in-process loop gave session-one-never-written 3 vs 8 and 10 of 60 cases discordant -")
+
+
+def _k41_arm(rates, valid=None):
+    rows = [{"id": f"c{j}", "shape": "value_replaced", "old_day_correct": ok, "new_day_correct": True,
+             "both_correct": ok, "store": {"s0": {"written": 1}}} for j, ok in enumerate(rates)]
+    a = {"rows": rows, **ab.score(rows), "seconds": 1.0, "config": "cfg",
+         "ollama_transport": {"calls": 3}}
+    if valid is False:
+        a["valid"] = False
+        a["invalid_reason"] = "ollama_transport.failed_outcomes_llm=1 (the extractor call failed)"
+    return a
+
+
+def _k41_blob(rates, commit="c" * 40, store="S1", with_naive=True, valid=None, sleep=True):
+    arms = {"nevertwice": _k41_arm(rates, valid)}
+    if sleep:
+        arms["nevertwice_after_sleep"] = dict(_k41_arm(rates), adjudication={"pairs": 2})
+    if with_naive:
+        arms["naive"] = _k41_arm([True, False])
+    arms["mem0"] = {"blocked": "by design"}
+    return {"dataset": {"sha256": "x"}, "arms": arms, "store": store,
+            "measured_at": {"commit": commit, "utc": "2026-09-24T19:00:00Z", "dirty": False}}
+
+
+runs_ok = [("o.run1.json", _k41_blob([True, True, False, True])),
+           ("o.run2.json", _k41_blob([True, False, False, True], store="S2", with_naive=False))]
+pooled = ab.pool_engine_runs(runs_ok)
+eng = pooled["nevertwice"]
+check("K41: the engine arm is pooled over the run files (rows tagged 0/1, runs=2, per-run kept)",
+      eng["runs"] == 2 and len(eng["rows"]) == 8 and {r["run"] for r in eng["rows"]} == {0, 1}
+      and eng["per_run"] == [0.75, 0.5] and eng["run_files"] == ["o.run1.json", "o.run2.json"], str(eng.get("per_run")))
+check("K41: the pooled rate is scored over all case-runs (5 of 8)", eng["both_correct_rate"] == 0.625,
+      str(eng["both_correct_rate"]))
+check("K41: the after-sleep reading is pooled the same way, with each run's adjudication",
+      pooled["nevertwice_after_sleep"]["runs"] == 2
+      and pooled["nevertwice_after_sleep"]["adjudication_per_run"] == [{"pairs": 2}, {"pairs": 2}])
+check("K41: the other arms come from run 1 (they are measured once), mem0 is not carried",
+      "naive" in pooled and "mem0" not in pooled)
+
+bad = [runs_ok[0], ("o.run2.json", _k41_blob([True, True, True, True], store="S2", with_naive=False, valid=False))]
+pooled_bad = ab.pool_engine_runs(bad)
+out_bad = {"arms": dict(pooled_bad)}
+ab._propagate_root_invalidity(out_bad, [])
+check("K41: an invalid run 2 makes the pooled engine arm invalid, naming its file (P2)",
+      pooled_bad["nevertwice"].get("valid") is False and "o.run2.json" in pooled_bad["nevertwice"]["invalid_reason"])
+check("K41: ...and the root, so row_refusal refuses both the engine and the naive pointer",
+      rm.row_refusal(out_bad, 'arms["nevertwice"].both_correct_rate', 0) is not None
+      and rm.row_refusal(out_bad, 'arms["naive"].both_correct_rate', 0) is not None)
+root_bad = [runs_ok[0], ("o.run2.json", dict(_k41_blob([True] * 4, store="S2", with_naive=False),
+                                              valid=False, invalid_reason="file root"))]
+check("K41: a run file's own ROOT invalid also invalidates the pooled arm",
+      ab.pool_engine_runs(root_bad)["nevertwice"].get("valid") is False)
+try:
+    ab.pool_engine_runs([runs_ok[0], ("o.run2.json", _k41_blob([True] * 4, commit="d" * 40, store="S2"))])
+    check("K41: runs from different commits are refused", False)
+except ValueError as e:
+    check("K41: runs from different commits are refused", "different commits" in str(e), str(e))
+try:
+    ab.pool_engine_runs([runs_ok[0], ("o.run2.json", _k41_blob([True] * 4))])
+    check("K41: two runs sharing one store are refused", False)
+except ValueError as e:
+    check("K41: two runs sharing one store are refused", "share one store" in str(e), str(e))
+
+print("\nK41: main() --runs 2 spawns one subprocess per run (run 1 all arms, later runs the engine "
+      "only), never calls run_nevertwice in the parent, and a failed run pools nothing -")
+saved_run, saved_nt = ab.subprocess.run, ab.run_nevertwice
+parent_calls = {"n": 0}
+spawned: list = []
+
+
+def _fake_nt(*a, **k):
+    parent_calls["n"] += 1
+    raise AssertionError("run_nevertwice called in the parent process")
+
+
+class _Rc:
+    def __init__(self, rc):
+        self.returncode = rc
+
+
+def _fake_run_factory(fail_at=None):
+    def _fake_run(cmd, *a, **kw):
+        if not any(str(x).endswith("asof_bench.py") for x in cmd):
+            return saved_run(cmd, *a, **kw)        # git et al. (provenance) go to the real one
+        spawned.append(list(cmd))
+        n = len(spawned)
+        out = Path(cmd[cmd.index("--out") + 1])
+        if n == fail_at:
+            return _Rc(1)
+        arms_arg = cmd[cmd.index("--arms") + 1].split(",")
+        out.write_text(json.dumps(_k41_blob([True, n == 1, True, True], store=f"S{n}",
+                                            with_naive="naive" in arms_arg)), encoding="utf-8")
+        return _Rc(0)
+    return _fake_run
+
+
+ab.run_nevertwice = _fake_nt
+try:
+    with tempfile.TemporaryDirectory() as td_k41:
+        ds = Path(td_k41) / "ds.json"
+        ds.write_text(json.dumps({"name": "mini", "cases": [{"id": "c0", "shape": "value_replaced",
+                                  "sessions": [["a"], ["b"]], "query": "q", "current": ["b"],
+                                  "superseded": ["a"]}]}), encoding="utf-8")
+        ab.subprocess.run = _fake_run_factory()
+        saved_argv = sys.argv
+        try:
+            sys.argv = ["asof_bench.py", "--dataset", str(ds), "--arms", "nevertwice,naive", "--runs", "2",
+                        "--sleep", "--out", str(Path(td_k41) / "pooled.json")]
+            try:
+                with contextlib.redirect_stdout(io.StringIO()):
+                    rc_k41 = ab.main()
+            except AssertionError as e:          # the parent ran the engine in-process: a named red below
+                rc_k41 = f"crash: {e}"
+        finally:
+            sys.argv = saved_argv
+        art_k41 = json.loads((Path(td_k41) / "pooled.json").read_text(encoding="utf-8")) \
+            if (Path(td_k41) / "pooled.json").exists() else {}
+        check("K41: main() exits 0 and writes the pooled artifact", rc_k41 == 0 and bool(art_k41), str(rc_k41))
+        check("K41: two subprocesses, each with --runs 1; run 1 all arms, run 2 the engine arm only",
+              len(spawned) == 2 and all(c[c.index("--runs") + 1] == "1" for c in spawned)
+              and spawned[0][spawned[0].index("--arms") + 1] == "nevertwice,naive"
+              and spawned[1][spawned[1].index("--arms") + 1] == "nevertwice"
+              and all("--sleep" in c for c in spawned), str(spawned)[:300])
+        check("K41: run_nevertwice was never called in the parent process", parent_calls["n"] == 0)
+        check("K41: the pooled artifact carries runs=2 and both arms",
+              (art_k41.get("arms", {}).get("nevertwice") or {}).get("runs") == 2 and "naive" in art_k41.get("arms", {}))
+        spawned.clear()
+        ab.subprocess.run = _fake_run_factory(fail_at=2)
+        try:
+            sys.argv = ["asof_bench.py", "--dataset", str(ds), "--arms", "nevertwice,naive", "--runs", "2",
+                        "--out", str(Path(td_k41) / "pooled2.json")]
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc_fail = ab.main()
+        finally:
+            sys.argv = saved_argv
+        check("K41: a failed run pools nothing (exit 2, no pooled file)",
+              rc_fail == 2 and not (Path(td_k41) / "pooled2.json").exists(), str(rc_fail))
+finally:
+    ab.subprocess.run, ab.run_nevertwice = saved_run, saved_nt
+check("ab.subprocess.run and ab.run_nevertwice are restored", ab.subprocess.run is saved_run and ab.run_nevertwice is saved_nt)
+
 print(f"\n{'ALL OK' if not FAILS else f'{FAILS} FAILED'}")
 sys.exit(1 if FAILS else 0)
