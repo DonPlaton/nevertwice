@@ -314,11 +314,14 @@ def test_t2_retry_resends_the_identical_request_object() -> None:
         clock = FakeClock()
         pacer._now, pacer._sleep = clock.now, clock.sleep
         req = urllib.request.Request("http://127.0.0.1:11434/api/embed", data=b'{"a":1}')
-        seen_ids: list = []
+        #: K40: the OBJECTS themselves, not their id() - CPython reuses a freed object's
+        #: address, so ids of short-lived rebuilt requests can collide and hide the mutation
+        #: below (CI packaging job, 2026-09-24). Live references cannot collide.
+        seen_objs: list = []
         attempts = {"n": 0}
 
         def flaky(r, *a, **k):
-            seen_ids.append(id(r))
+            seen_objs.append(r)
             attempts["n"] += 1
             if attempts["n"] <= 2:
                 raise urllib.error.HTTPError(
@@ -334,20 +337,21 @@ def test_t2_retry_resends_the_identical_request_object() -> None:
         # silently never runs. Names every check this block would otherwise make.
         with _crash_guard("the call eventually succeeds",
                           "exactly 3 attempts were made (2 failures + 1 success)",
-                          "every attempt reused the IDENTICAL Request object (same id())",
+                          "every attempt reused the IDENTICAL Request object (`is`)",
                           "retries counted = 2"):
             result = urllib.request.urlopen(req)
             check("the call eventually succeeds", result == "OK")
             check("exactly 3 attempts were made (2 failures + 1 success)",
                   attempts["n"] == 3, str(attempts["n"]))
-            check("every attempt reused the IDENTICAL Request object (same id())",
-                  len(set(seen_ids)) == 1 and seen_ids[0] == id(req), str(seen_ids))
+            check("every attempt reused the IDENTICAL Request object (`is`)",
+                  len(seen_objs) == 3 and all(o is req for o in seen_objs),
+                  str([id(o) for o in seen_objs]))
             check("retries counted = 2", pacer.snapshot()["retries"] == 2)
 
         # mutation: rebuild the request from scratch on every attempt (same bytes, a
         # NEW object) instead of resending the one the caller handed us
         attempts["n"] = 0
-        seen_ids.clear()
+        seen_objs.clear()
 
         def _rebuilding_paced_urlopen(*args, **kwargs):
             r = args[0] if args else kwargs.get("url")
@@ -362,12 +366,13 @@ def test_t2_retry_resends_the_identical_request_object() -> None:
                 return orig(rebuilt, *args[1:], **kwargs)
             return pacer._run_paced(_call)
         urllib.request.urlopen = _rebuilding_paced_urlopen
-        with _crash_guard("mutation 'rebuild request': the attempts no longer share the "
-                         "SAME object id (would FAIL the identical-object check above)"):
+        with _crash_guard("mutation 'rebuild request': the attempts are no longer the SAME "
+                         "object (would FAIL the identical-object check above)"):
             urllib.request.urlopen(req)
-            check("mutation 'rebuild request': the attempts no longer share the SAME object "
-                  "id (would FAIL the identical-object check above)",
-                  len(set(seen_ids)) > 1, str(seen_ids))
+            check("mutation 'rebuild request': the attempts are no longer the SAME object "
+                  "(would FAIL the identical-object check above)",
+                  len(seen_objs) == 3 and any(o is not req for o in seen_objs),
+                  str([id(o) for o in seen_objs]))
 
 
 # ── T3: a non-port HTTPError is re-raised once, its body still readable afterwards ─────

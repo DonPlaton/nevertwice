@@ -148,6 +148,35 @@ with _isolated_pacer():
     check("K39: the default run's transport record says mode 'pace'", ot_k39.get("mode") == "pace",
           str(ot_k39.get("mode")))
 
+print("\n- K40 (CI packaging has no `requests`): a FAILED /api/generate through the paced urllib path (K33) marks the run invalid in the BASE environment, and row_refusal refuses a REAL claim pointer -")
+
+
+def _fake_urlopen_generate_500(*a, **kw):
+    req = a[0] if a else kw.get("url")
+    url = req.full_url if hasattr(req, "full_url") else str(req)
+    raise urllib.error.HTTPError(url, 500, "Internal Server Error", {},
+                                 io.BytesIO(b'{"error": "model runner has unexpectedly stopped"}'))
+
+
+with _isolated_pacer():
+    urllib.request.urlopen = _fake_urlopen_generate_500
+    with tempfile.TemporaryDirectory() as td_k40:
+        res_k40 = _run_mini(Path(td_k40) / "out.json")          # --timing: observe, no retry sleeps
+    art_k40 = res_k40["artifact"]
+    ot_k40 = art_k40.get("ollama_transport") or {}
+    check("K40: main() still exits 0 (a failed judge call is recorded, not fatal)",
+          res_k40["rc"] == 0, str(res_k40["rc"]))
+    _fo_k40 = ot_k40.get("failed_outcomes_llm") or {}
+    check("K40: the failed /api/generate is tallied in failed_outcomes_llm",
+          bool(_fo_k40.get("by_status") or _fo_k40.get("by_exception_type") or _fo_k40.get("gave_up")),
+          str(_fo_k40))
+    check("K40: the run is marked invalid, naming llm",
+          art_k40.get("valid") is False and "llm" in (art_k40.get("invalid_reason") or ""),
+          str(art_k40.get("invalid_reason")))
+    reason_k40 = remeasure_mod.row_refusal(art_k40, "pooled.seconds_per_pair", 0)
+    check("K40: row_refusal refuses the REAL pointer absorb_judge.seconds_per_pair",
+          reason_k40 is not None and "invalid" in reason_k40, str(reason_k40))
+
 print("\n- item 9A/P0(a): a genuine BYPASS (traffic to the Ollama host outside any paced call) "
       "still marks the run invalid in observe mode, and "
       "tools/remeasure.row_refusal refuses a REAL claim pointer -")
@@ -160,7 +189,10 @@ def _judge_with_bypass(old_title, old_desc, new_desc):
     dependency that bypasses the paced transport entirely. The real `requests.Session.send`
     is still reached (pacer.install() only COUNTS a requests/aiohttp bypass, never blocks it),
     so it is expected to fail to connect (nothing is listening) - only the COUNT matters here."""
-    import requests  # noqa: PLC0415
+    try:
+        import requests  # noqa: PLC0415
+    except ImportError:
+        return saved_judge(old_title, old_desc, new_desc)
     try:
         requests.get("http://localhost:11434/", timeout=0.5)
     except Exception:                                            # noqa: BLE001 - the count already landed
@@ -168,6 +200,14 @@ def _judge_with_bypass(old_title, old_desc, new_desc):
     return saved_judge(old_title, old_desc, new_desc)
 
 
+try:
+    import requests as _requests_probe  # noqa: F401
+    _HAVE_REQUESTS = True
+except ImportError:
+    _HAVE_REQUESTS = False
+check("`requests` importable - without it (the CI packaging job) the bypass block below is "
+      "SKIPPED, not failed; K40 above proves invalidity through the base environment",
+      True, "no requests: bypass block skipped")
 kj.judge = _judge_with_bypass
 with _isolated_pacer():
     urllib.request.urlopen = _fake_urlopen_ok
@@ -175,14 +215,15 @@ with _isolated_pacer():
         out_path2 = Path(td2) / "out.json"
         result2 = _run_mini(out_path2)
     art2 = result2["artifact"]
-    check("main() still exits 0 (a bypass is recorded, not fatal)", result2["rc"] == 0, str(result2["rc"]))
-    check("the run is marked invalid - a bypass reached the Ollama host outside the paced path",
-          art2.get("valid") is False and "bypass" in (art2.get("invalid_reason") or ""),
-          str(art2.get("invalid_reason")))
-    reason = remeasure_mod.row_refusal(art2, "pooled.seconds_per_pair", 0)
-    check("tools/remeasure.row_refusal refuses a REAL claim pointer "
-          "(absorb_judge.seconds_per_pair) on this invalid result",
-          reason is not None and "invalid" in reason, str(reason))
+    if _HAVE_REQUESTS:
+        check("main() still exits 0 (a bypass is recorded, not fatal)", result2["rc"] == 0, str(result2["rc"]))
+        check("the run is marked invalid - a bypass reached the Ollama host outside the paced path",
+              art2.get("valid") is False and "bypass" in (art2.get("invalid_reason") or ""),
+              str(art2.get("invalid_reason")))
+        reason = remeasure_mod.row_refusal(art2, "pooled.seconds_per_pair", 0)
+        check("tools/remeasure.row_refusal refuses a REAL claim pointer "
+              "(absorb_judge.seconds_per_pair) on this invalid result",
+              reason is not None and "invalid" in reason, str(reason))
 kj.judge = saved_judge
 
 print("\n- item 9A mutations: install()/attach() removed from the real run (in-process, "
