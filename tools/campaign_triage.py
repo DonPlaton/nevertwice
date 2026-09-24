@@ -151,6 +151,21 @@ DOORS = ("capture_session", "process_session", "generate_json", "write_typed_not
 #: error is the one that puts a model call in a list of arithmetic.
 MODEL_CALL = re.compile(r"/api/(generate|chat)(?![A-Za-z])")
 
+#: K33 (item 9D, 2026-09-24, the coordinator's own reasoning): the SAME shape of false positive
+#: as the `nevertwice/` prefix skip just above this function's own loop, one exact file instead
+#: of a whole directory. `research/_ollama_pacer.py` gained a bounded retry for LLM generation
+#: endpoints, so its own source now literally contains "/api/generate"/"/api/chat" (the
+#: `_LLM_PATHS` tuple, its comments) - MODEL_CALL matches it. But the pacer only wraps or
+#: re-sends a request a CALLER already originated; it defines no door and calls no endpoint of
+#: its own, so it is not evidence of what a PARTICULAR claim's own stand does - it is present in
+#: the closure of nearly every pacer-wired stand regardless of whether that stand's own code
+#: ever calls a generation endpoint. Left unexcluded, this one file flipped ~226 claims from A to
+#: D (measured 2026-09-24: A 271->45, D 335->561, own/comp split 211/60->45/0, tracked sources
+#: 16->17) - the register did not change, the transport module's own source did. Exact paths
+#: only, never a prefix or a pattern - `tests/_test_campaign_triage.py` pins both this set and
+#: the population it keeps out of the "sixteen tracked sources" listing.
+CLOSURE_EXCLUDED_FILES = frozenset({"research/_ollama_pacer.py"})
+
 #: Fields that measure the machine. F1 re-measured one of these and it moved by a third between
 #: two sessions on one box, with no code change.
 CLOCK_FIELDS = {"ms_per_call", "seconds", "latency", "ms", "p50_ms", "p95_ms", "query_s",
@@ -211,6 +226,8 @@ def triage(claim: dict) -> tuple[str, str]:
         rel = f.replace("\\", "/")
         if rel.startswith("nevertwice/"):
             continue                       # the engine DEFINES the doors; every closure holds it
+        if rel in CLOSURE_EXCLUDED_FILES:
+            continue
         d, m = _asked_of_source(rel)
         if d:
             door = rel

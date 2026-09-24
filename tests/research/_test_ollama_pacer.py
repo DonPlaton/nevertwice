@@ -779,9 +779,10 @@ def test_t8b_async_calls_by_host_via_httpx_asyncclient() -> None:
         pacer._reset_for_tests()
         real_run_paced_async = pacer._run_paced_async
 
-        async def _no_host_tally(call, host_key=None, is_embed=False):
+        async def _no_host_tally(call, host_key=None, is_embed=False, is_llm=False):
             before = dict(pacer._CALLS_BY_HOST)
-            result = await real_run_paced_async(call, host_key=host_key, is_embed=is_embed)
+            result = await real_run_paced_async(call, host_key=host_key, is_embed=is_embed,
+                                                is_llm=is_llm)
             with pacer._LOCK:
                 pacer._CALLS_BY_HOST.clear()
                 pacer._CALLS_BY_HOST.update(before)
@@ -1648,6 +1649,780 @@ def test_t9_observe_mode_paces_nothing_retries_nothing_still_counts_failures() -
               pacer._effective_max_retries is saved_eff)
 
 
+# ── T9b: K26 (the auditor's finding, 2026-09-24) - three gaps in T9's own coverage ──────
+#
+# The auditor's `mut82.py` mutates `research/_ollama_pacer.py` at 82013e4 four ways (M1-M4)
+# and reruns this whole file as a subprocess. Before the checks below existed, M1-M3
+# survived (this suite stayed green under each): T9 only ever drives observe mode through
+# `_pace()` (the SYNC urllib path), never `_pace_async()` (M1); nothing here calls
+# `uninstall()` after an `install(mode="observe")` and checks `_MODE` afterward (M2); and
+# T8's "shape carries every documented field" check does not even list `mode` among the
+# keys it requires, let alone its VALUE in "pace" mode (M3). M4 already dies on T9's own
+# "attach() writes timing_includes_pacing == False in observe mode" check.
+
+def test_t9b_async_observe_mode_and_mode_bookkeeping() -> None:
+    print("\n- T9b (K26): async observe mode paces nothing either; uninstall() resets "
+          "_MODE so a later install() is NOT stuck in 'observe'; a PACE-mode attach() "
+          "names its own mode too -")
+    try:
+        import httpx
+    except ImportError:
+        check("httpx importable (research extra) - this environment lacks it; every "
+              "other T9b assertion is skipped, not failed", True,
+              "install the `research` extra to exercise T9b's httpx path")
+        return
+    with _isolated():
+        # (a) K26: the ASYNC httpx.AsyncClient path through observe mode - a SEPARATE code
+        # path from T9's sync urllib coverage (`_pace_async`, not `_pace`), with its own
+        # `if _MODE == "observe": return` guard (mut82.py's M1 removes exactly this one).
+        clock = FakeClock()
+        pacer._now, pacer._sleep, pacer._async_sleep = (clock.now, clock.sleep,
+                                                         clock.async_sleep)
+        saved_pace_s = pacer.PACE_S
+        pacer.PACE_S = 0.125          # hermetic regardless of NEVERTWICE_OLLAMA_PACE_S in env
+
+        async def _ten_async_calls():
+            async def handler(request):
+                return httpx.Response(200, json={"ok": True})
+            client = httpx.AsyncClient(transport=httpx.MockTransport(handler),
+                                       base_url="http://127.0.0.1:11434")
+            for _ in range(10):
+                await client.get("/api/tags")
+            await client.aclose()
+        try:
+            pacer.install(mode="observe")
+            with _crash_guard("T9b: 10 async observe-mode calls give pace_sleep_s == 0",
+                              "T9b: 10 async observe-mode calls are still counted (calls "
+                              "== 10)"):
+                asyncio.run(_ten_async_calls())
+                snap = pacer.snapshot()
+                check("T9b: 10 async observe-mode calls give pace_sleep_s == 0",
+                      snap["pace_sleep_s"] == 0.0, str(snap))
+                check("T9b: 10 async observe-mode calls are still counted (calls == 10)",
+                      snap["calls"] == 10, str(snap))
+        finally:
+            pacer.uninstall()
+            pacer.PACE_S = saved_pace_s
+
+        # (b) K26: install(mode="observe") -> uninstall() -> install() gives mode "pace".
+        # Before this check existed, mut82.py's M2 (uninstall() drops its own
+        # `_MODE = "pace"` reset) survived: a stand that calls `install(mode="observe")`
+        # and later, in the SAME process, `uninstall()` then a plain `install()` (the exact
+        # sequence a test suite or a multi-stand campaign driver performs) would silently
+        # inherit "observe" pacing-off behaviour for a caller that asked for the default.
+        #
+        # The FIRST check below (right after `uninstall()`, before any second `install()`
+        # call) is the one that actually distinguishes M2: `install()` unconditionally
+        # re-derives `_MODE = mode` whenever `_INSTALLED` is False, so a SECOND install()
+        # call masks a leaked `_MODE` regardless of whether uninstall() reset it - checking
+        # only after the second install() (as the practical consequence reads) would pass
+        # under M2 too, and miss it entirely.
+        pacer._reset_for_tests()
+        pacer.install(mode="observe")
+        pacer.uninstall()
+        with _crash_guard("T9b: uninstall() itself resets _MODE to 'pace' (checked "
+                          "BEFORE any second install() call, which would mask this)"):
+            check("T9b: uninstall() itself resets _MODE to 'pace' (checked BEFORE any "
+                  "second install() call, which would mask this)",
+                  pacer._MODE == "pace", pacer._MODE)
+        pacer.install()
+        with _crash_guard("T9b: ... and the practical consequence holds too: a later "
+                          "plain install() gives mode 'pace'"):
+            check("T9b: ... and the practical consequence holds too: a later plain "
+                  "install() gives mode 'pace'", pacer._MODE == "pace", pacer._MODE)
+        pacer.uninstall()
+
+        # (c) K26: a PACE-mode attach() names its own mode too. T8's "shape carries every
+        # documented field" check never listed `mode` among the required keys, so mut82.py's
+        # M3 (attach() always writes "mode": "observe", even in pace mode) survived: a
+        # reader trusting `ollama_transport.mode == "pace"` to mean "no artificial spacing
+        # was excluded" would be told the OPPOSITE of what actually happened.
+        pacer._reset_for_tests()
+        pacer.install()
+
+        def ok():
+            return "ok"
+        pacer._run_paced(ok)
+        out: dict = {}
+        pacer.attach(out)
+        with _crash_guard("T9b: a PACE-mode attach() writes ollama_transport.mode == "
+                          "'pace'"):
+            check("T9b: a PACE-mode attach() writes ollama_transport.mode == 'pace'",
+                  out.get("ollama_transport", {}).get("mode") == "pace", str(out))
+        pacer.uninstall()
+
+
+# ── T10: K27 (the auditor's finding, 2026-09-24) - install() rejects a bad mode, and a ──
+# second install() in a DIFFERENT mode, instead of silently accepting either ────────────
+#
+# Before this: `install(mode="obsrve")` (a typo) was accepted and stored verbatim, and
+# `attach()` reported `"mode": "obsrve"` back - neither "pace" nor "observe" to a reader
+# checking PREREG-V2 P5's own rule. And `install()` then `install(mode="observe")` (the
+# auditor's own `observe_probe.py` reproduction) was ALWAYS a silent no-op regardless of
+# mode - the pacer stayed stuck in "pace", sleeping and retrying, while the caller believed
+# it had switched to observe.
+
+def test_t10_install_rejects_bad_mode_and_silent_mode_switch() -> None:
+    print("\n- T10 (K27): install() raises ValueError on a mode outside {'pace','observe'}; "
+          "raises RuntimeError on a second install() in a DIFFERENT mode; the SAME mode "
+          "twice stays the pre-existing idempotent no-op -")
+    with _isolated():
+        # (a) an invalid mode is refused outright - never installed, nothing patched.
+        with _crash_guard("T10: install(mode='obsrve') (a typo) raises ValueError",
+                          "T10: the pacer is NOT installed after the rejected call"):
+            raised = None
+            try:
+                pacer.install(mode="obsrve")
+            except ValueError as e:
+                raised = e
+            check("T10: install(mode='obsrve') (a typo) raises ValueError",
+                  raised is not None, str(raised))
+            check("T10: the pacer is NOT installed after the rejected call",
+                  not pacer.installed())
+
+        # (b) install() then install(mode="observe") - the exact sequence observe_probe.py
+        # (the auditor's own reproduction) showed as a silent no-op - now raises, and the
+        # pacer stays in its ORIGINAL mode rather than ending up half-switched.
+        pacer.install()
+        with _crash_guard("T10: install() then install(mode='observe') raises RuntimeError",
+                          "T10: ... and the pacer stays in its ORIGINAL mode ('pace'), not "
+                          "half-switched"):
+            raised2 = None
+            try:
+                pacer.install(mode="observe")
+            except RuntimeError as e:
+                raised2 = e
+            check("T10: install() then install(mode='observe') raises RuntimeError",
+                  raised2 is not None, str(raised2))
+            check("T10: ... and the pacer stays in its ORIGINAL mode ('pace'), not "
+                  "half-switched", pacer._MODE == "pace", pacer._MODE)
+        pacer.uninstall()
+
+        # (c) control: the SAME mode twice is still the pre-existing idempotent no-op -
+        # neither new check may make a defensively-repeated install() start raising.
+        pacer.install(mode="observe")
+        with _crash_guard("T10: control - install(mode='observe') twice in a row does NOT "
+                          "raise (still idempotent for the SAME mode)"):
+            try:
+                pacer.install(mode="observe")
+                ok_twice = True
+            except (ValueError, RuntimeError):
+                ok_twice = False
+            check("T10: control - install(mode='observe') twice in a row does NOT raise "
+                  "(still idempotent for the SAME mode)", ok_twice)
+        pacer.uninstall()
+        pacer.install()
+        with _crash_guard("T10: control - install() (mode='pace') twice in a row does NOT "
+                          "raise either"):
+            try:
+                pacer.install()
+                ok_twice2 = True
+            except (ValueError, RuntimeError):
+                ok_twice2 = False
+            check("T10: control - install() (mode='pace') twice in a row does NOT raise "
+                  "either", ok_twice2)
+        pacer.uninstall()
+
+        # mutation (rule 1 removed): a minimal reimplementation that drops ONLY the
+        # mode-membership check, keeping the different-mode guard intact - the same
+        # "reimplement, don't monkeypatch a helper that does not exist" style TW1's own
+        # `_install_without_tripwire` uses above for `install()`'s tripwire half.
+        def _install_without_mode_validation(mode: str = "pace") -> None:
+            with pacer._LOCK:
+                if pacer._INSTALLED:
+                    if mode != pacer._MODE:
+                        raise RuntimeError(f"already installed in mode {pacer._MODE!r}")
+                    return
+                pacer._MODE = mode
+                pacer._ORIG["urlopen"] = urllib.request.urlopen
+                urllib.request.urlopen = pacer._paced_urlopen
+                pacer._INSTALLED = True
+        saved_install = pacer.install
+        pacer.install = _install_without_mode_validation
+        try:
+            with _crash_guard("mutation 'rule 1 removed': install(mode='obsrve') no "
+                              "longer raises ValueError (would FAIL the ValueError check "
+                              "above)"):
+                raised3 = None
+                try:
+                    pacer.install(mode="obsrve")
+                except ValueError as e:
+                    raised3 = e
+                check("mutation 'rule 1 removed': install(mode='obsrve') no longer raises "
+                      "ValueError (would FAIL the ValueError check above)", raised3 is None,
+                      str(raised3))
+        finally:
+            pacer.uninstall()
+            pacer.install = saved_install
+        check("install is restored to the real function", pacer.install is saved_install)
+
+        # mutation (rule 2 removed): a minimal reimplementation that drops ONLY the
+        # already-installed-in-a-different-mode guard, keeping the mode-membership check.
+        def _install_without_mode_switch_guard(mode: str = "pace") -> None:
+            if mode not in pacer.VALID_MODES:
+                raise ValueError(f"bad mode {mode!r}")
+            with pacer._LOCK:
+                if pacer._INSTALLED:
+                    return                                    # the different-mode check removed
+                pacer._MODE = mode
+                pacer._ORIG["urlopen"] = urllib.request.urlopen
+                urllib.request.urlopen = pacer._paced_urlopen
+                pacer._INSTALLED = True
+        pacer.install = _install_without_mode_switch_guard
+        try:
+            pacer.install()
+            with _crash_guard("mutation 'rule 2 removed': install() then "
+                              "install(mode='observe') is WRONGLY a silent no-op again "
+                              "(would FAIL the RuntimeError check above), and _MODE stays "
+                              "stuck at 'pace'"):
+                raised4 = None
+                try:
+                    pacer.install(mode="observe")
+                except RuntimeError as e:
+                    raised4 = e
+                check("mutation 'rule 2 removed': install() then install(mode='observe') "
+                      "is WRONGLY a silent no-op again (would FAIL the RuntimeError check "
+                      "above), and _MODE stays stuck at 'pace'",
+                      raised4 is None and pacer._MODE == "pace",
+                      f"raised4={raised4!r} _MODE={pacer._MODE!r}")
+        finally:
+            pacer.uninstall()
+            pacer.install = saved_install
+        check("install is restored to the real function (again)",
+              pacer.install is saved_install)
+
+
+# ── T11: K33 (the auditor's finding, 2026-09-24) - a failed LLM call is scored as the ──────
+# system's own failure, with no record anywhere ─────────────────────────────────────────────
+#
+# A fake Ollama whose /api/generate answers 500 {"error": "model runner has unexpectedly
+# stopped"} made asof score "never_written" and left the artifact valid - failed_outcomes only
+# ever asked about embed traffic. failed_outcomes_llm (`_is_llm_path`: /api/generate, /api/chat,
+# /v1/chat/completions, /v1/completions) mirrors it exactly, plus a SEPARATE bounded retry (at
+# most 2, 15s then 30s), PACE mode only, covering both a 5xx status and (the coordinator's scope
+# addition) a timeout/connection-reset/connection-refused class transport exception - the same
+# class the engine's own retry logic already recovers from.
+
+def test_t11a_llm_generate_500_always_invalidates() -> None:
+    print("\n- T11a: generate -> 500 always - failed_outcomes_llm counts it, attach() gives "
+          "valid:False, llm_retries == LLM_MAX_RETRIES (both bounded retries exhausted) -")
+    with _isolated():
+        clock = FakeClock()
+        pacer._now, pacer._sleep = clock.now, clock.sleep
+        attempts = {"n": 0}
+
+        def always_500(r, *a, **k):
+            attempts["n"] += 1
+            raise urllib.error.HTTPError(
+                r.full_url, 500, "Internal Server Error", {},
+                io.BytesIO(b'{"error": "model runner has unexpectedly stopped"}'))
+        urllib.request.urlopen = always_500
+        pacer.install()
+        req = urllib.request.Request(
+            "http://127.0.0.1:11434/api/generate", data=b'{"model": "m", "prompt": "x"}')
+        with _crash_guard("T11a: the ORIGINAL 500 still propagates after exhausting the "
+                          "bounded LLM retry",
+                          f"T11a: exactly {pacer.LLM_MAX_RETRIES + 1} attempts were made "
+                          "(1 + LLM_MAX_RETRIES retries)",
+                          "T11a: llm_retries == LLM_MAX_RETRIES",
+                          "T11a: llm_retry_sleep_s == 15 + 30 = 45s (the two distinct "
+                          "intervals, not a uniform one)",
+                          "T11a: failed_outcomes_llm.by_status counts the 500",
+                          "T11a: attach() gives valid:False, naming 'llm'"):
+            raised = None
+            try:
+                urllib.request.urlopen(req)
+            except urllib.error.HTTPError as e:
+                raised = e
+            check("T11a: the ORIGINAL 500 still propagates after exhausting the bounded "
+                  "LLM retry", raised is not None)
+            check(f"T11a: exactly {pacer.LLM_MAX_RETRIES + 1} attempts were made (1 + "
+                  "LLM_MAX_RETRIES retries)", attempts["n"] == pacer.LLM_MAX_RETRIES + 1 == 3,
+                  str(attempts["n"]))
+            snap = pacer.snapshot()
+            check("T11a: llm_retries == LLM_MAX_RETRIES",
+                  snap["llm_retries"] == pacer.LLM_MAX_RETRIES, str(snap))
+            check("T11a: llm_retry_sleep_s == 15 + 30 = 45s (the two distinct intervals, "
+                  "not a uniform one)", abs(snap["llm_retry_sleep_s"] - 45.0) < 1e-9, str(snap))
+            out: dict = {}
+            pacer.attach(out)
+            ot = out.get("ollama_transport", {})
+            check("T11a: failed_outcomes_llm.by_status counts the 500",
+                  ot.get("failed_outcomes_llm", {}).get("by_status") == {500: 1}, str(ot))
+            check("T11a: attach() gives valid:False, naming 'llm'",
+                  out.get("valid") is False and "llm" in out.get("invalid_reason", ""),
+                  str(out))
+
+        # mutation: "generate excluded from the tally" - _is_llm_path stubbed to recognise
+        # nothing, the exact F1a-style mutation (pacer._is_embed_path stubbed False) applied
+        # to the LLM path instead.
+        pacer._reset_for_tests()
+        attempts["n"] = 0
+        saved_is_llm_path = pacer._is_llm_path
+        pacer._is_llm_path = lambda url: False
+        try:
+            with _crash_guard("mutation 'generate excluded from the tally': the SAME "
+                              "always-500 /api/generate call is now WRONGLY never tallied "
+                              "and the run stays valid (would FAIL the T11a checks above)"):
+                try:
+                    urllib.request.urlopen(req)
+                except urllib.error.HTTPError:
+                    pass
+                out2: dict = {}
+                pacer.attach(out2)
+                check("mutation 'generate excluded from the tally': the SAME always-500 "
+                      "/api/generate call is now WRONGLY never tallied and the run stays "
+                      "valid (would FAIL the T11a checks above)",
+                      "valid" not in out2
+                      and not out2.get("ollama_transport", {}).get("failed_outcomes_llm",
+                                                                    {}).get("by_status"),
+                      str(out2))
+        finally:
+            pacer._is_llm_path = saved_is_llm_path
+        check("_is_llm_path is restored to the real function",
+              pacer._is_llm_path is saved_is_llm_path)
+
+
+def test_t11b_llm_generate_500_once_recovers_in_pace_mode() -> None:
+    print("\n- T11b: generate -> 500 once, then success, in PACE mode - recovered: valid, "
+          "llm_retries 1, the SAME request bytes resent -")
+    with _isolated():
+        clock = FakeClock()
+        pacer._now, pacer._sleep = clock.now, clock.sleep
+        req = urllib.request.Request(
+            "http://127.0.0.1:11434/api/generate", data=b'{"model": "m", "prompt": "x"}')
+        seen_ids: list = []
+        attempts = {"n": 0}
+
+        def flaky(r, *a, **k):
+            seen_ids.append(id(r))
+            attempts["n"] += 1
+            if attempts["n"] == 1:
+                raise urllib.error.HTTPError(
+                    r.full_url, 500, "Internal Server Error", {},
+                    io.BytesIO(b'{"error": "model runner has unexpectedly stopped"}'))
+            return _JsonResp({"response": "ok", "done": True})
+        urllib.request.urlopen = flaky
+        pacer.install()                    # default mode: "pace"
+        with _crash_guard("T11b: the call eventually succeeds",
+                          "T11b: exactly 2 attempts were made (1 failure + 1 success)",
+                          "T11b: both attempts reused the IDENTICAL Request object",
+                          "T11b: llm_retries == 1",
+                          "T11b: the retry slept exactly 15s (the FIRST interval)",
+                          "T11b: the run is NOT marked invalid - it recovered"):
+            with contextlib.redirect_stderr(io.StringIO()):
+                result = urllib.request.urlopen(req)
+            check("T11b: the call eventually succeeds", result is not None)
+            check("T11b: exactly 2 attempts were made (1 failure + 1 success)",
+                  attempts["n"] == 2, str(attempts["n"]))
+            check("T11b: both attempts reused the IDENTICAL Request object",
+                  len(set(seen_ids)) == 1 and seen_ids[0] == id(req), str(seen_ids))
+            snap = pacer.snapshot()
+            check("T11b: llm_retries == 1", snap["llm_retries"] == 1, str(snap))
+            check("T11b: the retry slept exactly 15s (the FIRST interval)",
+                  abs(snap["llm_retry_sleep_s"] - 15.0) < 1e-9, str(snap))
+            out: dict = {}
+            pacer.attach(out)
+            check("T11b: the run is NOT marked invalid - it recovered",
+                  "valid" not in out, str(out))
+
+
+def test_t11c_llm_generate_500_once_observe_mode_no_retry_invalid() -> None:
+    print("\n- T11c: the SAME 500-once-then-success sequence in OBSERVE mode - no retry, "
+          "invalid (P5: observe mode never retries) -")
+    with _isolated():
+        clock = FakeClock()
+        pacer._now, pacer._sleep = clock.now, clock.sleep
+        req = urllib.request.Request(
+            "http://127.0.0.1:11434/api/generate", data=b'{"model": "m", "prompt": "x"}')
+        attempts = {"n": 0}
+
+        def flaky(r, *a, **k):
+            attempts["n"] += 1
+            if attempts["n"] == 1:
+                raise urllib.error.HTTPError(
+                    r.full_url, 500, "Internal Server Error", {},
+                    io.BytesIO(b'{"error": "model runner has unexpectedly stopped"}'))
+            return _JsonResp({"response": "ok", "done": True})
+        urllib.request.urlopen = flaky
+        pacer.install(mode="observe")
+        with _crash_guard("T11c: the 500 propagates immediately - no retry in observe mode",
+                          "T11c: exactly 1 attempt was made",
+                          "T11c: llm_retries == 0",
+                          "T11c: the run IS marked invalid, naming 'llm'"):
+            raised = None
+            try:
+                urllib.request.urlopen(req)
+            except urllib.error.HTTPError as e:
+                raised = e
+            check("T11c: the 500 propagates immediately - no retry in observe mode",
+                  raised is not None)
+            check("T11c: exactly 1 attempt was made", attempts["n"] == 1, str(attempts["n"]))
+            snap = pacer.snapshot()
+            check("T11c: llm_retries == 0", snap["llm_retries"] == 0, str(snap))
+            out: dict = {}
+            pacer.attach(out)
+            check("T11c: the run IS marked invalid, naming 'llm'",
+                  out.get("valid") is False and "llm" in out.get("invalid_reason", ""),
+                  str(out))
+
+
+def test_t11d_llm_4xx_never_retried() -> None:
+    print("\n- T11d: generate -> 400 (not the port-exhaustion signature) is NEVER retried, "
+          "in either mode, but is still tallied and invalidates -")
+    with _isolated():
+        clock = FakeClock()
+        pacer._now, pacer._sleep = clock.now, clock.sleep
+        req = urllib.request.Request(
+            "http://127.0.0.1:11434/api/generate", data=b'{"model": "m", "prompt": "x"}')
+        attempts = {"n": 0}
+
+        def always_400(r, *a, **k):
+            attempts["n"] += 1
+            raise urllib.error.HTTPError(
+                r.full_url, 400, "Bad Request", {},
+                io.BytesIO(b'{"error": "missing model field"}'))
+        urllib.request.urlopen = always_400
+        pacer.install()
+        with _crash_guard("T11d: the 400 propagates after exactly 1 attempt - never "
+                          "retried as an LLM failure",
+                          "T11d: llm_retries == 0",
+                          "T11d: failed_outcomes_llm.by_status counts the 400",
+                          "T11d: the run IS marked invalid"):
+            raised = None
+            try:
+                urllib.request.urlopen(req)
+            except urllib.error.HTTPError as e:
+                raised = e
+            check("T11d: the 400 propagates after exactly 1 attempt - never retried as an "
+                  "LLM failure", raised is not None and attempts["n"] == 1, str(attempts["n"]))
+            snap = pacer.snapshot()
+            check("T11d: llm_retries == 0", snap["llm_retries"] == 0, str(snap))
+            out: dict = {}
+            pacer.attach(out)
+            ot = out.get("ollama_transport", {})
+            check("T11d: failed_outcomes_llm.by_status counts the 400",
+                  ot.get("failed_outcomes_llm", {}).get("by_status") == {400: 1}, str(ot))
+            check("T11d: the run IS marked invalid",
+                  out.get("valid") is False, str(out))
+
+
+def test_t11e_async_llm_via_httpx_mocktransport() -> None:
+    print("\n- T11e: the SAME K33 behaviour via httpx.AsyncClient + MockTransport - 500 "
+          "once then success recovers; always-500 invalidates -")
+    try:
+        import httpx
+    except ImportError:
+        check("httpx importable (research extra) - this environment lacks it; every "
+              "other T11e assertion is skipped, not failed", True,
+              "install the `research` extra to exercise T11e's httpx path")
+        return
+    with _isolated():
+        clock = FakeClock()
+        pacer._now, pacer._sleep, pacer._async_sleep = (clock.now, clock.sleep,
+                                                        clock.async_sleep)
+        pacer.install()                    # pace mode
+        calls = {"n": 0}
+
+        def handler(request):
+            calls["n"] += 1
+            if calls["n"] == 1:
+                return httpx.Response(500, json={"error": "model runner has unexpectedly "
+                                                          "stopped"})
+            return httpx.Response(200, json={"response": "ok", "done": True})
+
+        async def _run():
+            client = httpx.AsyncClient(transport=httpx.MockTransport(handler),
+                                       base_url="http://127.0.0.1:11434")
+            r = await client.post("/api/generate", json={"model": "m", "prompt": "x"})
+            await client.aclose()
+            return r
+        with _crash_guard("T11e: async - 500 once then success recovers (200)",
+                          "T11e: async - exactly 2 attempts, llm_retries == 1"):
+            resp = asyncio.run(_run())
+            check("T11e: async - 500 once then success recovers (200)",
+                  resp.status_code == 200, str(resp.status_code))
+            snap = pacer.snapshot()
+            check("T11e: async - exactly 2 attempts, llm_retries == 1",
+                  calls["n"] == 2 and snap["llm_retries"] == 1,
+                  f"calls={calls['n']} snap={snap}")
+            out: dict = {}
+            pacer.attach(out)
+            check("T11e: async - the run is NOT marked invalid - it recovered",
+                  "valid" not in out, str(out))
+
+        pacer._reset_for_tests()
+        acalls = {"n": 0}
+
+        def always_500_handler(request):
+            acalls["n"] += 1
+            return httpx.Response(500, json={"error": "model runner has unexpectedly "
+                                                      "stopped"})
+
+        async def _run_always():
+            client = httpx.AsyncClient(transport=httpx.MockTransport(always_500_handler),
+                                       base_url="http://127.0.0.1:11434")
+            r = await client.post("/api/generate", json={"model": "m", "prompt": "x"})
+            await client.aclose()
+            return r
+        with _crash_guard("T11e: async - always-500 exhausts the bounded retry and "
+                          "invalidates"):
+            aresp = asyncio.run(_run_always())
+            check("T11e: async - the exhausted 5xx is handed back as-is (httpx's own "
+                  "contract - never raised)", aresp.status_code == 500, str(aresp.status_code))
+            check("T11e: async - exactly LLM_MAX_RETRIES + 1 attempts were made",
+                  acalls["n"] == pacer.LLM_MAX_RETRIES + 1, str(acalls["n"]))
+            out2: dict = {}
+            pacer.attach(out2)
+            check("T11e: async - always-500 exhausts the bounded retry and invalidates",
+                  out2.get("valid") is False and "llm" in out2.get("invalid_reason", ""),
+                  str(out2))
+
+
+def test_t11h_httpx_non_raised_llm_failure_is_tallied() -> None:
+    print("\n- T11h (the auditor's K38 on 88c27e1): an httpx LLM failure that is RETURNED, never "
+          "raised - a 4xx on /api/chat in pace mode (e.g. a model-not-found 404 inside a "
+          "competitor library) and a 5xx in observe mode - is tallied and invalidates -")
+    try:
+        import httpx
+    except ImportError:
+        check("httpx importable (research extra) - this environment lacks it; every "
+              "other T11h assertion is skipped, not failed", True,
+              "install the `research` extra to exercise T11h's httpx path")
+        return
+    with _isolated():
+        clock = FakeClock()
+        pacer._now, pacer._sleep, pacer._async_sleep = (clock.now, clock.sleep,
+                                                        clock.async_sleep)
+        pacer.install()                    # pace mode
+        calls = {"n": 0}
+
+        def handler_404(request):
+            calls["n"] += 1
+            return httpx.Response(404, json={"error": "model 'x' not found"})
+        with _crash_guard("T11h: pace - an httpx 404 on /api/chat invalidates, naming llm"):
+            client = httpx.Client(transport=httpx.MockTransport(handler_404),
+                                  base_url="http://127.0.0.1:11434")
+            resp = client.post("/api/chat", json={"model": "x", "messages": []})
+            client.close()
+            check("T11h: pace - the 404 is handed back as-is and never retried",
+                  resp.status_code == 404 and calls["n"] == 1, f"{resp.status_code} calls={calls['n']}")
+            out: dict = {}
+            pacer.attach(out)
+            ot = out.get("ollama_transport") or {}
+            check("T11h: pace - an httpx 404 on /api/chat invalidates, naming llm",
+                  out.get("valid") is False and "llm" in (out.get("invalid_reason") or "")
+                  and (ot.get("failed_outcomes_llm") or {}).get("by_status") == {404: 1}, str(out)[:300])
+    with _isolated():
+        clock = FakeClock()
+        pacer._now, pacer._sleep, pacer._async_sleep = (clock.now, clock.sleep,
+                                                        clock.async_sleep)
+        pacer.install(mode="observe")
+        ocalls = {"n": 0}
+
+        def handler_500(request):
+            ocalls["n"] += 1
+            return httpx.Response(500, json={"error": "model runner has unexpectedly stopped"})
+        with _crash_guard("T11h: observe - an httpx 500 on /api/generate invalidates, naming llm"):
+            client = httpx.Client(transport=httpx.MockTransport(handler_500),
+                                  base_url="http://127.0.0.1:11434")
+            resp = client.post("/api/generate", json={"model": "m", "prompt": "x"})
+            client.close()
+            check("T11h: observe - the 500 is handed back as-is and never retried",
+                  resp.status_code == 500 and ocalls["n"] == 1, f"{resp.status_code} calls={ocalls['n']}")
+            out2: dict = {}
+            pacer.attach(out2)
+            ot2 = out2.get("ollama_transport") or {}
+            check("T11h: observe - an httpx 500 on /api/generate invalidates, naming llm",
+                  out2.get("valid") is False and "llm" in (out2.get("invalid_reason") or "")
+                  and (ot2.get("failed_outcomes_llm") or {}).get("by_status") == {500: 1}, str(out2)[:300])
+
+
+def test_t11f_llm_timeout_recovers_in_pace_invalid_in_observe() -> None:
+    print("\n- T11f (the coordinator's scope addition, 2026-09-24): a TIMEOUT/reset/refused "
+          "class transport exception on an LLM endpoint is retried in PACE mode too, never "
+          "in observe -")
+    with _isolated():
+        clock = FakeClock()
+        pacer._now, pacer._sleep = clock.now, clock.sleep
+        req = urllib.request.Request(
+            "http://127.0.0.1:11434/api/generate", data=b'{"model": "m", "prompt": "x"}')
+        attempts = {"n": 0}
+
+        def timeout_then_ok(r, *a, **k):
+            attempts["n"] += 1
+            if attempts["n"] == 1:
+                raise socket.timeout("timed out")
+            return _JsonResp({"response": "ok", "done": True})
+        urllib.request.urlopen = timeout_then_ok
+        pacer.install()                    # pace mode
+        with _crash_guard("T11f: pace mode - a timeout followed by success is RECOVERED",
+                          "T11f: pace mode - llm_retries == 1",
+                          "T11f: pace mode - the run is NOT marked invalid"):
+            result = None
+            try:
+                result = urllib.request.urlopen(req)
+            except socket.timeout:
+                pass
+            check("T11f: pace mode - a timeout followed by success is RECOVERED",
+                  result is not None, str(result))
+            snap = pacer.snapshot()
+            check("T11f: pace mode - llm_retries == 1", snap["llm_retries"] == 1, str(snap))
+            out: dict = {}
+            pacer.attach(out)
+            check("T11f: pace mode - the run is NOT marked invalid",
+                  "valid" not in out, str(out))
+        pacer.uninstall()
+
+        # the SAME sequence, observe mode: no retry, invalid
+        pacer._reset_for_tests()
+        attempts["n"] = 0
+        pacer.install(mode="observe")
+        with _crash_guard("T11f: observe mode - the SAME sequence is NOT recovered - no "
+                          "retry",
+                          "T11f: observe mode - exactly 1 attempt was made",
+                          "T11f: observe mode - the run IS marked invalid"):
+            raised = None
+            try:
+                urllib.request.urlopen(req)
+            except socket.timeout as e:
+                raised = e
+            check("T11f: observe mode - the SAME sequence is NOT recovered - no retry",
+                  raised is not None)
+            check("T11f: observe mode - exactly 1 attempt was made", attempts["n"] == 1,
+                  str(attempts["n"]))
+            out2: dict = {}
+            pacer.attach(out2)
+            check("T11f: observe mode - the run IS marked invalid",
+                  out2.get("valid") is False and "llm" in out2.get("invalid_reason", ""),
+                  str(out2))
+        pacer.uninstall()
+
+        # mutation: "retry in observe mode" - _llm_retry_allowed forced True regardless of
+        # _MODE. Reproduced by forcing the REAL gate function itself, which every retry
+        # decision (urllib AND httpx) reads - not a reimplementation of the retry loop.
+        pacer._reset_for_tests()
+        attempts["n"] = 0
+        pacer.install(mode="observe")
+        saved_allowed = pacer._llm_retry_allowed
+        pacer._llm_retry_allowed = lambda: True
+        try:
+            with _crash_guard("mutation 'retry in observe mode': the SAME sequence that "
+                              "must fail immediately in observe mode instead retries and "
+                              "recovers (would FAIL the T11f observe-mode checks above)"):
+                result2 = None
+                try:
+                    result2 = urllib.request.urlopen(req)
+                except socket.timeout:
+                    pass
+                check("mutation 'retry in observe mode': the SAME sequence that must fail "
+                      "immediately in observe mode instead retries and recovers (would "
+                      "FAIL the T11f observe-mode checks above)",
+                      result2 is not None and attempts["n"] == 2,
+                      f"result={result2} attempts={attempts['n']}")
+        finally:
+            pacer.uninstall()
+            pacer._llm_retry_allowed = saved_allowed
+        check("_llm_retry_allowed is restored to the real function",
+              pacer._llm_retry_allowed is saved_allowed)
+
+        # mutation: "the retry not counted" - _record_llm_retry stubbed to a no-op. The
+        # retry+sleep+continue below is UNCHANGED (still runs for real, the call still
+        # recovers) - only the counter bump is silenced.
+        pacer._reset_for_tests()
+        attempts["n"] = 0
+        pacer.install()                    # pace mode
+        saved_record = pacer._record_llm_retry
+        pacer._record_llm_retry = lambda wait: None
+        try:
+            with _crash_guard("mutation 'the retry not counted': the SAME recovered retry "
+                              "now WRONGLY reads llm_retries == 0 (would FAIL the T11f "
+                              "pace-mode llm_retries==1 check above)"):
+                result3 = None
+                try:
+                    result3 = urllib.request.urlopen(req)
+                except socket.timeout:
+                    pass
+                snap3 = pacer.snapshot()
+                check("mutation 'the retry not counted': the SAME recovered retry now "
+                      "WRONGLY reads llm_retries == 0 (would FAIL the T11f pace-mode "
+                      "llm_retries==1 check above)",
+                      result3 is not None and snap3["llm_retries"] == 0,
+                      f"result={result3} snap={snap3}")
+        finally:
+            pacer.uninstall()
+            pacer._record_llm_retry = saved_record
+        check("_record_llm_retry is restored to the real function",
+              pacer._record_llm_retry is saved_record)
+
+        # mutation (coordinator's scope addition): "exceptions excluded from the retry" -
+        # _is_llm_retryable_transport_exc stubbed False. A 5xx STATUS is unaffected (that
+        # path never reaches this function - `_llm_status_of` returns early); only the
+        # bare-transport-exception class (this test's own timeout) stops being retried.
+        pacer._reset_for_tests()
+        attempts["n"] = 0
+        pacer.install()                    # pace mode
+        saved_transport_exc = pacer._is_llm_retryable_transport_exc
+        pacer._is_llm_retryable_transport_exc = lambda obj: False
+        try:
+            with _crash_guard("mutation 'exceptions excluded from the retry': the SAME "
+                              "timeout-then-success sequence no longer recovers (would "
+                              "FAIL the T11f pace-mode recovery check above)"):
+                raised2 = None
+                try:
+                    urllib.request.urlopen(req)
+                except socket.timeout as e:
+                    raised2 = e
+                check("mutation 'exceptions excluded from the retry': the SAME "
+                      "timeout-then-success sequence no longer recovers (would FAIL the "
+                      "T11f pace-mode recovery check above)",
+                      raised2 is not None and attempts["n"] == 1,
+                      f"raised={raised2} attempts={attempts['n']}")
+        finally:
+            pacer.uninstall()
+            pacer._is_llm_retryable_transport_exc = saved_transport_exc
+        check("_is_llm_retryable_transport_exc is restored to the real function",
+              pacer._is_llm_retryable_transport_exc is saved_transport_exc)
+
+
+def test_t11g_e2e_remeasure_row_refusal_refuses_a_failed_asof_run() -> None:
+    print("\n- T11g: end-to-end - tools/remeasure.row_refusal refuses a REAL asof pointer "
+          "(arms[\"nevertwice\"].both_correct_rate) built by attach() on a run whose "
+          "/api/generate failed -")
+    ROOT = HERE.parent.parent
+    sys.path.insert(0, str(ROOT / "tools"))
+    import remeasure as rm                                             # noqa: E402,PLC0415
+    with _isolated():
+        clock = FakeClock()
+        pacer._now, pacer._sleep = clock.now, clock.sleep
+
+        def always_500(r, *a, **k):
+            raise urllib.error.HTTPError(
+                r.full_url, 500, "Internal Server Error", {},
+                io.BytesIO(b'{"error": "model runner has unexpectedly stopped"}'))
+        urllib.request.urlopen = always_500
+        pacer.install()
+        req = urllib.request.Request(
+            "http://127.0.0.1:11434/api/generate", data=b'{"model": "m", "prompt": "x"}')
+        try:
+            urllib.request.urlopen(req)
+        except urllib.error.HTTPError:
+            pass
+        #: the asof-shaped artifact: attach() writes ollama_transport/valid/invalid_reason
+        #: at the ROOT, exactly as research/asof_bench.py's own wiring does (item 9A part 2).
+        out = {"arms": {"nevertwice": {"both_correct_rate": 0.42}}}
+        pacer.attach(out)
+        with _crash_guard("T11g: attach() marked the artifact invalid, naming 'llm'",
+                          "T11g: row_refusal refuses the real asof pointer, citing the "
+                          "run's own invalid_reason"):
+            check("T11g: attach() marked the artifact invalid, naming 'llm'",
+                  out.get("valid") is False and "llm" in out.get("invalid_reason", ""),
+                  str(out))
+            refusal = rm.row_refusal(out, 'arms["nevertwice"].both_correct_rate', 0)
+            check("T11g: row_refusal refuses the real asof pointer, citing the run's own "
+                  "invalid_reason", refusal is not None and "invalid" in refusal, str(refusal))
+
+
 def test_zz_every_check_passed() -> None:
     """Bare pytest must reach the same verdict as this suite's exit code.
 
@@ -1677,7 +2452,17 @@ def main() -> int:
                test_tw1_requests_session_send_is_counted_not_paced_and_marks_invalid,
                test_tw2_aiohttp_client_session_request_is_counted_not_paced,
                test_tw3_nested_aiohttp_inside_a_paced_httpx_call_is_not_a_bypass,
-               test_t9_observe_mode_paces_nothing_retries_nothing_still_counts_failures):
+               test_t9_observe_mode_paces_nothing_retries_nothing_still_counts_failures,
+               test_t9b_async_observe_mode_and_mode_bookkeeping,
+               test_t10_install_rejects_bad_mode_and_silent_mode_switch,
+               test_t11a_llm_generate_500_always_invalidates,
+               test_t11b_llm_generate_500_once_recovers_in_pace_mode,
+               test_t11c_llm_generate_500_once_observe_mode_no_retry_invalid,
+               test_t11d_llm_4xx_never_retried,
+               test_t11e_async_llm_via_httpx_mocktransport,
+               test_t11f_llm_timeout_recovers_in_pace_invalid_in_observe,
+               test_t11g_e2e_remeasure_row_refusal_refuses_a_failed_asof_run,
+               test_t11h_httpx_non_raised_llm_failure_is_tallied):
         fn()
     print(f"\nollama_pacer: {PASSED} passed, {FAILED} failed")
     return 1 if FAILED else 0
