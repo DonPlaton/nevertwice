@@ -125,6 +125,7 @@ import api  # noqa: E402 - the write path lives here, NOT on memory_hook
 import corpus_pin  # noqa: E402
 import longmem_eval as le  # noqa: E402
 import memory_hook as m  # noqa: E402
+import _ollama_pacer as pacer  # noqa: E402 - R-v2-ports: pace/retry/count every arm's traffic
 
 #: BOTH corpora, fixed here rather than behind a flag with a default. A default is a choice
 #: whose consequence nobody sees afterwards, and this particular choice decides the answer:
@@ -839,6 +840,31 @@ def curve(arms: dict, toks: dict) -> dict:
     return out
 
 
+def finish_arm(name: str, res: dict, wall_s: float, snap: dict) -> dict:
+    """Mutates and returns `res` (one arm's own result dict from `run_nevertwice`/
+    `run_mem0`) with the pacer's own findings about that arm's run: `wall_s` (the whole
+    call, timed by the caller), `pacer.attach(res, since=snap)`'s per-arm delta under
+    `res["ollama_transport"]`, a pace-excluded companion for `wall_s` when that delta
+    exists, and (R-v2-ports A4) `res["coverage"] = "unobserved"` when a COMPETITOR arm
+    (never our own `nevertwice`, which measures its OWN write path rather than a
+    client's) made fewer paced calls than the sessions it says it wrote - a lower
+    bound, not a complete measurement, and the row says so rather than implying full
+    coverage it did not have."""
+    res["wall_s"] = round(wall_s, 1)
+    pacer.attach(res, since=snap)
+    if "ollama_transport" in res:
+        res["timing_includes_pacing"] = True
+        ot = res["ollama_transport"]
+        res["wall_s_pace_excluded"] = round(
+            res["wall_s"] - ot["pace_sleep_s"] - ot["retry_sleep_s"], 3)
+    if name != "nevertwice" and "blocked" not in res:
+        ingested = (res.get("ingest") or {}).get("written")
+        observed = res.get("ollama_transport", {}).get("calls", 0)
+        if ingested is not None and observed < ingested:
+            res["coverage"] = "unobserved"
+    return res
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--only", default="nevertwice",
@@ -883,6 +909,8 @@ def main(argv=None) -> int:
                           capture_output=True, text=True).stdout.strip() or None
     measured_at = time.strftime("%Y-%m-%dT%H:%M:%S")
 
+    pacer.install()          # R-v2-ports: pace/retry/count every arm's own Ollama traffic -
+                              # a no-op under --dry, which never reaches a real backend at all
     corpora: dict = {}
     for cname in CORPORA:
         try:
@@ -908,11 +936,14 @@ def main(argv=None) -> int:
         cap = 1 if a.dry else (a.sessions or None)
         arms = {}
         for name in wanted:
+            snap = pacer.snapshot()
+            t0 = time.time()
             if name == "nevertwice":
                 arms[name] = run_nevertwice(data, pool, toks, cap, groups=groups, dry=a.dry,
                                             corpus_name=cname)
             else:
                 arms[name] = run_mem0(data, pool, toks, cap, groups=groups, corpus_name=cname)
+            finish_arm(name, arms[name], time.time() - t0, snap)
         corpora[cname] = {
             "questions": len(data), "pool_sessions": len(pool),
             "provenance": (corpus_pin.record(cname) if cname in corpus_pin.CORPORA

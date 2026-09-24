@@ -40,6 +40,7 @@ import sandbox_guard  # noqa: E402 - one store sandbox for the whole repo
 sandbox_guard.isolate()  # throwaway store, verified, before any project import
 import memory_hook as m
 import _rerank as rr
+import _ollama_pacer as pacer  # noqa: E402 - R-v2-ports: pace/retry/count --embed's traffic
 
 
 # ── Shared session-level BM25 + the engine's own score fusion ─────────────────
@@ -277,6 +278,8 @@ def embed_all():
     qs = [e for e in data if e["question_id"] not in cache["questions"]]
     print(f"[embed] {len(sids)} sessions + {len(qs)} questions to embed "
           f"(cached: {len(cache['sessions'])} / {len(cache['questions'])})", file=sys.stderr)
+    pacer.install()          # R-v2-ports: pace/retry/count this --embed run's own traffic
+    snap = pacer.snapshot()
     t0 = time.time()
     for i, sid in enumerate(sids):
         v = embed_full(pool[sid], kind=m.doc_embed_kind())
@@ -286,6 +289,10 @@ def embed_all():
                 cache["shrunk"][sid] = LAST_EMBED_CHARS
         if (i + 1) % 50 == 0:
             print(f"  sessions {i+1}/{len(sids)}  ({time.time()-t0:.0f}s)", file=sys.stderr)
+            #: cache["ollama_transport"] lives OUTSIDE cache["meta"] on purpose - cache_ok()
+            #: checks meta's own keys only, but a second source of truth inside meta would
+            #: still be one more thing to keep in sync for no reason.
+            pacer.attach(cache, since=snap)
             EMB.write_text(json.dumps(cache), encoding="utf-8", newline="\n")   # checkpoint
     for i, e in enumerate(qs):
         v = embed_full(e["question"], kind=m.query_embed_kind())
@@ -293,6 +300,7 @@ def embed_all():
             cache["questions"][e["question_id"]] = v
         if (i + 1) % 100 == 0:
             print(f"  questions {i+1}/{len(qs)}  ({time.time()-t0:.0f}s)", file=sys.stderr)
+    pacer.attach(cache, since=snap)
     EMB.write_text(json.dumps(cache), encoding="utf-8", newline="\n")
     print(f"[embed] done in {time.time()-t0:.0f}s → {EMB.name}", file=sys.stderr)
 

@@ -46,6 +46,7 @@ sys.path.insert(0, str(ROOT / "nevertwice"))
 import corpus_pin  # noqa: E402
 import longmem_eval as le  # noqa: E402
 import memory_hook as m  # noqa: E402
+import _ollama_pacer as pacer  # noqa: E402 - R-v2-ports: pace/retry/count --embed's traffic
 
 KS = (1, 3, 5, 10)
 CORPUS = "locomo10"
@@ -112,6 +113,8 @@ def embed_all(convs: list[dict]) -> dict:
     cache.setdefault("questions", {})
     todo_t = [(d, t) for c in convs for d, t in c["pool"].items() if d not in cache["turns"]]
     todo_q = [q["question"] for c in convs for q in c["qa"] if q["question"] not in cache["questions"]]
+    pacer.install()          # R-v2-ports: pace/retry/count this --embed run's own traffic
+    snap = pacer.snapshot()
     t0 = time.time()
     for i, (did, text) in enumerate(todo_t, 1):
         # `le.embed_full`: the engine's endpoint, model and prefix without the 2,000-char
@@ -122,6 +125,7 @@ def embed_all(convs: list[dict]) -> dict:
             cache["turns"][did] = v
         if i % 500 == 0:
             print(f"  turns {i}/{len(todo_t)}  ({time.time() - t0:.0f}s)", flush=True)
+            pacer.attach(cache, since=snap)
             EMB.write_text(json.dumps(cache), encoding="utf-8", newline="\n")
     for i, q in enumerate(dict.fromkeys(todo_q), 1):
         v = le.embed_full(q, kind=m.query_embed_kind())
@@ -129,6 +133,7 @@ def embed_all(convs: list[dict]) -> dict:
             cache["questions"][q] = v
         if i % 500 == 0:
             print(f"  questions {i}  ({time.time() - t0:.0f}s)", flush=True)
+    pacer.attach(cache, since=snap)
     EMB.write_text(json.dumps(cache), encoding="utf-8", newline="\n")
     print(f"[embed] done in {time.time() - t0:.0f}s -> {EMB.name}")
     return cache

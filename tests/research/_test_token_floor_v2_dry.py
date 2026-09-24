@@ -146,5 +146,59 @@ if "blocked" not in res:
           sum(res["per_turn"]["by_reason"].values()) == res["per_turn"]["n"],
           res["per_turn"])
 
+print("\n- R-v2-ports: finish_arm() - wall_s, pace-excluded timing, coverage -")
+snap0 = {"calls": 0, "pace_sleep_s": 0.0, "retries": 0, "retry_sleep_s": 0.0, "gave_up": 0,
+        "bypass_requests": 0, "bypass_aiohttp": 0, "nested_requests": 0, "nested_aiohttp": 0,
+        "_call_ms_len": 0, "_calls_by_host": {}}
+
+# no pacer traffic at all (the --dry shape): wall_s is set, nothing pacer-specific is
+none_arm = {"recall@1": 0.5}
+tf.finish_arm("nevertwice", none_arm, 3.456, snap0)
+check("wall_s is always set, rounded to 1dp", none_arm.get("wall_s") == 3.5, str(none_arm))
+check("no ollama_transport, no pace-excluded field, no coverage - nothing pacer-specific "
+      "happened", "ollama_transport" not in none_arm and "wall_s_pace_excluded" not in
+      none_arm and "coverage" not in none_arm, str(none_arm))
+
+# a competitor arm with real pacer traffic that FULLY covered its own ingest
+tf.pacer.install()
+try:
+    tf.pacer._reset_for_tests()
+    tf.pacer._COUNTERS["calls"] = 5
+    tf.pacer._COUNTERS["pace_sleep_s"] = 0.5
+    full_arm = {"recall@1": 0.5, "ingest": {"written": 5}}
+    tf.finish_arm("mem0", full_arm, 10.0, snap0)
+    check("ollama_transport is written (calls > 0)", "ollama_transport" in full_arm, str(full_arm))
+    check("timing_includes_pacing is True", full_arm.get("timing_includes_pacing") is True)
+    check("wall_s_pace_excluded == wall_s - pace_sleep_s - retry_sleep_s",
+          full_arm["wall_s_pace_excluded"] == round(10.0 - 0.5 - 0.0, 3), str(full_arm))
+    check("full coverage (5 calls for 5 written) -> no coverage key", "coverage" not in full_arm,
+          str(full_arm))
+
+    # the SAME arm, but under-observed: fewer calls than sessions written
+    tf.pacer._reset_for_tests()
+    tf.pacer._COUNTERS["calls"] = 3
+    under_arm = {"recall@1": 0.5, "ingest": {"written": 5}}
+    tf.finish_arm("mem0", under_arm, 10.0, snap0)
+    check("3 calls for 5 written -> coverage='unobserved'",
+          under_arm.get("coverage") == "unobserved", str(under_arm))
+
+    # our OWN arm is never flagged, even with the identical shortfall
+    tf.pacer._reset_for_tests()
+    tf.pacer._COUNTERS["calls"] = 3
+    own_arm = {"recall@1": 0.5, "ingest": {"written": 5}}
+    tf.finish_arm("nevertwice", own_arm, 10.0, snap0)
+    check("our own arm is never flagged, even with the same shortfall",
+          "coverage" not in own_arm, str(own_arm))
+
+    # a blocked competitor arm is never flagged
+    tf.pacer._reset_for_tests()
+    tf.pacer._COUNTERS["calls"] = 3
+    blocked_arm = {"blocked": "x", "ingest": {"written": 5}}
+    tf.finish_arm("mem0", blocked_arm, 10.0, snap0)
+    check("a blocked arm is never flagged", "coverage" not in blocked_arm, str(blocked_arm))
+finally:
+    tf.pacer.uninstall()
+    tf.pacer._reset_for_tests()
+
 print(f"\ntoken_floor v2 (--dry / stub only): {FAILS} failure(s)")
 sys.exit(1 if FAILS else 0)
