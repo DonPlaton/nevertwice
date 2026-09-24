@@ -17,6 +17,7 @@ import asyncio
 import contextlib
 import io
 import json
+import socket
 import sys
 import threading
 import time
@@ -464,6 +465,12 @@ def test_t4_seventeen_failures_exhaust_retries_and_raise_the_original_error() ->
                   f"{pacer.MAX_RETRIES * pacer.RETRY_INTERVAL_S}s (2x TIME_WAIT)",
                   abs(snap["retry_sleep_s"] - pacer.MAX_RETRIES * pacer.RETRY_INTERVAL_S) < 1e-6,
                   str(snap))
+            # F1: this request was to /api/embed - giving up on it is ALSO an embed
+            # failure (P0(a)'s own concern), tallied separately from the general gave_up
+            # above so a reader can ask "did an EMBED call give up" without re-deriving
+            # it from the URL of every retried call.
+            check("F1: the embed-specific gave_up counter also reads 1 (this request "
+                  "was to /api/embed)", snap["_embed_failures"]["gave_up"] == 1, str(snap))
 
 
 # ── T5: pacing floor, and call_ms excludes every sleep ─────────────────────────────────
@@ -885,6 +892,184 @@ def test_t8d_max_concurrent_paced_covers_the_whole_paced_operation() -> None:
             pacer._concurrent_enter, pacer._concurrent_exit = saved_enter, saved_exit
 
 
+# ── F1: failed_outcomes on EMBED endpoints - P0(a) ──────────────────────────────────────
+#
+# .loop/PREREG-V2-2026-09-24.md, P0(a): `_embed_http` (nevertwice/_engine_store.py) returns
+# None on ANY failure and the caller falls back to lexical recall, silently - the one
+# failure class this module could always see (it sits below every caller) but never
+# counted until now. `failed_outcomes` on an embed endpoint (`/api/embed`, `_is_embed_path`)
+# > 0 marks the run invalid, same as a pacer bypass.
+
+def test_f1a_urlopen_embed_failure_marks_the_run_invalid() -> None:
+    print("\n- F1a: urlopen raising on /api/embed -> failed_outcomes, run marked invalid -")
+    with _isolated():
+        # by_status: an HTTPError that is NOT the port-exhaustion signature (a real 500) -
+        # never retried, immediately a genuine failure. Installed FIRST (T2/T4's own
+        # pattern) so pacer.install() captures IT as "the original" - swapping
+        # urllib.request.urlopen again afterward would overwrite the pacer's own
+        # wrapper, not the thing underneath it; later scenarios swap `pacer._ORIG
+        # ["urlopen"]` instead, for exactly that reason.
+        def fails_500(r, *a, **k):
+            raise urllib.error.HTTPError(
+                r.full_url, 500, "Internal Server Error", {}, io.BytesIO(b"model busy"))
+        urllib.request.urlopen = fails_500
+        pacer.install()
+        req_embed = urllib.request.Request("http://127.0.0.1:11434/api/embed", data=b"{}")
+        with _crash_guard("F1a: run marked invalid (by_status)",
+                          "by_status tallies the 500 for /api/embed"):
+            raised = None
+            try:
+                urllib.request.urlopen(req_embed)
+            except urllib.error.HTTPError as e:
+                raised = e
+            check("the original 500 still propagates", raised is not None)
+            out: dict = {}
+            pacer.attach(out)
+            ot = out.get("ollama_transport", {})
+            check("by_status tallies the 500 for /api/embed",
+                  ot.get("failed_outcomes", {}).get("by_status") == {500: 1}, str(ot))
+            check("F1a: run marked invalid (by_status)",
+                  out.get("valid") is False and "embed" in out.get("invalid_reason", ""),
+                  str(out))
+
+        # by_exception_type: a pure transport failure (a timeout) - no status at all.
+        # Swaps pacer._ORIG["urlopen"] (what the ALREADY-INSTALLED wrapper calls as "the
+        # original"), never urllib.request.urlopen itself, which stays _paced_urlopen.
+        pacer._reset_for_tests()
+
+        def fails_timeout(r, *a, **k):
+            raise socket.timeout("timed out")
+        pacer._ORIG["urlopen"] = fails_timeout
+        # socket.timeout is an ALIAS for the builtin TimeoutError since Python 3.10
+        # (confirmed: socket.timeout is TimeoutError) - the exception's OWN class name,
+        # not the alias it was raised through, is what `type(exc).__name__` reads.
+        with _crash_guard("F1a: run marked invalid (by_exception_type)",
+                          "by_exception_type tallies 'TimeoutError' for /api/embed"):
+            raised2 = None
+            try:
+                urllib.request.urlopen(req_embed)
+            except socket.timeout as e:
+                raised2 = e
+            check("the original socket.timeout still propagates", raised2 is not None)
+            out2: dict = {}
+            pacer.attach(out2)
+            ot2 = out2.get("ollama_transport", {})
+            check("by_exception_type tallies 'TimeoutError' for /api/embed",
+                  ot2.get("failed_outcomes", {}).get("by_exception_type") == {"TimeoutError": 1},
+                  str(ot2))
+            check("F1a: run marked invalid (by_exception_type)",
+                  out2.get("valid") is False and "embed" in out2.get("invalid_reason", ""),
+                  str(out2))
+
+        # scope: the SAME failure on a NON-embed endpoint (/api/tags) is paced/counted
+        # normally but must NOT be tallied into failed_outcomes at all.
+        pacer._reset_for_tests()
+        req_tags = urllib.request.Request("http://127.0.0.1:11434/api/tags")
+        with _crash_guard("a non-embed endpoint's failure is not tallied into "
+                          "failed_outcomes at all"):
+            try:
+                urllib.request.urlopen(req_tags)
+            except socket.timeout:
+                pass
+            out3: dict = {}
+            pacer.attach(out3)
+            ot3 = out3.get("ollama_transport", {})
+            fo3 = ot3.get("failed_outcomes", {})
+            check("a non-embed endpoint's failure is not tallied into failed_outcomes at "
+                  "all", not fo3.get("by_status") and not fo3.get("by_exception_type")
+                  and not fo3.get("gave_up"), str(ot3))
+            check("... yet the call itself IS still counted/paced normally (calls == 1)",
+                  ot3.get("calls") == 1, str(ot3))
+
+        # mutation: F1 removed - _is_embed_path always says "not an embed endpoint"
+        pacer._reset_for_tests()
+        pacer._ORIG["urlopen"] = fails_500
+        saved_is_embed = pacer._is_embed_path
+        pacer._is_embed_path = lambda url: False
+        try:
+            with _crash_guard("mutation 'F1 removed': the SAME by_status failure on "
+                              "/api/embed is now WRONGLY never tallied - run stays "
+                              "valid (would FAIL the F1a 'run marked invalid' check "
+                              "above)"):
+                try:
+                    urllib.request.urlopen(req_embed)
+                except urllib.error.HTTPError:
+                    pass
+                out4: dict = {}
+                pacer.attach(out4)
+                check("mutation 'F1 removed': the SAME by_status failure on /api/embed "
+                      "is now WRONGLY never tallied - run stays valid (would FAIL the "
+                      "F1a 'run marked invalid' check above)",
+                      "valid" not in out4, str(out4))
+        finally:
+            pacer._is_embed_path = saved_is_embed
+        check("_is_embed_path is restored to the real function",
+              pacer._is_embed_path is saved_is_embed)
+
+
+def test_f1b_httpx_embed_failure_marks_the_run_invalid() -> None:
+    print("\n- F1b: httpx.MockTransport raising ReadTimeout on /api/embed -> "
+          "failed_outcomes, run marked invalid -")
+    try:
+        import httpx
+    except ImportError:
+        check("httpx importable (research extra) - this environment lacks it; every "
+              "other F1b assertion is skipped, not failed", True,
+              "install the `research` extra to exercise F1b's httpx path")
+        return
+    with _isolated():
+        pacer.install()
+
+        def handler(request):
+            raise httpx.ReadTimeout("timed out", request=request)
+        with _crash_guard("F1b: run marked invalid (by_exception_type, ReadTimeout)",
+                          "by_exception_type tallies 'ReadTimeout' for /api/embed"):
+            client = httpx.Client(transport=httpx.MockTransport(handler),
+                                  base_url="http://127.0.0.1:11434")
+            raised = None
+            try:
+                client.post("/api/embed", json={"model": "x", "input": "y"})
+            except httpx.ReadTimeout as e:
+                raised = e
+            client.close()
+            check("the original httpx.ReadTimeout still propagates", raised is not None)
+            out: dict = {}
+            pacer.attach(out)
+            ot = out.get("ollama_transport", {})
+            check("by_exception_type tallies 'ReadTimeout' for /api/embed",
+                  ot.get("failed_outcomes", {}).get("by_exception_type") == {"ReadTimeout": 1},
+                  str(ot))
+            check("F1b: run marked invalid (by_exception_type, ReadTimeout)",
+                  out.get("valid") is False and "embed" in out.get("invalid_reason", ""),
+                  str(out))
+
+        # mutation: F1 removed - _record_embed_failure replaced with a no-op
+        pacer._reset_for_tests()
+        saved_record = pacer._record_embed_failure
+        pacer._record_embed_failure = lambda exc: None
+        try:
+            with _crash_guard("mutation 'F1 removed': the SAME ReadTimeout on "
+                              "/api/embed is now WRONGLY never tallied - run stays "
+                              "valid (would FAIL the F1b 'run marked invalid' check "
+                              "above)"):
+                client2 = httpx.Client(transport=httpx.MockTransport(handler),
+                                       base_url="http://127.0.0.1:11434")
+                try:
+                    client2.post("/api/embed", json={"model": "x", "input": "y"})
+                except httpx.ReadTimeout:
+                    pass
+                client2.close()
+                out2: dict = {}
+                pacer.attach(out2)
+                check("mutation 'F1 removed': the SAME ReadTimeout on /api/embed is now "
+                      "WRONGLY never tallied - run stays valid (would FAIL the F1b 'run "
+                      "marked invalid' check above)", "valid" not in out2, str(out2))
+        finally:
+            pacer._record_embed_failure = saved_record
+        check("_record_embed_failure is restored to the real function",
+              pacer._record_embed_failure is saved_record)
+
+
 # ── TW1/TW2: the tripwire - requests/aiohttp are COUNTED, never paced or retried ────────
 #
 # R1 (the auditor's review of 717f482, after the empirical arm-symmetry probe found no
@@ -1138,6 +1323,8 @@ def main() -> int:
                test_t8b_calls_by_host_distinguishes_two_recognised_ollama_hosts,
                test_t8c_max_inflight_tracks_real_concurrency,
                test_t8d_max_concurrent_paced_covers_the_whole_paced_operation,
+               test_f1a_urlopen_embed_failure_marks_the_run_invalid,
+               test_f1b_httpx_embed_failure_marks_the_run_invalid,
                test_tw1_requests_session_send_is_counted_not_paced_and_marks_invalid,
                test_tw2_aiohttp_client_session_request_is_counted_not_paced,
                test_tw3_nested_aiohttp_inside_a_paced_httpx_call_is_not_a_bypass):

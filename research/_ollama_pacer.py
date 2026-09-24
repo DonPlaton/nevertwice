@@ -127,6 +127,14 @@ _COUNTERS = {"calls": 0, "pace_sleep_s": 0.0, "retries": 0, "retry_sleep_s": 0.0
             "nested_requests": 0, "nested_aiohttp": 0, "max_inflight": 0,
             "max_concurrent_paced": 0}
 _CALL_MS: list = []
+#: F1 (.loop/PREREG-V2-2026-09-24.md, P0(a)): a genuine, non-retried (or retried-and-
+#: gave-up) failure on an EMBED endpoint - counted separately from `_COUNTERS["gave_up"]`
+#: (which is EVERY endpoint's port-exhaustion give-up, embed or not) because P0(a) only
+#: ever asks about embed traffic: this is where `_embed_http` returns None and the caller
+#: falls back to lexical, silently. `by_status`/`by_exception_type` are DICTS (status code
+#: or exception class name -> count), never scalars, so they live here rather than in
+#: `_COUNTERS` (whose own `_reset_for_tests` assumes every value is an int or a float).
+_EMBED_FAILURES = {"by_status": {}, "by_exception_type": {}, "gave_up": 0}
 #: R1 (the auditor's finding, 2026-09-24): a probe or a stand can be reachable from MORE
 #: than one recognised Ollama host at once (this dev machine runs a real Ollama on the
 #: default 127.0.0.1:11434 AND a fake one on a random port during
@@ -204,6 +212,21 @@ def is_ollama_host(host: str, port: int) -> bool:
     """True iff (host, port) is one this process recognises as the local Ollama - the
     ONLY thing pacing/retry ever acts on (R1: everything else passes straight through)."""
     return ((host or "").lower(), port) in _ollama_hosts()
+
+
+def _is_embed_path(url: str) -> bool:
+    """True iff `url`'s path names an embedding endpoint. F1 (.loop/PREREG-V2-2026-09-24.md,
+    P0(a)): `nevertwice/_engine_store.py`'s `_embed_http` returns None on ANY failure and
+    the caller falls back to lexical recall, silently - the one failure class this module
+    could see (it sits below every caller) but never counted. `/api/embed` is Ollama's own
+    endpoint - the only one this module's host-scoped traffic (F2: the local Ollama host
+    only) can ever carry - matched loosely (a trailing slash, a query string) rather than
+    an exact string compare."""
+    try:
+        path = urllib.parse.urlsplit(url).path
+    except Exception:                                                # noqa: BLE001
+        return False
+    return path.rstrip("/").endswith("/api/embed")
 
 
 # ── classification: the one signature this module ever retries ─────────────────────────
@@ -289,6 +312,31 @@ def classify(obj, *, is_ollama_host: bool) -> bool:
     return _is_port_exhaustion_text(_body_of(obj))
 
 
+def _record_embed_failure(exc: BaseException) -> None:
+    """F1: a genuine failure on an EMBED endpoint - never classified as port-exhaustion
+    (so never retried), or retried and given up on (see the `is_embed` branch in
+    `_run_paced`/`_run_paced_async`, which is the only caller). `by_status`: the
+    exception carries an HTTP status - `urllib.error.HTTPError`'s `.code`, an
+    `ollama.ResponseError`-shaped `.status_code`, or an `httpx.HTTPStatusError`'s
+    `.response.status_code` - the server answered, just badly. `by_exception_type`: no
+    status anywhere - a pure transport failure (a timeout, a refused connection) that
+    never got a response to read a status from. The two are mutually exclusive per call:
+    a status, when found, is trusted over the exception's own class name."""
+    status = getattr(exc, "code", None)
+    if status is None:
+        status = getattr(exc, "status_code", None)
+    if status is None:
+        resp = getattr(exc, "response", None)
+        status = getattr(resp, "status_code", None)
+    with _LOCK:
+        if status is not None:
+            _EMBED_FAILURES["by_status"][status] = _EMBED_FAILURES["by_status"].get(status, 0) + 1
+        else:
+            name = type(exc).__name__
+            _EMBED_FAILURES["by_exception_type"][name] = (
+                _EMBED_FAILURES["by_exception_type"].get(name, 0) + 1)
+
+
 # ── pacing: one process-wide schedule, reserved under the lock, slept outside it ────────
 
 def _reserve_slot() -> float:
@@ -329,6 +377,17 @@ def _percentiles(samples: list) -> dict:
             "max": round(s[-1], 3)}
 
 
+def _dict_delta(now_d: dict, base_d: dict) -> dict:
+    """F1: `now_d - base_d`, key by key (a status code or an exception class name),
+    dropping any key whose delta is <= 0 - the same "only report what grew" rule
+    `attach()`'s scalar counters already follow, extended to the dict-shaped ones
+    (`_EMBED_FAILURES["by_status"]`/`["by_exception_type"]`) `_COUNTERS` cannot hold
+    (its own `_reset_for_tests` assumes every value is a plain int or float)."""
+    keys = set(now_d) | set(base_d)
+    delta = {k: now_d.get(k, 0) - base_d.get(k, 0) for k in keys}
+    return {k: v for k, v in delta.items() if v > 0}
+
+
 # ── the retry driver: sync and async, identical policy, different sleep primitive ──────
 
 def _inflight_enter() -> None:
@@ -357,12 +416,15 @@ def _concurrent_exit() -> None:
         _CONCURRENT_STATE["n"] -= 1
 
 
-def _run_paced(call: Callable, host_key: tuple | None = None):
+def _run_paced(call: Callable, host_key: tuple | None = None, is_embed: bool = False):
     """`call()` to the Ollama host, paced and retried in place. `call` raises on any
     failure worth classifying (a plain function return is success); `call_ms` records
     only a SUCCESSFUL attempt's wall time, never a failed attempt's, and never a sleep -
     the timing window opens after `_pace()` has already returned. `host_key`, when given,
-    is tallied in `_CALLS_BY_HOST` alongside the aggregate `calls` counter."""
+    is tallied in `_CALLS_BY_HOST` alongside the aggregate `calls` counter. `is_embed`
+    (F1): when the call ultimately fails - never classified as port-exhaustion, or
+    retried and given up on - and was to an embed endpoint, the failure is tallied into
+    `_EMBED_FAILURES` (never for a call this function itself successfully retried past)."""
     _concurrent_enter()                 # K14: before _pace() - the WHOLE operation
     try:
         _pace()
@@ -390,6 +452,11 @@ def _run_paced(call: Callable, host_key: tuple | None = None):
                 if retry:
                     with _LOCK:
                         _COUNTERS["gave_up"] += 1
+                    if is_embed:
+                        with _LOCK:
+                            _EMBED_FAILURES["gave_up"] += 1
+                elif is_embed:
+                    _record_embed_failure(exc)
                 raise
             else:
                 _inflight_exit()
@@ -400,7 +467,8 @@ def _run_paced(call: Callable, host_key: tuple | None = None):
         _concurrent_exit()
 
 
-async def _run_paced_async(call: Callable, host_key: tuple | None = None):
+async def _run_paced_async(call: Callable, host_key: tuple | None = None,
+                           is_embed: bool = False):
     _concurrent_enter()                 # K14: before _pace() - the WHOLE operation
     try:
         await _pace_async()
@@ -428,6 +496,11 @@ async def _run_paced_async(call: Callable, host_key: tuple | None = None):
                 if retry:
                     with _LOCK:
                         _COUNTERS["gave_up"] += 1
+                    if is_embed:
+                        with _LOCK:
+                            _EMBED_FAILURES["gave_up"] += 1
+                elif is_embed:
+                    _record_embed_failure(exc)
                 raise
             else:
                 _inflight_exit()
@@ -448,7 +521,7 @@ def _paced_urlopen(*args, **kwargs):
     if not is_ollama_host(host, port):
         return orig(*args, **kwargs)
     return _run_paced(lambda: _mark_paced(lambda: orig(*args, **kwargs)),
-                      host_key=(host, port))
+                      host_key=(host, port), is_embed=_is_embed_path(url))
 
 
 # ── httpx.Client.send / httpx.AsyncClient.send ───────────────────────────────────────
@@ -490,6 +563,7 @@ def _paced_httpx_send(self, request, **kwargs):
     if not is_ollama_host(host, port):
         return orig(self, request, **kwargs)
     stream = bool(kwargs.get("stream", False))
+    is_embed = _is_embed_path(str(request.url))
 
     def _attempt():
         response = _mark_paced(lambda: orig(self, request, **kwargs))
@@ -497,7 +571,7 @@ def _paced_httpx_send(self, request, **kwargs):
             raise _PortExhaustionResponse(response)
         return response
     try:
-        return _run_paced(_attempt, host_key=(host, port))
+        return _run_paced(_attempt, host_key=(host, port), is_embed=is_embed)
     except _PortExhaustionResponse as marker:
         return marker.response          # retries exhausted; hand back the last 400 as-is
     except httpx.HTTPError:
@@ -511,6 +585,7 @@ async def _paced_httpx_async_send(self, request, **kwargs):
     if not is_ollama_host(host, port):
         return await orig(self, request, **kwargs)
     stream = bool(kwargs.get("stream", False))
+    is_embed = _is_embed_path(str(request.url))
 
     async def _attempt():
         response = await _mark_paced_async(lambda: orig(self, request, **kwargs))
@@ -518,7 +593,7 @@ async def _paced_httpx_async_send(self, request, **kwargs):
             raise _PortExhaustionResponse(response)
         return response
     try:
-        return await _run_paced_async(_attempt, host_key=(host, port))
+        return await _run_paced_async(_attempt, host_key=(host, port), is_embed=is_embed)
     except _PortExhaustionResponse as marker:
         return marker.response
 
@@ -652,7 +727,10 @@ def snapshot() -> dict:
                 "max_inflight": _COUNTERS["max_inflight"],
                 "max_concurrent_paced": _COUNTERS["max_concurrent_paced"],
                 "_call_ms_len": len(_CALL_MS),
-                "_calls_by_host": dict(_CALLS_BY_HOST)}
+                "_calls_by_host": dict(_CALLS_BY_HOST),
+                "_embed_failures": {"by_status": dict(_EMBED_FAILURES["by_status"]),
+                                    "by_exception_type": dict(_EMBED_FAILURES["by_exception_type"]),
+                                    "gave_up": _EMBED_FAILURES["gave_up"]}}
 
 
 def calls_by_host(since: dict | None = None) -> dict:
@@ -691,18 +769,32 @@ def attach(out: dict, *, since: dict | None = None) -> None:
 
     `nested_requests`/`nested_aiohttp` (K11) are a hit INSIDE an already-paced urllib/httpx
     call (litellm's async path routes through an aiohttp-backed httpx transport) -
-    informational only, reported alongside `bypass_calls` but never affecting `valid`."""
+    informational only, reported alongside `bypass_calls` but never affecting `valid`.
+
+    F1 (.loop/PREREG-V2-2026-09-24.md, P0(a)): `failed_outcomes` (`by_status`,
+    `by_exception_type`, `gave_up` - EMBED endpoints only, `_is_embed_path`) is where
+    `nevertwice/_engine_store.py`'s `_embed_http` returns None and a note or query
+    silently falls back to lexical. Any of the three > 0 sets `out["valid"] = False` too,
+    combined with a bypass's own reason (below) when both fire in the same window - a
+    run is invalid for every reason this call found, not just the last one checked."""
     base = since or {"calls": 0, "pace_sleep_s": 0.0, "retries": 0, "retry_sleep_s": 0.0,
                      "gave_up": 0, "bypass_requests": 0, "bypass_aiohttp": 0,
                      "nested_requests": 0, "nested_aiohttp": 0, "_call_ms_len": 0}
+    base_ef = base.get("_embed_failures") or {"by_status": {}, "by_exception_type": {},
+                                              "gave_up": 0}
     with _LOCK:
         calls = _COUNTERS["calls"] - base["calls"]
         bypass_requests = _COUNTERS["bypass_requests"] - base.get("bypass_requests", 0)
         bypass_aiohttp = _COUNTERS["bypass_aiohttp"] - base.get("bypass_aiohttp", 0)
         nested_requests = _COUNTERS["nested_requests"] - base.get("nested_requests", 0)
         nested_aiohttp = _COUNTERS["nested_aiohttp"] - base.get("nested_aiohttp", 0)
+        failed_by_status = _dict_delta(_EMBED_FAILURES["by_status"], base_ef["by_status"])
+        failed_by_exc = _dict_delta(_EMBED_FAILURES["by_exception_type"],
+                                    base_ef["by_exception_type"])
+        failed_gave_up = _EMBED_FAILURES["gave_up"] - base_ef["gave_up"]
         if (calls <= 0 and bypass_requests <= 0 and bypass_aiohttp <= 0
-                and nested_requests <= 0 and nested_aiohttp <= 0):
+                and nested_requests <= 0 and nested_aiohttp <= 0
+                and not failed_by_status and not failed_by_exc and failed_gave_up <= 0):
             return
         pace_sleep_s = _COUNTERS["pace_sleep_s"] - base["pace_sleep_s"]
         retries = _COUNTERS["retries"] - base["retries"]
@@ -731,15 +823,27 @@ def attach(out: dict, *, since: dict | None = None) -> None:
         "max_inflight": max_inflight,
         "max_concurrent_paced": max_concurrent_paced,
         "pace_excluded_exact": max_concurrent_paced <= 1,
+        "failed_outcomes": {"by_status": failed_by_status, "by_exception_type": failed_by_exc,
+                            "gave_up": failed_gave_up},
     }
+    reasons = []
     if bypass_requests > 0 or bypass_aiohttp > 0:
         culprits = [name for name, n in
                    (("requests", bypass_requests), ("aiohttp", bypass_aiohttp)) if n > 0]
-        out["valid"] = False
-        out["invalid_reason"] = (
+        reasons.append(
             f"bypassed the pacer via {' and '.join(culprits)}: "
             f"{bypass_requests + bypass_aiohttp} request(s) reached the Ollama host "
             f"directly - unpaced, unretried, uncounted by the paced transports")
+    if failed_by_status or failed_by_exc or failed_gave_up > 0:
+        n_failed = (sum(failed_by_status.values()) + sum(failed_by_exc.values())
+                   + failed_gave_up)
+        reasons.append(
+            f"{n_failed} embed call(s) failed (by_status={failed_by_status}, "
+            f"by_exception_type={failed_by_exc}, gave_up={failed_gave_up}) - "
+            f"a note or query may have silently fallen back to lexical recall")
+    if reasons:
+        out["valid"] = False
+        out["invalid_reason"] = "; ".join(reasons)
 
 
 def _reset_for_tests() -> None:
@@ -754,3 +858,6 @@ def _reset_for_tests() -> None:
         _CALLS_BY_HOST.clear()
         _INFLIGHT_STATE["n"] = 0
         _CONCURRENT_STATE["n"] = 0
+        _EMBED_FAILURES["by_status"].clear()
+        _EMBED_FAILURES["by_exception_type"].clear()
+        _EMBED_FAILURES["gave_up"] = 0
