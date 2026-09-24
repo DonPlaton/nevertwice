@@ -65,15 +65,20 @@ MODEL_NAMES = ("probe-model", "bge-m3", "nomic-embed-text")
 class _CountingHandler(http.server.BaseHTTPRequestHandler):
     def _handle(self) -> None:
         length = int(self.headers.get("Content-Length", 0) or 0)
-        if length:
-            self.rfile.read(length)                     # drain the body; content unused
+        raw_body = self.rfile.read(length) if length else b""
         with self.server.lock:                           # type: ignore[attr-defined]
             counts = self.server.counts                  # type: ignore[attr-defined]
             counts[self.path] = counts.get(self.path, 0) + 1
-        payload = _response_for(self.path)
-        data = json.dumps(payload).encode("utf-8")
+        stream = False
+        if raw_body:
+            try:
+                stream = bool(json.loads(raw_body).get("stream"))
+            except (ValueError, TypeError, AttributeError):
+                pass
+        data = _response_body_for(self.path, stream)
         self.send_response(200)
-        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Type",
+                         "application/x-ndjson" if stream else "application/json")
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
         try:
@@ -86,6 +91,34 @@ class _CountingHandler(http.server.BaseHTTPRequestHandler):
 
     def log_message(self, fmt, *args) -> None:            # noqa: A002 - stdlib's own name
         pass                                               # silence per-request console spam
+
+
+def _ndjson_chunks(path: str) -> list:
+    """A minimal, valid two-line NDJSON stream (one partial chunk, one done=true final) -
+    real Ollama streams many more, but a client's own parsing only needs `done` to
+    eventually read True, and this is still delivered as exactly ONE HTTP request/response
+    (an `http.server` handler writes its whole body before returning either way), so
+    server-vs-pacer symmetry is unaffected by how many logical chunks the body contains."""
+    if path.startswith("/api/chat"):
+        return [
+            {"model": "probe-model", "created_at": "2026-01-01T00:00:00Z",
+             "message": {"role": "assistant", "content": "ok "}, "done": False},
+            {"model": "probe-model", "created_at": "2026-01-01T00:00:00Z",
+             "message": {"role": "assistant", "content": ""}, "done": True,
+             "done_reason": "stop", "total_duration": 1, "load_duration": 1,
+             "prompt_eval_count": 1, "eval_count": 1},
+        ]
+    return [                                               # /api/generate
+        {"model": "probe-model", "response": "ok ", "done": False},
+        {"model": "probe-model", "response": "", "done": True, "total_duration": 1,
+         "load_duration": 1, "prompt_eval_count": 1, "eval_count": 1},
+    ]
+
+
+def _response_body_for(path: str, stream: bool) -> bytes:
+    if stream and (path.startswith("/api/chat") or path.startswith("/api/generate")):
+        return b"\n".join(json.dumps(c).encode("utf-8") for c in _ndjson_chunks(path)) + b"\n"
+    return json.dumps(_response_for(path)).encode("utf-8")
 
 
 def _response_for(path: str) -> dict:
@@ -248,18 +281,107 @@ def drive_amem_llm(port: int, n: int = N) -> dict:
     return {"attempted": n, "errors": errors}
 
 
+# ── generation stacks (the auditor's follow-up: embedding alone is not the whole surface) ─
+
+def drive_ollama_python_chat_stream(port: int, n: int = N) -> dict:
+    """Same client/transport as `drive_ollama_python`, but exercises STREAMING -
+    `client.chat(..., stream=True)` returns a generator over NDJSON chunks. Still exactly
+    ONE HTTP request/response per call (an `http.server` handler writes its whole body
+    before returning), so server-vs-pacer symmetry is expected to hold identically -
+    proving the pacer's per-CALL counting does not silently multiply or drop a count on a
+    streamed body the way a per-CHUNK counter would."""
+    try:
+        import ollama                                      # noqa: PLC0415
+    except ImportError as e:
+        return {"skipped": f"ollama not importable in this interpreter ({e})"}
+    client = ollama.Client(host=f"http://127.0.0.1:{port}")
+    errors = 0
+    for i in range(n):
+        try:
+            for _chunk in client.chat(
+                    model="probe-model",
+                    messages=[{"role": "user", "content": f"probe prompt {i}"}],
+                    stream=True):
+                pass
+        except Exception:                                  # noqa: BLE001
+            errors += 1
+    return {"attempted": n, "errors": errors}
+
+
+def drive_mem0_llm(port: int, n: int = N) -> dict:
+    """mem0's OWN Ollama LLM (`mem0.llms.ollama.OllamaLLM`, separate from its embedder
+    driven above) - `generate_response()` calls `ollama.Client.chat(...)`, hitting
+    /api/chat non-streaming."""
+    try:
+        from mem0.llms.ollama import OllamaLLM               # noqa: PLC0415
+        from mem0.configs.llms.ollama import OllamaConfig     # noqa: PLC0415
+    except ImportError as e:
+        return {"skipped": f"mem0 LLM not importable in this interpreter ({e})"}
+    cfg = OllamaConfig(model="probe-model", ollama_base_url=f"http://127.0.0.1:{port}")
+    try:
+        llm = OllamaLLM(cfg)
+    except Exception as e:                                 # noqa: BLE001
+        return {"skipped": f"mem0 OllamaLLM init failed ({type(e).__name__}: {e})"}
+    errors = 0
+    for i in range(n):
+        try:
+            llm.generate_response([{"role": "user", "content": f"probe prompt {i}"}])
+        except Exception:                                  # noqa: BLE001
+            errors += 1
+    return {"attempted": n, "errors": errors}
+
+
+def drive_langchain_ollama_chat(port: int, n: int = N) -> dict:
+    """langchain_ollama's ChatOllama (LangMem's chat model) - also `ollama.Client`/httpx
+    underneath, same as its embeddings sibling driven above."""
+    try:
+        from langchain_ollama import ChatOllama               # noqa: PLC0415
+    except ImportError as e:
+        return {"skipped": f"langchain_ollama ChatOllama not importable in this "
+                           f"interpreter ({e})"}
+    try:
+        chat = ChatOllama(model="probe-model", base_url=f"http://127.0.0.1:{port}")
+    except Exception as e:                                 # noqa: BLE001
+        return {"skipped": f"ChatOllama init failed ({type(e).__name__}: {e})"}
+    errors = 0
+    for i in range(n):
+        try:
+            chat.invoke(f"probe prompt {i}")
+        except Exception:                                  # noqa: BLE001
+            errors += 1
+    return {"attempted": n, "errors": errors}
+
+
 STACKS = {
     "engine_embed (urllib.request.urlopen)": drive_engine_embed,
     "ollama-python Client.embed (httpx)": drive_ollama_python,
     "mem0 OllamaEmbedding (ollama-python/httpx)": drive_mem0_embedder,
     "langchain_ollama OllamaEmbeddings (ollama-python/httpx)": drive_langchain_ollama,
     "A-MEM OllamaController (litellm/httpx)": drive_amem_llm,
+    "ollama-python Client.chat stream=True (httpx)": drive_ollama_python_chat_stream,
+    "mem0 OllamaLLM.generate_response (ollama-python/httpx)": drive_mem0_llm,
+    "langchain_ollama ChatOllama.invoke (ollama-python/httpx)": drive_langchain_ollama_chat,
 }
 
 
 def run() -> dict:
+    """R1 (the auditor's finding, 2026-09-24): this dev machine runs a REAL Ollama on the
+    default 127.0.0.1:11434 at all times, and litellm 1.100.0's model-validation step
+    sends /api/show to that DEFAULT host regardless of the `api_base` this probe
+    configures it with (observed 8x in the real Ollama's own log during a probe run) - so
+    the pacer's AGGREGATE `calls` counter can include real-host traffic this probe never
+    intended to measure, silently inflating a stack's number into looking symmetric (or
+    asymmetric) by coincidence rather than by what actually happened on THIS run's own
+    fake server. `pacer.calls_by_host()` is used instead of the aggregate: the symmetry
+    verdict compares `server_calls` (which by construction can ONLY be requests THIS
+    fake server itself received) against the pacer's count for THAT EXACT host:port,
+    never the total across every host it happened to recognise. Any calls counted for a
+    DIFFERENT host (real 11434 chief among them) are reported separately, by name, as
+    `other_hosts_leaked` - visible, never silently folded into the "symmetric" number
+    either way."""
     server, port = start_fake_ollama()
     _point_env_at(port)
+    fake_host_key = ("127.0.0.1", port)
     pacer.install()
     results: dict = {}
     try:
@@ -273,16 +395,31 @@ def run() -> dict:
             server_calls = after_total - before_total
             out: dict = {}
             pacer.attach(out, since=snap)
-            pacer_calls = out.get("ollama_transport", {}).get("calls", 0)
+            by_host = pacer.calls_by_host(since=snap)
+            pacer_calls_fake_host = by_host.get(fake_host_key, 0)
+            pacer_calls_total = out.get("ollama_transport", {}).get("calls", 0)
+            other_hosts = {f"{h}:{p}": n for (h, p), n in by_host.items()
+                           if (h, p) != fake_host_key}
             if "skipped" not in r:
                 r["server_calls"] = server_calls
-                r["pacer_calls"] = pacer_calls
-                r["symmetric"] = server_calls == pacer_calls
+                r["pacer_calls"] = pacer_calls_fake_host      # THIS run's fake host ONLY
+                r["pacer_calls_all_hosts"] = pacer_calls_total
+                r["calls_by_host"] = {f"{h}:{p}": n for (h, p), n in by_host.items()}
+                r["symmetric"] = server_calls == pacer_calls_fake_host
+                if other_hosts:
+                    r["other_hosts_leaked"] = other_hosts
             results[name] = r
     finally:
         pacer.uninstall()
         stop_fake_ollama(server)
     return results
+
+
+#: The default Ollama host, always recognised by the pacer (research/_ollama_pacer.py's
+#: own _DEFAULT_HOSTS) and, on this dev machine, always a REAL Ollama listening on it -
+#: the exact host litellm 1.100.0's model-validation step leaked /api/show to, ignoring
+#: the api_base this probe configured it with (the auditor's finding on 623a1df/ab82ff8).
+REAL_OLLAMA_HOST_KEY = "127.0.0.1:11434"
 
 
 def main() -> int:
@@ -296,9 +433,15 @@ def main() -> int:
         except (OSError, ValueError):
             merged = {}
     interpreter = sys.executable
+    # R1 (the auditor): an explicit, asserted check that the REAL Ollama host received
+    # ZERO pacer-counted calls during this run - not just per-stack visibility, a single
+    # number this script's own exit code is gated on.
+    real_host_calls = sum(r.get("other_hosts_leaked", {}).get(REAL_OLLAMA_HOST_KEY, 0)
+                          for r in results.values() if "skipped" not in r)
     merged.setdefault("runs", {})[interpreter] = {
         "python": sys.version.split()[0], "platform": platform.platform(),
         "stacks": results,
+        "real_ollama_host_pacer_calls": real_host_calls,
         "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
     out_path.write_text(json.dumps(merged, indent=1, ensure_ascii=False) + "\n",
@@ -315,9 +458,16 @@ def main() -> int:
             verdict = "OK" if r["symmetric"] else "MISMATCH - BYPASSES THE PACER"
             print(f"  {name:56s} server={r['server_calls']:3d}  pacer={r['pacer_calls']:3d}"
                   f"  errors={r['errors']}  {verdict}")
+            if r.get("other_hosts_leaked"):
+                print(f"  {'':56s} LEAKED to other host(s), excluded from the verdict "
+                      f"above: {r['other_hosts_leaked']}")
+    print(f"  real Ollama host ({REAL_OLLAMA_HOST_KEY}) pacer-counted calls during this "
+          f"probe: {real_host_calls}" +
+          ("  [CLEAN]" if real_host_calls == 0 else
+           "  [LEAK - see other_hosts_leaked per stack above]"))
     print(f"  wrote -> {out_path}")
     print(bar)
-    return 0
+    return 3 if real_host_calls > 0 else 0
 
 
 if __name__ == "__main__":

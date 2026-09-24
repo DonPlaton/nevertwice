@@ -694,6 +694,34 @@ def test_t8_attach_writes_the_key_only_when_something_ran_through_it() -> None:
               "ollama_transport" not in out5, str(out5))
 
 
+def test_t8b_calls_by_host_distinguishes_two_recognised_ollama_hosts() -> None:
+    print("\n- T8b: calls_by_host() tallies paced calls PER (host, port) - a probe or a "
+          "stand reachable from more than one recognised Ollama host can tell them apart -")
+    with _isolated():
+        clock = FakeClock()
+        pacer._now, pacer._sleep = clock.now, clock.sleep
+        req_a = urllib.request.Request("http://127.0.0.1:11434/api/tags")
+        req_b = urllib.request.Request("http://localhost:11434/api/tags")
+
+        def ok(*a, **k):
+            return "OK"
+        urllib.request.urlopen = ok
+        pacer.install()
+        snap = pacer.snapshot()
+        urllib.request.urlopen(req_a)
+        urllib.request.urlopen(req_a)
+        urllib.request.urlopen(req_b)
+        delta = pacer.calls_by_host(since=snap)
+        check("host A (127.0.0.1:11434) tallied twice", delta.get(("127.0.0.1", 11434)) == 2,
+              str(delta))
+        check("host B (localhost:11434) tallied once", delta.get(("localhost", 11434)) == 1,
+              str(delta))
+        check("per-host sums equal the aggregate calls delta",
+              sum(delta.values()) == pacer.snapshot()["calls"] - snap["calls"], str(delta))
+        check("a host with zero calls in this span is absent, not zero-valued",
+              ("::1", 11434) not in delta, str(delta))
+
+
 # ── TW1/TW2: the tripwire - requests/aiohttp are COUNTED, never paced or retried ────────
 #
 # R1 (the auditor's review of 717f482, after the empirical arm-symmetry probe found no
@@ -944,6 +972,7 @@ def main() -> int:
                test_t6_engine_embed_text_transparently_survives_two_port_failures,
                test_t7_httpx_client_and_asyncclient_are_paced_through_mocktransport,
                test_t8_attach_writes_the_key_only_when_something_ran_through_it,
+               test_t8b_calls_by_host_distinguishes_two_recognised_ollama_hosts,
                test_tw1_requests_session_send_is_counted_not_paced_and_marks_invalid,
                test_tw2_aiohttp_client_session_request_is_counted_not_paced,
                test_tw3_nested_aiohttp_inside_a_paced_httpx_call_is_not_a_bypass):

@@ -96,6 +96,15 @@ _COUNTERS = {"calls": 0, "pace_sleep_s": 0.0, "retries": 0, "retry_sleep_s": 0.0
             "bypass_requests": 0, "bypass_aiohttp": 0,
             "nested_requests": 0, "nested_aiohttp": 0}
 _CALL_MS: list = []
+#: R1 (the auditor's finding, 2026-09-24): a probe or a stand can be reachable from MORE
+#: than one recognised Ollama host at once (this dev machine runs a real Ollama on the
+#: default 127.0.0.1:11434 AND a fake one on a random port during
+#: research/_ollama_symmetry_probe.py's own runs) - `calls` alone cannot tell which host a
+#: paced call actually went to, so a stray request to the WRONG one (litellm's /api/show
+#: ignoring api_base, observed hitting the real 11434 during probing) silently inflated
+#: the aggregate without anyone able to see it. Tallied by (host, port) at the exact same
+#: point `_COUNTERS["calls"]` increments, so per-host sums always equal the aggregate.
+_CALLS_BY_HOST: dict = {}
 
 #: K11 (the auditor's finding on 623a1df): litellm 1.100.0's ASYNC path (amem_eval's own
 #: dependency) routes its httpx.AsyncClient through a custom transport backed by aiohttp
@@ -291,14 +300,17 @@ def _percentiles(samples: list) -> dict:
 
 # ── the retry driver: sync and async, identical policy, different sleep primitive ──────
 
-def _run_paced(call: Callable):
+def _run_paced(call: Callable, host_key: tuple | None = None):
     """`call()` to the Ollama host, paced and retried in place. `call` raises on any
     failure worth classifying (a plain function return is success); `call_ms` records
     only a SUCCESSFUL attempt's wall time, never a failed attempt's, and never a sleep -
-    the timing window opens after `_pace()` has already returned."""
+    the timing window opens after `_pace()` has already returned. `host_key`, when given,
+    is tallied in `_CALLS_BY_HOST` alongside the aggregate `calls` counter."""
     _pace()
     with _LOCK:
         _COUNTERS["calls"] += 1
+        if host_key is not None:
+            _CALLS_BY_HOST[host_key] = _CALLS_BY_HOST.get(host_key, 0) + 1
     attempt = 0
     while True:
         t0 = _now()
@@ -324,10 +336,12 @@ def _run_paced(call: Callable):
             return result
 
 
-async def _run_paced_async(call: Callable):
+async def _run_paced_async(call: Callable, host_key: tuple | None = None):
     await _pace_async()
     with _LOCK:
         _COUNTERS["calls"] += 1
+        if host_key is not None:
+            _CALLS_BY_HOST[host_key] = _CALLS_BY_HOST.get(host_key, 0) + 1
     attempt = 0
     while True:
         t0 = _now()
@@ -362,7 +376,8 @@ def _paced_urlopen(*args, **kwargs):
     orig = _ORIG["urlopen"]
     if not is_ollama_host(host, port):
         return orig(*args, **kwargs)
-    return _run_paced(lambda: _mark_paced(lambda: orig(*args, **kwargs)))
+    return _run_paced(lambda: _mark_paced(lambda: orig(*args, **kwargs)),
+                      host_key=(host, port))
 
 
 # ── httpx.Client.send / httpx.AsyncClient.send ───────────────────────────────────────
@@ -411,7 +426,7 @@ def _paced_httpx_send(self, request, **kwargs):
             raise _PortExhaustionResponse(response)
         return response
     try:
-        return _run_paced(_attempt)
+        return _run_paced(_attempt, host_key=(host, port))
     except _PortExhaustionResponse as marker:
         return marker.response          # retries exhausted; hand back the last 400 as-is
     except httpx.HTTPError:
@@ -432,7 +447,7 @@ async def _paced_httpx_async_send(self, request, **kwargs):
             raise _PortExhaustionResponse(response)
         return response
     try:
-        return await _run_paced_async(_attempt)
+        return await _run_paced_async(_attempt, host_key=(host, port))
     except _PortExhaustionResponse as marker:
         return marker.response
 
@@ -563,7 +578,27 @@ def snapshot() -> dict:
                 "bypass_aiohttp": _COUNTERS["bypass_aiohttp"],
                 "nested_requests": _COUNTERS["nested_requests"],
                 "nested_aiohttp": _COUNTERS["nested_aiohttp"],
-                "_call_ms_len": len(_CALL_MS)}
+                "_call_ms_len": len(_CALL_MS),
+                "_calls_by_host": dict(_CALLS_BY_HOST)}
+
+
+def calls_by_host(since: dict | None = None) -> dict:
+    """`{(host, port): count}` for paced calls (urllib/httpx) this process made, as a
+    DELTA against an earlier `snapshot()` when given. A read-only diagnostic - separate
+    from `attach()`'s own aggregate `calls`, which every existing caller already reads and
+    which this does not change the meaning of. Exists because a probe or a stand can be
+    reachable from more than one recognised Ollama host at once (R1: this dev machine
+    runs a real Ollama on the default 127.0.0.1:11434 AND a fake one on a random port
+    during research/_ollama_symmetry_probe.py's own runs) - the aggregate alone cannot
+    say whether every counted call actually reached the host the caller INTENDED."""
+    with _LOCK:
+        now = dict(_CALLS_BY_HOST)
+    if since is None:
+        return now
+    before = since.get("_calls_by_host", {})
+    keys = set(now) | set(before)
+    delta = {k: now.get(k, 0) - before.get(k, 0) for k in keys}
+    return {k: v for k, v in delta.items() if v != 0}
 
 
 def attach(out: dict, *, since: dict | None = None) -> None:
@@ -629,3 +664,4 @@ def _reset_for_tests() -> None:
         for k in _COUNTERS:
             _COUNTERS[k] = 0 if isinstance(_COUNTERS[k], int) else 0.0
         _CALL_MS.clear()
+        _CALLS_BY_HOST.clear()

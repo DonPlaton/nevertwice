@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import os
 import sys
+import urllib.request
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -98,11 +99,88 @@ def test_engine_stack_is_symmetric_with_a_real_fake_ollama() -> None:
                   "server-vs-pacer comparison actually detects a real bypass",
                   server_calls2 == 5 and pacer_calls2 == 0,
                   f"server={server_calls2} pacer={pacer_calls2}")
+
+            # MS2 (the auditor's finding on cfe4211): the check above reads the PACER's
+            # own counters directly, never run()'s own returned verdict - so a mutation
+            # of run() itself (e.g. it always sets r["symmetric"] = True, regardless of
+            # what it just measured) stays green here. Call the REAL run(), still under
+            # this same is_ollama_host->False mutation, and read ITS returned dict for
+            # the engine stack, proving run() itself computes (and would print) MISMATCH.
+            results = probe.run()
+            engine_result = results.get("engine_embed (urllib.request.urlopen)", {})
+            check("run() marks a bypass as symmetric=False (the MISMATCH verdict) for "
+                  "the engine stack - read from run()'s OWN returned dict, not this "
+                  "test's separate counters", engine_result.get("symmetric") is False,
+                  str(engine_result))
         finally:
             pacer.is_ollama_host = saved_is_ollama_host
     finally:
         pacer.uninstall()
         probe.stop_fake_ollama(server)
+        for k, v in saved_env.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+
+
+def test_run_excludes_other_host_leaks_from_the_symmetric_verdict() -> None:
+    print("\n- R1 per-host (the auditor's finding on 623a1df/ab82ff8): a call that "
+          "leaks to a DIFFERENT recognised Ollama host (this machine runs a real "
+          "Ollama on the default 127.0.0.1:11434 at all times) is excluded from the "
+          "symmetric verdict and reported separately, by name, never silently folded "
+          "into either side of the comparison -")
+    saved_env = {k: os.environ.get(k) for k in _ENV_KEYS}
+    saved_stacks = dict(probe.STACKS)
+    saved_urlopen = urllib.request.urlopen
+
+    class _FakeResp:
+        def read(self):
+            return b'{"ok": true}'
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    def _hermetic_urlopen(url_or_req, *a, **k):
+        """Delegates to the REAL urlopen for anything addressed at THIS test's own fake
+        server (so it genuinely receives those requests, matching real probe behaviour);
+        fakes the response for the simulated leak to 127.0.0.1:11434 instead of ever
+        touching whatever is actually listening there - hermetic either way."""
+        url = url_or_req if isinstance(url_or_req, str) else url_or_req.full_url
+        if "127.0.0.1:11434" in url:
+            return _FakeResp()
+        return saved_urlopen(url_or_req, *a, **k)
+    urllib.request.urlopen = _hermetic_urlopen
+
+    def _leaky_stack(port, n=5):
+        for i in range(n):
+            urllib.request.urlopen(f"http://127.0.0.1:{port}/api/tags")
+        # simulates litellm's own model-validation /api/show ignoring api_base and
+        # reaching the DEFAULT Ollama host instead - the auditor's exact finding
+        urllib.request.urlopen("http://127.0.0.1:11434/api/tags")
+        return {"attempted": n, "errors": 0}
+    try:
+        probe.STACKS.clear()
+        probe.STACKS["leaky"] = _leaky_stack
+        results = probe.run()
+        r = results["leaky"]
+        check("server_calls == 5 (the fake server never receives the leaked call - it "
+              "went to a different host entirely)", r["server_calls"] == 5, str(r))
+        check("pacer_calls (fake host only) == 5, matching the server - the leak plays "
+              "no part in the verdict", r["pacer_calls"] == 5, str(r))
+        check("symmetric is True despite the leak, because the leak is not counted "
+              "against THIS host's comparison", r["symmetric"] is True, str(r))
+        check("the leak is reported by name under other_hosts_leaked",
+              r.get("other_hosts_leaked", {}).get("127.0.0.1:11434") == 1, str(r))
+        check("pacer_calls_all_hosts == 6 (5 fake + 1 leaked) - visible in the record, "
+              "never hidden", r.get("pacer_calls_all_hosts") == 6, str(r))
+    finally:
+        probe.STACKS.clear()
+        probe.STACKS.update(saved_stacks)
+        urllib.request.urlopen = saved_urlopen
         for k, v in saved_env.items():
             if v is None:
                 os.environ.pop(k, None)
@@ -122,6 +200,7 @@ def test_zz_every_check_passed() -> None:
 
 def main() -> int:
     test_engine_stack_is_symmetric_with_a_real_fake_ollama()
+    test_run_excludes_other_host_leaks_from_the_symmetric_verdict()
     print(f"\nollama_symmetry_probe: {PASSED} passed, {FAILED} failed")
     return 1 if FAILED else 0
 
