@@ -68,11 +68,14 @@ check("every claim that ever existed has a birth", all(r["born"] for r in record
 check("and there are enough of them to say anything", len(records) >= 800, str(len(records)))
 
 print("\n- the curve is the measured one -")
-for days, floor, ceil in ((1, 0.15, 0.35), (7, 0.01, 0.10)):
+#: Printed, not asserted. These bands were read at TODAY's HEAD, so restore #2 and the v2
+#: registrations would move them whatever the code does - the calendar source K4 and K17 removed
+#: elsewhere in this file (the auditing session, 2026-09-24). The page's numbers are asserted
+#: EXACTLY below, re-derived at the artifact's own pinned commit; a band over the live register
+#: added nothing but a date to fail on.
+for days in (1, 7):
     s, n = H.survival(records, head, days)
-    share = s / n if n else None
-    check(f"{days}-day survival is between {floor} and {ceil} ({s}/{n})",
-          share is not None and floor <= share <= ceil, str(share))
+    print(f"       (at today's HEAD, for information: {days}-day survival {s}/{n})")
 
 #: A horizon longer than the register cannot be answered, and the tool must say so rather than
 #: divide by zero or print a share over an empty population.
