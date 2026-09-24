@@ -194,7 +194,14 @@ with tempfile.TemporaryDirectory() as tmp:
     except ValueError as e:
         check("a file without the engine arm cannot be pooled", "no nevertwice arm" in str(e))
     blocked = _write(tmp, "blocked.json", _blob({"mem0": {"blocked": "not installed"}}))
-    res2 = sb.pool([run1], [blocked])
+    # W4: guarded, so that a regression to "the first constituent by index" reddens by NAME
+    # here instead of killing the suite with KeyError 'rows' before any later check runs.
+    try:
+        res2 = sb.pool([run1], [blocked])
+        res2_err = None
+    except Exception as e:                                # noqa: BLE001
+        res2, res2_err = {"arms": {}}, f"{type(e).__name__}: {e}"
+    check("W4: pool() survives a wholly-blocked --with arm (pairs never read a blocked constituent's rows)", res2_err is None, str(res2_err))
     # K29 (the auditor, item 9C): a blocked arm used to be left out entirely - P3 says "a
     # blocked arm is printed 'blocked (reason)', never 0" (and, by the same logic, never
     # absent either). It now stays present, as a declared absence rather than a silent one,
@@ -202,11 +209,11 @@ with tempfile.TemporaryDirectory() as tmp:
     check("a blocked arm stays PRESENT, not left out (K29: never silently absent)",
           "mem0" in res2["arms"], str(sorted(res2["arms"])))
     check("...as a blocked-shaped dict naming the file",
-          res2["arms"]["mem0"] == {"blocked": "not installed (blocked.json)"},
-          str(res2["arms"]["mem0"]))
+          res2["arms"].get("mem0") == {"blocked": "not installed (blocked.json)"},
+          str(res2["arms"].get("mem0")))
     check("a wholly-blocked arm does not invalidate the pool (P3: a declared absence)",
           "valid" not in res2, str(res2.get("valid")))
-    check("without mem0 there is no per-run pairing", res2["pairs_per_engine_run"] == [])
+    check("without mem0 there is no per-run pairing", res2.get("pairs_per_engine_run") == [])
 
     print("\n- K29: pool_other_arm() - a single LIVE result always writes 'runs' -")
     single_mem0 = sb.pool_other_arm([_arm(mem0_rows(), 450.0)])
@@ -1011,6 +1018,29 @@ with tempfile.TemporaryDirectory() as tmp_k25:
           "mutation the auditor found surviving, on the --with-file site specifically, not "
           "the engine-file one the earlier 'run-file root not checked' mutation covers",
           _refused(res_p52_mut, PTR_STALE) is None, str(_refused(res_p52_mut, PTR_STALE)))
+
+print("\n- W4 (the auditor's (в) on 7b2e0bf): the FIRST mem0 constituent is blocked, the second "
+      "live - the pairs are computed from the live one (never index 0), and the pool is invalid -")
+with tempfile.TemporaryDirectory() as tmp_w4:
+    w4_run1 = _write(tmp_w4, "run1.json", _blob({"nevertwice": _arm(engine_rows({"s0"}), 260.0),
+                                                 "naive": _arm(naive_rows(), 200.0)}))
+    w4_blocked = _write(tmp_w4, "mem0_blocked.json", _blob({"mem0": {"blocked": "qdrant lock timeout"}}))
+    w4_live = _write(tmp_w4, "mem0_live.json", _blob({"mem0": _arm(mem0_rows(), 450.0)}))
+    try:
+        res_w4 = sb.pool([w4_run1], [w4_blocked, w4_live])
+        w4_err = None
+    except Exception as e:                                    # noqa: BLE001 - a named red, not a crash
+        res_w4, w4_err = {}, f"{type(e).__name__}: {e}"
+    check("W4: pool() survives a blocked FIRST mem0 constituent (no KeyError on 'rows')",
+          w4_err is None, str(w4_err))
+    w4_pair = next((p for p in (res_w4.get("pairs") or []) if {p.get("a"), p.get("b")} == {"mem0", "nevertwice"}), None)
+    check("W4: the mem0-vs-nevertwice pair is computed from the LIVE constituent (4 supersession cases)",
+          w4_pair is not None and w4_pair.get("n") == 4, str(w4_pair))
+    check("W4: the per-engine-run pairs are computed too",
+          len(res_w4.get("pairs_per_engine_run") or []) == 1, str(res_w4.get("pairs_per_engine_run")))
+    check("W4: the pool is invalid at the root, naming the blocked file (P0(d) + P2)",
+          res_w4.get("valid") is False and "mem0_blocked.json" in (res_w4.get("invalid_reason") or ""),
+          str(res_w4.get("invalid_reason")))
 
 print(f"\n{'ALL OK' if not FAILS else f'{FAILS} FAILED'}")
 sys.exit(1 if FAILS else 0)
