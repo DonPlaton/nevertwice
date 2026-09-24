@@ -117,6 +117,55 @@ def pair_mismatch(claim: dict, data) -> str | None:
     return None
 
 
+def _utc_epoch(stamp: str) -> int | None:
+    """`2026-09-23T06:03:47Z` -> seconds since the epoch; None for anything else."""
+    from datetime import datetime, timezone                      # noqa: PLC0415
+    try:
+        return int(datetime.strptime(stamp, "%Y-%m-%dT%H:%M:%SZ")
+                   .replace(tzinfo=timezone.utc).timestamp())
+    except (TypeError, ValueError):
+        return None
+
+
+def row_refusal(data, pointer: str, code_time: int) -> str | None:
+    """Would restoring THIS row put a number back that no valid run at HEAD produced?
+
+    Two ways it would, both found before the v2 campaign (2026-09-24):
+    - a container on the pointer's path says `"valid": false` - the stands mark a run invalid
+      when its transport bypassed the pacer or its embeds failed, and `restore` never read it;
+    - the nearest `measured_at` on the path is older than HEAD. The file-level mtime check below
+      cannot see this: `head_to_head.py --save` MERGES rows, so a file written today carries rows
+      measured weeks ago. Restore #1 put twelve such claims back as if re-measured
+      (`h2h_pinned.{mem0_infer,langmem_full,amem_full}`, rows stamped 2026-09-08 at f0ed080,
+      restored at 358fa75).
+    Every container on the path is asked, the artifact root included; the deepest `measured_at`
+    wins, because that is the stamp of the row the value was read from."""
+    nodes, node = [data], data
+    try:
+        for quoted, index, key in SEGMENT.findall(pointer):
+            node = node[int(index)] if index else node[quoted or key]
+            nodes.append(node)
+    except (KeyError, IndexError, TypeError) as e:
+        return f"`{pointer}` cannot be walked in this artifact ({type(e).__name__})"
+    stamp = None
+    for n in nodes[:-1]:
+        if not isinstance(n, dict):
+            continue
+        if n.get("valid") is False:
+            return (f"the row is marked invalid by its own run: "
+                    f"{n.get('invalid_reason') or 'no reason recorded'}")
+        ma = n.get("measured_at")
+        if isinstance(ma, dict) and ma.get("utc"):
+            stamp = ma
+    if stamp is not None:
+        t = _utc_epoch(stamp.get("utc"))
+        if t is not None and t < code_time:
+            return (f"the row was measured at {stamp['utc']} (commit "
+                    f"{str(stamp.get('commit') or '?')[:7]}), before HEAD - a row merged in from an "
+                    f"older run, not a re-measurement")
+    return None
+
+
 def list_shape(data, pointer: str) -> list[dict]:
     """The shape of every list a pointer indexes by position, as it stands in this artifact.
 
@@ -358,6 +407,12 @@ def restore(manifest: dict, select: set[str] | None = None, head: str | None = N
         # The artifact must be newer than the code it was produced by. A file untouched since
         # the code commit is the OLD measurement wearing a new commit hash.
         code_time = int(_git("log", "-1", "--format=%ct", head))
+        #: ...and so must the ROW, which a merging --save can carry over from an older run, and
+        #: the row must not be one its own run marked invalid (see `row_refusal`).
+        refusal = row_refusal(data, c["pointer"], code_time)
+        if refusal:
+            left.append(f"{c['id']}: {refusal}")
+            continue
         if (ROOT / raw).stat().st_mtime < code_time:
             left.append(f"{c['id']}: {raw} predates HEAD - re-run `{c.get('command', '?')}`")
             continue
