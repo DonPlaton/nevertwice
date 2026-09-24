@@ -235,6 +235,19 @@ def load_in(pkg: Path, expr: str) -> subprocess.CompletedProcess:
             "import memory_hook as m\n"
             "print(%s)\n") % (str(pkg), expr)
     env = dict(os.environ)
+    #: (в) (the coordinator's reproduction, .loop/HANDOFF-PORTS.md): this suite exercises the
+    #: loader's OWN hand-rolled body cache (`_ld_cache` in `_engine.py`), which gates its write on
+    #: `sys.dont_write_bytecode` - "if not _ld_sys.dont_write_bytecode" - exactly the flag
+    #: `PYTHONDONTWRITEBYTECODE` sets on interpreter start. An ambient `PYTHONDONTWRITEBYTECODE=1`
+    #: in the environment THIS suite itself runs under (e.g. a caller's shell, or a harness that
+    #: sets it globally) would be inherited by `dict(os.environ)` above and silently propagate into
+    #: every child this function spawns, so the child compiles the body but never writes the cache
+    #: file - "a cold copy loads and writes its cache" stays green (the getattr probe does not
+    #: care), but "the cache landed where the loader looks for it" reddens, and every check after it
+    #: that reads `blob` dies with FileNotFoundError instead of failing on its own assertion. This
+    #: suite is testing THE CACHE, not respecting a caller's bytecode preference, so the child's
+    #: environment is made hermetic to that one variable regardless of what the parent process set.
+    env.pop("PYTHONDONTWRITEBYTECODE", None)
     env.update({"NEVERTWICE_HOME": str(pkg / "store"), "NEVERTWICE_VAULT": str(pkg / "store"),
                 "NEVERTWICE_CLOUD": "none"})
     return subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
