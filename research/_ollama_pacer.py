@@ -35,6 +35,12 @@ that traffic passed through here.
     ...
     pacer.attach(out)               # out["ollama_transport"] = {...}, only if calls > 0
 
+`install(mode="observe")` (item 9A addendum, 2026-09-24): the identical hooks, with pacing
+and retry both disabled - for a stand whose own published number IS a wall-clock time
+(`guard_bench.py`'s `ms_per_call`, `k8_judge_eval.py`'s `seconds_per_pair`) and must never
+include this module's own artificial spacing, while a bypass or a failed embed (P0(a))
+still marks the run invalid exactly as in the default `"pace"` mode.
+
 Out of scope (recorded, not fixed here): `.loop/`/`explore` probes, `research/embed_universal/*`,
 `invariants_lab/*` never import this (R2); aiohttp transports - litellm on aiohttp, Graphiti's
 AsyncOpenAI client - are not patched (R3); this is a PER-PROCESS pacer, so two campaigns racing
@@ -91,6 +97,20 @@ _async_sleep: Callable[[float], "asyncio.Future"] = asyncio.sleep
 _LOCK = threading.Lock()
 _INSTALLED = False
 _ORIG: dict = {}
+#: item 9A addendum (the coordinator, 2026-09-24): `research/guard_bench.py`'s
+#: `ms_per_call` and `research/k8_judge_eval.py`'s `seconds_per_pair` are registered
+#: claims that PREREG-V2-2026-09-24 P5 requires measured WITHOUT this module's own
+#: artificial pacing - but running those two stands with the pacer uninstalled entirely
+#: would also hide a failed embed from P0(a), and a silent lexical fallback makes the
+#: guard FASTER, corrupting the very timing P5 is protecting. `install(mode="observe")`
+#: installs the identical hooks (so a bypass/failed-embed tripwire still fires) but with
+#: pacing and retry both disabled: `_pace()`/`_pace_async()` are no-ops (pace_sleep_s
+#: stays exactly 0 - the proof a reader checks) and `_effective_max_retries()` reads 0 (a
+#: port-exhaustion signature is raised straight through exactly once, never retried).
+#: `install()`'s default stays `"pace"`; every other stand is unaffected. Reset to
+#: `"pace"` by `uninstall()`, so one process installing several stands in sequence (a
+#: test suite) never leaks one stand's mode into the next stand's `install()` call.
+_MODE = "pace"
 _PACE_STATE = {"next_at": float("-inf")}
 #: R2 (the auditor's finding): a consumer's own `elapsed - pace_sleep_s - retry_sleep_s`
 #: subtraction (research/head_to_head.py's `_pace_excluded`, research/token_floor.py's
@@ -360,7 +380,16 @@ def _reserve_slot() -> float:
     return max(0.0, start - now)
 
 
+def _effective_max_retries() -> int:
+    """`MAX_RETRIES` in `"pace"` mode; 0 in `"observe"` mode (see `_MODE`'s docstring) -
+    a port-exhaustion signature is still classified and still counted (`gave_up`), it is
+    simply never slept on or resent."""
+    return 0 if _MODE == "observe" else MAX_RETRIES
+
+
 def _pace() -> None:
+    if _MODE == "observe":
+        return
     wait = _reserve_slot()
     if wait > 0:
         _sleep(wait)
@@ -369,6 +398,8 @@ def _pace() -> None:
 
 
 async def _pace_async() -> None:
+    if _MODE == "observe":
+        return
     wait = _reserve_slot()
     if wait > 0:
         await _async_sleep(wait)
@@ -452,7 +483,7 @@ def _run_paced(call: Callable, host_key: tuple | None = None, is_embed: bool = F
             except BaseException as exc:                              # noqa: BLE001
                 _inflight_exit()
                 retry = classify(exc, is_ollama_host=True)
-                if retry and attempt < MAX_RETRIES:
+                if retry and attempt < _effective_max_retries():
                     attempt += 1
                     with _LOCK:
                         _COUNTERS["retries"] += 1
@@ -496,7 +527,7 @@ async def _run_paced_async(call: Callable, host_key: tuple | None = None,
             except BaseException as exc:                              # noqa: BLE001
                 _inflight_exit()
                 retry = classify(exc, is_ollama_host=True)
-                if retry and attempt < MAX_RETRIES:
+                if retry and attempt < _effective_max_retries():
                     attempt += 1
                     with _LOCK:
                         _COUNTERS["retries"] += 1
@@ -683,18 +714,24 @@ async def _paced_aiohttp_request(self, method, str_or_url, **kwargs):
 
 # ── install / uninstall (idempotent) ─────────────────────────────────────────────────
 
-def install() -> None:
+def install(mode: str = "pace") -> None:
     """Patch `urllib.request.urlopen` and, when importable, `httpx.Client.send` /
     `httpx.AsyncClient.send` (paced and retried), plus `requests.Session.send` /
     `aiohttp.ClientSession._request` (the tripwire - counted only, never paced or
     retried). A second call while already installed is a no-op - it does NOT re-capture
     `_ORIG` (which would point the "original" at THIS module's own wrapper) and does NOT
     reset counters (a stand may call `install()` defensively more than once in one
-    process)."""
-    global _INSTALLED
+    process), and it does NOT change an already-installed `mode` either.
+
+    `mode="observe"` (item 9A addendum, see `_MODE`'s own docstring): the identical hooks,
+    with pacing and retry both disabled - for a stand (`guard_bench.py`, `k8_judge_eval.py`)
+    whose published claim IS a wall-clock time and must never include this module's own
+    artificial spacing, while still catching a bypass or a failed embed (P0(a))."""
+    global _INSTALLED, _MODE
     with _LOCK:
         if _INSTALLED:
             return
+        _MODE = mode
         _ORIG["urlopen"] = urllib.request.urlopen
         urllib.request.urlopen = _paced_urlopen
         try:
@@ -725,7 +762,7 @@ def install() -> None:
 
 def uninstall() -> None:
     """Restore whatever `install()` saved. A no-op when not installed."""
-    global _INSTALLED
+    global _INSTALLED, _MODE
     with _LOCK:
         if not _INSTALLED:
             return
@@ -741,6 +778,7 @@ def uninstall() -> None:
             import aiohttp  # noqa: PLC0415
             aiohttp.ClientSession._request = _ORIG.pop("aiohttp_request")
         _INSTALLED = False
+        _MODE = "pace"          # item 9A addendum: never leak one stand's mode into the next
 
 
 def installed() -> bool:
@@ -854,8 +892,13 @@ def attach(out: dict, *, since: dict | None = None) -> None:
         "calls": calls, "pace_sleep_s": round(pace_sleep_s, 3), "retries": retries,
         "retry_sleep_s": round(retry_sleep_s, 3), "gave_up": gave_up,
         "call_ms": _percentiles(samples),
-        "timing_includes_pacing": True,
-        "pace_floor_s": round(calls * PACE_S, 3),
+        #: item 9A addendum: "observe" mode never sleeps or retries at all (`_pace()`,
+        #: `_effective_max_retries()`), so `pace_sleep_s`/`retry_sleep_s` are already,
+        #: honestly, 0 - `timing_includes_pacing` says so too, rather than reporting
+        #: `True` for a mode whose entire point is that it added nothing to subtract.
+        "mode": _MODE,
+        "timing_includes_pacing": _MODE != "observe",
+        "pace_floor_s": round(calls * PACE_S, 3) if _MODE != "observe" else 0.0,
         "bypass_calls": {"requests": bypass_requests, "aiohttp": bypass_aiohttp},
         "nested_calls": {"requests": nested_requests, "aiohttp": nested_aiohttp},
         "max_inflight": max_inflight,

@@ -1507,6 +1507,147 @@ def test_tw3_nested_aiohttp_inside_a_paced_httpx_call_is_not_a_bypass() -> None:
             aiohttp.ClientSession._request = saved_aiohttp_request
 
 
+# ── T9: "observe" mode - item 9A addendum, PREREG-V2 P5 timing claims ──────────────────
+#
+# guard_bench.py's `ms_per_call` and k8_judge_eval.py's `seconds_per_pair` are registered
+# claims that P5 requires measured WITHOUT this module's own artificial pacing - but
+# skipping the pacer entirely for those two stands would also hide a failed embed from
+# P0(a), and a silent lexical fallback makes the guard FASTER, corrupting the very timing
+# P5 exists to protect. `install(mode="observe")` installs the identical hooks with
+# pacing and retry both disabled.
+
+def test_t9_observe_mode_paces_nothing_retries_nothing_still_counts_failures() -> None:
+    print("\n- T9: install(mode='observe') - zero pacing sleep, zero retries, a bypass/"
+          "failed embed still counted, attach() names the mode -")
+    with _isolated():
+        clock = FakeClock()
+        pacer._now, pacer._sleep = clock.now, clock.sleep
+
+        def ok(*a, **k):
+            return "OK"
+        urllib.request.urlopen = ok
+        pacer.install(mode="observe")
+        with _crash_guard("observe mode: 10 calls give pace_sleep_s == 0",
+                          "observe mode: 10 calls give retries == 0",
+                          "attach() writes ollama_transport.mode == 'observe'",
+                          "attach() writes timing_includes_pacing == False in observe mode",
+                          "attach() writes pace_floor_s == 0.0 in observe mode"):
+            for _ in range(10):
+                urllib.request.urlopen(
+                    urllib.request.Request("http://127.0.0.1:11434/api/tags"))
+            snap = pacer.snapshot()
+            check("observe mode: 10 calls give pace_sleep_s == 0",
+                  snap["pace_sleep_s"] == 0.0, str(snap))
+            check("observe mode: 10 calls give retries == 0", snap["retries"] == 0, str(snap))
+            out: dict = {}
+            pacer.attach(out)
+            ot = out.get("ollama_transport", {})
+            check("attach() writes ollama_transport.mode == 'observe'",
+                  ot.get("mode") == "observe", str(ot))
+            check("attach() writes timing_includes_pacing == False in observe mode",
+                  ot.get("timing_includes_pacing") is False, str(ot))
+            check("attach() writes pace_floor_s == 0.0 in observe mode",
+                  ot.get("pace_floor_s") == 0.0, str(ot))
+
+        # a port-exhaustion signature: raised through exactly once, never retried, no sleep
+        pacer._reset_for_tests()
+        attempts = {"n": 0}
+
+        def always_port_error(r, *a, **k):
+            attempts["n"] += 1
+            raise urllib.error.HTTPError(
+                r.full_url, 400, "Bad Request", {},
+                io.BytesIO(pacer.SOCKET_ADDR_MSG.encode("utf-8")))
+        pacer._ORIG["urlopen"] = always_port_error
+        req = urllib.request.Request("http://127.0.0.1:11434/api/tags")
+        with _crash_guard("observe mode: a port error is raised once, not retried",
+                          "observe mode: no retry sleep was spent",
+                          "observe mode: gave_up is still counted (F1's own accounting)"):
+            raised = None
+            try:
+                urllib.request.urlopen(req)
+            except urllib.error.HTTPError as e:
+                raised = e
+            check("observe mode: a port error is raised once, not retried",
+                  raised is not None and attempts["n"] == 1, str(attempts))
+            snap2 = pacer.snapshot()
+            check("observe mode: no retry sleep was spent", snap2["retry_sleep_s"] == 0.0,
+                  str(snap2))
+            check("observe mode: gave_up is still counted (F1's own accounting)",
+                  snap2["gave_up"] == 1, str(snap2))
+
+        # a 500 on /api/embed still marks the run invalid, same as "pace" mode (P0(a))
+        pacer._reset_for_tests()
+
+        def embed_500(r, *a, **k):
+            raise urllib.error.HTTPError(
+                r.full_url, 500, "Internal Server Error", {}, io.BytesIO(b"busy"))
+        pacer._ORIG["urlopen"] = embed_500
+        req_embed = urllib.request.Request("http://127.0.0.1:11434/api/embed", data=b"{}")
+        with _crash_guard("observe mode: a 500 on /api/embed still marks the run invalid"):
+            try:
+                urllib.request.urlopen(req_embed)
+            except urllib.error.HTTPError:
+                pass
+            out2: dict = {}
+            pacer.attach(out2)
+            check("observe mode: a 500 on /api/embed still marks the run invalid",
+                  out2.get("valid") is False and "embed" in out2.get("invalid_reason", ""),
+                  str(out2))
+
+        # mutation: observe mode still sleeping (a plausible regression - _pace() forgot
+        # to check _MODE) -> pace_sleep_s > 0, would FAIL the pace_sleep_s==0 check above
+        pacer._reset_for_tests()
+        pacer._ORIG["urlopen"] = ok
+        saved_pace_s = pacer.PACE_S
+        pacer.PACE_S = 0.125
+        saved_pace = pacer._pace
+
+        def _pace_ignoring_mode() -> None:
+            wait = pacer._reserve_slot()
+            if wait > 0:
+                pacer._sleep(wait)
+                with pacer._LOCK:
+                    pacer._COUNTERS["pace_sleep_s"] += wait
+        pacer._pace = _pace_ignoring_mode
+        try:
+            with _crash_guard("mutation 'observe still sleeping': pace_sleep_s > 0 "
+                              "(would FAIL the pace_sleep_s==0 check above)"):
+                urllib.request.urlopen(req)
+                urllib.request.urlopen(req)
+                snap3 = pacer.snapshot()
+                check("mutation 'observe still sleeping': pace_sleep_s > 0 (would FAIL "
+                      "the pace_sleep_s==0 check above)", snap3["pace_sleep_s"] > 0,
+                      str(snap3))
+        finally:
+            pacer._pace = saved_pace
+            pacer.PACE_S = saved_pace_s
+        check("_pace is restored to the real function", pacer._pace is saved_pace)
+
+        # mutation: observe mode still retrying (a plausible regression -
+        # _effective_max_retries() forgot to check _MODE) -> retries > 0, would FAIL the
+        # retries==0 check above
+        pacer._reset_for_tests()
+        pacer._ORIG["urlopen"] = always_port_error
+        attempts["n"] = 0
+        saved_eff = pacer._effective_max_retries
+        pacer._effective_max_retries = lambda: pacer.MAX_RETRIES
+        try:
+            with _crash_guard("mutation 'observe still retrying': retries > 0 (would "
+                              "FAIL the retries==0 check above)"):
+                try:
+                    urllib.request.urlopen(req)
+                except urllib.error.HTTPError:
+                    pass
+                snap4 = pacer.snapshot()
+                check("mutation 'observe still retrying': retries > 0 (would FAIL the "
+                      "retries==0 check above)", snap4["retries"] > 0, str(snap4))
+        finally:
+            pacer._effective_max_retries = saved_eff
+        check("_effective_max_retries is restored to the real function",
+              pacer._effective_max_retries is saved_eff)
+
+
 def test_zz_every_check_passed() -> None:
     """Bare pytest must reach the same verdict as this suite's exit code.
 
@@ -1535,7 +1676,8 @@ def main() -> int:
                test_f1c_httpx_non2xx_response_without_raising_marks_the_run_invalid,
                test_tw1_requests_session_send_is_counted_not_paced_and_marks_invalid,
                test_tw2_aiohttp_client_session_request_is_counted_not_paced,
-               test_tw3_nested_aiohttp_inside_a_paced_httpx_call_is_not_a_bypass):
+               test_tw3_nested_aiohttp_inside_a_paced_httpx_call_is_not_a_bypass,
+               test_t9_observe_mode_paces_nothing_retries_nothing_still_counts_failures):
         fn()
     print(f"\nollama_pacer: {PASSED} passed, {FAILED} failed")
     return 1 if FAILED else 0
