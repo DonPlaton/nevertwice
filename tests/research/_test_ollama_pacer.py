@@ -2179,6 +2179,65 @@ def test_t11e_async_llm_via_httpx_mocktransport() -> None:
                   str(out2))
 
 
+def test_t11h_httpx_non_raised_llm_failure_is_tallied() -> None:
+    print("\n- T11h (the auditor's K38 on 88c27e1): an httpx LLM failure that is RETURNED, never "
+          "raised - a 4xx on /api/chat in pace mode (e.g. a model-not-found 404 inside a "
+          "competitor library) and a 5xx in observe mode - is tallied and invalidates -")
+    try:
+        import httpx
+    except ImportError:
+        check("httpx importable (research extra) - this environment lacks it; every "
+              "other T11h assertion is skipped, not failed", True,
+              "install the `research` extra to exercise T11h's httpx path")
+        return
+    with _isolated():
+        clock = FakeClock()
+        pacer._now, pacer._sleep, pacer._async_sleep = (clock.now, clock.sleep,
+                                                        clock.async_sleep)
+        pacer.install()                    # pace mode
+        calls = {"n": 0}
+
+        def handler_404(request):
+            calls["n"] += 1
+            return httpx.Response(404, json={"error": "model 'x' not found"})
+        with _crash_guard("T11h: pace - an httpx 404 on /api/chat invalidates, naming llm"):
+            client = httpx.Client(transport=httpx.MockTransport(handler_404),
+                                  base_url="http://127.0.0.1:11434")
+            resp = client.post("/api/chat", json={"model": "x", "messages": []})
+            client.close()
+            check("T11h: pace - the 404 is handed back as-is and never retried",
+                  resp.status_code == 404 and calls["n"] == 1, f"{resp.status_code} calls={calls['n']}")
+            out: dict = {}
+            pacer.attach(out)
+            ot = out.get("ollama_transport") or {}
+            check("T11h: pace - an httpx 404 on /api/chat invalidates, naming llm",
+                  out.get("valid") is False and "llm" in (out.get("invalid_reason") or "")
+                  and (ot.get("failed_outcomes_llm") or {}).get("by_status") == {404: 1}, str(out)[:300])
+    with _isolated():
+        clock = FakeClock()
+        pacer._now, pacer._sleep, pacer._async_sleep = (clock.now, clock.sleep,
+                                                        clock.async_sleep)
+        pacer.install(mode="observe")
+        ocalls = {"n": 0}
+
+        def handler_500(request):
+            ocalls["n"] += 1
+            return httpx.Response(500, json={"error": "model runner has unexpectedly stopped"})
+        with _crash_guard("T11h: observe - an httpx 500 on /api/generate invalidates, naming llm"):
+            client = httpx.Client(transport=httpx.MockTransport(handler_500),
+                                  base_url="http://127.0.0.1:11434")
+            resp = client.post("/api/generate", json={"model": "m", "prompt": "x"})
+            client.close()
+            check("T11h: observe - the 500 is handed back as-is and never retried",
+                  resp.status_code == 500 and ocalls["n"] == 1, f"{resp.status_code} calls={ocalls['n']}")
+            out2: dict = {}
+            pacer.attach(out2)
+            ot2 = out2.get("ollama_transport") or {}
+            check("T11h: observe - an httpx 500 on /api/generate invalidates, naming llm",
+                  out2.get("valid") is False and "llm" in (out2.get("invalid_reason") or "")
+                  and (ot2.get("failed_outcomes_llm") or {}).get("by_status") == {500: 1}, str(out2)[:300])
+
+
 def test_t11f_llm_timeout_recovers_in_pace_invalid_in_observe() -> None:
     print("\n- T11f (the coordinator's scope addition, 2026-09-24): a TIMEOUT/reset/refused "
           "class transport exception on an LLM endpoint is retried in PACE mode too, never "
@@ -2402,7 +2461,8 @@ def main() -> int:
                test_t11d_llm_4xx_never_retried,
                test_t11e_async_llm_via_httpx_mocktransport,
                test_t11f_llm_timeout_recovers_in_pace_invalid_in_observe,
-               test_t11g_e2e_remeasure_row_refusal_refuses_a_failed_asof_run):
+               test_t11g_e2e_remeasure_row_refusal_refuses_a_failed_asof_run,
+               test_t11h_httpx_non_raised_llm_failure_is_tallied):
         fn()
     print(f"\nollama_pacer: {PASSED} passed, {FAILED} failed")
     return 1 if FAILED else 0
