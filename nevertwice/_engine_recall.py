@@ -454,6 +454,32 @@ def _live_note_exists(stem: str, ntype: str) -> bool:
     return not (base / "Superseded" / f"{stem}.md").exists()
 
 
+#: B6: why the LAST retrieve_relevant did or did not rank by embedding similarity, and whether
+#: that is a degradation the reader must be told about. A cold-loading embedder misses the one-second
+#: ping or the query embed, ranking falls to word overlap, and the hook used to inject those hits as
+#: if nothing had changed. `semantic` is one of: ok | abstained:low_confidence (the vectors ran and
+#: found no confident match - not a fallback) | fallback:embedder_unreachable | fallback:embed_failed
+#: | skipped:space_mismatch (the cache was built by another embedder) | skipped:no_query. `degraded`
+#: is True for a fallback or a mismatch on a store that HAS vectors; a text-only store is word
+#: matching by design.
+_RECALL_LAST: dict = {"semantic": None, "degraded": False}
+
+#: The line both injections add when `degraded` - one sentence, so it costs the budget almost nothing.
+_RECALL_NOTICE = {
+    "fallback:embedder_unreachable": "the embedder did not answer in time",
+    "fallback:embed_failed": "embedding the query failed",
+    "skipped:space_mismatch": "the vector cache was built by another embedder",
+}
+
+
+def recall_notice() -> str:
+    """'' unless the last retrieval degraded; else the one line an injection appends."""
+    if not _RECALL_LAST.get("degraded"):
+        return ""
+    why = _RECALL_NOTICE.get(_RECALL_LAST.get("semantic") or "", "semantic ranking did not run")
+    return f"_(recall ran on word matching only: {why}; `nevertwice-doctor --probe` checks the embedder)_"
+
+
 def retrieve_relevant(project: str, query: str, k: int,
                       embed_timeout: int | None = None,
                       alive_timeout: int = 2, cache: dict | None = None,
@@ -475,6 +501,7 @@ def retrieve_relevant(project: str, query: str, k: int,
     per-prompt path)."""
     if embed_timeout is None:
         embed_timeout = RETRIEVAL_EMBED_TIMEOUT
+    _RECALL_LAST["semantic"], _RECALL_LAST["degraded"] = None, False
     cands = _retrieval_candidates(project, cross=False, cache=cache, query=query)
     if not cands:
         return _recency_fallback(project, k) if recency_fallback else []
@@ -483,9 +510,19 @@ def retrieve_relevant(project: str, query: str, k: int,
     # semantic signal - scores per candidate, only when Ollama answers quickly (no GPU stall)
     sem_scores = {}
     amb = 1.0                           # relevance ambiguity → scales the recurrence prior
-    if query and embed_cache_usable() and embedder_available(alive_timeout):
+    # B6: the same three gates as before, in the same order, each now naming itself when it closes.
+    if not query:
+        _mode = "skipped:no_query"
+    elif not embed_cache_usable():
+        _mode = "skipped:space_mismatch"
+    elif not embedder_available(alive_timeout):
+        _mode = "fallback:embedder_unreachable"
+    else:
+        _mode = "fallback:embed_failed"             # until the query vector arrives
+    if _mode == "fallback:embed_failed":
         qvec = embed_text(query, kind=query_embed_kind(), timeout=embed_timeout, project=project)
         if qvec:
+            _mode = "ok"
             try:
                 _qn = math.sqrt(sum(x * x for x in qvec))
             except (TypeError, ValueError):
@@ -504,6 +541,13 @@ def retrieve_relevant(project: str, query: str, k: int,
             # not arbitrary neighbours. A confident query keeps the floored semantic scores.
             if not _low_confidence(sims_desc):
                 sem_scores = {s: sim for sim, s in scored if sim > RETRIEVAL_SIM_FLOOR}
+            else:
+                _mode = "abstained:low_confidence"
+    _RECALL_LAST["semantic"] = _mode
+    _RECALL_LAST["degraded"] = (_mode.startswith("fallback:") or _mode == "skipped:space_mismatch") \
+        and any(isinstance(r, dict) and r.get("vec") for _, r in cands)
+    if _RECALL_LAST["degraded"]:
+        log(f"Recall fell back to word matching ({_mode}) on a store with vectors")
 
     # lexical signal - BM25 over the candidate notes (IDF-weighted, no GPU)
     qtok = _tokens(query)
@@ -935,6 +979,7 @@ def emit_session_start_context(cwd: str) -> None:
     rcache = None if scale_index_ready() else load_embed_cache()
     relevant = retrieve_relevant(project, brief or project, RETRIEVAL_TOP_K, cache=rcache,
                                  graph_expand=RELATION_EXPAND)   # SessionStart-only, opt-in
+    notice = recall_notice()             # B6: read now, before any other retrieval resets it
     if not brief and not relevant:
         return  # nothing useful to inject
     # Budget-aware assembly (M-15/M-d): the cap bounds the WHOLE payload, not just
@@ -1074,6 +1119,10 @@ def emit_session_start_context(cwd: str) -> None:
         # leftover room and degrades (or returns "") rather than overshoot the cap - content
         # is never displaced, and the invariant that the budget bounds the WHOLE payload
         # (audit M-d) is preserved.
+        # B6: only into room the budget has left, never displacing content, and before the
+        # receipt, which accounts for the payload as sealed and stays its last line.
+        if notice and len(_si) + 1 + len(notice) <= INJECT_BUDGET_CHARS:
+            _si = f"{_si}\n{notice}"
         if INJECT_RECEIPT and _receipt is not None:
             _rline = rcpt.seal(_si, 0).best_line(len(_si))
             if _rline:

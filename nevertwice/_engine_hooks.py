@@ -138,6 +138,7 @@ def emit_prompt_recall(cwd: str, prompt: str, session_id: str) -> None:
                              embed_timeout=PROMPT_RECALL_EMBED_TIMEOUT,
                              alive_timeout=PROMPT_RECALL_ALIVE_TIMEOUT, cache=cache,
                              recency_fallback=False)   # off-topic prompt → stay silent, not noise
+    notice = recall_notice()        # B6: read now - the cross-project retrieval below runs its own
     fresh = [h for h in hits if h.get("stem") not in seen][:PROMPT_RECALL_K]
     if PROMPT_RECALL_MIN_VALUE > 0 and fresh:
         # Refuse the weak tail rather than truncate it. Relative to the batch's best hit,
@@ -168,6 +169,8 @@ def emit_prompt_recall(cwd: str, prompt: str, session_id: str) -> None:
         parts += ["", "**✅ Related patterns/decisions:**"] + [_fact_line(h) for h in others]
     if cross:
         parts += ["", "**🔗 From other projects:**"] + [_cross_line(c) for c in cross]
+    if notice:
+        parts += ["", notice]
 
     injected = "\n".join(parts)
     _record_recall_saving(injected)          # best-effort token-savings ledger (never blocks)

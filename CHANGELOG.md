@@ -575,6 +575,12 @@ empty.
 
 ### Fixed
 
+- **Recall that fell back to word matching said nothing (B6).** A cold-loading embedder misses the
+  hook's one-second ping or its query embed, and ranking silently fell to word overlap; the hook
+  injected those hits as if nothing had changed. `retrieve_relevant` now records why semantic
+  ranking did or did not run, and both injections - per prompt and at SessionStart - add one line
+  when it fell back on a store that has vectors (SessionStart only into room its budget leaves,
+  before the receipt). A text-only store is word matching by design and says nothing.
 - **A run of sessions that captured nothing stayed green (B4).** A valid extraction with every
   list empty was marked processed and counted nowhere, and `doctor`'s freshness stayed green on the
   Session note every session writes. Each relevant, non-trivial session now records its yield in
