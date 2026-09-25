@@ -97,8 +97,13 @@ def _run_embed(rebuild: bool):
         d = m.VAULT / folder
         if not d.exists():
             continue
-        for p in sorted(d.glob("*.md")):          # flat glob skips Superseded/Archive
+        # B2: Archive/ too - an age-archived note stays recallable, and one the old rule dropped
+        # from the cache comes back here. Superseded/ is retraction and stays out, and so does a
+        # merged duplicate (`duplicate_of`): the consolidator archived it into its keeper.
+        arch = d / "Archive"
+        for p in sorted(d.glob("*.md")) + (sorted(arch.glob("*.md")) if arch.is_dir() else []):
             stem = p.stem
+            in_archive = p.parent == arch
             # skip only if already VECTORISED; a text-only entry (a no-embedder
             # write, #32) is re-processed so it gets upgraded to a real vector
             if isinstance(cache.get(stem), dict) and cache[stem].get("vec"):
@@ -113,6 +118,8 @@ def _run_embed(rebuild: bool):
             except OSError:
                 pass
             fm, _ = m._read_frontmatter(raw)
+            if in_archive and fm.get("duplicate_of"):
+                continue
             resolved = bool(fm.get("resolved_by")) \
                 or str(fm.get("status", "")).lower() == "resolved"
             conf = m._coerce_confidence(fm.get("confidence"))   # H2: read back in ranking
@@ -131,6 +138,8 @@ def _run_embed(rebuild: bool):
                          "title": title, "desc": desc, "prevention": prevention,
                          "resolved": resolved,   # M-3: down-weight solved mistakes
                          "recurrence": recur}
+                if in_archive:
+                    entry["archived"] = True
                 if conf is not None:
                     entry["confidence"] = conf
                 cache[stem] = entry
@@ -147,6 +156,8 @@ def _run_embed(rebuild: bool):
                 entry = {"ntype": ntype, "project": project, "title": title,
                          "desc": desc, "prevention": prevention,
                          "resolved": resolved, "recurrence": recur}
+                if in_archive:
+                    entry["archived"] = True
                 if conf is not None:
                     entry["confidence"] = conf
                 cache[stem] = entry

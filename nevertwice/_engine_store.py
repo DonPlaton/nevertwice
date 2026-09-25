@@ -277,8 +277,8 @@ def archive_old_sessions(days: int | None = None) -> int:
 
 def archive_old_typed(days: int | None = None) -> int:
     """Move typed notes (Patterns/Mistakes/Decisions) older than `days` into a
-    per-folder Archive/ subdir. Knowledge is preserved (moved, never deleted),
-    but the live folders - and the dedup-grounding glob that scans them - stop
+    per-folder Archive/ subdir. Knowledge is preserved (moved, never deleted, and still
+    recallable - B2), but the live folders - and the dedup-grounding glob that scans them - stop
     growing without bound (audit F24). Obsidian resolves [[stem]] regardless of
     folder, so existing wikilinks keep working after the move.
 
@@ -313,23 +313,38 @@ def archive_old_typed(days: int | None = None) -> int:
             if note_date >= cutoff:
                 continue
             try:
-                os.replace(p, _archive_dest(arch, p.name))   # atomic; collision-safe name
+                dest = _archive_dest(arch, p.name)            # collision-safe name
+                os.replace(p, dest)                           # atomic
                 moved += 1
-                archived_stems.append(p.stem)
+                archived_stems.append((p.stem, dest.stem))
             except OSError as e:
                 log(f"Typed archive failed for {p.name}: {e}")
-    # keep the embedding cache in sync with live notes so archived titles stop
-    # surfacing in SessionStart recall and the cache stays bounded (audit D2)
+    # B2 (K46, 2026-09-25): an archived note is OLD, not retracted - the engine's own rule
+    # (`_live_note_exists`: "Archive/ is age ... must still be recallable"). This pass used to drop
+    # the note's vector and index row as well (audit D2, "so archived titles stop surfacing"), and
+    # recall reads candidates from those two only, so every lesson older than the window - and
+    # every note an importer of old transcripts wrote - vanished from recall the day it was
+    # written. The file still moves (the live folders stay small); the entry stays, marked
+    # `archived` and re-keyed when the collision-safe name renamed the file. Ranking ages it
+    # through the existing decay (`_salience_mult`), no new parameter.
     if archived_stems:
         cache = load_embed_cache()
-        saved = True
-        if any(s in cache for s in archived_stems):
-            for s in archived_stems:
-                cache.pop(s, None)
-            saved = save_embed_cache(cache, delete=archived_stems)    # B3: journalled
-        if saved:
+        put, gone = {}, []
+        for old, new in archived_stems:
+            entry = cache.get(old)
+            if not isinstance(entry, dict):
+                continue
+            if new != old:
+                cache.pop(old, None)
+                gone.append(old)
+            entry["archived"] = True
+            cache[new] = entry
+            put[new] = entry
+        if (put or gone) and save_embed_cache(cache, put=put, delete=gone or None):
             # F13: the index follows the cache only when the cache change reached the disk
-            sync_scale_index(delete=archived_stems)   # keep the SQLite index in sync
+            if gone:
+                sync_scale_index(delete=gone)
+            sync_scale_index(records=put)
     if moved:
         log(f"Archived {moved} typed note(s) older than {days}d")
     return moved

@@ -575,6 +575,16 @@ empty.
 
 ### Fixed
 
+- **A lesson older than ninety days vanished from recall (B2).** The age pass moved typed notes
+  into `Archive/` and dropped their vectors and index rows in the same pass, and recall reads
+  candidates from those two only - against the engine's own rule that `Archive/` is age, not
+  retraction. Every lesson past the window, and every note an importer of old transcripts wrote,
+  disappeared the day it was written; the campaign-v2 code-sessions stand measured an empty
+  context for 420 of 420 questions on exactly this (K46). The file still moves; the entry stays,
+  marked `archived`, re-keyed when a name collision renamed the file, and ranking ages it through
+  the existing decay. `embed_index` re-embeds archived notes the old rule dropped, but not merged
+  duplicates. What the consolidator archives (a merged duplicate, a note over the opt-in cap) still
+  leaves recall.
 - **Capturing one note rewrote the whole vector cache (B3).** Every capture parsed and rewrote
   `.embeddings_cache.json` and its `.bak` - about 280 MB of writes per session on a 115 MB store,
   linear in the store. The snapshot keeps its format, and an append-only journal

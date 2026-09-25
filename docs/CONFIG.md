@@ -145,7 +145,7 @@ After setting `NEVERTWICE_EMBED_QUANT`, rebuild the index once the same way.
 | Variable | Default | Notes |
 |---|---|---|
 | `NEVERTWICE_ARCHIVE_DAYS` | `30` | Move Sessions/ notes to Archive after N days. |
-| `NEVERTWICE_TYPED_ARCHIVE_DAYS` | `90` | Archive typed notes (patterns/mistakes/decisions) after N days. |
+| `NEVERTWICE_TYPED_ARCHIVE_DAYS` | `90` | Move typed notes (patterns/mistakes/decisions) to `Archive/` after N days. Only the live folders shrink: an archived note keeps its vector and index row and stays recallable, aged by the ranking's decay (B2). |
 | `NEVERTWICE_PRUNE_DAYS` | `90` | Prune horizon for stale candidates. |
 | `NEVERTWICE_DECAY_HALFLIFE` | `365` | Salience half-life (days). |
 | `NEVERTWICE_DECAY_FLOOR` | `0.5` | Minimum decayed salience. |

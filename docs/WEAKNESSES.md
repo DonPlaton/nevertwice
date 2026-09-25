@@ -609,7 +609,8 @@ in the just-shipped W7/W8 security code** (exactly what a capstone is for). All 
    corpus-adaptive margin gate stays the PRIMARY abstention mechanism (it caught 6/6 gibberish).
 
 **What the audits CONFIRMED clean:** retrieval never leaks a quarantined note into recall; deferred
-retirement never fires on a quarantined note; the embed cache excludes quarantined/archived stems;
+retirement never fires on a quarantined note; the embed cache excludes quarantined stems and merged
+duplicates (an age-archived note stays recallable since stage D, B2);
 index_sqlite / ingest / select_coreset / mcp_server / `_looks_injected` / mmr are correct; no dead code in
 the new modules (rankers, _rerank, _common - every function is reached). Token economy is real (~3.2×
 Context compression). Competitive review: the system has *already* measured-and-rejected the tempting
