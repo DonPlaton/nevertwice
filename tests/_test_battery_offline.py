@@ -38,7 +38,7 @@ sys.path.insert(0, str(HERE))
 
 import _env_guard  # noqa: F401,E402  - the guard under test
 import sandbox_guard  # noqa: E402
-import test_self_checks as tsc  # noqa: E402
+import _tracked_files as tsc  # noqa: E402 - pytest-free: CI's core job has no pytest
 
 PASSED = FAILED = 0
 

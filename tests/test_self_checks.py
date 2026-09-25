@@ -39,27 +39,8 @@ def _research_distributions() -> frozenset[str]:
 
 RESEARCH_DISTS = _research_distributions()
 
-
-def tracked_files(root: Path = ROOT) -> list[str]:
-    out = subprocess.run(["git", "ls-files", "-z"], cwd=root, capture_output=True, check=False).stdout
-    return [f.decode("utf-8", "replace") for f in out.split(b"\0") if f]
-
-
-def tracked_state(root: Path = ROOT, files: list[str] | None = None) -> dict:
-    """(mtime_ns, size) of every tracked file - a rewrite with the SAME bytes changes mtime, and
-    that is a write too (stage D: the auditor's snapshot caught two suites doing exactly that)."""
-    state = {}
-    for rel in (files if files is not None else tracked_files(root)):
-        try:
-            st = (root / rel).stat()
-            state[rel] = (st.st_mtime_ns, st.st_size)
-        except OSError:
-            state[rel] = None
-    return state
-
-
-def touched(before: dict, after: dict) -> list[str]:
-    return sorted(rel for rel in set(before) | set(after) if before.get(rel) != after.get(rel))
+sys.path.insert(0, str(ROOT / "tests"))
+from _tracked_files import touched, tracked_files, tracked_state  # noqa: E402 - pytest-free, see there
 
 
 TRACKED = tracked_files()
