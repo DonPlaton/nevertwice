@@ -236,6 +236,7 @@ _VAULT_GITIGNORE = (
     ".lock", "*.tmp", "*.bak", "*.prev", "__pycache__/", "*.pyc",
     ".prompt_recall/", ".logs/",
     ".embeddings_cache.json", ".embeddings_meta.json",
+    ".embeddings_cache.json.journal*",      # B3: the cache's append-only journal (+ set-aside ones)
     ".index.sqlite", ".index.sqlite-wal", ".index.sqlite-shm",
     ".processed_sessions.json", ".ingest_watermarks.json", "anticipate.json",
     "graph.json", "status.txt", "health.txt", "savings.json",

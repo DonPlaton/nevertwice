@@ -91,7 +91,8 @@ NOT_OURS_TO_REBUILD = ("graph.json",)
 #: Derived in principle, and NOT rebuilt by default: reconstructing it needs an embedding model,
 #: and on a machine without one, deleting it would destroy work that cannot be recreated. A
 #: rebuild that quietly cost someone their embeddings would be worse than no rebuild at all.
-EXPENSIVE = (".embeddings_cache.json", ".embeddings_meta.json")
+EXPENSIVE = (".embeddings_cache.json", ".embeddings_meta.json",
+             ".embeddings_cache.json.journal")      # B3: the cache's unfolded tail
 
 #: State files a migration may read but never regenerate: they record history, not derivation.
 PRESERVED = ("guards.json", ".processed_sessions.json", ".imported.json", ".migrations.json")

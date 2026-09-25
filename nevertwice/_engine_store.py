@@ -322,11 +322,14 @@ def archive_old_typed(days: int | None = None) -> int:
     # surfacing in SessionStart recall and the cache stays bounded (audit D2)
     if archived_stems:
         cache = load_embed_cache()
+        saved = True
         if any(s in cache for s in archived_stems):
             for s in archived_stems:
                 cache.pop(s, None)
-            save_embed_cache(cache)
-        sync_scale_index(delete=archived_stems)   # keep the SQLite index in sync
+            saved = save_embed_cache(cache, delete=archived_stems)    # B3: journalled
+        if saved:
+            # F13: the index follows the cache only when the cache change reached the disk
+            sync_scale_index(delete=archived_stems)   # keep the SQLite index in sync
     if moved:
         log(f"Archived {moved} typed note(s) older than {days}d")
     return moved
@@ -1347,12 +1350,164 @@ def embed_text(text: str, kind: str | None = None, timeout: int | None = None,
 _EMBED_CACHE_MEMO: dict = {"sig": None, "data": None}
 
 
-def _embed_cache_sig():
+#: B3 (premortem N4, 2026-09-25): the append-only journal beside the snapshot. A capture used to
+#: rewrite the WHOLE cache, primary and `.bak` - about 280 MB of writes per captured session on the
+#: owner's 115 MB store, linear in the store. Now a save that names what changed (`put`/`delete`)
+#: appends those records here, and the journal is folded into the snapshot once it passes
+#: max(EMBED_JOURNAL_FOLD_MIN, a tenth of the snapshot). The snapshot keeps its format, so every
+#: existing store and every reader of the old shape still reads it.
+#: The threshold is PROPORTIONAL to the snapshot so the amortised write per note is constant: a fold
+#: costs two snapshots (primary and .bak) and comes once per snapshot/10 bytes of records, about
+#: twenty records' worth per record at any size. A fixed floor of megabytes would make it grow with
+#: the store up to that floor; this one only stops a tiny store folding on every note.
+EMBED_JOURNAL_FOLD_MIN = 64 * 1024
+
+
+def _journal_path() -> Path:
+    """Call-time derived from EMBED_CACHE, so it follows `_rebase_vault` and a test that rebinds
+    `m.EMBED_CACHE` - a module constant would bake the store the process imported with."""
+    return EMBED_CACHE.with_name(EMBED_CACHE.name + ".journal")
+
+
+def _snapshot_base():
+    """The identity a journal is written against: the snapshot's size, mtime and a hash of its
+    first and last 64 KiB. Size and ends alone would miss a same-length rewrite of the middle;
+    the mtime catches it for free (auditor, 2026-09-25). None when there is no snapshot."""
+    import hashlib                       # noqa: PLC0415 - off the hot path (3 ms an import)
     try:
         st = EMBED_CACHE.stat()
-        return (str(EMBED_CACHE), st.st_mtime_ns, st.st_size)
+        with open(EMBED_CACHE, "rb") as fh:
+            head = fh.read(65536)
+            tail = b""
+            if st.st_size > 65536:
+                fh.seek(max(65536, st.st_size - 65536))
+                tail = fh.read(65536)
     except OSError:
         return None
+    return {"size": st.st_size, "mtime_ns": st.st_mtime_ns,
+            "ends": hashlib.sha256(head + tail).hexdigest()[:16]}
+
+
+def _set_aside_journal(why: str) -> None:
+    """A journal that cannot be replayed is renamed, never deleted: it names notes whose vectors
+    `embed_index` can rebuild, and it is the evidence of what went wrong."""
+    jp = _journal_path()
+    if not jp.exists():
+        return
+    dest = jp.with_name(f"{jp.name}.stale-{datetime.now():%Y%m%d-%H%M%S}")
+    try:
+        os.replace(jp, dest)
+        log(f"Embed cache journal set aside as {dest.name}: {why} - its notes are recallable "
+            f"lexically; python -m nevertwice.embed_index re-embeds them")
+    except OSError as e:
+        log(f"Embed cache journal could not be set aside ({why}): {e}")
+
+
+def _replay_journal(data: dict) -> dict:
+    """Apply the journal to the snapshot just loaded, if the journal was written against it.
+
+    A torn LAST line (a crash mid-append) costs that line. A bad line anywhere else stops the
+    replay loudly - what follows it cannot be trusted to be in order. A journal whose base is not
+    this snapshot (a fold that crashed after writing the snapshot, or a writer that does not know
+    the journal rewrote it) is set aside: replaying it would resurrect or drop the wrong notes."""
+    jp = _journal_path()
+    try:
+        raw = jp.read_bytes()
+    except OSError:
+        return data
+    lines = raw.split(b"\n")
+    try:
+        header = json.loads(lines[0])
+    except ValueError:
+        header = None
+    if not isinstance(header, dict) or header.get("journal") != 1:
+        _set_aside_journal("no readable header")
+        return data
+    if header.get("base") != _snapshot_base():
+        _set_aside_journal("it was written against another snapshot")
+        return data
+    last = len(lines) - 1
+    for i in range(1, len(lines)):
+        ln = lines[i].strip()
+        if not ln:
+            continue
+        try:
+            op = json.loads(ln)
+        except ValueError:
+            if i == last:
+                log("Embed cache journal: a torn last line (a crash mid-append) - skipped")
+            else:
+                log(f"Embed cache journal: line {i + 1} is unreadable - replay STOPPED there; "
+                    f"python -m nevertwice.embed_index re-embeds what follows it")
+            break
+        if not isinstance(op, dict):
+            continue
+        if isinstance(op.get("put"), str) and isinstance(op.get("rec"), dict):
+            data[op["put"]] = op["rec"]
+        elif isinstance(op.get("del"), list):
+            for stem in op["del"]:
+                data.pop(stem, None)
+    return data
+
+
+def _journal_append(put: dict, delete) -> None:
+    """Append records, fsync'd. A torn tail left by an earlier crash is cut first, so the new
+    record starts on a line of its own instead of gluing onto half a line."""
+    jp = _journal_path()
+    out = []
+    size = jp.stat().st_size if jp.exists() else 0
+    if size == 0:
+        out.append(json.dumps({"journal": 1, "base": _snapshot_base()}))
+    else:
+        with open(jp, "rb+") as fh:
+            fh.seek(-1, os.SEEK_END)
+            if fh.read(1) != b"\n":
+                fh.seek(0)
+                body = fh.read()
+                keep = body.rfind(b"\n") + 1
+                fh.truncate(keep)
+                log("Embed cache journal: cut a torn tail before appending")
+    for stem, entry in (put or {}).items():
+        out.append(json.dumps({"put": stem, "rec": entry}, ensure_ascii=False))
+    gone = sorted(set(delete or ()))
+    if gone:
+        out.append(json.dumps({"del": gone}, ensure_ascii=False))
+    if not out:
+        return
+    with open(jp, "ab") as fh:
+        fh.write(("\n".join(out) + "\n").encode("utf-8"))
+        fh.flush()
+        os.fsync(fh.fileno())
+
+
+def _journal_fits() -> bool:
+    """True while the journal is small enough to keep appending to rather than fold."""
+    try:
+        size = _journal_path().stat().st_size
+        snap = EMBED_CACHE.stat().st_size
+    except OSError:
+        return True
+    return size <= max(EMBED_JOURNAL_FOLD_MIN, snap // 10)
+
+
+def _embed_cache_sig():
+    """What load_embed_cache's memo is keyed on: the snapshot AND the journal. Anything keyed on
+    the snapshot's mtime alone (the near-duplicate memo was) never sees a journal append."""
+    try:
+        st = EMBED_CACHE.stat()
+    except OSError:
+        return None
+    try:
+        jt = _journal_path().stat()
+        journal = (jt.st_mtime_ns, jt.st_size)
+    except OSError:
+        journal = None
+    return (str(EMBED_CACHE), st.st_mtime_ns, st.st_size, journal)
+
+
+def _forget_memo() -> None:
+    """F13: after a save that did not reach the disk, memory must not claim what the disk lacks."""
+    _EMBED_CACHE_MEMO["sig"], _EMBED_CACHE_MEMO["data"] = None, None
 
 
 def load_embed_cache() -> dict:
@@ -1360,7 +1515,11 @@ def load_embed_cache() -> dict:
     LOUDLY on corruption (audit M-f). The round-1 code swallowed a JSONDecodeError
     into {} - a half-written cache silently disabled semantic recall (dropping to
     recency) with no signal. Now a corrupt primary is recovered from .bak, and an
-    unrecoverable cache is announced so it gets rebuilt instead of degrading mutely."""
+    unrecoverable cache is announced so it gets rebuilt instead of degrading mutely.
+
+    B3: the snapshot, then its journal replayed on top (`_replay_journal`). A snapshot
+    recovered from `.bak` is not the one the journal was written against, so the journal is
+    set aside rather than replayed onto it."""
     sig = _embed_cache_sig()
     if sig is not None and sig == _EMBED_CACHE_MEMO["sig"] \
             and _EMBED_CACHE_MEMO["data"] is not None:
@@ -1377,8 +1536,12 @@ def load_embed_cache() -> dict:
         if isinstance(data, dict):
             if f is not EMBED_CACHE:
                 log("Primary embed cache corrupt - recovered from .bak")
-            elif sig is not None:
-                _EMBED_CACHE_MEMO["sig"], _EMBED_CACHE_MEMO["data"] = sig, data
+                _set_aside_journal("the primary snapshot was unreadable and .bak was loaded")
+            else:
+                data = _replay_journal(data)
+                sig = _embed_cache_sig()         # a set-aside journal changed it
+                if sig is not None:
+                    _EMBED_CACHE_MEMO["sig"], _EMBED_CACHE_MEMO["data"] = sig, data
             return data
     if EMBED_CACHE.exists():
         log("Embed cache corrupt and no valid .bak - semantic recall DISABLED "
@@ -1386,8 +1549,23 @@ def load_embed_cache() -> dict:
     return {}
 
 
-def save_embed_cache(cache: dict):
-    if not cache:
+def save_embed_cache(cache: dict, *, put: dict | None = None, delete=None) -> bool:
+    """Write the cache; True when it reached the disk.
+
+    With `put` (stem -> entry) and/or `delete` (stems) the caller names what changed, and those
+    records are APPENDED to the journal - one note's worth of bytes, whatever the store's size
+    (B3). Without them the whole snapshot is written, as bulk writers (embed_index, the
+    consolidator, migrations) need, and the journal is folded away. A journal past its threshold
+    is folded on the next hinted save. `cache` is always the whole in-memory state: it is what a
+    fold writes and what the memo holds."""
+    hinted = put is not None or delete is not None
+    # An empty cache is the truth, not a transient read failure, when the caller NAMED its
+    # deletions (hinted) or when it is the very dict load_embed_cache handed out from a good
+    # snapshot and the caller emptied it by pops (the CONTRACT above: load, mutate, save). A
+    # failed load returns a fresh {} that is never the memo's dict, and that one is still
+    # refused. Refusing the second kind left the vectors of the last reverted/retired notes on
+    # disk while the memo said they were gone (migrate.revert, B3 review).
+    if not cache and not hinted and cache is not _EMBED_CACHE_MEMO["data"]:
         # F13 (xhigh review): refuse to overwrite a NON-empty on-disk cache with an empty one.
         # `cache` reaches {} in the caller's hands when both generations were transiently
         # unreadable (a lock steal, a crash between file ops) - load_embed_cache's own fallback -
@@ -1398,15 +1576,55 @@ def save_embed_cache(cache: dict):
             if EMBED_CACHE.exists() and EMBED_CACHE.stat().st_size > 2:
                 log("Embed cache save refused: in-memory cache is empty but the on-disk cache is "
                     "not - run embed_index.py --rebuild if the vault is genuinely empty")
-                return
+                _forget_memo()
+                return False
         except OSError:
             pass
     try:
-        # prev=False: a 90 MB rebuildable cache earns no rollback copy (store_state).
-        _save_json_generations(EMBED_CACHE, json.dumps(cache, ensure_ascii=False), prev=False)
-        _EMBED_CACHE_MEMO["sig"], _EMBED_CACHE_MEMO["data"] = _embed_cache_sig(), cache
+        if hinted and EMBED_CACHE.exists():
+            jp = _journal_path()
+            if jp.exists() and jp.stat().st_size > 0 and not _journal_on_this_snapshot():
+                # Written against another snapshot: appending would extend a journal no load
+                # will replay. The whole in-memory state goes down as a snapshot instead.
+                _set_aside_journal("it was written against another snapshot")
+            else:
+                _journal_append(put or {}, delete)
+                if not _journal_fits():
+                    try:
+                        _fold(cache)
+                    except OSError as e:
+                        # The records are durable in the journal; only the fold failed, and the
+                        # next save retries it. Snapshot and .bak are untouched (atomic replace).
+                        log(f"Embed cache journal fold failed ({e}) - the records are in the "
+                            f"journal; the fold is retried on the next save")
+                _EMBED_CACHE_MEMO["sig"], _EMBED_CACHE_MEMO["data"] = _embed_cache_sig(), cache
+                return True
+        _fold(cache)
+        return True
     except OSError as e:
         log(f"Embed cache save failed: {e}")
+        _forget_memo()
+        return False
+
+
+def _fold(cache: dict) -> None:
+    """The whole in-memory state as the snapshot, then the journal removed."""
+    # prev=False: a 90 MB rebuildable cache earns no rollback copy (store_state).
+    _save_json_generations(EMBED_CACHE, json.dumps(cache, ensure_ascii=False), prev=False)
+    # The snapshot now holds everything the journal did. Removing the journal second means a
+    # crash between the two leaves a journal whose base is no longer this snapshot - set aside
+    # on the next load, never replayed twice.
+    _journal_path().unlink(missing_ok=True)
+    _EMBED_CACHE_MEMO["sig"], _EMBED_CACHE_MEMO["data"] = _embed_cache_sig(), cache
+
+
+def _journal_on_this_snapshot() -> bool:
+    try:
+        first = _journal_path().read_bytes().split(b"\n", 1)[0]
+        header = json.loads(first)
+    except (OSError, ValueError):
+        return False
+    return isinstance(header, dict) and header.get("base") == _snapshot_base()
 
 
 def load_embed_meta() -> dict:

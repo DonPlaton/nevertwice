@@ -291,9 +291,9 @@ def seeded_pairs(n):
 def counting_saves(run):
     real, calls = m.save_embed_cache, []
 
-    def spy(cache):
+    def spy(cache, **hints):                     # B3: a save may name what changed
         calls.append(len(cache))
-        return real(cache)
+        return real(cache, **hints)
 
     m.save_embed_cache = spy
     try:

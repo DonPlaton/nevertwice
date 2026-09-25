@@ -564,14 +564,21 @@ def revert(batch_id: str, *, dry_run: bool = True) -> dict:
     #: `supersede_note` and the archive sweep both do this; this path was written without them.
     if removed:
         cache = m.load_embed_cache()
-        if any(s in cache for s in removed):
-            for s in removed:
+        gone = [s for s in removed if s in cache]
+        if gone:
+            for s in gone:
                 cache.pop(s, None)
-            m.save_embed_cache(cache)
-        try:
-            m.sync_scale_index(delete=removed)
-        except Exception:       # noqa: BLE001 - a graph-only or absent index must not fail it
-            pass
+            # B3: named deletions. A whole-cache save of what is left was REFUSED when the reverted
+            # notes were the last entries (the empty-overwrite guard), and the vector survived on
+            # disk while the in-process memo said it was gone - the test read the memo.
+            saved = m.save_embed_cache(cache, delete=gone)
+        else:
+            saved = True
+        if saved:                # the index follows the cache, never ahead of it (B3/F13)
+            try:
+                m.sync_scale_index(delete=removed)
+            except Exception:       # noqa: BLE001 - a graph-only or absent index must not fail it
+                pass
 
     #: The batch leaves the ledger only when nothing of it is left on disk. Dropping it while a
     #: note could not be unlinked (Obsidian or an AV scanner holding the file) made that note

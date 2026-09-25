@@ -24,6 +24,7 @@ def update_embeddings(new_notes):
     storing the text too so lexical fallback and fact injection work without a
     re-read (audit C3/H5). Document prefix matches the cache's mode (audit H2)."""
     cache = load_embed_cache()
+    demoted = False
     if not embed_cache_usable():
         # The embedder changed since these vectors were written - they live in a
         # foreign space, so cosine against them is meaningless. Demote them to
@@ -32,6 +33,7 @@ def update_embeddings(new_notes):
         for e in cache.values():
             if isinstance(e, dict):
                 e.pop("vec", None)
+        demoted = True                       # every entry changed: a whole-snapshot write
         log(f"Embedder changed to {embed_signature()} - demoted stale vectors to "
             "text-only (run python -m nevertwice.embed_index --rebuild to re-embed all notes)")
         # the new embedder defines its own prefix policy; reset it BEFORE embedding so
@@ -61,12 +63,15 @@ def update_embeddings(new_notes):
         cache[stem] = entry
         added[stem] = entry
     if added:
-        save_embed_cache(cache)
+        # B3: one note's records appended to the journal, not the whole cache rewritten - unless
+        # the demotion above changed every entry, which only a snapshot can carry.
+        saved = save_embed_cache(cache) if demoted else save_embed_cache(cache, put=added)
         meta = load_embed_meta()
         meta["model"] = embed_signature()
         meta["prefixed"] = cache_is_prefixed()
         save_embed_meta(meta)
-        sync_scale_index(records=added)               # keep SQLite current (C2/C3)
+        if saved:                                     # the index follows the cache (B3/F13)
+            sync_scale_index(records=added)           # keep SQLite current (C2/C3)
         n_vec = sum(1 for e in added.values() if e.get("vec"))
         if n_vec == len(added):
             log(f"Embedded {n_vec} note(s) into cache")

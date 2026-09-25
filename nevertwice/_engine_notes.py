@@ -158,9 +158,10 @@ def _near_duplicate_paths(folder_path: Path, project: str, ntype: str,
                          kind=doc_embed_kind(), project=project)
         if not vec:
             return []
-        try:
-            mtime = EMBED_CACHE.stat().st_mtime_ns
-        except OSError:
+        # B3: keyed on the snapshot AND its journal - the snapshot's mtime alone does not move
+        # when a capture appends, and this memo would go on answering from before the append.
+        mtime = _embed_cache_sig()
+        if mtime is None:
             return []
         if _NDUP_MEMO[0] != mtime:              # one parse per cache generation, not per note
             _NDUP_MEMO[0] = mtime
@@ -370,6 +371,7 @@ def supersede_note(p: Path, new_stem: str, via: str = "slug", extra_fields: dict
         log(f"Supersede failed for {p.name} (unlink: {e}); rolled back the Superseded/ copy")
         return False
     _unregister_slug(p.stem)              # keep the grounding cache honest (audit A16)
+    index_follows = True                  # B3/F13: the index follows the cache, never ahead of it
     if cache is not None:
         #: The caller holds the vector cache and writes it once when its loop is done. Writing it
         #: here as well cost one FULL rewrite per retired note - 2 093 ms a write on the owner's
@@ -379,8 +381,9 @@ def supersede_note(p: Path, new_stem: str, via: str = "slug", extra_fields: dict
     else:
         cache = load_embed_cache()
         if cache.pop(p.stem, None) is not None:
-            save_embed_cache(cache)
-    sync_scale_index(delete=[p.stem])     # drop from the SQLite index too (C2/C3)
+            index_follows = save_embed_cache(cache, delete=[p.stem])      # B3: one record, journalled
+    if index_follows:
+        sync_scale_index(delete=[p.stem])     # drop from the SQLite index too (C2/C3)
     log(f"Superseded {p.stem} → {new_stem}")
     return True
 
@@ -412,8 +415,8 @@ def mark_resolved(mistake_fp: Path, by_stem: str) -> bool:
     rec = cache.get(mistake_fp.stem)
     if isinstance(rec, dict) and not rec.get("resolved"):
         rec["resolved"] = True
-        save_embed_cache(cache)
-        sync_scale_index(records={mistake_fp.stem: rec})
+        if save_embed_cache(cache, put={mistake_fp.stem: rec}):   # B3: one record, journalled
+            sync_scale_index(records={mistake_fp.stem: rec})      # the index follows the cache
     log(f"Resolved {mistake_fp.stem} ← {by_stem}")
     return True
 

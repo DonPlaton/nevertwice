@@ -248,7 +248,7 @@ def masked_text(path: Path, store: Path) -> str:
 
 #: Files a snapshot must not certify: written only when an embedder answered.
 DERIVED_FROM_EMBEDDER = {".embeddings_cache.json", ".embeddings_meta.json",
-                         ".index.sqlite"}
+                         ".embeddings_cache.json.journal", ".index.sqlite"}
 
 
 def snapshot(store: Path, extra: dict | None = None) -> dict:

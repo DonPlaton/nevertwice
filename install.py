@@ -103,6 +103,7 @@ _GITIGNORE_LINES = [
     ".lock", "*.tmp", "*.bak", "*.prev", "__pycache__/", "*.pyc",
     ".prompt_recall/", ".logs/",
     ".embeddings_cache.json", ".embeddings_meta.json",
+    ".embeddings_cache.json.journal*",
     ".index.sqlite", ".index.sqlite-wal", ".index.sqlite-shm",
     ".processed_sessions.json",
     "graph.json", "status.txt", "health.txt", "savings.json",

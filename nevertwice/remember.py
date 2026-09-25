@@ -91,9 +91,8 @@ def do_forget(stem: str) -> int:
             print(f"[remember] forget failed (unlink: {e}) - rolled back", file=sys.stderr)
             return 1
         cache = m.load_embed_cache()
-        if cache.pop(stem, None) is not None:
-            m.save_embed_cache(cache)
-        m.sync_scale_index(delete=[stem])     # drop from the SQLite index too (C2/C3)
+        if cache.pop(stem, None) is None or m.save_embed_cache(cache, delete=[stem]):   # B3
+            m.sync_scale_index(delete=[stem])     # drop from the SQLite index too (C2/C3)
         try:
             m._unregister_slug(stem)          # keep the grounding cache honest (audit A16,
         except Exception:                     # mirrors supersede_note - was missing here)

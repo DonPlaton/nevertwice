@@ -575,6 +575,21 @@ empty.
 
 ### Fixed
 
+- **Capturing one note rewrote the whole vector cache (B3).** Every capture parsed and rewrote
+  `.embeddings_cache.json` and its `.bak` - about 280 MB of writes per session on a 115 MB store,
+  linear in the store. The snapshot keeps its format, and an append-only journal
+  (`.embeddings_cache.json.journal`) takes what a capture changed: one note's records, fsync'd.
+  The journal is folded into the snapshot once it passes a tenth of it, so the amortised write per
+  note is constant. A journal is written against one snapshot (size, mtime, a hash of both ends);
+  one whose snapshot was rewritten by anything else is set aside as `.stale-*`, never replayed
+  onto it. A torn last line costs that line. A save that did not reach the disk no longer leaves
+  the in-process memo ahead of it (F13), and archiving drops SQLite rows only when the cache change
+  landed. That F13 fix exposed a revert that never worked: `migrate.revert` popped the reverted
+  notes and saved the rest, the save was refused when they were the last entries, and the
+  vector stayed on disk while the memo said it was gone - it now names its deletions, and an
+  empty cache is written when it is the very dict a good load handed out and the caller emptied
+  (only a failed load's fresh `{}` is refused). The SQLite index follows the cache only when the
+  cache change reached the disk. Loading still parses the whole snapshot.
 - **A sandboxed test could run on the owner's model and cloud key (b-e).** `isolate()` scrubbed
   `NEVERTWICE_ENV_FILE` but not its legacy mirrors: `config._bridge_legacy_prefixes` copied
   `ANAMNESIS_ENV_FILE` / `CLAUDE_MEMORY_ENV_FILE` back after the scrub and the file they named was
