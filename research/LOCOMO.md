@@ -103,7 +103,7 @@ cent of the semantic arm's vectors belonged to a different dialogue. The lexical
 untouched, because it reads text from the per-conversation pool, which is exactly why the result
 looked plausible enough to publish: one arm was broken and the other vouched for the stand.
 
-Namespacing the ids with the conversation moved semantic recall from 0.037 to 0.182.
+Namespacing the ids with the conversation moved semantic recall from 0.037 to 0.182 on the cache of the time (the LoCoMo figures are withdrawn now, pending an owner decision on the rebuilt cache).
 
 ## What this does not show
 
@@ -111,7 +111,7 @@ Namespacing the ids with the conversation moved semantic recall from 0.037 to 0.
   a judge, and a local judge would produce a number that is mostly about the judge. The concern
   that a strong reader washes out the memory's contribution stands, unmeasured here.
 - **A number from this page must never be compared with a published LoCoMo accuracy figure.**
-  They are different quantities. A vendor's ninety-odd per cent and our 0.640 are not on the same scale, not
+  They are different quantities. A vendor's ninety-odd per cent and our recall figure (withdrawn with the other LoCoMo figures) are not on the same scale, not
   measuring the same thing, and putting them in one table would be the most misleading thing
   this repository could do with either.
 - **Nine questions are unscoreable and are dropped, not counted as failures.** Four have no

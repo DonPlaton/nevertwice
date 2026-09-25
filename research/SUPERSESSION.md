@@ -1,13 +1,5 @@
 # Does the memory hand back a fact that has since been retracted?
 
-<!-- withdrawn-banner -->
-> **Withdrawn: figures on this page must not be quoted.** They were retracted and remain
-> here because deleting a result one was wrong about destroys the record of having been
-> wrong. The design, the method and the caveats stand; the numbers do not. Each figure's
-> own reason and date are in
-> [`research/evidence_manifest.json`](evidence_manifest.json), and
-> `python tools/check_freshness.py --list-stale` lists every one.
-
 Every public benchmark for agent memory asks whether a system **recalls** a fact. LoCoMo,
 LongMemEval and BEAM all measure retrieval against a set of questions whose answers were true
 when the corpus was written and stayed true. None of them asks what happens when a fact is
@@ -186,16 +178,14 @@ of those a session our extractor wrote no note for, none of them a fact the memo
 current column the shade of a lead it held over us on the campaign before this one is gone - the
 table above has both figures. Mem0 loses this benchmark and leads on the one everyone else runs.
 
-**Graphiti is the row that tests the claim.** It is the one system on the stand designed for
-retraction - an edge carries `valid_at` and `invalid_at`, and a model decides what an episode
-contradicts - and it does retract: three in ten of the retracted facts come back where Mem0 and
-the file return nine in ten. It pays on the other columns, which is the whole reason they are
-printed: it returns the replacement barely more often than not, and a still-true fact fails to
-come back nine times in forty - and its graph says why: it never wrote them (no edge carried the
-fact), and it retired none. Paired with us on the same cases the discordant pairs run nineteen to
-two - two cases where its invalidation caught a replacement ours did not - and on the implicit
-corpus, with the retraction cue removed, its stale rate is several times ours (its two runs sit five
-points apart). The lead over the ADD-only stores was never the finding; this row is.
+**Graphiti is the row that tests the claim, and its figures are withdrawn.** It is the one system
+on the stand designed for retraction - an edge carries `valid_at` and `invalid_at`, and a model
+decides what an episode contradicts. Its campaign-v2 rows wait for an owner decision: Graphiti's
+client sends its model traffic past the campaign's call counter, so the run cannot show that it was
+clean, and a figure that cannot show that is not printed here, in a table or in words. What the
+earlier runs described - that it retracts, and what it pays for it on the other columns - is kept
+in the register with the reason, and returns to this page when the row is re-measured with its
+traffic counted. The lead over the ADD-only stores was never the finding; this row is.
 
 ## Between nights, and after the night
 

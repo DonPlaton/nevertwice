@@ -25,7 +25,8 @@ reason the banner above gives. Two comparisons have since been made and live on 
 It measures the row in the matrix below that reads "ADD-only (nothing deleted)" for Mem0. On
 cases where a fact is replaced, Mem0 and an append-only markdown file with term matching hand
 the retracted fact back at rates that are **tied with each other** and far above Nevertwice's.
-On the other column, returning the replacement, Mem0 leads. The figures, the intervals, the
+On the other column, returning the replacement, the two are level on the explicit corpus since the
+latest campaign (the lead Mem0 held there before is gone). The figures, the intervals, the
 paired test and the caveats are on that page rather than repeated here, so there is one place
 to correct if they change.
 

@@ -119,9 +119,18 @@ def live_forms(manifest: dict) -> set[str]:
     return forms
 
 
+#: A `claims:` region is rendered from the register: its figures are live claims, and a withdrawn
+#: cell prints the word "withdrawn" (render_claims, restore #2). A figure inside one is never a
+#: withdrawn figure - but its CONFIDENCE BOUNDS can equal one by accident: research/SUPERSESSION.md
+#: carried a whole-page retraction banner in 2026-09 only because "[0.005, 0.059]" and
+#: "[0.009, 0.236]" in its live tables equalled two historical embedder deltas. `comparison:`
+#: regions are NOT excluded: they deliberately show withdrawn July figures under a banner.
+CLAIMS_REGION = re.compile(r"<!--\s*claims:([\w-]+)\s*-->.*?<!--\s*/claims:\1\s*-->", re.S)
+
+
 def figures_on_page(text: str, claims: list[dict], live: set[str] | None = None
                     ) -> list[tuple[str, str]]:
-    body = FENCE.sub(" ", text)
+    body = CLAIMS_REGION.sub(" ", FENCE.sub(" ", text))
     live = live or set()
     found = []
     for c in claims:

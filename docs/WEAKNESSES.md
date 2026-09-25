@@ -288,12 +288,13 @@ below is read in context:
   "prove it's a toy" framing fails: real retrieval works - the one genuine bug found (recurrence
   carry-forward, W15) is fixed, and the rest are dormant-on-old-data (recurrence/confidence/decay)
   or defensible design (W10).
-- **Scale verified (synthetic 12 k-note stress).** Index build is 0.37 s for 12 000 rows; the
-  JSON cache is **not** memoised and a cold parse costs ~200 ms at that size - exactly the cost the
-  SQLite index removes on the per-event hook (it reads candidates from SQLite, never parsing the
-  JSON), and the FTS-prefilter caps per-query cosine work past 600 candidates. The hook loads the
-  cache once per event and reuses it, so no redundant parses. The scale path is already covered by
-  the prefilter test (bound + no-query-full-set) - confirmed, no gap.
+- **Scale: the read path is verified, the capture path is not.** A synthetic 12 k-note stress
+  built the index in 0.37 s, the per-event hook reads candidates from SQLite without parsing the
+  JSON cache, and the FTS-prefilter caps per-query cosine work past 600 candidates. The capture path
+  is the gap: every captured session parses and rewrites the WHOLE JSON embed cache, whose size
+  grows with the notes of the last ninety days, and no curve for that write is published. The
+  synthetic parse figure that stood here does not carry over to a store of real embedder vectors
+  (premortem 2026-09-25, mode N4); the fix direction is a capture write path off whole-file JSON.
 
 ## Weaknesses
 
@@ -361,7 +362,8 @@ below is read in context:
   negation-gated guard for dangerous *actions* (secret exfiltration, destructive commands,
   security-control bypass) folded into the write-time `_looks_unsafe` reject. Injection acceptance
   0.25→**0.00**; **0/328 false-positive** on the live vault (cautionary lessons survive via the
-  negation gate), so it ships on by default. Overall poisoning block 88% (precision 0.91/recall 0.83).
+  negation gate), so it ships on by default. Overall poisoning block, as re-measured by the second campaign:
+  81% (precision 0.90); the earlier figure on this line predates that campaign.
 - **W9 [DEFERRED - measured, deliberately not shipped] Corroboration-quarantine.** Measured on the
   real vault: a conservative rule (single-source AND confidence ≥ 0.95, or superseding a
   recurrence ≥ 3 note) has **0 false-quarantine** (no legit note carries confidence; none supersede

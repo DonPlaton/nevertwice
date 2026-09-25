@@ -56,7 +56,8 @@ notes *are* the database. For live editing, the vault opens in Obsidian as-is.
 
 ## Recall and correctness
 
-<p align="center"><img src="post_retrieval.png" alt="Post-retrieval correctness: contradictions resolved at write time via supersession, where competitors are add-only or manual; poisoning attacks blocked, with prompt-injection caught in full and an honest partial result on plausible-false facts; a submodular forgetting coreset keeping more topic coverage per token at a tight retention budget; and negative results published, such as consolidation-by-replacement halving recall, which is why it is not shipped" width="880"></p>
+<!-- the 2026-07 infographic (post_retrieval.png) printed poisoning rates since re-measured; it is
+     kept in docs/ but not shown until it is regenerated from the register -->
 
 - **Bi-temporal queries.** Ask *"what did we believe on March 3?"* and the answer comes from that
   day's truth, not today's.

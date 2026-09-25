@@ -436,9 +436,9 @@
   },
   "docs/WEAKNESSES.md": {
    "governance": "backlog",
-   "budget": 134,
+   "budget": 131,
    "target": null,
-   "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered. Lowered 146 -> 134 (C7, 2026-09-23): the counter now excludes register-ID-shaped tokens (W<N>, R<N>...) as IDs, not measurements, which also drops every PRE-EXISTING W<N> heading's own digits out of the count, not only the ones this task added - the 146 baseline had been counting them as if they were measurements all along.",
+   "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered. Lowered 146 -> 134 (C7, 2026-09-23): the counter now excludes register-ID-shaped tokens (W<N>, R<N>...) as IDs, not measurements, which also drops every PRE-EXISTING W<N> heading's own digits out of the count, not only the ones this task added - the 146 baseline had been counting them as if they were measurements all along. Lowered 134 -> 132 (2026-09-25): the scale bullet dropped a synthetic parse figure that did not carry over to real embedder vectors (premortem N4). Lowered 132 -> 131 (2026-09-25, auditor C3): W8's poisoning line prints the live campaign figures (block 81%, precision 0.90) in place of the 2026-06 block/precision/recall triple.",
    "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions, bare single digits, and register-ID-shaped tokens (W<N>/R<N>/D<N>/K<N>/Q<N>/M<N>/B<N>/F<N>/A<N>/C<N>[a-z]/G<N>(.<N>)?/P<N>/N<N>/H<N> - IDs are not measurements)"
   },
   "docs/starter-issues/01-latency-interval-not-point.md": {
@@ -663,8 +663,8 @@
   },
   "research/LOCOMO.md": {
    "governance": "backlog",
-   "budget": 18,
-   "note": "Every retrieval figure here is registered under `locomo.*`. The vendor accuracy figure this page names is an external citation, not a measurement of ours.",
+   "budget": 17,
+   "note": "Every retrieval figure here is registered under `locomo.*`. The vendor accuracy figure this page names is an external citation, not a measurement of ours. Lowered 18 -> 17 (2026-09-25): the prose stopped quoting the withdrawn hybrid R@5 (0.640 on the old cache).",
    "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits",
    "generator": "research/locomo_eval.py"
   },

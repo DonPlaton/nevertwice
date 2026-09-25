@@ -281,10 +281,43 @@ def test_every_image_in_a_tracked_document_has_alt_text() -> None:
     #: label). Found by sweeping for a classifier rule with a tiny population - the signature the
     #: `MODEL_CALL` defect produced - and it is the same class as the sixteen checks fixed in
     #: `1ef491c`, which that sweep missed because it looked for a name interpolating `len(X)`.
-    check("there are images to judge at all", judged >= 9, str(judged))
+    #: 2026-09-25: 9 -> 8. docs/FEATURES.md no longer embeds post_retrieval.png - the 2026-07
+    #: infographic printed poisoning rates (88% blocked, ~50% on plausible-false facts) that the
+    #: register has since re-measured (81% / 25%), and its generator hard-codes them; the image
+    #: stays in docs/ and returns when it is regenerated from the register (premortem 2026-09-25).
+    check("there are images to judge at all", judged >= 8, str(judged))
     check("every local image has alt text", not missing, ", ".join(missing[:5]))
     check(f"every alt text describes the image (>= {MIN_ALT} chars)", not weak,
           ", ".join(weak[:5]))
+
+
+#: A generated figure whose numbers are typed into its generator cannot follow the register:
+#: post_retrieval.png printed 88% / ~50% poisoning (hard-coded in its generator) while the register
+#: re-measured 81% / 25%, and FEATURES.md showed it. It stays unembedded until the generator reads
+#: the register; this check fails the moment it is embedded again while the literals remain.
+STALE_FIGURE = ("post_retrieval.png", ROOT / "research" / "gen_post_retrieval_infographic.py")
+_HTML_COMMENT = re.compile(r"<!--.*?-->", re.S)
+
+
+def _embeds(text: str, image: str) -> bool:
+    """True when `text` shows `image` (an <img> or a Markdown image) outside HTML comments."""
+    live = _HTML_COMMENT.sub(" ", text)
+    return bool(re.search(r"<img[^>]*" + re.escape(image) + r"|!\[[^\]]*\]\([^)]*" + re.escape(image),
+                          live))
+
+
+def test_a_figure_with_hard_coded_numbers_is_not_shown() -> None:
+    print("\n- a figure whose generator hard-codes its numbers is not embedded -")
+    image, generator = STALE_FIGURE
+    literals = re.findall(r'"\d+%"', generator.read_text(encoding="utf-8")) if generator.exists() else []
+    pages = [ROOT / "README.md"] + sorted((ROOT / "docs").glob("*.md")) + sorted((ROOT / "research").glob("*.md"))
+    shown = [p.relative_to(ROOT).as_posix() for p in pages if _embeds(p.read_text(encoding="utf-8"), image)]
+    check(f"{image} is not embedded while its generator hard-codes percentages",
+          not (literals and shown), f"literals {literals[:3]}, embedded in {shown}")
+    probe = ('<p align="center"><img src="post_retrieval.png" alt="Post-retrieval correctness: '
+             'contradictions resolved at write time" width="880"></p>')
+    check("the check sees an embed with a full alt text, and ignores one inside a comment",
+          _embeds(probe, image) and not _embeds("<!-- " + probe + " -->", image))
 
 
 def test_zz_every_check_passed() -> None:
