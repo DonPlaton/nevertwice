@@ -575,6 +575,11 @@ empty.
 
 ### Fixed
 
+- **`doctor` said the hooks were wired when they could not run (B5).** The check looked for the
+  substring `memory_hook` in `settings.json`; the interpreter is pinned into every hook command at
+  install time, so a deleted venv made every hook call exit 127 - memory off - while `doctor`
+  printed ok. It now asks `hookwire.dead_reason` about each wired entry and fails on a missing
+  interpreter, shim or engine, with `python install.py` as the repair.
 - **An LLM answer that never ends is capped and counted, and a failure of the content is retried a bounded number of times (B1).** The
   extraction call sent no output limit, so a model that never closed its JSON generated until the
   120 s timeout - the campaign-v2 frontier stand was stopped 644 sessions in on exactly this. Every

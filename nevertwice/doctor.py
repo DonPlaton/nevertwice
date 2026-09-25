@@ -123,6 +123,27 @@ def check_hook_registration(settings: Path) -> dict:
         return _check("hook_registration", "Claude Code hooks are wired", WARN,
                       "settings.json has no memory_hook entry",
                       "python install.py  # idempotent; it backs settings.json up first")
+    # B5 (premortem N3, 2026-09-25): "wired" is not "runs". The interpreter is pinned into the
+    # command at install time; delete that venv and every hook call exits 127 while this check
+    # said ok, because it only looked for the substring. `hookwire.dead_reason` already knew the
+    # three ways a wired entry cannot run - interpreter, shim or engine missing - and nothing here
+    # asked it. Every one is a FAIL: a blocking entry stops the agent, a non-blocking one turns
+    # memory off without a word, and either way the store stops getting written.
+    import hookwire  # noqa: PLC0415 - stdlib-only sibling, loaded when a settings file exists
+    dead = []
+    for event, groups in hooks.items():
+        for group in groups if isinstance(groups, list) else []:
+            for entry in (group.get("hooks") or []) if isinstance(group, dict) else []:
+                if not (isinstance(entry, dict) and "memory_hook" in json.dumps(entry)):
+                    continue
+                why = hookwire.dead_reason(entry)
+                if why is not None:
+                    dead.append(f"{event}: {why[0]}" + (" - BLOCKS the agent" if why[1] else ""))
+    if dead:
+        return _check("hook_registration", "Claude Code hooks are wired", FAIL,
+                      f"{len(dead)} wired hook(s) cannot run: " + "; ".join(dead[:3])
+                      + (f"; and {len(dead) - 3} more" if len(dead) > 3 else ""),
+                      "python install.py  # re-pins the interpreter and the engine path")
     return _check("hook_registration", "Claude Code hooks are wired", OK,
                   f"{len(wired)} events: {', '.join(wired)}")
 

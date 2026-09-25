@@ -626,6 +626,51 @@ def test_a_list_the_engine_cannot_read_is_counted() -> None:
         check("no store: skipped, not failed", result["status"] == doctor.SKIP, str(result))
 
 
+def test_a_wired_hook_that_cannot_run_is_a_failure() -> None:
+    """B5 (premortem N3, 2026-09-25): the interpreter is pinned into every hook command at install
+    time. Delete that venv and each hook call exits 127 - memory stops - while this check said
+    "ok | 3 events", because it only looked for the substring `memory_hook`. The auditor's five
+    cases, both ways: three that cannot run must FAIL with the reason, two that can stay ok."""
+    print("\n- a wired hook that cannot run is a failure, not 'wired' -")
+    sys.path.insert(0, str(ROOT / "nevertwice"))
+    import hookwire  # noqa: PLC0415
+
+    with tempfile.TemporaryDirectory(prefix="nevertwice_doc_hook_") as tmp:
+        root = Path(tmp)
+        engine = root / "clone" / "nevertwice" / "memory_hook.py"
+        shim = root / "shim" / "nevertwice" / "hook_shim.py"
+        for p in (engine, shim):
+            p.parent.mkdir(parents=True)
+            p.write_text("x = 1\n", encoding="utf-8")
+        gone_py = root / "deleted-venv" / "Scripts" / "python.exe"
+
+        def status(command: str) -> dict:
+            settings = root / "settings.json"
+            settings.write_text(json.dumps({"hooks": {event: [{"hooks": [{"type": "command",
+                                                                            "command": command}]}]
+                                                      for event in ("SessionStart", "SessionEnd",
+                                                                    "PreToolUse")}}),
+                                encoding="utf-8")
+            return doctor.check_hook_registration(settings)
+
+        legacy = lambda py, script: f'"{py}" "{script}"'.replace("\\", "/")   # noqa: E731
+        cases = [
+            ("a live interpreter, the -c form", hookwire.hook_command(sys.executable, shim, engine), doctor.OK),
+            ("a deleted venv's interpreter, the -c form",
+             hookwire.hook_command(gone_py, shim, engine), doctor.FAIL),
+            ("a deleted interpreter, the old two-token form", legacy(gone_py, engine), doctor.FAIL),
+            ("a bare `python` from PATH, the old form", legacy("python", engine), doctor.OK),
+            ("a live interpreter whose engine is gone", hookwire.hook_command(
+                sys.executable, shim, root / "gone" / "nevertwice" / "memory_hook.py"), doctor.FAIL),
+        ]
+        for label, command, want in cases:
+            got = status(command)
+            check(f"{label}: {want}", got["status"] == want, f"{got['status']} | {got['detail']}")
+        dead = status(hookwire.hook_command(gone_py, shim, engine))
+        check("the failure names the missing interpreter, and the repair is install.py",
+              "interpreter missing" in dead["detail"] and "install.py" in dead["repair"], str(dead))
+
+
 def test_zz_every_check_passed() -> None:
     """Bare pytest must reach the same verdict as this suite's exit code.
 
