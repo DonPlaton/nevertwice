@@ -36,6 +36,7 @@
   }
  },
  "recur_inert": true,
+ "empty_skipped": 0,
  "provenance": {
   "corpus": "longmemeval_oracle",
   "sha256": "821a2034d219ab45846873dd14c14f12cfe7776e73527a483f9dac095d38620c",
@@ -45,5 +46,7 @@
   "url": "https://huggingface.co/datasets/xiaowu0162/longmemeval/resolve/main/longmemeval_oracle",
   "licence": "MIT",
   "citation": "Wu et al., LongMemEval: Benchmarking Chat Assistants on Long-Term Interactive Memory, ICLR 2025"
- }
+ },
+ "dropped_sessions": [],
+ "dropped_questions": []
 }

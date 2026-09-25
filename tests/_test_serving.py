@@ -76,7 +76,12 @@ def test_the_latency_the_product_actually_pays_is_published() -> None:
     print("\n- the served cost -")
     s = DATA["seconds"]
     check("both paths were timed", s.get("local", 0) > 0 and s.get("served", 0) > 0, str(s))
-    check("the served path is the slower one, as expected", s["served"] > s["local"], str(s))
+    #: The direction is NOT asserted any more (restore #2, 2026-09-25): which path is faster is a
+    #: timing, and a timing from a machine that was not idle is not a fact (PREREG-V2 P5; the
+    #: latency claim on this artifact stays pending as machine-not-idle). The campaign's P2 re-run
+    #: had served 29.78 s against local 29.91 s; flipping the expectation to match that one draw
+    #: would be the same mistake in the other direction. What the stand gates is V1/V2 above.
+    print(f"  (timing recorded, direction not asserted - machine-not-idle, P5: {s})")
     check("the text count is recorded so the per-text figure is derivable", s.get("texts", 0) > 0)
 
 

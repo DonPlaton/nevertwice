@@ -4020,15 +4020,15 @@
     "rr": 1.0
    }
   ],
-  "query_s": 1155.5,
+  "query_s": 1641.8,
   "embed_chars": 28000,
   "setup": "local bge-m3 via Ollama (calibrated fusion; 0 deps, no server, no DB)",
-  "_wall_s": 1172.6,
+  "_wall_s": 1662.3,
   "version": "nevertwice==2.4.0",
   "label": "Nevertwice (calibrated fusion, the shipped ranker)",
   "measured_at": {
-   "commit": "358fa756e869605423dda2829f29dd9f81e3c939",
-   "utc": "2026-09-23T07:11:26Z"
+   "commit": "fe6ddff232915c61ec2177b5541039a9c3e370c6",
+   "utc": "2026-09-24T21:08:41Z"
   },
   "morphology": true
  },
@@ -8041,19 +8041,69 @@
     "rr": 1.0
    }
   ],
-  "ingest_s": 1069.0,
-  "query_s": 1280.9,
+  "ingest_s": 2700.5,
+  "query_s": 1256.7,
+  "timing_includes_pacing": true,
+  "ingest_s_pace_excluded": 1830.552,
+  "ingest_pace_excluded_exact": true,
+  "query_s_pace_excluded": 1256.597,
+  "query_pace_excluded_exact": true,
+  "ingested_items": 19206,
   "mode": "infer=False (retrieval-only, 1 memory/session)",
   "sessions_shrunk": 3,
   "embedder": "ollama bge-m3",
   "search": "dense cosine + fastembed BM25 (Mem0 default hybrid); entity boost off",
   "setup": "pip install mem0ai ollama fastembed; embedded qdrant (no server)",
-  "_wall_s": 2354.3,
+  "_wall_s": 3962.4,
+  "ollama_transport": {
+   "calls": 19710,
+   "pace_sleep_s": 795.043,
+   "retries": 5,
+   "retry_sleep_s": 75.0,
+   "gave_up": 0,
+   "call_ms": {
+    "n": 19710,
+    "p50": 56.9,
+    "p90": 136.485,
+    "p99": 220.162,
+    "max": 9862.262
+   },
+   "mode": "pace",
+   "timing_includes_pacing": true,
+   "pace_floor_s": 2463.75,
+   "bypass_calls": {
+    "requests": 0,
+    "aiohttp": 0
+   },
+   "nested_calls": {
+    "requests": 0,
+    "aiohttp": 0
+   },
+   "max_inflight": 1,
+   "max_concurrent_paced": 1,
+   "pace_excluded_exact": true,
+   "failed_outcomes": {
+    "by_status": {
+     "400": 3
+    },
+    "by_exception_type": {},
+    "gave_up": 0
+   },
+   "llm_retries": 0,
+   "llm_retry_sleep_s": 0.0,
+   "failed_outcomes_llm": {
+    "by_status": {},
+    "by_exception_type": {},
+    "gave_up": 0
+   }
+  },
+  "valid": false,
+  "invalid_reason": "3 embed call(s) failed (by_status={400: 3}, by_exception_type={}, gave_up=0) - a note or query may have silently fallen back to lexical recall",
   "version": "mem0ai==2.0.19",
   "label": "Mem0 store search (infer=False: no LLM extraction, one memory per item; its default hybrid of dense cosine + fastembed BM25 when fastembed is installed)",
   "measured_at": {
-   "commit": "358fa756e869605423dda2829f29dd9f81e3c939",
-   "utc": "2026-09-23T07:50:40Z"
+   "commit": "fe6ddff232915c61ec2177b5541039a9c3e370c6",
+   "utc": "2026-09-24T22:14:44Z"
   }
  },
  "langmem": {
@@ -12065,26 +12115,76 @@
     "rr": 0.5
    }
   ],
-  "ingest_s": 804.4,
-  "query_s": 360.2,
+  "ingest_s": 2465.0,
+  "query_s": 433.0,
+  "timing_includes_pacing": true,
+  "ingest_s_pace_excluded": 845.889,
+  "ingest_pace_excluded_exact": true,
+  "query_s_pace_excluded": 432.918,
+  "query_pace_excluded_exact": true,
+  "ingested_items": 19206,
   "embedder": "ollama bge-m3",
   "mode": "store search only: LangGraph InMemoryStore, no memory manager, no LLM",
   "sessions_shrunk": 3,
   "setup": "pip install langgraph langmem langchain-ollama (no server)",
-  "_wall_s": 1166.4,
+  "_wall_s": 2899.7,
+  "ollama_transport": {
+   "calls": 19709,
+   "pace_sleep_s": 1559.136,
+   "retries": 4,
+   "retry_sleep_s": 60.0,
+   "gave_up": 0,
+   "call_ms": {
+    "n": 19709,
+    "p50": 49.183,
+    "p90": 55.129,
+    "p99": 61.68,
+    "max": 775.943
+   },
+   "mode": "pace",
+   "timing_includes_pacing": true,
+   "pace_floor_s": 2463.625,
+   "bypass_calls": {
+    "requests": 0,
+    "aiohttp": 0
+   },
+   "nested_calls": {
+    "requests": 0,
+    "aiohttp": 0
+   },
+   "max_inflight": 1,
+   "max_concurrent_paced": 1,
+   "pace_excluded_exact": true,
+   "failed_outcomes": {
+    "by_status": {
+     "400": 3
+    },
+    "by_exception_type": {},
+    "gave_up": 0
+   },
+   "llm_retries": 0,
+   "llm_retry_sleep_s": 0.0,
+   "failed_outcomes_llm": {
+    "by_status": {},
+    "by_exception_type": {},
+    "gave_up": 0
+   }
+  },
+  "valid": false,
+  "invalid_reason": "3 embed call(s) failed (by_status={400: 3}, by_exception_type={}, gave_up=0) - a note or query may have silently fallen back to lexical recall",
   "version": "langmem==0.0.30",
   "label": "LangGraph InMemoryStore semantic search (LangMem's store layer, no memory manager)",
   "measured_at": {
-   "commit": "358fa756e869605423dda2829f29dd9f81e3c939",
-   "utc": "2026-09-23T08:10:07Z"
+   "commit": "fe6ddff232915c61ec2177b5541039a9c3e370c6",
+   "utc": "2026-09-24T23:03:04Z"
   }
  },
  "amem": {
-  "recall@1": 0.15,
-  "recall@3": 0.28,
-  "recall@5": 0.348,
-  "recall@10": 0.434,
-  "mrr@10": 0.2349,
+  "recall@1": 0.148,
+  "recall@3": 0.276,
+  "recall@5": 0.346,
+  "recall@10": 0.432,
+  "mrr@10": 0.2327,
   "n": 500,
   "per_question": [
    {
@@ -13570,10 +13670,10 @@
    {
     "q": "a1cc6108",
     "h1": 0,
-    "h3": 1,
+    "h3": 0,
     "h5": 1,
     "h10": 1,
-    "rr": 0.3333
+    "rr": 0.25
    },
    {
     "q": "9ee3ecd6",
@@ -14060,8 +14160,8 @@
     "h1": 0,
     "h3": 0,
     "h5": 0,
-    "h10": 0,
-    "rr": 0.0
+    "h10": 1,
+    "rr": 0.1
    },
    {
     "q": "gpt4_7f6b06db",
@@ -14444,8 +14544,8 @@
     "h1": 0,
     "h3": 0,
     "h5": 0,
-    "h10": 1,
-    "rr": 0.1
+    "h10": 0,
+    "rr": 0.0
    },
    {
     "q": "gpt4_4929293b",
@@ -15113,11 +15213,11 @@
    },
    {
     "q": "184da446",
-    "h1": 1,
-    "h3": 1,
-    "h5": 1,
-    "h10": 1,
-    "rr": 1.0
+    "h1": 0,
+    "h3": 0,
+    "h5": 0,
+    "h10": 0,
+    "rr": 0.0
    },
    {
     "q": "031748ae",
@@ -16088,18 +16188,68 @@
     "rr": 0.5
    }
   ],
-  "ingest_s": 1078.8,
-  "query_s": 12.0,
+  "ingest_s": 2455.4,
+  "query_s": 62.5,
+  "timing_includes_pacing": true,
+  "ingest_s_pace_excluded": 1155.755,
+  "ingest_pace_excluded_exact": true,
+  "query_s_pace_excluded": 22.607,
+  "query_pace_excluded_exact": true,
+  "ingested_items": 19206,
   "embedder": "ollama bge-m3",
   "mode": "store search only: chromadb cosine, no LLM note construction, no link evolution",
   "sessions_shrunk": 3,
   "setup": "pip install chromadb (A-MEM's vector store) + Ollama embeddings",
-  "_wall_s": 1091.7,
+  "_wall_s": 2518.5,
+  "ollama_transport": {
+   "calls": 19709,
+   "pace_sleep_s": 1294.533,
+   "retries": 3,
+   "retry_sleep_s": 45.0,
+   "gave_up": 0,
+   "call_ms": {
+    "n": 19706,
+    "p50": 59.528,
+    "p90": 77.991,
+    "p99": 92.26,
+    "max": 9254.56
+   },
+   "mode": "pace",
+   "timing_includes_pacing": true,
+   "pace_floor_s": 2463.625,
+   "bypass_calls": {
+    "requests": 0,
+    "aiohttp": 0
+   },
+   "nested_calls": {
+    "requests": 0,
+    "aiohttp": 0
+   },
+   "max_inflight": 1,
+   "max_concurrent_paced": 1,
+   "pace_excluded_exact": true,
+   "failed_outcomes": {
+    "by_status": {
+     "400": 3
+    },
+    "by_exception_type": {},
+    "gave_up": 0
+   },
+   "llm_retries": 0,
+   "llm_retry_sleep_s": 0.0,
+   "failed_outcomes_llm": {
+    "by_status": {},
+    "by_exception_type": {},
+    "gave_up": 0
+   }
+  },
+  "valid": false,
+  "invalid_reason": "3 embed call(s) failed (by_status={400: 3}, by_exception_type={}, gave_up=0) - a note or query may have silently fallen back to lexical recall",
   "version": "chromadb==1.5.9",
   "label": "chromadb cosine over the same vectors (A-MEM's vector store, no LLM notes, no links)",
   "measured_at": {
-   "commit": "358fa756e869605423dda2829f29dd9f81e3c939",
-   "utc": "2026-09-23T08:28:18Z"
+   "commit": "fe6ddff232915c61ec2177b5541039a9c3e370c6",
+   "utc": "2026-09-24T23:45:02Z"
   }
  }
 }

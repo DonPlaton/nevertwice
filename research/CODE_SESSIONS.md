@@ -39,7 +39,7 @@ with no reader and no judge - at or above three fifths on the held-out, with rea
 two fifths; the base (five of fifty-two), the cost caps and the decision on a miss are in the ledger.
 
 <!-- claims:code-sessions -->
-> **Withdrawn 2026-09.** the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored
+> **Withdrawn 2026-09.** owner decision pending: the Nevertwice contexts were empty for every question in this run and in the committed one (dated sessions archived against the wall clock), and the run is invalid (failed model calls)
 >
 > The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/code_sessions_eval.py judge --arms nevertwice_full,naive,mem0_infer --save` is what re-measures this one.
 <!-- /claims:code-sessions -->
@@ -73,9 +73,13 @@ project-specific facts phrased as lessons rather than the anti-patterns every mo
 ## The real held-out
 
 <!-- claims:code-heldout -->
-> **Withdrawn 2026-09.** the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/code_sessions_eval.py summary --arms nevertwice_full,naive,mem0_infer --corpus D:/Coding/_nevertwice_polygon/code_heldout/code_heldout_v2.json --save --out research/results/code_heldout_v2.json` is what re-measures this one.
+| system | fact | current | stale | lesson | situation (top three) | tokens |
+|---|---|---|---|---|---|---|
+| **Nevertwice, our extractor's notes** | 0.442 | - | - | - | - | 220 |
+| append-only sessions, term overlap (floor) | 0.827 | - | - | - | - | 569 |
+| Mem0 full pipeline, its memories | 0.231 | - | - | - | - | 182 |
+| no memory (bracket) | 0.000 | - | - | - | - | 122 |
+| the gold session whole (bracket) | 0.827 | - | - | - | - | 569 |
 <!-- /claims:code-heldout -->
 
 Two hundred candidates over thirty-seven transcripts; the automatic checks accepted thirty-nine,

@@ -1,0 +1,5427 @@
+{
+ "dataset": {
+  "name": "supersession_v1",
+  "sha256": "0e3114ea9175f8bb832522bdf0b182e11432da0603dc2571e3890f94d7b586f9",
+  "path": "research\\data\\supersession_v1.json",
+  "supersession_cases": 60
+ },
+ "days": {
+  "first": "2026-03-01",
+  "between": "2026-04-01",
+  "second": "2026-05-01",
+  "after": "2026-06-01"
+ },
+ "recent": false,
+ "k": 5,
+ "llm": "qwen3-coder:30b",
+ "embedder": "bge-m3",
+ "arms": {
+  "nevertwice": {
+   "rows": [
+    {
+     "id": "val-http-timeout",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 5,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0000-pattern-http-client-timeout-configuration",
+        "2026-03-01-asof0000-decision-api-client-timeout-set-to-30s"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 3,
+       "live": 3,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0000-pattern-http-client-timeout-configuration",
+        "2026-05-01-asof0000-mistake-incorrect-timeout-value",
+        "2026-05-01-asof0000-decision-api-client-timeout-set-to-30s"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "val-pg-version",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0001-pattern-postgresql-version-in-production"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0001-pattern-postgresql-version-in-production"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "val-batch-size",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0002-pattern-training-batch-size-confirmed"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0002-pattern-training-batch-size-confirmed"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "val-node-version",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 0,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0003-pattern-frontend-build-target-node-18"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "explicit"
+       ]
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0003-pattern-frontend-build-target-node-22"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0003-pattern-frontend-build-target-node-18"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "val-retry-count",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0004-pattern-queue-worker-retry-logic"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0004-pattern-queue-worker-retry-logic"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "val-cache-ttl",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0005-pattern-cache-layer-expiration",
+        "2026-03-01-asof0005-decision-cache-expiration-time"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0005-pattern-cache-layer-expiration",
+        "2026-05-01-asof0005-decision-cache-expiration-time"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "val-port",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 0,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0006-pattern-dev-server-port-configuration"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "explicit"
+       ]
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0006-pattern-dev-server-port-configuration"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0006-pattern-dev-server-port-configuration"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "val-region",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0007-pattern-deployment-in-eu-west-1"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0007-pattern-deployment-in-eu-west-1"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "val-py-version",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 3,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0008-pattern-python-version-pinning",
+        "2026-03-01-asof0008-pattern-test-suite-validation"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0008-pattern-python-version-pinning"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "val-replicas",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0009-pattern-api-capacity-replicas"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0009-pattern-api-capacity-replicas"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "val-lr",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0010-pattern-learning-rate-configuration"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0010-pattern-learning-rate-configuration"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "val-chunk",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0011-pattern-document-ingestion-chunking",
+        "2026-03-01-asof0011-decision-ingestion-chunk-size"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0011-pattern-document-ingestion-chunking",
+        "2026-05-01-asof0011-decision-ingestion-chunk-size"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "val-quorum",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0012-pattern-cluster-quorum-setup",
+        "2026-03-01-asof0012-decision-staged-release-rollout"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0012-pattern-cluster-quorum-setup",
+        "2026-05-01-asof0012-decision-staged-release-rollout"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "val-license",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0013-decision-license-agpl3"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0013-decision-license-agpl3"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "val-branch",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0014-pattern-repository-thread-resumption"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0014-pattern-repository-thread-resumption"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "app-cache-store",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0015-pattern-redis-session-caching"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0015-pattern-redis-session-caching"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "app-auth",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 3,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0016-pattern-jwt-authentication-with-hs256"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0016-pattern-jwt-authentication-with-hs256",
+        "2026-05-01-asof0016-decision-opaque-session-cookies"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "app-bundler",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 0,
+       "retired": 2,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01",
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0017-pattern-frontend-bundling-with-webpack",
+        "2026-03-01-asof0017-decision-use-webpack-for-frontend-bundling"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "explicit",
+        "explicit"
+       ]
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0017-pattern-frontend-bundling-with-vite",
+        "2026-05-01-asof0017-decision-use-vite-for-frontend-bundling"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0017-pattern-frontend-bundling-with-webpack",
+        "2026-03-01-asof0017-decision-use-webpack-for-frontend-bundling"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "app-orm",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 3,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 1,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0018-pattern-sqlalchemy-orm-data-access",
+        "2026-03-01-asof0018-decision-orm-for-data-access"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "explicit"
+       ]
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0018-pattern-asyncpg-for-data-access",
+        "2026-05-01-asof0018-decision-use-asyncpg-for-data-access"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0018-pattern-sqlalchemy-orm-data-access"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "app-queue",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0019-pattern-celery-background-jobs"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0019-pattern-celery-background-jobs"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "app-ci",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 1,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0020-pattern-ci-staged-release"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0020-pattern-ci-staged-release"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "app-search",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0021-pattern-elasticsearch-search-setup"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0021-pattern-elasticsearch-search-setup"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "app-styling",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 3,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0022-pattern-styled-components-usage"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0022-pattern-tailwind-styling-in-components",
+        "2026-05-01-asof0022-decision-switch-to-tailwind-styling"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "app-packaging",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0023-pattern-package-deployment-with-poetry",
+        "2026-03-01-asof0023-decision-use-poetry-for-packaging"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0023-pattern-package-deployment-with-poetry",
+        "2026-05-01-asof0023-decision-use-poetry-for-packaging"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "app-state",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 3,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 1,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0024-pattern-frontend-state-management",
+        "2026-03-01-asof0024-decision-redux-for-global-state"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "explicit"
+       ]
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0024-pattern-frontend-state-management",
+        "2026-05-01-asof0024-decision-redux-for-global-state"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0024-decision-redux-for-global-state"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "app-infra",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 0,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0025-pattern-infrastructure-provisioning-with-terraform"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "explicit"
+       ]
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0025-pattern-infrastructure-provisioning-with-pulumi"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0025-pattern-infrastructure-provisioning-with-terraform"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "app-migrations",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0026-pattern-schema-migration-through-alembic"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0026-pattern-schema-migration-through-alembic"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "app-serialisation",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0027-pattern-protobuf-message-serialization"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0027-pattern-protobuf-message-serialization"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "app-secrets",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0028-pattern-secrets-from-vault-at-boot"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0028-pattern-secrets-from-vault-at-boot"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "app-e2e",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0029-pattern-end-to-end-test-verification",
+        "2026-03-01-asof0029-decision-testing-decision-confirmed"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0029-pattern-end-to-end-test-verification",
+        "2026-05-01-asof0029-decision-testing-decision-confirmed"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "ret-beta-flag",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0030-pattern-feature-flag-gating",
+        "2026-03-01-asof0030-decision-beta-dashboard-flag"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0030-pattern-feature-flag-gating",
+        "2026-05-01-asof0030-decision-beta-dashboard-flag"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "ret-legacy-endpoint",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0031-pattern-api-export-csv-endpoint"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0031-pattern-api-export-csv-endpoint-removed"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "ret-telemetry",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 1,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0032-pattern-telemetry-thread-continuity",
+        "2026-03-01-asof0032-pattern-test-suite-green-after-telemetry"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 0,
+       "live": 0,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": false,
+       "titles": [],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "ret-mirror",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0033-pattern-read-replica-setup"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0033-pattern-read-replica-setup"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "ret-plugin-api",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 3,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0034-pattern-third-party-plugins-loading"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0034-pattern-third-party-plugins-loading",
+        "2026-05-01-asof0034-decision-extensibility-removed"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "ret-mobile",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 1,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0035-decision-ios-client-sync-engine"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 0,
+       "live": 0,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": false,
+       "titles": [],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "ret-cron",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 3,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 1,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0036-pattern-nightly-cron-audit-log-compaction",
+        "2026-03-01-asof0036-decision-staged-release-rollout"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "explicit"
+       ]
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0036-pattern-nightly-cron-audit-log-compaction",
+        "2026-05-01-asof0036-decision-staged-release-rollout"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0036-pattern-nightly-cron-audit-log-compaction"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "ret-grpc",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 1,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0037-pattern-grpc-communication-setup"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0037-pattern-grpc-communication-setup"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "ret-sso",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0038-pattern-okta-saml-sign-in",
+        "2026-03-01-asof0038-decision-rename-approval"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0038-pattern-okta-saml-sign-in",
+        "2026-05-01-asof0038-decision-rename-approval"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "ret-webhook",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0039-pattern-webhook-order-integration"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0039-pattern-webhook-order-integration"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "ret-gpu-node",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": false,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 0,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 0,
+       "live": 0,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": false,
+       "titles": [],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 0,
+       "live": 0,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": false,
+       "titles": [],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": "never_written",
+     "run": 0
+    },
+    {
+     "id": "ret-cli-flag",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0041-pattern-cli-flag-legacy-restores-pre-2-0-format",
+        "2026-03-01-asof0041-decision-use-legacy-flag-to-match-pre-2-0-behavior"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0041-pattern-cli-flag-legacy-restores-pre-2-0-format",
+        "2026-05-01-asof0041-decision-use-legacy-flag-to-match-pre-2-0-behavior"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "ret-audit-ui",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 0,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0042-pattern-admin-panel-audit-filtering"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "explicit"
+       ]
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0042-pattern-admin-panel-audit-filtering"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0042-pattern-admin-panel-audit-filtering"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "ret-i18n",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": false,
+       "titles": [
+        "2026-03-01-asof0043-pattern-localization-pair-programming"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0043-pattern-localization-pair-programming",
+        "2026-05-01-asof0043-decision-english-only-app"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": "unranked",
+     "run": 0
+    },
+    {
+     "id": "ret-sandbox",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0044-pattern-sandbox-environment-mirrors-production"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0044-pattern-sandbox-environment-mirrors-production"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "nar-retry-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0045-pattern-http-client-retry-logic"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0045-pattern-http-client-retry-logic"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "nar-cache-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 3,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0046-pattern-api-response-caching"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0046-pattern-api-response-caching",
+        "2026-05-01-asof0046-decision-get-request-caching"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "nar-audit-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0047-pattern-audit-log-table-changes",
+        "2026-03-01-asof0047-decision-document-audit-decision"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0047-pattern-audit-log-table-changes",
+        "2026-05-01-asof0047-decision-document-audit-decision"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "nar-gpu-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0048-pattern-trainer-gpu-utilization"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0048-pattern-trainer-gpu-utilization"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "nar-lint-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0049-pattern-pre-commit-hook-lints-repo"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0049-pattern-pre-commit-hook-lints-repo"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "nar-notify-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0050-pattern-deploy-alerting-works"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0050-pattern-deploy-alerting-works"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "nar-encrypt-scope",
+     "shape": "narrowed",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 0,
+       "live": 0,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": false,
+       "titles": [],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0051-pattern-encryption-at-rest-scope"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": "never_written",
+     "run": 0
+    },
+    {
+     "id": "nar-index-scope",
+     "shape": "narrowed",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 0,
+       "live": 0,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": false,
+       "titles": [],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0052-pattern-index-reversal-for-docs"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": "never_written",
+     "run": 0
+    },
+    {
+     "id": "nar-backup-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0053-pattern-nightly-backup-database-dump",
+        "2026-03-01-asof0053-decision-backups-decision-written"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0053-pattern-nightly-backup-database-dump",
+        "2026-05-01-asof0053-decision-backups-decision-written"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "nar-ratelimit-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 1,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0054-pattern-rate-limiting-handling",
+        "2026-03-01-asof0054-decision-rename-approval"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "explicit"
+       ]
+      },
+      "s1": {
+       "written": 3,
+       "live": 3,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0054-pattern-rate-limiting-handling",
+        "2026-05-01-asof0054-mistake-incorrect-rate-limit-logic",
+        "2026-05-01-asof0054-decision-rename-approval"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0054-pattern-rate-limiting-handling"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "nar-compress-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0055-pattern-gzip-compression-response"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0055-pattern-gzip-compression-response"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "nar-mfa-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 0,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0056-pattern-mfa-required-for-all-users"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "explicit"
+       ]
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0056-pattern-mfa-required-for-admins"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0056-pattern-mfa-required-for-all-users"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "nar-replay-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0057-pattern-event-log-replay-on-boot"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0057-pattern-event-log-replay-on-boot"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "nar-shard-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 3,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0058-pattern-sharding-tenant-database"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0058-pattern-sharding-tenant-database",
+        "2026-05-01-asof0058-decision-dedicated-shard-for-high-volume-tenants"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "nar-trace-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0059-pattern-end-to-end-request-tracing",
+        "2026-03-01-asof0059-decision-request-tracing-implementation"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0059-pattern-end-to-end-request-tracing",
+        "2026-05-01-asof0059-decision-request-tracing-implementation"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    }
+   ],
+   "n_cases": 60,
+   "both_correct_rate": 0.8667,
+   "both_correct_ci": [
+    0.7583,
+    0.9309
+   ],
+   "old_day_rate": 0.9333,
+   "new_day_rate": 0.9167,
+   "errors": 0,
+   "old_day_failures_by_kind": {
+    "never_written": 3,
+    "absorbed": 0,
+    "unranked": 1,
+    "paraphrase": 0,
+    "leak": 0
+   },
+   "s0_never_written": 3,
+   "s0_absorbed": 0,
+   "s0_retired_rate": 0.1754,
+   "s0_retired_via": {
+    "explicit": 11
+   },
+   "s0_written_pairs": 57,
+   "runs": 1,
+   "seconds": 229.0,
+   "config": "ollama qwen3-coder:30b + bge-m3, k=5, days 2026-03-01/2026-05-01",
+   "store_bytes": 132426,
+   "ollama_transport": {
+    "calls": 542,
+    "pace_sleep_s": 25.001,
+    "retries": 0,
+    "retry_sleep_s": 0.0,
+    "gave_up": 0,
+    "call_ms": {
+     "n": 542,
+     "p50": 25.423,
+     "p90": 1355.662,
+     "p99": 2012.23,
+     "max": 2412.162
+    },
+    "mode": "pace",
+    "timing_includes_pacing": true,
+    "pace_floor_s": 67.75,
+    "bypass_calls": {
+     "requests": 0,
+     "aiohttp": 0
+    },
+    "nested_calls": {
+     "requests": 0,
+     "aiohttp": 0
+    },
+    "max_inflight": 1,
+    "max_concurrent_paced": 1,
+    "pace_excluded_exact": true,
+    "failed_outcomes": {
+     "by_status": {},
+     "by_exception_type": {},
+     "gave_up": 0
+    },
+    "llm_retries": 0,
+    "llm_retry_sleep_s": 0.0,
+    "failed_outcomes_llm": {
+     "by_status": {},
+     "by_exception_type": {},
+     "gave_up": 0
+    }
+   }
+  },
+  "nevertwice_after_sleep": {
+   "rows": [
+    {
+     "id": "val-http-timeout",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 5,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0000-pattern-http-client-timeout-configuration",
+        "2026-03-01-asof0000-decision-api-client-timeout-set-to-30s"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 3,
+       "live": 3,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0000-pattern-http-client-timeout-configuration",
+        "2026-05-01-asof0000-mistake-incorrect-timeout-value",
+        "2026-05-01-asof0000-decision-api-client-timeout-set-to-30s"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "val-pg-version",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 0,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0001-pattern-postgresql-version-in-production"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "judge"
+       ]
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0001-pattern-postgresql-version-in-production"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0001-pattern-postgresql-version-in-production"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "val-batch-size",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 0,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0002-pattern-training-batch-size-confirmed"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "judge"
+       ]
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0002-pattern-training-batch-size-confirmed"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0002-pattern-training-batch-size-confirmed"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "val-node-version",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 0,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0003-pattern-frontend-build-target-node-18"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "explicit"
+       ]
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0003-pattern-frontend-build-target-node-22"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0003-pattern-frontend-build-target-node-18"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "val-retry-count",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 0,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0004-pattern-queue-worker-retry-logic"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "judge"
+       ]
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0004-pattern-queue-worker-retry-logic"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0004-pattern-queue-worker-retry-logic"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "val-cache-ttl",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 3,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 1,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0005-pattern-cache-layer-expiration",
+        "2026-03-01-asof0005-decision-cache-expiration-time"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "judge"
+       ]
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0005-pattern-cache-layer-expiration",
+        "2026-05-01-asof0005-decision-cache-expiration-time"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0005-decision-cache-expiration-time"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "val-port",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 0,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0006-pattern-dev-server-port-configuration"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "explicit"
+       ]
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0006-pattern-dev-server-port-configuration"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0006-pattern-dev-server-port-configuration"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "val-region",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 0,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0007-pattern-deployment-in-eu-west-1"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "judge"
+       ]
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0007-pattern-deployment-in-eu-west-1"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0007-pattern-deployment-in-eu-west-1"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "val-py-version",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 1,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0008-pattern-test-suite-validation",
+        "2026-03-01-asof0008-pattern-python-version-pinning"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "judge"
+       ]
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0008-pattern-python-version-pinning"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0008-pattern-python-version-pinning"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "val-replicas",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0009-pattern-api-capacity-replicas"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0009-pattern-api-capacity-replicas"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "val-lr",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 0,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0010-pattern-learning-rate-configuration"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "judge"
+       ]
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0010-pattern-learning-rate-configuration"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0010-pattern-learning-rate-configuration"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "val-chunk",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 0,
+       "retired": 2,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01",
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0011-pattern-document-ingestion-chunking",
+        "2026-03-01-asof0011-decision-ingestion-chunk-size"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "judge",
+        "judge"
+       ]
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0011-pattern-document-ingestion-chunking",
+        "2026-05-01-asof0011-decision-ingestion-chunk-size"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0011-pattern-document-ingestion-chunking",
+        "2026-03-01-asof0011-decision-ingestion-chunk-size"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "val-quorum",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 3,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 1,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0012-pattern-cluster-quorum-setup",
+        "2026-03-01-asof0012-decision-staged-release-rollout"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "judge"
+       ]
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0012-pattern-cluster-quorum-setup",
+        "2026-05-01-asof0012-decision-staged-release-rollout"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0012-pattern-cluster-quorum-setup"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "val-license",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 0,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0013-decision-license-agpl3"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "judge"
+       ]
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0013-decision-license-agpl3"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0013-decision-license-agpl3"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "val-branch",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0014-pattern-repository-thread-resumption"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0014-pattern-repository-thread-resumption"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "app-cache-store",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 0,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0015-pattern-redis-session-caching"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "judge"
+       ]
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0015-pattern-redis-session-caching"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0015-pattern-redis-session-caching"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "app-auth",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 0,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0016-pattern-jwt-authentication-with-hs256"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "judge"
+       ]
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0016-pattern-jwt-authentication-with-hs256",
+        "2026-05-01-asof0016-decision-opaque-session-cookies"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0016-pattern-jwt-authentication-with-hs256"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "app-bundler",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 0,
+       "retired": 2,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01",
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0017-pattern-frontend-bundling-with-webpack",
+        "2026-03-01-asof0017-decision-use-webpack-for-frontend-bundling"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "explicit",
+        "explicit"
+       ]
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0017-pattern-frontend-bundling-with-vite",
+        "2026-05-01-asof0017-decision-use-vite-for-frontend-bundling"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0017-pattern-frontend-bundling-with-webpack",
+        "2026-03-01-asof0017-decision-use-webpack-for-frontend-bundling"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "app-orm",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 3,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 1,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0018-pattern-sqlalchemy-orm-data-access",
+        "2026-03-01-asof0018-decision-orm-for-data-access"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "explicit"
+       ]
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0018-pattern-asyncpg-for-data-access",
+        "2026-05-01-asof0018-decision-use-asyncpg-for-data-access"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0018-pattern-sqlalchemy-orm-data-access"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "app-queue",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 0,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0019-pattern-celery-background-jobs"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "judge"
+       ]
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0019-pattern-celery-background-jobs"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0019-pattern-celery-background-jobs"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "app-ci",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 1,
+     "new_items": 0,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 0,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0020-pattern-ci-staged-release"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "judge"
+       ]
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0020-pattern-ci-staged-release"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0020-pattern-ci-staged-release"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "app-search",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 0,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0021-pattern-elasticsearch-search-setup"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "judge"
+       ]
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0021-pattern-elasticsearch-search-setup"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0021-pattern-elasticsearch-search-setup"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "app-styling",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 3,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0022-pattern-styled-components-usage"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0022-pattern-tailwind-styling-in-components",
+        "2026-05-01-asof0022-decision-switch-to-tailwind-styling"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "app-packaging",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 0,
+       "retired": 2,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01",
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0023-pattern-package-deployment-with-poetry",
+        "2026-03-01-asof0023-decision-use-poetry-for-packaging"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "judge",
+        "judge"
+       ]
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0023-pattern-package-deployment-with-poetry",
+        "2026-05-01-asof0023-decision-use-poetry-for-packaging"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0023-pattern-package-deployment-with-poetry",
+        "2026-03-01-asof0023-decision-use-poetry-for-packaging"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "app-state",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 0,
+       "retired": 2,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01",
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0024-pattern-frontend-state-management",
+        "2026-03-01-asof0024-decision-redux-for-global-state"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "judge",
+        "explicit"
+       ]
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0024-pattern-frontend-state-management",
+        "2026-05-01-asof0024-decision-redux-for-global-state"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0024-pattern-frontend-state-management",
+        "2026-03-01-asof0024-decision-redux-for-global-state"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "app-infra",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 0,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0025-pattern-infrastructure-provisioning-with-terraform"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "explicit"
+       ]
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0025-pattern-infrastructure-provisioning-with-pulumi"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0025-pattern-infrastructure-provisioning-with-terraform"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "app-migrations",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 0,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0026-pattern-schema-migration-through-alembic"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "judge"
+       ]
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0026-pattern-schema-migration-through-alembic"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0026-pattern-schema-migration-through-alembic"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "app-serialisation",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 0,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0027-pattern-protobuf-message-serialization"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "judge"
+       ]
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0027-pattern-protobuf-message-serialization"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0027-pattern-protobuf-message-serialization"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "app-secrets",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 0,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0028-pattern-secrets-from-vault-at-boot"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "judge"
+       ]
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0028-pattern-secrets-from-vault-at-boot"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0028-pattern-secrets-from-vault-at-boot"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "app-e2e",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 0,
+       "retired": 2,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01",
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0029-pattern-end-to-end-test-verification",
+        "2026-03-01-asof0029-decision-testing-decision-confirmed"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "judge",
+        "judge"
+       ]
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0029-pattern-end-to-end-test-verification",
+        "2026-05-01-asof0029-decision-testing-decision-confirmed"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0029-pattern-end-to-end-test-verification",
+        "2026-03-01-asof0029-decision-testing-decision-confirmed"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "ret-beta-flag",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 0,
+       "retired": 2,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01",
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0030-pattern-feature-flag-gating",
+        "2026-03-01-asof0030-decision-beta-dashboard-flag"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "judge",
+        "judge"
+       ]
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0030-pattern-feature-flag-gating",
+        "2026-05-01-asof0030-decision-beta-dashboard-flag"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0030-pattern-feature-flag-gating",
+        "2026-03-01-asof0030-decision-beta-dashboard-flag"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "ret-legacy-endpoint",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0031-pattern-api-export-csv-endpoint"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0031-pattern-api-export-csv-endpoint-removed"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "ret-telemetry",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 1,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0032-pattern-telemetry-thread-continuity",
+        "2026-03-01-asof0032-pattern-test-suite-green-after-telemetry"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 0,
+       "live": 0,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": false,
+       "titles": [],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "ret-mirror",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 0,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0033-pattern-read-replica-setup"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "judge"
+       ]
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0033-pattern-read-replica-setup"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0033-pattern-read-replica-setup"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "ret-plugin-api",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 0,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0034-pattern-third-party-plugins-loading"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "judge"
+       ]
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0034-pattern-third-party-plugins-loading",
+        "2026-05-01-asof0034-decision-extensibility-removed"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0034-pattern-third-party-plugins-loading"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "ret-mobile",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 1,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0035-decision-ios-client-sync-engine"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 0,
+       "live": 0,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": false,
+       "titles": [],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "ret-cron",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 3,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 1,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0036-pattern-nightly-cron-audit-log-compaction",
+        "2026-03-01-asof0036-decision-staged-release-rollout"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "explicit"
+       ]
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0036-pattern-nightly-cron-audit-log-compaction",
+        "2026-05-01-asof0036-decision-staged-release-rollout"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0036-pattern-nightly-cron-audit-log-compaction"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "ret-grpc",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 1,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0037-pattern-grpc-communication-setup"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0037-pattern-grpc-communication-setup"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "ret-sso",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 3,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 1,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0038-pattern-okta-saml-sign-in",
+        "2026-03-01-asof0038-decision-rename-approval"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "judge"
+       ]
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0038-pattern-okta-saml-sign-in",
+        "2026-05-01-asof0038-decision-rename-approval"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0038-pattern-okta-saml-sign-in"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "ret-webhook",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 0,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0039-pattern-webhook-order-integration"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "judge"
+       ]
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0039-pattern-webhook-order-integration"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0039-pattern-webhook-order-integration"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "ret-gpu-node",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": false,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 0,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 0,
+       "live": 0,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": false,
+       "titles": [],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 0,
+       "live": 0,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": false,
+       "titles": [],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": "never_written",
+     "run": 0
+    },
+    {
+     "id": "ret-cli-flag",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 0,
+       "retired": 2,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01",
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0041-pattern-cli-flag-legacy-restores-pre-2-0-format",
+        "2026-03-01-asof0041-decision-use-legacy-flag-to-match-pre-2-0-behavior"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "judge",
+        "judge"
+       ]
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0041-pattern-cli-flag-legacy-restores-pre-2-0-format",
+        "2026-05-01-asof0041-decision-use-legacy-flag-to-match-pre-2-0-behavior"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0041-pattern-cli-flag-legacy-restores-pre-2-0-format",
+        "2026-03-01-asof0041-decision-use-legacy-flag-to-match-pre-2-0-behavior"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "ret-audit-ui",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 0,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0042-pattern-admin-panel-audit-filtering"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "explicit"
+       ]
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0042-pattern-admin-panel-audit-filtering"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0042-pattern-admin-panel-audit-filtering"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "ret-i18n",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": false,
+       "titles": [
+        "2026-03-01-asof0043-pattern-localization-pair-programming"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0043-pattern-localization-pair-programming",
+        "2026-05-01-asof0043-decision-english-only-app"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": "unranked",
+     "run": 0
+    },
+    {
+     "id": "ret-sandbox",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 0,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0044-pattern-sandbox-environment-mirrors-production"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "judge"
+       ]
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0044-pattern-sandbox-environment-mirrors-production"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0044-pattern-sandbox-environment-mirrors-production"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "nar-retry-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 0,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0045-pattern-http-client-retry-logic"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "judge"
+       ]
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0045-pattern-http-client-retry-logic"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0045-pattern-http-client-retry-logic"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "nar-cache-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 0,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0046-pattern-api-response-caching"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "judge"
+       ]
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0046-pattern-api-response-caching",
+        "2026-05-01-asof0046-decision-get-request-caching"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0046-pattern-api-response-caching"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "nar-audit-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 3,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 1,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0047-pattern-audit-log-table-changes",
+        "2026-03-01-asof0047-decision-document-audit-decision"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "judge"
+       ]
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0047-pattern-audit-log-table-changes",
+        "2026-05-01-asof0047-decision-document-audit-decision"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0047-pattern-audit-log-table-changes"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "nar-gpu-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 0,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0048-pattern-trainer-gpu-utilization"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "judge"
+       ]
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0048-pattern-trainer-gpu-utilization"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0048-pattern-trainer-gpu-utilization"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "nar-lint-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 0,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0049-pattern-pre-commit-hook-lints-repo"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "judge"
+       ]
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0049-pattern-pre-commit-hook-lints-repo"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0049-pattern-pre-commit-hook-lints-repo"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "nar-notify-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 0,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0050-pattern-deploy-alerting-works"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "judge"
+       ]
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0050-pattern-deploy-alerting-works"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0050-pattern-deploy-alerting-works"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "nar-encrypt-scope",
+     "shape": "narrowed",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 0,
+       "live": 0,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": false,
+       "titles": [],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0051-pattern-encryption-at-rest-scope"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": "never_written",
+     "run": 0
+    },
+    {
+     "id": "nar-index-scope",
+     "shape": "narrowed",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 0,
+       "live": 0,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": false,
+       "titles": [],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0052-pattern-index-reversal-for-docs"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": "never_written",
+     "run": 0
+    },
+    {
+     "id": "nar-backup-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 0,
+       "retired": 2,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01",
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0053-pattern-nightly-backup-database-dump",
+        "2026-03-01-asof0053-decision-backups-decision-written"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "judge",
+        "judge"
+       ]
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0053-pattern-nightly-backup-database-dump",
+        "2026-05-01-asof0053-decision-backups-decision-written"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0053-pattern-nightly-backup-database-dump",
+        "2026-03-01-asof0053-decision-backups-decision-written"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "nar-ratelimit-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 3,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 0,
+       "retired": 2,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01",
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0054-pattern-rate-limiting-handling",
+        "2026-03-01-asof0054-decision-rename-approval"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "explicit",
+        "judge"
+       ]
+      },
+      "s1": {
+       "written": 3,
+       "live": 3,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0054-pattern-rate-limiting-handling",
+        "2026-05-01-asof0054-mistake-incorrect-rate-limit-logic",
+        "2026-05-01-asof0054-decision-rename-approval"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0054-pattern-rate-limiting-handling",
+        "2026-03-01-asof0054-decision-rename-approval"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "nar-compress-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 0,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0055-pattern-gzip-compression-response"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "judge"
+       ]
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0055-pattern-gzip-compression-response"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0055-pattern-gzip-compression-response"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "nar-mfa-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 0,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0056-pattern-mfa-required-for-all-users"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "explicit"
+       ]
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0056-pattern-mfa-required-for-admins"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0056-pattern-mfa-required-for-all-users"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "nar-replay-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0057-pattern-event-log-replay-on-boot"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0057-pattern-event-log-replay-on-boot"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "nar-shard-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 3,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0058-pattern-sharding-tenant-database"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0058-pattern-sharding-tenant-database",
+        "2026-05-01-asof0058-decision-dedicated-shard-for-high-volume-tenants"
+       ],
+       "supersedes": [],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    },
+    {
+     "id": "nar-trace-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 0,
+       "retired": 2,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01",
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0059-pattern-end-to-end-request-tracing",
+        "2026-03-01-asof0059-decision-request-tracing-implementation"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "judge",
+        "judge"
+       ]
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0059-pattern-end-to-end-request-tracing",
+        "2026-05-01-asof0059-decision-request-tracing-implementation"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0059-pattern-end-to-end-request-tracing",
+        "2026-03-01-asof0059-decision-request-tracing-implementation"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 0
+    }
+   ],
+   "n_cases": 60,
+   "both_correct_rate": 0.8667,
+   "both_correct_ci": [
+    0.7583,
+    0.9309
+   ],
+   "old_day_rate": 0.9333,
+   "new_day_rate": 0.9167,
+   "errors": 0,
+   "old_day_failures_by_kind": {
+    "never_written": 3,
+    "absorbed": 0,
+    "unranked": 1,
+    "paraphrase": 0,
+    "leak": 0
+   },
+   "s0_never_written": 3,
+   "s0_absorbed": 0,
+   "s0_retired_rate": 0.807,
+   "s0_retired_via": {
+    "judge": 45,
+    "explicit": 11
+   },
+   "s0_written_pairs": 57,
+   "runs": 1,
+   "adjudication": {
+    "pairs": 58,
+    "budget": 100000,
+    "cap": 0,
+    "judged": 58,
+    "tokens_spent": 24208,
+    "estimated_calls": 0,
+    "replaces": 45,
+    "separate": 5,
+    "vetoed": 8,
+    "unanswered": 0,
+    "errors": 0,
+    "left": 0,
+    "prompt_tokens": 21908,
+    "eval_tokens": 2300,
+    "skipped": null,
+    "carry_kept": 0,
+    "requeued": 0,
+    "baselined": 0,
+    "healed": 0,
+    "judged_ollama": 58
+   },
+   "seconds": 14.7,
+   "store_bytes": 144803,
+   "config": "the same store after consolidate_memory.adjudicate_contested(budget=100000, cap=0)",
+   "ollama_transport": {
+    "calls": 542,
+    "pace_sleep_s": 25.001,
+    "retries": 0,
+    "retry_sleep_s": 0.0,
+    "gave_up": 0,
+    "call_ms": {
+     "n": 542,
+     "p50": 25.423,
+     "p90": 1355.662,
+     "p99": 2012.23,
+     "max": 2412.162
+    },
+    "mode": "pace",
+    "timing_includes_pacing": true,
+    "pace_floor_s": 67.75,
+    "bypass_calls": {
+     "requests": 0,
+     "aiohttp": 0
+    },
+    "nested_calls": {
+     "requests": 0,
+     "aiohttp": 0
+    },
+    "max_inflight": 1,
+    "max_concurrent_paced": 1,
+    "pace_excluded_exact": true,
+    "failed_outcomes": {
+     "by_status": {},
+     "by_exception_type": {},
+     "gave_up": 0
+    },
+    "llm_retries": 0,
+    "llm_retry_sleep_s": 0.0,
+    "failed_outcomes_llm": {
+     "by_status": {},
+     "by_exception_type": {},
+     "gave_up": 0
+    }
+   }
+  },
+  "mem0": {
+   "blocked": "Mem0 stamps a memory with the wall-clock time of the add() call and its search has no as-of filter; facts cannot be placed in the past without patching the product"
+  }
+ },
+ "store": "C:\\Users\\Platon\\AppData\\Local\\Temp\\nevertwice_asof_fd35ddcj",
+ "measured_at": {
+  "commit": "fe6ddff232915c61ec2177b5541039a9c3e370c6",
+  "utc": "2026-09-25T00:55:56Z",
+  "dirty": false
+ }
+}

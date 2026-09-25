@@ -18,6 +18,8 @@
     "recall@10": 0.856,
     "mrr": 0.6180619749044768,
     "n": 500,
+    "dropped_questions": [],
+    "dropped_sessions": [],
     "delta_recall@5_vs_0.5": -0.01
    },
    "0.5": {
@@ -27,6 +29,8 @@
     "recall@10": 0.868,
     "mrr": 0.6337568486201592,
     "n": 500,
+    "dropped_questions": [],
+    "dropped_sessions": [],
     "delta_recall@5_vs_0.5": 0.0
    },
    "0.75": {
@@ -36,6 +40,8 @@
     "recall@10": 0.868,
     "mrr": 0.6353749001895854,
     "n": 500,
+    "dropped_questions": [],
+    "dropped_sessions": [],
     "delta_recall@5_vs_0.5": 0.012
    },
    "1.0": {
@@ -45,6 +51,8 @@
     "recall@10": 0.866,
     "mrr": 0.6361181037061142,
     "n": 500,
+    "dropped_questions": [],
+    "dropped_sessions": [],
     "delta_recall@5_vs_0.5": 0.012
    },
    "1.5": {
@@ -54,55 +62,272 @@
     "recall@10": 0.866,
     "mrr": 0.634500994656683,
     "n": 500,
+    "dropped_questions": [],
+    "dropped_sessions": [],
     "delta_recall@5_vs_0.5": -0.004
    }
   },
   "locomo": {
    "0.25": {
-    "recall@1": 0.3449671219018715,
+    "recall@1": 0.34597875569044007,
     "recall@3": 0.5437531613555893,
     "recall@5": 0.6150733434496712,
-    "recall@10": 0.69549822964087,
-    "mrr": 0.4692014347971535,
+    "recall@10": 0.6934749620637329,
+    "mrr": 0.4697983992302303,
     "n": 1977,
-    "delta_recall@5_vs_0.5": -0.0111
+    "dropped_questions": [],
+    "dropped_turns": [],
+    "ollama_transport": {
+     "calls": 7847,
+     "pace_sleep_s": 648.574,
+     "retries": 1,
+     "retry_sleep_s": 15.0,
+     "gave_up": 0,
+     "call_ms": {
+      "n": 7847,
+      "p50": 40.474,
+      "p90": 56.807,
+      "p99": 97.521,
+      "max": 759.609
+     },
+     "mode": "pace",
+     "timing_includes_pacing": true,
+     "pace_floor_s": 980.875,
+     "bypass_calls": {
+      "requests": 0,
+      "aiohttp": 0
+     },
+     "nested_calls": {
+      "requests": 0,
+      "aiohttp": 0
+     },
+     "max_inflight": 1,
+     "max_concurrent_paced": 1,
+     "pace_excluded_exact": true,
+     "failed_outcomes": {
+      "by_status": {},
+      "by_exception_type": {},
+      "gave_up": 0
+     },
+     "llm_retries": 0,
+     "llm_retry_sleep_s": 0.0,
+     "failed_outcomes_llm": {
+      "by_status": {},
+      "by_exception_type": {},
+      "gave_up": 0
+     }
+    },
+    "delta_recall@5_vs_0.5": -0.0137
    },
    "0.5": {
-    "recall@1": 0.35306019221041984,
+    "recall@1": 0.3550834597875569,
     "recall@3": 0.5483055134041477,
-    "recall@5": 0.6262013151239252,
-    "recall@10": 0.7071320182094082,
-    "mrr": 0.4783312872761034,
+    "recall@5": 0.6287303995953465,
+    "recall@10": 0.7076378351036925,
+    "mrr": 0.48001799278439017,
     "n": 1977,
+    "dropped_questions": [],
+    "dropped_turns": [],
+    "ollama_transport": {
+     "calls": 7847,
+     "pace_sleep_s": 648.574,
+     "retries": 1,
+     "retry_sleep_s": 15.0,
+     "gave_up": 0,
+     "call_ms": {
+      "n": 7847,
+      "p50": 40.474,
+      "p90": 56.807,
+      "p99": 97.521,
+      "max": 759.609
+     },
+     "mode": "pace",
+     "timing_includes_pacing": true,
+     "pace_floor_s": 980.875,
+     "bypass_calls": {
+      "requests": 0,
+      "aiohttp": 0
+     },
+     "nested_calls": {
+      "requests": 0,
+      "aiohttp": 0
+     },
+     "max_inflight": 1,
+     "max_concurrent_paced": 1,
+     "pace_excluded_exact": true,
+     "failed_outcomes": {
+      "by_status": {},
+      "by_exception_type": {},
+      "gave_up": 0
+     },
+     "llm_retries": 0,
+     "llm_retry_sleep_s": 0.0,
+     "failed_outcomes_llm": {
+      "by_status": {},
+      "by_exception_type": {},
+      "gave_up": 0
+     }
+    },
     "delta_recall@5_vs_0.5": 0.0
    },
    "0.75": {
-    "recall@1": 0.3495194739504299,
-    "recall@3": 0.5558927668184117,
-    "recall@5": 0.6312594840667678,
-    "recall@10": 0.7177541729893778,
-    "mrr": 0.479495779840633,
+    "recall@1": 0.35558927668184115,
+    "recall@3": 0.5538694992412747,
+    "recall@5": 0.6398583712696004,
+    "recall@10": 0.7197774405665149,
+    "mrr": 0.48299790818554533,
     "n": 1977,
-    "delta_recall@5_vs_0.5": 0.0051
+    "dropped_questions": [],
+    "dropped_turns": [],
+    "ollama_transport": {
+     "calls": 7847,
+     "pace_sleep_s": 648.574,
+     "retries": 1,
+     "retry_sleep_s": 15.0,
+     "gave_up": 0,
+     "call_ms": {
+      "n": 7847,
+      "p50": 40.474,
+      "p90": 56.807,
+      "p99": 97.521,
+      "max": 759.609
+     },
+     "mode": "pace",
+     "timing_includes_pacing": true,
+     "pace_floor_s": 980.875,
+     "bypass_calls": {
+      "requests": 0,
+      "aiohttp": 0
+     },
+     "nested_calls": {
+      "requests": 0,
+      "aiohttp": 0
+     },
+     "max_inflight": 1,
+     "max_concurrent_paced": 1,
+     "pace_excluded_exact": true,
+     "failed_outcomes": {
+      "by_status": {},
+      "by_exception_type": {},
+      "gave_up": 0
+     },
+     "llm_retries": 0,
+     "llm_retry_sleep_s": 0.0,
+     "failed_outcomes_llm": {
+      "by_status": {},
+      "by_exception_type": {},
+      "gave_up": 0
+     }
+    },
+    "delta_recall@5_vs_0.5": 0.0111
    },
    "1.0": {
-    "recall@1": 0.35002529084471423,
-    "recall@3": 0.5558927668184117,
-    "recall@5": 0.6403641881638846,
-    "recall@10": 0.7268588770864947,
-    "mrr": 0.4813637787611655,
+    "recall@1": 0.3566009104704097,
+    "recall@3": 0.5569044006069803,
+    "recall@5": 0.642893272635306,
+    "recall@10": 0.7303995953464846,
+    "mrr": 0.4850860167473686,
     "n": 1977,
+    "dropped_questions": [],
+    "dropped_turns": [],
+    "ollama_transport": {
+     "calls": 7847,
+     "pace_sleep_s": 648.574,
+     "retries": 1,
+     "retry_sleep_s": 15.0,
+     "gave_up": 0,
+     "call_ms": {
+      "n": 7847,
+      "p50": 40.474,
+      "p90": 56.807,
+      "p99": 97.521,
+      "max": 759.609
+     },
+     "mode": "pace",
+     "timing_includes_pacing": true,
+     "pace_floor_s": 980.875,
+     "bypass_calls": {
+      "requests": 0,
+      "aiohttp": 0
+     },
+     "nested_calls": {
+      "requests": 0,
+      "aiohttp": 0
+     },
+     "max_inflight": 1,
+     "max_concurrent_paced": 1,
+     "pace_excluded_exact": true,
+     "failed_outcomes": {
+      "by_status": {},
+      "by_exception_type": {},
+      "gave_up": 0
+     },
+     "llm_retries": 0,
+     "llm_retry_sleep_s": 0.0,
+     "failed_outcomes_llm": {
+      "by_status": {},
+      "by_exception_type": {},
+      "gave_up": 0
+     }
+    },
     "delta_recall@5_vs_0.5": 0.0142
    },
    "1.5": {
-    "recall@1": 0.35154274152756704,
-    "recall@3": 0.5584218512898331,
+    "recall@1": 0.35558927668184115,
+    "recall@3": 0.5624683864441072,
     "recall@5": 0.6413758219524532,
-    "recall@10": 0.734951947395043,
-    "mrr": 0.4826712991636434,
+    "recall@10": 0.7374810318664643,
+    "mrr": 0.48561174084877623,
     "n": 1977,
-    "delta_recall@5_vs_0.5": 0.0152
+    "dropped_questions": [],
+    "dropped_turns": [],
+    "ollama_transport": {
+     "calls": 7847,
+     "pace_sleep_s": 648.574,
+     "retries": 1,
+     "retry_sleep_s": 15.0,
+     "gave_up": 0,
+     "call_ms": {
+      "n": 7847,
+      "p50": 40.474,
+      "p90": 56.807,
+      "p99": 97.521,
+      "max": 759.609
+     },
+     "mode": "pace",
+     "timing_includes_pacing": true,
+     "pace_floor_s": 980.875,
+     "bypass_calls": {
+      "requests": 0,
+      "aiohttp": 0
+     },
+     "nested_calls": {
+      "requests": 0,
+      "aiohttp": 0
+     },
+     "max_inflight": 1,
+     "max_concurrent_paced": 1,
+     "pace_excluded_exact": true,
+     "failed_outcomes": {
+      "by_status": {},
+      "by_exception_type": {},
+      "gave_up": 0
+     },
+     "llm_retries": 0,
+     "llm_retry_sleep_s": 0.0,
+     "failed_outcomes_llm": {
+      "by_status": {},
+      "by_exception_type": {},
+      "gave_up": 0
+     }
+    },
+    "delta_recall@5_vs_0.5": 0.0126
    }
   }
+ },
+ "measured_at": {
+  "commit": "fe6ddff232915c61ec2177b5541039a9c3e370c6",
+  "utc": "2026-09-24T19:09:42Z",
+  "dirty": false
  }
 }

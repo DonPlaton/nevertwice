@@ -6,154 +6,29 @@
  },
  "llm": "qwen3-coder:30b",
  "extract_temperature": "0",
- "silent_cases": 8,
+ "silent_cases": 3,
  "by_kind": {
   "extraction failed": 0,
   "no items returned": 1,
   "items returned, none written": 0,
-  "written without the marker": 1,
-  "written with the marker": 6
+  "written without the marker": 0,
+  "written with the marker": 2
  },
  "rows": [
-  {
-   "id": "app-queue",
-   "shape": "approach_abandoned",
-   "chars": 154,
-   "sentences": 2,
-   "raw_items": {
-    "patterns": 1,
-    "mistakes": 0,
-    "decisions": 0
-   },
-   "raw_total": 1,
-   "notes_written": 1,
-   "marker_in_note": true,
-   "kind": "written with the marker",
-   "extraction_keys": [
-    "context_update",
-    "decisions",
-    "mistakes",
-    "patterns",
-    "project",
-    "project_relevant",
-    "session_summary",
-    "tags"
-   ]
-  },
-  {
-   "id": "app-search",
-   "shape": "approach_abandoned",
-   "chars": 139,
-   "sentences": 2,
-   "raw_items": {
-    "patterns": 1,
-    "mistakes": 0,
-    "decisions": 0
-   },
-   "raw_total": 1,
-   "notes_written": 1,
-   "marker_in_note": true,
-   "kind": "written with the marker",
-   "extraction_keys": [
-    "context_update",
-    "decisions",
-    "mistakes",
-    "patterns",
-    "project",
-    "project_relevant",
-    "session_summary",
-    "tags"
-   ]
-  },
-  {
-   "id": "app-secrets",
-   "shape": "approach_abandoned",
-   "chars": 131,
-   "sentences": 2,
-   "raw_items": {
-    "patterns": 1,
-    "mistakes": 0,
-    "decisions": 0
-   },
-   "raw_total": 1,
-   "notes_written": 1,
-   "marker_in_note": true,
-   "kind": "written with the marker",
-   "extraction_keys": [
-    "context_update",
-    "decisions",
-    "mistakes",
-    "patterns",
-    "project",
-    "project_relevant",
-    "session_summary",
-    "tags"
-   ]
-  },
-  {
-   "id": "app-serialisation",
-   "shape": "approach_abandoned",
-   "chars": 148,
-   "sentences": 2,
-   "raw_items": {
-    "patterns": 1,
-    "mistakes": 0,
-    "decisions": 0
-   },
-   "raw_total": 1,
-   "notes_written": 1,
-   "marker_in_note": true,
-   "kind": "written with the marker",
-   "extraction_keys": [
-    "context_update",
-    "decisions",
-    "mistakes",
-    "patterns",
-    "project",
-    "project_relevant",
-    "session_summary",
-    "tags"
-   ]
-  },
-  {
-   "id": "app-styling",
-   "shape": "approach_abandoned",
-   "chars": 143,
-   "sentences": 2,
-   "raw_items": {
-    "patterns": 1,
-    "mistakes": 0,
-    "decisions": 0
-   },
-   "raw_total": 1,
-   "notes_written": 1,
-   "marker_in_note": true,
-   "kind": "written with the marker",
-   "extraction_keys": [
-    "context_update",
-    "decisions",
-    "mistakes",
-    "patterns",
-    "project",
-    "project_relevant",
-    "session_summary",
-    "tags"
-   ]
-  },
   {
    "id": "nar-encrypt-scope",
    "shape": "narrowed",
    "chars": 145,
    "sentences": 2,
    "raw_items": {
-    "patterns": 0,
+    "patterns": 1,
     "mistakes": 0,
     "decisions": 0
    },
-   "raw_total": 0,
-   "notes_written": 0,
-   "marker_in_note": false,
-   "kind": "no items returned",
+   "raw_total": 1,
+   "notes_written": 1,
+   "marker_in_note": true,
+   "kind": "written with the marker",
    "extraction_keys": [
     "context_update",
     "decisions",
@@ -171,14 +46,14 @@
    "chars": 139,
    "sentences": 2,
    "raw_items": {
-    "patterns": 1,
+    "patterns": 0,
     "mistakes": 0,
     "decisions": 0
    },
-   "raw_total": 1,
-   "notes_written": 1,
+   "raw_total": 0,
+   "notes_written": 0,
    "marker_in_note": false,
-   "kind": "written without the marker",
+   "kind": "no items returned",
    "extraction_keys": [
     "context_update",
     "decisions",
@@ -215,5 +90,50 @@
     "tags"
    ]
   }
- ]
+ ],
+ "ollama_transport": {
+  "calls": 11,
+  "pace_sleep_s": 0.311,
+  "retries": 0,
+  "retry_sleep_s": 0.0,
+  "gave_up": 0,
+  "call_ms": {
+   "n": 11,
+   "p50": 494.655,
+   "p90": 1282.983,
+   "p99": 1320.418,
+   "max": 1320.418
+  },
+  "mode": "pace",
+  "timing_includes_pacing": true,
+  "pace_floor_s": 1.375,
+  "bypass_calls": {
+   "requests": 0,
+   "aiohttp": 0
+  },
+  "nested_calls": {
+   "requests": 0,
+   "aiohttp": 0
+  },
+  "max_inflight": 1,
+  "max_concurrent_paced": 1,
+  "pace_excluded_exact": true,
+  "failed_outcomes": {
+   "by_status": {},
+   "by_exception_type": {},
+   "gave_up": 0
+  },
+  "llm_retries": 0,
+  "llm_retry_sleep_s": 0.0,
+  "failed_outcomes_llm": {
+   "by_status": {},
+   "by_exception_type": {},
+   "gave_up": 0
+  }
+ },
+ "measured_at": {
+  "commit": "fe6ddff232915c61ec2177b5541039a9c3e370c6",
+  "utc": "2026-09-25T01:21:17Z",
+  "dirty": false
+ }
 }

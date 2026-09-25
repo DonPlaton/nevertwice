@@ -4,22 +4,15 @@
  "artifacts": {
   "supersession_v1": {
    "cases": 80,
-   "diverging": 16,
-   "rate": 0.2,
-   "by_field": {
-    "stale_returned": 7,
-    "current_returned": 3,
-    "old_value_served": 9,
-    "current_absent": 3
-   }
+   "diverging": 0,
+   "rate": 0.0,
+   "by_field": {}
   },
   "supersession_v1_implicit": {
    "cases": 80,
-   "diverging": 1,
-   "rate": 0.0125,
-   "by_field": {
-    "old_value_served": 1
-   }
+   "diverging": 0,
+   "rate": 0.0,
+   "by_field": {}
   },
   "supersession_baseline_ef8120d": {
    "cases": 80,

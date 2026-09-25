@@ -1,0 +1,362 @@
+{
+ "dataset": {
+  "name": "supersession_v1_implicit",
+  "sha256": "01e361a4e3656e07248248f52b84095780e9d4e63d23cd9d179f1f1628e6bc0f",
+  "path": "research/data/supersession_v1_implicit.json",
+  "control_cases": 20
+ },
+ "llm": "qwen3-coder:30b",
+ "embedder": "bge-m3",
+ "extract_temperature": "0",
+ "k": 5,
+ "depth": 50,
+ "ingest_seconds": 83.4,
+ "notes": 45,
+ "notes_with_facts_block": 31,
+ "notes_reembedded": 31,
+ "named_cases": [],
+ "named_from": "research/results/supersession_v1_implicit.json",
+ "gate": {
+  "worse_at_least": 6,
+  "better_at_most": 0,
+  "written": ".loop/GOAL-CLOSE.md item K1, before the run"
+ },
+ "named": null,
+ "all_controls": {
+  "n": 20,
+  "worse_with_block": 0,
+  "better_with_block": 0,
+  "same": 20,
+  "in_top_k_with": 18,
+  "in_top_k_without": 18,
+  "p_sign_one_sided": 1.0
+ },
+ "verdict": null,
+ "rows": [
+  {
+   "id": "ctl-db-cache",
+   "named": false,
+   "k": 5,
+   "rank_with": 1,
+   "rank_without": 1,
+   "returned_with": [
+    "postgresql-16-primary-database The project uses PostgreSQL 16 as the primary database. This was documented in the README section that was already stale.",
+    "postgresql-16-as-primary-database PostgreSQL 16 was chosen as the primary database for the project.",
+    "staged-release-deployment The deployment was rolled out behind a staged release process, which helps in managing risk and ensuring stability during updates.  [facts] Rolled it out behind the usual staged release",
+    "staged-release-for-deployment A staged release approach was chosen for rolling out the deployment, allowing gradual rollout and minimizing potential impact of failures.  [facts] Rolled it out behind the usual staged release"
+   ],
+   "returned_without": [
+    "postgresql-16-primary-database The project uses PostgreSQL 16 as the primary database. This was documented in the README section that was already stale.",
+    "postgresql-16-as-primary-database PostgreSQL 16 was chosen as the primary database for the project.",
+    "staged-release-deployment The deployment was rolled out behind a staged release process, which helps in managing risk and ensuring stability during updates.",
+    "staged-release-for-deployment A staged release approach was chosen for rolling out the deployment, allowing gradual rollout and minimizing potential impact of failures."
+   ]
+  },
+  {
+   "id": "ctl-lang-test",
+   "named": false,
+   "k": 5,
+   "rank_with": 1,
+   "rank_without": 1,
+   "returned_with": [
+    "service-written-in-rust The service is written in Rust, which provides memory safety and performance benefits. This choice was made to ensure robustness and efficiency of the system. | earlier: The service was determined to be written in Rust after working through the stack. This was confirme…"
+   ],
+   "returned_without": [
+    "service-written-in-rust The service is written in Rust, which provides memory safety and performance benefits. This choice was made to ensure robustness and efficiency of the system. | earlier: The service was determined to be written in Rust after working through the stack. This was confirme…"
+   ]
+  },
+  {
+   "id": "ctl-port-pair",
+   "named": false,
+   "k": 5,
+   "rank_with": 1,
+   "rank_without": 1,
+   "returned_with": [
+    "api-listens-on-port-8443 The API was confirmed to be listening on port 8443. This is a verified fact about the system's networking configuration.  [facts] API listens on port 8443",
+    "metrics-endpoint-listens-on-port-9100 The metrics endpoint listens on port 9100. This was noted in the tracker to prevent duplication of effort by future developers."
+   ],
+   "returned_without": [
+    "api-listens-on-port-8443 The API was confirmed to be listening on port 8443. This is a verified fact about the system's networking configuration.",
+    "metrics-endpoint-listens-on-port-9100 The metrics endpoint listens on port 9100. This was noted in the tracker to prevent duplication of effort by future developers."
+   ]
+  },
+  {
+   "id": "ctl-env",
+   "named": false,
+   "k": 5,
+   "rank_with": 1,
+   "rank_without": 1,
+   "returned_with": [
+    "production-deploys-on-tagged-release Production deployments are now configured to occur only on tagged releases. This decision ensures that production environments are updated with deliberate, versioned releases rather than continuous integration.  [facts] production deploys on a tagged release",
+    "staging-deploy-on-merge Staging deployments are triggered on merge events. This pattern ensures that code changes are automatically deployed to the staging environment upon merging into the main branch. | earlier: Staging environment deploys on every merge to main branch. This was documented in the README as par…"
+   ],
+   "returned_without": [
+    "production-deploys-on-tagged-release Production deployments are now configured to occur only on tagged releases. This decision ensures that production environments are updated with deliberate, versioned releases rather than continuous integration.",
+    "staging-deploy-on-merge Staging deployments are triggered on merge events. This pattern ensures that code changes are automatically deployed to the staging environment upon merging into the main branch. | earlier: Staging environment deploys on every merge to main branch. This was documented in the README as par…"
+   ]
+  },
+  {
+   "id": "ctl-model",
+   "named": false,
+   "k": 5,
+   "rank_with": 1,
+   "rank_without": 1,
+   "returned_with": [
+    "embedder-configuration The embedder was configured to use 'bge-m3'. This configuration was verified by running the full test suite, which remained green after the change.  [facts] the embedder is bge-m3 · Ran the full test suite afterwards and it stayed green"
+   ],
+   "returned_without": [
+    "embedder-configuration The embedder was configured to use 'bge-m3'. This configuration was verified by running the full test suite, which remained green after the change."
+   ]
+  },
+  {
+   "id": "ctl-storage",
+   "named": false,
+   "k": 5,
+   "rank_with": 1,
+   "rank_without": 1,
+   "returned_with": [
+    "s3-storage-decision Decided to use S3 for object storage with Glacier for long-term backups. This decision was made to balance cost and accessibility. | earlier: The decision was made to store user uploads in S3, which aligns with the code implementation.",
+    "s3-storage-configuration Configured S3 storage with specific bucket and region settings. The configuration was applied to the project's infrastructure. | earlier: The user uploads go to S3, and the code now matches. This ensures consistent storage handling for u…"
+   ],
+   "returned_without": [
+    "s3-storage-configuration Configured S3 storage with specific bucket and region settings. The configuration was applied to the project's infrastructure. | earlier: The user uploads go to S3, and the code now matches. This ensures consistent storage handling for u…",
+    "s3-storage-decision Decided to use S3 for object storage with Glacier for long-term backups. This decision was made to balance cost and accessibility. | earlier: The decision was made to store user uploads in S3, which aligns with the code implementation."
+   ]
+  },
+  {
+   "id": "ctl-auth-pair",
+   "named": false,
+   "k": 5,
+   "rank_with": 1,
+   "rank_without": 1,
+   "returned_with": [
+    "admin-panel-mfa-requirement The admin panel requires hardware MFA for access. This was confirmed during a security review and implemented as part of the session's work."
+   ],
+   "returned_without": [
+    "admin-panel-mfa-requirement The admin panel requires hardware MFA for access. This was confirmed during a security review and implemented as part of the session's work."
+   ]
+  },
+  {
+   "id": "ctl-fmt",
+   "named": false,
+   "k": 5,
+   "rank_with": 1,
+   "rank_without": 1,
+   "returned_with": [
+    "ruff-formatting-for-python Python code in the project is formatted using ruff. This was confirmed during a pairing session where the tooling was worked through and the outcome was explicitly stated.  [facts] Python code is formatted with ruff"
+   ],
+   "returned_without": [
+    "ruff-formatting-for-python Python code in the project is formatted using ruff. This was confirmed during a pairing session where the tooling was worked through and the outcome was explicitly stated."
+   ]
+  },
+  {
+   "id": "ctl-obs",
+   "named": false,
+   "k": 5,
+   "rank_with": null,
+   "rank_without": null,
+   "returned_with": [
+    "logs-exported-to-loki Logs are shipped to Loki for observability. This was documented in the README section which was already stale.  [facts] Documented it in the README section that was already stale"
+   ],
+   "returned_without": [
+    "logs-exported-to-loki Logs are shipped to Loki for observability. This was documented in the README section which was already stale."
+   ]
+  },
+  {
+   "id": "ctl-limits",
+   "named": false,
+   "k": 5,
+   "rank_with": 1,
+   "rank_without": 1,
+   "returned_with": [
+    "upload-size-limit-check The system enforces an upload size limit to prevent excessive resource usage. This was verified by running the full test suite which stayed green after the change.  [facts] the request rate limit is 100 per minute · Ran the full test suite afterwards and it stayed green | earlier: 25 MB"
+   ],
+   "returned_without": [
+    "upload-size-limit-check The system enforces an upload size limit to prevent excessive resource usage. This was verified by running the full test suite which stayed green after the change. | earlier: 25 MB"
+   ]
+  },
+  {
+   "id": "ctl-sched",
+   "named": false,
+   "k": 5,
+   "rank_with": null,
+   "rank_without": null,
+   "returned_with": [],
+   "returned_without": []
+  },
+  {
+   "id": "ctl-clients",
+   "named": false,
+   "k": 5,
+   "rank_with": 1,
+   "rank_without": 1,
+   "returned_with": [
+    "cli-distribution-homebrew The desktop app ships as a signed installer, which is part of the CLI distribution strategy. This approach ensures proper installation and signing for end users. | earlier: The CLI is distributed through Homebrew, which was confirmed by reviewing the client's decision and…",
+    "cli-distribution-method The CLI distribution method includes shipping the desktop app as a signed installer, which is a deliberate choice for user trust and proper installation.  [facts] the desktop app ships as a signed installer | earlier: The decision was made to distribute the CLI through Homebrew, aligning with client requirements and…"
+   ],
+   "returned_without": [
+    "cli-distribution-homebrew The desktop app ships as a signed installer, which is part of the CLI distribution strategy. This approach ensures proper installation and signing for end users. | earlier: The CLI is distributed through Homebrew, which was confirmed by reviewing the client's decision and…",
+    "cli-distribution-method The CLI distribution method includes shipping the desktop app as a signed installer, which is a deliberate choice for user trust and proper installation. | earlier: The decision was made to distribute the CLI through Homebrew, aligning with client requirements and…"
+   ]
+  },
+  {
+   "id": "ctl-queue-pair",
+   "named": false,
+   "k": 5,
+   "rank_with": 1,
+   "rank_without": 1,
+   "returned_with": [
+    "ingest-queue-nats-backend The ingest queue is backed by NATS, which provides a reliable message queuing system for handling ingestion tasks. This setup ensures that the system can process incoming data asynchronously and maintain stability under load."
+   ],
+   "returned_without": [
+    "ingest-queue-nats-backend The ingest queue is backed by NATS, which provides a reliable message queuing system for handling ingestion tasks. This setup ensures that the system can process incoming data asynchronously and maintain stability under load."
+   ]
+  },
+  {
+   "id": "ctl-doc",
+   "named": false,
+   "k": 5,
+   "rank_with": 1,
+   "rank_without": 1,
+   "returned_with": [
+    "api-reference-generation The API reference is generated from OpenAPI documentation. This process was verified and documented to prevent future reinvention of the wheel."
+   ],
+   "returned_without": [
+    "api-reference-generation The API reference is generated from OpenAPI documentation. This process was verified and documented to prevent future reinvention of the wheel."
+   ]
+  },
+  {
+   "id": "ctl-runtime",
+   "named": false,
+   "k": 5,
+   "rank_with": 1,
+   "rank_without": 1,
+   "returned_with": [
+    "worker-runtime-verification The sidecar runs on Go 1.23 and was verified through dashboard monitoring for an hour after deployment. No movement was observed, indicating a potential runtime issue or lack of expected behavior.  [facts] Checked the dashboards for an hour after and nothing moved | earlier: 3.13"
+   ],
+   "returned_without": [
+    "worker-runtime-verification The sidecar runs on Go 1.23 and was verified through dashboard monitoring for an hour after deployment. No movement was observed, indicating a potential runtime issue or lack of expected behavior. | earlier: 3.13"
+   ]
+  },
+  {
+   "id": "ctl-net",
+   "named": false,
+   "k": 5,
+   "rank_with": 1,
+   "rank_without": 1,
+   "returned_with": [
+    "tls-termination-at-load-balancer Ingress terminates TLS at the load balancer, which is the current networking setup. This pattern ensures secure communication while offloading TLS processing to a dedicated component.",
+    "egress-through-nat-gateway Egress traffic now goes through a NAT gateway, which was settled as part of a networking configuration review. This change was approved after a minor rename request.  [facts] egress goes through a NAT gateway · a different piece of networking got settled · one rename and otherwise approved it"
+   ],
+   "returned_without": [
+    "tls-termination-at-load-balancer Ingress terminates TLS at the load balancer, which is the current networking setup. This pattern ensures secure communication while offloading TLS processing to a dedicated component.",
+    "egress-through-nat-gateway Egress traffic now goes through a NAT gateway, which was settled as part of a networking configuration review. This change was approved after a minor rename request."
+   ]
+  },
+  {
+   "id": "ctl-review",
+   "named": false,
+   "k": 5,
+   "rank_with": 1,
+   "rank_without": 1,
+   "returned_with": [
+    "pull-request-approval-policy A pull request approval policy was already in place, but the session reinforced the need for a signed changelog entry as part of the release process.  [facts] Unrelated to the earlier change, every release needs a signed changelog entry. · Documented it in the README section that was already stale. | earlier: Every pull request now requires two approvals to ensure code quality and reduce errors.",
+    "staged-release-rollout Every release requires a signed changelog entry. This ensures accountability and traceability of changes. The process was documented in the README section that was already stale.  [facts] Unrelated to the earlier change, every release needs a signed changelog entry. · Documented it in the README section that was already stale. | earlier: A process change was rolled out using a staged release approach. This ensures controlled deployment…"
+   ],
+   "returned_without": [
+    "pull-request-approval-policy A pull request approval policy was already in place, but the session reinforced the need for a signed changelog entry as part of the release process. | earlier: Every pull request now requires two approvals to ensure code quality and reduce errors.",
+    "staged-release-rollout Every release requires a signed changelog entry. This ensures accountability and traceability of changes. The process was documented in the README section that was already stale. | earlier: A process change was rolled out using a staged release approach. This ensures controlled deployment…"
+   ]
+  },
+  {
+   "id": "ctl-metrics",
+   "named": false,
+   "k": 5,
+   "rank_with": 1,
+   "rank_without": 1,
+   "returned_with": [
+    "latency-histogram-tracking Request latency is tracked as a histogram. This approach was validated by checking dashboards after an hour and observing no movement, confirming the implementation works as intended.  [facts] Checked the dashboards for an hour after and nothing moved",
+    "observability-decision The decision to track queue depth as a gauge was made for observability purposes, in addition to existing latency histogram tracking.  [facts] One more observability item, independent of the first: queue depth is tracked as a gauge | earlier: The decision was made to track request latency as a histogram, which is now implemented and verifie…",
+    "queue-depth-gauge-tracking Queue depth is tracked as a gauge for observability. This pattern was added independently of latency histogram tracking and was verified by running the full test suite which stayed green.  [facts] Ran the full test suite afterwards and it stayed green"
+   ],
+   "returned_without": [
+    "latency-histogram-tracking Request latency is tracked as a histogram. This approach was validated by checking dashboards after an hour and observing no movement, confirming the implementation works as intended.",
+    "observability-decision The decision to track queue depth as a gauge was made for observability purposes, in addition to existing latency histogram tracking. | earlier: The decision was made to track request latency as a histogram, which is now implemented and verifie…",
+    "queue-depth-gauge-tracking Queue depth is tracked as a gauge for observability. This pattern was added independently of latency histogram tracking and was verified by running the full test suite which stayed green."
+   ]
+  },
+  {
+   "id": "ctl-store",
+   "named": false,
+   "k": 5,
+   "rank_with": 1,
+   "rank_without": 1,
+   "returned_with": [
+    "session-state-in-localstorage The session state is stored in localStorage for persistence across page reloads. This approach ensures that user interactions and application state are maintained without requiring server-side storage. | earlier: The session state was successfully moved to browser localStorage for persistence. This approach was…"
+   ],
+   "returned_without": [
+    "session-state-in-localstorage The session state is stored in localStorage for persistence across page reloads. This approach ensures that user interactions and application state are maintained without requiring server-side storage. | earlier: The session state was successfully moved to browser localStorage for persistence. This approach was…"
+   ]
+  },
+  {
+   "id": "ctl-alerting",
+   "named": false,
+   "k": 5,
+   "rank_with": 1,
+   "rank_without": 1,
+   "returned_with": [
+    "pagerduty-for-paging-alerts It was decided that paging alerts should be routed to PagerDuty. This decision was documented in the README.  [facts] paging alerts go to PagerDuty · documented it in the README",
+    "alerting-destination-pagerduty Paging alerts are configured to go to PagerDuty. This was documented in the README section which was already stale.  [facts] paging alerts go to PagerDuty · README section that was already stale"
+   ],
+   "returned_without": [
+    "pagerduty-for-paging-alerts It was decided that paging alerts should be routed to PagerDuty. This decision was documented in the README.",
+    "alerting-destination-pagerduty Paging alerts are configured to go to PagerDuty. This was documented in the README section which was already stale."
+   ]
+  }
+ ],
+ "ollama_transport": {
+  "calls": 263,
+  "pace_sleep_s": 18.212,
+  "retries": 0,
+  "retry_sleep_s": 0.0,
+  "gave_up": 0,
+  "call_ms": {
+   "n": 263,
+   "p50": 25.111,
+   "p90": 1228.955,
+   "p99": 1941.558,
+   "max": 13008.249
+  },
+  "mode": "pace",
+  "timing_includes_pacing": true,
+  "pace_floor_s": 32.875,
+  "bypass_calls": {
+   "requests": 0,
+   "aiohttp": 0
+  },
+  "nested_calls": {
+   "requests": 0,
+   "aiohttp": 0
+  },
+  "max_inflight": 1,
+  "max_concurrent_paced": 1,
+  "pace_excluded_exact": true,
+  "failed_outcomes": {
+   "by_status": {},
+   "by_exception_type": {},
+   "gave_up": 0
+  },
+  "llm_retries": 0,
+  "llm_retry_sleep_s": 0.0,
+  "failed_outcomes_llm": {
+   "by_status": {},
+   "by_exception_type": {},
+   "gave_up": 0
+  }
+ },
+ "measured_at": {
+  "commit": "fe6ddff232915c61ec2177b5541039a9c3e370c6",
+  "utc": "2026-09-25T10:56:26Z",
+  "dirty": false
+ }
+}

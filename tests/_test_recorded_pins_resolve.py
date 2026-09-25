@@ -241,8 +241,15 @@ print("\n- and the inventory is pinned, so new pins cannot arrive unnoticed -")
 #: deterministically GENERATED fixture (research/gen_cross_project_dataset.py) with no pin of its
 #: own, counted because it is a committed .json under research/. Both counts re-measured on the
 #: merged tree, not taken from either side (q5 alone read 167 / 145 on its older base).
-check("the number of pinned artifacts has not moved", len(artifacts) == 168, str(len(artifacts)))
-check("and the number of pin KINDS has not moved", len(kinds) == 150,
+#: 2026-09-25, restore #2 of campaign v2 at fe6ddff: +25 artifacts - the constituent run files the
+#: pooled artifacts and the two-run claims name (research/results/v2_runs/, 17; the per-run files of
+#: abstention_ab x3, asof_v1 x2, asof_recent x2) and heldout/truncation_v1.json (b4_truncation's
+#: new output). +83 kinds, all gained: the campaign's artifacts record measured_at {commit, utc},
+#: the store provenance K42 added and the corpus pins of the run files. Diffed against HEAD with
+#: this file's own walk(): none lost (the three kinds of corpus_census_heldout.json that a plain
+#: diff reports are the 12 MB skip above - that file is 33 MB and unchanged).
+check("the number of pinned artifacts has not moved", len(artifacts) == 193, str(len(artifacts)))
+check("and the number of pin KINDS has not moved", len(kinds) == 233,
       f"{len(kinds)} kinds over {len(pins)} values")
 
 print(f"\n{'ALL OK' if not FAILS else f'{FAILS} FAILED'}")

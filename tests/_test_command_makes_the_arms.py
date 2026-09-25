@@ -102,12 +102,52 @@ def defaults(stand: Path) -> tuple[str | None, int]:
     return _DEFAULTS[stand]
 
 
+def _files_after(t: list[str], flag: str) -> list[str]:
+    """The file arguments that follow `flag` up to the next flag."""
+    if flag not in t:
+        return []
+    out = []
+    for tok in t[t.index(flag) + 1:]:
+        if tok.startswith("--"):
+            break
+        out.append(tok)
+    return out
+
+
+def pooled_arms(t: list[str]) -> set[str] | None:
+    """The arms a `--pool run1 run2 ... [--with other ...]` command writes, read off the run files
+    the way `supersession_bench.pool()` names them: the engine arm of file i is `nevertwice` for
+    the first file and `nevertwice_run{i}` after it (its after-sleep reading likewise), every other
+    arm is pooled under its own name, and a `--with` file adds its non-engine arms. None when a
+    named file is not in this clone - an arm set that cannot be read is not guessed."""
+    out: set[str] = set()
+    for i, f in enumerate(_files_after(t, "--pool"), start=1):
+        arms = arms_on_disk(f)
+        if arms is None:
+            return None
+        if ENGINE in arms:
+            out.add(ENGINE if i == 1 else f"{ENGINE}_run{i}")
+        if f"{ENGINE}_after_sleep" in arms:
+            out.add(f"{ENGINE}_after_sleep" if i == 1 else f"{ENGINE}_after_sleep_run{i}")
+        out |= {a for a in arms if not a.startswith(ENGINE)}
+    for f in _files_after(t, "--with"):
+        arms = arms_on_disk(f)
+        if arms is None:
+            return None
+        out |= {a for a in arms if not a.startswith(ENGINE)}
+    return out
+
+
 def producible(cmd) -> set[str] | None:
     """Every arm name this command can write. None when the stand has no arm selector at all."""
     t = tokens(cmd)
     stand = stand_of(cmd)
     if stand is None:
         return None
+    if "--pool" in t:
+        #: campaign v2 records the pooled artifacts' real writer (`--pool ... --with ...`); its arms
+        #: come from the files it names, not from `--arms`/`--runs`
+        return pooled_arms(t)
     arms_default, runs_default = defaults(stand)
     if "--arms" in t:
         base = set(t[t.index("--arms") + 1].split(","))
@@ -269,6 +309,16 @@ check("--runs and --sleep are accounted for rather than ignored",
       producible(f"{sup_stand} --arms nevertwice --runs 2 --sleep")
       == {"nevertwice", "nevertwice_run2", "nevertwice_after_sleep", "nevertwice_after_sleep_run2"},
       str(sorted(producible(f"{sup_stand} --arms nevertwice --runs 2 --sleep"))))
+_sup_pool = next((c["command"] for c in claims if c.get("raw") == "research/results/supersession_v1.json"
+                  and "--pool" in (c.get("command") or "")), None)
+if _sup_pool and arms_on_disk("research/results/supersession_v1.json") is not None         and pooled_arms(tokens(_sup_pool)) is not None:
+    check("a --pool command is read from the run files it names: exactly the pooled file's arms",
+          producible(_sup_pool) == arms_on_disk("research/results/supersession_v1.json"),
+          f"{sorted(producible(_sup_pool))} vs {sorted(arms_on_disk('research/results/supersession_v1.json'))}")
+    _no_with = _sup_pool.split(" --with ")[0] + " --out x.json"
+    check("and the same pool without its --with files cannot write the arms those files carried",
+          arms_on_disk("research/results/supersession_v1.json") - producible(_no_with) >= {"mem0", "zep"},
+          str(sorted(producible(_no_with))))
 check("and a command with no --arms at all is read as the stand's default, not as 'anything'",
       producible(f"{sup_stand} --out x.json") == {"nevertwice", "naive"},
       str(sorted(producible(f"{sup_stand} --out x.json"))))

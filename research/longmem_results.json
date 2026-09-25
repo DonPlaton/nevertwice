@@ -43,6 +43,7 @@
   }
  },
  "recur_inert": true,
+ "empty_skipped": 0,
  "provenance": {
   "corpus": "longmemeval_oracle",
   "sha256": "821a2034d219ab45846873dd14c14f12cfe7776e73527a483f9dac095d38620c",
@@ -60,5 +61,7 @@
   "delta_recall@1": 0.11399999999999999,
   "delta_recall@5": 0.03399999999999992,
   "delta_recall@10": 0.0
- }
+ },
+ "dropped_sessions": [],
+ "dropped_questions": []
 }

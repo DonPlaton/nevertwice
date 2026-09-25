@@ -125,8 +125,8 @@
  },
  "local_checkpoint": "models/universal_v1_merged",
  "seconds": {
-  "local": 14.46,
-  "served": 88.1,
+  "local": 29.91,
+  "served": 29.78,
   "texts": 2412
  },
  "served": {

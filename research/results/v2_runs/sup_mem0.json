@@ -1,0 +1,1628 @@
+{
+ "dataset": {
+  "name": "supersession_v1",
+  "sha256": "0e3114ea9175f8bb832522bdf0b182e11432da0603dc2571e3890f94d7b586f9",
+  "path": "research/data/supersession_v1.json"
+ },
+ "n_cases": 80,
+ "k": 5,
+ "llm": "qwen3-coder:30b",
+ "embedder": "bge-m3",
+ "store": "C:\\Users\\Platon\\AppData\\Local\\Temp\\nevertwice_supersession_qmjt21rq",
+ "code_sha": "38e0ce63eefc",
+ "extract_temperature": "0",
+ "arms": {
+  "mem0": {
+   "rows": [
+    {
+     "id": "val-http-timeout",
+     "shape": "value_replaced",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 2,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 348,
+     "returned": [
+      "User came back to the API client work and revised the HTTP client timeout decision from 30 seconds back to 5 seconds after a pairing session of roughly ninety minutes with no interruptions",
+      "User spent a session working on the API client and settled on an HTTP client timeout of 30 seconds, followed by running the full test suite which remained green"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "val-pg-version",
+     "shape": "value_replaced",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 351,
+     "returned": [
+      "User worked through the database on September 25, 2026, and confirmed that production is running PostgreSQL 14, leaving a note in the tracker to prevent future redoing of this work",
+      "User reopened the database after the last review on September 25, 2026, and noted that production was upgraded to PostgreSQL 16, rolled out behind the usual staged release"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "val-batch-size",
+     "shape": "value_replaced",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 2,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 289,
+     "returned": [
+      "User's training job changed this week and the training batch size is now 128, with no movement observed in dashboards after an hour",
+      "User picked up the training job thread again and confirmed that the training batch size is 32, with the change touching three files that were not config files"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "val-node-version",
+     "shape": "value_replaced",
+     "n_hits": 4,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 537,
+     "returned": [
+      "User reviewed the frontend build setup as of September 25, 2026, and noted that the build targets Node 18.",
+      "User revisited the frontend build setup on September 25, 2026, and confirmed that the build now targets Node 22.",
+      "User received feedback from a reviewer regarding the frontend build decision on September 25, 2026. The reviewer requested one rename and otherwise approved the changes.",
+      "User participated in a pairing session lasting roughly ninety minutes to review the frontend build setup on September 25, 2026, with no interruptions."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "val-retry-count",
+     "shape": "value_replaced",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 2,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 377,
+     "returned": [
+      "User reversed the earlier call on the queue worker, changing the retry behavior from 3 times to 10 times for failed jobs, and documented it in the README section which was already stale.",
+      "User cleared an open question regarding the queue worker's retry behavior, initially setting it to retry failed jobs 3 times and rolling out the change using the usual staged release process."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "val-cache-ttl",
+     "shape": "value_replaced",
+     "n_hits": 3,
+     "stale_returned": true,
+     "stale_rank": 2,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 444,
+     "returned": [
+      "User conducted a follow-up on the cache layer implementation, which did not survive the testing phase. Cache entries were set to expire after 15 minutes.",
+      "User documented a cache layer decision where cache entries were set to expire after 60 seconds, and the code implementation matched this specification.",
+      "After implementing the cache layer with 60-second expiration, the user monitored dashboards for an hour and observed no changes or activity."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "val-port",
+     "shape": "value_replaced",
+     "n_hits": 3,
+     "stale_returned": true,
+     "stale_rank": 3,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 526,
+     "returned": [
+      "User confirmed that the dev server listens on port 8080 after previously settling on port 3000, and left a note in the tracker to prevent future redoing of this work",
+      "User came back to the dev server and confirmed that it listens on port 8080, reversing a previous decision to set it to port 3000, and left a note in the tracker to prevent future redoing of this work",
+      "User spent a session working on the dev server and settled on it listening on port 3000, with a reviewer requesting one rename and otherwise approving the change"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "val-region",
+     "shape": "value_replaced",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 309,
+     "returned": [
+      "User worked through a deployment today and documented the service as deployed in eu-west-1, noting that the README section was already stale.",
+      "User reopened a deployment after the last review and determined that the service was moved to us-east-2, with the change touching three files that were not config files"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "val-py-version",
+     "shape": "value_replaced",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 2,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 324,
+     "returned": [
+      "User's project toolchain changed this week, and the project now pins Python 3.13, following a pairing session that lasted roughly ninety minutes with no interruptions.",
+      "User picked up the toolchain thread again on September 25, 2026, confirmed that the project pins Python 3.11, and ran the full test suite which stayed green."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "val-replicas",
+     "shape": "value_replaced",
+     "n_hits": 4,
+     "stale_returned": true,
+     "stale_rank": 2,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 465,
+     "returned": [
+      "User had to revisit the API capacity setup and confirmed that as of September 25, 2026, the API runs with 12 replicas after the load test.",
+      "User reviewed the API capacity setup as of September 25, 2026, and noted that it currently runs with 4 replicas.",
+      "User rolled out the API capacity change with 12 replicas behind the usual staged release process.",
+      "User left a note in the tracker regarding the API capacity setup to prevent future team members from redoing the work."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "val-lr",
+     "shape": "value_replaced",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 295,
+     "returned": [
+      "User cleared an open question about training where the learning rate was set to 3e-4, and the change affected three files that were not configuration files",
+      "User reversed an earlier call on training, lowering the learning rate to 5e-5, and checked dashboards for an hour afterward with no movement"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "val-chunk",
+     "shape": "value_replaced",
+     "n_hits": 4,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 608,
+     "returned": [
+      "User wrote up an ingestion decision where documents were initially set to be chunked at 512 tokens, and the code matched this specification.",
+      "The outcome of the ingestion work was that documents are now chunked at 1024 tokens after the reviewer requested one rename and otherwise approved the changes.",
+      "User followed up on ingestion work, and the changes did not survive - documents are now chunked at 1024 tokens after a reviewer requested one rename and otherwise approved the modifications.",
+      "User participated in a pairing session lasting roughly ninety minutes to work through ingestion, with no interruptions."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "val-quorum",
+     "shape": "value_replaced",
+     "n_hits": 3,
+     "stale_returned": true,
+     "stale_rank": 3,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 431,
+     "returned": [
+      "User came back to the cluster and revised the earlier decision about quorum requirements, determining that the cluster needs a quorum of 5 nodes after the resize",
+      "User documented the cluster's quorum requirement of 5 nodes in the README section, which was already stale",
+      "User spent a session working on the cluster and decided that the cluster needs a quorum of 3 nodes, which was then rolled out using the usual staged release process"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "val-license",
+     "shape": "value_replaced",
+     "n_hits": 6,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 638,
+     "returned": [
+      "User worked through licensing today and the project was released under AGPL-3.0 license as of September 25, 2026",
+      "After reviewing the licensing setup, the project was relicensed to Apache-2.0 on September 25, 2026",
+      "User reopened licensing after the last review on September 25, 2026, and the project was relicensed to Apache-2.0",
+      "After relicensing the project to Apache-2.0 on September 25, 2026, the full test suite was run and it stayed green",
+      "The full test suite was run after relicensing to Apache-2.0 on September 25, 2026 and it stayed green",
+      "User checked dashboards for an hour after licensing changes and nothing moved on September 25, 2026"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "val-branch",
+     "shape": "value_replaced",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 278,
+     "returned": [
+      "User confirmed the default branch of a repository is master and that a reviewer asked for one rename, which was approved.",
+      "User confirmed that the default branch of a repository was renamed to main this week, and left a note in the tracker to prevent future redoing of the change."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-cache-store",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 320,
+     "returned": [
+      "User reviewed the caching setup as of September 25, 2026, and documented that session data is cached in Redis in the README section, which was already stale.",
+      "User replaced Redis with an in-process LRU cache for session data caching as of September 25, 2026, and the change touched three files that were not config-related"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-auth",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 413,
+     "returned": [
+      "User resolved an open question about authentication, initially deciding it would use JWT tokens signed with HS256 algorithm, and confirmed the full test suite remained green after implementation.",
+      "User reversed an earlier decision about authentication, moving from JWT tokens signed with HS256 to opaque session cookies backed by the database, after a pairing session of roughly ninety minutes with no interruptions"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-bundler",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 2,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 319,
+     "returned": [
+      "User followed up on the build decision, confirming that the frontend is bundled with Vite now and was rolled out behind the usual staged release.",
+      "User documented a build decision where the frontend is bundled with Webpack, and the code now matches. They left a note in the tracker to prevent future redoing of this work."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-orm",
+     "shape": "approach_abandoned",
+     "n_hits": 4,
+     "stale_returned": true,
+     "stale_rank": 4,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 525,
+     "returned": [
+      "User came back to the data access thread and reverted the earlier decision, confirming that data access was rewritten as hand-written SQL with asyncpg",
+      "User confirmed that data access was rewritten as hand-written SQL with asyncpg after previously settling on SQLAlchemy ORM",
+      "User checked dashboards for an hour after implementing data access changes and observed no movement or updates",
+      "User spent a session on data access and settled on using SQLAlchemy ORM, with the change touching three files that were not configuration files"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-queue",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 459,
+     "returned": [
+      "User worked on background work today, completing a pairing session that lasted roughly ninety minutes with no interruptions. The outcome was that background jobs run on Celery with RabbitMQ.",
+      "User reopened background work after the last review on September 25, 2026. The new position is that background jobs run on a Postgres-backed queue instead of Celery with RabbitMQ, as requested by the reviewer who asked for one rename and otherwise approved the changes."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-ci",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 277,
+     "returned": [
+      "User picked up the continuous integration thread again and confirmed that CI runs on Jenkins, rolling it out behind the usual staged release",
+      "User migrated continuous integration to GitHub Actions this week and documented the change in the README section, which was already stale"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-search",
+     "shape": "approach_abandoned",
+     "n_hits": 3,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 411,
+     "returned": [
+      "User reviewed the search setup as of September 25, 2026, and found that search is powered by Elasticsearch.",
+      "User revisited the search setup on September 25, 2026, and determined that search is now powered by Postgres full-text search after previously finding it was powered by Elasticsearch.",
+      "After reviewing the search setup on September 25, 2026, user checked the dashboards for an hour and observed no movement."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-styling",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 424,
+     "returned": [
+      "User resolved an open question regarding UI component styling, initially settling on styled-components but then reversing the decision to use Tailwind utility classes after reviewer feedback requesting a rename.",
+      "User reversed an earlier decision about UI component styling, settling on Tailwind utility classes after reviewer feedback requesting a rename, and left a note in the tracker to prevent future redoing of this work"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-packaging",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 2,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 343,
+     "returned": [
+      "User followed up on packaging and determined that the package is built with hatchling and published by CI, with changes touching three files that were not config files",
+      "User documented a packaging decision in the README, stating that the package is built and published with Poetry, and the code now matches. The README section was already stale."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-state",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 363,
+     "returned": [
+      "User spent a frontend development session settling that global state is held in Redux and ran the full test suite which stayed green",
+      "User came back to the frontend development session and revised their earlier decision about global state management, confirming it moved to Zustand stores after a pairing session lasting roughly ninety minutes with no interruptions"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-infra",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 2,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 346,
+     "returned": [
+      "User reopened provisioning after the last review and determined that infrastructure should be provisioned with Pulumi in TypeScript, rolled out behind the usual staged release",
+      "User worked through provisioning today and confirmed that infrastructure is provisioned with Terraform, leaving a note in the tracker to prevent future redoing of the work"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-migrations",
+     "shape": "approach_abandoned",
+     "n_hits": 4,
+     "stale_returned": true,
+     "stale_rank": 3,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 514,
+     "returned": [
+      "User investigated schema changes that occurred this week and confirmed that schema migrations are plain numbered SQL files applied by a shell script",
+      "Schema migrations are plain numbered SQL files applied by a shell script, as determined by the user's investigation.",
+      "User confirmed that schema migrations run through Alembic and that the recent change touched three files, none of which were configuration files.",
+      "User checked dashboards for an hour after the schema change this week and observed no movement or updates"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-serialisation",
+     "shape": "approach_abandoned",
+     "n_hits": 3,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 415,
+     "returned": [
+      "User reviewed the wire format setup, noting that as of today, messages are serialised as Protobuf.",
+      "User revisited the wire format decision and confirmed that messages are now serialised as newline-delimited JSON, following a reviewer's request for one rename and overall approval.",
+      "User participated in a pairing session lasting roughly ninety minutes with no interruptions, focused on reviewing the wire format setup."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-secrets",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 345,
+     "returned": [
+      "User resolved an open question about secrets implementation: secrets are read from HashiCorp Vault at boot and rolled out behind the usual staged release.",
+      "User reversed an earlier decision about secrets implementation: secrets are now injected as environment variables by the orchestrator, documented in the README section which was already stale"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-e2e",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 2,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 304,
+     "returned": [
+      "User followed up on testing and confirmed that end-to-end tests are driven by Playwright, running the full test suite which stayed green.",
+      "User documented a testing decision stating that end-to-end tests are driven by Selenium and the code now matches, then checked dashboards for an hour with no movement."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ret-beta-flag",
+     "shape": "retracted_no_replacement",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 2,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 354,
+     "returned": [
+      "User came back to feature flags and confirmed that the beta_dashboard flag was deleted; the new UI is now unconditional, and left a note in the tracker so the next person does not redo this",
+      "User spent a session on feature flags and settled that the beta_dashboard feature flag gates the new UI. The reviewer asked for one rename and otherwise approved it."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ret-legacy-endpoint",
+     "shape": "retracted_no_replacement",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 2,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 353,
+     "returned": [
+      "User reopened the API after the last review and confirmed that the /v1/export endpoint was removed with no replacement, with the change touching three files that were not config files",
+      "User worked through the API today and found that the /v1/export endpoint streams a CSV of all records, which they documented in the README section that was already stale."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ret-telemetry",
+     "shape": "retracted_no_replacement",
+     "n_hits": 4,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 516,
+     "returned": [
+      "User picked up the telemetry thread again on September 25, 2026, confirmed that the client reports anonymous usage counters on startup, and ran the full test suite which stayed green",
+      "User cleared an open question on telemetry: usage reporting was stripped out entirely; the client sends nothing",
+      "User cleared an open question on telemetry this week: usage reporting was stripped out entirely; the client sends nothing",
+      "User had a pairing session lasting roughly ninety minutes on September 25, 2026, with no interruptions"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ret-mirror",
+     "shape": "retracted_no_replacement",
+     "n_hits": 3,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 443,
+     "returned": [
+      "User reviewed the infrastructure setup as of September 25, 2026, and noted that a read replica in ap-south-1 serves analytics queries.",
+      "User revisited infrastructure on September 25, 2026, and confirmed that the ap-south-1 replica was decommissioned; analytics reads now hit the primary.",
+      "User left a note in the tracker on September 25, 2026, to prevent the next person from redoing the infrastructure work related to the ap-south-1 read replica."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ret-plugin-api",
+     "shape": "retracted_no_replacement",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 384,
+     "returned": [
+      "User resolved an open question about extensibility regarding third-party plugins loading through the entry_points group, noting that the change touched three files and none were configuration files.",
+      "User reversed an earlier call on extensibility, confirming that the plugin system was removed before version 1.0 and never shipped, after checking dashboards for an hour with no movement"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ret-mobile",
+     "shape": "retracted_no_replacement",
+     "n_hits": 3,
+     "stale_returned": true,
+     "stale_rank": 2,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 406,
+     "returned": [
+      "The iOS client was discontinued; only the web app remains as the final outcome of the client decision process.",
+      "User wrote up the client's decision regarding the iOS client, which shares the sync engine with the web app and now has matching code. The pairing session lasted roughly ninety minutes with no interruptions.",
+      "A reviewer asked for one rename in the client decision process and otherwise approved it."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ret-cron",
+     "shape": "retracted_no_replacement",
+     "n_hits": 3,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 324,
+     "returned": [
+      "User settled on implementing a nightly cron job to compact the audit log at 03:00 AM",
+      "The nightly audit log compaction was rolled out using the usual staged release process",
+      "User confirmed that nightly compaction was dropped and the audit log is append-only forever, documenting this change in the README which was already stale"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ret-grpc",
+     "shape": "retracted_no_replacement",
+     "n_hits": 4,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 426,
+     "returned": [
+      "User worked through transport today and found that internal services communicate over gRPC on port 9090",
+      "After checking dashboards for an hour following the transport work, no changes were observed",
+      "User reopened transport after the last review and confirmed that gRPC was ripped out; everything is now plain HTTP.",
+      "After running the full test suite following the removal of gRPC and switching to plain HTTP, the tests stayed green."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ret-sso",
+     "shape": "retracted_no_replacement",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 358,
+     "returned": [
+      "User picked up the access thread again and confirmed that staff sign in through the Okta SAML integration, with the reviewer asking for one rename and otherwise approving it",
+      "User confirmed that the Okta SAML integration was cancelled this week and staff now use ordinary accounts for access, leaving a note in the tracker to prevent future redoing of the work"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ret-webhook",
+     "shape": "retracted_no_replacement",
+     "n_hits": 3,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 454,
+     "returned": [
+      "User reviewed the integrations setup as of September 25, 2026, and confirmed that a webhook posts every order to the partner endpoint",
+      "User revisited integrations on September 25, 2026, and confirmed that the partner integration was terminated and the webhook deleted, with changes touching three files that were not config-related",
+      "User documented the integrations setup in the README section on September 25, 2026, noting that the section was already stale"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ret-gpu-node",
+     "shape": "retracted_no_replacement",
+     "n_hits": 3,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 453,
+     "returned": [
+      "User resolved an infrastructure question regarding the use of an A100 node for nightly training, ultimately deciding to rent GPU capacity per run rather than reserve a node.",
+      "User reversed an earlier infrastructure decision to reserve an A100 node for nightly training, instead choosing to rent GPU capacity per run",
+      "After resolving the infrastructure question about nightly training with an A100 node, the user ran the full test suite which remained green."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ret-cli-flag",
+     "shape": "retracted_no_replacement",
+     "n_hits": 3,
+     "stale_returned": true,
+     "stale_rank": 2,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 471,
+     "returned": [
+      "User left a note in the tracker to prevent future team members from redoing the CLI decision about the --legacy flag.",
+      "User documented a CLI decision regarding the --legacy flag which restored the pre-2.0 output format, and confirmed the code now matches this behavior.",
+      "User followed up on the CLI decision and confirmed that the --legacy flag was dropped in version 3.0 with no equivalent replacement, and the change was rolled out through the usual staged release process."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ret-audit-ui",
+     "shape": "retracted_no_replacement",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 335,
+     "returned": [
+      "User spent time on the admin panel and settled that the audit tab shows a filterable event history, with changes touching three files that were not config-related",
+      "User returned to the admin panel and confirmed that the audit tab was taken out of the admin panel entirely, with no changes observed in the dashboards for an hour afterward"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ret-i18n",
+     "shape": "retracted_no_replacement",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 371,
+     "returned": [
+      "User worked through localisation today and the app will ship with German and French translations after a pairing session lasting roughly ninety minutes with no interruptions",
+      "User reopened localisation after the last review, and as of today (September 25, 2026), the app is English-only with translations dropped; the reviewer asked for one rename and otherwise approved it"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ret-sandbox",
+     "shape": "retracted_no_replacement",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 331,
+     "returned": [
+      "User picked up the API thread again and confirmed that a sandbox environment mirrors production for partners, rolling it out behind the usual staged release",
+      "User documented in the README that the API changed this week, with the sandbox shut down and partners now testing against their own stubs, noting the section was already stale"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "nar-retry-scope",
+     "shape": "narrowed",
+     "n_hits": 4,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 507,
+     "returned": [
+      "User reviewed the HTTP client setup as of September 25, 2026, and noted that the client retries every failed request.",
+      "User revisited the HTTP client setup on September 25, 2026, and confirmed that the client now retries only on 5xx responses; 4xx responses are never retried.",
+      "After revisiting the HTTP client setup on September 25, 2026, User ran the full test suite which stayed green.",
+      "After reviewing the HTTP client setup on September 25, 2026, user checked dashboards for an hour with no movement observed."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "nar-cache-scope",
+     "shape": "narrowed",
+     "n_hits": 4,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 598,
+     "returned": [
+      "User resolved an open question on caching by deciding that only GET API responses are cached, while write operations bypass the cache entirely.",
+      "User reversed an earlier caching decision to only cache GET API responses while write operations bypass the cache entirely, and left a note in the tracker to prevent future team members from redoing the same work",
+      "User left a note in the tracker regarding the caching decision to prevent future team members from redoing the same work.",
+      "The reviewer approved the caching solution with only one requested rename, indicating alignment on the technical approach."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "nar-audit-scope",
+     "shape": "narrowed",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 2,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 360,
+     "returned": [
+      "User followed up on auditing and confirmed that only changes to billing tables are now audited, with the change touching three files that were not config-related",
+      "User documented an auditing decision in the README, noting that every table change is written to the audit log and the code now matches the documentation, though the README section was already stale."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "nar-gpu-scope",
+     "shape": "narrowed",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 331,
+     "returned": [
+      "User spent a session working on the trainer and confirmed that the trainer runs on GPU for every job, with the full test suite staying green afterward.",
+      "User came back to working on the trainer and revised their earlier decision about GPU usage, confirming that GPU is used only for jobs above 10M parameters; smaller ones run on CPU"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "nar-lint-scope",
+     "shape": "narrowed",
+     "n_hits": 3,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 430,
+     "returned": [
+      "User worked through linting today and determined that the pre-commit hook lints the whole repository, not just staged files as previously thought.",
+      "User reopened linting after the last review and determined that the pre-commit hook now lints only the staged files, not the entire repository as previously believed.",
+      "User left a note in the tracker regarding the linting setup to prevent future team members from redoing the same work."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "nar-notify-scope",
+     "shape": "narrowed",
+     "n_hits": 5,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 693,
+     "returned": [
+      "User picked up the alerting thread again on September 25, 2026, confirming that every failed deploy pages the on-call engineer.",
+      "User cleared an open question regarding alerting on September 25, 2026, confirming that only production deploy failures page the on-call engineer while staging failures go to Slack.",
+      "User confirmed that alerting changes were made this week, with production deploy failures paging the on-call engineer and staging failures going to Slack.",
+      "The change to the alerting system touched three files and none of them were configuration files.",
+      "After making changes to alerting on September 25, 2026, user checked dashboards for an hour and observed no movement or further alerts."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "nar-encrypt-scope",
+     "shape": "narrowed",
+     "n_hits": 4,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 543,
+     "returned": [
+      "User reviewed the storage setup as of September 25, 2026, confirming that all uploaded files are encrypted at rest.",
+      "User had to revisit storage setup, confirming that encryption at rest applies only to files in the private bucket as of September 25, 2026.",
+      "User's storage decision was reviewed by a reviewer who requested one rename but otherwise approved the changes regarding encryption at rest for files in the private bucket.",
+      "User participated in a pairing session lasting roughly ninety minutes to review storage setup, with no interruptions."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "nar-index-scope",
+     "shape": "narrowed",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 315,
+     "returned": [
+      "User clarified that the search index covers every document in the store and rolled it out using the usual staged release process.",
+      "User reversed an earlier decision about the search index, settling on it covering documents from the last 90 days only, and documented this in the README section which was already stale."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "nar-backup-scope",
+     "shape": "narrowed",
+     "n_hits": 5,
+     "stale_returned": true,
+     "stale_rank": 3,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 603,
+     "returned": [
+      "User confirmed that the nightly backup covers the primary database only, not all databases as initially thought.",
+      "User followed up on the backups implementation and confirmed that the nightly backup covers the primary database only, not all databases as initially thought.",
+      "User documented a decision regarding backups, stating that the nightly backup dumps every database and the code now matches.",
+      "After implementing the backup changes, User checked dashboards for an hour and observed no movement or issues.",
+      "Following the backup implementation and testing, User ran the full test suite which remained green."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "nar-ratelimit-scope",
+     "shape": "narrowed",
+     "n_hits": 4,
+     "stale_returned": true,
+     "stale_rank": 4,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 763,
+     "returned": [
+      "User picked up the rate limiting thread again and confirmed that rate limits apply only to unauthenticated callers, leaving a note in the tracker so the next person does not redo this work",
+      "User came back to rate limiting and revised an earlier decision, determining that rate limits apply only to unauthenticated callers, and left a note in the tracker so the next person does not redo this work",
+      "User came back to rate limiting and revised an earlier decision, determining that rate limits apply only to unauthenticated callers, and left a note in the tracker to prevent future duplication of effort",
+      "User spent a session on rate limiting and settled that rate limits apply to every caller, with the reviewer asking for one rename and otherwise approving the decision"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "nar-compress-scope",
+     "shape": "narrowed",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 2,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 340,
+     "returned": [
+      "User reopened transport after the last review and confirmed that the new position is to compress only responses above 8 KB, with the change touching three files that were not config files",
+      "User worked through transport today and determined that every response is gzip-compressed, documenting this change in the README which was already stale."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "nar-mfa-scope",
+     "shape": "narrowed",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 2,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 264,
+     "returned": [
+      "User confirmed that MFA is required only for accounts with admin scope as of the week of September 25, 2026",
+      "User picked up the security thread again on September 25, 2026, confirmed that MFA is required for all users, and ran the full test suite which stayed green."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "nar-replay-scope",
+     "shape": "narrowed",
+     "n_hits": 4,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 457,
+     "returned": [
+      "User reviewed the event log setup and noted that as of September 25, 2026, the consumer replays the entire event log on boot.",
+      "User had to revisit the event log setup and confirmed that as of September 25, 2026, the consumer replays only events since the last checkpoint.",
+      "User rolled out the event log change behind the usual staged release on September 25, 2026.",
+      "User left a note in the tracker to prevent the next person from redoing the event log setup work."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "nar-shard-scope",
+     "shape": "narrowed",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 2,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 358,
+     "returned": [
+      "User reversed the earlier sharding decision, returning to the policy that only tenants with above 50k records get a dedicated shard, after checking dashboards for an hour with no movement",
+      "User resolved the open question on sharding by deciding that every tenant gets its own database shard, and the change touched three files that were not configuration files"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "nar-trace-scope",
+     "shape": "narrowed",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 372,
+     "returned": [
+      "User wrote up a tracing decision where every request is traced end to end, and the code now matches. The pairing session lasted roughly ninety minutes with no interruptions.",
+      "User followed up on the tracing decision, and it did not survive. The outcome is that one request in a hundred is sampled for tracing, with the reviewer asking for one rename and otherwise approving."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-db-cache",
+     "shape": "control",
+     "n_hits": 3,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 361,
+     "returned": [
+      "User settled on PostgreSQL 16 as the primary database for the stack and rolled it out behind the usual staged release process",
+      "User worked on the stack and settled on PostgreSQL 16 as the primary database, rolling it out behind the usual staged release process",
+      "User documented Redis 7 as the cache layer for the stack in the README section, which was already stale"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-lang-test",
+     "shape": "control",
+     "n_hits": 4,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 433,
+     "returned": [
+      "User worked through the stack on September 25, 2026, and determined that the service is written in Rust.",
+      "After checking dashboards for an hour on September 25, 2026, nothing moved regarding the service written in Rust.",
+      "On September 25, 2026, user landed that the integration tests are written in Python.",
+      "User ran the full test suite on September 25, 2026, after landing that integration tests are written in Python, and it stayed green."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-port-pair",
+     "shape": "control",
+     "n_hits": 5,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 613,
+     "returned": [
+      "User confirmed that the API listens on port 8443 and received approval from the reviewer with only one requested rename.",
+      "The metrics endpoint listens on port 9100 as part of the networking tasks for this sprint.",
+      "User is working on the second item related to networking this sprint, which involves the metrics endpoint listening on port 9100.",
+      "User left a note in the tracker to prevent the next person from redoing the networking work related to the metrics endpoint on port 9100.",
+      "User left a note in the tracker to ensure the next person does not redo the networking work related to the metrics endpoint on port 9100."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-env",
+     "shape": "control",
+     "n_hits": 3,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 475,
+     "returned": [
+      "Production deploys are configured to occur on tagged releases, following a change that touched three files and did not involve configuration files",
+      "User reviewed how environments are set up and confirmed that production deploys occur on a tagged release, with the change touching three files that were not configuration files",
+      "User reviewed the environment setup and documented that staging deploys on every merge to main as of September 25, 2026, updating a stale README section"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-model",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 293,
+     "returned": [
+      "User confirmed that the embedder model is bge-m3 and ran a full test suite which remained green, indicating no regressions in functionality.",
+      "The reranker model is a cross-encoder, as determined by the user during a pairing session that lasted approximately ninety minutes with no interruptions."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-storage",
+     "shape": "control",
+     "n_hits": 5,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 544,
+     "returned": [
+      "User documented the storage decision that user uploads go to S3 and the code now matches the decision.",
+      "User left a note in the tracker regarding the storage decision for user uploads going to S3 to prevent future redoing of the work.",
+      "User documented the storage decision that database backups go to Glacier.",
+      "User rolled out the database backup storage decision to Glacier behind the usual staged release process.",
+      "User rolled out the database backup storage decision to Glacier behind the usual staged release process on or around September 25, 2026"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-auth-pair",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 320,
+     "returned": [
+      "User spent a session on security and settled on requiring hardware MFA for the admin panel, with the change touching three files that were not configuration files",
+      "User addressed a separate security thread concerning the public API using scoped tokens and checked dashboards for an hour afterward with no activity observed"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-fmt",
+     "shape": "control",
+     "n_hits": 3,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 296,
+     "returned": [
+      "User worked through tooling today and decided to format Python code with ruff.",
+      "User's SQL migrations are checked with sqlfluff, and the reviewer asked for one rename but otherwise approved the changes.",
+      "User participated in a pairing session that lasted roughly ninety minutes with no interruptions."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-obs",
+     "shape": "control",
+     "n_hits": 3,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 321,
+     "returned": [
+      "User rolled out trace exporting to Tempo behind the usual staged release process.",
+      "User confirmed that traces are exported to Tempo as part of the observability improvements.",
+      "User worked on the second item for observability this sprint, shipping logs to Loki and documenting the change in the README which was already stale."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-limits",
+     "shape": "control",
+     "n_hits": 4,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 467,
+     "returned": [
+      "User reviewed the limits setup as of September 25, 2026, and found that the upload size limit is set to 25 MB",
+      "User reviewed the limits setup and determined that the request rate limit is set to 100 per minute as of September 25, 2026",
+      "After reviewing the limits setup and determining the request rate limit is 100 per minute, user ran the full test suite which stayed green",
+      "After reviewing the limits setup, user checked the dashboards for an hour and observed no changes"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-sched",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 298,
+     "returned": [
+      "User cleared an open question on scheduling regarding reindexing, which runs weekly on Sunday, with the reviewer requesting one rename but otherwise approving the change.",
+      "Certificate renewal runs every 60 days and a note was left in the tracker to prevent future team members from redoing this task."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-clients",
+     "shape": "control",
+     "n_hits": 6,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 824,
+     "returned": [
+      "User documented a client's decision regarding the CLI distribution through Homebrew and confirmed that the code now matches the implementation.",
+      "User updated the README section to document the client's decision about CLI distribution through Homebrew, noting that the section was already stale.",
+      "The desktop app ships as a signed installer according to the client's decision documented by the user.",
+      "Changes related to the desktop app shipping as a signed installer touched three files, none of which were configuration files.",
+      "User wrote up the client's decision regarding the desktop app shipping as a signed installer and confirmed that the code now matches the implementation",
+      "User documented a client's decision that the desktop app ships as a signed installer, with changes touching three files that were not configuration files"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-queue-pair",
+     "shape": "control",
+     "n_hits": 4,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 554,
+     "returned": [
+      "User spent a session on background work and settled that the ingest queue is backed by NATS, running the full test suite which stayed green",
+      "User engaged in a pairing session lasting roughly ninety minutes with no interruptions, focusing on background work related to the email queue being backed by SQS and the ingest queue being backed by NATS",
+      "Separate thread on background work in the same week involved the email queue being backed by SQS",
+      "User engaged in a pairing session lasting roughly ninety minutes with no interruptions, focusing on background work"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-doc",
+     "shape": "control",
+     "n_hits": 3,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 339,
+     "returned": [
+      "User worked through documentation today and determined that the API reference is generated from OpenAPI specifications",
+      "User left a note in the tracker regarding the API reference generation to prevent future duplication of effort",
+      "User also landed the tutorials which are hand-written in MDX format, rolled out behind the usual staged release"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-runtime",
+     "shape": "control",
+     "n_hits": 5,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 541,
+     "returned": [
+      "User is working on the second item related to runtime in the current sprint, which involves a sidecar running on Go 1.23.",
+      "User confirmed that the worker runs on Python 3.13 and that the change touched three files, none of which were config files.",
+      "After implementing changes for the runtime item, user checked dashboards for an hour and observed no movement or updates.",
+      "Second item on runtime this sprint involves the sidecar running on Go 1.23.",
+      "After implementing changes, user checked dashboards for an hour and observed no movement or updates."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-net",
+     "shape": "control",
+     "n_hits": 4,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 476,
+     "returned": [
+      "User reviewed the networking setup as of September 25, 2026, and confirmed that ingress terminates TLS at the load balancer.",
+      "On September 25, 2026, a different piece of networking was settled: egress goes through a NAT gateway.",
+      "As of September 25, 2026, the user's pairing session for reviewing networking setup lasted roughly ninety minutes with no interruptions.",
+      "On September 25, 2026, the reviewer asked for one rename regarding the networking setup and otherwise approved it."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-review",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 284,
+     "returned": [
+      "User clarified the process for pull requests, stating that every pull request needs two approvals and that this change was rolled out behind a staged release.",
+      "User documented the requirement for signed changelog entries for every release in the README section, which was already stale."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-metrics",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 345,
+     "returned": [
+      "User documented an observability decision regarding request latency tracking as a histogram, which now matches the implemented code, and monitored dashboards for an hour afterward with no changes observed",
+      "User documented an observability decision regarding queue depth tracking as a gauge, and ran the full test suite which stayed green afterward"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-store",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 411,
+     "returned": [
+      "User spent a session working on storage implementation, settling on using browser localStorage for session state management. The reviewer requested one rename change but otherwise approved the solution.",
+      "User documented a decision about audit records storage in an append-only table as a separate thread from the main storage session, noting that a note was left in the tracker to prevent future work duplication."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-alerting",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 230,
+     "returned": [
+      "User worked through alerting today and determined that paging alerts go to PagerDuty, documenting the change in a stale README section",
+      "Weekly digests are sent to email, and this change touched three files that were not config files"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    }
+   ],
+   "n_supersession": 60,
+   "n_control": 20,
+   "stale_rate": 0.9333,
+   "stale_ci": [
+    0.8407,
+    0.9738
+   ],
+   "current_rate": 1.0,
+   "current_ci": [
+    0.9398,
+    1.0
+   ],
+   "old_value_served_rate": 0.9667,
+   "control_miss_rate": 0.0,
+   "control_miss_ci": [
+    0.0,
+    0.1611
+   ],
+   "over_retraction_rate": 0.0,
+   "over_retraction_ci": [
+    0.0,
+    0.1611
+   ],
+   "mean_chars_returned": 416.7,
+   "max_chars_returned": 824,
+   "stale_at_rank_1": 32,
+   "control_retired_by_memory": 0,
+   "control_demoted_by_merge": 0,
+   "control_never_written": 0,
+   "control_written_but_unranked": 0,
+   "errors": 0,
+   "mem0_errors": {
+    "supersession": 0,
+    "control": 0
+   },
+   "seconds": 150.0,
+   "config": "mem0 ollama qwen3-coder:30b + bge-m3, limit=5",
+   "widened_ci": {
+    "stale": [
+     0.8407,
+     0.9738
+    ],
+    "control_miss": [
+     0.0,
+     0.1611
+    ],
+    "current": [
+     0.9398,
+     1.0
+    ]
+   },
+   "ollama_transport": {
+    "calls": 554,
+    "pace_sleep_s": 38.96,
+    "retries": 0,
+    "retry_sleep_s": 0.0,
+    "gave_up": 0,
+    "call_ms": {
+     "n": 554,
+     "p50": 20.09,
+     "p90": 596.977,
+     "p99": 1026.616,
+     "max": 10992.138
+    },
+    "mode": "pace",
+    "timing_includes_pacing": true,
+    "pace_floor_s": 69.25,
+    "bypass_calls": {
+     "requests": 0,
+     "aiohttp": 0
+    },
+    "nested_calls": {
+     "requests": 0,
+     "aiohttp": 0
+    },
+    "max_inflight": 1,
+    "max_concurrent_paced": 1,
+    "pace_excluded_exact": true,
+    "failed_outcomes": {
+     "by_status": {},
+     "by_exception_type": {},
+     "gave_up": 0
+    },
+    "llm_retries": 0,
+    "llm_retry_sleep_s": 0.0,
+    "failed_outcomes_llm": {
+     "by_status": {},
+     "by_exception_type": {},
+     "gave_up": 0
+    }
+   }
+  }
+ },
+ "measured_at": {
+  "commit": "fe6ddff232915c61ec2177b5541039a9c3e370c6",
+  "utc": "2026-09-25T00:32:05Z",
+  "dirty": false
+ }
+}

@@ -49,10 +49,10 @@
    },
    "lesson": {
     "n": 90,
-    "accuracy": 0.6,
+    "accuracy": 0.5444,
     "ci": [
-     0.4967,
-     0.6951
+     0.4418,
+     0.6434
     ],
     "mean_prompt_tokens": 126.2
    },
@@ -66,10 +66,10 @@
    },
    "core": {
     "n": 330,
-    "accuracy": 0.2152,
+    "accuracy": 0.2,
     "ci": [
-     0.1742,
-     0.2626
+     0.1604,
+     0.2465
     ]
    },
    "fact_survival": {
@@ -102,7 +102,9 @@
      "the API guild",
      "64"
     ]
-   }
+   },
+   "valid": false,
+   "invalid_reason": "4 llm call(s) failed (by_status={500: 1}, by_exception_type={'TimeoutError': 3}, gave_up=0) - K33: a failed extraction/generation call is scored as the system's own failure, with no record, unless this fires"
   },
   "naive": {
    "fact": {
@@ -167,35 +169,35 @@
   "mem0_infer": {
    "fact": {
     "n": 180,
-    "accuracy": 0.6833,
+    "accuracy": 0.7,
     "ci": [
-     0.6121,
-     0.7469
+     0.6294,
+     0.7622
     ],
-    "mean_prompt_tokens": 187.0
+    "mean_prompt_tokens": 187.7
    },
    "current": {
     "n": 60,
-    "accuracy": 0.75,
+    "accuracy": 0.6833,
     "ci": [
-     0.6277,
-     0.8422
+     0.5577,
+     0.7869
     ],
-    "mean_prompt_tokens": 195.5,
-    "stale_rate": 0.1167,
+    "mean_prompt_tokens": 196.9,
+    "stale_rate": 0.2167,
     "stale_ci": [
-     0.0577,
-     0.2218
+     0.1312,
+     0.3362
     ]
    },
    "lesson": {
     "n": 90,
-    "accuracy": 0.7,
+    "accuracy": 0.7556,
     "ci": [
-     0.5987,
-     0.7849
+     0.6575,
+     0.8327
     ],
-    "mean_prompt_tokens": 202.4
+    "mean_prompt_tokens": 204.4
    },
    "situation": {
     "n": 90,
@@ -207,19 +209,19 @@
    },
    "core": {
     "n": 330,
-    "accuracy": 0.7,
+    "accuracy": 0.7121,
     "ci": [
-     0.6485,
-     0.7469
+     0.661,
+     0.7583
     ]
    },
    "fact_survival": {
     "n": 180,
-    "survived": 126,
-    "fact_survival": 0.7,
+    "survived": 129,
+    "fact_survival": 0.7167,
     "ci": [
-     0.6294,
-     0.7622
+     0.6468,
+     0.7774
     ],
     "misses": [
      "5e-4",
@@ -234,14 +236,14 @@
      "PostgreSQL 15",
      "INFO",
      "3.11",
-     "etc/app.yaml",
+     "pnpm",
+     "Node 24",
      "6 hours",
      "stable-main",
-     "eu-west-3",
      "the API guild",
+     "WARNING",
      "64",
-     "the payments squad",
-     "etc/app.yaml"
+     "the payments squad"
     ]
    }
   }
@@ -273,10 +275,10 @@
    },
    "lesson": {
     "n": 90,
-    "accuracy": 0.4778,
+    "accuracy": 0.5222,
     "ci": [
-     0.3776,
-     0.5798
+     0.4202,
+     0.6224
     ],
     "mean_prompt_tokens": 130.2
    },
@@ -290,10 +292,10 @@
    },
    "core": {
     "n": 330,
-    "accuracy": 0.1697,
+    "accuracy": 0.1818,
     "ci": [
-     0.1331,
-     0.2139
+     0.1439,
+     0.227
     ]
    }
   },
@@ -354,7 +356,611 @@
    "llm_calls_per_session": 1,
    "sessions": 150,
    "errors": 0,
-   "sessions_with_zero_notes": 1
+   "sessions_with_zero_notes": 2,
+   "seed_pairs": 0,
+   "seeded_pairs_by_project": {},
+   "session_tokens": {
+    "cs000-s0": {
+     "prompt_tokens": 1675,
+     "eval_tokens": 456
+    },
+    "cs000-s1": {
+     "prompt_tokens": 1852,
+     "eval_tokens": 492
+    },
+    "cs000-s2": {
+     "prompt_tokens": 1829,
+     "eval_tokens": 435
+    },
+    "cs000-s3": {
+     "prompt_tokens": 2939,
+     "eval_tokens": 568
+    },
+    "cs000-s4": {
+     "prompt_tokens": 1599,
+     "eval_tokens": 196
+    },
+    "cs001-s0": {
+     "prompt_tokens": 1993,
+     "eval_tokens": 479
+    },
+    "cs001-s1": {
+     "prompt_tokens": 1647,
+     "eval_tokens": 434
+    },
+    "cs001-s2": {
+     "prompt_tokens": 1809,
+     "eval_tokens": 516
+    },
+    "cs001-s3": {
+     "prompt_tokens": 1691,
+     "eval_tokens": 208
+    },
+    "cs001-s4": {
+     "prompt_tokens": 1814,
+     "eval_tokens": 481
+    },
+    "cs002-s0": {
+     "prompt_tokens": 2078,
+     "eval_tokens": 437
+    },
+    "cs002-s1": {
+     "prompt_tokens": 3146,
+     "eval_tokens": 467
+    },
+    "cs002-s2": {
+     "prompt_tokens": 1657,
+     "eval_tokens": 480
+    },
+    "cs002-s3": {
+     "prompt_tokens": 2309,
+     "eval_tokens": 513
+    },
+    "cs002-s4": {
+     "prompt_tokens": 2174,
+     "eval_tokens": 483
+    },
+    "cs003-s0": {
+     "prompt_tokens": 4569,
+     "eval_tokens": 743
+    },
+    "cs003-s1": {
+     "prompt_tokens": 2035,
+     "eval_tokens": 531
+    },
+    "cs003-s2": {
+     "prompt_tokens": 1815,
+     "eval_tokens": 522
+    },
+    "cs003-s3": {
+     "prompt_tokens": 1681,
+     "eval_tokens": 431
+    },
+    "cs003-s4": {
+     "prompt_tokens": 1692,
+     "eval_tokens": 452
+    },
+    "cs004-s0": {
+     "prompt_tokens": 3058,
+     "eval_tokens": 749
+    },
+    "cs004-s1": {
+     "prompt_tokens": 1841,
+     "eval_tokens": 404
+    },
+    "cs004-s2": {
+     "prompt_tokens": 1875,
+     "eval_tokens": 459
+    },
+    "cs004-s3": {
+     "prompt_tokens": 1957,
+     "eval_tokens": 472
+    },
+    "cs004-s4": {
+     "prompt_tokens": 1918,
+     "eval_tokens": 557
+    },
+    "cs005-s0": {
+     "prompt_tokens": 2344,
+     "eval_tokens": 430
+    },
+    "cs005-s1": {
+     "prompt_tokens": 2447,
+     "eval_tokens": 567
+    },
+    "cs005-s2": {
+     "prompt_tokens": 2071,
+     "eval_tokens": 468
+    },
+    "cs005-s3": {
+     "prompt_tokens": 1898,
+     "eval_tokens": 509
+    },
+    "cs005-s4": {
+     "prompt_tokens": 2183,
+     "eval_tokens": 536
+    },
+    "cs006-s0": {
+     "prompt_tokens": 3533,
+     "eval_tokens": 1200
+    },
+    "cs006-s1": {
+     "prompt_tokens": 1880,
+     "eval_tokens": 473
+    },
+    "cs006-s2": {
+     "prompt_tokens": 1832,
+     "eval_tokens": 532
+    },
+    "cs006-s3": {
+     "prompt_tokens": 1814,
+     "eval_tokens": 521
+    },
+    "cs006-s4": {
+     "prompt_tokens": 1816,
+     "eval_tokens": 541
+    },
+    "cs007-s0": {
+     "prompt_tokens": 1748,
+     "eval_tokens": 448
+    },
+    "cs007-s1": {
+     "prompt_tokens": 1812,
+     "eval_tokens": 544
+    },
+    "cs007-s2": {
+     "prompt_tokens": 2311,
+     "eval_tokens": 536
+    },
+    "cs007-s3": {
+     "prompt_tokens": 2098,
+     "eval_tokens": 526
+    },
+    "cs007-s4": {
+     "prompt_tokens": 2617,
+     "eval_tokens": 711
+    },
+    "cs008-s0": {
+     "prompt_tokens": 1867,
+     "eval_tokens": 501
+    },
+    "cs008-s1": {
+     "prompt_tokens": 1938,
+     "eval_tokens": 550
+    },
+    "cs008-s2": {
+     "prompt_tokens": 2206,
+     "eval_tokens": 492
+    },
+    "cs008-s3": {
+     "prompt_tokens": 1881,
+     "eval_tokens": 496
+    },
+    "cs008-s4": {
+     "prompt_tokens": 1730,
+     "eval_tokens": 386
+    },
+    "cs009-s0": {
+     "prompt_tokens": 1821,
+     "eval_tokens": 454
+    },
+    "cs009-s1": {
+     "prompt_tokens": 1699,
+     "eval_tokens": 333
+    },
+    "cs009-s2": {
+     "prompt_tokens": 1872,
+     "eval_tokens": 386
+    },
+    "cs009-s3": {
+     "prompt_tokens": 4961,
+     "eval_tokens": 198
+    },
+    "cs009-s4": {
+     "prompt_tokens": 1871,
+     "eval_tokens": 574
+    },
+    "cs010-s0": {
+     "prompt_tokens": 1816,
+     "eval_tokens": 482
+    },
+    "cs010-s1": {
+     "prompt_tokens": 1817,
+     "eval_tokens": 402
+    },
+    "cs010-s2": {
+     "prompt_tokens": 1729,
+     "eval_tokens": 464
+    },
+    "cs010-s3": {
+     "prompt_tokens": 1692,
+     "eval_tokens": 430
+    },
+    "cs010-s4": {
+     "prompt_tokens": 1709,
+     "eval_tokens": 424
+    },
+    "cs011-s0": {
+     "prompt_tokens": 2104,
+     "eval_tokens": 325
+    },
+    "cs011-s1": {
+     "prompt_tokens": 2358,
+     "eval_tokens": 512
+    },
+    "cs011-s2": {
+     "prompt_tokens": 1699,
+     "eval_tokens": 468
+    },
+    "cs011-s3": {
+     "prompt_tokens": 1719,
+     "eval_tokens": 223
+    },
+    "cs011-s4": {
+     "prompt_tokens": 1769,
+     "eval_tokens": 454
+    },
+    "cs012-s0": {
+     "prompt_tokens": 1828,
+     "eval_tokens": 421
+    },
+    "cs012-s1": {
+     "prompt_tokens": 1886,
+     "eval_tokens": 356
+    },
+    "cs012-s2": {
+     "prompt_tokens": 1961,
+     "eval_tokens": 357
+    },
+    "cs012-s3": {
+     "prompt_tokens": 1731,
+     "eval_tokens": 521
+    },
+    "cs012-s4": {
+     "prompt_tokens": 2005,
+     "eval_tokens": 440
+    },
+    "cs013-s0": {
+     "prompt_tokens": 1798,
+     "eval_tokens": 444
+    },
+    "cs013-s1": {
+     "prompt_tokens": 1766,
+     "eval_tokens": 554
+    },
+    "cs013-s2": {
+     "prompt_tokens": 1775,
+     "eval_tokens": 444
+    },
+    "cs013-s3": {
+     "prompt_tokens": 1652,
+     "eval_tokens": 236
+    },
+    "cs013-s4": {
+     "prompt_tokens": 1903,
+     "eval_tokens": 227
+    },
+    "cs014-s0": {
+     "prompt_tokens": 1851,
+     "eval_tokens": 455
+    },
+    "cs014-s1": {
+     "prompt_tokens": 1901,
+     "eval_tokens": 548
+    },
+    "cs014-s2": {
+     "prompt_tokens": 1706,
+     "eval_tokens": 475
+    },
+    "cs014-s3": {
+     "prompt_tokens": 1724,
+     "eval_tokens": 488
+    },
+    "cs014-s4": {
+     "prompt_tokens": 1825,
+     "eval_tokens": 460
+    },
+    "cs015-s0": {
+     "prompt_tokens": 1741,
+     "eval_tokens": 428
+    },
+    "cs015-s1": {
+     "prompt_tokens": 2842,
+     "eval_tokens": 505
+    },
+    "cs015-s2": {
+     "prompt_tokens": 1769,
+     "eval_tokens": 526
+    },
+    "cs015-s3": {
+     "prompt_tokens": 1793,
+     "eval_tokens": 288
+    },
+    "cs015-s4": {
+     "prompt_tokens": 2757,
+     "eval_tokens": 579
+    },
+    "cs016-s0": {
+     "prompt_tokens": 1865,
+     "eval_tokens": 434
+    },
+    "cs016-s1": {
+     "prompt_tokens": 2002,
+     "eval_tokens": 529
+    },
+    "cs016-s2": {
+     "prompt_tokens": 1959,
+     "eval_tokens": 469
+    },
+    "cs016-s3": {
+     "prompt_tokens": 2015,
+     "eval_tokens": 633
+    },
+    "cs016-s4": {
+     "prompt_tokens": 0,
+     "eval_tokens": 0
+    },
+    "cs017-s0": {
+     "prompt_tokens": 1721,
+     "eval_tokens": 442
+    },
+    "cs017-s1": {
+     "prompt_tokens": 1782,
+     "eval_tokens": 494
+    },
+    "cs017-s2": {
+     "prompt_tokens": 1604,
+     "eval_tokens": 450
+    },
+    "cs017-s3": {
+     "prompt_tokens": 1919,
+     "eval_tokens": 456
+    },
+    "cs017-s4": {
+     "prompt_tokens": 1993,
+     "eval_tokens": 542
+    },
+    "cs018-s0": {
+     "prompt_tokens": 2265,
+     "eval_tokens": 439
+    },
+    "cs018-s1": {
+     "prompt_tokens": 1655,
+     "eval_tokens": 401
+    },
+    "cs018-s2": {
+     "prompt_tokens": 1962,
+     "eval_tokens": 501
+    },
+    "cs018-s3": {
+     "prompt_tokens": 1723,
+     "eval_tokens": 513
+    },
+    "cs018-s4": {
+     "prompt_tokens": 1818,
+     "eval_tokens": 462
+    },
+    "cs019-s0": {
+     "prompt_tokens": 1947,
+     "eval_tokens": 407
+    },
+    "cs019-s1": {
+     "prompt_tokens": 3531,
+     "eval_tokens": 551
+    },
+    "cs019-s2": {
+     "prompt_tokens": 1918,
+     "eval_tokens": 480
+    },
+    "cs019-s3": {
+     "prompt_tokens": 1769,
+     "eval_tokens": 536
+    },
+    "cs019-s4": {
+     "prompt_tokens": 2117,
+     "eval_tokens": 579
+    },
+    "cs020-s0": {
+     "prompt_tokens": 2451,
+     "eval_tokens": 462
+    },
+    "cs020-s1": {
+     "prompt_tokens": 2101,
+     "eval_tokens": 512
+    },
+    "cs020-s2": {
+     "prompt_tokens": 1789,
+     "eval_tokens": 491
+    },
+    "cs020-s3": {
+     "prompt_tokens": 1683,
+     "eval_tokens": 569
+    },
+    "cs020-s4": {
+     "prompt_tokens": 1701,
+     "eval_tokens": 462
+    },
+    "cs021-s0": {
+     "prompt_tokens": 1806,
+     "eval_tokens": 584
+    },
+    "cs021-s1": {
+     "prompt_tokens": 1714,
+     "eval_tokens": 561
+    },
+    "cs021-s2": {
+     "prompt_tokens": 1913,
+     "eval_tokens": 447
+    },
+    "cs021-s3": {
+     "prompt_tokens": 1832,
+     "eval_tokens": 513
+    },
+    "cs021-s4": {
+     "prompt_tokens": 1723,
+     "eval_tokens": 202
+    },
+    "cs022-s0": {
+     "prompt_tokens": 0,
+     "eval_tokens": 0
+    },
+    "cs022-s1": {
+     "prompt_tokens": 1810,
+     "eval_tokens": 479
+    },
+    "cs022-s2": {
+     "prompt_tokens": 1788,
+     "eval_tokens": 484
+    },
+    "cs022-s3": {
+     "prompt_tokens": 1699,
+     "eval_tokens": 476
+    },
+    "cs022-s4": {
+     "prompt_tokens": 1768,
+     "eval_tokens": 512
+    },
+    "cs023-s0": {
+     "prompt_tokens": 2184,
+     "eval_tokens": 483
+    },
+    "cs023-s1": {
+     "prompt_tokens": 1760,
+     "eval_tokens": 494
+    },
+    "cs023-s2": {
+     "prompt_tokens": 4362,
+     "eval_tokens": 496
+    },
+    "cs023-s3": {
+     "prompt_tokens": 1644,
+     "eval_tokens": 452
+    },
+    "cs023-s4": {
+     "prompt_tokens": 1739,
+     "eval_tokens": 431
+    },
+    "cs024-s0": {
+     "prompt_tokens": 1817,
+     "eval_tokens": 369
+    },
+    "cs024-s1": {
+     "prompt_tokens": 1784,
+     "eval_tokens": 302
+    },
+    "cs024-s2": {
+     "prompt_tokens": 1753,
+     "eval_tokens": 398
+    },
+    "cs024-s3": {
+     "prompt_tokens": 1690,
+     "eval_tokens": 364
+    },
+    "cs024-s4": {
+     "prompt_tokens": 1809,
+     "eval_tokens": 396
+    },
+    "cs025-s0": {
+     "prompt_tokens": 1904,
+     "eval_tokens": 302
+    },
+    "cs025-s1": {
+     "prompt_tokens": 1671,
+     "eval_tokens": 487
+    },
+    "cs025-s2": {
+     "prompt_tokens": 1780,
+     "eval_tokens": 484
+    },
+    "cs025-s3": {
+     "prompt_tokens": 2083,
+     "eval_tokens": 502
+    },
+    "cs025-s4": {
+     "prompt_tokens": 1766,
+     "eval_tokens": 487
+    },
+    "cs026-s0": {
+     "prompt_tokens": 1914,
+     "eval_tokens": 477
+    },
+    "cs026-s1": {
+     "prompt_tokens": 1749,
+     "eval_tokens": 488
+    },
+    "cs026-s2": {
+     "prompt_tokens": 1706,
+     "eval_tokens": 470
+    },
+    "cs026-s3": {
+     "prompt_tokens": 2129,
+     "eval_tokens": 491
+    },
+    "cs026-s4": {
+     "prompt_tokens": 1970,
+     "eval_tokens": 430
+    },
+    "cs027-s0": {
+     "prompt_tokens": 1867,
+     "eval_tokens": 583
+    },
+    "cs027-s1": {
+     "prompt_tokens": 1846,
+     "eval_tokens": 486
+    },
+    "cs027-s2": {
+     "prompt_tokens": 2012,
+     "eval_tokens": 548
+    },
+    "cs027-s3": {
+     "prompt_tokens": 1794,
+     "eval_tokens": 486
+    },
+    "cs027-s4": {
+     "prompt_tokens": 1795,
+     "eval_tokens": 411
+    },
+    "cs028-s0": {
+     "prompt_tokens": 1966,
+     "eval_tokens": 409
+    },
+    "cs028-s1": {
+     "prompt_tokens": 1833,
+     "eval_tokens": 475
+    },
+    "cs028-s2": {
+     "prompt_tokens": 2128,
+     "eval_tokens": 473
+    },
+    "cs028-s3": {
+     "prompt_tokens": 1653,
+     "eval_tokens": 249
+    },
+    "cs028-s4": {
+     "prompt_tokens": 1705,
+     "eval_tokens": 496
+    },
+    "cs029-s0": {
+     "prompt_tokens": 2093,
+     "eval_tokens": 455
+    },
+    "cs029-s1": {
+     "prompt_tokens": 1864,
+     "eval_tokens": 508
+    },
+    "cs029-s2": {
+     "prompt_tokens": 2462,
+     "eval_tokens": 499
+    },
+    "cs029-s3": {
+     "prompt_tokens": 1741,
+     "eval_tokens": 453
+    },
+    "cs029-s4": {
+     "prompt_tokens": 1764,
+     "eval_tokens": 451
+    }
+   }
   },
   "mem0_infer": {
    "llm": "qwen2.5-7b-64k:latest",
@@ -363,10 +969,233 @@
    "errors": 0
   }
  },
+ "contexts_transport": {
+  "nevertwice_full": {
+   "ollama_transport": {
+    "calls": 1974,
+    "pace_sleep_s": 159.937,
+    "retries": 0,
+    "retry_sleep_s": 0.0,
+    "gave_up": 0,
+    "call_ms": {
+     "n": 1970,
+     "p50": 22.12,
+     "p90": 41.111,
+     "p99": 2457.226,
+     "max": 5592.38
+    },
+    "mode": "pace",
+    "timing_includes_pacing": true,
+    "pace_floor_s": 246.75,
+    "bypass_calls": {
+     "requests": 0,
+     "aiohttp": 0
+    },
+    "nested_calls": {
+     "requests": 0,
+     "aiohttp": 0
+    },
+    "max_inflight": 1,
+    "max_concurrent_paced": 1,
+    "pace_excluded_exact": true,
+    "failed_outcomes": {
+     "by_status": {},
+     "by_exception_type": {},
+     "gave_up": 0
+    },
+    "llm_retries": 8,
+    "llm_retry_sleep_s": 180.0,
+    "failed_outcomes_llm": {
+     "by_status": {
+      "500": 1
+     },
+     "by_exception_type": {
+      "TimeoutError": 3
+     },
+     "gave_up": 0
+    }
+   },
+   "valid": false,
+   "invalid_reason": "4 llm call(s) failed (by_status={500: 1}, by_exception_type={'TimeoutError': 3}, gave_up=0) - K33: a failed extraction/generation call is scored as the system's own failure, with no record, unless this fires",
+   "runs": [
+    {
+     "utc": "2026-09-25T01:54:42.948893+00:00",
+     "valid": false,
+     "reason": "4 llm call(s) failed (by_status={500: 1}, by_exception_type={'TimeoutError': 3}, gave_up=0) - K33: a failed extraction/generation call is scored as the system's own failure, with no record, unless this fires"
+    }
+   ]
+  },
+  "mem0_infer": {
+   "ollama_transport": {
+    "calls": 871,
+    "pace_sleep_s": 58.498,
+    "retries": 0,
+    "retry_sleep_s": 0.0,
+    "gave_up": 0,
+    "call_ms": {
+     "n": 871,
+     "p50": 17.183,
+     "p90": 1326.732,
+     "p99": 3484.245,
+     "max": 5071.985
+    },
+    "mode": "pace",
+    "timing_includes_pacing": true,
+    "pace_floor_s": 108.875,
+    "bypass_calls": {
+     "requests": 0,
+     "aiohttp": 0
+    },
+    "nested_calls": {
+     "requests": 0,
+     "aiohttp": 0
+    },
+    "max_inflight": 1,
+    "max_concurrent_paced": 1,
+    "pace_excluded_exact": true,
+    "failed_outcomes": {
+     "by_status": {},
+     "by_exception_type": {},
+     "gave_up": 0
+    },
+    "llm_retries": 0,
+    "llm_retry_sleep_s": 0.0,
+    "failed_outcomes_llm": {
+     "by_status": {},
+     "by_exception_type": {},
+     "gave_up": 0
+    }
+   },
+   "runs": [
+    {
+     "utc": "2026-09-25T02:00:38.594912+00:00",
+     "valid": true,
+     "reason": null
+    }
+   ]
+  }
+ },
+ "competitor_cache": {
+  "naive": {
+   "sha256": "c116fa665c92ead3d87782b97522fa90971bdabc5afcad2a60a3414c1563a78f",
+   "mtime": "2026-09-25T01:54:45.838346+00:00",
+   "keys": 420
+  },
+  "mem0_infer": {
+   "sha256": "49018d4100a98dda38c2a4d6b65888e0bc26992b45baa20c77cf3870e67d0d97",
+   "mtime": "2026-09-25T02:00:38.598085+00:00",
+   "keys": 420
+  }
+ },
+ "answer_transport": {
+  "ollama_transport": {
+   "calls": 1650,
+   "pace_sleep_s": 11.895,
+   "retries": 0,
+   "retry_sleep_s": 0.0,
+   "gave_up": 0,
+   "call_ms": {
+    "n": 1650,
+    "p50": 141.401,
+    "p90": 289.105,
+    "p99": 458.927,
+    "max": 693.064
+   },
+   "mode": "pace",
+   "timing_includes_pacing": true,
+   "pace_floor_s": 206.25,
+   "bypass_calls": {
+    "requests": 0,
+    "aiohttp": 0
+   },
+   "nested_calls": {
+    "requests": 0,
+    "aiohttp": 0
+   },
+   "max_inflight": 1,
+   "max_concurrent_paced": 1,
+   "pace_excluded_exact": true,
+   "failed_outcomes": {
+    "by_status": {},
+    "by_exception_type": {},
+    "gave_up": 0
+   },
+   "llm_retries": 0,
+   "llm_retry_sleep_s": 0.0,
+   "failed_outcomes_llm": {
+    "by_status": {},
+    "by_exception_type": {},
+    "gave_up": 0
+   }
+  },
+  "runs": [
+   {
+    "utc": "2026-09-25T02:06:01.763542+00:00",
+    "valid": true,
+    "reason": null
+   }
+  ]
+ },
+ "judge_transport": {
+  "ollama_transport": {
+   "calls": 450,
+   "pace_sleep_s": 0.0,
+   "retries": 0,
+   "retry_sleep_s": 0.0,
+   "gave_up": 0,
+   "call_ms": {
+    "n": 450,
+    "p50": 4135.954,
+    "p90": 11554.05,
+    "p99": 16660.987,
+    "max": 23820.389
+   },
+   "mode": "pace",
+   "timing_includes_pacing": true,
+   "pace_floor_s": 56.25,
+   "bypass_calls": {
+    "requests": 0,
+    "aiohttp": 0
+   },
+   "nested_calls": {
+    "requests": 0,
+    "aiohttp": 0
+   },
+   "max_inflight": 1,
+   "max_concurrent_paced": 1,
+   "pace_excluded_exact": true,
+   "failed_outcomes": {
+    "by_status": {},
+    "by_exception_type": {},
+    "gave_up": 0
+   },
+   "llm_retries": 0,
+   "llm_retry_sleep_s": 0.0,
+   "failed_outcomes_llm": {
+    "by_status": {},
+    "by_exception_type": {},
+    "gave_up": 0
+   }
+  },
+  "runs": [
+   {
+    "utc": "2026-09-25T02:49:03.604565+00:00",
+    "valid": true,
+    "reason": null
+   }
+  ]
+ },
  "corpus_gates": {
   "none_le_0.10": false,
   "oracle_ge_0.60": true,
   "naive_le_oracle_minus_0.20": false,
   "corpus_separates": false
+ },
+ "valid": false,
+ "invalid_reason": "nevertwice_full: 4 llm call(s) failed (by_status={500: 1}, by_exception_type={'TimeoutError': 3}, gave_up=0) - K33: a failed extraction/generation call is scored as the system's own failure, with no record, unless this fires",
+ "measured_at": {
+  "commit": "fe6ddff232915c61ec2177b5541039a9c3e370c6",
+  "utc": "2026-09-25T02:49:04Z",
+  "dirty": false
  }
 }

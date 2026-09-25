@@ -10,10 +10,10 @@
  "extract_temperature": "0",
  "k": 5,
  "depth": 50,
- "ingest_seconds": 114.2,
- "notes": 45,
- "notes_with_facts_block": 31,
- "notes_reembedded": 31,
+ "ingest_seconds": 66.2,
+ "notes": 42,
+ "notes_with_facts_block": 27,
+ "notes_reembedded": 27,
  "named_cases": [],
  "named_from": "research/results/supersession_v1_implicit.json",
  "gate": {
@@ -27,8 +27,8 @@
   "worse_with_block": 0,
   "better_with_block": 0,
   "same": 20,
-  "in_top_k_with": 18,
-  "in_top_k_without": 18,
+  "in_top_k_with": 19,
+  "in_top_k_without": 19,
   "p_sign_one_sided": 1.0
  },
  "verdict": null,
@@ -40,16 +40,14 @@
    "rank_with": 1,
    "rank_without": 1,
    "returned_with": [
-    "postgresql-16-primary-database The project uses PostgreSQL 16 as the primary database. This was documented in the README section that was already stale.",
-    "postgresql-16-as-primary-database PostgreSQL 16 was chosen as the primary database for the project.",
-    "staged-release-deployment The deployment was rolled out behind a staged release process, which helps in managing risk and ensuring stability during updates.  [facts] Rolled it out behind the usual staged release",
-    "staged-release-for-deployment A staged release approach was chosen for rolling out the deployment, allowing gradual rollout and minimizing potential impact of failures.  [facts] Rolled it out behind the usual staged release"
+    "postgresql-16-primary-database The primary database for the project is PostgreSQL 16. This was confirmed during the session and set as the baseline for deployment.  [facts] the primary database is PostgreSQL 16",
+    "redis-cache-layer-documentation The cache layer is Redis 7, which was documented in the README section that was already stale. This ensures that the documentation reflects the current technology stack.  [facts] Documented it in the README section that was already stale",
+    "staged-release-deployment The deployment was rolled out behind a staged release process, which is a standard practice for ensuring stability and controlled rollout.  [facts] Rolled it out behind the usual staged release"
    ],
    "returned_without": [
-    "postgresql-16-primary-database The project uses PostgreSQL 16 as the primary database. This was documented in the README section that was already stale.",
-    "postgresql-16-as-primary-database PostgreSQL 16 was chosen as the primary database for the project.",
-    "staged-release-deployment The deployment was rolled out behind a staged release process, which helps in managing risk and ensuring stability during updates.",
-    "staged-release-for-deployment A staged release approach was chosen for rolling out the deployment, allowing gradual rollout and minimizing potential impact of failures."
+    "postgresql-16-primary-database The primary database for the project is PostgreSQL 16. This was confirmed during the session and set as the baseline for deployment.",
+    "redis-cache-layer-documentation The cache layer is Redis 7, which was documented in the README section that was already stale. This ensures that the documentation reflects the current technology stack.",
+    "staged-release-deployment The deployment was rolled out behind a staged release process, which is a standard practice for ensuring stability and controlled rollout."
    ]
   },
   {
@@ -169,20 +167,24 @@
    "rank_with": 1,
    "rank_without": 1,
    "returned_with": [
-    "upload-size-limit-check The system enforces an upload size limit to prevent excessive resource usage. This was verified by running the full test suite which stayed green after the change.  [facts] the request rate limit is 100 per minute · Ran the full test suite afterwards and it stayed green | earlier: 25 MB"
+    "upload-size-limit-verification The session verified that upload size limits are properly enforced and tested. The request rate limit was also updated to 100 per minute, which was confirmed to not break existing functionality.  [facts] the request rate limit is 100 per minute · Ran the full test suite afterwards and it stayed green | earlier: 25 MB"
    ],
    "returned_without": [
-    "upload-size-limit-check The system enforces an upload size limit to prevent excessive resource usage. This was verified by running the full test suite which stayed green after the change. | earlier: 25 MB"
+    "upload-size-limit-verification The session verified that upload size limits are properly enforced and tested. The request rate limit was also updated to 100 per minute, which was confirmed to not break existing functionality. | earlier: 25 MB"
    ]
   },
   {
    "id": "ctl-sched",
    "named": false,
    "k": 5,
-   "rank_with": null,
-   "rank_without": null,
-   "returned_with": [],
-   "returned_without": []
+   "rank_with": 1,
+   "rank_without": 1,
+   "returned_with": [
+    "reindexing-schedule The certificate renewal runs every 60 days. A note was left in the tracker so the next person does not redo this.  [facts] Left a note in the tracker so the next person does not redo this | earlier: The reindexing process runs weekly on Sunday. This was confirmed by the reviewer after a rename req…"
+   ],
+   "returned_without": [
+    "reindexing-schedule The certificate renewal runs every 60 days. A note was left in the tracker so the next person does not redo this. | earlier: The reindexing process runs weekly on Sunday. This was confirmed by the reviewer after a rename req…"
+   ]
   },
   {
    "id": "ctl-clients",
@@ -191,12 +193,12 @@
    "rank_with": 1,
    "rank_without": 1,
    "returned_with": [
-    "cli-distribution-homebrew The desktop app ships as a signed installer, which is part of the CLI distribution strategy. This approach ensures proper installation and signing for end users. | earlier: The CLI is distributed through Homebrew, which was confirmed by reviewing the client's decision and…",
-    "cli-distribution-method The CLI distribution method includes shipping the desktop app as a signed installer, which is a deliberate choice for user trust and proper installation.  [facts] the desktop app ships as a signed installer | earlier: The decision was made to distribute the CLI through Homebrew, aligning with client requirements and…"
+    "cli-distribution-method The decision was made to distribute the CLI via a signed installer, which is consistent with the project's approach to ensuring software integrity and user trust.  [facts] the desktop app ships as a signed installer | earlier: The decision was made to distribute the CLI through Homebrew, which aligns with the current codebas…",
+    "cli-distribution-homebrew The desktop app ships as a signed installer, which is part of the CLI distribution strategy. This approach ensures proper installation and signing for end users. | earlier: The CLI is distributed through Homebrew and the code now matches this distribution method. This ens…"
    ],
    "returned_without": [
-    "cli-distribution-homebrew The desktop app ships as a signed installer, which is part of the CLI distribution strategy. This approach ensures proper installation and signing for end users. | earlier: The CLI is distributed through Homebrew, which was confirmed by reviewing the client's decision and…",
-    "cli-distribution-method The CLI distribution method includes shipping the desktop app as a signed installer, which is a deliberate choice for user trust and proper installation. | earlier: The decision was made to distribute the CLI through Homebrew, aligning with client requirements and…"
+    "cli-distribution-homebrew The desktop app ships as a signed installer, which is part of the CLI distribution strategy. This approach ensures proper installation and signing for end users. | earlier: The CLI is distributed through Homebrew and the code now matches this distribution method. This ens…",
+    "cli-distribution-method The decision was made to distribute the CLI via a signed installer, which is consistent with the project's approach to ensuring software integrity and user trust. | earlier: The decision was made to distribute the CLI through Homebrew, which aligns with the current codebas…"
    ]
   },
   {
@@ -206,10 +208,10 @@
    "rank_with": 1,
    "rank_without": 1,
    "returned_with": [
-    "ingest-queue-nats-backend The ingest queue is backed by NATS, which provides a reliable message queuing system for handling ingestion tasks. This setup ensures that the system can process incoming data asynchronously and maintain stability under load."
+    "ingest-queue-nats-backend The ingest queue is backed by NATS, which provides reliable message delivery and scalability for the ingestion pipeline. This pattern ensures that messages are processed in order and can handle high throughput with minimal latency. | earlier: The ingest queue is backed by NATS, which provides a reliable message queuing system for handling i…"
    ],
    "returned_without": [
-    "ingest-queue-nats-backend The ingest queue is backed by NATS, which provides a reliable message queuing system for handling ingestion tasks. This setup ensures that the system can process incoming data asynchronously and maintain stability under load."
+    "ingest-queue-nats-backend The ingest queue is backed by NATS, which provides reliable message delivery and scalability for the ingestion pipeline. This pattern ensures that messages are processed in order and can handle high throughput with minimal latency. | earlier: The ingest queue is backed by NATS, which provides a reliable message queuing system for handling i…"
    ]
   },
   {
@@ -219,10 +221,10 @@
    "rank_with": 1,
    "rank_without": 1,
    "returned_with": [
-    "api-reference-generation The API reference is generated from OpenAPI documentation. This process was verified and documented to prevent future reinvention of the wheel."
+    "api-reference-generation API reference generation is handled through automated tooling that processes MDX files. The tutorials are hand-written in MDX and integrated into the release process.  [facts] rolled it out behind the usual staged release | earlier: The API reference is generated from OpenAPI specifications. This process was documented and a note…"
    ],
    "returned_without": [
-    "api-reference-generation The API reference is generated from OpenAPI documentation. This process was verified and documented to prevent future reinvention of the wheel."
+    "api-reference-generation API reference generation is handled through automated tooling that processes MDX files. The tutorials are hand-written in MDX and integrated into the release process. | earlier: The API reference is generated from OpenAPI specifications. This process was documented and a note…"
    ]
   },
   {
@@ -232,10 +234,12 @@
    "rank_with": 1,
    "rank_without": 1,
    "returned_with": [
-    "worker-runtime-verification The sidecar runs on Go 1.23 and was verified through dashboard monitoring for an hour after deployment. No movement was observed, indicating a potential runtime issue or lack of expected behavior.  [facts] Checked the dashboards for an hour after and nothing moved | earlier: 3.13"
+    "python-3.13-worker-runtime The worker runs on Python 3.13, which was confirmed during the session. This is a key runtime detail for the project's environment setup.  [facts] Confirmed that the worker runs on Python 3.13",
+    "go-1-23-sidecar-runtime The sidecar runs on Go 1.23. This was confirmed during the session and is a known runtime parameter for this project."
    ],
    "returned_without": [
-    "worker-runtime-verification The sidecar runs on Go 1.23 and was verified through dashboard monitoring for an hour after deployment. No movement was observed, indicating a potential runtime issue or lack of expected behavior. | earlier: 3.13"
+    "python-3.13-worker-runtime The worker runs on Python 3.13, which was confirmed during the session. This is a key runtime detail for the project's environment setup.",
+    "go-1-23-sidecar-runtime The sidecar runs on Go 1.23. This was confirmed during the session and is a known runtime parameter for this project."
    ]
   },
   {
@@ -245,12 +249,12 @@
    "rank_with": 1,
    "rank_without": 1,
    "returned_with": [
-    "tls-termination-at-load-balancer Ingress terminates TLS at the load balancer, which is the current networking setup. This pattern ensures secure communication while offloading TLS processing to a dedicated component.",
-    "egress-through-nat-gateway Egress traffic now goes through a NAT gateway, which was settled as part of a networking configuration review. This change was approved after a minor rename request.  [facts] egress goes through a NAT gateway · a different piece of networking got settled · one rename and otherwise approved it"
+    "tls-termination-at-load-balancer Ingress terminates TLS at the load balancer. This setup ensures that encrypted traffic is handled at the edge before being routed to internal services.",
+    "egress-through-nat-gateway Egress traffic now goes through a NAT gateway, which was a settled networking decision. This change was reviewed and approved with only one rename requested.  [facts] egress goes through a NAT gateway · reviewer asked for one rename and otherwise approved it"
    ],
    "returned_without": [
-    "tls-termination-at-load-balancer Ingress terminates TLS at the load balancer, which is the current networking setup. This pattern ensures secure communication while offloading TLS processing to a dedicated component.",
-    "egress-through-nat-gateway Egress traffic now goes through a NAT gateway, which was settled as part of a networking configuration review. This change was approved after a minor rename request."
+    "tls-termination-at-load-balancer Ingress terminates TLS at the load balancer. This setup ensures that encrypted traffic is handled at the edge before being routed to internal services.",
+    "egress-through-nat-gateway Egress traffic now goes through a NAT gateway, which was a settled networking decision. This change was reviewed and approved with only one rename requested."
    ]
   },
   {
@@ -260,12 +264,12 @@
    "rank_with": 1,
    "rank_without": 1,
    "returned_with": [
-    "pull-request-approval-policy A pull request approval policy was already in place, but the session reinforced the need for a signed changelog entry as part of the release process.  [facts] Unrelated to the earlier change, every release needs a signed changelog entry. · Documented it in the README section that was already stale. | earlier: Every pull request now requires two approvals to ensure code quality and reduce errors.",
-    "staged-release-rollout Every release requires a signed changelog entry. This ensures accountability and traceability of changes. The process was documented in the README section that was already stale.  [facts] Unrelated to the earlier change, every release needs a signed changelog entry. · Documented it in the README section that was already stale. | earlier: A process change was rolled out using a staged release approach. This ensures controlled deployment…"
+    "pull-request-approval-process A pull request requires two approvals before being merged. This process was rolled out using a staged release approach to ensure smooth adoption.  [facts] every pull request needs two approvals · Rolled it out behind the usual staged release",
+    "signed-changelog-requirement Every release requires a signed changelog entry. This was documented in the README section that was already stale.  [facts] Every release needs a signed changelog entry · Documented it in the README section that was already stale"
    ],
    "returned_without": [
-    "pull-request-approval-policy A pull request approval policy was already in place, but the session reinforced the need for a signed changelog entry as part of the release process. | earlier: Every pull request now requires two approvals to ensure code quality and reduce errors.",
-    "staged-release-rollout Every release requires a signed changelog entry. This ensures accountability and traceability of changes. The process was documented in the README section that was already stale. | earlier: A process change was rolled out using a staged release approach. This ensures controlled deployment…"
+    "pull-request-approval-process A pull request requires two approvals before being merged. This process was rolled out using a staged release approach to ensure smooth adoption.",
+    "signed-changelog-requirement Every release requires a signed changelog entry. This was documented in the README section that was already stale."
    ]
   },
   {
@@ -275,13 +279,13 @@
    "rank_with": 1,
    "rank_without": 1,
    "returned_with": [
-    "latency-histogram-tracking Request latency is tracked as a histogram. This approach was validated by checking dashboards after an hour and observing no movement, confirming the implementation works as intended.  [facts] Checked the dashboards for an hour after and nothing moved",
-    "observability-decision The decision to track queue depth as a gauge was made for observability purposes, in addition to existing latency histogram tracking.  [facts] One more observability item, independent of the first: queue depth is tracked as a gauge | earlier: The decision was made to track request latency as a histogram, which is now implemented and verifie…",
+    "latency-histogram-tracking Request latency is tracked as a histogram, and the code now matches. This approach provides detailed performance insights by capturing the distribution of request times rather than just averages.",
+    "observability-decision An observability decision was written, which included tracking request latency as a histogram. This ensures that performance metrics are captured in a way that allows for deeper analysis of system behavior.  [facts] Wrote up the observability decision · Request latency is tracked as a histogram",
     "queue-depth-gauge-tracking Queue depth is tracked as a gauge for observability. This pattern was added independently of latency histogram tracking and was verified by running the full test suite which stayed green.  [facts] Ran the full test suite afterwards and it stayed green"
    ],
    "returned_without": [
-    "latency-histogram-tracking Request latency is tracked as a histogram. This approach was validated by checking dashboards after an hour and observing no movement, confirming the implementation works as intended.",
-    "observability-decision The decision to track queue depth as a gauge was made for observability purposes, in addition to existing latency histogram tracking. | earlier: The decision was made to track request latency as a histogram, which is now implemented and verifie…",
+    "latency-histogram-tracking Request latency is tracked as a histogram, and the code now matches. This approach provides detailed performance insights by capturing the distribution of request times rather than just averages.",
+    "observability-decision An observability decision was written, which included tracking request latency as a histogram. This ensures that performance metrics are captured in a way that allows for deeper analysis of system behavior.",
     "queue-depth-gauge-tracking Queue depth is tracked as a gauge for observability. This pattern was added independently of latency histogram tracking and was verified by running the full test suite which stayed green."
    ]
   },
@@ -305,13 +309,56 @@
    "rank_with": 1,
    "rank_without": 1,
    "returned_with": [
-    "pagerduty-for-paging-alerts It was decided that paging alerts should be routed to PagerDuty. This decision was documented in the README.  [facts] paging alerts go to PagerDuty · documented it in the README",
-    "alerting-destination-pagerduty Paging alerts are configured to go to PagerDuty. This was documented in the README section which was already stale.  [facts] paging alerts go to PagerDuty · README section that was already stale"
+    "alerting-pagerduty-integration Paging alerts are configured to go to PagerDuty. This was documented in the existing stale README section.  [facts] paging alerts go to PagerDuty · Documented it in the README section that was already stale"
    ],
    "returned_without": [
-    "pagerduty-for-paging-alerts It was decided that paging alerts should be routed to PagerDuty. This decision was documented in the README.",
-    "alerting-destination-pagerduty Paging alerts are configured to go to PagerDuty. This was documented in the README section which was already stale."
+    "alerting-pagerduty-integration Paging alerts are configured to go to PagerDuty. This was documented in the existing stale README section."
    ]
   }
- ]
+ ],
+ "ollama_transport": {
+  "calls": 244,
+  "pace_sleep_s": 16.507,
+  "retries": 0,
+  "retry_sleep_s": 0.0,
+  "gave_up": 0,
+  "call_ms": {
+   "n": 244,
+   "p50": 20.402,
+   "p90": 1225.552,
+   "p99": 1830.915,
+   "max": 1903.444
+  },
+  "mode": "pace",
+  "timing_includes_pacing": true,
+  "pace_floor_s": 30.5,
+  "bypass_calls": {
+   "requests": 0,
+   "aiohttp": 0
+  },
+  "nested_calls": {
+   "requests": 0,
+   "aiohttp": 0
+  },
+  "max_inflight": 1,
+  "max_concurrent_paced": 1,
+  "pace_excluded_exact": true,
+  "failed_outcomes": {
+   "by_status": {},
+   "by_exception_type": {},
+   "gave_up": 0
+  },
+  "llm_retries": 0,
+  "llm_retry_sleep_s": 0.0,
+  "failed_outcomes_llm": {
+   "by_status": {},
+   "by_exception_type": {},
+   "gave_up": 0
+  }
+ },
+ "measured_at": {
+  "commit": "fe6ddff232915c61ec2177b5541039a9c3e370c6",
+  "utc": "2026-09-25T01:21:06Z",
+  "dirty": false
+ }
 }

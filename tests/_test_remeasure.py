@@ -631,7 +631,18 @@ _tail = [ln for ln in _out.splitlines() if "declares incomplete" in ln]
 check("and it says how many claims stand behind such a command", bool(_tail),
       _out.splitlines()[-1] if _out else "(no output)")
 _n = int(re.search(r"(\d+) of the (\d+) stand behind", _out).group(1)) if _tail else 0
-check(f"which is a population, not a zero ({_n})", _n >= 200, str(_n))
+#: The count is derived from the register rather than pinned: `>= 200` was written against 661
+#: pending claims before campaign v2, and restore #2 left 219 in the queue. What the line exists to
+#: prove is that the tail is a real population and the SAME population the register implies - so
+#: it is compared exactly with the pending claims that stand behind such a COMMAND - the listing
+#: groups by command, so a claim with no raw of its own (asof judge_calls since restore #2) that
+#: shares the command of an assembled artifact stands behind it too.
+_asm_cmds = {c.get("command") for c in _manifest["claims"]
+             if c.get("pending_remeasure") and (c.get("raw") or "").replace("\\", "/") in _asm}
+_expected = sum(1 for c in _manifest["claims"]
+                if c.get("pending_remeasure") and c.get("command") in _asm_cmds)
+check(f"which is a population, not a zero, and the one the register implies ({_n} = {_expected})",
+      _n == _expected and _n > 0, f"{_n} vs {_expected}")
 
 #: The rule bites: with the package's declaration removed, the listing goes back to printing the
 #: command bare - so a green line above means the caveat travelled, not that nothing was wrong.

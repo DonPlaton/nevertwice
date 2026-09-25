@@ -131,6 +131,48 @@ with tempfile.TemporaryDirectory() as tmp:
     finally:
         rc.ROOT, rc.RENDERERS = saved, saved_renderers
 
+print("\n- a partly-withdrawn table prints its live rows and marks the withdrawn cells (restore #2) -")
+REASON = "owner decision pending: the arm's traffic was not observed"
+TRAP = "; the value is the campaign's and the statement predates it - rewrite the statement before any restore"
+fam = family("h2h_locomo", ["nevertwice", "mem0", "langmem", "amem"])
+for cl in fam:
+    if ".mem0." in cl["id"]:
+        cl["stale"] = REASON + (TRAP if cl["id"].endswith("recall_at_1") else "")
+page = "x\n<!-- claims:head-to-head-locomo -->\nold\n<!-- /claims:head-to-head-locomo -->\n"
+out, changed = rc.apply_regions(page, rc.Claims({"claims": fam, "scope": {"docs": []}, "documents": {}}))
+check("the live rows are printed, not a whole-table notice",
+      "| **Nevertwice (calibrated fusion)** |" in out and "**Withdrawn 20" not in out, out[:200])
+check("every cell of the withdrawn row says so",
+      "| Mem0 | withdrawn | withdrawn | withdrawn | withdrawn |" in out, out)
+check("no NaN reaches the page", "nan" not in out.lower().replace("withdrawn", ""))
+check("the reason is written once under the table, without the register-only suffix",
+      out.count(f"<sub>**Withdrawn** cells: {REASON}</sub>") == 1 and "statement predates" not in out, out)
+for cl in fam:
+    cl["stale"] = REASON
+out_all, _ = rc.apply_regions(page, rc.Claims({"claims": fam, "scope": {"docs": []}, "documents": {}}))
+check("a region with nothing live stays one withdrawal notice", "**Withdrawn" in out_all
+      and "| Mem0 |" not in out_all, out_all[:160])
+
+print("\n- a withdrawn pair's p-value does not leak into the pairs table -")
+pairs = []
+for _label, a, b in rc.PAIRS:
+    x, y = sorted((a, b))
+    pid = f"supersession.{x}_vs_{y}"
+    stale = REASON if "zep" in (a, b) else None
+    p = {"id": f"{pid}.p_mcnemar", "value": 0.0123, "printed": ["0.0123"], "cited_in": [],
+         "command": "python research/supersession_bench.py", "commit": "abc"}
+    if stale:
+        p["stale"] = stale
+    pairs.append(p)
+    for arm in (a, b):
+        pairs.append({**claim(f"{pid}.discordant.{arm}", 3, stale), "printed": ["3"]})
+cp = rc.Claims({"claims": pairs, "scope": {"docs": []}, "documents": {}})
+body = rc.render_partial(rc.render_supersession_pairs, cp)
+zep_row = next((ln for ln in (body or "").splitlines() if "Zep" in ln), "")
+check("the Zep pair row is marked, and its p is not printed",
+      body is not None and "withdrawn" in zep_row and "0.0123" not in zep_row, zep_row or str(body))
+check("the live pairs keep their p", body is not None and body.count("0.0123") == 3, str(body))
+
 print("\n- every renderer registered has a region in a document in scope (the real tree) -")
 manifest = json.loads((ROOT / "research/evidence_manifest.json").read_text(encoding="utf-8"))
 seen = set()

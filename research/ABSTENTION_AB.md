@@ -38,9 +38,14 @@ hit is refused, even when there is room for it - the distinction between *does i
 returned no more than 2 points less often. On a miss the default returns to 0.
 
 <!-- claims:abstention-sweep -->
-> **Withdrawn 2026-09.** one run of a stochastic extraction model across an engine change, no spread measured; re-measured on the GPU in v2 with --runs 3 so the claim prints mean and spread
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/abstention_ab.py --part all --out research/results/abstention_ab.json` is what re-measures this one.
+| threshold | chars/query | hits | wanted fact returned | chars saved | recall lost |
+|---|---|---|---|---|---|
+| 0.00 (off) | 457.7 | 1.47 | 0.992 | - | - |
+| 0.10 | 433.8 | 1.38 | 0.987 | 5.2% | 0.4 pts |
+| 0.20 | 397.6 | 1.26 | 0.966 | 13.1% | 2.5 pts |
+| **0.35 (shipped)** | 377.9 | 1.20 | 0.966 | 17.4% | 2.5 pts |
+| 0.50 | 368.0 | 1.17 | 0.966 | 19.6% | 2.5 pts |
+| 0.75 | 340.2 | 1.07 | 0.966 | 25.7% | 2.5 pts |
 <!-- /claims:abstention-sweep -->
 
 Every threshold from 0.30 upward reads the same as the shipped one: one hit is all that is left to
@@ -65,7 +70,7 @@ and a half. That is a hypothesis, and it is written here as one.
 `NEVERTWICE_INJECT_MIN_VALUE`, on the path capped at 2200 characters.
 
 The sweep is identical to C1's, and that is the result: **the mean payload on this corpus is
-463.1 characters, so the cap never binds and the two paths differ in nothing the measurement can
+457.7 characters (mean of 3 runs), so the cap never binds and the two paths differ in nothing the measurement can
 see.** The gate written for it - 15% smaller with no loss of the top-ranked lesson - is
 **vacuous as written**: the top item scores 1.0 by construction and cannot be dropped at any
 threshold below 1.0, so the second half is satisfied by arithmetic rather than by evidence.
@@ -111,7 +116,7 @@ no stand at all.
 
 ## What this does not show
 
-- **One corpus, and a small one.** Mean recall depth is 1.48 hits. The abstention mechanisms
+- **One corpus, and a small one.** Mean recall depth is 1.45 hits (mean of 3 runs). The abstention mechanisms
   are built for the case where recall returns many hits of uneven quality, and that case is
   not in this corpus. The result is honest about the store it was measured on and says nothing
   about a larger one.

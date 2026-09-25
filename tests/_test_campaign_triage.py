@@ -73,7 +73,12 @@ groups = T.groups_of(pending)
 #: 2026-09-24, the step-4 engine merge (Q5 principle layer, note_snippet word boundary, defaults set
 #: by the Q5 gates): the engine moved under 314 live claims, withdrawn in one pass (A 24 -> 271,
 #: D 268 -> 335; the A split moves to 211 our own / 60 competitors'). C and E did not move.
-KNOWN = {"A": 271, "B": 0, "C": 45, "D": 335, "E": 10}
+#: 2026-09-25, restore #2 of campaign v2 at fe6ddff: 426 pending claims came back live and the 16
+#: bare head_to_head claims became historical, so the queue went 661 -> 219: A 271 -> 82 (own 211 ->
+#: 68, competitors 60 -> 14), C 45 -> 15 (on their own stand 34 -> 10, transferred 11 -> 5; the
+#: over-retraction gate 6 -> 2), D 335 -> 112. E did not move. Every value is what T.groups_of()
+#: returns on the restored register; none was typed from memory.
+KNOWN = {"A": 82, "B": 0, "C": 15, "D": 112, "E": 10}
 
 print("\n- the split is the one the campaign was planned against -")
 check("the pending set has not moved", len(pending) == sum(KNOWN.values()),
@@ -83,7 +88,7 @@ for g, n in KNOWN.items():
 
 own = [c for c, _ in groups["A"] if not T.COMPETITOR.search(c["id"])]
 comp = [c for c, _ in groups["A"] if T.COMPETITOR.search(c["id"])]
-check("and A splits 211 our own / 60 competitor arms", (len(own), len(comp)) == (211, 60),
+check("and A splits 68 our own / 14 competitor arms", (len(own), len(comp)) == (68, 14),
       f"{len(own)} / {len(comp)}")
 
 #: C carries a seam of its own. The spread table was measured on ONE stand, so `SPREAD.get(leaf)`
@@ -94,20 +99,20 @@ check("and A splits 211 our own / 60 competitor arms", (len(own), len(comp)) == 
 #: turn out to belong in D, needing a run rather than a re-print.
 home = [c for c, _ in groups["C"] if not T.transferred(c)]
 away = [c for c, _ in groups["C"] if T.transferred(c)]
-check("C splits 34 measured on their own stand / 11 on a transferred spread",
-      (len(home), len(away)) == (34, 11), f"{len(home)} / {len(away)}")
+check("C splits 10 measured on their own stand / 5 on a transferred spread",
+      (len(home), len(away)) == (10, 5), f"{len(home)} / {len(away)}")
 check("and the table says which stand it was measured on, rather than implying every stand",
       T.SPREAD_MEASURED_ON == "research/supersession_bench.py", T.SPREAD_MEASURED_ON)
 
 print("\n- B is empty OF THE MEASURED, which is a smaller claim than B is empty -")
 measured = len(groups["B"]) + len(groups["C"])
 check(f"the fields with a measured spread carry {measured} claims, and none of them is in B",
-      not groups["B"] and measured == 45, f"B {len(groups['B'])}, measured {measured}")
+      not groups["B"] and measured == KNOWN["B"] + KNOWN["C"], f"B {len(groups['B'])}, measured {measured}")
 check("the unmeasured majority is counted, not folded into the same sentence",
       len(groups["D"]) == KNOWN["D"], str(len(groups["D"])))
 c_over = [c for c, _ in groups["C"]
           if (c.get("pointer") or "").endswith("over_retraction_rate")]
-check("the gate called absolute is in C, printed finer than it is resolved", len(c_over) == 6,
+check("the gate called absolute is in C, printed finer than it is resolved", len(c_over) == 2,
       str(len(c_over)))
 
 print("\n- the two wrong signs are still refused, not merely remembered -")

@@ -1,0 +1,1516 @@
+{
+ "dataset": {
+  "name": "supersession_v1_implicit",
+  "sha256": "01e361a4e3656e07248248f52b84095780e9d4e63d23cd9d179f1f1628e6bc0f",
+  "path": "research/data/supersession_v1_implicit.json"
+ },
+ "n_cases": 80,
+ "k": 5,
+ "llm": "qwen3-coder:30b",
+ "embedder": "bge-m3",
+ "store": "C:\\Users\\Platon\\AppData\\Local\\Temp\\nevertwice_supersession_ccjgwrbx",
+ "code_sha": "38e0ce63eefc",
+ "extract_temperature": "0",
+ "arms": {
+  "zep": {
+   "rows": [
+    {
+     "id": "val-http-timeout",
+     "shape": "value_replaced",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 149,
+     "returned": [
+      "Picked up the API client thread again and confirmed that the HTTP client timeout is 5 seconds.",
+      "Ran the full test suite afterwards and it stayed green."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "val-pg-version",
+     "shape": "value_replaced",
+     "n_hits": 0,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "old_value_served": false,
+     "chars_returned": 0,
+     "returned": [],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": true
+    },
+    {
+     "id": "val-batch-size",
+     "shape": "value_replaced",
+     "n_hits": 3,
+     "stale_returned": true,
+     "stale_rank": 2,
+     "current_returned": false,
+     "old_value_served": true,
+     "chars_returned": 197,
+     "returned": [
+      "The training job is monitored on the dashboards.",
+      "Picked up the training job thread again and confirmed that the training batch size is 32.",
+      "The change touched three files and none of them were config."
+     ],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": true
+    },
+    {
+     "id": "val-node-version",
+     "shape": "value_replaced",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 94,
+     "returned": [
+      "The frontend build decision targets Node 22.",
+      "The reviewer approved the frontend build decision."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "val-retry-count",
+     "shape": "value_replaced",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": false,
+     "old_value_served": true,
+     "chars_returned": 117,
+     "returned": [
+      "The queue worker retries a failed job 3 times.",
+      "The queue worker's retry behavior was documented in the README section."
+     ],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": true
+    },
+    {
+     "id": "val-cache-ttl",
+     "shape": "value_replaced",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 143,
+     "returned": [
+      "Cache entries expire after 15 minutes in the cache layer.",
+      "The full test suite was run after the cache layer was implemented and it stayed green."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "val-port",
+     "shape": "value_replaced",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": false,
+     "old_value_served": true,
+     "chars_returned": 99,
+     "returned": [
+      "The dev server listens on port 3000",
+      "The reviewer approved the dev server after asking for one rename"
+     ],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": true
+    },
+    {
+     "id": "val-region",
+     "shape": "value_replaced",
+     "n_hits": 1,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": false,
+     "old_value_served": true,
+     "chars_returned": 74,
+     "returned": [
+      "The service is deployed in eu-west-1 and documented in the README section."
+     ],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": true
+    },
+    {
+     "id": "val-py-version",
+     "shape": "value_replaced",
+     "n_hits": 5,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 203,
+     "returned": [
+      "The project now pins Python 3.13.",
+      "The toolchain now pins Python 3.13.",
+      "The pairing session involves the toolchain.",
+      "Picked up the toolchain thread again.",
+      "Ran the full test suite afterwards and it stayed green."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "val-replicas",
+     "shape": "value_replaced",
+     "n_hits": 3,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 204,
+     "returned": [
+      "The API runs with 12 replicas after the load test.",
+      "Wrote up the capacity decision. The API runs with 12 replicas after the load test, and the code now matches.",
+      "Rolled it out behind the usual staged release."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "val-lr",
+     "shape": "value_replaced",
+     "n_hits": 3,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 206,
+     "returned": [
+      "The learning rate was lowered to 5e-5 during the training session.",
+      "Checked the dashboards for an hour after the training session and nothing moved.",
+      "The change touched three files and none of them were config."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "val-chunk",
+     "shape": "value_replaced",
+     "n_hits": 4,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 221,
+     "returned": [
+      "Documents are chunked at 512 tokens, and the code now matches.",
+      "Documents are chunked at 1024 tokens.",
+      "Pairing session, roughly ninety minutes, no interruptions.",
+      "The reviewer approved the documents after asking for one rename."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "val-quorum",
+     "shape": "value_replaced",
+     "n_hits": 3,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": false,
+     "old_value_served": true,
+     "chars_returned": 140,
+     "returned": [
+      "The cluster needs a quorum of 3 nodes.",
+      "The cluster thread was documented in the README section.",
+      "Rolled it out behind the usual staged release."
+     ],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": true
+    },
+    {
+     "id": "val-license",
+     "shape": "value_replaced",
+     "n_hits": 0,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "old_value_served": false,
+     "chars_returned": 0,
+     "returned": [],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": true
+    },
+    {
+     "id": "val-branch",
+     "shape": "value_replaced",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 93,
+     "returned": [
+      "The repository has a default branch.",
+      "The default branch of the repository was renamed to main."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-cache-store",
+     "shape": "approach_abandoned",
+     "n_hits": 3,
+     "stale_returned": true,
+     "stale_rank": 2,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 147,
+     "returned": [
+      "The caching decision replaced Redis with an in-process LRU cache.",
+      "The caching decision replaced Redis.",
+      "The code now matches the in-process LRU cache."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-auth",
+     "shape": "approach_abandoned",
+     "n_hits": 3,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 173,
+     "returned": [
+      "authentication moved to opaque session cookies backed by the database",
+      "Spent the session on authentication",
+      "authentication moved to opaque session cookies backed by the database"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-bundler",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": false,
+     "old_value_served": true,
+     "chars_returned": 100,
+     "returned": [
+      "The frontend is bundled with Webpack",
+      "Left a note in the tracker so the next person does not redo this"
+     ],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": true
+    },
+    {
+     "id": "app-orm",
+     "shape": "approach_abandoned",
+     "n_hits": 0,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "old_value_served": false,
+     "chars_returned": 0,
+     "returned": [],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": true
+    },
+    {
+     "id": "app-queue",
+     "shape": "approach_abandoned",
+     "n_hits": 3,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": false,
+     "old_value_served": true,
+     "chars_returned": 133,
+     "returned": [
+      "background jobs run on Celery",
+      "background jobs run on Celery with RabbitMQ",
+      "Worked through background work today during a pairing session"
+     ],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": true
+    },
+    {
+     "id": "app-ci",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 114,
+     "returned": [
+      "Continuous integration was migrated to GitHub Actions.",
+      "Continuous integration was documented in the README section."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-search",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 120,
+     "returned": [
+      "The search decision is powered by Postgres full-text search.",
+      "The code for the search decision now matches the test suite."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-styling",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 115,
+     "returned": [
+      "components are styled with Tailwind utility classes",
+      "Left a note in the tracker so the next person does not redo this"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-packaging",
+     "shape": "approach_abandoned",
+     "n_hits": 3,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 126,
+     "returned": [
+      "The package is built with hatchling.",
+      "The package is published by CI.",
+      "Documented it in the README section that was already stale."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-state",
+     "shape": "approach_abandoned",
+     "n_hits": 0,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "old_value_served": false,
+     "chars_returned": 0,
+     "returned": [],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": true
+    },
+    {
+     "id": "app-infra",
+     "shape": "approach_abandoned",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 69,
+     "returned": [
+      "As of today, infrastructure is provisioned with Pulumi in TypeScript."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-migrations",
+     "shape": "approach_abandoned",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 72,
+     "returned": [
+      "schema migrations are plain numbered SQL files applied by a shell script"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-serialisation",
+     "shape": "approach_abandoned",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 90,
+     "returned": [
+      "The wire format decision specifies that messages are serialised as newline-delimited JSON."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-secrets",
+     "shape": "approach_abandoned",
+     "n_hits": 3,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 156,
+     "returned": [
+      "secrets are injected as environment variables by the orchestrator",
+      "Documented secrets in the README section that was already stale",
+      "Spent the session on secrets"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-e2e",
+     "shape": "approach_abandoned",
+     "n_hits": 1,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": false,
+     "old_value_served": true,
+     "chars_returned": 39,
+     "returned": [
+      "End-to-end tests are driven by Selenium"
+     ],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": true
+    },
+    {
+     "id": "ret-beta-flag",
+     "shape": "retracted_no_replacement",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 111,
+     "returned": [
+      "The feature flags thread contains the beta_dashboard flag.",
+      "The beta_dashboard flag was deleted from the tracker."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ret-legacy-endpoint",
+     "shape": "retracted_no_replacement",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "old_value_served": false,
+     "chars_returned": 61,
+     "returned": [
+      "The /v1/export endpoint was documented in the README section."
+     ],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": true
+    },
+    {
+     "id": "ret-telemetry",
+     "shape": "retracted_no_replacement",
+     "n_hits": 4,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 195,
+     "returned": [
+      "The client sends nothing regarding telemetry.",
+      "The telemetry usage reporting was stripped out entirely.",
+      "The pairing session involved telemetry.",
+      "Ran the full test suite afterwards and it stayed green."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ret-mirror",
+     "shape": "retracted_no_replacement",
+     "n_hits": 1,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": false,
+     "old_value_served": true,
+     "chars_returned": 53,
+     "returned": [
+      "A read replica in ap-south-1 serves analytics queries"
+     ],
+     "current_live": false,
+     "current_retired": true,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ret-plugin-api",
+     "shape": "retracted_no_replacement",
+     "n_hits": 3,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": false,
+     "old_value_served": true,
+     "chars_returned": 169,
+     "returned": [
+      "third-party plugins load through the entry_points group",
+      "third-party plugins load through the entry_points group",
+      "Checked the dashboards for an hour after and nothing moved."
+     ],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": true
+    },
+    {
+     "id": "ret-mobile",
+     "shape": "retracted_no_replacement",
+     "n_hits": 5,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 281,
+     "returned": [
+      "The iOS client shares the sync engine with the web app.",
+      "The iOS client was discontinued; only the web app remains.",
+      "The iOS client shares the sync engine with the web app.",
+      "The iOS client shares the sync engine with the web app.",
+      "Pairing session, roughly ninety minutes, no interruptions."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ret-cron",
+     "shape": "retracted_no_replacement",
+     "n_hits": 3,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 189,
+     "returned": [
+      "Picked up the scheduling thread again. Confirmed that nightly compaction was dropped.",
+      "Documented it in the README section that was already stale.",
+      "Rolled it out behind the usual staged release"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ret-grpc",
+     "shape": "retracted_no_replacement",
+     "n_hits": 3,
+     "stale_returned": true,
+     "stale_rank": 2,
+     "current_returned": false,
+     "old_value_served": true,
+     "chars_returned": 135,
+     "returned": [
+      "internal services talk over gRPC",
+      "internal services talk over gRPC on port 9090",
+      "Checked the dashboards for an hour after and nothing moved"
+     ],
+     "current_live": false,
+     "current_retired": true,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ret-sso",
+     "shape": "retracted_no_replacement",
+     "n_hits": 0,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "old_value_served": false,
+     "chars_returned": 0,
+     "returned": [],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": true
+    },
+    {
+     "id": "ret-webhook",
+     "shape": "retracted_no_replacement",
+     "n_hits": 4,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 213,
+     "returned": [
+      "The integrations decision deleted the webhook.",
+      "The integrations decision made the code match the new state.",
+      "The integrations decision touched three files.",
+      "The integrations decision terminated the partner integration."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ret-gpu-node",
+     "shape": "retracted_no_replacement",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 71,
+     "returned": [
+      "The reserved GPU node was given up and training rents capacity per run."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ret-cli-flag",
+     "shape": "retracted_no_replacement",
+     "n_hits": 5,
+     "stale_returned": true,
+     "stale_rank": 2,
+     "current_returned": true,
+     "old_value_served": true,
+     "chars_returned": 275,
+     "returned": [
+      "The --legacy flag was dropped in 3.0 with no equivalent.",
+      "The --legacy flag produces the pre-2.0 output format.",
+      "The CLI decision restores the pre-2.0 output format via the --legacy flag.",
+      "The CLI decision is documented in the tracker.",
+      "Rolled it out behind the usual staged release."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ret-audit-ui",
+     "shape": "retracted_no_replacement",
+     "n_hits": 3,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 256,
+     "returned": [
+      "The audit tab was taken out of the admin panel entirely.",
+      "The dashboards were checked for an hour after and nothing moved, indicating they are monitored by or related to the admin panel.",
+      "The admin panel thread was picked up again and involved the admin panel."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ret-i18n",
+     "shape": "retracted_no_replacement",
+     "n_hits": 3,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": false,
+     "old_value_served": true,
+     "chars_returned": 279,
+     "returned": [
+      "Worked through localisation today. The outcome: the app ships German and French translations.",
+      "Worked through localisation today. The outcome: the app ships German and French translations.",
+      "Worked through localisation today. The outcome: the app ships German and French translations."
+     ],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": true
+    },
+    {
+     "id": "ret-sandbox",
+     "shape": "retracted_no_replacement",
+     "n_hits": 3,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": false,
+     "old_value_served": true,
+     "chars_returned": 156,
+     "returned": [
+      "Confirmed that a sandbox environment mirrors production for partners.",
+      "Documented the API in the README section.",
+      "Rolled it out behind the usual staged release."
+     ],
+     "current_live": false,
+     "current_retired": true,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "nar-retry-scope",
+     "shape": "narrowed",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "old_value_served": false,
+     "chars_returned": 101,
+     "returned": [
+      "The HTTP client decision was written up, and the full test suite was run afterwards and stayed green."
+     ],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": true
+    },
+    {
+     "id": "nar-cache-scope",
+     "shape": "narrowed",
+     "n_hits": 3,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": false,
+     "old_value_served": true,
+     "chars_returned": 197,
+     "returned": [
+      "All API responses are cached regarding the open question on caching.",
+      "Spent the session on caching. Left a note in the tracker so the next person does not redo this.",
+      "The reviewer asked for one rename."
+     ],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": true
+    },
+    {
+     "id": "nar-audit-scope",
+     "shape": "narrowed",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 83,
+     "returned": [
+      "Only changes to billing tables are audited now, and the change touched three files."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "nar-gpu-scope",
+     "shape": "narrowed",
+     "n_hits": 3,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 182,
+     "returned": [
+      "The trainer thread uses GPU for jobs above 10M parameters.",
+      "The trainer thread uses CPU for jobs below or equal to 10M parameters.",
+      "Ran the full test suite afterwards and it stayed green"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "nar-lint-scope",
+     "shape": "narrowed",
+     "n_hits": 1,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": false,
+     "old_value_served": true,
+     "chars_returned": 120,
+     "returned": [
+      "The pre-commit hook lints the whole repository and a note was left in the tracker so the next person does not redo this."
+     ],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": true
+    },
+    {
+     "id": "nar-notify-scope",
+     "shape": "narrowed",
+     "n_hits": 3,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": false,
+     "old_value_served": true,
+     "chars_returned": 150,
+     "returned": [
+      "Confirmed that every failed deploy pages the on-call engineer.",
+      "staging failures go to Slack",
+      "The change touched three files and none of them were config."
+     ],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": true
+    },
+    {
+     "id": "nar-encrypt-scope",
+     "shape": "narrowed",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 206,
+     "returned": [
+      "The storage decision states that encryption at rest applies only to files in the private bucket.",
+      "The storage decision indicates that the code now matches the encryption at rest policy for the private bucket."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "nar-index-scope",
+     "shape": "narrowed",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": false,
+     "old_value_served": true,
+     "chars_returned": 122,
+     "returned": [
+      "The search index covers every document in the store.",
+      "The index was documented in the README section that was already stale."
+     ],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": true
+    },
+    {
+     "id": "nar-backup-scope",
+     "shape": "narrowed",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 52,
+     "returned": [
+      "The nightly backup covers the primary database only."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "nar-ratelimit-scope",
+     "shape": "narrowed",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "old_value_served": false,
+     "chars_returned": 65,
+     "returned": [
+      "Left a note in the tracker so the next person does not redo this."
+     ],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": true
+    },
+    {
+     "id": "nar-compress-scope",
+     "shape": "narrowed",
+     "n_hits": 1,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": false,
+     "old_value_served": true,
+     "chars_returned": 91,
+     "returned": [
+      "Documented in the README section that was already stale, every response is gzip-compressed."
+     ],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": true
+    },
+    {
+     "id": "nar-mfa-scope",
+     "shape": "narrowed",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 111,
+     "returned": [
+      "MFA is required only for accounts with admin scope",
+      "Ran the full test suite after picking up the security thread."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "nar-replay-scope",
+     "shape": "narrowed",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 131,
+     "returned": [
+      "The consumer replays only events since the last checkpoint, and the code now matches.",
+      "Rolled it out behind the usual staged release."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "nar-shard-scope",
+     "shape": "narrowed",
+     "n_hits": 3,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 251,
+     "returned": [
+      "Spent the session on sharding. Settled it: only tenants above 50k records get a dedicated shard.",
+      "Spent the session on sharding. Settled it: only tenants above 50k records get a dedicated shard.",
+      "Checked the dashboards for an hour after and nothing moved."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "nar-trace-scope",
+     "shape": "narrowed",
+     "n_hits": 3,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 130,
+     "returned": [
+      "One request in a hundred is sampled for tracing.",
+      "The tracing decision involves a Pairing session.",
+      "The reviewer asked for one rename."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-db-cache",
+     "shape": "control",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "old_value_served": false,
+     "chars_returned": 84,
+     "returned": [
+      "The cache layer is Redis 7, documented in the README section that was already stale."
+     ],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": true
+    },
+    {
+     "id": "ctl-lang-test",
+     "shape": "control",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "old_value_served": false,
+     "chars_returned": 44,
+     "returned": [
+      "The integration tests are written in Python."
+     ],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": true
+    },
+    {
+     "id": "ctl-port-pair",
+     "shape": "control",
+     "n_hits": 3,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 185,
+     "returned": [
+      "The metrics endpoint listens on port 9100.",
+      "Picked up the networking thread again. Confirmed that the API listens on port 8443.",
+      "The reviewer asked for one rename and otherwise approved it."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-env",
+     "shape": "control",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 38,
+     "returned": [
+      "production deploys on a tagged release"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-model",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 77,
+     "returned": [
+      "The full test suite uses the embedder bge-m3.",
+      "The reranker is a cross-encoder."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-storage",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 51,
+     "returned": [
+      "User uploads go to S3",
+      "database backups go to Glacier"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-auth-pair",
+     "shape": "control",
+     "n_hits": 3,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 132,
+     "returned": [
+      "The admin panel requires hardware MFA.",
+      "The change touched three files and none of them were config.",
+      "The public API uses scoped tokens."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-fmt",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 74,
+     "returned": [
+      "Python code is formatted with ruff",
+      "SQL migrations are checked with sqlfluff"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-obs",
+     "shape": "control",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 44,
+     "returned": [
+      "Confirmed that traces are exported to Tempo."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-limits",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 113,
+     "returned": [
+      "As of today, the upload size limit is set up to 25 MB.",
+      "Checked the dashboards for an hour after and nothing moved."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-sched",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 134,
+     "returned": [
+      "Cleared the open question on scheduling: reindexing runs weekly on Sunday.",
+      "The reviewer asked for one rename and otherwise approved it."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-clients",
+     "shape": "control",
+     "n_hits": 3,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 143,
+     "returned": [
+      "The CLI is distributed through Homebrew.",
+      "The desktop app ships as a signed installer.",
+      "Documented it in the README section that was already stale."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-queue-pair",
+     "shape": "control",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "old_value_served": false,
+     "chars_returned": 32,
+     "returned": [
+      "the email queue is backed by SQS"
+     ],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": true
+    },
+    {
+     "id": "ctl-doc",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 109,
+     "returned": [
+      "The API reference is generated from OpenAPI.",
+      "Left a note in the tracker so the next person does not redo this."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-runtime",
+     "shape": "control",
+     "n_hits": 4,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 252,
+     "returned": [
+      "Picked up the runtime thread again. Confirmed that the worker runs on Python 3.13.",
+      "Picked up the runtime thread again. Confirmed that the worker runs on Python 3.13.",
+      "The sidecar runs on Go 1.23.",
+      "The change touched three files and none of them were config."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-net",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 90,
+     "returned": [
+      "As of today, ingress terminates TLS at the load balancer.",
+      "egress goes through a NAT gateway"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-review",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 123,
+     "returned": [
+      "Cleared the open question on process: every pull request needs two approvals.",
+      "Rolled it out behind the usual staged release."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-metrics",
+     "shape": "control",
+     "n_hits": 4,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 195,
+     "returned": [
+      "The observability decision tracks request latency as a histogram.",
+      "Request latency is tracked as a histogram.",
+      "Queue depth is tracked as a gauge.",
+      "The observability decision is monitored on dashboards."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-store",
+     "shape": "control",
+     "n_hits": 3,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "old_value_served": false,
+     "chars_returned": 100,
+     "returned": [
+      "session state lives in browser localStorage",
+      "The reviewer approved it",
+      "The reviewer asked for one rename"
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-alerting",
+     "shape": "control",
+     "n_hits": 0,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "old_value_served": false,
+     "chars_returned": 0,
+     "returned": [],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": true
+    }
+   ],
+   "n_supersession": 60,
+   "n_control": 20,
+   "stale_rate": 0.3667,
+   "stale_ci": [
+    0.2562,
+    0.4932
+   ],
+   "current_rate": 0.5667,
+   "current_ci": [
+    0.441,
+    0.6843
+   ],
+   "old_value_served_rate": 0.3667,
+   "control_miss_rate": 0.2,
+   "control_miss_ci": [
+    0.0807,
+    0.416
+   ],
+   "over_retraction_rate": 0.0,
+   "over_retraction_ci": [
+    0.0,
+    0.1611
+   ],
+   "mean_chars_returned": 123.1,
+   "max_chars_returned": 281,
+   "stale_at_rank_1": 18,
+   "control_retired_by_memory": 0,
+   "control_demoted_by_merge": 0,
+   "control_never_written": 4,
+   "control_written_but_unranked": 0,
+   "errors": 0,
+   "seconds": 303.1,
+   "config": "graphiti-core via FalkorDB, qwen3-coder:30b + bge-m3, edge hybrid RRF, limit=5",
+   "graphiti": {
+    "llm": "qwen3-coder:30b",
+    "embedder": "bge-m3",
+    "json_mode": "json_schema",
+    "driver": "falkordb localhost:6380",
+    "database": "nw_1790294714",
+    "episodes": 160,
+    "episode_errors": 0,
+    "llm_calls": 524,
+    "llm_failures": 0,
+    "llm_calls_per_episode": 3.27
+   }
+  }
+ },
+ "measured_at": {
+  "commit": "fe6ddff232915c61ec2177b5541039a9c3e370c6",
+  "utc": "2026-09-25T00:10:17Z",
+  "dirty": false
+ }
+}

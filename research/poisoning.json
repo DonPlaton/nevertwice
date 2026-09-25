@@ -45,5 +45,10 @@
   "supersession-abuse": 1.0,
   "confidence-spoof": 1.0
  },
- "block_rate": 0.8125
+ "block_rate": 0.8125,
+ "measured_at": {
+  "commit": "fe6ddff232915c61ec2177b5541039a9c3e370c6",
+  "utc": "2026-09-24T19:09:48Z",
+  "dirty": false
+ }
 }

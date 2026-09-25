@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -278,8 +279,29 @@ if "--record" in sys.argv:
     print(f"  recorded {fixture}")
 elif fixture.exists():
     want = json.loads(fixture.read_text(encoding="utf-8"))
-    check("the snapshot matches the recorded fixture", want == first,
-          "\n".join(G.diff(want, first, LAST_STORE)[:20]))
+    #: K50 (2026-09-25): a served line ends with its age against the WALL CLOCK - `_(~6mo)_` - and
+    #: the corpus is dated 2026-02/03, so the fixture flipped on the calendar alone (GS-CACHE went
+    #: ~6mo -> ~7mo on 2026-09-25; the fixture failed at HEAD too, and the canaries below passed
+    #: for the wrong reason: their unmutated copy was already red). Only that token is removed
+    #: before comparing; every served line must still carry one, so the label cannot vanish unseen.
+    AGE = re.compile(r"\s*_\(~\d+[a-z]+\)_")
+
+    def _undated(node):
+        if isinstance(node, str):
+            return AGE.sub("", node)
+        if isinstance(node, list):
+            return [_undated(x) for x in node]
+        if isinstance(node, dict):
+            return {k: _undated(v) for k, v in node.items()}
+        return node
+
+    served_lines = [ln for lines in first.get("served", {}).values() for ln in lines]
+    check("every served line still carries its age label", bool(served_lines)
+          and all(AGE.search(ln) for ln in served_lines),
+          next((ln for ln in served_lines if not AGE.search(ln)), "no served lines"))
+    check("the snapshot matches the recorded fixture (age labels aside - they follow the clock)",
+          _undated(want) == _undated(first),
+          "\n".join(G.diff(_undated(want), _undated(first), LAST_STORE)[:20]))
 else:
     print("  [--] no fixture recorded yet (run with --record)")
 

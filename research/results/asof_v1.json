@@ -36,8 +36,8 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof0000-pattern-http-client-timeout-configuration",
-        "2026-03-01-asof0000-decision-api-client-timeout-set-to-30s"
+        "2026-03-01-asof0000-pattern-http-client-timeout-configured",
+        "2026-03-01-asof0000-decision-set-http-client-timeout-to-30s"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -50,9 +50,9 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof0000-pattern-http-client-timeout-configuration",
-        "2026-05-01-asof0000-mistake-incorrect-timeout-value",
-        "2026-05-01-asof0000-decision-api-client-timeout-set-to-30s"
+        "2026-05-01-asof0000-pattern-http-client-timeout-configured",
+        "2026-05-01-asof0000-mistake-incorrect-http-timeout-assumption",
+        "2026-05-01-asof0000-decision-set-http-client-timeout-to-30s"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -2520,7 +2520,7 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 3,
+     "new_items": 5,
      "leak": false,
      "store": {
       "s0": {
@@ -2531,21 +2531,23 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1000-pattern-http-client-timeout-configured",
-        "2026-03-01-asof1000-decision-api-client-timeout-set-to-thirty-seconds"
+        "2026-03-01-asof0000-pattern-http-client-timeout-configuration",
+        "2026-03-01-asof0000-decision-api-client-timeout-set-to-30s"
        ],
        "supersedes": [],
        "superseded_via": []
       },
       "s1": {
-       "written": 1,
-       "live": 1,
+       "written": 3,
+       "live": 3,
        "retired": 0,
        "absorbed": 0,
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1000-pattern-http-client-timeout-configured"
+        "2026-05-01-asof0000-pattern-http-client-timeout-configuration",
+        "2026-05-01-asof0000-mistake-incorrect-timeout-value",
+        "2026-05-01-asof0000-decision-api-client-timeout-set-to-30s"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -2572,7 +2574,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1001-pattern-postgresql-version-in-production"
+        "2026-03-01-asof0001-pattern-postgresql-version-in-production"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -2585,7 +2587,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1001-pattern-postgresql-version-in-production"
+        "2026-05-01-asof0001-pattern-postgresql-version-in-production"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -2612,7 +2614,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1002-pattern-training-batch-size-confirmed"
+        "2026-03-01-asof0002-pattern-training-batch-size-confirmed"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -2625,7 +2627,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1002-pattern-training-batch-size-confirmed"
+        "2026-05-01-asof0002-pattern-training-batch-size-confirmed"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -2654,7 +2656,7 @@
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1003-pattern-frontend-build-target-node-18"
+        "2026-03-01-asof0003-pattern-frontend-build-target-node-18"
        ],
        "supersedes": [],
        "superseded_via": [
@@ -2669,10 +2671,10 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1003-pattern-frontend-build-target-node-22"
+        "2026-05-01-asof0003-pattern-frontend-build-target-node-22"
        ],
        "supersedes": [
-        "2026-03-01-asof1003-pattern-frontend-build-target-node-18"
+        "2026-03-01-asof0003-pattern-frontend-build-target-node-18"
        ],
        "superseded_via": []
       }
@@ -2698,7 +2700,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1004-pattern-queue-worker-retry-logic"
+        "2026-03-01-asof0004-pattern-queue-worker-retry-logic"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -2711,7 +2713,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1004-pattern-queue-worker-retry-logic"
+        "2026-05-01-asof0004-pattern-queue-worker-retry-logic"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -2738,8 +2740,8 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1005-pattern-cache-layer-expiration",
-        "2026-03-01-asof1005-decision-cache-expiration-time"
+        "2026-03-01-asof0005-pattern-cache-layer-expiration",
+        "2026-03-01-asof0005-decision-cache-expiration-time"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -2752,8 +2754,8 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1005-pattern-cache-layer-expiration",
-        "2026-05-01-asof1005-decision-cache-expiration-time"
+        "2026-05-01-asof0005-pattern-cache-layer-expiration",
+        "2026-05-01-asof0005-decision-cache-expiration-time"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -2782,7 +2784,7 @@
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1006-pattern-dev-server-port-configuration"
+        "2026-03-01-asof0006-pattern-dev-server-port-configuration"
        ],
        "supersedes": [],
        "superseded_via": [
@@ -2797,10 +2799,10 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1006-pattern-dev-server-port-configuration"
+        "2026-05-01-asof0006-pattern-dev-server-port-configuration"
        ],
        "supersedes": [
-        "2026-03-01-asof1006-pattern-dev-server-port-configuration"
+        "2026-03-01-asof0006-pattern-dev-server-port-configuration"
        ],
        "superseded_via": []
       }
@@ -2826,7 +2828,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1007-pattern-service-deployment-in-eu-west-1"
+        "2026-03-01-asof0007-pattern-deployment-in-eu-west-1"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -2839,7 +2841,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1007-pattern-service-deployment-in-eu-west-1"
+        "2026-05-01-asof0007-pattern-deployment-in-eu-west-1"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -2866,8 +2868,8 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1008-pattern-python-version-pinning",
-        "2026-03-01-asof1008-pattern-test-suite-stays-green"
+        "2026-03-01-asof0008-pattern-python-version-pinning",
+        "2026-03-01-asof0008-pattern-test-suite-validation"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -2880,7 +2882,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1008-pattern-python-version-pinning"
+        "2026-05-01-asof0008-pattern-python-version-pinning"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -2907,7 +2909,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1009-pattern-api-capacity-replicas"
+        "2026-03-01-asof0009-pattern-api-capacity-replicas"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -2920,7 +2922,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1009-pattern-api-capacity-replicas"
+        "2026-05-01-asof0009-pattern-api-capacity-replicas"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -2947,7 +2949,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1010-pattern-learning-rate-configuration"
+        "2026-03-01-asof0010-pattern-learning-rate-configuration"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -2960,7 +2962,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1010-pattern-learning-rate-configuration"
+        "2026-05-01-asof0010-pattern-learning-rate-configuration"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -2987,8 +2989,8 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1011-pattern-document-ingestion-chunking",
-        "2026-03-01-asof1011-decision-ingestion-decision-finalized"
+        "2026-03-01-asof0011-pattern-document-ingestion-chunking",
+        "2026-03-01-asof0011-decision-ingestion-chunk-size"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -3001,8 +3003,8 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1011-pattern-document-ingestion-chunking",
-        "2026-05-01-asof1011-decision-ingestion-decision-finalized"
+        "2026-05-01-asof0011-pattern-document-ingestion-chunking",
+        "2026-05-01-asof0011-decision-ingestion-chunk-size"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -3029,8 +3031,8 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1012-pattern-cluster-quorum-requirement",
-        "2026-03-01-asof1012-decision-staged-release-rollout"
+        "2026-03-01-asof0012-pattern-cluster-quorum-setup",
+        "2026-03-01-asof0012-decision-staged-release-rollout"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -3043,8 +3045,8 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1012-pattern-cluster-quorum-requirement",
-        "2026-05-01-asof1012-decision-staged-release-rollout"
+        "2026-05-01-asof0012-pattern-cluster-quorum-setup",
+        "2026-05-01-asof0012-decision-staged-release-rollout"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -3071,7 +3073,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1013-decision-license-agpl3"
+        "2026-03-01-asof0013-decision-license-agpl3"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -3084,7 +3086,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1013-decision-license-agpl3"
+        "2026-05-01-asof0013-decision-license-agpl3"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -3111,7 +3113,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1014-pattern-repository-thread-resumption"
+        "2026-03-01-asof0014-pattern-repository-thread-resumption"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -3124,7 +3126,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1014-pattern-repository-thread-resumption"
+        "2026-05-01-asof0014-pattern-repository-thread-resumption"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -3151,7 +3153,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1015-pattern-redis-session-caching"
+        "2026-03-01-asof0015-pattern-redis-session-caching"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -3164,7 +3166,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1015-pattern-redis-session-caching"
+        "2026-05-01-asof0015-pattern-redis-session-caching"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -3177,10 +3179,10 @@
      "id": "app-auth",
      "shape": "approach_abandoned",
      "old_day_correct": true,
-     "new_day_correct": false,
-     "both_correct": false,
+     "new_day_correct": true,
+     "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 3,
      "leak": false,
      "store": {
       "s0": {
@@ -3191,53 +3193,10 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1016-pattern-jwt-authentication-with-hs256"
+        "2026-03-01-asof0016-pattern-jwt-authentication-with-hs256"
        ],
        "supersedes": [],
        "superseded_via": []
-      },
-      "s1": {
-       "written": 0,
-       "live": 0,
-       "retired": 0,
-       "absorbed": 0,
-       "valid_to": [],
-       "marker_in_text": false,
-       "titles": [],
-       "supersedes": [],
-       "superseded_via": []
-      }
-     },
-     "old_fail_kind": null,
-     "run": 1
-    },
-    {
-     "id": "app-bundler",
-     "shape": "approach_abandoned",
-     "old_day_correct": true,
-     "new_day_correct": true,
-     "both_correct": true,
-     "old_items": 2,
-     "new_items": 3,
-     "leak": false,
-     "store": {
-      "s0": {
-       "written": 2,
-       "live": 1,
-       "retired": 1,
-       "absorbed": 0,
-       "valid_to": [
-        "2026-05-01"
-       ],
-       "marker_in_text": true,
-       "titles": [
-        "2026-03-01-asof1017-pattern-frontend-bundling-with-webpack",
-        "2026-03-01-asof1017-decision-build-decision-made"
-       ],
-       "supersedes": [],
-       "superseded_via": [
-        "explicit"
-       ]
       },
       "s1": {
        "written": 2,
@@ -3247,12 +3206,10 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1017-pattern-frontend-bundling-with-vite",
-        "2026-05-01-asof1017-decision-build-decision-made"
+        "2026-05-01-asof0016-pattern-jwt-authentication-with-hs256",
+        "2026-05-01-asof0016-decision-opaque-session-cookies"
        ],
-       "supersedes": [
-        "2026-03-01-asof1017-pattern-frontend-bundling-with-webpack"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -3260,7 +3217,7 @@
      "run": 1
     },
     {
-     "id": "app-orm",
+     "id": "app-bundler",
      "shape": "approach_abandoned",
      "old_day_correct": true,
      "new_day_correct": true,
@@ -3280,8 +3237,8 @@
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1018-pattern-sqlalchemy-orm-data-access",
-        "2026-03-01-asof1018-decision-use-sqlalchemy-orm"
+        "2026-03-01-asof0017-pattern-frontend-bundling-with-webpack",
+        "2026-03-01-asof0017-decision-use-webpack-for-frontend-bundling"
        ],
        "supersedes": [],
        "superseded_via": [
@@ -3297,12 +3254,60 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1018-pattern-asyncpg-data-access",
-        "2026-05-01-asof1018-decision-use-asyncpg-for-data-access"
+        "2026-05-01-asof0017-pattern-frontend-bundling-with-vite",
+        "2026-05-01-asof0017-decision-use-vite-for-frontend-bundling"
        ],
        "supersedes": [
-        "2026-03-01-asof1018-pattern-sqlalchemy-orm-data-access",
-        "2026-03-01-asof1018-decision-use-sqlalchemy-orm"
+        "2026-03-01-asof0017-pattern-frontend-bundling-with-webpack",
+        "2026-03-01-asof0017-decision-use-webpack-for-frontend-bundling"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 1
+    },
+    {
+     "id": "app-orm",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 3,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 1,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0018-pattern-sqlalchemy-orm-data-access",
+        "2026-03-01-asof0018-decision-orm-for-data-access"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "explicit"
+       ]
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0018-pattern-asyncpg-for-data-access",
+        "2026-05-01-asof0018-decision-use-asyncpg-for-data-access"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0018-pattern-sqlalchemy-orm-data-access"
        ],
        "superseded_via": []
       }
@@ -3313,21 +3318,23 @@
     {
      "id": "app-queue",
      "shape": "approach_abandoned",
-     "old_day_correct": false,
+     "old_day_correct": true,
      "new_day_correct": true,
-     "both_correct": false,
-     "old_items": 0,
-     "new_items": 1,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
-       "written": 0,
-       "live": 0,
+       "written": 1,
+       "live": 1,
        "retired": 0,
        "absorbed": 0,
        "valid_to": [],
-       "marker_in_text": false,
-       "titles": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0019-pattern-celery-background-jobs"
+       ],
        "supersedes": [],
        "superseded_via": []
       },
@@ -3339,13 +3346,13 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1019-pattern-background-jobs-postgres-queue"
+        "2026-05-01-asof0019-pattern-celery-background-jobs"
        ],
        "supersedes": [],
        "superseded_via": []
       }
      },
-     "old_fail_kind": "never_written",
+     "old_fail_kind": null,
      "run": 1
     },
     {
@@ -3366,7 +3373,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1020-pattern-ci-staged-release"
+        "2026-03-01-asof0020-pattern-ci-staged-release"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -3379,7 +3386,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1020-pattern-ci-staged-release"
+        "2026-05-01-asof0020-pattern-ci-staged-release"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -3391,21 +3398,23 @@
     {
      "id": "app-search",
      "shape": "approach_abandoned",
-     "old_day_correct": false,
+     "old_day_correct": true,
      "new_day_correct": true,
-     "both_correct": false,
-     "old_items": 0,
-     "new_items": 1,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
-       "written": 0,
-       "live": 0,
+       "written": 1,
+       "live": 1,
        "retired": 0,
        "absorbed": 0,
        "valid_to": [],
-       "marker_in_text": false,
-       "titles": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0021-pattern-elasticsearch-search-setup"
+       ],
        "supersedes": [],
        "superseded_via": []
       },
@@ -3417,49 +3426,54 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1021-pattern-postgres-fulltext-search"
+        "2026-05-01-asof0021-pattern-elasticsearch-search-setup"
        ],
        "supersedes": [],
        "superseded_via": []
       }
      },
-     "old_fail_kind": "never_written",
+     "old_fail_kind": null,
      "run": 1
     },
     {
      "id": "app-styling",
      "shape": "approach_abandoned",
-     "old_day_correct": false,
-     "new_day_correct": false,
-     "both_correct": false,
-     "old_items": 0,
-     "new_items": 0,
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 3,
      "leak": false,
      "store": {
       "s0": {
-       "written": 0,
-       "live": 0,
+       "written": 1,
+       "live": 1,
        "retired": 0,
        "absorbed": 0,
        "valid_to": [],
-       "marker_in_text": false,
-       "titles": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0022-pattern-styled-components-usage"
+       ],
        "supersedes": [],
        "superseded_via": []
       },
       "s1": {
-       "written": 0,
-       "live": 0,
+       "written": 2,
+       "live": 2,
        "retired": 0,
        "absorbed": 0,
        "valid_to": [],
-       "marker_in_text": false,
-       "titles": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0022-pattern-tailwind-styling-in-components",
+        "2026-05-01-asof0022-decision-switch-to-tailwind-styling"
+       ],
        "supersedes": [],
        "superseded_via": []
       }
      },
-     "old_fail_kind": "never_written",
+     "old_fail_kind": null,
      "run": 1
     },
     {
@@ -3480,8 +3494,8 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1023-pattern-package-build-and-publish",
-        "2026-03-01-asof1023-decision-packaging-decision"
+        "2026-03-01-asof0023-pattern-package-deployment-with-poetry",
+        "2026-03-01-asof0023-decision-use-poetry-for-packaging"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -3494,8 +3508,8 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1023-pattern-package-build-and-publish",
-        "2026-05-01-asof1023-decision-packaging-decision"
+        "2026-05-01-asof0023-pattern-package-deployment-with-poetry",
+        "2026-05-01-asof0023-decision-use-poetry-for-packaging"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -3511,26 +3525,24 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 2,
+     "new_items": 3,
      "leak": false,
      "store": {
       "s0": {
        "written": 2,
-       "live": 0,
-       "retired": 2,
+       "live": 1,
+       "retired": 1,
        "absorbed": 0,
        "valid_to": [
-        "2026-05-01",
         "2026-05-01"
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1024-pattern-frontend-global-state-redux",
-        "2026-03-01-asof1024-decision-use-redux-for-global-state"
+        "2026-03-01-asof0024-pattern-frontend-state-management",
+        "2026-03-01-asof0024-decision-redux-for-global-state"
        ],
        "supersedes": [],
        "superseded_via": [
-        "explicit",
         "explicit"
        ]
       },
@@ -3542,12 +3554,11 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1024-pattern-frontend-global-state-zustand",
-        "2026-05-01-asof1024-decision-use-zustand-for-global-state"
+        "2026-05-01-asof0024-pattern-frontend-state-management",
+        "2026-05-01-asof0024-decision-redux-for-global-state"
        ],
        "supersedes": [
-        "2026-03-01-asof1024-pattern-frontend-global-state-redux",
-        "2026-03-01-asof1024-decision-use-redux-for-global-state"
+        "2026-03-01-asof0024-decision-redux-for-global-state"
        ],
        "superseded_via": []
       }
@@ -3575,7 +3586,7 @@
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1025-pattern-infrastructure-provisioning-with-terraform"
+        "2026-03-01-asof0025-pattern-infrastructure-provisioning-with-terraform"
        ],
        "supersedes": [],
        "superseded_via": [
@@ -3590,10 +3601,10 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1025-pattern-infrastructure-provisioning-with-pulumi"
+        "2026-05-01-asof0025-pattern-infrastructure-provisioning-with-pulumi"
        ],
        "supersedes": [
-        "2026-03-01-asof1025-pattern-infrastructure-provisioning-with-terraform"
+        "2026-03-01-asof0025-pattern-infrastructure-provisioning-with-terraform"
        ],
        "superseded_via": []
       }
@@ -3619,7 +3630,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1026-pattern-schema-migration-through-alembic"
+        "2026-03-01-asof0026-pattern-schema-migration-through-alembic"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -3632,7 +3643,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1026-pattern-schema-migration-through-alembic"
+        "2026-05-01-asof0026-pattern-schema-migration-through-alembic"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -3644,21 +3655,23 @@
     {
      "id": "app-serialisation",
      "shape": "approach_abandoned",
-     "old_day_correct": false,
+     "old_day_correct": true,
      "new_day_correct": true,
-     "both_correct": false,
-     "old_items": 0,
-     "new_items": 1,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
-       "written": 0,
-       "live": 0,
+       "written": 1,
+       "live": 1,
        "retired": 0,
        "absorbed": 0,
        "valid_to": [],
-       "marker_in_text": false,
-       "titles": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0027-pattern-protobuf-message-serialization"
+       ],
        "supersedes": [],
        "superseded_via": []
       },
@@ -3670,33 +3683,35 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1027-pattern-newline-delimited-json-messages"
+        "2026-05-01-asof0027-pattern-protobuf-message-serialization"
        ],
        "supersedes": [],
        "superseded_via": []
       }
      },
-     "old_fail_kind": "never_written",
+     "old_fail_kind": null,
      "run": 1
     },
     {
      "id": "app-secrets",
      "shape": "approach_abandoned",
-     "old_day_correct": false,
+     "old_day_correct": true,
      "new_day_correct": true,
-     "both_correct": false,
-     "old_items": 0,
-     "new_items": 1,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
-       "written": 0,
-       "live": 0,
+       "written": 1,
+       "live": 1,
        "retired": 0,
        "absorbed": 0,
        "valid_to": [],
-       "marker_in_text": false,
-       "titles": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0028-pattern-secrets-from-vault-at-boot"
+       ],
        "supersedes": [],
        "superseded_via": []
       },
@@ -3708,13 +3723,13 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1028-pattern-secrets-injection-via-env-vars"
+        "2026-05-01-asof0028-pattern-secrets-from-vault-at-boot"
        ],
        "supersedes": [],
        "superseded_via": []
       }
      },
-     "old_fail_kind": "never_written",
+     "old_fail_kind": null,
      "run": 1
     },
     {
@@ -3735,8 +3750,8 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1029-pattern-end-to-end-test-validation",
-        "2026-03-01-asof1029-decision-testing-decision-confirmed"
+        "2026-03-01-asof0029-pattern-end-to-end-test-verification",
+        "2026-03-01-asof0029-decision-testing-decision-confirmed"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -3749,8 +3764,8 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1029-pattern-end-to-end-test-validation",
-        "2026-05-01-asof1029-decision-testing-decision-confirmed"
+        "2026-05-01-asof0029-pattern-end-to-end-test-verification",
+        "2026-05-01-asof0029-decision-testing-decision-confirmed"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -3762,9 +3777,9 @@
     {
      "id": "ret-beta-flag",
      "shape": "retracted_no_replacement",
-     "old_day_correct": false,
+     "old_day_correct": true,
      "new_day_correct": true,
-     "both_correct": false,
+     "both_correct": true,
      "old_items": 2,
      "new_items": 4,
      "leak": false,
@@ -3775,10 +3790,10 @@
        "retired": 0,
        "absorbed": 0,
        "valid_to": [],
-       "marker_in_text": false,
+       "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1030-pattern-feature-flag-gating",
-        "2026-03-01-asof1030-decision-beta-dashboard-flag"
+        "2026-03-01-asof0030-pattern-feature-flag-gating",
+        "2026-03-01-asof0030-decision-beta-dashboard-flag"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -3791,14 +3806,14 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1030-pattern-feature-flag-gating",
-        "2026-05-01-asof1030-decision-beta-dashboard-flag"
+        "2026-05-01-asof0030-pattern-feature-flag-gating",
+        "2026-05-01-asof0030-decision-beta-dashboard-flag"
        ],
        "supersedes": [],
        "superseded_via": []
       }
      },
-     "old_fail_kind": "paraphrase",
+     "old_fail_kind": null,
      "run": 1
     },
     {
@@ -3819,7 +3834,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1031-pattern-api-export-endpoint-streams-csv"
+        "2026-03-01-asof0031-pattern-api-export-csv-endpoint"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -3832,7 +3847,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1031-pattern-api-export-endpoint-removed"
+        "2026-05-01-asof0031-pattern-api-export-csv-endpoint-removed"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -3859,8 +3874,8 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1032-pattern-telemetry-thread-continuity",
-        "2026-03-01-asof1032-pattern-test-suite-green-after-telemetry"
+        "2026-03-01-asof0032-pattern-telemetry-thread-continuity",
+        "2026-03-01-asof0032-pattern-test-suite-green-after-telemetry"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -3898,7 +3913,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1033-pattern-read-replica-setup"
+        "2026-03-01-asof0033-pattern-read-replica-setup"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -3911,7 +3926,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1033-pattern-read-replica-setup"
+        "2026-05-01-asof0033-pattern-read-replica-setup"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -3938,7 +3953,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1034-pattern-third-party-plugins-loading"
+        "2026-03-01-asof0034-pattern-third-party-plugins-loading"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -3951,8 +3966,8 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1034-pattern-third-party-plugins-loading",
-        "2026-05-01-asof1034-decision-plugin-system-removal"
+        "2026-05-01-asof0034-pattern-third-party-plugins-loading",
+        "2026-05-01-asof0034-decision-extensibility-removed"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -3979,7 +3994,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1035-decision-ios-client-sync-engine"
+        "2026-03-01-asof0035-decision-ios-client-sync-engine"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -4019,8 +4034,8 @@
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1036-pattern-nightly-cron-audit-log-compaction",
-        "2026-03-01-asof1036-decision-staged-release-rollout"
+        "2026-03-01-asof0036-pattern-nightly-cron-audit-log-compaction",
+        "2026-03-01-asof0036-decision-staged-release-rollout"
        ],
        "supersedes": [],
        "superseded_via": [
@@ -4035,11 +4050,11 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1036-pattern-nightly-cron-audit-log-compaction",
-        "2026-05-01-asof1036-decision-staged-release-rollout"
+        "2026-05-01-asof0036-pattern-nightly-cron-audit-log-compaction",
+        "2026-05-01-asof0036-decision-staged-release-rollout"
        ],
        "supersedes": [
-        "2026-03-01-asof1036-pattern-nightly-cron-audit-log-compaction"
+        "2026-03-01-asof0036-pattern-nightly-cron-audit-log-compaction"
        ],
        "superseded_via": []
       }
@@ -4065,7 +4080,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1037-pattern-grpc-communication-setup"
+        "2026-03-01-asof0037-pattern-grpc-communication-setup"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -4078,7 +4093,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1037-pattern-grpc-communication-setup"
+        "2026-05-01-asof0037-pattern-grpc-communication-setup"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -4091,33 +4106,37 @@
      "id": "ret-sso",
      "shape": "retracted_no_replacement",
      "old_day_correct": true,
-     "new_day_correct": false,
-     "both_correct": false,
-     "old_items": 1,
-     "new_items": 1,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 4,
      "leak": false,
      "store": {
       "s0": {
-       "written": 1,
-       "live": 1,
+       "written": 2,
+       "live": 2,
        "retired": 0,
        "absorbed": 0,
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1038-pattern-okta-saml-sign-in"
+        "2026-03-01-asof0038-pattern-okta-saml-sign-in",
+        "2026-03-01-asof0038-decision-rename-approval"
        ],
        "supersedes": [],
        "superseded_via": []
       },
       "s1": {
-       "written": 0,
-       "live": 0,
+       "written": 2,
+       "live": 2,
        "retired": 0,
        "absorbed": 0,
        "valid_to": [],
-       "marker_in_text": false,
-       "titles": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0038-pattern-okta-saml-sign-in",
+        "2026-05-01-asof0038-decision-rename-approval"
+       ],
        "supersedes": [],
        "superseded_via": []
       }
@@ -4143,7 +4162,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1039-pattern-webhook-integration-documentation"
+        "2026-03-01-asof0039-pattern-webhook-order-integration"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -4156,7 +4175,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1039-pattern-webhook-integration-documentation"
+        "2026-05-01-asof0039-pattern-webhook-order-integration"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -4219,8 +4238,8 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1041-pattern-cli-flag-legacy-restores-pre-2-0-format",
-        "2026-03-01-asof1041-decision-use-legacy-flag-for-compatibility"
+        "2026-03-01-asof0041-pattern-cli-flag-legacy-restores-pre-2-0-format",
+        "2026-03-01-asof0041-decision-use-legacy-flag-to-match-pre-2-0-behavior"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -4233,8 +4252,8 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1041-pattern-cli-flag-legacy-restores-pre-2-0-format",
-        "2026-05-01-asof1041-decision-use-legacy-flag-for-compatibility"
+        "2026-05-01-asof0041-pattern-cli-flag-legacy-restores-pre-2-0-format",
+        "2026-05-01-asof0041-decision-use-legacy-flag-to-match-pre-2-0-behavior"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -4263,7 +4282,7 @@
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1042-pattern-admin-panel-audit-filtering"
+        "2026-03-01-asof0042-pattern-admin-panel-audit-filtering"
        ],
        "supersedes": [],
        "superseded_via": [
@@ -4278,10 +4297,10 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1042-pattern-admin-panel-audit-filtering"
+        "2026-05-01-asof0042-pattern-admin-panel-audit-filtering"
        ],
        "supersedes": [
-        "2026-03-01-asof1042-pattern-admin-panel-audit-filtering"
+        "2026-03-01-asof0042-pattern-admin-panel-audit-filtering"
        ],
        "superseded_via": []
       }
@@ -4292,11 +4311,11 @@
     {
      "id": "ret-i18n",
      "shape": "retracted_no_replacement",
-     "old_day_correct": true,
+     "old_day_correct": false,
      "new_day_correct": true,
-     "both_correct": true,
-     "old_items": 1,
-     "new_items": 3,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
@@ -4305,9 +4324,9 @@
        "retired": 0,
        "absorbed": 0,
        "valid_to": [],
-       "marker_in_text": true,
+       "marker_in_text": false,
        "titles": [
-        "2026-03-01-asof1043-pattern-localization-pairing-session"
+        "2026-03-01-asof0043-pattern-localization-pair-programming"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -4320,14 +4339,14 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1043-pattern-localization-pairing-session",
-        "2026-05-01-asof1043-decision-english-only-app"
+        "2026-05-01-asof0043-pattern-localization-pair-programming",
+        "2026-05-01-asof0043-decision-english-only-app"
        ],
        "supersedes": [],
        "superseded_via": []
       }
      },
-     "old_fail_kind": null,
+     "old_fail_kind": "unranked",
      "run": 1
     },
     {
@@ -4348,7 +4367,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1044-pattern-sandbox-environment-mirrors-production"
+        "2026-03-01-asof0044-pattern-sandbox-environment-mirrors-production"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -4361,7 +4380,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1044-pattern-sandbox-environment-mirrors-production"
+        "2026-05-01-asof0044-pattern-sandbox-environment-mirrors-production"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -4377,25 +4396,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-05-01"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1045-pattern-http-client-retry-logic"
+        "2026-03-01-asof0045-pattern-http-client-retry-logic"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "explicit"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -4405,11 +4420,9 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1045-pattern-http-client-retry-logic"
+        "2026-05-01-asof0045-pattern-http-client-retry-logic"
        ],
-       "supersedes": [
-        "2026-03-01-asof1045-pattern-http-client-retry-logic"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -4434,7 +4447,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1046-pattern-api-response-caching"
+        "2026-03-01-asof0046-pattern-api-response-caching"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -4447,8 +4460,8 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1046-pattern-api-response-caching",
-        "2026-05-01-asof1046-decision-get-request-caching-only"
+        "2026-05-01-asof0046-pattern-api-response-caching",
+        "2026-05-01-asof0046-decision-get-request-caching"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -4475,8 +4488,8 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1047-pattern-audit-log-table-changes",
-        "2026-03-01-asof1047-decision-document-audit-decision-in-readme"
+        "2026-03-01-asof0047-pattern-audit-log-table-changes",
+        "2026-03-01-asof0047-decision-document-audit-decision"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -4489,8 +4502,8 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1047-pattern-audit-log-table-changes",
-        "2026-05-01-asof1047-decision-document-audit-decision-in-readme"
+        "2026-05-01-asof0047-pattern-audit-log-table-changes",
+        "2026-05-01-asof0047-decision-document-audit-decision"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -4517,7 +4530,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1048-pattern-trainer-runs-on-gpu"
+        "2026-03-01-asof0048-pattern-trainer-gpu-utilization"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -4530,7 +4543,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1048-pattern-trainer-runs-on-gpu"
+        "2026-05-01-asof0048-pattern-trainer-gpu-utilization"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -4557,7 +4570,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1049-pattern-pre-commit-hook-lints-repository"
+        "2026-03-01-asof0049-pattern-pre-commit-hook-lints-repo"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -4570,7 +4583,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1049-pattern-pre-commit-hook-lints-repository"
+        "2026-05-01-asof0049-pattern-pre-commit-hook-lints-repo"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -4583,10 +4596,10 @@
      "id": "nar-notify-scope",
      "shape": "narrowed",
      "old_day_correct": true,
-     "new_day_correct": false,
-     "both_correct": false,
+     "new_day_correct": true,
+     "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
@@ -4597,19 +4610,21 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1050-pattern-alerting-thread-confirmed"
+        "2026-03-01-asof0050-pattern-deploy-alerting-works"
        ],
        "supersedes": [],
        "superseded_via": []
       },
       "s1": {
-       "written": 0,
-       "live": 0,
+       "written": 1,
+       "live": 1,
        "retired": 0,
        "absorbed": 0,
        "valid_to": [],
-       "marker_in_text": false,
-       "titles": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0050-pattern-deploy-alerting-works"
+       ],
        "supersedes": [],
        "superseded_via": []
       }
@@ -4646,7 +4661,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1051-pattern-encryption-at-rest-scope"
+        "2026-05-01-asof0051-pattern-encryption-at-rest-scope"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -4684,7 +4699,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1052-pattern-index-reversal-for-docs"
+        "2026-05-01-asof0052-pattern-index-reversal-for-docs"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -4711,8 +4726,8 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1053-pattern-nightly-backup-database-dump",
-        "2026-03-01-asof1053-decision-backup-decision-written"
+        "2026-03-01-asof0053-pattern-nightly-backup-database-dump",
+        "2026-03-01-asof0053-decision-backups-decision-written"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -4725,8 +4740,8 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1053-pattern-nightly-backup-database-dump",
-        "2026-05-01-asof1053-decision-backup-decision-written"
+        "2026-05-01-asof0053-pattern-nightly-backup-database-dump",
+        "2026-05-01-asof0053-decision-backups-decision-written"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -4741,13 +4756,13 @@
      "old_day_correct": true,
      "new_day_correct": true,
      "both_correct": true,
-     "old_items": 1,
-     "new_items": 2,
+     "old_items": 2,
+     "new_items": 4,
      "leak": false,
      "store": {
       "s0": {
-       "written": 1,
-       "live": 0,
+       "written": 2,
+       "live": 1,
        "retired": 1,
        "absorbed": 0,
        "valid_to": [
@@ -4755,7 +4770,8 @@
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1054-pattern-rate-limiting-handling"
+        "2026-03-01-asof0054-pattern-rate-limiting-handling",
+        "2026-03-01-asof0054-decision-rename-approval"
        ],
        "supersedes": [],
        "superseded_via": [
@@ -4763,18 +4779,19 @@
        ]
       },
       "s1": {
-       "written": 2,
-       "live": 2,
+       "written": 3,
+       "live": 3,
        "retired": 0,
        "absorbed": 0,
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1054-pattern-rate-limiting-handling",
-        "2026-05-01-asof1054-mistake-incorrect-rate-limiting-logic"
+        "2026-05-01-asof0054-pattern-rate-limiting-handling",
+        "2026-05-01-asof0054-mistake-incorrect-rate-limit-logic",
+        "2026-05-01-asof0054-decision-rename-approval"
        ],
        "supersedes": [
-        "2026-03-01-asof1054-pattern-rate-limiting-handling"
+        "2026-03-01-asof0054-pattern-rate-limiting-handling"
        ],
        "superseded_via": []
       }
@@ -4800,7 +4817,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1055-pattern-gzip-compression-response"
+        "2026-03-01-asof0055-pattern-gzip-compression-response"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -4813,7 +4830,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1055-pattern-gzip-compression-response"
+        "2026-05-01-asof0055-pattern-gzip-compression-response"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -4842,7 +4859,7 @@
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1056-pattern-mfa-required-for-all-users"
+        "2026-03-01-asof0056-pattern-mfa-required-for-all-users"
        ],
        "supersedes": [],
        "superseded_via": [
@@ -4857,10 +4874,10 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1056-pattern-mfa-required-for-admins"
+        "2026-05-01-asof0056-pattern-mfa-required-for-admins"
        ],
        "supersedes": [
-        "2026-03-01-asof1056-pattern-mfa-required-for-all-users"
+        "2026-03-01-asof0056-pattern-mfa-required-for-all-users"
        ],
        "superseded_via": []
       }
@@ -4886,7 +4903,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1057-pattern-event-log-replay-on-boot"
+        "2026-03-01-asof0057-pattern-event-log-replay-on-boot"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -4899,7 +4916,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1057-pattern-event-log-replay-on-boot"
+        "2026-05-01-asof0057-pattern-event-log-replay-on-boot"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -4926,7 +4943,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1058-pattern-sharding-tenant-database"
+        "2026-03-01-asof0058-pattern-sharding-tenant-database"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -4939,8 +4956,8 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1058-pattern-sharding-tenant-database",
-        "2026-05-01-asof1058-decision-tenant-shard-threshold"
+        "2026-05-01-asof0058-pattern-sharding-tenant-database",
+        "2026-05-01-asof0058-decision-dedicated-shard-for-high-volume-tenants"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -4967,8 +4984,8 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1059-pattern-end-to-end-request-tracing",
-        "2026-03-01-asof1059-decision-tracing-implementation"
+        "2026-03-01-asof0059-pattern-end-to-end-request-tracing",
+        "2026-03-01-asof0059-decision-request-tracing-implementation"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -4981,8 +4998,8 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1059-pattern-end-to-end-request-tracing",
-        "2026-05-01-asof1059-decision-tracing-implementation"
+        "2026-05-01-asof0059-pattern-end-to-end-request-tracing",
+        "2026-05-01-asof0059-decision-request-tracing-implementation"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -4993,35 +5010,120 @@
     }
    ],
    "n_cases": 120,
-   "both_correct_rate": 0.8,
+   "both_correct_rate": 0.8667,
    "both_correct_ci": [
-    0.7196,
-    0.8618
+    0.7944,
+    0.9162
    ],
-   "old_day_rate": 0.8917,
-   "new_day_rate": 0.8833,
+   "old_day_rate": 0.9333,
+   "new_day_rate": 0.9167,
    "errors": 0,
    "old_day_failures_by_kind": {
-    "never_written": 11,
+    "never_written": 6,
     "absorbed": 0,
-    "unranked": 1,
-    "paraphrase": 1,
+    "unranked": 2,
+    "paraphrase": 0,
     "leak": 0
    },
-   "s0_never_written": 11,
+   "s0_never_written": 6,
    "s0_absorbed": 0,
-   "s0_retired_rate": 0.1927,
+   "s0_retired_rate": 0.1754,
    "s0_retired_via": {
-    "explicit": 24
+    "explicit": 22
    },
-   "s0_written_pairs": 109,
+   "s0_written_pairs": 114,
    "runs": 2,
-   "seconds": 422.1,
-   "config": "ollama qwen3-coder:30b + bge-m3, k=5, days 2026-03-01/2026-05-01",
-   "store_bytes": 258993,
    "per_run": [
     0.8667,
-    0.7333
+    0.8667
+   ],
+   "seconds": 467.8,
+   "config": "ollama qwen3-coder:30b + bge-m3, k=5, days 2026-03-01/2026-05-01",
+   "run_files": [
+    "asof_v1.run1.json",
+    "asof_v1.run2.json"
+   ],
+   "ollama_transport_per_run": [
+    {
+     "calls": 542,
+     "pace_sleep_s": 24.621,
+     "retries": 0,
+     "retry_sleep_s": 0.0,
+     "gave_up": 0,
+     "call_ms": {
+      "n": 542,
+      "p50": 26.697,
+      "p90": 1350.934,
+      "p99": 2013.871,
+      "max": 11278.648
+     },
+     "mode": "pace",
+     "timing_includes_pacing": true,
+     "pace_floor_s": 67.75,
+     "bypass_calls": {
+      "requests": 0,
+      "aiohttp": 0
+     },
+     "nested_calls": {
+      "requests": 0,
+      "aiohttp": 0
+     },
+     "max_inflight": 1,
+     "max_concurrent_paced": 1,
+     "pace_excluded_exact": true,
+     "failed_outcomes": {
+      "by_status": {},
+      "by_exception_type": {},
+      "gave_up": 0
+     },
+     "llm_retries": 0,
+     "llm_retry_sleep_s": 0.0,
+     "failed_outcomes_llm": {
+      "by_status": {},
+      "by_exception_type": {},
+      "gave_up": 0
+     }
+    },
+    {
+     "calls": 542,
+     "pace_sleep_s": 25.001,
+     "retries": 0,
+     "retry_sleep_s": 0.0,
+     "gave_up": 0,
+     "call_ms": {
+      "n": 542,
+      "p50": 25.423,
+      "p90": 1355.662,
+      "p99": 2012.23,
+      "max": 2412.162
+     },
+     "mode": "pace",
+     "timing_includes_pacing": true,
+     "pace_floor_s": 67.75,
+     "bypass_calls": {
+      "requests": 0,
+      "aiohttp": 0
+     },
+     "nested_calls": {
+      "requests": 0,
+      "aiohttp": 0
+     },
+     "max_inflight": 1,
+     "max_concurrent_paced": 1,
+     "pace_excluded_exact": true,
+     "failed_outcomes": {
+      "by_status": {},
+      "by_exception_type": {},
+      "gave_up": 0
+     },
+     "llm_retries": 0,
+     "llm_retry_sleep_s": 0.0,
+     "failed_outcomes_llm": {
+      "by_status": {},
+      "by_exception_type": {},
+      "gave_up": 0
+     }
+    }
    ]
   },
   "nevertwice_after_sleep": {
@@ -5044,8 +5146,8 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof0000-pattern-http-client-timeout-configuration",
-        "2026-03-01-asof0000-decision-api-client-timeout-set-to-30s"
+        "2026-03-01-asof0000-pattern-http-client-timeout-configured",
+        "2026-03-01-asof0000-decision-set-http-client-timeout-to-30s"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -5058,9 +5160,9 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof0000-pattern-http-client-timeout-configuration",
-        "2026-05-01-asof0000-mistake-incorrect-timeout-value",
-        "2026-05-01-asof0000-decision-api-client-timeout-set-to-30s"
+        "2026-05-01-asof0000-pattern-http-client-timeout-configured",
+        "2026-05-01-asof0000-mistake-incorrect-http-timeout-assumption",
+        "2026-05-01-asof0000-decision-set-http-client-timeout-to-30s"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -7771,40 +7873,36 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 2,
+     "new_items": 5,
      "leak": false,
      "store": {
       "s0": {
        "written": 2,
-       "live": 1,
-       "retired": 1,
-       "absorbed": 0,
-       "valid_to": [
-        "2026-05-01"
-       ],
-       "marker_in_text": true,
-       "titles": [
-        "2026-03-01-asof1000-pattern-http-client-timeout-configured",
-        "2026-03-01-asof1000-decision-api-client-timeout-set-to-thirty-seconds"
-       ],
-       "supersedes": [],
-       "superseded_via": [
-        "judge"
-       ]
-      },
-      "s1": {
-       "written": 1,
-       "live": 1,
+       "live": 2,
        "retired": 0,
        "absorbed": 0,
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1000-pattern-http-client-timeout-configured"
+        "2026-03-01-asof0000-pattern-http-client-timeout-configuration",
+        "2026-03-01-asof0000-decision-api-client-timeout-set-to-30s"
        ],
-       "supersedes": [
-        "2026-03-01-asof1000-pattern-http-client-timeout-configured"
+       "supersedes": [],
+       "superseded_via": []
+      },
+      "s1": {
+       "written": 3,
+       "live": 3,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0000-pattern-http-client-timeout-configuration",
+        "2026-05-01-asof0000-mistake-incorrect-timeout-value",
+        "2026-05-01-asof0000-decision-api-client-timeout-set-to-30s"
        ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -7831,7 +7929,7 @@
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1001-pattern-postgresql-version-in-production"
+        "2026-03-01-asof0001-pattern-postgresql-version-in-production"
        ],
        "supersedes": [],
        "superseded_via": [
@@ -7846,10 +7944,10 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1001-pattern-postgresql-version-in-production"
+        "2026-05-01-asof0001-pattern-postgresql-version-in-production"
        ],
        "supersedes": [
-        "2026-03-01-asof1001-pattern-postgresql-version-in-production"
+        "2026-03-01-asof0001-pattern-postgresql-version-in-production"
        ],
        "superseded_via": []
       }
@@ -7877,7 +7975,7 @@
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1002-pattern-training-batch-size-confirmed"
+        "2026-03-01-asof0002-pattern-training-batch-size-confirmed"
        ],
        "supersedes": [],
        "superseded_via": [
@@ -7892,10 +7990,10 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1002-pattern-training-batch-size-confirmed"
+        "2026-05-01-asof0002-pattern-training-batch-size-confirmed"
        ],
        "supersedes": [
-        "2026-03-01-asof1002-pattern-training-batch-size-confirmed"
+        "2026-03-01-asof0002-pattern-training-batch-size-confirmed"
        ],
        "superseded_via": []
       }
@@ -7923,7 +8021,7 @@
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1003-pattern-frontend-build-target-node-18"
+        "2026-03-01-asof0003-pattern-frontend-build-target-node-18"
        ],
        "supersedes": [],
        "superseded_via": [
@@ -7938,10 +8036,10 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1003-pattern-frontend-build-target-node-22"
+        "2026-05-01-asof0003-pattern-frontend-build-target-node-22"
        ],
        "supersedes": [
-        "2026-03-01-asof1003-pattern-frontend-build-target-node-18"
+        "2026-03-01-asof0003-pattern-frontend-build-target-node-18"
        ],
        "superseded_via": []
       }
@@ -7969,7 +8067,7 @@
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1004-pattern-queue-worker-retry-logic"
+        "2026-03-01-asof0004-pattern-queue-worker-retry-logic"
        ],
        "supersedes": [],
        "superseded_via": [
@@ -7984,10 +8082,10 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1004-pattern-queue-worker-retry-logic"
+        "2026-05-01-asof0004-pattern-queue-worker-retry-logic"
        ],
        "supersedes": [
-        "2026-03-01-asof1004-pattern-queue-worker-retry-logic"
+        "2026-03-01-asof0004-pattern-queue-worker-retry-logic"
        ],
        "superseded_via": []
       }
@@ -8015,8 +8113,8 @@
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1005-pattern-cache-layer-expiration",
-        "2026-03-01-asof1005-decision-cache-expiration-time"
+        "2026-03-01-asof0005-pattern-cache-layer-expiration",
+        "2026-03-01-asof0005-decision-cache-expiration-time"
        ],
        "supersedes": [],
        "superseded_via": [
@@ -8031,11 +8129,11 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1005-pattern-cache-layer-expiration",
-        "2026-05-01-asof1005-decision-cache-expiration-time"
+        "2026-05-01-asof0005-pattern-cache-layer-expiration",
+        "2026-05-01-asof0005-decision-cache-expiration-time"
        ],
        "supersedes": [
-        "2026-03-01-asof1005-decision-cache-expiration-time"
+        "2026-03-01-asof0005-decision-cache-expiration-time"
        ],
        "superseded_via": []
       }
@@ -8063,7 +8161,7 @@
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1006-pattern-dev-server-port-configuration"
+        "2026-03-01-asof0006-pattern-dev-server-port-configuration"
        ],
        "supersedes": [],
        "superseded_via": [
@@ -8078,10 +8176,10 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1006-pattern-dev-server-port-configuration"
+        "2026-05-01-asof0006-pattern-dev-server-port-configuration"
        ],
        "supersedes": [
-        "2026-03-01-asof1006-pattern-dev-server-port-configuration"
+        "2026-03-01-asof0006-pattern-dev-server-port-configuration"
        ],
        "superseded_via": []
       }
@@ -8109,7 +8207,7 @@
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1007-pattern-service-deployment-in-eu-west-1"
+        "2026-03-01-asof0007-pattern-deployment-in-eu-west-1"
        ],
        "supersedes": [],
        "superseded_via": [
@@ -8124,10 +8222,10 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1007-pattern-service-deployment-in-eu-west-1"
+        "2026-05-01-asof0007-pattern-deployment-in-eu-west-1"
        ],
        "supersedes": [
-        "2026-03-01-asof1007-pattern-service-deployment-in-eu-west-1"
+        "2026-03-01-asof0007-pattern-deployment-in-eu-west-1"
        ],
        "superseded_via": []
       }
@@ -8142,22 +8240,26 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 3,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 2,
-       "live": 2,
-       "retired": 0,
+       "live": 1,
+       "retired": 1,
        "absorbed": 0,
-       "valid_to": [],
+       "valid_to": [
+        "2026-05-01"
+       ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1008-pattern-python-version-pinning",
-        "2026-03-01-asof1008-pattern-test-suite-stays-green"
+        "2026-03-01-asof0008-pattern-test-suite-validation",
+        "2026-03-01-asof0008-pattern-python-version-pinning"
        ],
        "supersedes": [],
-       "superseded_via": []
+       "superseded_via": [
+        "judge"
+       ]
       },
       "s1": {
        "written": 1,
@@ -8167,9 +8269,11 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1008-pattern-python-version-pinning"
+        "2026-05-01-asof0008-pattern-python-version-pinning"
        ],
-       "supersedes": [],
+       "supersedes": [
+        "2026-03-01-asof0008-pattern-python-version-pinning"
+       ],
        "superseded_via": []
       }
      },
@@ -8194,7 +8298,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1009-pattern-api-capacity-replicas"
+        "2026-03-01-asof0009-pattern-api-capacity-replicas"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -8207,7 +8311,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1009-pattern-api-capacity-replicas"
+        "2026-05-01-asof0009-pattern-api-capacity-replicas"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -8236,7 +8340,7 @@
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1010-pattern-learning-rate-configuration"
+        "2026-03-01-asof0010-pattern-learning-rate-configuration"
        ],
        "supersedes": [],
        "superseded_via": [
@@ -8251,10 +8355,10 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1010-pattern-learning-rate-configuration"
+        "2026-05-01-asof0010-pattern-learning-rate-configuration"
        ],
        "supersedes": [
-        "2026-03-01-asof1010-pattern-learning-rate-configuration"
+        "2026-03-01-asof0010-pattern-learning-rate-configuration"
        ],
        "superseded_via": []
       }
@@ -8283,8 +8387,8 @@
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1011-pattern-document-ingestion-chunking",
-        "2026-03-01-asof1011-decision-ingestion-decision-finalized"
+        "2026-03-01-asof0011-pattern-document-ingestion-chunking",
+        "2026-03-01-asof0011-decision-ingestion-chunk-size"
        ],
        "supersedes": [],
        "superseded_via": [
@@ -8300,12 +8404,12 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1011-pattern-document-ingestion-chunking",
-        "2026-05-01-asof1011-decision-ingestion-decision-finalized"
+        "2026-05-01-asof0011-pattern-document-ingestion-chunking",
+        "2026-05-01-asof0011-decision-ingestion-chunk-size"
        ],
        "supersedes": [
-        "2026-03-01-asof1011-pattern-document-ingestion-chunking",
-        "2026-03-01-asof1011-decision-ingestion-decision-finalized"
+        "2026-03-01-asof0011-pattern-document-ingestion-chunking",
+        "2026-03-01-asof0011-decision-ingestion-chunk-size"
        ],
        "superseded_via": []
       }
@@ -8333,8 +8437,8 @@
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1012-pattern-cluster-quorum-requirement",
-        "2026-03-01-asof1012-decision-staged-release-rollout"
+        "2026-03-01-asof0012-pattern-cluster-quorum-setup",
+        "2026-03-01-asof0012-decision-staged-release-rollout"
        ],
        "supersedes": [],
        "superseded_via": [
@@ -8349,11 +8453,11 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1012-pattern-cluster-quorum-requirement",
-        "2026-05-01-asof1012-decision-staged-release-rollout"
+        "2026-05-01-asof0012-pattern-cluster-quorum-setup",
+        "2026-05-01-asof0012-decision-staged-release-rollout"
        ],
        "supersedes": [
-        "2026-03-01-asof1012-pattern-cluster-quorum-requirement"
+        "2026-03-01-asof0012-pattern-cluster-quorum-setup"
        ],
        "superseded_via": []
       }
@@ -8381,7 +8485,7 @@
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1013-decision-license-agpl3"
+        "2026-03-01-asof0013-decision-license-agpl3"
        ],
        "supersedes": [],
        "superseded_via": [
@@ -8396,10 +8500,10 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1013-decision-license-agpl3"
+        "2026-05-01-asof0013-decision-license-agpl3"
        ],
        "supersedes": [
-        "2026-03-01-asof1013-decision-license-agpl3"
+        "2026-03-01-asof0013-decision-license-agpl3"
        ],
        "superseded_via": []
       }
@@ -8425,7 +8529,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1014-pattern-repository-thread-resumption"
+        "2026-03-01-asof0014-pattern-repository-thread-resumption"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -8438,7 +8542,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1014-pattern-repository-thread-resumption"
+        "2026-05-01-asof0014-pattern-repository-thread-resumption"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -8454,21 +8558,25 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 2,
+     "new_items": 1,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 1,
-       "retired": 0,
+       "live": 0,
+       "retired": 1,
        "absorbed": 0,
-       "valid_to": [],
+       "valid_to": [
+        "2026-05-01"
+       ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1015-pattern-redis-session-caching"
+        "2026-03-01-asof0015-pattern-redis-session-caching"
        ],
        "supersedes": [],
-       "superseded_via": []
+       "superseded_via": [
+        "judge"
+       ]
       },
       "s1": {
        "written": 1,
@@ -8478,9 +8586,11 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1015-pattern-redis-session-caching"
+        "2026-05-01-asof0015-pattern-redis-session-caching"
        ],
-       "supersedes": [],
+       "supersedes": [
+        "2026-03-01-asof0015-pattern-redis-session-caching"
+       ],
        "superseded_via": []
       }
      },
@@ -8491,34 +8601,43 @@
      "id": "app-auth",
      "shape": "approach_abandoned",
      "old_day_correct": true,
-     "new_day_correct": false,
-     "both_correct": false,
+     "new_day_correct": true,
+     "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 1,
+       "live": 0,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0016-pattern-jwt-authentication-with-hs256"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "judge"
+       ]
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
        "retired": 0,
        "absorbed": 0,
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1016-pattern-jwt-authentication-with-hs256"
+        "2026-05-01-asof0016-pattern-jwt-authentication-with-hs256",
+        "2026-05-01-asof0016-decision-opaque-session-cookies"
        ],
-       "supersedes": [],
-       "superseded_via": []
-      },
-      "s1": {
-       "written": 0,
-       "live": 0,
-       "retired": 0,
-       "absorbed": 0,
-       "valid_to": [],
-       "marker_in_text": false,
-       "titles": [],
-       "supersedes": [],
+       "supersedes": [
+        "2026-03-01-asof0016-pattern-jwt-authentication-with-hs256"
+       ],
        "superseded_via": []
       }
      },
@@ -8546,59 +8665,8 @@
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1017-pattern-frontend-bundling-with-webpack",
-        "2026-03-01-asof1017-decision-build-decision-made"
-       ],
-       "supersedes": [],
-       "superseded_via": [
-        "explicit",
-        "judge"
-       ]
-      },
-      "s1": {
-       "written": 2,
-       "live": 2,
-       "retired": 0,
-       "absorbed": 0,
-       "valid_to": [],
-       "marker_in_text": true,
-       "titles": [
-        "2026-05-01-asof1017-pattern-frontend-bundling-with-vite",
-        "2026-05-01-asof1017-decision-build-decision-made"
-       ],
-       "supersedes": [
-        "2026-03-01-asof1017-pattern-frontend-bundling-with-webpack",
-        "2026-03-01-asof1017-decision-build-decision-made"
-       ],
-       "superseded_via": []
-      }
-     },
-     "old_fail_kind": null,
-     "run": 1
-    },
-    {
-     "id": "app-orm",
-     "shape": "approach_abandoned",
-     "old_day_correct": true,
-     "new_day_correct": true,
-     "both_correct": true,
-     "old_items": 2,
-     "new_items": 2,
-     "leak": false,
-     "store": {
-      "s0": {
-       "written": 2,
-       "live": 0,
-       "retired": 2,
-       "absorbed": 0,
-       "valid_to": [
-        "2026-05-01",
-        "2026-05-01"
-       ],
-       "marker_in_text": true,
-       "titles": [
-        "2026-03-01-asof1018-pattern-sqlalchemy-orm-data-access",
-        "2026-03-01-asof1018-decision-use-sqlalchemy-orm"
+        "2026-03-01-asof0017-pattern-frontend-bundling-with-webpack",
+        "2026-03-01-asof0017-decision-use-webpack-for-frontend-bundling"
        ],
        "supersedes": [],
        "superseded_via": [
@@ -8614,12 +8682,60 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1018-pattern-asyncpg-data-access",
-        "2026-05-01-asof1018-decision-use-asyncpg-for-data-access"
+        "2026-05-01-asof0017-pattern-frontend-bundling-with-vite",
+        "2026-05-01-asof0017-decision-use-vite-for-frontend-bundling"
        ],
        "supersedes": [
-        "2026-03-01-asof1018-pattern-sqlalchemy-orm-data-access",
-        "2026-03-01-asof1018-decision-use-sqlalchemy-orm"
+        "2026-03-01-asof0017-pattern-frontend-bundling-with-webpack",
+        "2026-03-01-asof0017-decision-use-webpack-for-frontend-bundling"
+       ],
+       "superseded_via": []
+      }
+     },
+     "old_fail_kind": null,
+     "run": 1
+    },
+    {
+     "id": "app-orm",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 3,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 1,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0018-pattern-sqlalchemy-orm-data-access",
+        "2026-03-01-asof0018-decision-orm-for-data-access"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "explicit"
+       ]
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "absorbed": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0018-pattern-asyncpg-for-data-access",
+        "2026-05-01-asof0018-decision-use-asyncpg-for-data-access"
+       ],
+       "supersedes": [
+        "2026-03-01-asof0018-pattern-sqlalchemy-orm-data-access"
        ],
        "superseded_via": []
       }
@@ -8630,23 +8746,29 @@
     {
      "id": "app-queue",
      "shape": "approach_abandoned",
-     "old_day_correct": false,
+     "old_day_correct": true,
      "new_day_correct": true,
-     "both_correct": false,
-     "old_items": 0,
+     "both_correct": true,
+     "old_items": 1,
      "new_items": 1,
      "leak": false,
      "store": {
       "s0": {
-       "written": 0,
+       "written": 1,
        "live": 0,
-       "retired": 0,
+       "retired": 1,
        "absorbed": 0,
-       "valid_to": [],
-       "marker_in_text": false,
-       "titles": [],
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0019-pattern-celery-background-jobs"
+       ],
        "supersedes": [],
-       "superseded_via": []
+       "superseded_via": [
+        "judge"
+       ]
       },
       "s1": {
        "written": 1,
@@ -8656,13 +8778,15 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1019-pattern-background-jobs-postgres-queue"
+        "2026-05-01-asof0019-pattern-celery-background-jobs"
        ],
-       "supersedes": [],
+       "supersedes": [
+        "2026-03-01-asof0019-pattern-celery-background-jobs"
+       ],
        "superseded_via": []
       }
      },
-     "old_fail_kind": "never_written",
+     "old_fail_kind": null,
      "run": 1
     },
     {
@@ -8685,7 +8809,7 @@
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1020-pattern-ci-staged-release"
+        "2026-03-01-asof0020-pattern-ci-staged-release"
        ],
        "supersedes": [],
        "superseded_via": [
@@ -8700,10 +8824,10 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1020-pattern-ci-staged-release"
+        "2026-05-01-asof0020-pattern-ci-staged-release"
        ],
        "supersedes": [
-        "2026-03-01-asof1020-pattern-ci-staged-release"
+        "2026-03-01-asof0020-pattern-ci-staged-release"
        ],
        "superseded_via": []
       }
@@ -8714,23 +8838,29 @@
     {
      "id": "app-search",
      "shape": "approach_abandoned",
-     "old_day_correct": false,
+     "old_day_correct": true,
      "new_day_correct": true,
-     "both_correct": false,
-     "old_items": 0,
+     "both_correct": true,
+     "old_items": 1,
      "new_items": 1,
      "leak": false,
      "store": {
       "s0": {
-       "written": 0,
+       "written": 1,
        "live": 0,
-       "retired": 0,
+       "retired": 1,
        "absorbed": 0,
-       "valid_to": [],
-       "marker_in_text": false,
-       "titles": [],
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0021-pattern-elasticsearch-search-setup"
+       ],
        "supersedes": [],
-       "superseded_via": []
+       "superseded_via": [
+        "judge"
+       ]
       },
       "s1": {
        "written": 1,
@@ -8740,49 +8870,56 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1021-pattern-postgres-fulltext-search"
+        "2026-05-01-asof0021-pattern-elasticsearch-search-setup"
        ],
-       "supersedes": [],
+       "supersedes": [
+        "2026-03-01-asof0021-pattern-elasticsearch-search-setup"
+       ],
        "superseded_via": []
       }
      },
-     "old_fail_kind": "never_written",
+     "old_fail_kind": null,
      "run": 1
     },
     {
      "id": "app-styling",
      "shape": "approach_abandoned",
-     "old_day_correct": false,
-     "new_day_correct": false,
-     "both_correct": false,
-     "old_items": 0,
-     "new_items": 0,
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 3,
      "leak": false,
      "store": {
       "s0": {
-       "written": 0,
-       "live": 0,
+       "written": 1,
+       "live": 1,
        "retired": 0,
        "absorbed": 0,
        "valid_to": [],
-       "marker_in_text": false,
-       "titles": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0022-pattern-styled-components-usage"
+       ],
        "supersedes": [],
        "superseded_via": []
       },
       "s1": {
-       "written": 0,
-       "live": 0,
+       "written": 2,
+       "live": 2,
        "retired": 0,
        "absorbed": 0,
        "valid_to": [],
-       "marker_in_text": false,
-       "titles": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0022-pattern-tailwind-styling-in-components",
+        "2026-05-01-asof0022-decision-switch-to-tailwind-styling"
+       ],
        "supersedes": [],
        "superseded_via": []
       }
      },
-     "old_fail_kind": "never_written",
+     "old_fail_kind": null,
      "run": 1
     },
     {
@@ -8806,8 +8943,8 @@
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1023-pattern-package-build-and-publish",
-        "2026-03-01-asof1023-decision-packaging-decision"
+        "2026-03-01-asof0023-pattern-package-deployment-with-poetry",
+        "2026-03-01-asof0023-decision-use-poetry-for-packaging"
        ],
        "supersedes": [],
        "superseded_via": [
@@ -8823,12 +8960,12 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1023-pattern-package-build-and-publish",
-        "2026-05-01-asof1023-decision-packaging-decision"
+        "2026-05-01-asof0023-pattern-package-deployment-with-poetry",
+        "2026-05-01-asof0023-decision-use-poetry-for-packaging"
        ],
        "supersedes": [
-        "2026-03-01-asof1023-pattern-package-build-and-publish",
-        "2026-03-01-asof1023-decision-packaging-decision"
+        "2026-03-01-asof0023-pattern-package-deployment-with-poetry",
+        "2026-03-01-asof0023-decision-use-poetry-for-packaging"
        ],
        "superseded_via": []
       }
@@ -8857,12 +8994,12 @@
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1024-pattern-frontend-global-state-redux",
-        "2026-03-01-asof1024-decision-use-redux-for-global-state"
+        "2026-03-01-asof0024-pattern-frontend-state-management",
+        "2026-03-01-asof0024-decision-redux-for-global-state"
        ],
        "supersedes": [],
        "superseded_via": [
-        "explicit",
+        "judge",
         "explicit"
        ]
       },
@@ -8874,12 +9011,12 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1024-pattern-frontend-global-state-zustand",
-        "2026-05-01-asof1024-decision-use-zustand-for-global-state"
+        "2026-05-01-asof0024-pattern-frontend-state-management",
+        "2026-05-01-asof0024-decision-redux-for-global-state"
        ],
        "supersedes": [
-        "2026-03-01-asof1024-pattern-frontend-global-state-redux",
-        "2026-03-01-asof1024-decision-use-redux-for-global-state"
+        "2026-03-01-asof0024-pattern-frontend-state-management",
+        "2026-03-01-asof0024-decision-redux-for-global-state"
        ],
        "superseded_via": []
       }
@@ -8907,7 +9044,7 @@
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1025-pattern-infrastructure-provisioning-with-terraform"
+        "2026-03-01-asof0025-pattern-infrastructure-provisioning-with-terraform"
        ],
        "supersedes": [],
        "superseded_via": [
@@ -8922,10 +9059,10 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1025-pattern-infrastructure-provisioning-with-pulumi"
+        "2026-05-01-asof0025-pattern-infrastructure-provisioning-with-pulumi"
        ],
        "supersedes": [
-        "2026-03-01-asof1025-pattern-infrastructure-provisioning-with-terraform"
+        "2026-03-01-asof0025-pattern-infrastructure-provisioning-with-terraform"
        ],
        "superseded_via": []
       }
@@ -8953,7 +9090,7 @@
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1026-pattern-schema-migration-through-alembic"
+        "2026-03-01-asof0026-pattern-schema-migration-through-alembic"
        ],
        "supersedes": [],
        "superseded_via": [
@@ -8968,10 +9105,10 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1026-pattern-schema-migration-through-alembic"
+        "2026-05-01-asof0026-pattern-schema-migration-through-alembic"
        ],
        "supersedes": [
-        "2026-03-01-asof1026-pattern-schema-migration-through-alembic"
+        "2026-03-01-asof0026-pattern-schema-migration-through-alembic"
        ],
        "superseded_via": []
       }
@@ -8982,23 +9119,29 @@
     {
      "id": "app-serialisation",
      "shape": "approach_abandoned",
-     "old_day_correct": false,
+     "old_day_correct": true,
      "new_day_correct": true,
-     "both_correct": false,
-     "old_items": 0,
+     "both_correct": true,
+     "old_items": 1,
      "new_items": 1,
      "leak": false,
      "store": {
       "s0": {
-       "written": 0,
+       "written": 1,
        "live": 0,
-       "retired": 0,
+       "retired": 1,
        "absorbed": 0,
-       "valid_to": [],
-       "marker_in_text": false,
-       "titles": [],
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0027-pattern-protobuf-message-serialization"
+       ],
        "supersedes": [],
-       "superseded_via": []
+       "superseded_via": [
+        "judge"
+       ]
       },
       "s1": {
        "written": 1,
@@ -9008,35 +9151,43 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1027-pattern-newline-delimited-json-messages"
+        "2026-05-01-asof0027-pattern-protobuf-message-serialization"
        ],
-       "supersedes": [],
+       "supersedes": [
+        "2026-03-01-asof0027-pattern-protobuf-message-serialization"
+       ],
        "superseded_via": []
       }
      },
-     "old_fail_kind": "never_written",
+     "old_fail_kind": null,
      "run": 1
     },
     {
      "id": "app-secrets",
      "shape": "approach_abandoned",
-     "old_day_correct": false,
+     "old_day_correct": true,
      "new_day_correct": true,
-     "both_correct": false,
-     "old_items": 0,
+     "both_correct": true,
+     "old_items": 1,
      "new_items": 1,
      "leak": false,
      "store": {
       "s0": {
-       "written": 0,
+       "written": 1,
        "live": 0,
-       "retired": 0,
+       "retired": 1,
        "absorbed": 0,
-       "valid_to": [],
-       "marker_in_text": false,
-       "titles": [],
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0028-pattern-secrets-from-vault-at-boot"
+       ],
        "supersedes": [],
-       "superseded_via": []
+       "superseded_via": [
+        "judge"
+       ]
       },
       "s1": {
        "written": 1,
@@ -9046,13 +9197,15 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1028-pattern-secrets-injection-via-env-vars"
+        "2026-05-01-asof0028-pattern-secrets-from-vault-at-boot"
        ],
-       "supersedes": [],
+       "supersedes": [
+        "2026-03-01-asof0028-pattern-secrets-from-vault-at-boot"
+       ],
        "superseded_via": []
       }
      },
-     "old_fail_kind": "never_written",
+     "old_fail_kind": null,
      "run": 1
     },
     {
@@ -9076,8 +9229,8 @@
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1029-pattern-end-to-end-test-validation",
-        "2026-03-01-asof1029-decision-testing-decision-confirmed"
+        "2026-03-01-asof0029-pattern-end-to-end-test-verification",
+        "2026-03-01-asof0029-decision-testing-decision-confirmed"
        ],
        "supersedes": [],
        "superseded_via": [
@@ -9093,12 +9246,12 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1029-pattern-end-to-end-test-validation",
-        "2026-05-01-asof1029-decision-testing-decision-confirmed"
+        "2026-05-01-asof0029-pattern-end-to-end-test-verification",
+        "2026-05-01-asof0029-decision-testing-decision-confirmed"
        ],
        "supersedes": [
-        "2026-03-01-asof1029-pattern-end-to-end-test-validation",
-        "2026-03-01-asof1029-decision-testing-decision-confirmed"
+        "2026-03-01-asof0029-pattern-end-to-end-test-verification",
+        "2026-03-01-asof0029-decision-testing-decision-confirmed"
        ],
        "superseded_via": []
       }
@@ -9109,9 +9262,9 @@
     {
      "id": "ret-beta-flag",
      "shape": "retracted_no_replacement",
-     "old_day_correct": false,
+     "old_day_correct": true,
      "new_day_correct": true,
-     "both_correct": false,
+     "both_correct": true,
      "old_items": 2,
      "new_items": 2,
      "leak": false,
@@ -9125,10 +9278,10 @@
         "2026-05-01",
         "2026-05-01"
        ],
-       "marker_in_text": false,
+       "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1030-pattern-feature-flag-gating",
-        "2026-03-01-asof1030-decision-beta-dashboard-flag"
+        "2026-03-01-asof0030-pattern-feature-flag-gating",
+        "2026-03-01-asof0030-decision-beta-dashboard-flag"
        ],
        "supersedes": [],
        "superseded_via": [
@@ -9144,17 +9297,17 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1030-pattern-feature-flag-gating",
-        "2026-05-01-asof1030-decision-beta-dashboard-flag"
+        "2026-05-01-asof0030-pattern-feature-flag-gating",
+        "2026-05-01-asof0030-decision-beta-dashboard-flag"
        ],
        "supersedes": [
-        "2026-03-01-asof1030-pattern-feature-flag-gating",
-        "2026-03-01-asof1030-decision-beta-dashboard-flag"
+        "2026-03-01-asof0030-pattern-feature-flag-gating",
+        "2026-03-01-asof0030-decision-beta-dashboard-flag"
        ],
        "superseded_via": []
       }
      },
-     "old_fail_kind": "paraphrase",
+     "old_fail_kind": null,
      "run": 1
     },
     {
@@ -9175,7 +9328,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1031-pattern-api-export-endpoint-streams-csv"
+        "2026-03-01-asof0031-pattern-api-export-csv-endpoint"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -9188,7 +9341,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1031-pattern-api-export-endpoint-removed"
+        "2026-05-01-asof0031-pattern-api-export-csv-endpoint-removed"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -9215,8 +9368,8 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1032-pattern-telemetry-thread-continuity",
-        "2026-03-01-asof1032-pattern-test-suite-green-after-telemetry"
+        "2026-03-01-asof0032-pattern-telemetry-thread-continuity",
+        "2026-03-01-asof0032-pattern-test-suite-green-after-telemetry"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -9256,7 +9409,7 @@
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1033-pattern-read-replica-setup"
+        "2026-03-01-asof0033-pattern-read-replica-setup"
        ],
        "supersedes": [],
        "superseded_via": [
@@ -9271,10 +9424,10 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1033-pattern-read-replica-setup"
+        "2026-05-01-asof0033-pattern-read-replica-setup"
        ],
        "supersedes": [
-        "2026-03-01-asof1033-pattern-read-replica-setup"
+        "2026-03-01-asof0033-pattern-read-replica-setup"
        ],
        "superseded_via": []
       }
@@ -9302,7 +9455,7 @@
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1034-pattern-third-party-plugins-loading"
+        "2026-03-01-asof0034-pattern-third-party-plugins-loading"
        ],
        "supersedes": [],
        "superseded_via": [
@@ -9317,11 +9470,11 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1034-pattern-third-party-plugins-loading",
-        "2026-05-01-asof1034-decision-plugin-system-removal"
+        "2026-05-01-asof0034-pattern-third-party-plugins-loading",
+        "2026-05-01-asof0034-decision-extensibility-removed"
        ],
        "supersedes": [
-        "2026-03-01-asof1034-pattern-third-party-plugins-loading"
+        "2026-03-01-asof0034-pattern-third-party-plugins-loading"
        ],
        "superseded_via": []
       }
@@ -9347,7 +9500,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1035-decision-ios-client-sync-engine"
+        "2026-03-01-asof0035-decision-ios-client-sync-engine"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -9374,27 +9527,25 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 2,
+     "new_items": 3,
      "leak": false,
      "store": {
       "s0": {
        "written": 2,
-       "live": 0,
-       "retired": 2,
+       "live": 1,
+       "retired": 1,
        "absorbed": 0,
        "valid_to": [
-        "2026-05-01",
         "2026-05-01"
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1036-pattern-nightly-cron-audit-log-compaction",
-        "2026-03-01-asof1036-decision-staged-release-rollout"
+        "2026-03-01-asof0036-pattern-nightly-cron-audit-log-compaction",
+        "2026-03-01-asof0036-decision-staged-release-rollout"
        ],
        "supersedes": [],
        "superseded_via": [
-        "explicit",
-        "judge"
+        "explicit"
        ]
       },
       "s1": {
@@ -9405,12 +9556,11 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1036-pattern-nightly-cron-audit-log-compaction",
-        "2026-05-01-asof1036-decision-staged-release-rollout"
+        "2026-05-01-asof0036-pattern-nightly-cron-audit-log-compaction",
+        "2026-05-01-asof0036-decision-staged-release-rollout"
        ],
        "supersedes": [
-        "2026-03-01-asof1036-pattern-nightly-cron-audit-log-compaction",
-        "2026-03-01-asof1036-decision-staged-release-rollout"
+        "2026-03-01-asof0036-pattern-nightly-cron-audit-log-compaction"
        ],
        "superseded_via": []
       }
@@ -9436,7 +9586,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1037-pattern-grpc-communication-setup"
+        "2026-03-01-asof0037-pattern-grpc-communication-setup"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -9449,7 +9599,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1037-pattern-grpc-communication-setup"
+        "2026-05-01-asof0037-pattern-grpc-communication-setup"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -9462,34 +9612,44 @@
      "id": "ret-sso",
      "shape": "retracted_no_replacement",
      "old_day_correct": true,
-     "new_day_correct": false,
-     "both_correct": false,
-     "old_items": 1,
-     "new_items": 1,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 3,
      "leak": false,
      "store": {
       "s0": {
-       "written": 1,
+       "written": 2,
        "live": 1,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0038-pattern-okta-saml-sign-in",
+        "2026-03-01-asof0038-decision-rename-approval"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "judge"
+       ]
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
        "retired": 0,
        "absorbed": 0,
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1038-pattern-okta-saml-sign-in"
+        "2026-05-01-asof0038-pattern-okta-saml-sign-in",
+        "2026-05-01-asof0038-decision-rename-approval"
        ],
-       "supersedes": [],
-       "superseded_via": []
-      },
-      "s1": {
-       "written": 0,
-       "live": 0,
-       "retired": 0,
-       "absorbed": 0,
-       "valid_to": [],
-       "marker_in_text": false,
-       "titles": [],
-       "supersedes": [],
+       "supersedes": [
+        "2026-03-01-asof0038-pattern-okta-saml-sign-in"
+       ],
        "superseded_via": []
       }
      },
@@ -9516,7 +9676,7 @@
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1039-pattern-webhook-integration-documentation"
+        "2026-03-01-asof0039-pattern-webhook-order-integration"
        ],
        "supersedes": [],
        "superseded_via": [
@@ -9531,10 +9691,10 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1039-pattern-webhook-integration-documentation"
+        "2026-05-01-asof0039-pattern-webhook-order-integration"
        ],
        "supersedes": [
-        "2026-03-01-asof1039-pattern-webhook-integration-documentation"
+        "2026-03-01-asof0039-pattern-webhook-order-integration"
        ],
        "superseded_via": []
       }
@@ -9599,8 +9759,8 @@
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1041-pattern-cli-flag-legacy-restores-pre-2-0-format",
-        "2026-03-01-asof1041-decision-use-legacy-flag-for-compatibility"
+        "2026-03-01-asof0041-pattern-cli-flag-legacy-restores-pre-2-0-format",
+        "2026-03-01-asof0041-decision-use-legacy-flag-to-match-pre-2-0-behavior"
        ],
        "supersedes": [],
        "superseded_via": [
@@ -9616,12 +9776,12 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1041-pattern-cli-flag-legacy-restores-pre-2-0-format",
-        "2026-05-01-asof1041-decision-use-legacy-flag-for-compatibility"
+        "2026-05-01-asof0041-pattern-cli-flag-legacy-restores-pre-2-0-format",
+        "2026-05-01-asof0041-decision-use-legacy-flag-to-match-pre-2-0-behavior"
        ],
        "supersedes": [
-        "2026-03-01-asof1041-pattern-cli-flag-legacy-restores-pre-2-0-format",
-        "2026-03-01-asof1041-decision-use-legacy-flag-for-compatibility"
+        "2026-03-01-asof0041-pattern-cli-flag-legacy-restores-pre-2-0-format",
+        "2026-03-01-asof0041-decision-use-legacy-flag-to-match-pre-2-0-behavior"
        ],
        "superseded_via": []
       }
@@ -9649,7 +9809,7 @@
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1042-pattern-admin-panel-audit-filtering"
+        "2026-03-01-asof0042-pattern-admin-panel-audit-filtering"
        ],
        "supersedes": [],
        "superseded_via": [
@@ -9664,10 +9824,10 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1042-pattern-admin-panel-audit-filtering"
+        "2026-05-01-asof0042-pattern-admin-panel-audit-filtering"
        ],
        "supersedes": [
-        "2026-03-01-asof1042-pattern-admin-panel-audit-filtering"
+        "2026-03-01-asof0042-pattern-admin-panel-audit-filtering"
        ],
        "superseded_via": []
       }
@@ -9678,29 +9838,25 @@
     {
      "id": "ret-i18n",
      "shape": "retracted_no_replacement",
-     "old_day_correct": true,
+     "old_day_correct": false,
      "new_day_correct": true,
-     "both_correct": true,
-     "old_items": 1,
+     "both_correct": false,
+     "old_items": 0,
      "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-05-01"
-       ],
-       "marker_in_text": true,
+       "valid_to": [],
+       "marker_in_text": false,
        "titles": [
-        "2026-03-01-asof1043-pattern-localization-pairing-session"
+        "2026-03-01-asof0043-pattern-localization-pair-programming"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "judge"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 2,
@@ -9710,16 +9866,14 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1043-pattern-localization-pairing-session",
-        "2026-05-01-asof1043-decision-english-only-app"
+        "2026-05-01-asof0043-pattern-localization-pair-programming",
+        "2026-05-01-asof0043-decision-english-only-app"
        ],
-       "supersedes": [
-        "2026-03-01-asof1043-pattern-localization-pairing-session"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
-     "old_fail_kind": null,
+     "old_fail_kind": "unranked",
      "run": 1
     },
     {
@@ -9742,7 +9896,7 @@
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1044-pattern-sandbox-environment-mirrors-production"
+        "2026-03-01-asof0044-pattern-sandbox-environment-mirrors-production"
        ],
        "supersedes": [],
        "superseded_via": [
@@ -9757,10 +9911,10 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1044-pattern-sandbox-environment-mirrors-production"
+        "2026-05-01-asof0044-pattern-sandbox-environment-mirrors-production"
        ],
        "supersedes": [
-        "2026-03-01-asof1044-pattern-sandbox-environment-mirrors-production"
+        "2026-03-01-asof0044-pattern-sandbox-environment-mirrors-production"
        ],
        "superseded_via": []
       }
@@ -9788,11 +9942,11 @@
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1045-pattern-http-client-retry-logic"
+        "2026-03-01-asof0045-pattern-http-client-retry-logic"
        ],
        "supersedes": [],
        "superseded_via": [
-        "explicit"
+        "judge"
        ]
       },
       "s1": {
@@ -9803,10 +9957,10 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1045-pattern-http-client-retry-logic"
+        "2026-05-01-asof0045-pattern-http-client-retry-logic"
        ],
        "supersedes": [
-        "2026-03-01-asof1045-pattern-http-client-retry-logic"
+        "2026-03-01-asof0045-pattern-http-client-retry-logic"
        ],
        "superseded_via": []
       }
@@ -9834,7 +9988,7 @@
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1046-pattern-api-response-caching"
+        "2026-03-01-asof0046-pattern-api-response-caching"
        ],
        "supersedes": [],
        "superseded_via": [
@@ -9849,11 +10003,11 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1046-pattern-api-response-caching",
-        "2026-05-01-asof1046-decision-get-request-caching-only"
+        "2026-05-01-asof0046-pattern-api-response-caching",
+        "2026-05-01-asof0046-decision-get-request-caching"
        ],
        "supersedes": [
-        "2026-03-01-asof1046-pattern-api-response-caching"
+        "2026-03-01-asof0046-pattern-api-response-caching"
        ],
        "superseded_via": []
       }
@@ -9868,26 +10022,24 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 2,
+     "new_items": 3,
      "leak": false,
      "store": {
       "s0": {
        "written": 2,
-       "live": 0,
-       "retired": 2,
+       "live": 1,
+       "retired": 1,
        "absorbed": 0,
        "valid_to": [
-        "2026-05-01",
         "2026-05-01"
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1047-pattern-audit-log-table-changes",
-        "2026-03-01-asof1047-decision-document-audit-decision-in-readme"
+        "2026-03-01-asof0047-pattern-audit-log-table-changes",
+        "2026-03-01-asof0047-decision-document-audit-decision"
        ],
        "supersedes": [],
        "superseded_via": [
-        "judge",
         "judge"
        ]
       },
@@ -9899,12 +10051,11 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1047-pattern-audit-log-table-changes",
-        "2026-05-01-asof1047-decision-document-audit-decision-in-readme"
+        "2026-05-01-asof0047-pattern-audit-log-table-changes",
+        "2026-05-01-asof0047-decision-document-audit-decision"
        ],
        "supersedes": [
-        "2026-03-01-asof1047-pattern-audit-log-table-changes",
-        "2026-03-01-asof1047-decision-document-audit-decision-in-readme"
+        "2026-03-01-asof0047-pattern-audit-log-table-changes"
        ],
        "superseded_via": []
       }
@@ -9932,7 +10083,7 @@
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1048-pattern-trainer-runs-on-gpu"
+        "2026-03-01-asof0048-pattern-trainer-gpu-utilization"
        ],
        "supersedes": [],
        "superseded_via": [
@@ -9947,10 +10098,10 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1048-pattern-trainer-runs-on-gpu"
+        "2026-05-01-asof0048-pattern-trainer-gpu-utilization"
        ],
        "supersedes": [
-        "2026-03-01-asof1048-pattern-trainer-runs-on-gpu"
+        "2026-03-01-asof0048-pattern-trainer-gpu-utilization"
        ],
        "superseded_via": []
       }
@@ -9978,7 +10129,7 @@
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1049-pattern-pre-commit-hook-lints-repository"
+        "2026-03-01-asof0049-pattern-pre-commit-hook-lints-repo"
        ],
        "supersedes": [],
        "superseded_via": [
@@ -9993,10 +10144,10 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1049-pattern-pre-commit-hook-lints-repository"
+        "2026-05-01-asof0049-pattern-pre-commit-hook-lints-repo"
        ],
        "supersedes": [
-        "2026-03-01-asof1049-pattern-pre-commit-hook-lints-repository"
+        "2026-03-01-asof0049-pattern-pre-commit-hook-lints-repo"
        ],
        "superseded_via": []
       }
@@ -10008,13 +10159,30 @@
      "id": "nar-notify-scope",
      "shape": "narrowed",
      "old_day_correct": true,
-     "new_day_correct": false,
-     "both_correct": false,
+     "new_day_correct": true,
+     "both_correct": true,
      "old_items": 1,
      "new_items": 1,
      "leak": false,
      "store": {
       "s0": {
+       "written": 1,
+       "live": 0,
+       "retired": 1,
+       "absorbed": 0,
+       "valid_to": [
+        "2026-05-01"
+       ],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0050-pattern-deploy-alerting-works"
+       ],
+       "supersedes": [],
+       "superseded_via": [
+        "judge"
+       ]
+      },
+      "s1": {
        "written": 1,
        "live": 1,
        "retired": 0,
@@ -10022,20 +10190,11 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1050-pattern-alerting-thread-confirmed"
+        "2026-05-01-asof0050-pattern-deploy-alerting-works"
        ],
-       "supersedes": [],
-       "superseded_via": []
-      },
-      "s1": {
-       "written": 0,
-       "live": 0,
-       "retired": 0,
-       "absorbed": 0,
-       "valid_to": [],
-       "marker_in_text": false,
-       "titles": [],
-       "supersedes": [],
+       "supersedes": [
+        "2026-03-01-asof0050-pattern-deploy-alerting-works"
+       ],
        "superseded_via": []
       }
      },
@@ -10071,7 +10230,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1051-pattern-encryption-at-rest-scope"
+        "2026-05-01-asof0051-pattern-encryption-at-rest-scope"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -10109,7 +10268,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1052-pattern-index-reversal-for-docs"
+        "2026-05-01-asof0052-pattern-index-reversal-for-docs"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -10139,8 +10298,8 @@
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1053-pattern-nightly-backup-database-dump",
-        "2026-03-01-asof1053-decision-backup-decision-written"
+        "2026-03-01-asof0053-pattern-nightly-backup-database-dump",
+        "2026-03-01-asof0053-decision-backups-decision-written"
        ],
        "supersedes": [],
        "superseded_via": [
@@ -10156,12 +10315,12 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1053-pattern-nightly-backup-database-dump",
-        "2026-05-01-asof1053-decision-backup-decision-written"
+        "2026-05-01-asof0053-pattern-nightly-backup-database-dump",
+        "2026-05-01-asof0053-decision-backups-decision-written"
        ],
        "supersedes": [
-        "2026-03-01-asof1053-pattern-nightly-backup-database-dump",
-        "2026-03-01-asof1053-decision-backup-decision-written"
+        "2026-03-01-asof0053-pattern-nightly-backup-database-dump",
+        "2026-03-01-asof0053-decision-backups-decision-written"
        ],
        "superseded_via": []
       }
@@ -10175,40 +10334,45 @@
      "old_day_correct": true,
      "new_day_correct": true,
      "both_correct": true,
-     "old_items": 1,
-     "new_items": 2,
+     "old_items": 2,
+     "new_items": 3,
      "leak": false,
      "store": {
       "s0": {
-       "written": 1,
+       "written": 2,
        "live": 0,
-       "retired": 1,
+       "retired": 2,
        "absorbed": 0,
        "valid_to": [
+        "2026-05-01",
         "2026-05-01"
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1054-pattern-rate-limiting-handling"
+        "2026-03-01-asof0054-pattern-rate-limiting-handling",
+        "2026-03-01-asof0054-decision-rename-approval"
        ],
        "supersedes": [],
        "superseded_via": [
-        "explicit"
+        "explicit",
+        "judge"
        ]
       },
       "s1": {
-       "written": 2,
-       "live": 2,
+       "written": 3,
+       "live": 3,
        "retired": 0,
        "absorbed": 0,
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1054-pattern-rate-limiting-handling",
-        "2026-05-01-asof1054-mistake-incorrect-rate-limiting-logic"
+        "2026-05-01-asof0054-pattern-rate-limiting-handling",
+        "2026-05-01-asof0054-mistake-incorrect-rate-limit-logic",
+        "2026-05-01-asof0054-decision-rename-approval"
        ],
        "supersedes": [
-        "2026-03-01-asof1054-pattern-rate-limiting-handling"
+        "2026-03-01-asof0054-pattern-rate-limiting-handling",
+        "2026-03-01-asof0054-decision-rename-approval"
        ],
        "superseded_via": []
       }
@@ -10236,7 +10400,7 @@
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1055-pattern-gzip-compression-response"
+        "2026-03-01-asof0055-pattern-gzip-compression-response"
        ],
        "supersedes": [],
        "superseded_via": [
@@ -10251,10 +10415,10 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1055-pattern-gzip-compression-response"
+        "2026-05-01-asof0055-pattern-gzip-compression-response"
        ],
        "supersedes": [
-        "2026-03-01-asof1055-pattern-gzip-compression-response"
+        "2026-03-01-asof0055-pattern-gzip-compression-response"
        ],
        "superseded_via": []
       }
@@ -10282,7 +10446,7 @@
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1056-pattern-mfa-required-for-all-users"
+        "2026-03-01-asof0056-pattern-mfa-required-for-all-users"
        ],
        "supersedes": [],
        "superseded_via": [
@@ -10297,10 +10461,10 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1056-pattern-mfa-required-for-admins"
+        "2026-05-01-asof0056-pattern-mfa-required-for-admins"
        ],
        "supersedes": [
-        "2026-03-01-asof1056-pattern-mfa-required-for-all-users"
+        "2026-03-01-asof0056-pattern-mfa-required-for-all-users"
        ],
        "superseded_via": []
       }
@@ -10326,7 +10490,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1057-pattern-event-log-replay-on-boot"
+        "2026-03-01-asof0057-pattern-event-log-replay-on-boot"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -10339,7 +10503,7 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1057-pattern-event-log-replay-on-boot"
+        "2026-05-01-asof0057-pattern-event-log-replay-on-boot"
        ],
        "supersedes": [],
        "superseded_via": []
@@ -10355,25 +10519,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 2,
+     "new_items": 3,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-05-01"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1058-pattern-sharding-tenant-database"
+        "2026-03-01-asof0058-pattern-sharding-tenant-database"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "judge"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 2,
@@ -10383,12 +10543,10 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1058-pattern-sharding-tenant-database",
-        "2026-05-01-asof1058-decision-tenant-shard-threshold"
+        "2026-05-01-asof0058-pattern-sharding-tenant-database",
+        "2026-05-01-asof0058-decision-dedicated-shard-for-high-volume-tenants"
        ],
-       "supersedes": [
-        "2026-03-01-asof1058-pattern-sharding-tenant-database"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -10416,8 +10574,8 @@
        ],
        "marker_in_text": true,
        "titles": [
-        "2026-03-01-asof1059-pattern-end-to-end-request-tracing",
-        "2026-03-01-asof1059-decision-tracing-implementation"
+        "2026-03-01-asof0059-pattern-end-to-end-request-tracing",
+        "2026-03-01-asof0059-decision-request-tracing-implementation"
        ],
        "supersedes": [],
        "superseded_via": [
@@ -10433,12 +10591,12 @@
        "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-05-01-asof1059-pattern-end-to-end-request-tracing",
-        "2026-05-01-asof1059-decision-tracing-implementation"
+        "2026-05-01-asof0059-pattern-end-to-end-request-tracing",
+        "2026-05-01-asof0059-decision-request-tracing-implementation"
        ],
        "supersedes": [
-        "2026-03-01-asof1059-pattern-end-to-end-request-tracing",
-        "2026-03-01-asof1059-decision-tracing-implementation"
+        "2026-03-01-asof0059-pattern-end-to-end-request-tracing",
+        "2026-03-01-asof0059-decision-request-tracing-implementation"
        ],
        "superseded_via": []
       }
@@ -10448,54 +10606,167 @@
     }
    ],
    "n_cases": 120,
-   "both_correct_rate": 0.8,
+   "both_correct_rate": 0.8667,
    "both_correct_ci": [
-    0.7196,
-    0.8618
+    0.7944,
+    0.9162
    ],
-   "old_day_rate": 0.8917,
-   "new_day_rate": 0.8833,
+   "old_day_rate": 0.9333,
+   "new_day_rate": 0.9167,
    "errors": 0,
    "old_day_failures_by_kind": {
-    "never_written": 11,
+    "never_written": 6,
     "absorbed": 0,
-    "unranked": 1,
-    "paraphrase": 1,
+    "unranked": 2,
+    "paraphrase": 0,
     "leak": 0
    },
-   "s0_never_written": 11,
+   "s0_never_written": 6,
    "s0_absorbed": 0,
-   "s0_retired_rate": 0.789,
+   "s0_retired_rate": 0.807,
    "s0_retired_via": {
-    "judge": 84,
-    "explicit": 24
+    "judge": 90,
+    "explicit": 22
    },
-   "s0_written_pairs": 109,
+   "s0_written_pairs": 114,
    "runs": 2,
-   "adjudication": {
-    "pairs": 105,
-    "budget": 100000,
-    "cap": 0,
-    "judged": 105,
-    "tokens_spent": 43914,
-    "estimated_calls": 0,
-    "replaces": 84,
-    "separate": 7,
-    "vetoed": 14,
-    "unanswered": 0,
-    "errors": 0,
-    "left": 0,
-    "prompt_tokens": 39730,
-    "eval_tokens": 4184,
-    "skipped": null,
-    "judged_ollama": 105
-   },
-   "seconds": 29.4,
-   "store_bytes": 281267,
-   "config": "the same store after consolidate_memory.adjudicate_contested(budget=100000, cap=0)",
    "per_run": [
     0.8667,
-    0.7333
+    0.8667
+   ],
+   "seconds": 29.9,
+   "config": "the same store after consolidate_memory.adjudicate_contested(budget=100000, cap=0)",
+   "run_files": [
+    "asof_v1.run1.json",
+    "asof_v1.run2.json"
+   ],
+   "ollama_transport_per_run": [
+    {
+     "calls": 542,
+     "pace_sleep_s": 24.621,
+     "retries": 0,
+     "retry_sleep_s": 0.0,
+     "gave_up": 0,
+     "call_ms": {
+      "n": 542,
+      "p50": 26.697,
+      "p90": 1350.934,
+      "p99": 2013.871,
+      "max": 11278.648
+     },
+     "mode": "pace",
+     "timing_includes_pacing": true,
+     "pace_floor_s": 67.75,
+     "bypass_calls": {
+      "requests": 0,
+      "aiohttp": 0
+     },
+     "nested_calls": {
+      "requests": 0,
+      "aiohttp": 0
+     },
+     "max_inflight": 1,
+     "max_concurrent_paced": 1,
+     "pace_excluded_exact": true,
+     "failed_outcomes": {
+      "by_status": {},
+      "by_exception_type": {},
+      "gave_up": 0
+     },
+     "llm_retries": 0,
+     "llm_retry_sleep_s": 0.0,
+     "failed_outcomes_llm": {
+      "by_status": {},
+      "by_exception_type": {},
+      "gave_up": 0
+     }
+    },
+    {
+     "calls": 542,
+     "pace_sleep_s": 25.001,
+     "retries": 0,
+     "retry_sleep_s": 0.0,
+     "gave_up": 0,
+     "call_ms": {
+      "n": 542,
+      "p50": 25.423,
+      "p90": 1355.662,
+      "p99": 2012.23,
+      "max": 2412.162
+     },
+     "mode": "pace",
+     "timing_includes_pacing": true,
+     "pace_floor_s": 67.75,
+     "bypass_calls": {
+      "requests": 0,
+      "aiohttp": 0
+     },
+     "nested_calls": {
+      "requests": 0,
+      "aiohttp": 0
+     },
+     "max_inflight": 1,
+     "max_concurrent_paced": 1,
+     "pace_excluded_exact": true,
+     "failed_outcomes": {
+      "by_status": {},
+      "by_exception_type": {},
+      "gave_up": 0
+     },
+     "llm_retries": 0,
+     "llm_retry_sleep_s": 0.0,
+     "failed_outcomes_llm": {
+      "by_status": {},
+      "by_exception_type": {},
+      "gave_up": 0
+     }
+    }
+   ],
+   "adjudication_per_run": [
+    {
+     "pairs": 58,
+     "budget": 100000,
+     "cap": 0,
+     "judged": 58,
+     "tokens_spent": 24218,
+     "estimated_calls": 0,
+     "replaces": 45,
+     "separate": 4,
+     "vetoed": 9,
+     "unanswered": 0,
+     "errors": 0,
+     "left": 0,
+     "prompt_tokens": 21918,
+     "eval_tokens": 2300,
+     "skipped": null,
+     "carry_kept": 0,
+     "requeued": 0,
+     "baselined": 0,
+     "healed": 0,
+     "judged_ollama": 58
+    },
+    {
+     "pairs": 58,
+     "budget": 100000,
+     "cap": 0,
+     "judged": 58,
+     "tokens_spent": 24208,
+     "estimated_calls": 0,
+     "replaces": 45,
+     "separate": 5,
+     "vetoed": 8,
+     "unanswered": 0,
+     "errors": 0,
+     "left": 0,
+     "prompt_tokens": 21908,
+     "eval_tokens": 2300,
+     "skipped": null,
+     "carry_kept": 0,
+     "requeued": 0,
+     "baselined": 0,
+     "healed": 0,
+     "judged_ollama": 58
+    }
    ]
   },
   "naive": {
@@ -11081,8 +11352,8 @@
      "old_day_correct": true,
      "new_day_correct": true,
      "both_correct": true,
-     "old_items": 2,
-     "new_items": 3,
+     "old_items": 3,
+     "new_items": 4,
      "run": 0
     },
     {
@@ -11101,8 +11372,8 @@
      "old_day_correct": true,
      "new_day_correct": false,
      "both_correct": false,
-     "old_items": 2,
-     "new_items": 3,
+     "old_items": 1,
+     "new_items": 2,
      "run": 0
     },
     {
@@ -11151,8 +11422,8 @@
      "old_day_correct": false,
      "new_day_correct": true,
      "both_correct": false,
-     "old_items": 1,
-     "new_items": 2,
+     "old_items": 0,
+     "new_items": 1,
      "run": 0
     },
     {
@@ -11161,7 +11432,7 @@
      "old_day_correct": true,
      "new_day_correct": true,
      "both_correct": true,
-     "old_items": 1,
+     "old_items": 2,
      "new_items": 3,
      "run": 0
     },
@@ -11169,18 +11440,18 @@
      "id": "val-chunk",
      "shape": "value_replaced",
      "old_day_correct": true,
-     "new_day_correct": false,
-     "both_correct": false,
-     "old_items": 3,
-     "new_items": 3,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 4,
+     "new_items": 5,
      "run": 0
     },
     {
      "id": "val-quorum",
      "shape": "value_replaced",
      "old_day_correct": true,
-     "new_day_correct": true,
-     "both_correct": true,
+     "new_day_correct": false,
+     "both_correct": false,
      "old_items": 2,
      "new_items": 3,
      "run": 0
@@ -11201,8 +11472,8 @@
      "old_day_correct": true,
      "new_day_correct": true,
      "both_correct": true,
-     "old_items": 2,
-     "new_items": 4,
+     "old_items": 1,
+     "new_items": 3,
      "run": 0
     },
     {
@@ -11228,11 +11499,11 @@
     {
      "id": "app-bundler",
      "shape": "approach_abandoned",
-     "old_day_correct": false,
+     "old_day_correct": true,
      "new_day_correct": false,
      "both_correct": false,
-     "old_items": 0,
-     "new_items": 0,
+     "old_items": 2,
+     "new_items": 2,
      "run": 0
     },
     {
@@ -11251,18 +11522,18 @@
      "old_day_correct": true,
      "new_day_correct": false,
      "both_correct": false,
-     "old_items": 1,
-     "new_items": 1,
+     "old_items": 3,
+     "new_items": 3,
      "run": 0
     },
     {
      "id": "app-ci",
      "shape": "approach_abandoned",
      "old_day_correct": true,
-     "new_day_correct": true,
-     "both_correct": true,
+     "new_day_correct": false,
+     "both_correct": false,
      "old_items": 1,
-     "new_items": 2,
+     "new_items": 1,
      "run": 0
     },
     {
@@ -11312,7 +11583,7 @@
      "new_day_correct": true,
      "both_correct": false,
      "old_items": 0,
-     "new_items": 1,
+     "new_items": 2,
      "run": 0
     },
     {
@@ -11411,8 +11682,8 @@
      "old_day_correct": true,
      "new_day_correct": true,
      "both_correct": true,
-     "old_items": 2,
-     "new_items": 2,
+     "old_items": 4,
+     "new_items": 5,
      "run": 0
     },
     {
@@ -11421,8 +11692,8 @@
      "old_day_correct": true,
      "new_day_correct": false,
      "both_correct": false,
-     "old_items": 1,
-     "new_items": 2,
+     "old_items": 3,
+     "new_items": 3,
      "run": 0
     },
     {
@@ -11458,11 +11729,11 @@
     {
      "id": "ret-gpu-node",
      "shape": "retracted_no_replacement",
-     "old_day_correct": false,
+     "old_day_correct": true,
      "new_day_correct": true,
-     "both_correct": false,
-     "old_items": 1,
-     "new_items": 3,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 4,
      "run": 0
     },
     {
@@ -11492,7 +11763,7 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 3,
-     "new_items": 3,
+     "new_items": 4,
      "run": 0
     },
     {
@@ -11501,8 +11772,8 @@
      "old_day_correct": true,
      "new_day_correct": true,
      "both_correct": true,
-     "old_items": 3,
-     "new_items": 4,
+     "old_items": 2,
+     "new_items": 3,
      "run": 0
     },
     {
@@ -11521,8 +11792,8 @@
      "old_day_correct": true,
      "new_day_correct": false,
      "both_correct": false,
-     "old_items": 1,
-     "new_items": 1,
+     "old_items": 2,
+     "new_items": 2,
      "run": 0
     },
     {
@@ -11539,10 +11810,10 @@
      "id": "nar-gpu-scope",
      "shape": "narrowed",
      "old_day_correct": true,
-     "new_day_correct": false,
-     "both_correct": false,
+     "new_day_correct": true,
+     "both_correct": true,
      "old_items": 2,
-     "new_items": 2,
+     "new_items": 4,
      "run": 0
     },
     {
@@ -11589,10 +11860,10 @@
      "id": "nar-backup-scope",
      "shape": "narrowed",
      "old_day_correct": false,
-     "new_day_correct": true,
+     "new_day_correct": false,
      "both_correct": false,
      "old_items": 0,
-     "new_items": 2,
+     "new_items": 0,
      "run": 0
     },
     {
@@ -11601,17 +11872,17 @@
      "old_day_correct": false,
      "new_day_correct": false,
      "both_correct": false,
-     "old_items": 2,
-     "new_items": 2,
+     "old_items": 0,
+     "new_items": 1,
      "run": 0
     },
     {
      "id": "nar-compress-scope",
      "shape": "narrowed",
-     "old_day_correct": false,
+     "old_day_correct": true,
      "new_day_correct": true,
-     "both_correct": false,
-     "old_items": 0,
+     "both_correct": true,
+     "old_items": 1,
      "new_items": 3,
      "run": 0
     },
@@ -11681,8 +11952,8 @@
      "old_day_correct": true,
      "new_day_correct": true,
      "both_correct": true,
-     "old_items": 2,
-     "new_items": 3,
+     "old_items": 3,
+     "new_items": 4,
      "run": 1
     },
     {
@@ -11701,8 +11972,8 @@
      "old_day_correct": true,
      "new_day_correct": false,
      "both_correct": false,
-     "old_items": 2,
-     "new_items": 3,
+     "old_items": 1,
+     "new_items": 2,
      "run": 1
     },
     {
@@ -11751,8 +12022,8 @@
      "old_day_correct": false,
      "new_day_correct": true,
      "both_correct": false,
-     "old_items": 1,
-     "new_items": 2,
+     "old_items": 0,
+     "new_items": 1,
      "run": 1
     },
     {
@@ -11761,7 +12032,7 @@
      "old_day_correct": true,
      "new_day_correct": true,
      "both_correct": true,
-     "old_items": 1,
+     "old_items": 2,
      "new_items": 3,
      "run": 1
     },
@@ -11769,18 +12040,18 @@
      "id": "val-chunk",
      "shape": "value_replaced",
      "old_day_correct": true,
-     "new_day_correct": false,
-     "both_correct": false,
-     "old_items": 3,
-     "new_items": 3,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 4,
+     "new_items": 5,
      "run": 1
     },
     {
      "id": "val-quorum",
      "shape": "value_replaced",
      "old_day_correct": true,
-     "new_day_correct": true,
-     "both_correct": true,
+     "new_day_correct": false,
+     "both_correct": false,
      "old_items": 2,
      "new_items": 3,
      "run": 1
@@ -11801,8 +12072,8 @@
      "old_day_correct": true,
      "new_day_correct": true,
      "both_correct": true,
-     "old_items": 2,
-     "new_items": 4,
+     "old_items": 1,
+     "new_items": 3,
      "run": 1
     },
     {
@@ -11828,11 +12099,11 @@
     {
      "id": "app-bundler",
      "shape": "approach_abandoned",
-     "old_day_correct": false,
+     "old_day_correct": true,
      "new_day_correct": false,
      "both_correct": false,
-     "old_items": 0,
-     "new_items": 0,
+     "old_items": 2,
+     "new_items": 2,
      "run": 1
     },
     {
@@ -11851,18 +12122,18 @@
      "old_day_correct": true,
      "new_day_correct": false,
      "both_correct": false,
-     "old_items": 1,
-     "new_items": 1,
+     "old_items": 3,
+     "new_items": 3,
      "run": 1
     },
     {
      "id": "app-ci",
      "shape": "approach_abandoned",
      "old_day_correct": true,
-     "new_day_correct": true,
-     "both_correct": true,
+     "new_day_correct": false,
+     "both_correct": false,
      "old_items": 1,
-     "new_items": 2,
+     "new_items": 1,
      "run": 1
     },
     {
@@ -11912,7 +12183,7 @@
      "new_day_correct": true,
      "both_correct": false,
      "old_items": 0,
-     "new_items": 1,
+     "new_items": 2,
      "run": 1
     },
     {
@@ -12011,8 +12282,8 @@
      "old_day_correct": true,
      "new_day_correct": true,
      "both_correct": true,
-     "old_items": 2,
-     "new_items": 2,
+     "old_items": 4,
+     "new_items": 5,
      "run": 1
     },
     {
@@ -12021,8 +12292,8 @@
      "old_day_correct": true,
      "new_day_correct": false,
      "both_correct": false,
-     "old_items": 1,
-     "new_items": 2,
+     "old_items": 3,
+     "new_items": 3,
      "run": 1
     },
     {
@@ -12058,11 +12329,11 @@
     {
      "id": "ret-gpu-node",
      "shape": "retracted_no_replacement",
-     "old_day_correct": false,
+     "old_day_correct": true,
      "new_day_correct": true,
-     "both_correct": false,
-     "old_items": 1,
-     "new_items": 3,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 4,
      "run": 1
     },
     {
@@ -12092,7 +12363,7 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 3,
-     "new_items": 3,
+     "new_items": 4,
      "run": 1
     },
     {
@@ -12101,8 +12372,8 @@
      "old_day_correct": true,
      "new_day_correct": true,
      "both_correct": true,
-     "old_items": 3,
-     "new_items": 4,
+     "old_items": 2,
+     "new_items": 3,
      "run": 1
     },
     {
@@ -12121,8 +12392,8 @@
      "old_day_correct": true,
      "new_day_correct": false,
      "both_correct": false,
-     "old_items": 1,
-     "new_items": 1,
+     "old_items": 2,
+     "new_items": 2,
      "run": 1
     },
     {
@@ -12139,10 +12410,10 @@
      "id": "nar-gpu-scope",
      "shape": "narrowed",
      "old_day_correct": true,
-     "new_day_correct": false,
-     "both_correct": false,
+     "new_day_correct": true,
+     "both_correct": true,
      "old_items": 2,
-     "new_items": 2,
+     "new_items": 4,
      "run": 1
     },
     {
@@ -12189,10 +12460,10 @@
      "id": "nar-backup-scope",
      "shape": "narrowed",
      "old_day_correct": false,
-     "new_day_correct": true,
+     "new_day_correct": false,
      "both_correct": false,
      "old_items": 0,
-     "new_items": 2,
+     "new_items": 0,
      "run": 1
     },
     {
@@ -12201,17 +12472,17 @@
      "old_day_correct": false,
      "new_day_correct": false,
      "both_correct": false,
-     "old_items": 2,
-     "new_items": 2,
+     "old_items": 0,
+     "new_items": 1,
      "run": 1
     },
     {
      "id": "nar-compress-scope",
      "shape": "narrowed",
-     "old_day_correct": false,
+     "old_day_correct": true,
      "new_day_correct": true,
-     "both_correct": false,
-     "old_items": 0,
+     "both_correct": true,
+     "old_items": 1,
      "new_items": 3,
      "run": 1
     },
@@ -12257,32 +12528,32 @@
     }
    ],
    "n_cases": 120,
-   "both_correct_rate": 0.3667,
+   "both_correct_rate": 0.4,
    "both_correct_ci": [
-    0.2858,
-    0.4558
+    0.3168,
+    0.4894
    ],
-   "old_day_rate": 0.6,
-   "new_day_rate": 0.5333,
+   "old_day_rate": 0.65,
+   "new_day_rate": 0.5167,
    "errors": 0,
    "runs": 2,
    "per_run": [
-    0.3667,
-    0.3667
+    0.4,
+    0.4
    ],
-   "seconds": 400.9,
+   "seconds": 398.5,
    "config": "graphiti-core via FalkorDB, qwen3-coder:30b + bge-m3, edges filtered by valid_at/invalid_at/expired_at, k=5",
    "graphiti": {
     "llm": "qwen3-coder:30b",
     "embedder": "bge-m3",
     "json_mode": "json_schema",
     "driver": "falkordb localhost:6380",
-    "database": "nw_1789141594",
+    "database": "nw_1790295026",
     "episodes": 120,
     "episode_errors": 0,
-    "llm_calls": 389,
+    "llm_calls": 394,
     "llm_failures": 0,
-    "llm_calls_per_episode": 3.24
+    "llm_calls_per_episode": 3.28
    },
    "graphiti_per_run": [
     {
@@ -12290,29 +12561,35 @@
      "embedder": "bge-m3",
      "json_mode": "json_schema",
      "driver": "falkordb localhost:6380",
-     "database": "nw_1789141594",
+     "database": "nw_1790295026",
      "episodes": 120,
      "episode_errors": 0,
-     "llm_calls": 389,
+     "llm_calls": 394,
      "llm_failures": 0,
-     "llm_calls_per_episode": 3.24
+     "llm_calls_per_episode": 3.28
     },
     {
      "llm": "qwen3-coder:30b",
      "embedder": "bge-m3",
      "json_mode": "json_schema",
      "driver": "falkordb localhost:6380",
-     "database": "nw_1789141796",
+     "database": "nw_1790295233",
      "episodes": 120,
      "episode_errors": 0,
-     "llm_calls": 389,
+     "llm_calls": 394,
      "llm_failures": 0,
-     "llm_calls_per_episode": 3.24
+     "llm_calls_per_episode": 3.28
     }
    ]
   },
   "mem0": {
    "blocked": "Mem0 stamps a memory with the wall-clock time of the add() call and its search has no as-of filter; facts cannot be placed in the past without patching the product"
   }
+ },
+ "store": "C:\\Users\\Platon\\AppData\\Local\\Temp\\nevertwice_asof_pq5up772",
+ "measured_at": {
+  "commit": "fe6ddff232915c61ec2177b5541039a9c3e370c6",
+  "utc": "2026-09-25T00:55:57Z",
+  "dirty": false
  }
 }

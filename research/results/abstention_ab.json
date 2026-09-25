@@ -1,290 +1,2493 @@
 {
- "store": "C:\\Users\\Platon\\AppData\\Local\\Temp\\nevertwice_abstention__9eciird",
+ "store": "C:\\Users\\Platon\\AppData\\Local\\Temp\\nevertwice_abstention_rdrrj7zx",
+ "code_sha": "fe6ddff232915c61ec2177b5541039a9c3e370c6",
+ "measured_at": "2026-09-25T04:03:47",
  "remine": {
-  "events": 3200,
-  "stages": 8,
-  "final_bytes": 1391395,
-  "window_chars": 12000,
-  "full_read_bytes_total": 6261140,
-  "delta_read_bytes_total": 1391395,
+  "events": 3200.0,
+  "events_per_run": {
+   "values": [
+    3200,
+    3200,
+    3200
+   ],
+   "min": 3200,
+   "max": 3200
+  },
+  "stages": 8.0,
+  "stages_per_run": {
+   "values": [
+    8,
+    8,
+    8
+   ],
+   "min": 8,
+   "max": 8
+  },
+  "final_bytes": 1391395.0,
+  "final_bytes_per_run": {
+   "values": [
+    1391395,
+    1391395,
+    1391395
+   ],
+   "min": 1391395,
+   "max": 1391395
+  },
+  "window_chars": 12000.0,
+  "window_chars_per_run": {
+   "values": [
+    12000,
+    12000,
+    12000
+   ],
+   "min": 12000,
+   "max": 12000
+  },
+  "full_read_bytes_total": 6261140.0,
+  "full_read_bytes_total_per_run": {
+   "values": [
+    6261140,
+    6261140,
+    6261140
+   ],
+   "min": 6261140,
+   "max": 6261140
+  },
+  "delta_read_bytes_total": 1391395.0,
+  "delta_read_bytes_total_per_run": {
+   "values": [
+    1391395,
+    1391395,
+    1391395
+   ],
+   "min": 1391395,
+   "max": 1391395
+  },
   "byte_reduction": 0.7778,
+  "byte_reduction_per_run": {
+   "values": [
+    0.7778,
+    0.7778,
+    0.7778
+   ],
+   "min": 0.7778,
+   "max": 0.7778
+  },
   "full_read_coverage": 1.0,
+  "full_read_coverage_per_run": {
+   "values": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "min": 1.0,
+   "max": 1.0
+  },
   "delta_read_coverage": 1.0,
+  "delta_read_coverage_per_run": {
+   "values": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "min": 1.0,
+   "max": 1.0
+  },
   "events_only_delta_saw": [],
   "events_only_full_saw": [],
   "per_stage": [
    {
-    "stage": 0,
-    "file_bytes": 173865,
-    "full_read_bytes": 173865,
-    "delta_read_bytes": 173865,
+    "stage": 0.0,
+    "stage_per_run": {
+     "values": [
+      0,
+      0,
+      0
+     ],
+     "min": 0,
+     "max": 0
+    },
+    "file_bytes": 173865.0,
+    "file_bytes_per_run": {
+     "values": [
+      173865,
+      173865,
+      173865
+     ],
+     "min": 173865,
+     "max": 173865
+    },
+    "full_read_bytes": 173865.0,
+    "full_read_bytes_per_run": {
+     "values": [
+      173865,
+      173865,
+      173865
+     ],
+     "min": 173865,
+     "max": 173865
+    },
+    "delta_read_bytes": 173865.0,
+    "delta_read_bytes_per_run": {
+     "values": [
+      173865,
+      173865,
+      173865
+     ],
+     "min": 173865,
+     "max": 173865
+    },
     "full_cumulative_coverage": 1.0,
-    "delta_cumulative_coverage": 1.0
+    "full_cumulative_coverage_per_run": {
+     "values": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0
+    },
+    "delta_cumulative_coverage": 1.0,
+    "delta_cumulative_coverage_per_run": {
+     "values": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0
+    }
    },
    {
-    "stage": 1,
-    "file_bytes": 348000,
-    "full_read_bytes": 348000,
-    "delta_read_bytes": 174135,
+    "stage": 1.0,
+    "stage_per_run": {
+     "values": [
+      1,
+      1,
+      1
+     ],
+     "min": 1,
+     "max": 1
+    },
+    "file_bytes": 348000.0,
+    "file_bytes_per_run": {
+     "values": [
+      348000,
+      348000,
+      348000
+     ],
+     "min": 348000,
+     "max": 348000
+    },
+    "full_read_bytes": 348000.0,
+    "full_read_bytes_per_run": {
+     "values": [
+      348000,
+      348000,
+      348000
+     ],
+     "min": 348000,
+     "max": 348000
+    },
+    "delta_read_bytes": 174135.0,
+    "delta_read_bytes_per_run": {
+     "values": [
+      174135,
+      174135,
+      174135
+     ],
+     "min": 174135,
+     "max": 174135
+    },
     "full_cumulative_coverage": 1.0,
-    "delta_cumulative_coverage": 1.0
+    "full_cumulative_coverage_per_run": {
+     "values": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0
+    },
+    "delta_cumulative_coverage": 1.0,
+    "delta_cumulative_coverage_per_run": {
+     "values": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0
+    }
    },
    {
-    "stage": 2,
-    "file_bytes": 521865,
-    "full_read_bytes": 521865,
-    "delta_read_bytes": 173865,
+    "stage": 2.0,
+    "stage_per_run": {
+     "values": [
+      2,
+      2,
+      2
+     ],
+     "min": 2,
+     "max": 2
+    },
+    "file_bytes": 521865.0,
+    "file_bytes_per_run": {
+     "values": [
+      521865,
+      521865,
+      521865
+     ],
+     "min": 521865,
+     "max": 521865
+    },
+    "full_read_bytes": 521865.0,
+    "full_read_bytes_per_run": {
+     "values": [
+      521865,
+      521865,
+      521865
+     ],
+     "min": 521865,
+     "max": 521865
+    },
+    "delta_read_bytes": 173865.0,
+    "delta_read_bytes_per_run": {
+     "values": [
+      173865,
+      173865,
+      173865
+     ],
+     "min": 173865,
+     "max": 173865
+    },
     "full_cumulative_coverage": 1.0,
-    "delta_cumulative_coverage": 1.0
+    "full_cumulative_coverage_per_run": {
+     "values": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0
+    },
+    "delta_cumulative_coverage": 1.0,
+    "delta_cumulative_coverage_per_run": {
+     "values": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0
+    }
    },
    {
-    "stage": 3,
-    "file_bytes": 695597,
-    "full_read_bytes": 695597,
-    "delta_read_bytes": 173732,
+    "stage": 3.0,
+    "stage_per_run": {
+     "values": [
+      3,
+      3,
+      3
+     ],
+     "min": 3,
+     "max": 3
+    },
+    "file_bytes": 695597.0,
+    "file_bytes_per_run": {
+     "values": [
+      695597,
+      695597,
+      695597
+     ],
+     "min": 695597,
+     "max": 695597
+    },
+    "full_read_bytes": 695597.0,
+    "full_read_bytes_per_run": {
+     "values": [
+      695597,
+      695597,
+      695597
+     ],
+     "min": 695597,
+     "max": 695597
+    },
+    "delta_read_bytes": 173732.0,
+    "delta_read_bytes_per_run": {
+     "values": [
+      173732,
+      173732,
+      173732
+     ],
+     "min": 173732,
+     "max": 173732
+    },
     "full_cumulative_coverage": 1.0,
-    "delta_cumulative_coverage": 1.0
+    "full_cumulative_coverage_per_run": {
+     "values": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0
+    },
+    "delta_cumulative_coverage": 1.0,
+    "delta_cumulative_coverage_per_run": {
+     "values": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0
+    }
    },
    {
-    "stage": 4,
-    "file_bytes": 869620,
-    "full_read_bytes": 869620,
-    "delta_read_bytes": 174023,
+    "stage": 4.0,
+    "stage_per_run": {
+     "values": [
+      4,
+      4,
+      4
+     ],
+     "min": 4,
+     "max": 4
+    },
+    "file_bytes": 869620.0,
+    "file_bytes_per_run": {
+     "values": [
+      869620,
+      869620,
+      869620
+     ],
+     "min": 869620,
+     "max": 869620
+    },
+    "full_read_bytes": 869620.0,
+    "full_read_bytes_per_run": {
+     "values": [
+      869620,
+      869620,
+      869620
+     ],
+     "min": 869620,
+     "max": 869620
+    },
+    "delta_read_bytes": 174023.0,
+    "delta_read_bytes_per_run": {
+     "values": [
+      174023,
+      174023,
+      174023
+     ],
+     "min": 174023,
+     "max": 174023
+    },
     "full_cumulative_coverage": 1.0,
-    "delta_cumulative_coverage": 1.0
+    "full_cumulative_coverage_per_run": {
+     "values": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0
+    },
+    "delta_cumulative_coverage": 1.0,
+    "delta_cumulative_coverage_per_run": {
+     "values": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0
+    }
    },
    {
-    "stage": 5,
-    "file_bytes": 1043344,
-    "full_read_bytes": 1043344,
-    "delta_read_bytes": 173724,
+    "stage": 5.0,
+    "stage_per_run": {
+     "values": [
+      5,
+      5,
+      5
+     ],
+     "min": 5,
+     "max": 5
+    },
+    "file_bytes": 1043344.0,
+    "file_bytes_per_run": {
+     "values": [
+      1043344,
+      1043344,
+      1043344
+     ],
+     "min": 1043344,
+     "max": 1043344
+    },
+    "full_read_bytes": 1043344.0,
+    "full_read_bytes_per_run": {
+     "values": [
+      1043344,
+      1043344,
+      1043344
+     ],
+     "min": 1043344,
+     "max": 1043344
+    },
+    "delta_read_bytes": 173724.0,
+    "delta_read_bytes_per_run": {
+     "values": [
+      173724,
+      173724,
+      173724
+     ],
+     "min": 173724,
+     "max": 173724
+    },
     "full_cumulative_coverage": 1.0,
-    "delta_cumulative_coverage": 1.0
+    "full_cumulative_coverage_per_run": {
+     "values": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0
+    },
+    "delta_cumulative_coverage": 1.0,
+    "delta_cumulative_coverage_per_run": {
+     "values": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0
+    }
    },
    {
-    "stage": 6,
-    "file_bytes": 1217454,
-    "full_read_bytes": 1217454,
-    "delta_read_bytes": 174110,
+    "stage": 6.0,
+    "stage_per_run": {
+     "values": [
+      6,
+      6,
+      6
+     ],
+     "min": 6,
+     "max": 6
+    },
+    "file_bytes": 1217454.0,
+    "file_bytes_per_run": {
+     "values": [
+      1217454,
+      1217454,
+      1217454
+     ],
+     "min": 1217454,
+     "max": 1217454
+    },
+    "full_read_bytes": 1217454.0,
+    "full_read_bytes_per_run": {
+     "values": [
+      1217454,
+      1217454,
+      1217454
+     ],
+     "min": 1217454,
+     "max": 1217454
+    },
+    "delta_read_bytes": 174110.0,
+    "delta_read_bytes_per_run": {
+     "values": [
+      174110,
+      174110,
+      174110
+     ],
+     "min": 174110,
+     "max": 174110
+    },
     "full_cumulative_coverage": 1.0,
-    "delta_cumulative_coverage": 1.0
+    "full_cumulative_coverage_per_run": {
+     "values": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0
+    },
+    "delta_cumulative_coverage": 1.0,
+    "delta_cumulative_coverage_per_run": {
+     "values": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0
+    }
    },
    {
-    "stage": 7,
-    "file_bytes": 1391395,
-    "full_read_bytes": 1391395,
-    "delta_read_bytes": 173941,
+    "stage": 7.0,
+    "stage_per_run": {
+     "values": [
+      7,
+      7,
+      7
+     ],
+     "min": 7,
+     "max": 7
+    },
+    "file_bytes": 1391395.0,
+    "file_bytes_per_run": {
+     "values": [
+      1391395,
+      1391395,
+      1391395
+     ],
+     "min": 1391395,
+     "max": 1391395
+    },
+    "full_read_bytes": 1391395.0,
+    "full_read_bytes_per_run": {
+     "values": [
+      1391395,
+      1391395,
+      1391395
+     ],
+     "min": 1391395,
+     "max": 1391395
+    },
+    "delta_read_bytes": 173941.0,
+    "delta_read_bytes_per_run": {
+     "values": [
+      173941,
+      173941,
+      173941
+     ],
+     "min": 173941,
+     "max": 173941
+    },
     "full_cumulative_coverage": 1.0,
-    "delta_cumulative_coverage": 1.0
+    "full_cumulative_coverage_per_run": {
+     "values": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0
+    },
+    "delta_cumulative_coverage": 1.0,
+    "delta_cumulative_coverage_per_run": {
+     "values": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "min": 1.0,
+     "max": 1.0
+    }
    }
   ]
  },
- "captured_cases": 80,
- "llm": "qwen3-coder:30b",
+ "captured_cases": 80.0,
+ "captured_cases_per_run": {
+  "values": [
+   80,
+   80,
+   80
+  ],
+  "min": 80,
+  "max": 80
+ },
+ "llm": "qwen3.6:35b-a3b",
  "embedder": "bge-m3",
- "mean_hits_returned": 1.48,
+ "mean_hits_returned": 1.4467,
+ "mean_hits_returned_per_run": {
+  "values": [
+   1.46,
+   1.44,
+   1.44
+  ],
+  "min": 1.44,
+  "max": 1.46
+ },
  "recall_sweep": [
   {
    "threshold": 0.0,
-   "cases": 79,
-   "mean_chars": 463.1,
-   "mean_hits": 1.49,
-   "current_rate": 1.0,
+   "threshold_per_run": {
+    "values": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "min": 0.0,
+    "max": 0.0
+   },
+   "cases": 79.0,
+   "cases_per_run": {
+    "values": [
+     79,
+     79,
+     79
+    ],
+    "min": 79,
+    "max": 79
+   },
+   "mean_chars": 457.6667,
+   "mean_chars_per_run": {
+    "values": [
+     459.8,
+     456.6,
+     456.6
+    ],
+    "min": 456.6,
+    "max": 459.8
+   },
+   "mean_hits": 1.4667,
+   "mean_hits_per_run": {
+    "values": [
+     1.48,
+     1.46,
+     1.46
+    ],
+    "min": 1.46,
+    "max": 1.48
+   },
+   "current_rate": 0.9915,
+   "current_rate_per_run": {
+    "values": [
+     1.0,
+     0.9873,
+     0.9873
+    ],
+    "min": 0.9873,
+    "max": 1.0
+   },
    "stale_rate": 0.0506,
+   "stale_rate_per_run": {
+    "values": [
+     0.0506,
+     0.0506,
+     0.0506
+    ],
+    "min": 0.0506,
+    "max": 0.0506
+   },
    "char_reduction_vs_off": 0.0,
-   "current_delta_vs_off": 0.0
+   "char_reduction_vs_off_per_run": {
+    "values": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "min": 0.0,
+    "max": 0.0
+   },
+   "current_delta_vs_off": 0.0,
+   "current_delta_vs_off_per_run": {
+    "values": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "min": 0.0,
+    "max": 0.0
+   }
   },
   {
    "threshold": 0.1,
-   "cases": 79,
-   "mean_chars": 430.5,
-   "mean_hits": 1.38,
+   "threshold_per_run": {
+    "values": [
+     0.1,
+     0.1,
+     0.1
+    ],
+    "min": 0.1,
+    "max": 0.1
+   },
+   "cases": 79.0,
+   "cases_per_run": {
+    "values": [
+     79,
+     79,
+     79
+    ],
+    "min": 79,
+    "max": 79
+   },
+   "mean_chars": 433.8,
+   "mean_chars_per_run": {
+    "values": [
+     427.2,
+     437.1,
+     437.1
+    ],
+    "min": 427.2,
+    "max": 437.1
+   },
+   "mean_hits": 1.3833,
+   "mean_hits_per_run": {
+    "values": [
+     1.37,
+     1.39,
+     1.39
+    ],
+    "min": 1.37,
+    "max": 1.39
+   },
    "current_rate": 0.9873,
+   "current_rate_per_run": {
+    "values": [
+     0.9873,
+     0.9873,
+     0.9873
+    ],
+    "min": 0.9873,
+    "max": 0.9873
+   },
    "stale_rate": 0.038,
-   "char_reduction_vs_off": 0.0704,
-   "current_delta_vs_off": -0.0127
+   "stale_rate_per_run": {
+    "values": [
+     0.038,
+     0.038,
+     0.038
+    ],
+    "min": 0.038,
+    "max": 0.038
+   },
+   "char_reduction_vs_off": 0.0521,
+   "char_reduction_vs_off_per_run": {
+    "values": [
+     0.0709,
+     0.0427,
+     0.0427
+    ],
+    "min": 0.0427,
+    "max": 0.0709
+   },
+   "current_delta_vs_off": -0.0042,
+   "current_delta_vs_off_per_run": {
+    "values": [
+     -0.0127,
+     0.0,
+     0.0
+    ],
+    "min": -0.0127,
+    "max": 0.0
+   }
   },
   {
    "threshold": 0.2,
-   "cases": 79,
-   "mean_chars": 396.4,
-   "mean_hits": 1.25,
-   "current_rate": 0.9747,
+   "threshold_per_run": {
+    "values": [
+     0.2,
+     0.2,
+     0.2
+    ],
+    "min": 0.2,
+    "max": 0.2
+   },
+   "cases": 79.0,
+   "cases_per_run": {
+    "values": [
+     79,
+     79,
+     79
+    ],
+    "min": 79,
+    "max": 79
+   },
+   "mean_chars": 397.5667,
+   "mean_chars_per_run": {
+    "values": [
+     393.9,
+     399.4,
+     399.4
+    ],
+    "min": 393.9,
+    "max": 399.4
+   },
+   "mean_hits": 1.26,
+   "mean_hits_per_run": {
+    "values": [
+     1.24,
+     1.27,
+     1.27
+    ],
+    "min": 1.24,
+    "max": 1.27
+   },
+   "current_rate": 0.9662,
+   "current_rate_per_run": {
+    "values": [
+     0.9747,
+     0.962,
+     0.962
+    ],
+    "min": 0.962,
+    "max": 0.9747
+   },
    "stale_rate": 0.038,
-   "char_reduction_vs_off": 0.144,
-   "current_delta_vs_off": -0.0253
+   "stale_rate_per_run": {
+    "values": [
+     0.038,
+     0.038,
+     0.038
+    ],
+    "min": 0.038,
+    "max": 0.038
+   },
+   "char_reduction_vs_off": 0.1313,
+   "char_reduction_vs_off_per_run": {
+    "values": [
+     0.1433,
+     0.1253,
+     0.1253
+    ],
+    "min": 0.1253,
+    "max": 0.1433
+   },
+   "current_delta_vs_off": -0.0253,
+   "current_delta_vs_off_per_run": {
+    "values": [
+     -0.0253,
+     -0.0253,
+     -0.0253
+    ],
+    "min": -0.0253,
+    "max": -0.0253
+   }
   },
   {
    "threshold": 0.3,
-   "cases": 79,
-   "mean_chars": 377.0,
-   "mean_hits": 1.2,
-   "current_rate": 0.9747,
+   "threshold_per_run": {
+    "values": [
+     0.3,
+     0.3,
+     0.3
+    ],
+    "min": 0.3,
+    "max": 0.3
+   },
+   "cases": 79.0,
+   "cases_per_run": {
+    "values": [
+     79,
+     79,
+     79
+    ],
+    "min": 79,
+    "max": 79
+   },
+   "mean_chars": 384.1,
+   "mean_chars_per_run": {
+    "values": [
+     374.5,
+     388.9,
+     388.9
+    ],
+    "min": 374.5,
+    "max": 388.9
+   },
+   "mean_hits": 1.2167,
+   "mean_hits_per_run": {
+    "values": [
+     1.19,
+     1.23,
+     1.23
+    ],
+    "min": 1.19,
+    "max": 1.23
+   },
+   "current_rate": 0.9662,
+   "current_rate_per_run": {
+    "values": [
+     0.9747,
+     0.962,
+     0.962
+    ],
+    "min": 0.962,
+    "max": 0.9747
+   },
    "stale_rate": 0.038,
-   "char_reduction_vs_off": 0.1859,
-   "current_delta_vs_off": -0.0253
+   "stale_rate_per_run": {
+    "values": [
+     0.038,
+     0.038,
+     0.038
+    ],
+    "min": 0.038,
+    "max": 0.038
+   },
+   "char_reduction_vs_off": 0.1607,
+   "char_reduction_vs_off_per_run": {
+    "values": [
+     0.1855,
+     0.1483,
+     0.1483
+    ],
+    "min": 0.1483,
+    "max": 0.1855
+   },
+   "current_delta_vs_off": -0.0253,
+   "current_delta_vs_off_per_run": {
+    "values": [
+     -0.0253,
+     -0.0253,
+     -0.0253
+    ],
+    "min": -0.0253,
+    "max": -0.0253
+   }
   },
   {
    "threshold": 0.35,
-   "cases": 79,
-   "mean_chars": 377.0,
-   "mean_hits": 1.2,
-   "current_rate": 0.9747,
+   "threshold_per_run": {
+    "values": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "min": 0.35,
+    "max": 0.35
+   },
+   "cases": 79.0,
+   "cases_per_run": {
+    "values": [
+     79,
+     79,
+     79
+    ],
+    "min": 79,
+    "max": 79
+   },
+   "mean_chars": 377.9,
+   "mean_chars_per_run": {
+    "values": [
+     374.5,
+     379.6,
+     379.6
+    ],
+    "min": 374.5,
+    "max": 379.6
+   },
+   "mean_hits": 1.1967,
+   "mean_hits_per_run": {
+    "values": [
+     1.19,
+     1.2,
+     1.2
+    ],
+    "min": 1.19,
+    "max": 1.2
+   },
+   "current_rate": 0.9662,
+   "current_rate_per_run": {
+    "values": [
+     0.9747,
+     0.962,
+     0.962
+    ],
+    "min": 0.962,
+    "max": 0.9747
+   },
    "stale_rate": 0.038,
-   "char_reduction_vs_off": 0.1859,
-   "current_delta_vs_off": -0.0253
+   "stale_rate_per_run": {
+    "values": [
+     0.038,
+     0.038,
+     0.038
+    ],
+    "min": 0.038,
+    "max": 0.038
+   },
+   "char_reduction_vs_off": 0.1742,
+   "char_reduction_vs_off_per_run": {
+    "values": [
+     0.1855,
+     0.1686,
+     0.1686
+    ],
+    "min": 0.1686,
+    "max": 0.1855
+   },
+   "current_delta_vs_off": -0.0253,
+   "current_delta_vs_off_per_run": {
+    "values": [
+     -0.0253,
+     -0.0253,
+     -0.0253
+    ],
+    "min": -0.0253,
+    "max": -0.0253
+   }
   },
   {
    "threshold": 0.4,
-   "cases": 79,
-   "mean_chars": 371.9,
-   "mean_hits": 1.19,
-   "current_rate": 0.9747,
+   "threshold_per_run": {
+    "values": [
+     0.4,
+     0.4,
+     0.4
+    ],
+    "min": 0.4,
+    "max": 0.4
+   },
+   "cases": 79.0,
+   "cases_per_run": {
+    "values": [
+     79,
+     79,
+     79
+    ],
+    "min": 79,
+    "max": 79
+   },
+   "mean_chars": 376.2,
+   "mean_chars_per_run": {
+    "values": [
+     369.4,
+     379.6,
+     379.6
+    ],
+    "min": 369.4,
+    "max": 379.6
+   },
+   "mean_hits": 1.1933,
+   "mean_hits_per_run": {
+    "values": [
+     1.18,
+     1.2,
+     1.2
+    ],
+    "min": 1.18,
+    "max": 1.2
+   },
+   "current_rate": 0.9662,
+   "current_rate_per_run": {
+    "values": [
+     0.9747,
+     0.962,
+     0.962
+    ],
+    "min": 0.962,
+    "max": 0.9747
+   },
    "stale_rate": 0.038,
-   "char_reduction_vs_off": 0.1969,
-   "current_delta_vs_off": -0.0253
+   "stale_rate_per_run": {
+    "values": [
+     0.038,
+     0.038,
+     0.038
+    ],
+    "min": 0.038,
+    "max": 0.038
+   },
+   "char_reduction_vs_off": 0.1779,
+   "char_reduction_vs_off_per_run": {
+    "values": [
+     0.1966,
+     0.1686,
+     0.1686
+    ],
+    "min": 0.1686,
+    "max": 0.1966
+   },
+   "current_delta_vs_off": -0.0253,
+   "current_delta_vs_off_per_run": {
+    "values": [
+     -0.0253,
+     -0.0253,
+     -0.0253
+    ],
+    "min": -0.0253,
+    "max": -0.0253
+   }
   },
   {
    "threshold": 0.5,
-   "cases": 79,
-   "mean_chars": 359.0,
-   "mean_hits": 1.15,
-   "current_rate": 0.9747,
+   "threshold_per_run": {
+    "values": [
+     0.5,
+     0.5,
+     0.5
+    ],
+    "min": 0.5,
+    "max": 0.5
+   },
+   "cases": 79.0,
+   "cases_per_run": {
+    "values": [
+     79,
+     79,
+     79
+    ],
+    "min": 79,
+    "max": 79
+   },
+   "mean_chars": 367.9667,
+   "mean_chars_per_run": {
+    "values": [
+     356.5,
+     373.7,
+     373.7
+    ],
+    "min": 356.5,
+    "max": 373.7
+   },
+   "mean_hits": 1.1667,
+   "mean_hits_per_run": {
+    "values": [
+     1.14,
+     1.18,
+     1.18
+    ],
+    "min": 1.14,
+    "max": 1.18
+   },
+   "current_rate": 0.9662,
+   "current_rate_per_run": {
+    "values": [
+     0.9747,
+     0.962,
+     0.962
+    ],
+    "min": 0.962,
+    "max": 0.9747
+   },
    "stale_rate": 0.038,
-   "char_reduction_vs_off": 0.2248,
-   "current_delta_vs_off": -0.0253
+   "stale_rate_per_run": {
+    "values": [
+     0.038,
+     0.038,
+     0.038
+    ],
+    "min": 0.038,
+    "max": 0.038
+   },
+   "char_reduction_vs_off": 0.196,
+   "char_reduction_vs_off_per_run": {
+    "values": [
+     0.2247,
+     0.1816,
+     0.1816
+    ],
+    "min": 0.1816,
+    "max": 0.2247
+   },
+   "current_delta_vs_off": -0.0253,
+   "current_delta_vs_off_per_run": {
+    "values": [
+     -0.0253,
+     -0.0253,
+     -0.0253
+    ],
+    "min": -0.0253,
+    "max": -0.0253
+   }
   },
   {
    "threshold": 0.6,
-   "cases": 79,
-   "mean_chars": 345.8,
-   "mean_hits": 1.11,
-   "current_rate": 0.9747,
+   "threshold_per_run": {
+    "values": [
+     0.6,
+     0.6,
+     0.6
+    ],
+    "min": 0.6,
+    "max": 0.6
+   },
+   "cases": 79.0,
+   "cases_per_run": {
+    "values": [
+     79,
+     79,
+     79
+    ],
+    "min": 79,
+    "max": 79
+   },
+   "mean_chars": 349.5667,
+   "mean_chars_per_run": {
+    "values": [
+     343.3,
+     352.7,
+     352.7
+    ],
+    "min": 343.3,
+    "max": 352.7
+   },
+   "mean_hits": 1.1,
+   "mean_hits_per_run": {
+    "values": [
+     1.1,
+     1.1,
+     1.1
+    ],
+    "min": 1.1,
+    "max": 1.1
+   },
+   "current_rate": 0.9662,
+   "current_rate_per_run": {
+    "values": [
+     0.9747,
+     0.962,
+     0.962
+    ],
+    "min": 0.962,
+    "max": 0.9747
+   },
    "stale_rate": 0.038,
-   "char_reduction_vs_off": 0.2533,
-   "current_delta_vs_off": -0.0253
+   "stale_rate_per_run": {
+    "values": [
+     0.038,
+     0.038,
+     0.038
+    ],
+    "min": 0.038,
+    "max": 0.038
+   },
+   "char_reduction_vs_off": 0.2362,
+   "char_reduction_vs_off_per_run": {
+    "values": [
+     0.2534,
+     0.2276,
+     0.2276
+    ],
+    "min": 0.2276,
+    "max": 0.2534
+   },
+   "current_delta_vs_off": -0.0253,
+   "current_delta_vs_off_per_run": {
+    "values": [
+     -0.0253,
+     -0.0253,
+     -0.0253
+    ],
+    "min": -0.0253,
+    "max": -0.0253
+   }
   },
   {
    "threshold": 0.75,
-   "cases": 79,
-   "mean_chars": 326.1,
-   "mean_hits": 1.05,
-   "current_rate": 0.9747,
+   "threshold_per_run": {
+    "values": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "min": 0.75,
+    "max": 0.75
+   },
+   "cases": 79.0,
+   "cases_per_run": {
+    "values": [
+     79,
+     79,
+     79
+    ],
+    "min": 79,
+    "max": 79
+   },
+   "mean_chars": 340.1667,
+   "mean_chars_per_run": {
+    "values": [
+     327.3,
+     346.6,
+     346.6
+    ],
+    "min": 327.3,
+    "max": 346.6
+   },
+   "mean_hits": 1.07,
+   "mean_hits_per_run": {
+    "values": [
+     1.05,
+     1.08,
+     1.08
+    ],
+    "min": 1.05,
+    "max": 1.08
+   },
+   "current_rate": 0.9662,
+   "current_rate_per_run": {
+    "values": [
+     0.9747,
+     0.962,
+     0.962
+    ],
+    "min": 0.962,
+    "max": 0.9747
+   },
    "stale_rate": 0.038,
-   "char_reduction_vs_off": 0.2958,
-   "current_delta_vs_off": -0.0253
+   "stale_rate_per_run": {
+    "values": [
+     0.038,
+     0.038,
+     0.038
+    ],
+    "min": 0.038,
+    "max": 0.038
+   },
+   "char_reduction_vs_off": 0.2567,
+   "char_reduction_vs_off_per_run": {
+    "values": [
+     0.2882,
+     0.2409,
+     0.2409
+    ],
+    "min": 0.2409,
+    "max": 0.2882
+   },
+   "current_delta_vs_off": -0.0253,
+   "current_delta_vs_off_per_run": {
+    "values": [
+     -0.0253,
+     -0.0253,
+     -0.0253
+    ],
+    "min": -0.0253,
+    "max": -0.0253
+   }
   },
   {
    "threshold": 0.9,
-   "cases": 79,
-   "mean_chars": 318.2,
-   "mean_hits": 1.03,
-   "current_rate": 0.9747,
+   "threshold_per_run": {
+    "values": [
+     0.9,
+     0.9,
+     0.9
+    ],
+    "min": 0.9,
+    "max": 0.9
+   },
+   "cases": 79.0,
+   "cases_per_run": {
+    "values": [
+     79,
+     79,
+     79
+    ],
+    "min": 79,
+    "max": 79
+   },
+   "mean_chars": 329.9333,
+   "mean_chars_per_run": {
+    "values": [
+     319.4,
+     335.2,
+     335.2
+    ],
+    "min": 319.4,
+    "max": 335.2
+   },
+   "mean_hits": 1.0367,
+   "mean_hits_per_run": {
+    "values": [
+     1.03,
+     1.04,
+     1.04
+    ],
+    "min": 1.03,
+    "max": 1.04
+   },
+   "current_rate": 0.9662,
+   "current_rate_per_run": {
+    "values": [
+     0.9747,
+     0.962,
+     0.962
+    ],
+    "min": 0.962,
+    "max": 0.9747
+   },
    "stale_rate": 0.038,
-   "char_reduction_vs_off": 0.3129,
-   "current_delta_vs_off": -0.0253
+   "stale_rate_per_run": {
+    "values": [
+     0.038,
+     0.038,
+     0.038
+    ],
+    "min": 0.038,
+    "max": 0.038
+   },
+   "char_reduction_vs_off": 0.2791,
+   "char_reduction_vs_off_per_run": {
+    "values": [
+     0.3054,
+     0.2659,
+     0.2659
+    ],
+    "min": 0.2659,
+    "max": 0.3054
+   },
+   "current_delta_vs_off": -0.0253,
+   "current_delta_vs_off_per_run": {
+    "values": [
+     -0.0253,
+     -0.0253,
+     -0.0253
+    ],
+    "min": -0.0253,
+    "max": -0.0253
+   }
   }
  ],
  "inject_sweep": [
   {
    "threshold": 0.0,
-   "cases": 79,
-   "mean_chars": 463.1,
-   "mean_hits": 1.49,
-   "current_rate": 1.0,
+   "threshold_per_run": {
+    "values": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "min": 0.0,
+    "max": 0.0
+   },
+   "cases": 79.0,
+   "cases_per_run": {
+    "values": [
+     79,
+     79,
+     79
+    ],
+    "min": 79,
+    "max": 79
+   },
+   "mean_chars": 457.6667,
+   "mean_chars_per_run": {
+    "values": [
+     459.8,
+     456.6,
+     456.6
+    ],
+    "min": 456.6,
+    "max": 459.8
+   },
+   "mean_hits": 1.4667,
+   "mean_hits_per_run": {
+    "values": [
+     1.48,
+     1.46,
+     1.46
+    ],
+    "min": 1.46,
+    "max": 1.48
+   },
+   "current_rate": 0.9915,
+   "current_rate_per_run": {
+    "values": [
+     1.0,
+     0.9873,
+     0.9873
+    ],
+    "min": 0.9873,
+    "max": 1.0
+   },
    "stale_rate": 0.0506,
+   "stale_rate_per_run": {
+    "values": [
+     0.0506,
+     0.0506,
+     0.0506
+    ],
+    "min": 0.0506,
+    "max": 0.0506
+   },
    "char_reduction_vs_off": 0.0,
-   "current_delta_vs_off": 0.0
+   "char_reduction_vs_off_per_run": {
+    "values": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "min": 0.0,
+    "max": 0.0
+   },
+   "current_delta_vs_off": 0.0,
+   "current_delta_vs_off_per_run": {
+    "values": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "min": 0.0,
+    "max": 0.0
+   }
   },
   {
    "threshold": 0.1,
-   "cases": 79,
-   "mean_chars": 430.5,
-   "mean_hits": 1.38,
+   "threshold_per_run": {
+    "values": [
+     0.1,
+     0.1,
+     0.1
+    ],
+    "min": 0.1,
+    "max": 0.1
+   },
+   "cases": 79.0,
+   "cases_per_run": {
+    "values": [
+     79,
+     79,
+     79
+    ],
+    "min": 79,
+    "max": 79
+   },
+   "mean_chars": 433.8,
+   "mean_chars_per_run": {
+    "values": [
+     427.2,
+     437.1,
+     437.1
+    ],
+    "min": 427.2,
+    "max": 437.1
+   },
+   "mean_hits": 1.3833,
+   "mean_hits_per_run": {
+    "values": [
+     1.37,
+     1.39,
+     1.39
+    ],
+    "min": 1.37,
+    "max": 1.39
+   },
    "current_rate": 0.9873,
+   "current_rate_per_run": {
+    "values": [
+     0.9873,
+     0.9873,
+     0.9873
+    ],
+    "min": 0.9873,
+    "max": 0.9873
+   },
    "stale_rate": 0.038,
-   "char_reduction_vs_off": 0.0704,
-   "current_delta_vs_off": -0.0127
+   "stale_rate_per_run": {
+    "values": [
+     0.038,
+     0.038,
+     0.038
+    ],
+    "min": 0.038,
+    "max": 0.038
+   },
+   "char_reduction_vs_off": 0.0521,
+   "char_reduction_vs_off_per_run": {
+    "values": [
+     0.0709,
+     0.0427,
+     0.0427
+    ],
+    "min": 0.0427,
+    "max": 0.0709
+   },
+   "current_delta_vs_off": -0.0042,
+   "current_delta_vs_off_per_run": {
+    "values": [
+     -0.0127,
+     0.0,
+     0.0
+    ],
+    "min": -0.0127,
+    "max": 0.0
+   }
   },
   {
    "threshold": 0.2,
-   "cases": 79,
-   "mean_chars": 396.4,
-   "mean_hits": 1.25,
-   "current_rate": 0.9747,
+   "threshold_per_run": {
+    "values": [
+     0.2,
+     0.2,
+     0.2
+    ],
+    "min": 0.2,
+    "max": 0.2
+   },
+   "cases": 79.0,
+   "cases_per_run": {
+    "values": [
+     79,
+     79,
+     79
+    ],
+    "min": 79,
+    "max": 79
+   },
+   "mean_chars": 397.5667,
+   "mean_chars_per_run": {
+    "values": [
+     393.9,
+     399.4,
+     399.4
+    ],
+    "min": 393.9,
+    "max": 399.4
+   },
+   "mean_hits": 1.26,
+   "mean_hits_per_run": {
+    "values": [
+     1.24,
+     1.27,
+     1.27
+    ],
+    "min": 1.24,
+    "max": 1.27
+   },
+   "current_rate": 0.9662,
+   "current_rate_per_run": {
+    "values": [
+     0.9747,
+     0.962,
+     0.962
+    ],
+    "min": 0.962,
+    "max": 0.9747
+   },
    "stale_rate": 0.038,
-   "char_reduction_vs_off": 0.144,
-   "current_delta_vs_off": -0.0253
+   "stale_rate_per_run": {
+    "values": [
+     0.038,
+     0.038,
+     0.038
+    ],
+    "min": 0.038,
+    "max": 0.038
+   },
+   "char_reduction_vs_off": 0.1313,
+   "char_reduction_vs_off_per_run": {
+    "values": [
+     0.1433,
+     0.1253,
+     0.1253
+    ],
+    "min": 0.1253,
+    "max": 0.1433
+   },
+   "current_delta_vs_off": -0.0253,
+   "current_delta_vs_off_per_run": {
+    "values": [
+     -0.0253,
+     -0.0253,
+     -0.0253
+    ],
+    "min": -0.0253,
+    "max": -0.0253
+   }
   },
   {
    "threshold": 0.3,
-   "cases": 79,
-   "mean_chars": 377.0,
-   "mean_hits": 1.2,
-   "current_rate": 0.9747,
+   "threshold_per_run": {
+    "values": [
+     0.3,
+     0.3,
+     0.3
+    ],
+    "min": 0.3,
+    "max": 0.3
+   },
+   "cases": 79.0,
+   "cases_per_run": {
+    "values": [
+     79,
+     79,
+     79
+    ],
+    "min": 79,
+    "max": 79
+   },
+   "mean_chars": 384.1,
+   "mean_chars_per_run": {
+    "values": [
+     374.5,
+     388.9,
+     388.9
+    ],
+    "min": 374.5,
+    "max": 388.9
+   },
+   "mean_hits": 1.2167,
+   "mean_hits_per_run": {
+    "values": [
+     1.19,
+     1.23,
+     1.23
+    ],
+    "min": 1.19,
+    "max": 1.23
+   },
+   "current_rate": 0.9662,
+   "current_rate_per_run": {
+    "values": [
+     0.9747,
+     0.962,
+     0.962
+    ],
+    "min": 0.962,
+    "max": 0.9747
+   },
    "stale_rate": 0.038,
-   "char_reduction_vs_off": 0.1859,
-   "current_delta_vs_off": -0.0253
+   "stale_rate_per_run": {
+    "values": [
+     0.038,
+     0.038,
+     0.038
+    ],
+    "min": 0.038,
+    "max": 0.038
+   },
+   "char_reduction_vs_off": 0.1607,
+   "char_reduction_vs_off_per_run": {
+    "values": [
+     0.1855,
+     0.1483,
+     0.1483
+    ],
+    "min": 0.1483,
+    "max": 0.1855
+   },
+   "current_delta_vs_off": -0.0253,
+   "current_delta_vs_off_per_run": {
+    "values": [
+     -0.0253,
+     -0.0253,
+     -0.0253
+    ],
+    "min": -0.0253,
+    "max": -0.0253
+   }
   },
   {
    "threshold": 0.35,
-   "cases": 79,
-   "mean_chars": 377.0,
-   "mean_hits": 1.2,
-   "current_rate": 0.9747,
+   "threshold_per_run": {
+    "values": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "min": 0.35,
+    "max": 0.35
+   },
+   "cases": 79.0,
+   "cases_per_run": {
+    "values": [
+     79,
+     79,
+     79
+    ],
+    "min": 79,
+    "max": 79
+   },
+   "mean_chars": 377.9,
+   "mean_chars_per_run": {
+    "values": [
+     374.5,
+     379.6,
+     379.6
+    ],
+    "min": 374.5,
+    "max": 379.6
+   },
+   "mean_hits": 1.1967,
+   "mean_hits_per_run": {
+    "values": [
+     1.19,
+     1.2,
+     1.2
+    ],
+    "min": 1.19,
+    "max": 1.2
+   },
+   "current_rate": 0.9662,
+   "current_rate_per_run": {
+    "values": [
+     0.9747,
+     0.962,
+     0.962
+    ],
+    "min": 0.962,
+    "max": 0.9747
+   },
    "stale_rate": 0.038,
-   "char_reduction_vs_off": 0.1859,
-   "current_delta_vs_off": -0.0253
+   "stale_rate_per_run": {
+    "values": [
+     0.038,
+     0.038,
+     0.038
+    ],
+    "min": 0.038,
+    "max": 0.038
+   },
+   "char_reduction_vs_off": 0.1742,
+   "char_reduction_vs_off_per_run": {
+    "values": [
+     0.1855,
+     0.1686,
+     0.1686
+    ],
+    "min": 0.1686,
+    "max": 0.1855
+   },
+   "current_delta_vs_off": -0.0253,
+   "current_delta_vs_off_per_run": {
+    "values": [
+     -0.0253,
+     -0.0253,
+     -0.0253
+    ],
+    "min": -0.0253,
+    "max": -0.0253
+   }
   },
   {
    "threshold": 0.4,
-   "cases": 79,
-   "mean_chars": 371.9,
-   "mean_hits": 1.19,
-   "current_rate": 0.9747,
+   "threshold_per_run": {
+    "values": [
+     0.4,
+     0.4,
+     0.4
+    ],
+    "min": 0.4,
+    "max": 0.4
+   },
+   "cases": 79.0,
+   "cases_per_run": {
+    "values": [
+     79,
+     79,
+     79
+    ],
+    "min": 79,
+    "max": 79
+   },
+   "mean_chars": 376.2,
+   "mean_chars_per_run": {
+    "values": [
+     369.4,
+     379.6,
+     379.6
+    ],
+    "min": 369.4,
+    "max": 379.6
+   },
+   "mean_hits": 1.1933,
+   "mean_hits_per_run": {
+    "values": [
+     1.18,
+     1.2,
+     1.2
+    ],
+    "min": 1.18,
+    "max": 1.2
+   },
+   "current_rate": 0.9662,
+   "current_rate_per_run": {
+    "values": [
+     0.9747,
+     0.962,
+     0.962
+    ],
+    "min": 0.962,
+    "max": 0.9747
+   },
    "stale_rate": 0.038,
-   "char_reduction_vs_off": 0.1969,
-   "current_delta_vs_off": -0.0253
+   "stale_rate_per_run": {
+    "values": [
+     0.038,
+     0.038,
+     0.038
+    ],
+    "min": 0.038,
+    "max": 0.038
+   },
+   "char_reduction_vs_off": 0.1779,
+   "char_reduction_vs_off_per_run": {
+    "values": [
+     0.1966,
+     0.1686,
+     0.1686
+    ],
+    "min": 0.1686,
+    "max": 0.1966
+   },
+   "current_delta_vs_off": -0.0253,
+   "current_delta_vs_off_per_run": {
+    "values": [
+     -0.0253,
+     -0.0253,
+     -0.0253
+    ],
+    "min": -0.0253,
+    "max": -0.0253
+   }
   },
   {
    "threshold": 0.5,
-   "cases": 79,
-   "mean_chars": 359.0,
-   "mean_hits": 1.15,
-   "current_rate": 0.9747,
+   "threshold_per_run": {
+    "values": [
+     0.5,
+     0.5,
+     0.5
+    ],
+    "min": 0.5,
+    "max": 0.5
+   },
+   "cases": 79.0,
+   "cases_per_run": {
+    "values": [
+     79,
+     79,
+     79
+    ],
+    "min": 79,
+    "max": 79
+   },
+   "mean_chars": 367.9667,
+   "mean_chars_per_run": {
+    "values": [
+     356.5,
+     373.7,
+     373.7
+    ],
+    "min": 356.5,
+    "max": 373.7
+   },
+   "mean_hits": 1.1667,
+   "mean_hits_per_run": {
+    "values": [
+     1.14,
+     1.18,
+     1.18
+    ],
+    "min": 1.14,
+    "max": 1.18
+   },
+   "current_rate": 0.9662,
+   "current_rate_per_run": {
+    "values": [
+     0.9747,
+     0.962,
+     0.962
+    ],
+    "min": 0.962,
+    "max": 0.9747
+   },
    "stale_rate": 0.038,
-   "char_reduction_vs_off": 0.2248,
-   "current_delta_vs_off": -0.0253
+   "stale_rate_per_run": {
+    "values": [
+     0.038,
+     0.038,
+     0.038
+    ],
+    "min": 0.038,
+    "max": 0.038
+   },
+   "char_reduction_vs_off": 0.196,
+   "char_reduction_vs_off_per_run": {
+    "values": [
+     0.2247,
+     0.1816,
+     0.1816
+    ],
+    "min": 0.1816,
+    "max": 0.2247
+   },
+   "current_delta_vs_off": -0.0253,
+   "current_delta_vs_off_per_run": {
+    "values": [
+     -0.0253,
+     -0.0253,
+     -0.0253
+    ],
+    "min": -0.0253,
+    "max": -0.0253
+   }
   },
   {
    "threshold": 0.6,
-   "cases": 79,
-   "mean_chars": 345.8,
-   "mean_hits": 1.11,
-   "current_rate": 0.9747,
+   "threshold_per_run": {
+    "values": [
+     0.6,
+     0.6,
+     0.6
+    ],
+    "min": 0.6,
+    "max": 0.6
+   },
+   "cases": 79.0,
+   "cases_per_run": {
+    "values": [
+     79,
+     79,
+     79
+    ],
+    "min": 79,
+    "max": 79
+   },
+   "mean_chars": 349.5667,
+   "mean_chars_per_run": {
+    "values": [
+     343.3,
+     352.7,
+     352.7
+    ],
+    "min": 343.3,
+    "max": 352.7
+   },
+   "mean_hits": 1.1,
+   "mean_hits_per_run": {
+    "values": [
+     1.1,
+     1.1,
+     1.1
+    ],
+    "min": 1.1,
+    "max": 1.1
+   },
+   "current_rate": 0.9662,
+   "current_rate_per_run": {
+    "values": [
+     0.9747,
+     0.962,
+     0.962
+    ],
+    "min": 0.962,
+    "max": 0.9747
+   },
    "stale_rate": 0.038,
-   "char_reduction_vs_off": 0.2533,
-   "current_delta_vs_off": -0.0253
+   "stale_rate_per_run": {
+    "values": [
+     0.038,
+     0.038,
+     0.038
+    ],
+    "min": 0.038,
+    "max": 0.038
+   },
+   "char_reduction_vs_off": 0.2362,
+   "char_reduction_vs_off_per_run": {
+    "values": [
+     0.2534,
+     0.2276,
+     0.2276
+    ],
+    "min": 0.2276,
+    "max": 0.2534
+   },
+   "current_delta_vs_off": -0.0253,
+   "current_delta_vs_off_per_run": {
+    "values": [
+     -0.0253,
+     -0.0253,
+     -0.0253
+    ],
+    "min": -0.0253,
+    "max": -0.0253
+   }
   },
   {
    "threshold": 0.75,
-   "cases": 79,
-   "mean_chars": 326.1,
-   "mean_hits": 1.05,
-   "current_rate": 0.9747,
+   "threshold_per_run": {
+    "values": [
+     0.75,
+     0.75,
+     0.75
+    ],
+    "min": 0.75,
+    "max": 0.75
+   },
+   "cases": 79.0,
+   "cases_per_run": {
+    "values": [
+     79,
+     79,
+     79
+    ],
+    "min": 79,
+    "max": 79
+   },
+   "mean_chars": 340.1667,
+   "mean_chars_per_run": {
+    "values": [
+     327.3,
+     346.6,
+     346.6
+    ],
+    "min": 327.3,
+    "max": 346.6
+   },
+   "mean_hits": 1.07,
+   "mean_hits_per_run": {
+    "values": [
+     1.05,
+     1.08,
+     1.08
+    ],
+    "min": 1.05,
+    "max": 1.08
+   },
+   "current_rate": 0.9662,
+   "current_rate_per_run": {
+    "values": [
+     0.9747,
+     0.962,
+     0.962
+    ],
+    "min": 0.962,
+    "max": 0.9747
+   },
    "stale_rate": 0.038,
-   "char_reduction_vs_off": 0.2958,
-   "current_delta_vs_off": -0.0253
+   "stale_rate_per_run": {
+    "values": [
+     0.038,
+     0.038,
+     0.038
+    ],
+    "min": 0.038,
+    "max": 0.038
+   },
+   "char_reduction_vs_off": 0.2567,
+   "char_reduction_vs_off_per_run": {
+    "values": [
+     0.2882,
+     0.2409,
+     0.2409
+    ],
+    "min": 0.2409,
+    "max": 0.2882
+   },
+   "current_delta_vs_off": -0.0253,
+   "current_delta_vs_off_per_run": {
+    "values": [
+     -0.0253,
+     -0.0253,
+     -0.0253
+    ],
+    "min": -0.0253,
+    "max": -0.0253
+   }
   },
   {
    "threshold": 0.9,
-   "cases": 79,
-   "mean_chars": 318.2,
-   "mean_hits": 1.03,
-   "current_rate": 0.9747,
+   "threshold_per_run": {
+    "values": [
+     0.9,
+     0.9,
+     0.9
+    ],
+    "min": 0.9,
+    "max": 0.9
+   },
+   "cases": 79.0,
+   "cases_per_run": {
+    "values": [
+     79,
+     79,
+     79
+    ],
+    "min": 79,
+    "max": 79
+   },
+   "mean_chars": 329.9333,
+   "mean_chars_per_run": {
+    "values": [
+     319.4,
+     335.2,
+     335.2
+    ],
+    "min": 319.4,
+    "max": 335.2
+   },
+   "mean_hits": 1.0367,
+   "mean_hits_per_run": {
+    "values": [
+     1.03,
+     1.04,
+     1.04
+    ],
+    "min": 1.03,
+    "max": 1.04
+   },
+   "current_rate": 0.9662,
+   "current_rate_per_run": {
+    "values": [
+     0.9747,
+     0.962,
+     0.962
+    ],
+    "min": 0.962,
+    "max": 0.9747
+   },
    "stale_rate": 0.038,
-   "char_reduction_vs_off": 0.3129,
-   "current_delta_vs_off": -0.0253
+   "stale_rate_per_run": {
+    "values": [
+     0.038,
+     0.038,
+     0.038
+    ],
+    "min": 0.038,
+    "max": 0.038
+   },
+   "char_reduction_vs_off": 0.2791,
+   "char_reduction_vs_off_per_run": {
+    "values": [
+     0.3054,
+     0.2659,
+     0.2659
+    ],
+    "min": 0.2659,
+    "max": 0.3054
+   },
+   "current_delta_vs_off": -0.0253,
+   "current_delta_vs_off_per_run": {
+    "values": [
+     -0.0253,
+     -0.0253,
+     -0.0253
+    ],
+    "min": -0.0253,
+    "max": -0.0253
+   }
   }
- ]
+ ],
+ "ollama_transport": {
+  "calls": 778.6667,
+  "calls_per_run": {
+   "values": [
+    798,
+    769,
+    769
+   ],
+   "min": 769,
+   "max": 798
+  },
+  "pace_sleep_s": 45.517,
+  "pace_sleep_s_per_run": {
+   "values": [
+    47.309,
+    45.031,
+    44.211
+   ],
+   "min": 44.211,
+   "max": 47.309
+  },
+  "retries": 0.0,
+  "retries_per_run": {
+   "values": [
+    0,
+    0,
+    0
+   ],
+   "min": 0,
+   "max": 0
+  },
+  "retry_sleep_s": 0.0,
+  "retry_sleep_s_per_run": {
+   "values": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "min": 0.0,
+   "max": 0.0
+  },
+  "gave_up": 0.0,
+  "gave_up_per_run": {
+   "values": [
+    0,
+    0,
+    0
+   ],
+   "min": 0,
+   "max": 0
+  },
+  "call_ms": {
+   "n": 778.6667,
+   "n_per_run": {
+    "values": [
+     798,
+     769,
+     769
+    ],
+    "min": 769,
+    "max": 798
+   },
+   "p50": 20.2387,
+   "p50_per_run": {
+    "values": [
+     16.856,
+     21.137,
+     22.723
+    ],
+    "min": 16.856,
+    "max": 22.723
+   },
+   "p90": 1283.244,
+   "p90_per_run": {
+    "values": [
+     1303.455,
+     1268.627,
+     1277.65
+    ],
+    "min": 1268.627,
+    "max": 1303.455
+   },
+   "p99": 1940.488,
+   "p99_per_run": {
+    "values": [
+     1920.072,
+     1939.167,
+     1962.225
+    ],
+    "min": 1920.072,
+    "max": 1962.225
+   },
+   "max": 2079.3073,
+   "max_per_run": {
+    "values": [
+     2042.94,
+     2110.144,
+     2084.838
+    ],
+    "min": 2042.94,
+    "max": 2110.144
+   }
+  },
+  "mode": "pace",
+  "timing_includes_pacing": true,
+  "pace_floor_s": 97.3333,
+  "pace_floor_s_per_run": {
+   "values": [
+    99.75,
+    96.125,
+    96.125
+   ],
+   "min": 96.125,
+   "max": 99.75
+  },
+  "bypass_calls": {
+   "requests": 0.0,
+   "requests_per_run": {
+    "values": [
+     0,
+     0,
+     0
+    ],
+    "min": 0,
+    "max": 0
+   },
+   "aiohttp": 0.0,
+   "aiohttp_per_run": {
+    "values": [
+     0,
+     0,
+     0
+    ],
+    "min": 0,
+    "max": 0
+   }
+  },
+  "nested_calls": {
+   "requests": 0.0,
+   "requests_per_run": {
+    "values": [
+     0,
+     0,
+     0
+    ],
+    "min": 0,
+    "max": 0
+   },
+   "aiohttp": 0.0,
+   "aiohttp_per_run": {
+    "values": [
+     0,
+     0,
+     0
+    ],
+    "min": 0,
+    "max": 0
+   }
+  },
+  "max_inflight": 1.0,
+  "max_inflight_per_run": {
+   "values": [
+    1,
+    1,
+    1
+   ],
+   "min": 1,
+   "max": 1
+  },
+  "max_concurrent_paced": 1.0,
+  "max_concurrent_paced_per_run": {
+   "values": [
+    1,
+    1,
+    1
+   ],
+   "min": 1,
+   "max": 1
+  },
+  "pace_excluded_exact": true,
+  "failed_outcomes": {
+   "by_status": {},
+   "by_exception_type": {},
+   "gave_up": 0.0,
+   "gave_up_per_run": {
+    "values": [
+     0,
+     0,
+     0
+    ],
+    "min": 0,
+    "max": 0
+   }
+  },
+  "llm_retries": 0.0,
+  "llm_retries_per_run": {
+   "values": [
+    0,
+    0,
+    0
+   ],
+   "min": 0,
+   "max": 0
+  },
+  "llm_retry_sleep_s": 0.0,
+  "llm_retry_sleep_s_per_run": {
+   "values": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "min": 0.0,
+   "max": 0.0
+  },
+  "failed_outcomes_llm": {
+   "by_status": {},
+   "by_exception_type": {},
+   "gave_up": 0.0,
+   "gave_up_per_run": {
+    "values": [
+     0,
+     0,
+     0
+    ],
+    "min": 0,
+    "max": 0
+   }
+  }
+ },
+ "runs": 3
 }

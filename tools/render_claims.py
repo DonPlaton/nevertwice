@@ -618,7 +618,7 @@ def render_supersession_causes(c: Claims, fam: str = "supersession") -> str:
         row = [label, _with_ci(c, f"{fam}.{slug}.control_miss_rate")]
         for key, _ in CAUSES:
             cid = f"{fam}.{slug}.control_miss.{key}"
-            row.append(f"{int(c.value(cid))} of {c.get(cid)['n']}" if c.has(cid) else "not read")
+            row.append(f"{_count(c.value(cid))} of {c.get(cid)['n']}" if c.has(cid) else "not read")
         rows.append(row)
     out = _table(["arm", "a still-true fact did not come back"] + [name for _, name in CAUSES], rows)
     out += ("\n\n<sub>The first column is the rate in the table above; the four after it split its "
@@ -741,9 +741,9 @@ def render_supersession_pairs(c: Claims, fam: str = "supersession") -> str:
         if not c.has(pid):
             continue
         da, db = f"{fam}.{x}_vs_{y}.discordant.{a}", f"{fam}.{x}_vs_{y}.discordant.{b}"
-        disc = (f"{int(c.value(da))} - {int(c.value(db))}" if c.has(da) and c.has(db) else "-")
-        c.value(pid)                                       # raises Withdrawn if it is
-        rows.append([label, disc, str(c.get(pid)["printed"][0])])
+        disc = (f"{_count(c.value(da))} - {_count(c.value(db))}" if c.has(da) and c.has(db) else "-")
+        pv = c.value(pid)                                  # raises Withdrawn if it is
+        rows.append([label, disc, "nan" if pv != pv else str(c.get(pid)["printed"][0])])
     if not rows:
         return _not_yet(fam, "python research/supersession_bench.py --pool ...")
     return _table(["pair", "discordant (first - second)", "p, McNemar exact"], rows)
@@ -1080,6 +1080,64 @@ def withdrawal_notice(c: Claims, claim_id: str, reason: str) -> str:
             f"`{c.get(claim_id)['command']}` is what re-measures this one.")
 
 
+def _count(v) -> str:
+    """An integer cell that survives a withdrawn value: NaN prints as `nan`, which a partial
+    render turns into "withdrawn" (see `render_partial`)."""
+    return "nan" if v != v else str(int(v))
+
+
+class _PartialClaims(Claims):
+    """The register as a table sees it when some of its rows are withdrawn and the rest are live.
+
+    A renderer asks `value()` cell by cell, and a withdrawn claim used to raise on the first cell,
+    so one withdrawn row took the whole table down with it: after restore #2 (2026-09-25) nine
+    supersession/as-of tables printed a withdrawal notice although every Nevertwice, naive and
+    Mem0 figure in them was live - the one withdrawn row was Zep's, pending an owner decision.
+    Here a withdrawn cell becomes NaN and its reason is kept, so the table can be printed with
+    that cell marked and the reason written under it (the way `render_latency` has always done
+    it for a partly-withdrawn table).
+    """
+
+    def __init__(self, base: Claims):
+        self.__dict__.update(base.__dict__)
+        self.gone: dict[str, str] = {}
+        self.live = 0
+
+    def value(self, claim_id: str):
+        if self.is_withdrawn(claim_id):
+            self.gone[claim_id] = self.get(claim_id)["stale"]
+            return float("nan")
+        self.live += 1
+        return super().value(claim_id)
+
+
+#: How a NaN cell comes out of the renderers' formats: `nan`, `+nan`, `nan%`, `nan pp`, `nan ms`.
+_NAN_CELL = re.compile(r"[-+]?\bnan\b(?:%| ?pp| ms|x)?", re.I)
+
+
+def render_partial(renderer, c: Claims) -> str | None:
+    """The table with its withdrawn cells marked, or None when it cannot or should not be printed:
+    nothing in it is live, or the renderer cannot take a NaN (an int format, a lookup keyed by the
+    value). Then the whole region stays a withdrawal notice, as before."""
+    p = _PartialClaims(c)
+    try:
+        body = renderer(p)
+    except Exception:                                 # noqa: BLE001 - None means "the notice"
+        return None
+    if not p.gone or not p.live:
+        return None
+    body = _NAN_CELL.sub("withdrawn", body)
+    # A renderer that prints an interval reads it off the claim, not through value(): the
+    # withdrawn cell must not keep the interval of a number it no longer prints.
+    body = re.sub(r"withdrawn \[[^\]\n]*\]", "withdrawn", body)
+    # `stale` may end with a note for the register's reader (a synced value awaiting its
+    # sentence); the page reader needs the reason only, once per distinct reason.
+    reasons = [r.split("; the value is the campaign's")[0] for r in p.gone.values()]
+    for reason in dict.fromkeys(reasons):
+        body += f"\n\n<sub>**Withdrawn** cells: {reason}</sub>"
+    return body
+
+
 def apply_regions(text: str, c: Claims) -> tuple[str, list[str]]:
     """Return (rendered text, ids of regions whose content changed)."""
     changed = []
@@ -1094,7 +1152,7 @@ def apply_regions(text: str, c: Claims) -> tuple[str, list[str]]:
         try:
             body = renderer(c)
         except Withdrawn as w:
-            body = withdrawal_notice(c, w.claim_id, w.reason)
+            body = render_partial(renderer, c) or withdrawal_notice(c, w.claim_id, w.reason)
         fresh = "\n" + body + "\n"
         if current != fresh:
             changed.append(region_id)

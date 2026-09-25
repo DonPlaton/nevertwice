@@ -1136,7 +1136,7 @@
    "at_fpr_0.05": null,
    "at_zero_false_alarms": null,
    "tokens_per_call": 3.32,
-   "ms_per_call": 0.0272,
+   "ms_per_call": 0.0254,
    "split_at": {
     "threshold": 0.0,
     "false_positive_rate": 0.1786,
@@ -1224,7 +1224,7 @@
      "m-sync-scripts": "sync_install\\.py"
     }
    },
-   "seconds": 8.3
+   "seconds": 1.3
   },
   "universal_pack": {
    "n_calls": 230,
@@ -2354,7 +2354,7 @@
    },
    "at_zero_false_alarms": null,
    "tokens_per_call": 1.15,
-   "ms_per_call": 0.012,
+   "ms_per_call": 0.0116,
    "split_at": {
     "threshold": 0.0,
     "false_positive_rate": 0.0282,
@@ -2426,7 +2426,7 @@
      "m-yaml-load"
     ]
    },
-   "seconds": 8.2
+   "seconds": 1.1
   },
   "linter_or_test": {
    "n_calls": 230,
@@ -4628,13 +4628,13 @@
     },
     {
      "tp": 80,
-     "fp": 126,
+     "fp": 128,
      "fn": 12,
-     "tn": 18,
-     "precision": 0.3883,
+     "tn": 17,
+     "precision": 0.3846,
      "recall": 0.8696,
-     "false_positive_rate": 0.875,
-     "f1": 0.5369,
+     "false_positive_rate": 0.8828,
+     "f1": 0.5333,
      "threshold": 0.92
     },
     {
@@ -4661,13 +4661,13 @@
     },
     {
      "tp": 76,
-     "fp": 113,
+     "fp": 112,
      "fn": 16,
-     "tn": 30,
-     "precision": 0.4021,
+     "tn": 31,
+     "precision": 0.4043,
      "recall": 0.8261,
-     "false_positive_rate": 0.7902,
-     "f1": 0.5409,
+     "false_positive_rate": 0.7832,
+     "f1": 0.5429,
      "threshold": 0.95
     },
     {
@@ -4693,91 +4693,91 @@
      "threshold": 0.97
     },
     {
-     "tp": 62,
-     "fp": 85,
-     "fn": 30,
-     "tn": 56,
-     "precision": 0.4218,
-     "recall": 0.6739,
-     "false_positive_rate": 0.6028,
-     "f1": 0.5188,
+     "tp": 64,
+     "fp": 86,
+     "fn": 28,
+     "tn": 55,
+     "precision": 0.4267,
+     "recall": 0.6957,
+     "false_positive_rate": 0.6099,
+     "f1": 0.529,
      "threshold": 0.98
     },
     {
-     "tp": 50,
+     "tp": 51,
      "fp": 65,
-     "fn": 42,
+     "fn": 41,
      "tn": 74,
-     "precision": 0.4348,
-     "recall": 0.5435,
+     "precision": 0.4397,
+     "recall": 0.5543,
      "false_positive_rate": 0.4676,
-     "f1": 0.4831,
+     "f1": 0.4904,
      "threshold": 0.99
     },
     {
-     "tp": 0,
-     "fp": 1,
-     "fn": 92,
-     "tn": 137,
-     "precision": 0.0,
-     "recall": 0.0,
-     "false_positive_rate": 0.0072,
-     "f1": 0.0,
+     "tp": 2,
+     "fp": 3,
+     "fn": 90,
+     "tn": 135,
+     "precision": 0.4,
+     "recall": 0.0217,
+     "false_positive_rate": 0.0217,
+     "f1": 0.0412,
      "threshold": 1.0
     }
    ],
    "at_fpr_0.05": {
-    "tp": 0,
-    "fp": 1,
-    "fn": 92,
-    "tn": 137,
-    "precision": 0.0,
-    "recall": 0.0,
-    "false_positive_rate": 0.0072,
-    "f1": 0.0,
+    "tp": 2,
+    "fp": 3,
+    "fn": 90,
+    "tn": 135,
+    "precision": 0.4,
+    "recall": 0.0217,
+    "false_positive_rate": 0.0217,
+    "f1": 0.0412,
     "threshold": 1.0
    },
    "at_zero_false_alarms": null,
    "tokens_per_call": 103.56,
-   "ms_per_call": 40.4243,
+   "ms_per_call": 249.8137,
    "split_at": {
     "threshold": 1.0,
-    "false_positive_rate": 0.0072,
+    "false_positive_rate": 0.0217,
     "matched_target_fpr": true
    },
    "hard_negatives": {
     "tp": 0,
-    "fp": 1,
+    "fp": 3,
     "fn": 0,
-    "tn": 70,
+    "tn": 68,
     "precision": 0.0,
     "recall": null,
-    "false_positive_rate": 0.0141,
+    "false_positive_rate": 0.0423,
     "f1": 0.0
    },
    "generic": {
     "tp": 0,
-    "fp": 0,
+    "fp": 1,
     "fn": 40,
-    "tn": 60,
-    "precision": null,
+    "tn": 59,
+    "precision": 0.0,
     "recall": 0.0,
-    "false_positive_rate": 0.0,
+    "false_positive_rate": 0.0167,
     "f1": 0.0
    },
    "project": {
-    "tp": 0,
-    "fp": 1,
-    "fn": 52,
-    "tn": 77,
-    "precision": 0.0,
-    "recall": 0.0,
-    "false_positive_rate": 0.0128,
-    "f1": 0.0
+    "tp": 2,
+    "fp": 2,
+    "fn": 50,
+    "tn": 76,
+    "precision": 0.5,
+    "recall": 0.0385,
+    "false_positive_rate": 0.0256,
+    "f1": 0.0715
    },
    "recall_ci": [
-    0.0,
-    0.0401
+    0.006,
+    0.0758
    ],
    "info": {
     "k": 3,
@@ -4785,7 +4785,47 @@
     "notes_embedded": 45,
     "mode": "semantic + lexical"
    },
-   "seconds": 14.1
+   "seconds": 68.8,
+   "ollama_transport": {
+    "calls": 550,
+    "pace_sleep_s": 49.322,
+    "retries": 0,
+    "retry_sleep_s": 0.0,
+    "gave_up": 0,
+    "call_ms": {
+     "n": 550,
+     "p50": 30.568,
+     "p90": 49.042,
+     "p99": 56.493,
+     "max": 253.975
+    },
+    "mode": "pace",
+    "timing_includes_pacing": true,
+    "pace_floor_s": 68.75,
+    "bypass_calls": {
+     "requests": 0,
+     "aiohttp": 0
+    },
+    "nested_calls": {
+     "requests": 0,
+     "aiohttp": 0
+    },
+    "max_inflight": 1,
+    "max_concurrent_paced": 1,
+    "pace_excluded_exact": true,
+    "failed_outcomes": {
+     "by_status": {},
+     "by_exception_type": {},
+     "gave_up": 0
+    },
+    "llm_retries": 0,
+    "llm_retry_sleep_s": 0.0,
+    "failed_outcomes_llm": {
+     "by_status": {},
+     "by_exception_type": {},
+     "gave_up": 0
+    }
+   }
   },
   "never": {
    "n_calls": 230,
@@ -7085,8 +7125,8 @@
    ],
    "at_fpr_0.05": null,
    "at_zero_false_alarms": null,
-   "tokens_per_call": 5.34,
-   "ms_per_call": 0.0414,
+   "tokens_per_call": 5.29,
+   "ms_per_call": 0.0437,
    "split_at": {
     "threshold": 0.0,
     "false_positive_rate": 0.1549,
@@ -7124,34 +7164,30 @@
    },
    "info": {
     "llm": "qwen3-coder:30b",
-    "n_guards": 45,
+    "n_guards": 46,
     "empty_patterns": [],
-    "unsafe_patterns": [
-     {
-      "stem": "m-mutate-iter",
-      "pattern": "for.*in.*list.*:.*del.*\\1|for.*in.*list.*:.*remove"
-     }
-    ],
-    "fresh_generations": 0,
+    "unsafe_patterns": [],
+    "fresh_generations": 46,
     "patterns": {
-     "m-sql-fstring": "f.*SELECT.*FROM.*WHERE.*id.*=.*[\\w\\d_]+",
+     "m-sql-fstring": "f.*SELECT.*FROM.*WHERE.*id.*=.*\\w+.*\\w+.*",
      "m-sql-format": "sql\\s*=.*%.*\\(.*\\)",
-     "m-float-money": "float\\([^)]*price[^)]*\\)|float\\([^)]*money[^)]*\\)",
+     "m-float-money": "float\\([^)]*price[^)]*\\)",
      "m-json-status": "response\\.json\\(\\)\\s*(?!.*(?:ok|raise_for_status|status_code))",
      "m-bare-except": "except:\\s*\\n",
      "m-mutable-default": "def [a-zA-Z_][a-zA-Z0-9_]*\\([^)]*\\[.*?\\].*?\\)",
+     "m-mutate-iter": "for.*in.*list.*:.*del.*list|for.*in.*list.*:.*remove\\(",
      "m-eval": "eval\\s*\\(.*user.*input.*\\)|eval\\s*\\(.*input.*user.*\\)",
      "m-shell-true": "subprocess\\.run\\([^)]*shell=True[^)]*\"[^\"]*;[^\"]*\"",
      "m-eq-none": "\\s*==\\s*None\\s*",
      "m-type-eq": "type\\([^)]*\\)\\s*==\\s*",
      "m-os-system": "os\\.system\\([^\\]]*\\s[^\\]]*\\)",
      "m-pickle": "pickle\\.load\\(.*?open\\(.*?w",
-     "m-yaml-load": "yaml\\.load\\([^)]*?loader",
+     "m-yaml-load": "yaml\\.load\\([^)]*loader[^)]*\\)",
      "m-verify-false": "verify=False",
      "m-md5-password": "md5\\(.*password",
-     "m-open-no-with": "open\\s*\\([^\\)]*[^\\w]f[^\\w]",
+     "m-open-no-with": "open\\([^)]*[^a-zA-Z0-9_]as[^a-zA-Z0-9_]",
      "m-div-len": "len\\([^)]*\\)\\s*\\)\\s*/",
-     "m-requests-no-timeout": "requests\\.[a-z]+\\(.*?[^t]timeout",
+     "m-requests-no-timeout": "requests\\.[a-z]+\\([^)]*timeout[^)]*\\)",
      "m-exec": "exec\\s*\\(.*?\\binput\\b",
      "m-live-store": "vault.*D:.*Obsidian.*Claude_Memory",
      "m-render-empty": "render_chart\\(rows\\)",
@@ -7162,7 +7198,7 @@
      "m-global-pip": "pip install",
      "m-ollama-owner": "ollama\\s+(pull|rm|stop)\\b",
      "m-secrets-read": "cat\\s+\\.secrets\\.env|\\.secrets\\.env\\s+|read\\s+\\.secrets\\.env",
-     "m-hook-print": "print\\s*\\(.*hook.*\\)",
+     "m-hook-print": "print\\s*\\(.*?hook.*?\\)",
      "m-hook-sleep": "time\\.sleep\\(.*?\\)",
      "m-embed-cap": "session\\s*\\[.*?\\]\\s*=\\s*.*?\\[.*?:\\s*2000\\]",
      "m-cuda-cpu": "device\\s*=\\s*['\"]cpu['\"]",
@@ -7177,11 +7213,56 @@
      "m-cd-compound": "cd\\s+&&",
      "m-foreground-sleep": "sleep \\d+",
      "m-vault-env-test": "NEVERTWICE_HOME[^\\w]|NEVERTWICE_VAULT[^\\w]",
-     "m-commit-master": "git commit -m \"[^\"]*\".*master",
+     "m-commit-master": "git commit -m.*master",
      "m-sync-scripts": "^(\\s*)edit\\s*~/.claude/scripts/|^(\\s*)vim\\s*~/.claude/scripts/|^(\\s*)nano\\s*~/.claude/scripts/"
     }
    },
-   "seconds": 12.4
+   "seconds": 23.0,
+   "ollama_transport": {
+    "calls": 46,
+    "pace_sleep_s": 0.064,
+    "retries": 0,
+    "retry_sleep_s": 0.0,
+    "gave_up": 0,
+    "call_ms": {
+     "n": 46,
+     "p50": 219.202,
+     "p90": 291.756,
+     "p99": 10058.664,
+     "max": 10058.664
+    },
+    "mode": "pace",
+    "timing_includes_pacing": true,
+    "pace_floor_s": 5.75,
+    "bypass_calls": {
+     "requests": 0,
+     "aiohttp": 0
+    },
+    "nested_calls": {
+     "requests": 0,
+     "aiohttp": 0
+    },
+    "max_inflight": 1,
+    "max_concurrent_paced": 1,
+    "pace_excluded_exact": true,
+    "failed_outcomes": {
+     "by_status": {},
+     "by_exception_type": {},
+     "gave_up": 0
+    },
+    "llm_retries": 0,
+    "llm_retry_sleep_s": 0.0,
+    "failed_outcomes_llm": {
+     "by_status": {},
+     "by_exception_type": {},
+     "gave_up": 0
+    }
+   }
   }
+ },
+ "measured_at": {
+  "commit": "fe6ddff232915c61ec2177b5541039a9c3e370c6",
+  "utc": "2026-09-25T01:22:56Z",
+  "dirty": false
  }
 }

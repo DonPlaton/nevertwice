@@ -60,9 +60,15 @@ written first in the working ledger, item I1: the new weight beats 0.5 by at lea
 one corpus and loses no more than 0.005 on the other):
 
 <!-- claims:fusion-sweep -->
-> **Withdrawn 2026-09.** withdrawn at the step-4 engine merge (Q5 principle layer, note_snippet word boundary, defaults set by the Q5 gates): re-measurement needs the v2 campaign on GPU with local Ollama models
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/fusion_sweep.py --save` is what re-measures this one.
+| dense weight | oracle R@1 | oracle R@5 | oracle MRR | LoCoMo R@1 | LoCoMo R@5 | LoCoMo MRR |
+|---|---|---|---|---|---|---|
+| 0.25 | 0.490 | 0.778 | 0.618 | withdrawn | 0.615 | withdrawn |
+| 0.5 | 0.510 | 0.788 | 0.634 | withdrawn | withdrawn | withdrawn |
+| 0.75 | 0.510 | **0.800** | 0.635 | withdrawn | withdrawn | withdrawn |
+| **1.0 (shipped)** | 0.512 | **0.800** | **0.636** | withdrawn | withdrawn | withdrawn |
+| 1.5 | **0.516** | 0.784 | 0.635 | withdrawn | **0.641** | withdrawn |
+
+<sub>**Withdrawn** cells: owner decision pending: a deterministic claim moved, and the move traces to the rebuilt LoCoMo embedder cache (an input to the stand, not the code); the auditor's counterfactual on the old cache reproduces the committed value of every one of these claims exactly</sub>
 <!-- /claims:fusion-sweep -->
 
 The shipped weight is the one that clears the gate on both corpora. The oracle curve is flat

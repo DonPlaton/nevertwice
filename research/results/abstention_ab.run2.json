@@ -1,0 +1,332 @@
+{
+ "store": "C:\\Users\\Platon\\AppData\\Local\\Temp\\nevertwice_abstention_tbrztxp5",
+ "code_sha": "fe6ddff232915c61ec2177b5541039a9c3e370c6",
+ "measured_at": "2026-09-25T04:09:11",
+ "remine": {
+  "events": 3200,
+  "stages": 8,
+  "final_bytes": 1391395,
+  "window_chars": 12000,
+  "full_read_bytes_total": 6261140,
+  "delta_read_bytes_total": 1391395,
+  "byte_reduction": 0.7778,
+  "full_read_coverage": 1.0,
+  "delta_read_coverage": 1.0,
+  "events_only_delta_saw": [],
+  "events_only_full_saw": [],
+  "per_stage": [
+   {
+    "stage": 0,
+    "file_bytes": 173865,
+    "full_read_bytes": 173865,
+    "delta_read_bytes": 173865,
+    "full_cumulative_coverage": 1.0,
+    "delta_cumulative_coverage": 1.0
+   },
+   {
+    "stage": 1,
+    "file_bytes": 348000,
+    "full_read_bytes": 348000,
+    "delta_read_bytes": 174135,
+    "full_cumulative_coverage": 1.0,
+    "delta_cumulative_coverage": 1.0
+   },
+   {
+    "stage": 2,
+    "file_bytes": 521865,
+    "full_read_bytes": 521865,
+    "delta_read_bytes": 173865,
+    "full_cumulative_coverage": 1.0,
+    "delta_cumulative_coverage": 1.0
+   },
+   {
+    "stage": 3,
+    "file_bytes": 695597,
+    "full_read_bytes": 695597,
+    "delta_read_bytes": 173732,
+    "full_cumulative_coverage": 1.0,
+    "delta_cumulative_coverage": 1.0
+   },
+   {
+    "stage": 4,
+    "file_bytes": 869620,
+    "full_read_bytes": 869620,
+    "delta_read_bytes": 174023,
+    "full_cumulative_coverage": 1.0,
+    "delta_cumulative_coverage": 1.0
+   },
+   {
+    "stage": 5,
+    "file_bytes": 1043344,
+    "full_read_bytes": 1043344,
+    "delta_read_bytes": 173724,
+    "full_cumulative_coverage": 1.0,
+    "delta_cumulative_coverage": 1.0
+   },
+   {
+    "stage": 6,
+    "file_bytes": 1217454,
+    "full_read_bytes": 1217454,
+    "delta_read_bytes": 174110,
+    "full_cumulative_coverage": 1.0,
+    "delta_cumulative_coverage": 1.0
+   },
+   {
+    "stage": 7,
+    "file_bytes": 1391395,
+    "full_read_bytes": 1391395,
+    "delta_read_bytes": 173941,
+    "full_cumulative_coverage": 1.0,
+    "delta_cumulative_coverage": 1.0
+   }
+  ]
+ },
+ "captured_cases": 80,
+ "llm": "qwen3.6:35b-a3b",
+ "embedder": "bge-m3",
+ "mean_hits_returned": 1.44,
+ "recall_sweep": [
+  {
+   "threshold": 0.0,
+   "cases": 79,
+   "mean_chars": 456.6,
+   "mean_hits": 1.46,
+   "current_rate": 0.9873,
+   "stale_rate": 0.0506,
+   "char_reduction_vs_off": 0.0,
+   "current_delta_vs_off": 0.0
+  },
+  {
+   "threshold": 0.1,
+   "cases": 79,
+   "mean_chars": 437.1,
+   "mean_hits": 1.39,
+   "current_rate": 0.9873,
+   "stale_rate": 0.038,
+   "char_reduction_vs_off": 0.0427,
+   "current_delta_vs_off": 0.0
+  },
+  {
+   "threshold": 0.2,
+   "cases": 79,
+   "mean_chars": 399.4,
+   "mean_hits": 1.27,
+   "current_rate": 0.962,
+   "stale_rate": 0.038,
+   "char_reduction_vs_off": 0.1253,
+   "current_delta_vs_off": -0.0253
+  },
+  {
+   "threshold": 0.3,
+   "cases": 79,
+   "mean_chars": 388.9,
+   "mean_hits": 1.23,
+   "current_rate": 0.962,
+   "stale_rate": 0.038,
+   "char_reduction_vs_off": 0.1483,
+   "current_delta_vs_off": -0.0253
+  },
+  {
+   "threshold": 0.35,
+   "cases": 79,
+   "mean_chars": 379.6,
+   "mean_hits": 1.2,
+   "current_rate": 0.962,
+   "stale_rate": 0.038,
+   "char_reduction_vs_off": 0.1686,
+   "current_delta_vs_off": -0.0253
+  },
+  {
+   "threshold": 0.4,
+   "cases": 79,
+   "mean_chars": 379.6,
+   "mean_hits": 1.2,
+   "current_rate": 0.962,
+   "stale_rate": 0.038,
+   "char_reduction_vs_off": 0.1686,
+   "current_delta_vs_off": -0.0253
+  },
+  {
+   "threshold": 0.5,
+   "cases": 79,
+   "mean_chars": 373.7,
+   "mean_hits": 1.18,
+   "current_rate": 0.962,
+   "stale_rate": 0.038,
+   "char_reduction_vs_off": 0.1816,
+   "current_delta_vs_off": -0.0253
+  },
+  {
+   "threshold": 0.6,
+   "cases": 79,
+   "mean_chars": 352.7,
+   "mean_hits": 1.1,
+   "current_rate": 0.962,
+   "stale_rate": 0.038,
+   "char_reduction_vs_off": 0.2276,
+   "current_delta_vs_off": -0.0253
+  },
+  {
+   "threshold": 0.75,
+   "cases": 79,
+   "mean_chars": 346.6,
+   "mean_hits": 1.08,
+   "current_rate": 0.962,
+   "stale_rate": 0.038,
+   "char_reduction_vs_off": 0.2409,
+   "current_delta_vs_off": -0.0253
+  },
+  {
+   "threshold": 0.9,
+   "cases": 79,
+   "mean_chars": 335.2,
+   "mean_hits": 1.04,
+   "current_rate": 0.962,
+   "stale_rate": 0.038,
+   "char_reduction_vs_off": 0.2659,
+   "current_delta_vs_off": -0.0253
+  }
+ ],
+ "inject_sweep": [
+  {
+   "threshold": 0.0,
+   "cases": 79,
+   "mean_chars": 456.6,
+   "mean_hits": 1.46,
+   "current_rate": 0.9873,
+   "stale_rate": 0.0506,
+   "char_reduction_vs_off": 0.0,
+   "current_delta_vs_off": 0.0
+  },
+  {
+   "threshold": 0.1,
+   "cases": 79,
+   "mean_chars": 437.1,
+   "mean_hits": 1.39,
+   "current_rate": 0.9873,
+   "stale_rate": 0.038,
+   "char_reduction_vs_off": 0.0427,
+   "current_delta_vs_off": 0.0
+  },
+  {
+   "threshold": 0.2,
+   "cases": 79,
+   "mean_chars": 399.4,
+   "mean_hits": 1.27,
+   "current_rate": 0.962,
+   "stale_rate": 0.038,
+   "char_reduction_vs_off": 0.1253,
+   "current_delta_vs_off": -0.0253
+  },
+  {
+   "threshold": 0.3,
+   "cases": 79,
+   "mean_chars": 388.9,
+   "mean_hits": 1.23,
+   "current_rate": 0.962,
+   "stale_rate": 0.038,
+   "char_reduction_vs_off": 0.1483,
+   "current_delta_vs_off": -0.0253
+  },
+  {
+   "threshold": 0.35,
+   "cases": 79,
+   "mean_chars": 379.6,
+   "mean_hits": 1.2,
+   "current_rate": 0.962,
+   "stale_rate": 0.038,
+   "char_reduction_vs_off": 0.1686,
+   "current_delta_vs_off": -0.0253
+  },
+  {
+   "threshold": 0.4,
+   "cases": 79,
+   "mean_chars": 379.6,
+   "mean_hits": 1.2,
+   "current_rate": 0.962,
+   "stale_rate": 0.038,
+   "char_reduction_vs_off": 0.1686,
+   "current_delta_vs_off": -0.0253
+  },
+  {
+   "threshold": 0.5,
+   "cases": 79,
+   "mean_chars": 373.7,
+   "mean_hits": 1.18,
+   "current_rate": 0.962,
+   "stale_rate": 0.038,
+   "char_reduction_vs_off": 0.1816,
+   "current_delta_vs_off": -0.0253
+  },
+  {
+   "threshold": 0.6,
+   "cases": 79,
+   "mean_chars": 352.7,
+   "mean_hits": 1.1,
+   "current_rate": 0.962,
+   "stale_rate": 0.038,
+   "char_reduction_vs_off": 0.2276,
+   "current_delta_vs_off": -0.0253
+  },
+  {
+   "threshold": 0.75,
+   "cases": 79,
+   "mean_chars": 346.6,
+   "mean_hits": 1.08,
+   "current_rate": 0.962,
+   "stale_rate": 0.038,
+   "char_reduction_vs_off": 0.2409,
+   "current_delta_vs_off": -0.0253
+  },
+  {
+   "threshold": 0.9,
+   "cases": 79,
+   "mean_chars": 335.2,
+   "mean_hits": 1.04,
+   "current_rate": 0.962,
+   "stale_rate": 0.038,
+   "char_reduction_vs_off": 0.2659,
+   "current_delta_vs_off": -0.0253
+  }
+ ],
+ "ollama_transport": {
+  "calls": 769,
+  "pace_sleep_s": 45.031,
+  "retries": 0,
+  "retry_sleep_s": 0.0,
+  "gave_up": 0,
+  "call_ms": {
+   "n": 769,
+   "p50": 21.137,
+   "p90": 1268.627,
+   "p99": 1939.167,
+   "max": 2110.144
+  },
+  "mode": "pace",
+  "timing_includes_pacing": true,
+  "pace_floor_s": 96.125,
+  "bypass_calls": {
+   "requests": 0,
+   "aiohttp": 0
+  },
+  "nested_calls": {
+   "requests": 0,
+   "aiohttp": 0
+  },
+  "max_inflight": 1,
+  "max_concurrent_paced": 1,
+  "pace_excluded_exact": true,
+  "failed_outcomes": {
+   "by_status": {},
+   "by_exception_type": {},
+   "gave_up": 0
+  },
+  "llm_retries": 0,
+  "llm_retry_sleep_s": 0.0,
+  "failed_outcomes_llm": {
+   "by_status": {},
+   "by_exception_type": {},
+   "gave_up": 0
+  }
+ }
+}
