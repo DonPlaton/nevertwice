@@ -20,6 +20,12 @@ VERSION = "2.4.0"
 # explicitly-set new name). This module is imported before any config read, so EVERY
 # `os.environ.get("NEVERTWICE_X")` across the codebase transparently honours an existing
 # ANAMNESIS_X / CLAUDE_MEMORY_X - one release of painless back-compat, one block of code.
+#: The pre-rename prefixes the bridge mirrors into NEVERTWICE_*. `sandbox_guard` scrubs every name
+#: it scrubs under each of these too, and a test pins the two lists together: a mirror the guard
+#: did not know about carried ANAMNESIS_ENV_FILE past the scrub (auditor's probe, 2026-09-25).
+LEGACY_PREFIXES = ("ANAMNESIS_", "CLAUDE_MEMORY_")
+
+
 def _bridge_legacy_prefixes() -> None:
     """Mirror ANAMNESIS_*/CLAUDE_MEMORY_* into NEVERTWICE_* (setdefault - an explicit
     new-prefix value always wins). Runs at import AND again after load_dotenv(): a
@@ -28,7 +34,7 @@ def _bridge_legacy_prefixes() -> None:
     (review 2026-08: the local-only privacy pins and the Ollama model pin in
     .secrets.env were silently ignored by every NEVERTWICE_* reader)."""
     for _k in list(os.environ):
-        for _old in ("ANAMNESIS_", "CLAUDE_MEMORY_"):
+        for _old in LEGACY_PREFIXES:
             if _k.startswith(_old):
                 os.environ.setdefault("NEVERTWICE_" + _k[len(_old):], os.environ[_k])
 
@@ -65,14 +71,20 @@ def load_dotenv() -> None:
     Deliberately NOT the current working directory: the hook and the --dir sweep often
     run with cwd inside an untrusted repo, where a planted `./.env` could inject an
     attacker's API key / relay endpoint and observe what gets sent (audit 2026-06-18).
-    Point NEVERTWICE_ENV_FILE at a custom location if you need one elsewhere."""
+    Point NEVERTWICE_ENV_FILE at a custom location if you need one elsewhere.
+
+    NEVERTWICE_DOTENV=explicit reads ONLY that file and none of the fixed ones. A sandbox sets
+    it (sandbox_guard.isolate): the clone-root `.secrets.env` is where the owner keeps a model
+    pin and a cloud key, and a test that read it ran on the owner's model with a real key in
+    its environment (auditor's probe, 2026-09-25)."""
     here = Path(__file__).resolve().parent
     candidates = []
     custom = os.environ.get("NEVERTWICE_ENV_FILE")
     if custom:
         candidates.append(Path(custom))
-    candidates += [here / ".env", here / ".secrets.env",
-                   here.parent / ".env", here.parent / ".secrets.env"]
+    if os.environ.get("NEVERTWICE_DOTENV", "").strip().lower() != "explicit":
+        candidates += [here / ".env", here / ".secrets.env",
+                       here.parent / ".env", here.parent / ".secrets.env"]
     for fp in candidates:
         try:
             if not fp.is_file():

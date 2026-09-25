@@ -758,6 +758,7 @@ ALLOWLIST: dict[str, str] = {
     "NEVERTWICE_TRACK_ANY_PROJECT": "a boolean flag string",
     "NEVERTWICE_XRERANK": "a boolean flag string (turn the cross-encoder reranker on/off)",
     "NEVERTWICE_XRERANK_MAXLEN": "an integer token-length cap, not a path",
+    "NEVERTWICE_DOTENV": "a mode switch ('explicit' = read only NEVERTWICE_ENV_FILE), not a path; sandbox_guard.isolate() sets it",
     # -- real Windows system directories used only as text-classification REFERENCE
     # constants (_engine_text.py's _SYS_DIRS, to exclude them from "is this a project"
     # matching) - never opened or listed; pinning them to a fake path would break the
@@ -895,7 +896,9 @@ def test_walled_covers_or_allowlists_every_env_name_in_the_package() -> None:
                        "NEVERTWICE_PRINCIPLE_PROMOTE",
                        # B1 (2026-09-25): the engine's LLM output cap and the bound on retries of a
                        # session whose extraction keeps failing on its content (both env_int).
-                       "NEVERTWICE_EXTRACT_NUM_PREDICT", "NEVERTWICE_EXTRACT_MAX_ATTEMPTS"}
+                       "NEVERTWICE_EXTRACT_NUM_PREDICT", "NEVERTWICE_EXTRACT_MAX_ATTEMPTS",
+                       # b-e (2026-09-25): the dotenv mode a sandbox sets, so it reads no fixed file
+                       "NEVERTWICE_DOTENV"}
     expected_total = 168 - len(expected_lost) + len(expected_gained)
     check(f"this scanner finds {len(all_names)} names - every difference from the auditor's "
           f"168 named above: {len(expected_gained)} gained, {len(expected_lost)} lost "

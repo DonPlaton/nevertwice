@@ -49,7 +49,7 @@ from pathlib import Path
 __all__ = [
     "SandboxEscape", "isolate", "allow_live", "verify", "store", "mode", "live_reason",
     "LOCATION_VARS", "STORE_ROOT_VARS", "SIDE_CHANNEL_VARS", "PROJECT_MODULES",
-    "TRANSCRIPT_ROOT_VARS",
+    "TRANSCRIPT_ROOT_VARS", "BRIDGED_PREFIXES", "under_every_prefix",
 ]
 
 ROOT = Path(__file__).resolve().parent
@@ -86,6 +86,22 @@ SIDE_CHANNEL_VARS = (
 )
 
 LOCATION_VARS = STORE_ROOT_VARS + SIDE_CHANNEL_VARS
+
+#: Every prefix a NEVERTWICE_* name can arrive under: `config._bridge_legacy_prefixes` mirrors
+#: ANAMNESIS_X and CLAUDE_MEMORY_X into NEVERTWICE_X, at import and again after every
+#: `load_dotenv()`. Scrubbing only the NEVERTWICE_ spelling left the mirror standing, and the
+#: next bridge run put the value back AFTER the scrub - ANAMNESIS_ENV_FILE named a file that was
+#: then read (auditor's probe on 0a2c0ad, 2026-09-25). Pinned equal to config.LEGACY_PREFIXES by a
+#: test; not imported from config, because importing config runs load_dotenv before the scrub.
+BRIDGED_PREFIXES = ("NEVERTWICE_", "ANAMNESIS_", "CLAUDE_MEMORY_")
+
+
+def under_every_prefix(name: str) -> tuple:
+    """`name` spelled under each bridged prefix; a name with none of them is only itself."""
+    for prefix in BRIDGED_PREFIXES:
+        if name.startswith(prefix):
+            return tuple(p + name[len(prefix):] for p in BRIDGED_PREFIXES)
+    return (name,)
 
 
 def _project_module_names() -> frozenset:
@@ -236,7 +252,11 @@ def isolate(prefix: str = "nevertwice-sandbox-") -> Path:
 
     _REAL_STORES = _real_store_candidates()
     for key in LOCATION_VARS:
-        os.environ.pop(key, None)
+        for spelling in under_every_prefix(key):
+            os.environ.pop(spelling, None)
+    # No env file but one this process names itself: the fixed `.env` / `.secrets.env` beside
+    # the package and at the clone root are the owner's, not the sandbox's (config.load_dotenv).
+    os.environ["NEVERTWICE_DOTENV"] = "explicit"
 
     _STORE = Path(tempfile.mkdtemp(prefix=prefix))
     # VAULT as well as HOME: config prefers VAULT, and `load_dotenv` uses `setdefault`,

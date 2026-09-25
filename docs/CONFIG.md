@@ -187,6 +187,7 @@ After setting `NEVERTWICE_EMBED_QUANT`, rebuild the index once the same way.
 | `NEVERTWICE_TRUNCATE_HEAD_FRAC` | `0.4` | Fraction of a truncated transcript kept from the head (rest from the tail). |
 | `NEVERTWICE_TRUNCATE_HEAD_CHARS` | n/a | Absolute head-char override for `truncate_smart` (wins over the fraction). |
 | `NEVERTWICE_ENV_FILE` | n/a | Custom `.env` location (otherwise package/repo-root only). |
+| `NEVERTWICE_DOTENV` | unset | `explicit` reads only `NEVERTWICE_ENV_FILE` and none of the fixed `.env` / `.secrets.env` files beside the package or at the clone root. A sandbox (`sandbox_guard.isolate()`) sets it, so a test never picks up a model pin or a key kept in those fixed files. |
 
 ## Claude Code hook wiring (`install.py` / `nevertwice-hosts`)
 

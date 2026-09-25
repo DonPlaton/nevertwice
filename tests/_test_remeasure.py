@@ -165,7 +165,23 @@ try:
                                       check=True).stdout.strip()
     _last = _git("log", "--format=%H", "-1", "--", "sandbox_guard.py")
     _before = _git("rev-parse", f"{_last}^")            # sandbox_guard.py differs from HEAD here
-    _same = _git("rev-parse", "HEAD~1")                 # after its last change: closure identical
+    #: The control needs ANOTHER commit whose closure equals HEAD's. It was HEAD~1, which holds
+    #: only while HEAD itself does not touch sandbox_guard.py - the stage-D sandbox fix did, and
+    #: the control broke on history, not on code (auditor, 2026-09-25: the K46/K4 class). Now:
+    #: the nearest ancestor whose sandbox_guard.py is HEAD's own blob; when HEAD is the newest
+    #: change there is none, and a commit object with HEAD's exact tree stands in (an unreachable
+    #: object, no ref and no working-tree file is touched).
+    _blob = _git("rev-parse", "HEAD:sandbox_guard.py")
+    _same = next((c for c in _git("rev-list", "--max-count=200", "HEAD~1").split()
+                  if _git("rev-parse", f"{c}:sandbox_guard.py") == _blob), "")
+    if not _same:
+        # An identity of its own: a CI runner has none in any git config, and commit-tree without
+        # one is "Author identity unknown", rc 128 - a crash, not a named check (auditor, 2026-09-25).
+        _ident = {"GIT_AUTHOR_NAME": "nevertwice-test", "GIT_AUTHOR_EMAIL": "test@example.invalid",
+                  "GIT_COMMITTER_NAME": "nevertwice-test", "GIT_COMMITTER_EMAIL": "test@example.invalid"}
+        _same = subprocess.run(["git", "commit-tree", "HEAD^{tree}", "-p", "HEAD", "-m",
+                                "test: HEAD's tree, another commit"], cwd=ROOT, capture_output=True,
+                               text=True, check=True, env={**os.environ, **_ident}).stdout.strip()
     _k15 = {
         "oldcode": {"measured_at": {"commit": _before, "utc": _utc(_head_t + 60)}, "recall@5": 0.834},
         "samecl":  {"measured_at": {"commit": _same, "utc": _utc(_head_t + 60)}, "recall@5": 0.834},

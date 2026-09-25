@@ -24,6 +24,7 @@ This suite holds the guard to the stronger contract:
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 import shutil
 import subprocess
@@ -251,6 +252,11 @@ def _mutant_tree(tmp: Path, *, drop_vault: bool, drop_assertion: bool) -> Path:
         text = text.replace('    "NEVERTWICE_VAULT", "NEVERTWICE_HOME",\n',
                             '    "NEVERTWICE_HOME",\n')
         text = text.replace('    os.environ["NEVERTWICE_VAULT"] = str(_STORE)\n', "")
+        # Since stage D (b-e) every scrubbed name is scrubbed under every bridged prefix, so
+        # ANAMNESIS_VAULT on the list scrubs NEVERTWICE_VAULT too; the 2026-08-25 guard knew
+        # only the spellings it listed, and the mutant has to be that guard again.
+        text = text.replace("        for spelling in under_every_prefix(key):\n",
+                            "        for spelling in (key,):\n")
         assert text != before, "the mutation matched nothing - the guard was rewritten"
     if drop_assertion:
         text = text.replace("    if problems:\n", "    if False:\n")
@@ -468,6 +474,87 @@ def test_the_sandbox_pins_the_transcript_root_too() -> None:
     finally:
         _m.__dict__.pop("PROBE_TRANSCRIPT_PATH", None)
     check("and a clean sandbox still passes", _sandbox.make_sandbox(_m, "proot3_").is_dir())
+
+
+def test_no_mirror_and_no_fixed_env_file_reaches_a_sandbox() -> None:
+    """(б) sandbox_guard, the auditor's probe on 0a2c0ad: five ways a value got into a sandboxed
+    process although `isolate()` had scrubbed the name it knew.
+
+    1-2. ANAMNESIS_ENV_FILE / CLAUDE_MEMORY_ENV_FILE: `config._bridge_legacy_prefixes` mirrors
+         them into NEVERTWICE_ENV_FILE AFTER the scrub, and the file they name is read;
+    3.   ANAMNESIS_EMBED_MODEL becomes m.EMBED_MODEL the same way;
+    4.   ANAMNESIS_TWIN_FILE becomes NEVERTWICE_TWIN_FILE;
+    5.   a `.secrets.env` at the clone root is read by `load_dotenv` - the owner's model and a real
+         cloud key inside a test (abstention_ab's `llm` label came from exactly there).
+    Fixed by class: every scrubbed name is scrubbed under every prefix the bridge mirrors, and a
+    sandbox reads no env file but one it names explicitly (NEVERTWICE_DOTENV=explicit). Run in
+    a throwaway copy of the four files involved, so no env file is ever written into the clone."""
+    print("\n- no legacy mirror and no fixed env file reaches a sandboxed process -")
+    with tempfile.TemporaryDirectory(prefix="nevertwice_sg_leak_") as tmp:
+        tree = Path(tmp) / "clone"
+        (tree / "tests").mkdir(parents=True)
+        (tree / "nevertwice").mkdir()
+        for rel in ("sandbox_guard.py", "tests/_env_guard.py", "nevertwice/config.py"):
+            (tree / rel).write_bytes((ROOT / rel).read_bytes())
+        planted = Path(tmp) / "planted.env"
+        planted.write_text("NEVERTWICE_EMBED_MODEL=probe-from-envfile\nGEMINI_API_KEY=probe-key\n",
+                           encoding="utf-8")
+        probe = (
+            "import json, os, sys\n"
+            f"sys.path.insert(0, {str(tree / 'tests')!r})\n"
+            "import _env_guard\n"
+            "import config\n"
+            "config.load_dotenv()          # the engine calls it again at import (_engine_config)\n"
+            "e = os.environ.get\n"
+            "print(json.dumps({'embed': e('NEVERTWICE_EMBED_MODEL'), 'env_file': e('NEVERTWICE_ENV_FILE'),\n"
+            "                  'gemini': bool(e('GEMINI_API_KEY')), 'twin': e('NEVERTWICE_TWIN_FILE')}))\n"
+        )
+        base = {k: v for k, v in os.environ.items()
+                if not k.startswith(("NEVERTWICE_", "ANAMNESIS_", "CLAUDE_MEMORY_", "GEMINI_"))}
+        clean = {"embed": None, "env_file": None, "gemini": False, "twin": None}
+
+        def run(extra: dict, secrets: bool = False) -> dict:
+            s = tree / ".secrets.env"
+            if secrets:
+                s.write_text(planted.read_text(encoding="utf-8"), encoding="utf-8")
+            try:
+                p = subprocess.run([sys.executable, "-c", probe], cwd=tmp, env={**base, **extra},
+                                   capture_output=True, text=True, timeout=120)
+            finally:
+                s.unlink(missing_ok=True)
+            if p.returncode != 0:
+                return {"error": p.stderr.strip()[-300:]}
+            return json.loads(p.stdout.strip().splitlines()[-1])
+
+        cases = [
+            ("control: nothing planted", {}, False),
+            ("NEVERTWICE_ENV_FILE (scrubbed before this fix too)", {"NEVERTWICE_ENV_FILE": str(planted)}, False),
+            ("1. ANAMNESIS_ENV_FILE is not bridged back after the scrub", {"ANAMNESIS_ENV_FILE": str(planted)}, False),
+            ("2. CLAUDE_MEMORY_ENV_FILE is not bridged back after the scrub",
+             {"CLAUDE_MEMORY_ENV_FILE": str(planted)}, False),
+            ("3. ANAMNESIS_EMBED_MODEL does not become the sandbox's embedder",
+             {"ANAMNESIS_EMBED_MODEL": "probe-mirror-model"}, False),
+            ("4. ANAMNESIS_TWIN_FILE does not become NEVERTWICE_TWIN_FILE",
+             {"ANAMNESIS_TWIN_FILE": str(planted)}, False),
+            ("5. a .secrets.env at the clone root is not read inside a sandbox", {}, True),
+        ]
+        for label, extra, secrets in cases:
+            got = run(extra, secrets)
+            check(label, got == clean, str(got))
+
+        explicit = probe.replace(
+            "config.load_dotenv()          #",
+            f"os.environ['NEVERTWICE_ENV_FILE'] = {str(planted)!r}; config.load_dotenv()  #")
+        p = subprocess.run([sys.executable, "-c", explicit], cwd=tmp, env=base, capture_output=True,
+                           text=True, timeout=120)
+        got = json.loads(p.stdout.strip().splitlines()[-1]) if p.returncode == 0 else {"error": p.stderr[-300:]}
+        check("but a file the sandboxed process names itself, after isolate(), is still read",
+              got.get("embed") == "probe-from-envfile", str(got))
+
+    import config  # noqa: PLC0415 - already imported by the guard; read its bridge list
+    check("the guard scrubs under exactly the prefixes config's bridge mirrors",
+          sandbox_guard.BRIDGED_PREFIXES == ("NEVERTWICE_",) + tuple(config.LEGACY_PREFIXES),
+          f"{sandbox_guard.BRIDGED_PREFIXES} vs {config.LEGACY_PREFIXES}")
 
 
 def test_zz_every_check_passed() -> None:

@@ -575,6 +575,13 @@ empty.
 
 ### Fixed
 
+- **A sandboxed test could run on the owner's model and cloud key (b-e).** `isolate()` scrubbed
+  `NEVERTWICE_ENV_FILE` but not its legacy mirrors: `config._bridge_legacy_prefixes` copied
+  `ANAMNESIS_ENV_FILE` / `CLAUDE_MEMORY_ENV_FILE` back after the scrub and the file they named was
+  read; `ANAMNESIS_EMBED_MODEL` and `ANAMNESIS_TWIN_FILE` got through the same way; and the
+  clone-root `.secrets.env` was read inside every sandbox. Every scrubbed name is now scrubbed
+  under each bridged prefix (pinned equal to `config.LEGACY_PREFIXES`), and a sandbox sets
+  `NEVERTWICE_DOTENV=explicit`, so it reads no env file but one it names itself.
 - **`doctor` said the hooks were wired when they could not run (B5).** The check looked for the
   substring `memory_hook` in `settings.json`; the interpreter is pinned into every hook command at
   install time, so a deleted venv made every hook call exit 127 - memory off - while `doctor`
