@@ -575,6 +575,17 @@ empty.
 
 ### Fixed
 
+- **A run of sessions that captured nothing stayed green (B4).** A valid extraction with every
+  list empty was marked processed and counted nowhere, and `doctor`'s freshness stayed green on the
+  Session note every session writes. Each relevant, non-trivial session now records its yield in
+  telemetry (`extraction_yield`, a counter of its own: an empty answer is not a failure), and
+  `doctor` WARNs when the last ten were all empty, or when 40 of the last 50 were - a partial
+  failure one lesson in ten would hide from the first rule; both thresholds derive from one design
+  bound, not a tuning. No retry is switched on. `telemetry.json` is written every session now, so
+  the store's `.gitignore` names it - git_autocommit would otherwise commit it into a store that
+  may be pushed to a remote, against its own promise of no transmission - it keeps no rollback
+  copy, and the
+  golden store does not certify it, as it does not certify logs (K54).
 - **A lesson older than ninety days vanished from recall (B2).** The age pass moved typed notes
   into `Archive/` and dropped their vectors and index rows in the same pass, and recall reads
   candidates from those two only - against the engine's own rule that `Archive/` is age, not

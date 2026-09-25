@@ -61,7 +61,11 @@ SAMPLE_CAP = 200
 #: The counters, named once. `tests/_test_telemetry.py` requires the export to carry all of
 #: them, so adding one here without exporting it fails rather than quietly shrinking the file.
 COUNTERS = ("capture_lag", "extraction_failures", "search_latency", "intervention_outcomes",
-            "store_size")
+            "store_size", "extraction_yield")
+
+#: How many recent yield flags are kept (1 = the session's valid extraction proposed no item).
+#: Bounded for the same reason the latency sample is; doctor reads the tail of it.
+YIELD_RECENT_CAP = 50
 
 #: The documented export schema. Published as data rather than prose so a consumer can check a
 #: file against it, and so "documented schema" is something with a version rather than a
@@ -83,6 +87,10 @@ EXPORT_SCHEMA = {
                                  "overridden, false_positive, prevented_failure, unknown.",
         "store_size": "notes, bytes and projects. The slowest-moving counter and the one "
                       "that answers 'is this still growing'.",
+        "extraction_yield": "relevant, non-trivial sessions whose extraction SUCCEEDED: how many, "
+                            "how many proposed no item at all, and the last few as 0/1 flags. An "
+                            "empty answer is not a failure, and a run of them is the silent "
+                            "non-capture the failure counter cannot see (B4).",
     },
     "contains_no": ["note content", "titles", "queries", "file paths outside the store name",
                     "identifiers of any kind"],
@@ -104,6 +112,7 @@ def _blank() -> dict:
         "search_latency": {"samples": [], "count": 0},
         "intervention_outcomes": {},
         "store_size": {"notes": 0, "bytes": 0, "projects": 0, "measured": None},
+        "extraction_yield": {"sessions": 0, "empty": 0, "recent": []},
     }
 
 
@@ -182,13 +191,19 @@ def load() -> dict:
     data["extraction_failures"]["by_reason"] = _counts(
         data["extraction_failures"].get("by_reason"))
     data["intervention_outcomes"] = _counts(data["intervention_outcomes"])
+    y = data["extraction_yield"]
+    y["recent"] = [1 if v else 0 for v in (y.get("recent") or []) if v in (0, 1)][-YIELD_RECENT_CAP:]
+    for key in ("sessions", "empty"):
+        y[key] = y[key] if isinstance(y.get(key), int) and not isinstance(y.get(key), bool) else 0
     return data
 
 
 def _save(data: dict) -> None:
     try:
         m.VAULT.mkdir(parents=True, exist_ok=True)
-        m._save_json_generations(_path(), json.dumps(data, ensure_ascii=False, indent=1))
+        # prev=False: counters need no rollback copy, and since B4 this runs on every capture -
+        # a .prev per session would double the writes for nothing (auditor, stage D).
+        m._save_json_generations(_path(), json.dumps(data, ensure_ascii=False, indent=1), prev=False)
     except Exception:           # noqa: BLE001 - best-effort by contract
         pass
 
@@ -231,6 +246,22 @@ def record_extraction_failure(reason: str) -> None:
     bucket = data["extraction_failures"]
     bucket["total"] = int(bucket.get("total") or 0) + 1
     bucket["by_reason"][reason] = int(bucket["by_reason"].get(reason) or 0) + 1
+    _save(data)
+
+
+@_best_effort()
+def record_extraction_yield(empty: bool) -> None:
+    """One relevant, non-trivial session whose extraction succeeded: did it propose any item?
+
+    B4 (premortem N2): a valid answer with every list empty was marked processed and counted
+    nowhere, while freshness stayed green on the Session note every session writes. It is not a
+    failure - often it is the right answer - so it has its own counter, and `doctor` judges a
+    RUN of them, never one."""
+    data = load()
+    y = data["extraction_yield"]
+    y["sessions"] = int(y.get("sessions") or 0) + 1
+    y["empty"] = int(y.get("empty") or 0) + (1 if empty else 0)
+    y["recent"] = (list(y.get("recent") or []) + [1 if empty else 0])[-YIELD_RECENT_CAP:]
     _save(data)
 
 
@@ -344,6 +375,8 @@ def snapshot() -> dict:
                            "max_ms": samples[-1] if samples else None},
         "intervention_outcomes": dict(data["intervention_outcomes"]),
         "store_size": data["store_size"],
+        "extraction_yield": {k: data["extraction_yield"].get(k)
+                             for k in ("sessions", "empty", "recent")},
     }
 
 

@@ -39,7 +39,7 @@ import doctor  # noqa: E402
 # or removing a check is a deliberate edit to this list, not a silent break for a consumer.
 REPORT_KEYS = {"schema_version", "vault", "probed", "checks", "summary"}
 CHECK_IDS = ["store_writable", "store_schema", "hook_registration", "capture_freshness",
-             "extractor", "embedding_space", "twin_calibration", "index_age", "scheduler", "graph_generator",
+             "extraction_yield", "extractor", "embedding_space", "twin_calibration", "index_age", "scheduler", "graph_generator",
              "orphaned_temp", "list_fields", "package_source"]
 
 # A repair is printed for a human to run. These are the things it must never be.
@@ -376,10 +376,11 @@ def test_the_cli_contract() -> None:
                                       re.S):
                     _labels.setdefault(_m.group(1), _m.group(2))
                 #: One identifier builds its label from a variable (`twin_calibration`, whose
-                #: title names the model), so eleven of the twelve carry a literal. The count is
-                #: asserted, or an empty mapping would make the next check vacuous.
+                #: title names the model), so all but that one carry a literal - twelve since B4's
+                #: extraction_yield. The count is asserted, or an empty mapping would make the next
+                #: check vacuous.
                 check(f"the labels are read from doctor.py itself ({len(_labels)} of "
-                      f"{len(CHECK_IDS)})", len(_labels) == 11, str(len(_labels)))
+                      f"{len(CHECK_IDS)})", len(_labels) == 12, str(len(_labels)))
                 _unnamed = [cid for cid, label in _labels.items() if label not in proc.stdout]
                 check("and every one of those labels appears in the report", not _unnamed,
                       ", ".join(_unnamed[:4]))

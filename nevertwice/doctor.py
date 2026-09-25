@@ -148,6 +148,54 @@ def check_hook_registration(settings: Path) -> dict:
                   f"{len(wired)} events: {', '.join(wired)}")
 
 
+#: B4: how many consecutive relevant sessions with an empty (valid) extraction make a WARN. Derived,
+#: not tuned: assume pessimistically that half of genuine working sessions carry no durable lesson
+#: (p0 = 0.5 - a design bound, not a measurement on any corpus); a false alarm in one window of a
+#: thousand needs 0.5 ** W <= 0.001, so W = 10. One or two empty sessions in ten stay OK.
+YIELD_WINDOW = 10
+#: B4's second rule, from the same premise: a PARTIAL failure - an extractor silent in nine sessions
+#: of ten - never trips the run rule, because one lesson in ten resets it (auditor, 2026-09-25).
+#: Over the last 50 flags telemetry keeps, WARN at 40 or more empty: P(X >= 40 | n = 50, p = 0.5)
+#: is 1.2e-5, rarer still than the run rule's 0.001, so it adds no false alarm the first did not.
+YIELD_SHARE_WINDOW = 50
+YIELD_SHARE_MIN_EMPTY = 40
+
+
+def _yield_verdict(recent: list) -> tuple[str, str]:
+    """(status, detail) for the tail of telemetry's extraction_yield flags (1 = empty)."""
+    flags = list(recent or [])
+    tail = flags[-YIELD_WINDOW:]
+    if not tail:
+        return SKIP, "no relevant session has been extracted yet"
+    empty = sum(1 for v in tail if v)
+    if len(tail) >= YIELD_WINDOW and empty == len(tail):
+        return WARN, (f"the last {YIELD_WINDOW} relevant sessions were extracted and every one "
+                      f"proposed no lesson - nothing is being captured, though each session is "
+                      f"marked processed and freshness looks green")
+    share = flags[-YIELD_SHARE_WINDOW:]
+    share_empty = sum(1 for v in share if v)
+    if len(share) >= YIELD_SHARE_WINDOW and share_empty >= YIELD_SHARE_MIN_EMPTY:
+        return WARN, (f"{share_empty} of the last {YIELD_SHARE_WINDOW} relevant sessions proposed no "
+                      f"lesson - the extractor captures almost nothing, though no ten in a row were "
+                      f"all empty")
+    return OK, f"{empty} of the last {len(tail)} relevant sessions proposed no lesson"
+
+
+def check_extraction_yield(vault: Path) -> dict:
+    """The silent non-capture (premortem N2): extraction answers, every answer is empty."""
+    try:
+        data = json.loads((Path(vault) / "telemetry.json").read_text(encoding="utf-8"))
+        recent = (data.get("extraction_yield") or {}).get("recent") or []
+    except (OSError, ValueError, AttributeError):
+        recent = []
+    status, detail = _yield_verdict(recent)
+    repair = ("python -m nevertwice.doctor --probe  # is the extractor the model you meant? "
+              "then look at one recent session's extraction in the store's .logs/"
+              if status == WARN else "")
+    return _check("extraction_yield", "extraction captures lessons, not only session notes",
+                  status, detail, repair)
+
+
 def _mtimes(paths) -> list:
     """`st_mtime` for the paths that are still there.
 
@@ -556,6 +604,7 @@ def run(vault=None, *, settings=None, probe: bool = False, now: float | None = N
         check_store_schema(store),
         check_hook_registration(settings_path),
         check_capture_freshness(store, now),
+        check_extraction_yield(store),
         check_extractor(probe),
         check_embedding_space(store),
         check_twin_calibration(),

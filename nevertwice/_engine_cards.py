@@ -1050,6 +1050,18 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
     # model switches, empty chats) still get a Session note for the record, but
     # contribute NO typed notes and NO context update - zero contamination.
     relevant = _is_relevant(extraction.get("project_relevant", True))
+    # B4 (premortem N2): the yield of every relevant, non-trivial session whose extraction
+    # SUCCEEDED - empty or not - into its own telemetry counter, so a run of valid empty answers
+    # (the silent non-capture) is visible to `doctor`. Off-topic and too-short sessions are empty
+    # by design and are not samples. Visibility only: no retry (K5 missed its gate).
+    if relevant and len((body or "").strip()) >= _RETRY_MIN_CHARS:
+        _empty = _item_count(extraction) == 0
+        if _empty:
+            _LLM_STATS["empty"] = _LLM_STATS.get("empty", 0) + 1
+        try:
+            _sibling("telemetry").record_extraction_yield(_empty)
+        except Exception:       # noqa: BLE001 - a hook never fails on telemetry
+            pass
 
     # The FINAL (collision-resolved) session stem, fixed before any typed note stamps it
     # as provenance - see reserve_session_stem for why pre-uniquified stems conflated

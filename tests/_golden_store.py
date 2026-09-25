@@ -260,6 +260,8 @@ def snapshot(store: Path, extra: dict | None = None) -> dict:
         rel = p.relative_to(store).as_posix()
         if rel.startswith(".logs/") or rel.endswith(".bak"):
             continue                                       # a log is a diary, not a state
+        if rel.startswith("telemetry.json"):
+            continue                                       # operational counters, dated: a log too
         #: Derived from an EXTERNAL service and therefore not state either: the embedding cache,
         #: its meta and the sqlite index exist only when an embedder answered. On macOS jobs of
         #: CI's first matrix run all three were absent while Linux and Windows wrote them, with

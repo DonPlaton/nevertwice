@@ -237,6 +237,7 @@ _VAULT_GITIGNORE = (
     ".prompt_recall/", ".logs/",
     ".embeddings_cache.json", ".embeddings_meta.json",
     ".embeddings_cache.json.journal*",      # B3: the cache's append-only journal (+ set-aside ones)
+    "telemetry.json*",                      # B4: written every session now; machine-local, never sent
     ".index.sqlite", ".index.sqlite-wal", ".index.sqlite-shm",
     ".processed_sessions.json", ".ingest_watermarks.json", "anticipate.json",
     "graph.json", "status.txt", "health.txt", "savings.json",

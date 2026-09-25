@@ -174,7 +174,7 @@ def test_the_whole_lifecycle_runs_with_the_network_destroyed() -> None:
 
 def test_the_counters_answer_the_operational_questions() -> None:
     print("\n- five counters, and what each one is for -")
-    check("the counter set is declared once", len(T.COUNTERS) == 5, str(T.COUNTERS))
+    check("the counter set is declared once", len(T.COUNTERS) == 6, str(T.COUNTERS))  # B4: +yield
     snap = T.snapshot()
     for counter in T.COUNTERS:
         check(f"{counter} is in the snapshot", counter in snap)
@@ -426,7 +426,7 @@ def test_the_contract_is_in_the_module_that_states_it() -> None:
     check("every public recorder carries the contract: " + ", ".join(unguarded), not unguarded)
     check("and there are recorders to carry it",
           len([n for n in tree.body if isinstance(n, ast.FunctionDef)
-               and (n.name.startswith("record_") or n.name.startswith("refresh_"))]) == 5)
+               and (n.name.startswith("record_") or n.name.startswith("refresh_"))]) == 6)   # B4
 
 
 def test_zz_every_check_passed() -> None:
