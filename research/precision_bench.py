@@ -244,6 +244,7 @@ def run_rerank(queries, base_r, base_m):
     return {"backend": BACKEND, "model": RERANK_MODEL if BACKEND == "local" else "deepseek",
             "n": RERANK_N, "pool_ceiling": pool_r, "reranked_recall": rer_r, "reranked_mrr": rer_m,
             "delta": rer_r - base_r, "calls": stats["calls"], "errors": stats["errors"],
+            "capped": stats.get("capped", 0),                   # B1: answers that reached the output cap
             "est_prompt_tokens": est_tok, "wall_s": round(dt, 1),
             "beats_baseline": bool(rer_r > base_r + EPS)}
 

@@ -575,6 +575,19 @@ empty.
 
 ### Fixed
 
+- **An LLM answer that never ends is capped and counted, and a failure of the content is retried a bounded number of times (B1).** The
+  extraction call sent no output limit, so a model that never closed its JSON generated until the
+  120 s timeout - the campaign-v2 frontier stand was stopped 644 sessions in on exactly this. Every
+  engine backend now sends `NEVERTWICE_EXTRACT_NUM_PREDICT` (4,096: the 12,000-character input at
+  about three characters a token), an answer that reaches it is used when its JSON is whole
+  (`capped`) and is a named, counted failure when it is cut (`truncated`), and a session that fails
+  on its content three times (`NEVERTWICE_EXTRACT_MAX_ATTEMPTS`) is parked - marked processed with
+  the reason; `process_now --retry-parked` tries them again - instead of costing a full
+  generation on every sweep. A transport or HTTP failure (a backend down, a 4xx/5xx) is never
+  counted: that session waits, as before. The research stands' own LLM calls got the same cap and
+  carry a capped answer into their artifacts, marked; a test scans every payload. Telemetry's
+  extraction-failure and outcome counters were dead on the hook's own path - `from . import
+  telemetry` fails under `runpy.run_path`, and the error was swallowed (B7) - and now count.
 - **A deleted or moved clone used to BLOCK the agent, not just turn memory off.** Every hook
   command was `"<python>" "<clone>/nevertwice/memory_hook.py"`; delete the clone (or `pip
   uninstall` it) while wired and `python <missing file>` exits 2 - CPython's own exit code for

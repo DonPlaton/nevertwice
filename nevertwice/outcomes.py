@@ -130,8 +130,13 @@ def record(guard: dict, outcome: str, *, session_id: str | None = None) -> str |
     # The local counter behind `intervention_outcomes`. It had no caller, so the dashboard read
     # zero for every outcome however much feedback arrived (T1 review 2026-09-19). Best-effort by
     # the module's own contract: telemetry that can break the loop it measures is worse than none.
+    # B7: a relative import alone fails when this module is loaded flat - guards.py reaches it
+    # through _sibling("outcomes") on the hook's path - and the except swallowed it.
     try:
-        from . import telemetry as _tel
+        try:
+            from . import telemetry as _tel
+        except ImportError:
+            import telemetry as _tel  # noqa: PLC0415 - the flat shape
         _tel.record_outcome(name)
     except Exception:           # noqa: BLE001 - never fail a recorded outcome on bookkeeping
         pass

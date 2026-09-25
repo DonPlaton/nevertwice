@@ -52,7 +52,9 @@ EXPECTED = {"replaces": "replaces", "restates": "replaces", "separate": "separat
 def judge(old_title: str, old_desc: str, new_desc: str) -> dict:
     prompt = m._JUDGE_PROMPT.format(old=f"{old_title} - {(old_desc or '')[:600]}", new=(new_desc or "")[:600])
     payload = json.dumps({"model": MODEL, "prompt": prompt, "format": "json", "stream": False, "think": False,
-                          "options": {"temperature": 0.0, "num_ctx": 16384}}).encode("utf-8")
+                          # B1: the engine judge's own output cap (it goes through generate_json)
+                          "options": {"temperature": 0.0, "num_ctx": 16384,
+                                      "num_predict": m.EXTRACT_NUM_PREDICT}}).encode("utf-8")
     req = urllib.request.Request(URL, data=payload, headers={"Content-Type": "application/json"})
     t0 = time.time()
     with urllib.request.urlopen(req, timeout=180) as r:
@@ -67,7 +69,7 @@ def judge(old_title: str, old_desc: str, new_desc: str) -> dict:
     return {"verdict": verdict, "old_settles": (parsed or {}).get("old_settles") if isinstance(parsed, dict) else None,
             "new_settles": (parsed or {}).get("new_settles") if isinstance(parsed, dict) else None,
             "prompt_tokens": data.get("prompt_eval_count"), "eval_tokens": data.get("eval_count"),
-            "seconds": round(time.time() - t0, 2)}
+            "capped": data.get("done_reason") == "length", "seconds": round(time.time() - t0, 2)}
 
 
 def prf(rows: list[dict], cls: str) -> dict:
@@ -89,6 +91,9 @@ def summarise(rows: list[dict]) -> dict:
            "confusion": {f"{r['expected']}->{r['verdict']}": 0 for r in scored},
            "replaces": prf(scored, "replaces"), "separate": prf(scored, "separate"),
            "unanswered": sum(1 for r in rows if r["verdict"] is None),
+           # B1: verdicts whose answer reached the output cap - counted here, the rule for them
+           # is PREREG-V3's, fixed before the first number
+           "capped": sum(1 for r in rows if r.get("capped")),
            "accuracy": round(sum(1 for r in scored if r["verdict"] == r["expected"]) / len(scored), 4) if scored else None,
            "tokens_per_pair": {"mean": round(statistics.mean(toks), 1) if toks else None,
                                "median": statistics.median(toks) if toks else None,

@@ -132,7 +132,9 @@ def make_deepseek_reasoner(model="deepseek-reasoner", timeout=240, retries=3):
         raise RuntimeError("DEEPSEEK_API_KEY is not set - needed for --reasoner")
 
     def _call(prompt):
-        body = json.dumps({"model": model,
+        # B1: the cap is explicit - the vendor's own default for the reasoner (32K), whose chain of
+        # thought counts against it; the engine's 4,096 would cut the reasoning, not the answer.
+        body = json.dumps({"model": model, "max_tokens": 32768,
                            "messages": [{"role": "user", "content": prompt}]}).encode("utf-8")
         headers = {"Content-Type": "application/json",
                    "Authorization": f"Bearer {key}", "User-Agent": m._UA}

@@ -38,14 +38,9 @@ hit is refused, even when there is room for it - the distinction between *does i
 returned no more than 2 points less often. On a miss the default returns to 0.
 
 <!-- claims:abstention-sweep -->
-| threshold | chars/query | hits | wanted fact returned | chars saved | recall lost |
-|---|---|---|---|---|---|
-| 0.00 (off) | 457.7 | 1.47 | 0.992 | - | - |
-| 0.10 | 433.8 | 1.38 | 0.987 | 5.2% | 0.4 pts |
-| 0.20 | 397.6 | 1.26 | 0.966 | 13.1% | 2.5 pts |
-| **0.35 (shipped)** | 377.9 | 1.20 | 0.966 | 17.4% | 2.5 pts |
-| 0.50 | 368.0 | 1.17 | 0.966 | 19.6% | 2.5 pts |
-| 0.75 | 340.2 | 1.07 | 0.966 | 25.7% | 2.5 pts |
+> **Withdrawn 2026-09.** code moved in stage D, B1 (LLM output cap, bounded extraction retries, telemetry on the hook path); re-measured in campaign v3 on its anchor - needs GPU time with the pinned model
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/abstention_ab.py --part all --runs 3 --out research/results/abstention_ab.json` is what re-measures this one.
 <!-- /claims:abstention-sweep -->
 
 Every threshold from 0.30 upward reads the same as the shipped one: one hit is all that is left to
@@ -70,7 +65,7 @@ and a half. That is a hypothesis, and it is written here as one.
 `NEVERTWICE_INJECT_MIN_VALUE`, on the path capped at 2200 characters.
 
 The sweep is identical to C1's, and that is the result: **the mean payload on this corpus is
-457.7 characters (mean of 3 runs), so the cap never binds and the two paths differ in nothing the measurement can
+457.7 characters (mean of 3 runs; withdrawn since the engine moved in stage D), so the cap never binds and the two paths differ in nothing the measurement can
 see.** The gate written for it - 15% smaller with no loss of the top-ranked lesson - is
 **vacuous as written**: the top item scores 1.0 by construction and cannot be dropped at any
 threshold below 1.0, so the second half is satisfied by arithmetic rather than by evidence.
@@ -100,7 +95,7 @@ Eight growth stages, 400 events each, 3,200 events and 1,391,395 bytes by the en
 | bytes read across the eight triggers | 6,261,140 | 1,391,395 |
 | coverage of appended events | 1.000 | 1.000 |
 
-**77.8% fewer bytes at identical coverage. Passed.**
+**77.8% fewer bytes at identical coverage (a figure withdrawn since the engine moved in stage D). Passed.**
 
 Running it is what found the defect it existed to rule out. The delta reader seeked to the
 watermark and then discarded a line unconditionally, on the assumption that a byte offset

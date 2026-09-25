@@ -515,6 +515,7 @@ def evaluate():
         dt = time.time() - t0
         rerank_cost = {"model": RERANK_MODEL, "n": RERANK_N, "snippet_chars": RERANK_SNIP,
                        "calls": rstats["calls"], "errors": rstats["errors"],
+                       "capped": rstats.get("capped", 0),      # B1: answers that reached the output cap
                        "est_prompt_tokens": rstats["prompt_chars"] // 4, "wall_s": round(dt, 1),
                        "delta_recall@1": hr["recall@1"] - hb["recall@1"],
                        "delta_recall@5": hr["recall@5"] - hb["recall@5"]}

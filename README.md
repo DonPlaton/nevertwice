@@ -80,24 +80,23 @@ does not ship, the owner's private store, or a paid API, so they are withdrawn r
 reprinted. `python tools/check_freshness.py --list-stale` names every one and the gate that blocks
 it, and CI now fails when a published number outlives the code that made it. How long a claim lives, and why engine claims die first: [CLAIM_HALFLIFE.md](research/CLAIM_HALFLIFE.md).
 
-What survived re-measurement at HEAD, and what it cost:
+What the second campaign measured on 2026-09-25, and where each row stands now:
 
 | claim | result | evidence |
 |---|---|---|
-| external retrieval, one pool and one embedder for everyone | R@5 **0.800** on a hash-pinned LongMemEval corpus, whole sessions embedded on our side as on the competitors' (Mem0 0.756, LangMem 0.692, A-MEM 0.692); re-measured on 2026-09-25 by the second campaign, every arm on one frozen commit. The page it links to also keeps the figures withdrawn in 2026-08, and why | [EXTERNAL_RETRIEVAL.md](research/EXTERNAL_RETRIEVAL.md) |
-| handing back a fact that has since been **retracted** | **0.017** of case-runs between nights and the same after the weekly consolidation, against 0.933 for Mem0 and 0.950 for an append-only file with term matching. A fact that stayed true is never retired by mistake - 0.00 for every arm - because nothing is retired unless a rule proves the replacement or the sleep-time judge rules on it, and an unproven pair is served whole, newest first. The cost sits elsewhere: a still-true fact did not come back on 0.100 of our control case-runs, against 0.000 for Mem0 ([the causes](research/SUPERSESSION.md#what-it-costs-us)). Zep/Graphiti's figures wait for an owner decision: its model traffic went past the campaign's call counter, so the run cannot show it was clean. | [SUPERSESSION.md](research/SUPERSESSION.md) |
+| external retrieval, one pool and one embedder for everyone | withdrawn on 2026-09-25, a day after the second campaign measured it: the stage-D bug fixes moved the engine code under it, so the figure no longer describes the code in this repository, and campaign v3 re-measures it on its own anchor. The page it links to keeps the method and the figures withdrawn in 2026-08, and why | [EXTERNAL_RETRIEVAL.md](research/EXTERNAL_RETRIEVAL.md) |
+| handing back a fact that has since been **retracted** | withdrawn on 2026-09-25 for the same reason. The study page keeps the method and the design it measures: nothing is retired unless a rule proves the replacement or the sleep-time judge rules on it, and an unproven pair is served whole, newest first | [SUPERSESSION.md](research/SUPERSESSION.md) |
 | acting vs *always-injecting* the same lesson | same error prevention for **31×** fewer memory tokens - a simulation over a fixed task family, not a live agent run. The study page it links to is otherwise withdrawn, so read the ratio here and the method there | [ACTIVE_MEMORY.md](research/ACTIVE_MEMORY.md) |
-| memory-poisoning acceptance attacks | **81%** blocked overall, the unweighted mean of four attack families: prompt injection **100%**, plausible-false facts **25%** - the weak side is named, not averaged away. Re-measured on 2026-09-25 by the second campaign; method on the study page | [POISONING.md](research/POISONING.md) |
+| memory-poisoning acceptance attacks | withdrawn on 2026-09-25 for the same reason; the study page, withdrawn with it, keeps the four attack families and the method | [POISONING.md](research/POISONING.md) |
 | what being there costs | PreToolUse fell by well over a third once the hook stopped recompiling the engine on every call, and costs zero context tokens until a guard fires; the millisecond figure is withdrawn until it is timed on an idle machine - a timing is published only from such a run, and the campaign ran with models loaded | [BENCHMARKS.md](docs/BENCHMARKS.md) |
 
-Every row was re-measured on 2026-09-25 by the second campaign, every arm on one frozen commit, under a
-validity rule fixed before the first number: a run whose model calls failed or went past the call
-counter does not count. Zep/Graphiti's rows (its client sends past the counter) and the competitor arms
-of the large LongMemEval pool (Ollama refused some embed calls) did not pass it; they, and the LoCoMo
-figures that moved when that corpus's embedding cache was rebuilt ([LOCOMO.md](research/LOCOMO.md),
-withdrawn with them), wait for an owner decision. Earlier, a 2026-09 review found our semantic arm
-embedded only the first two thousand characters of each session while the competitors embedded the whole
-one, an error against us; the row prints the whole-session run.
+The second campaign measured every row on one frozen commit, under a validity rule fixed before the first
+number: a run whose model calls failed or went past the call counter does not count. The bug fixes of
+stage D then moved the engine under most of them, and a number measured on the old code says nothing
+about the new one, so those rows are withdrawn until campaign v3 re-measures them on its own anchor;
+`python tools/check_freshness.py --list-stale` names each withdrawn claim and why. Earlier, a 2026-09
+review found our semantic arm embedded only the first two thousand characters of each session while the
+competitors embedded the whole one, an error against us.
 
 The 2026-07 run of that retrieval stand stays withdrawn - its corpus could not be identified -
 and the re-run above is a separate claim family on a named one:
@@ -158,7 +157,7 @@ With no backend at all, extraction pauses loudly (sessions are kept and retried,
 recall runs on lexical search until an embedder shows up. The five-minute walkthrough is in
 [QUICKSTART.md](QUICKSTART.md); every environment variable is in [CONFIG.md](docs/CONFIG.md).
 
-Contributing: `pip install -e ".[dev]"`, then `python -m pytest -q`. Two hundred forty-three hermetic suites -
+Contributing: `pip install -e ".[dev]"`, then `python -m pytest -q`. Two hundred forty-four hermetic suites -
 LLMs, embedders, the optional reranker, network and GPU execution are disabled or mocked, and a lint
 fails the build if a script reaches a memory store without declaring which store it means. CI runs
 them on Linux, Windows and macOS across four Python versions. One is a golden store - same sessions

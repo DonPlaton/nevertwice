@@ -892,7 +892,10 @@ def test_walled_covers_or_allowlists_every_env_name_in_the_package() -> None:
                        "NEVERTWICE_PRINCIPLE", "NEVERTWICE_PRINCIPLE_T",
                        # and the promoter switch, read as m.os.environ.get until this merge -
                        # a form the scanner does not see; now a direct os.environ.get.
-                       "NEVERTWICE_PRINCIPLE_PROMOTE"}
+                       "NEVERTWICE_PRINCIPLE_PROMOTE",
+                       # B1 (2026-09-25): the engine's LLM output cap and the bound on retries of a
+                       # session whose extraction keeps failing on its content (both env_int).
+                       "NEVERTWICE_EXTRACT_NUM_PREDICT", "NEVERTWICE_EXTRACT_MAX_ATTEMPTS"}
     expected_total = 168 - len(expected_lost) + len(expected_gained)
     check(f"this scanner finds {len(all_names)} names - every difference from the auditor's "
           f"168 named above: {len(expected_gained)} gained, {len(expected_lost)} lost "

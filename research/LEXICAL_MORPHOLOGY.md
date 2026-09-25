@@ -27,16 +27,9 @@ Dialogue turns the length of a real note, each question retrieving its human-ann
 turn from its own conversation. Same cached vectors for both arms; only the tokenizer differs.
 
 <!-- claims:lexical-morphology-locomo -->
-| method | R@1 | R@5 | R@10 | MRR |
-|---|---|---|---|---|
-| semantic (bge-m3), raw tokens | withdrawn | withdrawn | withdrawn | withdrawn |
-| semantic (bge-m3), stop words + stems | withdrawn | withdrawn | withdrawn | withdrawn |
-| lexical (BM25), raw tokens | 0.271 | 0.499 | 0.576 | withdrawn |
-| lexical (BM25), stop words + stems | 0.339 | 0.601 | 0.681 | withdrawn |
-| **calibrated fusion (shipped)**, raw tokens | withdrawn | withdrawn | 0.662 | withdrawn |
-| **calibrated fusion (shipped)**, stop words + stems | withdrawn | withdrawn | withdrawn | withdrawn |
-
-<sub>**Withdrawn** cells: owner decision pending: a deterministic claim moved, and the move traces to the rebuilt LoCoMo embedder cache (an input to the stand, not the code); the auditor's counterfactual on the old cache reproduces the committed value of every one of these claims exactly</sub>
+> **Withdrawn 2026-09.** owner decision pending: a deterministic claim moved, and the move traces to the rebuilt LoCoMo embedder cache (an input to the stand, not the code); the auditor's counterfactual on the old cache reproduces the committed value of every one of these claims exactly; the value is the campaign's and the statement predates it - rewrite the statement before any restore
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/locomo_eval.py --no-morphology --save --out=research/results/locomo_raw.json` is what re-measures this one.
 <!-- /claims:lexical-morphology-locomo -->
 
 ## LongMemEval-oracle, global pool
@@ -46,14 +39,9 @@ document already contains most inflections of its own words, so morphology has l
 and a stem can cost the exact-form match at rank one.
 
 <!-- claims:lexical-morphology-oracle -->
-| method | R@1 | R@5 | R@10 | MRR |
-|---|---|---|---|---|
-| semantic (bge-m3), raw tokens | 0.428 | 0.692 | 0.782 | 0.552 |
-| semantic (bge-m3), stop words + stems | 0.428 | 0.692 | 0.782 | 0.552 |
-| lexical (BM25), raw tokens | 0.522 | 0.752 | 0.834 | 0.623 |
-| lexical (BM25), stop words + stems | 0.470 | 0.738 | 0.830 | 0.596 |
-| **calibrated fusion (shipped)**, raw tokens | **0.536** | 0.794 | 0.860 | **0.652** |
-| **calibrated fusion (shipped)**, stop words + stems | 0.512 | **0.800** | **0.866** | 0.636 |
+> **Withdrawn 2026-09.** code moved in stage D, B1 (LLM output cap, bounded extraction retries, telemetry on the hook path); re-measured in campaign v3 on its anchor - needs GPU time with the pinned model
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/longmem_eval.py --no-morphology --save --out=research/results/longmem_oracle_raw.json` is what re-measures this one.
 <!-- /claims:lexical-morphology-oracle -->
 
 ## The non-oracle pool, outside the gate
@@ -64,14 +52,9 @@ candidate set. The decision stands on the production shape - a note is the lengt
 turn, not of a session - and this pool is the price, published rather than argued away:
 
 <!-- claims:lexical-morphology-s -->
-| method | R@1 | R@5 | R@10 | MRR |
-|---|---|---|---|---|
-| semantic (bge-m3), raw tokens | 0.184 | 0.354 | 0.440 | 0.267 |
-| semantic (bge-m3), stop words + stems | 0.184 | 0.354 | 0.440 | 0.267 |
-| lexical (BM25), raw tokens | 0.242 | 0.442 | 0.534 | 0.338 |
-| lexical (BM25), stop words + stems | 0.218 | 0.416 | 0.510 | 0.313 |
-| **calibrated fusion (shipped)**, raw tokens | **0.244** | **0.450** | **0.548** | **0.349** |
-| **calibrated fusion (shipped)**, stop words + stems | 0.228 | 0.422 | 0.514 | 0.329 |
+> **Withdrawn 2026-09.** code moved in stage D, B1 (LLM output cap, bounded extraction retries, telemetry on the hook path); re-measured in campaign v3 on its anchor - needs GPU time with the pinned model
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/longmem_eval.py --data=s --no-morphology --save --out=research/results/longmem_s_raw.json` is what re-measures this one.
 <!-- /claims:lexical-morphology-s -->
 
 ## The owner's store, by language half

@@ -64,6 +64,14 @@ REVIEWED_COINCIDENCES = {
     ("research/EMBED_HELDOUT_BASELINE.md", "0.735"): "a confidence bound of an embedder's score, not the fusion sweep",
     ("research/EMBED_HELDOUT_BASELINE.md", "0.683"): "an embedder's retrieval score, not code-sessions accuracy",
     ("research/EMBED_HELDOUT_BASELINE.md", "0.631"): "a confidence bound of an embedder's score, not the fusion sweep",
+    # stage D, 2026-09-25: the B1 withdrawal made these forms dead; each reviewed on its line
+    ("research/EMBED_HELDOUT_BASELINE.md", "0.956"): "a confidence bound of an embedder's score, not code-sessions",
+    ("research/EMBED_HELDOUT_BASELINE.md", "0.662"): "an embedder's retrieval score on held-out data, not LoCoMo raw",
+    ("research/EMBED_HELDOUT_BASELINE.md", "0.782"): "a confidence bound of an embedder's score, not LongMemEval",
+    ("research/EMBED_HELDOUT_BASELINE.md", "0.042"): "a confidence bound of a distillation delta, not the capacity claim",
+    ("research/EMBED_M2_THRESHOLD.md", "0.042"): "the same distillation delta's bound, not the capacity claim",
+    ("research/EMBED_M3_THRESHOLD.md", "0.042"): "the same distillation delta's bound, not the capacity claim",
+    ("research/EMBED_SERVING.md", "1.0000"): "a median cosine of served vectors, not a dilution p-value",
 }
 
 
@@ -102,7 +110,10 @@ def unit(prose: str, start: int, end: int) -> str:
     A table row is one line, so a line-wide rule let a figure through on the strength of a
     "withdrawn" three sentences away in another cell - or in the same cell (README's external
     retrieval row says "withdrawn in 2026-08" about other figures)."""
-    lo, hi = 0, len(prose)
+    # The paragraph bounds the search (auditor, 2026-09-25): scanning back from the start of the
+    # page made the scan quadratic in the number of hits.
+    para = prose.rfind("\n\n", 0, start)
+    lo, hi = (para + 1 if para >= 0 else 0), len(prose)
     ls = prose.rfind("\n", 0, start) + 1
     le = prose.find("\n", end)
     le = len(prose) if le < 0 else le
@@ -165,16 +176,17 @@ def _zep(page: str, text: str) -> list:
 
 
 print("\n- the exemption is the figure's own sentence or cell, not its line (auditor, A6) -")
-readme = (ROOT / "README.md").read_text(encoding="utf-8")
-row = next((ln for ln in readme.split("\n") if ln.startswith("| external retrieval")), "")
-check("README's external retrieval row still says 'withdrawn' about other figures in its cell",
-      "R@5 **0.800**" in row and "withdrawn" in row.lower(), row[:90])
+#: The shape of README's external retrieval row as the auditor's A6 found it (0a2c0ad): one cell
+#: carrying a figure AND, two sentences on, "withdrawn" about OTHER figures. The live README row
+#: no longer prints a figure (stage D withdrew it), so the shape is kept here verbatim.
+row = ("| external retrieval, one pool and one embedder for everyone | R@5 **0.800** on a hash-pinned "
+       "LongMemEval corpus; re-measured on 2026-09-25 by the second campaign, every arm on one frozen "
+       "commit. The page it links to also keeps the figures withdrawn in 2026-08, and why | "
+       "[EXTERNAL_RETRIEVAL.md](research/EXTERNAL_RETRIEVAL.md) |\n")
 check("a withdrawn figure typed into that row is flagged - the 'withdrawn' is another sentence",
-      bool(_zep("README.md", readme.replace(row, row.replace(
-          "R@5 **0.800**", "R@5 **0.800** (Zep stale 34.2%)", 1), 1))))
+      bool(_zep("README.md", row.replace("R@5 **0.800**", "R@5 **0.800** (Zep stale 34.2%)", 1))))
 check("and let through when its own sentence says withdrawn",
-      not _zep("README.md", readme.replace(row, row.replace(
-          "R@5 **0.800**", "R@5 **0.800** (Zep stale 34.2%, withdrawn)", 1), 1)))
+      not _zep("README.md", row.replace("R@5 **0.800**", "R@5 **0.800** (Zep stale 34.2%, withdrawn)", 1)))
 check("a 'withdrawn' in another cell of the row does not excuse it",
       bool(_zep("x.md", "| a row | Zep was stale in 34.2% of cases | figures withdrawn in 2026-08 |\n")))
 check("a 'withdrawn' in the previous sentence of the same line does not excuse it",

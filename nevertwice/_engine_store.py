@@ -689,6 +689,37 @@ def _parse_iso(ts: str | None) -> datetime | None:
 _OLLAMA_DOWN = False  # set on a connectivity/timeout error this run (audit F29)
 _CLOUD_DEAD = False   # set when the active cloud backend exhausts this run → skip
 _LLM_STATS = {"cloud": 0, "ollama": 0, "fail": 0}  # backend usage this run
+#: Why the LAST `_json_api_call` gave up, as a stable slug - None after a success. The caller that
+#: decides whether a failure is the CONTENT's (a runaway answer cut by the output cap, an
+#: unparsable answer: retrying the same text is unlikely to help, so retries are bounded) or the
+#: TRANSPORT's (backend down, HTTP error: the session must wait, never be parked) reads it here.
+_LLM_LAST = {"failure": None}
+#: Failure slugs attributable to the answer itself rather than to the backend being unreachable.
+CONTENT_FAILURES = frozenset({"truncated", "unparsable", "empty", "blocked"})
+
+
+def _parse_capped(raw: str, capped: bool, label: str):
+    """Parse a JSON answer, knowing whether it stopped at the output cap (B1).
+
+    A capped answer whose JSON is whole - the model closed the object and then padded, which
+    `format: json` invites - is used and counted `capped`. A capped answer whose JSON is cut is a
+    failure named for the cap and counted `truncated`: a bare "parse failed" is how the runaway
+    looked before, and nobody could tell it from a malformed answer. An uncapped answer that does
+    not parse raises, as before, into `_json_api_call`'s parse-failure branch."""
+    try:
+        parsed = json.loads(_strip_json_fence(raw))
+    except json.JSONDecodeError:
+        if not capped:
+            raise
+        _LLM_STATS["truncated"] = _LLM_STATS.get("truncated", 0) + 1
+        _LLM_LAST["failure"] = "truncated"
+        return "fail", (f"answer cut by the output cap ({EXTRACT_NUM_PREDICT} tokens) - "
+                        f"its JSON is incomplete; counted as truncated")
+    if capped:
+        _LLM_STATS["capped"] = _LLM_STATS.get("capped", 0) + 1
+        log(f"{label}: answer reached the output cap ({EXTRACT_NUM_PREDICT} tokens) with its JSON "
+            f"whole - used, counted as capped")
+    return "ok", parsed if isinstance(parsed, dict) else {}
 
 
 def _record_usage(data: dict) -> None:
@@ -758,6 +789,7 @@ def _json_api_call(url: str, body: bytes, headers: dict, *, timeout: float,
     import urllib.error
     import urllib.request
     global _CLOUD_DEAD, _OLLAMA_DOWN
+    _LLM_LAST["failure"] = None
     for attempt in range(retries + 1):
         last = attempt >= retries
         req = urllib.request.Request(url, data=body, headers=headers)
@@ -766,12 +798,14 @@ def _json_api_call(url: str, body: bytes, headers: dict, *, timeout: float,
                 data = json.loads(r.read())
             status, out = extract(data, last)
             if status == "ok":
+                _LLM_LAST["failure"] = None
                 return out
             if status == "retry" and not last:
                 time.sleep(backoff * (attempt + 1))
                 continue
             if out:
                 log(f"{label}: {out}")
+            _LLM_LAST["failure"] = _LLM_LAST["failure"] or "empty"
             return {}
         except urllib.error.HTTPError as e:
             msg = ""
@@ -788,6 +822,7 @@ def _json_api_call(url: str, body: bytes, headers: dict, *, timeout: float,
                 log(f"{label} HTTP {e.code}: {_scrub_for_log(msg)}")
             if cloud and e.code in (401, 403, 429, 500, 503):
                 _CLOUD_DEAD = True  # bad key or exhausted transient - skip rest of run
+            _LLM_LAST["failure"] = "http"
             return {}
         except (urllib.error.URLError, TimeoutError) as e:
             if not last:
@@ -799,12 +834,15 @@ def _json_api_call(url: str, body: bytes, headers: dict, *, timeout: float,
                 _OLLAMA_DOWN = True
             log(f"{label} unreachable after {attempt + 1} tries "
                 f"({_scrub_for_log(url)}): {getattr(e, 'reason', e)}")
+            _LLM_LAST["failure"] = "transport"
             return {}
         except (json.JSONDecodeError, KeyError, TypeError) as e:
             log(f"{label} parse failed: {e}")
+            _LLM_LAST["failure"] = "unparsable"
             return {}
         except Exception as e:
             log(f"{label} error: {type(e).__name__}: {e}")
+            _LLM_LAST["failure"] = "error"
             return {}
     return {}
 
@@ -818,7 +856,8 @@ def call_ollama(prompt: str) -> dict:
         "think": False,  # qwen3.x "thinking" mode leaks structured output
         # temperature overridable so a benchmark can pin extraction deterministically (seeds/repro):
         # default 0.2 keeps the live hook's behaviour unchanged; a stand sets NEVERTWICE_EXTRACT_TEMP=0.
-        "options": {"temperature": float(os.environ.get("NEVERTWICE_EXTRACT_TEMP", "0.2")), "num_ctx": 16384},
+        "options": {"temperature": float(os.environ.get("NEVERTWICE_EXTRACT_TEMP", "0.2")), "num_ctx": 16384,
+                    "num_predict": EXTRACT_NUM_PREDICT},     # B1: a runaway answer stops at the cap
     }).encode("utf-8")
 
     def _extract(data, last):
@@ -828,8 +867,7 @@ def call_ollama(prompt: str) -> dict:
         raw = (data.get("response") or "").strip()
         if not raw:
             return "fail", "returned empty response"
-        parsed = json.loads(_strip_json_fence(raw))
-        return "ok", parsed if isinstance(parsed, dict) else {}
+        return _parse_capped(raw, data.get("done_reason") == "length", "Ollama")
 
     def _http_err(e, body):
         # A real HTTP response - never retried. 404 / "model not found" means the
@@ -856,7 +894,8 @@ def call_gemini(prompt: str) -> dict:
     body = json.dumps({
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {"temperature": 0.2,
-                             "responseMimeType": "application/json"},
+                             "responseMimeType": "application/json",
+                             "maxOutputTokens": EXTRACT_NUM_PREDICT},   # B1
     }).encode("utf-8")
     # key in a header, never the URL, so it can't leak via HTTPError.url / logs
     headers = {"Content-Type": "application/json",
@@ -868,6 +907,7 @@ def call_gemini(prompt: str) -> dict:
         if not cands:
             block = (data.get("promptFeedback") or {}).get("blockReason")
             if block:
+                _LLM_LAST["failure"] = "blocked"
                 return "fail", f"blocked: {block}"   # deterministic content block - don't retry
             if not last:                             # transient empty-candidates - retry (audit B1)
                 return "retry", None
@@ -880,10 +920,9 @@ def call_gemini(prompt: str) -> dict:
             if not last:
                 return "retry", None
             return "fail", f"empty text (finishReason={fin})"
-        if fin and fin != "STOP":  # MAX_TOKENS/SAFETY - log for diagnosability
+        if fin and fin not in ("STOP", "MAX_TOKENS"):  # SAFETY etc. - log for diagnosability
             log(f"Gemini finishReason={fin} - response may be truncated")
-        parsed = json.loads(_strip_json_fence(txt))
-        return "ok", parsed if isinstance(parsed, dict) else {}
+        return _parse_capped(txt, fin == "MAX_TOKENS", "Gemini")
 
     return _json_api_call(url, body, headers, timeout=GEMINI_TIMEOUT,
                           retries=GEMINI_RETRIES, backoff=GEMINI_RETRY_BACKOFF,
@@ -901,6 +940,7 @@ def _call_openai_chat(prompt: str, base_url: str, api_key: str, model: str,
         "messages": [{"role": "user", "content": prompt}],
         "response_format": {"type": "json_object"},
         "temperature": 0.2,
+        "max_tokens": EXTRACT_NUM_PREDICT,                   # B1
     }).encode("utf-8")
     headers = {"Content-Type": "application/json",
                "Authorization": f"Bearer {api_key}", "User-Agent": _UA}
@@ -921,8 +961,7 @@ def _call_openai_chat(prompt: str, base_url: str, api_key: str, model: str,
             return "fail", f"empty content (finish_reason={fin})"
         if fin and fin not in ("stop", "length"):
             log(f"{label} finish_reason={fin}")
-        parsed = json.loads(_strip_json_fence(txt))
-        return "ok", parsed if isinstance(parsed, dict) else {}
+        return _parse_capped(txt, fin == "length", label)
 
     return _json_api_call(base_url, body, headers, timeout=GEMINI_TIMEOUT,
                           retries=GEMINI_RETRIES, backoff=GEMINI_RETRY_BACKOFF,

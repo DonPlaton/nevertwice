@@ -19,6 +19,7 @@ shows carries alt text that describes it rather than naming its file.
 """
 from __future__ import annotations
 
+import json
 import re
 import subprocess
 import sys
@@ -285,7 +286,12 @@ def test_every_image_in_a_tracked_document_has_alt_text() -> None:
     #: infographic printed poisoning rates (88% blocked, ~50% on plausible-false facts) that the
     #: register has since re-measured (81% / 25%), and its generator hard-codes them; the image
     #: stays in docs/ and returns when it is regenerated from the register (premortem 2026-09-25).
-    check("there are images to judge at all", judged >= 8, str(judged))
+    #: 2026-09-25, stage D: 8 -> 7 (K52). docs/BENCHMARKS.md no longer embeds benchmarks.png - every
+    #: panel it draws is withdrawn (latency since 2026-09-19, supersession and poisoning since the
+    #: stage-D fixes moved the engine); it returns when campaign v3 makes them live again. Only
+    #: together with test_an_embedded_register_figure_draws_only_live_claims, which fails the day
+    #: it is embedded while one of its claims is withdrawn.
+    check("there are images to judge at all", judged >= 7, str(judged))
     check("every local image has alt text", not missing, ", ".join(missing[:5]))
     check(f"every alt text describes the image (>= {MIN_ALT} chars)", not weak,
           ", ".join(weak[:5]))
@@ -318,6 +324,38 @@ def test_a_figure_with_hard_coded_numbers_is_not_shown() -> None:
              'contradictions resolved at write time" width="880"></p>')
     check("the check sees an embed with a full alt text, and ignores one inside a comment",
           _embeds(probe, image) and not _embeds("<!-- " + probe + " -->", image))
+
+
+#: A figure DRAWN FROM the register is only as live as the claims it draws. benchmarks.png's
+#: generator refuses a withdrawn claim, but the PNG already embedded is a file: its latency panel
+#: drew four claims withdrawn on 2026-09-19 while its alt text said "every figure on them
+#: registered and live", and nothing read the two together. Map: image -> the generator whose
+#: claim ids it draws (every quoted string in the generator that is a registered claim id).
+REGISTER_FIGURES = {"benchmarks.png": ROOT / "research" / "gen_benchmarks_figure.py"}
+
+
+def _drawn_claims(generator: Path, claims: dict) -> list:
+    return sorted({s for s in re.findall(r'"([\w.]+)"', generator.read_text(encoding="utf-8")) if s in claims})
+
+
+def test_an_embedded_register_figure_draws_only_live_claims() -> None:
+    print("\n- a figure drawn from the register is not embedded while it draws a withdrawn claim -")
+    manifest = json.loads((ROOT / "research" / "evidence_manifest.json").read_text(encoding="utf-8"))
+    claims = {c["id"]: c for c in manifest["claims"]}
+    pages = [ROOT / "README.md"] + sorted((ROOT / "docs").glob("*.md")) + sorted((ROOT / "research").glob("*.md"))
+    for image, generator in REGISTER_FIGURES.items():
+        drawn = _drawn_claims(generator, claims)
+        check(f"{image}: its generator names the claims it draws", len(drawn) >= 10, str(len(drawn)))
+        dead = [cid for cid in drawn if claims[cid].get("stale")]
+        shown = [p.relative_to(ROOT).as_posix() for p in pages if _embeds(p.read_text(encoding="utf-8"), image)]
+        check(f"{image} is not embedded while it draws a withdrawn claim",
+              not (dead and shown), f"embedded in {shown}; withdrawn: {dead[:4]}")
+    probe = {"a.live": {"id": "a.live"}, "b.dead": {"id": "b.dead", "stale": "withdrawn"}}
+    with tempfile.TemporaryDirectory() as td:
+        gen = Path(td) / "gen.py"
+        gen.write_text('PANELS = {"p": ["a.live", "b.dead"]}\n', encoding="utf-8")
+        check("the reader of a generator finds the claim ids it draws, live and withdrawn",
+              _drawn_claims(gen, probe) == ["a.live", "b.dead"])
 
 
 def test_zz_every_check_passed() -> None:

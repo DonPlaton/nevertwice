@@ -198,7 +198,8 @@ def make_caller(model="deepseek-chat", temperature=0.7, timeout=90):
 
     def call(prompt):
         body = json.dumps({"model": model, "temperature": temperature,
-                           "messages": [{"role": "user", "content": prompt}]}).encode("utf-8")
+                           "messages": [{"role": "user", "content": prompt}],
+                           "max_tokens": m.EXTRACT_NUM_PREDICT}).encode("utf-8")   # B1: output cap
         req = urllib.request.Request(m.DEEPSEEK_URL, data=body, headers={
             "Content-Type": "application/json", "Authorization": f"Bearer {key}",
             "User-Agent": m._UA})
@@ -221,7 +222,8 @@ def make_ollama_caller(model="qwen2.5:3b", temperature=0.7, timeout=120):
     want code, not structured output), so a small model isn't fighting a format constraint."""
     def call(prompt):
         body = json.dumps({"model": model, "prompt": prompt, "stream": False,
-                           "think": False, "options": {"temperature": temperature}}).encode("utf-8")
+                           "think": False, "options": {"temperature": temperature,
+                                                       "num_predict": m.EXTRACT_NUM_PREDICT}}).encode("utf-8")
         req = urllib.request.Request(m.OLLAMA_URL, data=body,
                                      headers={"Content-Type": "application/json"})
         for attempt in range(2):

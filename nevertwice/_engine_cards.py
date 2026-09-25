@@ -808,6 +808,57 @@ def rebuild_index():
 #: written first sessions from 11 to 8 of 120 against a gate of 5 - a third of the silence, not the
 #: half the gate asked for - so K5's own rule reverts it. Opt in with NEVERTWICE_EXTRACT_RETRY=1.
 EXTRACT_RETRY = env_int("NEVERTWICE_EXTRACT_RETRY", 0)
+#: B1: how many times a session whose extraction failed on its CONTENT - an answer cut by the output
+#: cap, an unparsable or empty answer, a content block - is tried before it is PARKED: marked
+#: processed with a `parked` reason, counted, and logged. It used to be "left for retry" on every
+#: sweep, forever, each attempt paying the full generation. A TRANSPORT failure (backend down, an
+#: HTTP error) is never counted: that session waits for the backend, as before.
+EXTRACT_MAX_ATTEMPTS = env_int("NEVERTWICE_EXTRACT_MAX_ATTEMPTS", 3)
+
+
+def _attempts_file() -> Path:
+    """Content-failure counts per session. Call-time derived, so it follows `_rebase_vault`."""
+    return VAULT / ".extract_attempts.json"
+
+
+def _clear_extract_failures(session_id: str) -> None:
+    f = _attempts_file()
+    if not f.exists():
+        return
+    db = _load_json_generations(f, "extract-attempts") or {}
+    if db.pop(session_id, None) is not None:
+        _save_json_generations(f, json.dumps(db, ensure_ascii=False, indent=2), prev=False)
+
+
+def _note_extract_failure(processed_db: dict, session_id: str, transcript_path: str,
+                          size) -> str:
+    """Count one failed extraction and return the telemetry slug for it. A content failure is
+    counted per session; at EXTRACT_MAX_ATTEMPTS the session is parked (marked processed with
+    the reason, so no sweep picks it up again unless its transcript grows) and the slug is
+    `parked`. A transport failure is returned uncounted."""
+    reason = _LLM_LAST.get("failure") or "no_extraction"
+    if reason not in CONTENT_FAILURES:
+        return reason
+    f = _attempts_file()
+    db = _load_json_generations(f, "extract-attempts") or {}
+    rec = db.get(session_id) if isinstance(db.get(session_id), dict) else {}
+    n = int(rec.get("failures") or 0) + 1
+    if n < max(1, EXTRACT_MAX_ATTEMPTS):
+        db[session_id] = {"failures": n, "reason": reason,
+                          "at": datetime.now().isoformat(timespec="seconds")}
+        _save_json_generations(f, json.dumps(db, ensure_ascii=False, indent=2), prev=False)
+        log(f"Extraction failed for {session_id[:8]} ({reason}, attempt {n} of "
+            f"{EXTRACT_MAX_ATTEMPTS}) - left for retry")
+        return reason
+    db.pop(session_id, None)
+    _save_json_generations(f, json.dumps(db, ensure_ascii=False, indent=2), prev=False)
+    mark_processed(processed_db, session_id, transcript_path, size=size)
+    processed_db[session_id]["parked"] = f"{reason} x{n}"
+    save_processed(processed_db)
+    _LLM_STATS["parked"] = _LLM_STATS.get("parked", 0) + 1
+    log(f"PARKED {session_id[:8]}: extraction failed {n} times ({reason}) - nothing written; "
+        f"marked processed with the reason so no sweep retries it (NEVERTWICE_EXTRACT_MAX_ATTEMPTS)")
+    return "parked"
 _RETRY_MIN_CHARS = 40            # a shorter body has nothing to extract; silence is the right answer
 _RETRY_FRAME = (
     "Second pass. The first pass over this session returned no pattern, mistake or decision. A short "
@@ -943,15 +994,25 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
     )
     extraction = generate_json(prompt, project=project_hint)
     if not extraction:
-        log(f"Extraction failed for {session_id[:8]} - left for retry")
+        # B1: counted per session when the CONTENT failed, parked at the bound; a transport
+        # failure is left for retry uncounted, as before.
+        slug = _note_extract_failure(processed_db, session_id, transcript_path, t_size)
+        if slug not in CONTENT_FAILURES and slug != "parked":
+            log(f"Extraction failed for {session_id[:8]} ({slug}) - left for retry")
         # The counter whose docstring says "the 2026 stall showed up here as a flat store and
         # nowhere else". It could not have: nothing called it (T1 review 2026-09-19).
+        # B7 (auditor, 2026-09-25): `from . import telemetry` raised ImportError on the hook's
+        # own path - hook_shim runs the engine with runpy.run_path, where __package__ is '' - and
+        # the except below swallowed it, so this counter never moved in a hook. _sibling resolves
+        # the module in either shape. In the hook's shape telemetry imports a SECOND memory_hook
+        # (this one runs as __main__) and writes under that instance's VAULT - the same store, since
+        # both resolve it from the environment; a caller that re-bases only this one would diverge.
         try:
-            from . import telemetry as _tel
-            _tel.record_extraction_failure("no_extraction")
+            _sibling("telemetry").record_extraction_failure(slug)
         except Exception:       # noqa: BLE001 - a hook never fails on telemetry
             pass
         return False
+    _clear_extract_failures(session_id)
     extraction = _retry_if_silent(extraction, prompt, body, project_hint)
 
     # The session is marked processed at the END, AFTER its notes are durably

@@ -111,7 +111,8 @@ def synthesise_principle(texts, stats):
     prompt = "\n".join(lines)
     payload = json.dumps({"model": MODEL, "prompt": prompt, "format": "json", "stream": False,
                           "think": False, "keep_alive": "10m",
-                          "options": {"temperature": 0.2, "num_ctx": 8192}}).encode("utf-8")
+                          "options": {"temperature": 0.2, "num_ctx": 8192,
+                                      "num_predict": m.EXTRACT_NUM_PREDICT}}).encode("utf-8")   # B1
     import urllib.request
     stats["calls"] += 1
     stats["prompt_chars"] += len(prompt)
@@ -120,6 +121,8 @@ def synthesise_principle(texts, stats):
     try:
         with urllib.request.urlopen(req, timeout=120) as r:
             data = json.loads(r.read())
+        if data.get("done_reason") == "length":                    # B1: counted, never silent
+            stats["capped"] = stats.get("capped", 0) + 1
         obj = json.loads(m._strip_json_fence((data.get("response") or "").strip()))
         title, principle = obj.get("title", ""), obj.get("principle", "")
         return f"{title}\n{principle}".strip()
@@ -244,6 +247,7 @@ def main():
                "principle_ge_vector_mean": ideal,
                "recall_episodic": epi_r, "recall_consolidated": con_r,
                "synthesis_calls": stats["calls"], "errors": stats["errors"],
+               "capped": stats.get("capped", 0),               # B1: answers that reached the output cap
                "wall_s": round(dt, 1), "ship_supported": bool(verdict_ship)}
         p = HERE / "consolidation_eval.json"
         p.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")

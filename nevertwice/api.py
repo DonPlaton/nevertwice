@@ -89,7 +89,10 @@ def recall(query: str, project: str | None = None, k: int = 5,
     # every store (T1 review 2026-09-19). Timed around the ranking itself, after the empty-query
     # guard, so the sample is of searches that actually searched.
     try:
-        from . import telemetry as _tel
+        try:
+            from . import telemetry as _tel
+        except ImportError:                  # B7: the flat shape (api.py:45 imports the same way)
+            import telemetry as _tel  # noqa: PLC0415
         _tel.record_search((time.perf_counter() - started) * 1000.0)
     except Exception:           # noqa: BLE001 - a search never fails on bookkeeping
         pass

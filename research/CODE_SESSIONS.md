@@ -73,13 +73,9 @@ project-specific facts phrased as lessons rather than the anti-patterns every mo
 ## The real held-out
 
 <!-- claims:code-heldout -->
-| system | fact | current | stale | lesson | situation (top three) | tokens |
-|---|---|---|---|---|---|---|
-| **Nevertwice, our extractor's notes** | 0.442 | - | - | - | - | 220 |
-| append-only sessions, term overlap (floor) | 0.827 | - | - | - | - | 569 |
-| Mem0 full pipeline, its memories | 0.231 | - | - | - | - | 182 |
-| no memory (bracket) | 0.000 | - | - | - | - | 122 |
-| the gold session whole (bracket) | 0.827 | - | - | - | - | 569 |
+> **Withdrawn 2026-09.** code moved in stage D, B1 (LLM output cap, bounded extraction retries, telemetry on the hook path); re-measured in campaign v3 on its anchor - needs GPU time with the pinned model
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/code_sessions_eval.py summary --arms nevertwice_full,naive,mem0_infer --corpus D:/Coding/_nevertwice_polygon/code_heldout/code_heldout_v2.json --save --out research/results/code_heldout_v2.json` is what re-measures this one.
 <!-- /claims:code-heldout -->
 
 Two hundred candidates over thirty-seven transcripts; the automatic checks accepted thirty-nine,

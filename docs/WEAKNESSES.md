@@ -90,35 +90,15 @@ they cannot lag the artifact.
   time - see `memory_hook._same_replacement` and the K8/K8-B ledger entries for the numbers.
 
 <!-- claims:supersession-causes -->
-| arm | a still-true fact did not come back | retired by the memory | absorbed into another note | never written | served, below the top five |
-|---|---|---|---|---|---|
-| **Nevertwice**, between nights | 0.100 [0.040, 0.231] | 0 of 40 | 0 of 40 | 4 of 40 | 0 of 40 |
-| **Nevertwice**, after consolidation | 0.100 [0.040, 0.231] | 0 of 40 | 0 of 40 | 4 of 40 | 0 of 40 |
-| Mem0 | 0.000 [0.000, 0.161] | 0 of 20 | 0 of 20 | 0 of 20 | 0 of 20 |
-| Zep/Graphiti (`graphiti-core`, FalkorDB) | withdrawn | withdrawn of 40 | withdrawn of 40 | withdrawn of 40 | withdrawn of 40 |
-| an append-only markdown file | 0.050 [0.009, 0.236] | 0 of 20 | 0 of 20 | 0 of 20 | 1 of 20 |
-
-<sub>The first column is the rate in the table above; the four after it split its count by cause. The first two are the memory being too eager - it retired the note, or it judged a different fact a twin of this one and absorbed that fact into the note: the note stays on disk, but what it now hands back is the other fact, and this one is no longer served - the other two are the extractor's silence and the ranker's depth. A cause reads *not read* where the run did not inspect that arm's store: a retirement is visible only where the store records one (our `valid_to` and `## Previous statement`; Graphiti's `invalid_at`/`expired_at`; Mem0's delete and update events).</sub>
-
-<sub>Over-retraction proper - the memory stopped serving a fact that was still true, by retiring the note or by absorbing another fact into it - is the first two cause columns as a rate: 0.000 [0.000, 0.088] for Nevertwice over its control case-runs.</sub>
-
-<sub>**Withdrawn** cells: owner decision pending: the zep arm's model traffic was not observed (Graphiti's openai SDK sends through a vendored httpx the pacer does not hook); the server log shows no failed call</sub>
+> **Withdrawn 2026-09.** code moved in stage D, B1 (LLM output cap, bounded extraction retries, telemetry on the hook path); re-measured in campaign v3 on its anchor - needs GPU time with the pinned model
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/supersession_bench.py --pool research/results/v2_runs/sup.run1.json research/results/v2_runs/sup.run2.json --with research/results/v2_runs/sup_mem0.json research/results/v2_runs/sup_zep1.json research/results/v2_runs/sup_zep2.json --out research/results/supersession_v1.json` is what re-measures this one.
 <!-- /claims:supersession-causes -->
 
 <!-- claims:supersession-causes-implicit -->
-| arm | a still-true fact did not come back | retired by the memory | absorbed into another note | never written | served, below the top five |
-|---|---|---|---|---|---|
-| **Nevertwice**, between nights | 0.000 [0.000, 0.088] | 0 of 40 | 0 of 40 | 0 of 40 | 0 of 40 |
-| **Nevertwice**, after consolidation | 0.000 [0.000, 0.088] | 0 of 40 | 0 of 40 | 0 of 40 | 0 of 40 |
-| Mem0 | 0.000 [0.000, 0.161] | 0 of 20 | 0 of 20 | 0 of 20 | 0 of 20 |
-| Zep/Graphiti (`graphiti-core`, FalkorDB) | withdrawn | withdrawn of 40 | withdrawn of 40 | withdrawn of 40 | withdrawn of 40 |
-| an append-only markdown file | 0.050 [0.009, 0.236] | 0 of 20 | 0 of 20 | 0 of 20 | 1 of 20 |
-
-<sub>The first column is the rate in the table above; the four after it split its count by cause. The first two are the memory being too eager - it retired the note, or it judged a different fact a twin of this one and absorbed that fact into the note: the note stays on disk, but what it now hands back is the other fact, and this one is no longer served - the other two are the extractor's silence and the ranker's depth. A cause reads *not read* where the run did not inspect that arm's store: a retirement is visible only where the store records one (our `valid_to` and `## Previous statement`; Graphiti's `invalid_at`/`expired_at`; Mem0's delete and update events).</sub>
-
-<sub>Over-retraction proper - the memory stopped serving a fact that was still true, by retiring the note or by absorbing another fact into it - is the first two cause columns as a rate: 0.000 [0.000, 0.088] for Nevertwice over its control case-runs.</sub>
-
-<sub>**Withdrawn** cells: owner decision pending: the zep arm's model traffic was not observed (Graphiti's openai SDK sends through a vendored httpx the pacer does not hook); the server log shows no failed call</sub>
+> **Withdrawn 2026-09.** code moved in stage D, B1 (LLM output cap, bounded extraction retries, telemetry on the hook path); re-measured in campaign v3 on its anchor - needs GPU time with the pinned model
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/supersession_bench.py --pool research/results/v2_runs/supimp.run1.json research/results/v2_runs/supimp.run2.json --with research/results/v2_runs/supimp_mem0.json research/results/v2_runs/supimp_zep1.json research/results/v2_runs/supimp_zep2.json --out research/results/supersession_v1_implicit.json` is what re-measures this one.
 <!-- /claims:supersession-causes-implicit -->
 
 - **[OPEN - measured; fix gated as K5] The extractor's output on a bare two-sentence fact is
@@ -127,7 +107,8 @@ they cannot lag the artifact.
   three were silent in both runs and five in one run only; captured alone, six of eight wrote the note
   with the fact, one paraphrased it, one produced no item (ledger K3, `research/silence_probe.py`). Not
   length, not the absorb above. The fix was a single retry on an empty extraction, not a prompt rewrite
-  (K5). **Measured and reverted:** the retry took the never-written first sessions from eleven to eight
+  (K5). **Measured and reverted** (on the engine before stage D, whose figures are withdrawn now): the
+  retry took the never-written first sessions from eleven to eight
   of one hundred twenty against a gate of five - a third of the silence, not the half the gate asked
   for - so it ships off and is an opt-in switch. The silence stays published as the extractor's ceiling.
 
@@ -136,23 +117,13 @@ they cannot lag the artifact.
   of five percent false positives the design wrote; the all-fire arms recall under two fifths of the
   labelled cases at three to four times that false-positive rate, the linter recalls under half at
   zero, and the prompt-time guard recalls nothing. The README's sentence on guards was reduced to what
-  is measured. Live table:
+  is measured. These readings come from the second campaign, and the stage-D fixes have since moved
+  the engine under them, so the table below is withdrawn until campaign v3 re-measures it:
 
 <!-- claims:guard-bench -->
-| arm | recall of the right guard | precision | hard-negative false alarms | project-only recall | tokens / call | ms / check |
-|---|---|---|---|---|---|---|
-| **guards, engine's no-model patterns** | 0.380 at FPR 0.179 (over budget) | - | 0.268 | 0.154 | 3.320 | withdrawn |
-| **guards, model-written patterns** | 0.348 at FPR 0.155 (over budget) | - | 0.225 | 0.404 | 5.975 | withdrawn |
-| cold-start pack (no history) | 0.196 | 0.818 | 0.000 | 0.000 | 1.150 | withdrawn |
-| linter or scanner (scored in its favour) | 0.457 | 1.000 | 0.000 | 0.154 | 0.000 | withdrawn |
-| prompt recall over the notes (top three) | 0.022 | 0.400 | 0.042 | 0.038 | 103.560 | withdrawn |
-| silence (floor) | 0.000 | - | 0.000 | 0.000 | 0.000 | withdrawn |
-
-<sub>**Withdrawn** - ms / check for guards, engine's no-model patterns, guards, model-written patterns, cold-start pack (no history), prompt recall over the notes (top three): a timing is published only from an observe-mode run on an idle machine; the campaign timed it in pace mode beside other GPU work; the value is the campaign's and the statement predates it - rewrite the statement before any restore</sub>
-
-<sub>**Withdrawn** - ms / check for linter or scanner (scored in its favour), silence (floor): a timing is published only from an observe-mode run on an idle machine; the campaign timed it in pace mode beside other GPU work</sub>
-
-<sub>no operating point under the false-alarm budget for guards, engine's no-model patterns, guards, model-written patterns - a guard fires or it does not, and firing catches the repeats shown at the false-alarm rate shown; their hard-negative and project-only cells are read where the arm fires, not at the budget the rows below use.</sub>
+> **Withdrawn 2026-09.** code moved in stage D, B1 (LLM output cap, bounded extraction retries, telemetry on the hook path); re-measured in campaign v3 on its anchor - needs GPU time with the pinned model
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/guard_bench.py --llm --save` is what re-measures this one.
 <!-- /claims:guard-bench -->
 
 - **[CORPUS GATES FAILED - J3] The code-session corpus does not separate retrieval systems.** On the
@@ -162,7 +133,8 @@ they cannot lag the artifact.
   missed its gate on every clause against Mem0's pipeline. The hand-marked held-out over the owner's
   own sessions is the clean read; its first slice is the owner's and small, and its fact-survival and
   accuracy figures quoted elsewhere on this site are **dev-set numbers** until the marked cards arrive
-  and the stand is re-run on an unchanged engine. Live table:
+  and the stand is re-run on an unchanged engine. The owner has since retired this corpus from any
+  headline comparison (decision D3: it is our own synthetic corpus), and the table below is withdrawn:
 
 <!-- claims:code-sessions -->
 > **Withdrawn 2026-09.** owner decision pending: the Nevertwice contexts were empty for every question in this run and in the committed one (dated sessions archived against the wall clock), and the run is invalid (failed model calls)
@@ -224,7 +196,8 @@ below is read in context:
 - **W13 (only one external benchmark) is updated.** There is now a full local head-to-head
   against Mem0, LangMem, and A-MEM on one shared embedder (`research/head_to_head.py`), and a
   second external axis: **end-to-end answer-accuracy** on standard LongMemEval-oracle
-  (`research/qa_eval.py` → `QA_ACCURACY.md`) - 0.788 with an open reasoning reader, decomposed
+  (`research/qa_eval.py` → `QA_ACCURACY.md`) - 0.788 with an open reasoning reader (a figure
+  withdrawn since the stand moved in stage D), decomposed
   by a reader sweep that localizes the gap to vendor headlines as reader strength, not memory.
 - **Scale:** opt-in 1-bit index quantization (`NEVERTWICE_EMBED_QUANT=binary`) plus a popcount
   scan reach six figures of notes with no ANN dependency (`research/QUANTIZATION.md`).

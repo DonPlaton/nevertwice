@@ -39,13 +39,9 @@ at all, and five point at a turn id that is not in the conversation's own turns.
 nine are category 3.
 
 <!-- claims:locomo -->
-| method | R@1 | R@3 | R@5 | R@10 | MRR |
-|---|---|---|---|---|---|
-| semantic (bge-m3) | withdrawn | withdrawn | withdrawn | withdrawn | withdrawn |
-| lexical (BM25) | 0.339 | 0.527 | 0.601 | 0.681 | withdrawn |
-| **calibrated fusion (shipped default, 0 deps)** | withdrawn | withdrawn | withdrawn | withdrawn | withdrawn |
-
-<sub>**Withdrawn** cells: owner decision pending: a deterministic claim moved, and the move traces to the rebuilt LoCoMo embedder cache (an input to the stand, not the code); the auditor's counterfactual on the old cache reproduces the committed value of every one of these claims exactly</sub>
+> **Withdrawn 2026-09.** owner decision pending: a deterministic claim moved, and the move traces to the rebuilt LoCoMo embedder cache (an input to the stand, not the code); the auditor's counterfactual on the old cache reproduces the committed value of every one of these claims exactly; the value is the campaign's and the statement predates it - rewrite the statement before any restore
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/locomo_eval.py --save --out=research/results/locomo.json` is what re-measures this one.
 <!-- /claims:locomo -->
 
 Per category at R@5 for the shipped ranker (this table and the one above are generated from the
@@ -53,16 +49,14 @@ register; until 2026-09-11 both were typed by hand here and had drifted a whole 
 the morphology of 2026-09-06 - behind the figures the register carried):
 
 <!-- claims:locomo-categories -->
-| fused R@5, category 1 | 2 | 3 | 4 | 5 |
-|---|---|---|---|---|
-| withdrawn | withdrawn | 0.371 | withdrawn | withdrawn |
-
-<sub>**Withdrawn** cells: owner decision pending: a deterministic claim moved, and the move traces to the rebuilt LoCoMo embedder cache (an input to the stand, not the code); the auditor's counterfactual on the old cache reproduces the committed value of every one of these claims exactly</sub>
+> **Withdrawn 2026-09.** owner decision pending: a deterministic claim moved, and the move traces to the rebuilt LoCoMo embedder cache (an input to the stand, not the code); the auditor's counterfactual on the old cache reproduces the committed value of every one of these claims exactly; the value is the campaign's and the statement predates it - rewrite the statement before any restore
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/locomo_eval.py --save --out=research/results/locomo.json` is what re-measures this one.
 <!-- /claims:locomo-categories -->
 
 Category 3 is the hardest and is also where seven of the nine dropped questions sit.
 
-**The term-overlap floor scores 0.601 at R@5, not 0.94.** On the retrieval axis LoCoMo separates
+**The term-overlap floor scores 0.601 at R@5 (withdrawn with this page's other LoCoMo figures), not 0.94.** On the retrieval axis LoCoMo separates
 systems perfectly well: fusion is four points above the lexical floor and twenty-one above the bi-encoder,
 and the three methods are ordered the same way they are on LongMemEval. Whatever is saturated
 about LoCoMo, it is not this.
@@ -80,14 +74,9 @@ embedder, same scoring function, same evidence ids; the competitor rows are thei
 labelled as such (`research/EXTERNAL_RETRIEVAL.md` says what each is).
 
 <!-- claims:head-to-head-locomo -->
-| system | R@1 | R@5 | R@10 | MRR |
-|---|---|---|---|---|
-| **Nevertwice (calibrated fusion)** | withdrawn | withdrawn | withdrawn | withdrawn |
-| Mem0 | 0.270 | 0.573 | 0.662 | 0.396 |
-| LangMem | 0.189 | 0.441 | 0.549 | 0.295 |
-| A-MEM | 0.188 | withdrawn | 0.542 | withdrawn |
-
-<sub>**Withdrawn** cells: owner decision pending: a deterministic claim moved, and the move traces to the rebuilt LoCoMo embedder cache (an input to the stand, not the code); the auditor's counterfactual on the old cache reproduces the committed value of every one of these claims exactly</sub>
+> **Withdrawn 2026-09.** owner decision pending: a deterministic claim moved, and the move traces to the rebuilt LoCoMo embedder cache (an input to the stand, not the code); the auditor's counterfactual on the old cache reproduces the committed value of every one of these claims exactly; the value is the campaign's and the statement predates it - rewrite the statement before any restore
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/head_to_head.py --data=locomo --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_locomo.json` is what re-measures this one.
 <!-- /claims:head-to-head-locomo -->
 
 ## What running it found first

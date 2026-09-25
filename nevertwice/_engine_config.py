@@ -476,6 +476,14 @@ def local_routing_desc() -> str:
     return "all tracked projects use cloud"
 
 MAX_TRANSCRIPT_CHARS = env_int("NEVERTWICE_MAX_TRANSCRIPT", 12000)
+# B1 (campaign v2, 2026-09-25): the output cap every engine LLM call sends - Ollama `num_predict`,
+# OpenAI-compatible `max_tokens`, Gemini `maxOutputTokens`. Without one, a model that never closed
+# its JSON generated until the 120 s timeout. Derived from the input bound, not tuned: a faithful
+# extraction is shorter than its source, and at about three characters a token (code, the densest
+# tokenisation seen) the largest input is MAX_TRANSCRIPT_CHARS / 3 = 4,000 tokens, so 4,096 cannot cut
+# an answer that is no longer than what it summarises. The largest extraction answer in the committed
+# artifacts is 1,200 tokens. A capped answer is used when its JSON is whole and counted either way.
+EXTRACT_NUM_PREDICT = env_int("NEVERTWICE_EXTRACT_NUM_PREDICT", 4096)
 # Minimum transcript growth, in JSONL bytes, before a processed session is mined again.
 # The default is one byte: any growth. It was one extractor window for two days, which
 # lost the end of every session that finished within 12 kB of its PreCompact mark - the

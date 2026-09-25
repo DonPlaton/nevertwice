@@ -176,6 +176,8 @@ After setting `NEVERTWICE_EMBED_QUANT`, rebuild the index once the same way.
 | `NEVERTWICE_AGENT` | `claude-code` | Agent label stamped on captured notes. |
 | `NEVERTWICE_TRACK_ANY_PROJECT` | `1` | Track any git repo you work in, beyond the configured roots. |
 | `NEVERTWICE_MAX_TRANSCRIPT` | `12000` | Max transcript chars sent to extraction. |
+| `NEVERTWICE_EXTRACT_NUM_PREDICT` | `4096` | Output cap of every engine LLM call (Ollama `num_predict`, OpenAI-compatible `max_tokens`, Gemini `maxOutputTokens`). Derived from the input bound: 12,000 chars at about three chars a token is 4,000 tokens, and an extraction is shorter than its source. An answer that reaches the cap is used when its JSON is whole and counted `capped`; a cut one fails, counted `truncated`. |
+| `NEVERTWICE_EXTRACT_MAX_ATTEMPTS` | `3` | Tries for a session whose extraction fails on its content (cut by the cap, unparsable, empty, blocked) before it is parked: marked processed with a `parked` reason and counted. A backend that is down is never counted - that session waits. |
 | `NEVERTWICE_REMINE_MIN_GROWTH` | `1` | JSONL bytes a processed transcript must grow by before it is mined again. Any growth by default: a re-mine reads only the new region, and a floor of one extractor window lost the tail of every session that ended within it. |
 | `NEVERTWICE_MAX_SWEEP_BYTES` | `10485760` | Per-file cap for the `--dir` sweep / `watch` (DoS guard). |
 | `NEVERTWICE_SWEEP_DAYS` | `30` | Only sweep transcripts modified in the last N days. |

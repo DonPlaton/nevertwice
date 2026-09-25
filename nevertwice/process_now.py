@@ -13,6 +13,9 @@ Semantics:
   - Sessions whose cwd is not a tracked project (a configured root or a git
     repo, excluding system/agent-internal paths) are recorded as skipped -
     the same rule as the live hook (audit C2).
+  - `--retry-parked` first un-marks every session the engine PARKED after its
+    extraction failed NEVERTWICE_EXTRACT_MAX_ATTEMPTS times on its content (B1),
+    so this run tries them again - after a model change, say.
 """
 
 import sys
@@ -67,6 +70,15 @@ def _stat_or_none(p: Path):
 
 def _run(t0: float):
     db = _mh.load_processed()
+    parked = [sid for sid, e in db.items() if isinstance(e, dict) and e.get("parked")]
+    if parked and "--retry-parked" in sys.argv[1:]:
+        for sid in parked:
+            db.pop(sid, None)
+        _mh.save_processed(db)
+        print(f"Un-parked {len(parked)} session(s) - tried again below")
+    elif parked:
+        print(f"Parked sessions     : {len(parked)} (extraction kept failing on the content; "
+              f"--retry-parked tries them again)")
 
     # One stat() per transcript - cache mtime AND size in one pass.
     seen = []

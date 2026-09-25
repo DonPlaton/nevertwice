@@ -54,10 +54,21 @@ def check(name, cond, detail=""):
         FAILS += 1
 
 
-MANIFEST = json.loads((ROOT / "research" / "evidence_manifest.json").read_text(encoding="utf-8"))
+#: K53 (stage D, 2026-09-25): the pins below are campaign v2's queue, so they are read off the
+#: register AS campaign v2 left it - restore #2, commit 93e8052 - not off the working register. The
+#: first stage-D engine fix withdrew 422 claims (219 -> 641 pending); a pin that follows the working
+#: register has to be retyped after every engine commit, and a retyped count is exactly the
+#: hand-kept number this suite exists to replace. Campaign v3 gets its own split, pinned against its
+#: own frozen register when its plan exists. Full git history is required, as for check_freshness.
+V2_REGISTER = "93e8052"
+_show = subprocess.run(["git", "-C", str(ROOT), "show", f"{V2_REGISTER}:research/evidence_manifest.json"],
+                       capture_output=True, text=True, encoding="utf-8")
+MANIFEST = json.loads(_show.stdout) if _show.returncode == 0 else {"claims": []}
 _c = MANIFEST["claims"]
 claims = list(_c.values() if isinstance(_c, dict) else _c)
 pending = [c for c in claims if c.get("pending_remeasure")]
+check(f"campaign v2's register is readable at {V2_REGISTER} (needs full history)", bool(claims),
+      _show.stderr.strip()[:200])
 groups = T.groups_of(pending)
 
 #: Measured 2026-09-22 at `5dafc5b`. A number here moving is not a failure of the code: it means

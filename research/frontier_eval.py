@@ -682,9 +682,12 @@ CONTEXT_FNS = {
 
 def ollama_chat(model: str, prompt: str, timeout: int = 600) -> dict:
     """One chat call; returns {content, prompt_tokens, eval_tokens} or {} on failure."""
+    # B1: the engine's output cap - a reader that never closes its JSON stops there instead of at
+    # the timeout, and a capped answer is marked, never passed off as a whole one.
     body = json.dumps({"model": model, "stream": False, "format": "json",
                        "messages": [{"role": "user", "content": prompt}],
-                       "options": {"num_ctx": NUM_CTX, "temperature": 0}}).encode("utf-8")
+                       "options": {"num_ctx": NUM_CTX, "temperature": 0,
+                                   "num_predict": m.EXTRACT_NUM_PREDICT}}).encode("utf-8")
     req = urllib.request.Request(f"{OLLAMA}/api/chat", data=body, headers={"Content-Type": "application/json"})
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
@@ -692,9 +695,12 @@ def ollama_chat(model: str, prompt: str, timeout: int = 600) -> dict:
     except Exception as e:                                       # noqa: BLE001 - a stand reports
         print(f"  [ollama] {model}: {type(e).__name__}: {str(e)[:120]}", file=sys.stderr)
         return {}
+    capped = d.get("done_reason") == "length"
+    if capped:
+        print(f"  [ollama] {model}: answer reached the output cap ({m.EXTRACT_NUM_PREDICT} tokens)", file=sys.stderr)
     return {"content": ((d.get("message") or {}).get("content") or "").strip(),
             "prompt_tokens": int(d.get("prompt_eval_count") or 0),
-            "eval_tokens": int(d.get("eval_count") or 0)}
+            "eval_tokens": int(d.get("eval_count") or 0), "capped": capped}
 
 
 def _context_text(items: list[dict], k: int, budget: int) -> str:
@@ -751,8 +757,10 @@ def answer_stage(arms: list[str], data: list, pool: dict, reader: str, budget: i
                     continue
                 try:
                     ans = json.loads(m._strip_json_fence(r["content"])).get("answer", "")
+                    cut = False
                 except (ValueError, AttributeError):
                     ans = r["content"][:400]
+                    cut = bool(r.get("capped"))     # B1: the raw text of an answer the cap cut
                 stale = _find_akey(cache, reader, arm, k, qid)
                 if stale:                # the context moved; its answer is not this run's answer
                     del cache[stale]
@@ -760,7 +768,11 @@ def answer_stage(arms: list[str], data: list, pool: dict, reader: str, budget: i
                 # it was produced at - `summarise()` refuses a point whose answers/verdicts are
                 # not provably current with HEAD, the same idea F6 already applies to contexts.
                 cache[key] = {"answer": str(ans)[:600], "prompt_tokens": r["prompt_tokens"],
-                              "context_chars": len(context), "commit": git_head(), "utc": _utc_now_iso()}
+                              "context_chars": len(context), "commit": git_head(), "utc": _utc_now_iso(),
+                              # B1: an answer that reached the output cap is marked, and one whose
+                              # JSON the cap cut is marked as such - never passed off as whole;
+                              # summarise() counts both per point
+                              "capped": bool(r.get("capped")), "cut": cut}
                 changed += 1
                 n_done += 1
                 if changed % 20 == 0:
@@ -782,23 +794,32 @@ def answer_stage(arms: list[str], data: list, pool: dict, reader: str, budget: i
 # ── stage 3: the judge, and the artifact ──────────────────────────────────────
 
 def judge_one(judge: str, e: dict, pred: str) -> bool | None:
+    return judge_one_capped(judge, e, pred)[0]
+
+
+def judge_one_capped(judge: str, e: dict, pred: str) -> tuple:
+    """(verdict, whether the judge's answer reached the output cap) - B1: the flag goes into the
+    verdict's stamp, so summarise() can count capped verdicts per point."""
     r = ollama_chat(judge, qa.JUDGE_PROMPT.format(question=e["question"], gold=e["answer"], pred=pred))
     if not r:
-        return None
+        return None, False
+    capped = bool(r.get("capped"))
     try:
         v = json.loads(m._strip_json_fence(r["content"])).get("correct")
-        return bool(v) if v is not None else None
+        return (bool(v) if v is not None else None), capped
     except (ValueError, AttributeError):
         low = r["content"].lower()
-        return True if '"correct": true' in low or "correct: true" in low else (False if "false" in low else None)
+        return (True if '"correct": true' in low or "correct: true" in low
+                else (False if "false" in low else None)), capped
 
 
-def _stamp_verdict(verdicts: dict, vkey: str) -> None:
+def _stamp_verdict(verdicts: dict, vkey: str, capped: bool = False) -> None:
     """K30: verdicts are plain bools (`verdicts[vkey] = True/False`), so a stamp cannot live on
     the value itself without changing a shape every existing reader assumes - a parallel
     `_`-prefixed meta map instead (HANDOFF-PORTS gotcha 5: `_meta` never matches a `judge|...`
     prefix, so every existing consumer that filters or iterates verdicts skips it unchanged)."""
-    verdicts.setdefault("_meta", {})[vkey] = {"commit": git_head(), "utc": _utc_now_iso()}
+    verdicts.setdefault("_meta", {})[vkey] = {"commit": git_head(), "utc": _utc_now_iso(),
+                                              "capped": capped}
 
 
 def judge_stage(arms: list[str], data: list, reader: str, judge: str, judge2: str, agree_n: int) -> dict:
@@ -815,11 +836,11 @@ def judge_stage(arms: list[str], data: list, reader: str, judge: str, judge2: st
                 vkey = f"{judge}|{akey}"
                 if akey is None or vkey in verdicts:
                     continue
-                v = judge_one(judge, e, answers[akey]["answer"])
+                v, v_capped = judge_one_capped(judge, e, answers[akey]["answer"])
                 if v is None:
                     continue
                 verdicts[vkey] = v
-                _stamp_verdict(verdicts, vkey)
+                _stamp_verdict(verdicts, vkey, capped=v_capped)
                 changed += 1
                 if changed % 25 == 0:
                     _save(_cache_path("verdicts"), verdicts)
@@ -863,6 +884,7 @@ def summarise(arms: list[str], data: list, reader: str, judge: str, judge2: str,
     def point(arm: str, k: int) -> dict | None:
         vs, toks, missing = [], [], []
         stale_answers, stale_verdicts = [], []
+        capped = {"answers": 0, "answers_cut": 0, "verdicts": 0}      # B1, per point
         for qid in qids:
             akey = _find_akey(answers, reader, arm, k, qid)
             vkey = f"{judge}|{akey}" if akey is not None else None
@@ -876,6 +898,9 @@ def summarise(arms: list[str], data: list, reader: str, judge: str, judge2: str,
                 v_stamp = (verdicts.get("_meta") or {}).get(vkey)
                 if not _stamp_current(v_stamp, head, closure):
                     stale_verdicts.append(qid)
+                capped["answers"] += bool(answers[akey].get("capped"))
+                capped["answers_cut"] += bool(answers[akey].get("cut"))
+                capped["verdicts"] += bool((v_stamp or {}).get("capped"))
             else:
                 missing.append(qid)          # P0(f)/K23: no answer, or no verdict
         if not qids:
@@ -893,7 +918,8 @@ def summarise(arms: list[str], data: list, reader: str, judge: str, judge2: str,
                   "mean_prompt_tokens": round(sum(toks) / n, 1),
                   "median_prompt_tokens": toks_sorted[n // 2],
                   "answers_stamp": {"current": n - len(stale_answers), "stale": len(stale_answers)},
-                  "verdicts_stamp": {"current": n - len(stale_verdicts), "stale": len(stale_verdicts)}}
+                  "verdicts_stamp": {"current": n - len(stale_verdicts), "stale": len(stale_verdicts)},
+                  "capped": capped}
         else:
             pt = {"n": 0, "accuracy": None, "ci": wilson(0, 0)}
         # P0(f) item 2: n compared against the number of questions the stand asks for this

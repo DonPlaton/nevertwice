@@ -74,7 +74,8 @@ def ollama_rerank(query, items, model, stats, char_budget=CHAR_BUDGET, timeout=1
     prompt = build_prompt(query, items, char_budget)
     payload = json.dumps({"model": model, "prompt": prompt, "format": "json", "stream": False,
                           "think": False, "keep_alive": "10m",   # pin the model so a co-tenant doesn't evict it mid-run
-                          "options": {"temperature": 0.0, "num_ctx": 16384}}
+                          "options": {"temperature": 0.0, "num_ctx": 16384,
+                                      "num_predict": m.EXTRACT_NUM_PREDICT}}   # B1: output cap
                          ).encode("utf-8")
     stats["calls"] += 1
     stats["prompt_chars"] += len(prompt)
@@ -83,6 +84,8 @@ def ollama_rerank(query, items, model, stats, char_budget=CHAR_BUDGET, timeout=1
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
             data = json.loads(r.read())
+        if data.get("done_reason") == "length":                    # B1: counted, never silent
+            stats["capped"] = stats.get("capped", 0) + 1
         scores = parse_scores(_loads_tolerant(data.get("response")), len(items))
         if scores is None:
             stats["errors"] += 1
@@ -101,7 +104,8 @@ def deepseek_rerank(query, items, stats, char_budget=CHAR_BUDGET, timeout=120):
     prompt = build_prompt(query, items, char_budget)
     payload = json.dumps({"model": os.environ.get("DEEPSEEK_MODEL", "deepseek-chat"),
                           "messages": [{"role": "user", "content": prompt}], "temperature": 0.0,
-                          "response_format": {"type": "json_object"}}).encode("utf-8")
+                          "response_format": {"type": "json_object"},
+                          "max_tokens": m.EXTRACT_NUM_PREDICT}).encode("utf-8")   # B1: output cap
     stats["calls"] += 1
     stats["prompt_chars"] += len(prompt)
     url = os.environ.get("DEEPSEEK_URL", "https://api.deepseek.com/chat/completions")
