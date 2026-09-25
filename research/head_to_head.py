@@ -574,6 +574,7 @@ def run_mem0(data, pool, infer=None) -> dict:
         query_s, snap_ingest1, snap_query1)
     sc["ingested_items"] = len(items)
     sc["mode"] = f"infer={infer} ({'LLM ' + COMP_LLM if infer else 'retrieval-only, 1 memory/session'})"
+    sc["llm"] = COMP_LLM if infer else None          # (б) b-h: the tag as a field, compared exactly
     sc["sessions_shrunk"] = stats.get("shrunk", 0)
     sc["embedder"] = f"ollama {EMBED_MODEL}"
     # Mem0's search is hybrid by default once fastembed is present: dense cosine plus its
@@ -710,6 +711,7 @@ def run_langmem_full(data, pool) -> dict:
     sc["memories_written"] = n_mem
     sc["mode"] = (f"full pipeline: create_memory_store_manager with {COMP_LLM} "
                   f"(num_ctx {COMP_NUM_CTX}); store search over the extracted memories")
+    sc["llm"] = COMP_LLM
     sc["setup"] = "pip install langgraph langmem langchain-ollama (no server)"
     return sc
 
@@ -906,6 +908,7 @@ def run_amem_full(data, pool) -> dict:
     sc["silent_analyses"] = silent
     sc["mode"] = (f"full pipeline: agentic_memory with {COMP_LLM} via litellm (Ollama's own "
                   f"context default); search_agentic over its notes")
+    sc["llm"] = COMP_LLM
     sc["setup"] = "pip install a-mem (litellm, chromadb, sentence-transformers); Ollama LLM + embeddings"
     mark_store(store, len(items))                                  # K42: frontier reads this store back
     return sc

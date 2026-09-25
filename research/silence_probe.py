@@ -141,6 +141,7 @@ def main() -> int:
         # ONE artifact (research/results/silence_probe.json), so this IS the container every
         # registered claim's pointer (`by_kind[...]`, `silent_cases`) resolves through.
         pacer.attach(out, since=snap)
+        out["llm"] = prov.running_llm(out.get("llm"))   # (б): the model that ran, not the one meant
         prov.stamp(out)
         Path(args.out).write_text(json.dumps(out, indent=1, ensure_ascii=False), encoding="utf-8", newline="\n")
         print("wrote", args.out)

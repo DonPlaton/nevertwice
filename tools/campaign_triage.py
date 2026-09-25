@@ -164,7 +164,16 @@ MODEL_CALL = re.compile(r"/api/(generate|chat)(?![A-Za-z])")
 #: 16->17) - the register did not change, the transport module's own source did. Exact paths
 #: only, never a prefix or a pattern - `tests/_test_campaign_triage.py` pins both this set and
 #: the population it keeps out of the "sixteen tracked sources" listing.
-CLOSURE_EXCLUDED_FILES = frozenset({"research/_ollama_pacer.py"})
+#:
+#: (б) b-d, stage D (the auditor's C5): `sandbox_guard.py` names `/api/generate` in
+#: `CLOSED_OLLAMA` - the endpoint a TEST process and its children are pointed at, on a port
+#: nothing can connect to - so that the pacer and the suites' fakes still classify the call by
+#: its path. It names a CLOSED endpoint and never calls one, and it sits in the closure of nearly
+#: every claim: left unexcluded it flipped ~180 claims from A to D (group A 82 -> 4, D 112 -> 190,
+#: halflife rows 25/368 -> 25/154) with the register unchanged. Same shape as the pacer, same
+#: exact-path skip; the literal is not disguised, because a disguised literal would also hide a
+#: real generation URL written the same way.
+CLOSURE_EXCLUDED_FILES = frozenset({"research/_ollama_pacer.py", "sandbox_guard.py"})
 
 #: Fields that measure the machine. F1 re-measured one of these and it moved by a third between
 #: two sessions on one box, with no code change.

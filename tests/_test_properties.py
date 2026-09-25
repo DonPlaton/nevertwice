@@ -350,11 +350,64 @@ def test_concurrent_writers_never_leave_a_corrupt_file() -> None:
         for t in threads:
             t.join(timeout=60)
 
-        check("no writer raised", not errors, "; ".join(errors[:3]))
+        #: The promise is "a bounded wait, then a LOUD refusal", not "never refuses": eight threads
+        #: hammering one file on a loaded Windows runner (Defender, a slow disk) can hold a handle
+        #: past the two-second window, and CI 36152490314 did exactly that once in two attempts
+        #: (stage D). Asserting "no writer raised" asserted the scheduler's luck. What must never
+        #: happen is any OTHER failure, or a corrupt file; the window itself is tested below with a
+        #: clock the test controls.
+        other = [e for e in errors if not e.startswith("PermissionError")]
+        check("no writer failed in any way but the bounded replace refusal", not other, "; ".join(other[:3]))
         final = m._load_json_generations(path, "concurrent")
         check("the file is readable afterwards", isinstance(final, dict), str(final))
         check("and holds one writer's complete value, not a blend of two",
               isinstance(final, dict) and set(final) == {"writer", "i"}, str(final))
+
+
+def test_a_held_file_is_waited_for_then_refused_loudly() -> None:
+    """The replace window's promise, on a clock the test controls rather than the scheduler's."""
+    print("\n- a held file: a bounded wait, then a loud refusal -")
+    import store_state as ss                   # noqa: PLC0415
+    from unittest import mock                  # noqa: PLC0415
+    now = [0.0]
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_p, path = Path(tmp) / "x.tmp", Path(tmp) / "x.json"
+        tmp_p.write_text("{}", encoding="utf-8")
+        real_replace, calls = os.replace, []
+
+        def held_for(n):
+            def replace(a, b):
+                calls.append(now[0])
+                if len(calls) <= n:
+                    raise PermissionError(5, "Access is denied")
+                return real_replace(a, b)
+            return replace
+
+        with mock.patch.object(ss.os, "replace", held_for(3)), \
+                mock.patch.object(ss.time, "time", lambda: now[0]), \
+                mock.patch.object(ss.time, "sleep", lambda s: now.__setitem__(0, now[0] + s)):
+            try:
+                ss._replace_with_retry(tmp_p, path)
+                early = None
+            except PermissionError as e:           # a replace with no retry fails here - by name below
+                early = e
+        check("a handle released inside the window costs a wait, not a failure",
+              early is None and path.exists() and len(calls) == 4, f"{early!r}; calls {calls}")
+        calls.clear()
+        now[0] = 0.0
+        tmp_p.write_text("{}", encoding="utf-8")
+        raised = None
+        with mock.patch.object(ss.os, "replace", held_for(10 ** 6)), \
+                mock.patch.object(ss.time, "time", lambda: now[0]), \
+                mock.patch.object(ss.time, "sleep", lambda s: now.__setitem__(0, now[0] + s)):
+            try:
+                ss._replace_with_retry(tmp_p, path)
+            except PermissionError as e:
+                raised = e
+        check("a handle held past the window is refused LOUDLY (PermissionError), not waited on forever",
+              raised is not None, str(calls[-3:]))
+        check(f"and the wait is bounded by the window ({ss._REPLACE_RETRY_S} s)",
+              calls and calls[-1] <= ss._REPLACE_RETRY_S + 0.05, str(calls[-1] if calls else None))
 
 
 def test_a_symlinked_or_junctioned_store_is_refused() -> None:
@@ -554,6 +607,7 @@ def main() -> int:
                test_frontmatter_survives_arbitrary_text,
                test_truncated_state_recovers_from_the_previous_generation,
                test_concurrent_writers_never_leave_a_corrupt_file,
+               test_a_held_file_is_waited_for_then_refused_loudly,
                test_a_symlinked_or_junctioned_store_is_refused,
                test_jsonrpc_fuzzing_never_crashes_and_never_answers_a_notification,
                test_a_clock_jump_does_not_break_anything,

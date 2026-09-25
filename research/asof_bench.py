@@ -637,6 +637,7 @@ def main() -> int:
     # K25: any invalid arm invalidates the whole artifact; K29 adds a --with file's own root.
     _propagate_root_invalidity(out, with_file_root_invalid)
     if args.out:
+        out["llm"] = prov.running_llm(out.get("llm"))   # (б): the model that ran, not the one meant
         prov.stamp(out)
         Path(args.out).write_text(json.dumps(out, indent=1, ensure_ascii=False), encoding="utf-8", newline="\n")
         print("wrote", args.out)

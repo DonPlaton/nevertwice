@@ -40,11 +40,37 @@ def _research_distributions() -> frozenset[str]:
 RESEARCH_DISTS = _research_distributions()
 
 
+def tracked_files(root: Path = ROOT) -> list[str]:
+    out = subprocess.run(["git", "ls-files", "-z"], cwd=root, capture_output=True, check=False).stdout
+    return [f.decode("utf-8", "replace") for f in out.split(b"\0") if f]
+
+
+def tracked_state(root: Path = ROOT, files: list[str] | None = None) -> dict:
+    """(mtime_ns, size) of every tracked file - a rewrite with the SAME bytes changes mtime, and
+    that is a write too (stage D: the auditor's snapshot caught two suites doing exactly that)."""
+    state = {}
+    for rel in (files if files is not None else tracked_files(root)):
+        try:
+            st = (root / rel).stat()
+            state[rel] = (st.st_mtime_ns, st.st_size)
+        except OSError:
+            state[rel] = None
+    return state
+
+
+def touched(before: dict, after: dict) -> list[str]:
+    return sorted(rel for rel in set(before) | set(after) if before.get(rel) != after.get(rel))
+
+
+TRACKED = tracked_files()
+
+
 @pytest.mark.parametrize("suite", SUITES, ids=lambda path: str(path.relative_to(ROOT)))
 def test_standalone_suite(suite: Path) -> None:
     """Run one legacy suite in a clean interpreter and expose its output on failure."""
     env = os.environ.copy()
     env["PYTHONUTF8"] = "1"
+    before = tracked_state(ROOT, TRACKED)
     result = subprocess.run(
         [sys.executable, str(suite)],
         cwd=ROOT,
@@ -81,3 +107,9 @@ def test_standalone_suite(suite: Path) -> None:
         f"--- stdout ---\n{result.stdout}\n"
         f"--- stderr ---\n{result.stderr}"
     )
+    #: A suite writes into temporary directories, never into the repository: a tracked file it
+    #: rewrote - even byte for byte - is a test mutating the thing under test, left changed if the
+    #: run is killed, and visible to every process importing the package meanwhile.
+    changed = touched(before, tracked_state(ROOT, TRACKED))
+    assert not changed, (f"{suite.relative_to(ROOT)} wrote tracked file(s) in the repository: "
+                         f"{changed[:10]} - write to a temporary directory instead")

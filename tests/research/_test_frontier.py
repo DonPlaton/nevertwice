@@ -842,5 +842,33 @@ try:
 finally:
     fe.DATA = saved_DATA
 
+print("\n(б) b-k: the nevertwice_full ingest cache resumes only under the code, model and store that "
+      "built it, and anything else is set aside, never overwritten -")
+with tempfile.TemporaryDirectory(prefix="nevertwice_ingest_") as _td:
+    _cp = Path(_td) / "frontier_full_ingest_cache.json"
+    _key = {"_store": "S1", "_engine_commit": "c" * 40, "_extractor": "qwen2.5-7b-64k:latest", "_num_predict": 4096}
+    _fresh = fe.resume_ingest_cache(_cp, _key)
+    check("no cache: a fresh one carrying the key", _fresh == _key and not list(Path(_td).glob("*.stale-*")))
+    fe._save(_cp, {**_key, "sess-1": 2, "sess-2": 0})
+    check("the same store, commit, model and cap: resumed with its sessions",
+          fe.resume_ingest_cache(_cp, _key).get("sess-1") == 2)
+    for field, other in (("_engine_commit", "d" * 40), ("_extractor", "qwen2.5:3b"), ("_num_predict", None),
+                         ("_store", "S2")):
+        fe._save(_cp, {**_key, "sess-1": 2})
+        for p in Path(_td).glob("*.stale-*"):
+            p.unlink()
+        with contextlib.redirect_stdout(io.StringIO()):
+            _got = fe.resume_ingest_cache(_cp, {**_key, field: other})
+        _aside = list(Path(_td).glob("frontier_full_ingest_cache.stale-*.json"))
+        check(f"a cache built under another {field} is not resumed", "sess-1" not in _got, str(_got))
+        check(f"... and is set aside, not overwritten ({field})",
+              len(_aside) == 1 and json.loads(_aside[0].read_text(encoding="utf-8")).get("sess-1") == 2
+              and not _cp.exists(), str(_aside))
+    #: The stopped b8 run's leftover is exactly this shape: a store path and session counts, no code.
+    fe._save(_cp, {"_store": "S1", "sess-1": 2})
+    with contextlib.redirect_stdout(io.StringIO()):
+        _got = fe.resume_ingest_cache(_cp, _key)
+    check("the campaign-v2 leftover (keyed to its store only) is never resumed", "sess-1" not in _got, str(_got))
+
 print(f"\n{'ALL OK' if not FAILS else f'{FAILS} FAILED'}")
 sys.exit(1 if FAILS else 0)

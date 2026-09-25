@@ -61,6 +61,10 @@ ENGINE = "nevertwice"
 #: the table is checked against that line below rather than trusted.
 ADDS = {"guard_bench.py": ("--llm", "guards_llm")}
 
+#: An arm a stand writes on EVERY run whatever `--arms` says - a declared-blocked row. One line of
+#: one stand, checked against that line below: asof_bench records Mem0 as blocked (no as-of filter).
+ALWAYS = {"asof_bench.py": ("mem0", 'out["arms"]["mem0"] = {"blocked":')}
+
 
 def check(name, cond, detail=""):
     global FAILS
@@ -165,6 +169,15 @@ def producible(cmd) -> set[str] | None:
     flag, arm = ADDS.get(stand.name, (None, None))
     if flag and flag in t:
         out.add(arm)
+    if stand.name in ALWAYS:
+        out.add(ALWAYS[stand.name][0])
+    #: `--with` outside a pool (asof_bench, campaign v2): the files' non-engine arms are merged in,
+    #: exactly as in the pooled branch - and an unreadable file is not guessed.
+    for f in _files_after(t, "--with"):
+        arms = arms_on_disk(f)
+        if arms is None:
+            return None
+        out |= {a for a in arms if not a.startswith(ENGINE)}
     return out
 
 
@@ -207,6 +220,9 @@ print("\n- the naming rules are read from the stands, not remembered here -")
 for stand, (flag, arm) in ADDS.items():
     src = (ROOT / "research" / stand).read_text(encoding="utf-8", errors="replace")
     check(f"{stand} still adds {arm} for {flag}", f'"{arm}"] if args.{flag[2:]}' in src)
+for stand, (arm, line) in ALWAYS.items():
+    src = (ROOT / "research" / stand).read_text(encoding="utf-8", errors="replace")
+    check(f"{stand} still writes its {arm} row on every run", line in src)
 sup = defaults(ROOT / "research" / "supersession_bench.py")
 aso = defaults(ROOT / "research" / "asof_bench.py")
 check("the supersession stand's own defaults are what this suite uses",
@@ -319,6 +335,14 @@ if _sup_pool and arms_on_disk("research/results/supersession_v1.json") is not No
     check("and the same pool without its --with files cannot write the arms those files carried",
           arms_on_disk("research/results/supersession_v1.json") - producible(_no_with) >= {"mem0", "zep"},
           str(sorted(producible(_no_with))))
+_asof_cmd = next((c["command"] for c in claims if c.get("raw") == "research/results/asof_v1.json"
+                  and "--with" in (c.get("command") or "")), None)
+if _asof_cmd and arms_on_disk("research/results/asof_v1.json") is not None and producible(_asof_cmd) is not None:
+    check("a --with outside a pool is read from its files too: the as-of command makes every arm on disk",
+          not arms_on_disk("research/results/asof_v1.json") - producible(_asof_cmd),
+          f"{sorted(producible(_asof_cmd))} vs {sorted(arms_on_disk('research/results/asof_v1.json'))}")
+    check("and without its --with files it cannot make the zep arm they carried",
+          "zep" not in producible(_asof_cmd.split(" --with ")[0] + " --out x.json"))
 check("and a command with no --arms at all is read as the stand's default, not as 'anything'",
       producible(f"{sup_stand} --out x.json") == {"nevertwice", "naive"},
       str(sorted(producible(f"{sup_stand} --out x.json"))))

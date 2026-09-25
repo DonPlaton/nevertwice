@@ -198,8 +198,8 @@ check("a path that merely starts the same way is not an endpoint",
 print("")
 print("- K33 (item 9D, 2026-09-24): the pacer is shared transport, not a door or a caller - "
       "excluded from the closure walk the same reasoning already excludes nevertwice/ -")
-check("research/_ollama_pacer.py is excluded, by its exact path (never a prefix or pattern)",
-      T.CLOSURE_EXCLUDED_FILES == frozenset({"research/_ollama_pacer.py"}),
+check("research/_ollama_pacer.py and sandbox_guard.py are excluded, by exact path (never a prefix or pattern)",
+      T.CLOSURE_EXCLUDED_FILES == frozenset({"research/_ollama_pacer.py", "sandbox_guard.py"}),
       str(T.CLOSURE_EXCLUDED_FILES))
 _pacer_only_claim = {"pointer": "arms.nevertwice.both_correct_rate",
                      "produced_by": ["research/_ollama_pacer.py"],
@@ -221,6 +221,23 @@ finally:
     T.CLOSURE_EXCLUDED_FILES = _saved_excluded
 check("CLOSURE_EXCLUDED_FILES is restored to the real set",
       T.CLOSURE_EXCLUDED_FILES == _saved_excluded)
+
+#: (б) C5, stage D: sandbox_guard.py names the CLOSED `/api/generate` a test process is pointed at
+#: and never calls it. It is in nearly every claim's closure; unexcluded it moved A 82 -> 4.
+_guard_only_claim = {"pointer": "arms.nevertwice.both_correct_rate",
+                     "produced_by": ["sandbox_guard.py"],
+                     "command": "python research/asof_bench.py --save"}
+check("sandbox_guard.py really does name a generation endpoint (so the exclusion is doing work)",
+      bool(T.MODEL_CALL.search((T.ROOT / "sandbox_guard.py").read_text(encoding="utf-8"))))
+check("a claim whose closure holds sandbox_guard.py (and nothing that calls a model) stays deterministic",
+      T.triage(_guard_only_claim)[0] == "A", str(T.triage(_guard_only_claim)))
+T.CLOSURE_EXCLUDED_FILES = frozenset({"research/_ollama_pacer.py"})
+try:
+    check("mutation 'sandbox_guard exclusion removed': the SAME claim now WRONGLY reads noisy "
+          "(would FAIL the deterministic check above)",
+          T.triage(_guard_only_claim)[0] != "A", str(T.triage(_guard_only_claim)))
+finally:
+    T.CLOSURE_EXCLUDED_FILES = _saved_excluded
 
 
 print("")

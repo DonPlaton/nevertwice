@@ -461,16 +461,26 @@ with tempfile.TemporaryDirectory() as tmp5:
     #: both of its jobs. And the sort key is the repo-relative POSIX path, which is also the
     #: token, so the identity does not depend on the platform: `sorted(Path...)` compares a
     #: lowercased string with `\\` on Windows and the raw one with `/` on POSIX.
-    before = sb._code_sha()
-    api = ROOT / "nevertwice" / "api.py"
-    body = api.read_bytes()
-    try:
+    #: On a COPY of the package: this used to write the real nevertwice/api.py and put it back in
+    #: `finally` - a product source file edited by a test, left changed if the run was killed in
+    #: between, and visible to any process importing the package meanwhile (auditor, stage D).
+    import shutil  # noqa: PLC0415
+    with tempfile.TemporaryDirectory(prefix="nevertwice_codesha_") as _td:
+        croot = Path(_td)
+        shutil.copytree(ROOT / "nevertwice", croot / "nevertwice",
+                        ignore=shutil.ignore_patterns("__pycache__"))
+        (croot / "research").mkdir()
+        shutil.copyfile(ROOT / "research" / "supersession_bench.py", croot / "research" / "supersession_bench.py")
+        before = sb._code_sha(croot)
+        check("the hash of an identical copy equals the tree's own (it hashes content and "
+              "relative paths, not where the tree lives)", before == sb._code_sha())
+        api = croot / "nevertwice" / "api.py"
+        body = api.read_bytes()
         api.write_bytes(body + b"\n# touched by the suite\n")
         check("touching api.py moves the hash (the hand-written list would not have)",
-              sb._code_sha() != before)
-    finally:
+              sb._code_sha(croot) != before)
         api.write_bytes(body)
-    check("and restoring it moves the hash back", sb._code_sha() == before)
+        check("and restoring it moves the hash back", sb._code_sha(croot) == before)
     rels = sorted(q.relative_to(ROOT).as_posix()
                   for q in (ROOT / "nevertwice").rglob("*.py"))
     check("the walk reaches the subpackages, not just the top level",

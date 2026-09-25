@@ -39,3 +39,6 @@ for _stream in (sys.stdout, sys.stderr):
         pass
 
 _TMP_HOME = str(sandbox_guard.isolate(prefix="nevertwice_test_home_"))
+#: Tests only: no socket to the machine's Ollama, and every child pointed at a closed port
+#: (stage D, (б) hermeticity - a battery used to send the live server hundreds of requests).
+sandbox_guard.forbid_ollama()

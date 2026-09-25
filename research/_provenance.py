@@ -81,6 +81,36 @@ def _is_output_path(rel_path: str, excluded_raw: frozenset[str]) -> bool:
     return False
 
 
+def running_llm(configured: str | None = None) -> str | None:
+    """The extraction model the engine in THIS process actually runs, read off the object the
+    stands capture through - `nevertwice.api.m` - never off a copy of the name a stand MEANT to set.
+
+    (б), stage D: abstention_ab labelled its artifact from `sys.modules["memory_hook"]`, a second,
+    bare engine object imported before the stand pinned the model, which had inherited the owner's
+    model from `.secrets.env`; the extraction had run on `api.m` with another model. And four stands
+    wrote `sb.LLM`, the name they set in the environment - true only if the engine had not been
+    imported earlier in the process (the engine binds the name at import). `configured` is what is
+    returned when no engine was loaded at all (a stand that ran only competitor arms).
+
+    The same decision `generate_json` makes (the auditor's G4): with a cloud backend configured
+    and its key present, extraction goes to the cloud first, so the label is
+    `<ACTIVE_CLOUD>:<that backend's model>` - read off the backend's own module global
+    (`DEEPSEEK_MODEL`, ...), which is what `call_<backend>` sends, not the import-time
+    `_CLOUD_MODELS` table. Local Ollama is then only the fallback on a failed cloud call; how many
+    sessions fell back is `_LLM_STATS`, not this label (PREREG-V3 trap T28)."""
+    api = sys.modules.get("nevertwice.api")
+    engine = getattr(api, "m", None)
+    if engine is None:
+        return configured
+    cloud = getattr(engine, "ACTIVE_CLOUD", "none")
+    cloud_key = getattr(engine, "cloud_key", None)
+    if cloud and cloud != "none" and callable(cloud_key) and cloud_key():
+        model = getattr(engine, f"{cloud.upper()}_MODEL", None) \
+            or getattr(engine, "_CLOUD_MODELS", {}).get(cloud, "?")
+        return f"{cloud}:{model}"
+    return getattr(engine, "OLLAMA_MODEL", None) or configured
+
+
 def git_commit() -> str:
     """`HEAD`'s full SHA, or a `?(...)` placeholder naming the failure - never raises, because a
     stamp that crashes a run over a missing `git` binary is a worse failure than an honest '?'."""

@@ -45,6 +45,7 @@ import sandbox_guard  # noqa: E402 - must precede any nevertwice import
 sandbox_guard.isolate(prefix="nevertwice_abstention_")
 sys.path.insert(0, str(HERE))
 import _ollama_pacer as pacer  # noqa: E402 - R-v2-ports item 9A: pace/retry/count this stand's own traffic
+import _provenance as prov  # noqa: E402 - measured_at {commit, utc, dirty}; the running model
 
 DATASET = HERE / "data" / "supersession_v1.json"
 
@@ -435,7 +436,7 @@ def main() -> int:
         print("- retrieving once, then sweeping the policy offline")
         captured = capture_hits(cases, args.k)
         out["captured_cases"] = len(captured)
-        out["llm"] = getattr(sys.modules.get("memory_hook"), "OLLAMA_MODEL", os.environ.get("NEVERTWICE_MODEL"))
+        out["llm"] = prov.running_llm(os.environ.get("NEVERTWICE_MODEL"))   # (б): the running module
         out["embedder"] = os.environ.get("NEVERTWICE_EMBED_MODEL", "bge-m3")
         out["mean_hits_returned"] = round(
             sum(len(c["hits"]) for c in captured) / max(1, len(captured)), 2)
@@ -453,6 +454,9 @@ def main() -> int:
     # IS the container every registered claim's pointer resolves through.
     pacer.attach(out, since=snap)
     if args.out:
+        # (б): the one stamp every stand writes - {commit, utc with its zone, dirty} - replacing this
+        # stand's own zone-less local time; the restore gate had to date it by the file's mtime.
+        prov.stamp(out)
         Path(args.out).write_text(json.dumps(out, indent=1, ensure_ascii=False), encoding="utf-8", newline="\n")
         print("\nwrote", args.out)
     return 0

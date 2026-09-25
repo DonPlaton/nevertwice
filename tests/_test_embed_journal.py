@@ -281,6 +281,29 @@ fresh(2)
 check("a fresh {} - what a failed load hands back - still does not overwrite a non-empty cache",
       m.save_embed_cache({}) is False and len(m.load_embed_cache()) == 2)
 
+print("\n- the SQLite index follows the cache only when the cache change reached the disk -")
+#: The auditor's J14/J15 on 8ac500f: `if saved:` / `if index_follows:` replaced by `if True:` left
+#: every check green. A refused or failed save must leave the index row exactly where it was.
+d = fresh(3)
+synced = []
+with mock.patch.object(m, "save_embed_cache", lambda *a, **k: False), \
+        mock.patch.object(m, "sync_scale_index", lambda **k: synced.append(k)), \
+        mock.patch.object(m, "embed_text", lambda *a, **k: [0.5] * 8), \
+        mock.patch.object(m, "embed_cache_usable", lambda: True):
+    m.update_embeddings([("2026-09-25-b3-mistake-new-one", "mistake", "b3", "t", "d", "")])
+check("update_embeddings: a save that did not land leaves the index untouched", synced == [], str(synced))
+note = m.VAULT / "Mistakes" / "2026-09-25-b3-mistake-retired-one.md"
+note.parent.mkdir(parents=True, exist_ok=True)
+note.write_text("# retired\n", encoding="utf-8")
+cache = m.load_embed_cache()
+cache["2026-09-25-b3-mistake-retired-one"] = rec(1)
+m.save_embed_cache(cache, put={"2026-09-25-b3-mistake-retired-one": cache["2026-09-25-b3-mistake-retired-one"]})
+synced.clear()
+with mock.patch.object(m, "save_embed_cache", lambda *a, **k: False), \
+        mock.patch.object(m, "sync_scale_index", lambda **k: synced.append(k)):
+    m.supersede_note(note, "2026-09-25-b3-mistake-newer")
+check("supersede_note: a vector that could not be removed keeps its index row", synced == [], str(synced))
+
 print("\n- the journal is folded, and a failed save never leaves memory ahead of the disk -")
 fresh(3)                                        # a record is more than a tenth of this snapshot
 with mock.patch.object(m, "EMBED_JOURNAL_FOLD_MIN", 1):

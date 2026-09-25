@@ -50,6 +50,7 @@ __all__ = [
     "SandboxEscape", "isolate", "allow_live", "verify", "store", "mode", "live_reason",
     "LOCATION_VARS", "STORE_ROOT_VARS", "SIDE_CHANNEL_VARS", "PROJECT_MODULES",
     "TRANSCRIPT_ROOT_VARS", "BRIDGED_PREFIXES", "under_every_prefix",
+    "forbid_ollama", "CLOSED_OLLAMA", "OLLAMA_PORT",
 ]
 
 ROOT = Path(__file__).resolve().parent
@@ -206,6 +207,112 @@ def _import_config():
         return config
     except Exception:                                  # pragma: no cover - no package
         return None
+
+
+# -- the machine's Ollama, which no test reaches ------------------------
+
+#: Where a test process and every child it starts send model traffic: a closed port. Every name
+#: the engine, `doctor` and the stands read for an endpoint is here - the engine's three URLs,
+#: OLLAMA_HOST (doctor, the ollama client), OLLAMA_BASE_URL (head_to_head, supersession_bench,
+#: frontier_eval, gen_code_sessions), OLLAMA_OPENAI_BASE (the graphiti arm's OpenAI-compatible
+#: base) and OLLAMA_API_BASE (litellm) - so a child that never imports this module (an example, a
+#: stand run as a command) inherits a refused endpoint instead of the live one. Only the ADDRESS is
+#: closed; the paths stay Ollama's own, because the pacer and the tests' fakes classify a call by
+#: its path (`/api/embed` is an embed) - a made-up path turned every failed embed into an
+#: unclassified call and silently disarmed P0(a)'s invalidity in five stand suites.
+#:
+#: NOT covered by the environment, and said so rather than implied: a child that hardcodes the
+#: port - research/invariants_lab/measure_*.py, research/embed_universal/serving_check.py,
+#: gen_corpus.py and gen_pairs.py write `127.0.0.1:11434` / `localhost:11434` literally. A test
+#: that started one of those as a child would reach the live server; for children the proof is
+#: the server-log witness over the battery window, not this table.
+#:
+#: Port 0, not a closed port such as 9: on Windows a refused loopback connect costs about two
+#: seconds (the stack retries the SYN after the reset), measured 2037 ms per attempt here, and a
+#: battery pays it on every retry of every call; port 0 is not connectable and fails at once
+#: (WSAEADDRNOTAVAIL, 2 ms; ECONNREFUSED on Linux). Loopback, so no system proxy is consulted -
+#: `0.0.0.0` was measured going out through the machine's HTTP proxy instead.
+CLOSED_OLLAMA = {
+    "OLLAMA_URL": "http://127.0.0.1:0/api/generate",
+    "OLLAMA_TAGS_URL": "http://127.0.0.1:0/api/tags",
+    "OLLAMA_EMBED_URL": "http://127.0.0.1:0/api/embed",
+    "OLLAMA_HOST": "http://127.0.0.1:0",
+    "OLLAMA_BASE_URL": "http://127.0.0.1:0",
+    "OLLAMA_OPENAI_BASE": "http://127.0.0.1:0/v1",
+    "OLLAMA_API_BASE": "http://127.0.0.1:0",
+}
+#: The live server's port on this machine and on any machine that runs Ollama by default.
+OLLAMA_PORT = 11434
+_LOOPBACK = {"127.0.0.1", "localhost", "::1", "0.0.0.0", ""}
+_FORBIDDEN = False
+
+
+def _ollama_target(address) -> bool:
+    try:
+        host, port = address[0], address[1]
+    except (TypeError, IndexError):
+        return False
+    return port == OLLAMA_PORT and str(host).lower() in _LOOPBACK
+
+
+def forbid_ollama() -> None:
+    """Refuse every connection a TEST process opens to the machine's Ollama, and point every child
+    at a closed port. Called from `tests/_env_guard.py` only - never from `isolate()`: benches
+    call `isolate()` and do talk to a model on purpose.
+
+    Why (stage D, the auditor's witness in server.log): a battery sent 277 POST /api/embed and 54
+    GET /api/tags to the live server - fixtures that forgot to stub the embedder, `doctor`
+    probes, examples run as children. A test that silently reaches a real model measures the
+    machine, not the code, and it can load a model onto the GPU in the middle of a campaign step.
+
+    Two seams, because there are two ways a Python process opens a TCP connection:
+    - `socket.socket.connect` / `connect_ex`: every blocking client (urllib, requests, httpx sync,
+      `socket.create_connection`) and asyncio's selector loop, which calls `sock.connect` itself;
+    - `asyncio.windows_events.IocpProactor.connect`: the default loop on Windows is the proactor,
+      which connects through `_overlapped.ConnectEx` and never calls `socket.socket.connect` - the
+      auditor's probe connected `asyncio.open_connection` and `httpx.AsyncClient` straight through
+      the first seam alone (graphiti's AsyncOpenAI, ollama's AsyncClient, litellm's acompletion).
+    A fake server a test starts on a random port is untouched by both."""
+    global _FORBIDDEN
+    for key, value in CLOSED_OLLAMA.items():
+        os.environ[key] = value
+    if _FORBIDDEN:
+        return
+    import errno                                    # noqa: PLC0415
+    import socket                                   # noqa: PLC0415
+
+    real_connect, real_connect_ex = socket.socket.connect, socket.socket.connect_ex
+
+    def _refuse(address):
+        raise ConnectionRefusedError(
+            errno.ECONNREFUSED,
+            f"sandbox_guard: a test may not reach the machine's Ollama ({address[0]}:{address[1]})")
+
+    def connect(self, address):
+        if _ollama_target(address):
+            _refuse(address)
+        return real_connect(self, address)
+
+    def connect_ex(self, address):
+        if _ollama_target(address):
+            return errno.ECONNREFUSED               # what a closed port answers on this platform
+        return real_connect_ex(self, address)
+
+    socket.socket.connect = connect
+    socket.socket.connect_ex = connect_ex
+
+    if sys.platform == "win32":
+        from asyncio import windows_events         # noqa: PLC0415
+
+        real_iocp_connect = windows_events.IocpProactor.connect
+
+        def iocp_connect(self, conn, address):
+            if _ollama_target(address):
+                _refuse(address)
+            return real_iocp_connect(self, conn, address)
+
+        windows_events.IocpProactor.connect = iocp_connect
+    _FORBIDDEN = True
 
 
 # -- the two declarations ----------------------------------------------

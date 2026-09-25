@@ -23,6 +23,7 @@ module keeps the properties it was split out for, so this suite checks them dire
 from __future__ import annotations
 
 import json
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -165,15 +166,28 @@ def test_the_closure_is_the_module_alone() -> None:
 
 
 def test_the_documented_command_leaves_the_tree_clean() -> None:
-    """Reproduction that dirties `git status` is reproduction a reviewer has to take on faith."""
+    """Reproduction that dirties `git status` is reproduction a reviewer has to take on faith.
+
+    Run on a COPY of the tool and its four inputs in a temporary tree, not on the repository:
+    the suite used to run the command in place and so rewrote the tracked artifact (same bytes,
+    new mtime) on every battery - a test writing a tracked file, which the battery now refuses
+    (stage D, the auditor's snapshot). The tool locates everything from its own file, so the copy
+    reproduces exactly what `python tools/draw_divergence.py` does at the root."""
     print("\n- running the documented command changes nothing -")
     before = ARTIFACT.read_bytes()
-    run = subprocess.run([sys.executable, "tools/draw_divergence.py"], cwd=str(ROOT),
-                         capture_output=True, text=True, encoding="utf-8", errors="replace",
-                         timeout=300)
-    after = ARTIFACT.read_bytes()
-    if after != before:
-        ARTIFACT.write_bytes(before)          # never leave the tree dirty on a red run
+    with tempfile.TemporaryDirectory(prefix="nevertwice_dd_") as td:
+        tmp = Path(td)
+        (tmp / "tools").mkdir()
+        shutil.copyfile(ROOT / "tools" / "draw_divergence.py", tmp / "tools" / "draw_divergence.py")
+        (tmp / "research" / "results").mkdir(parents=True)
+        for key in dd.DIVERGENCE_SET:
+            shutil.copyfile(ROOT / "research" / "results" / f"{key}.json",
+                            tmp / "research" / "results" / f"{key}.json")
+        run = subprocess.run([sys.executable, "tools/draw_divergence.py"], cwd=str(tmp),
+                             capture_output=True, text=True, encoding="utf-8", errors="replace",
+                             timeout=300)
+        made = tmp / "research" / "results" / "draw_divergence.json"
+        after = made.read_bytes() if made.exists() else b""
     check("the command succeeds", run.returncode == 0, (run.stderr or "").strip()[-200:])
     check("and it rewrites the artifact byte for byte", after == before,
           "the bytes changed although the numbers did not - line endings, key order or spacing")

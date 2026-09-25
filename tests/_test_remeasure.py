@@ -70,10 +70,12 @@ man = {"claims": [{
     "cited_in": [], "cited_in_pending": ["README.md", "docs/BENCHMARKS.md"],
     "stale": "the engine moved; the re-run needs the GPU", "withdrawn_on": "2026-09-05",
     "pending_remeasure": True, "produced_by": ["sandbox_guard.py"],     # tracked and clean
-    "commit": "0" * 40, "raw": raw_rel, "pointer": "methods.hybrid.recall@5",
+    "commit": "0" * 40, "raw": raw_rel, "pointer": "methods.hybrid.recall@5", "n_pointer": "questions",
     "ci": {"method": "wilson", "level": 0.95, "low": 0.7648, "high": 0.8346}}]}
 try:
-    raw.write_text(json.dumps({"methods": {"hybrid": {"recall@5": 0.834}}}), encoding="utf-8")
+    #: longmem_results.json's own shape: the run's size is `questions` at the root (b-j: the Wilson
+    #: interval is recomputed from the artifact's count, so the fixture registers n_pointer).
+    raw.write_text(json.dumps({"questions": 500, "methods": {"hybrid": {"recall@5": 0.834}}}), encoding="utf-8")
     # an artifact older than the code commit is the OLD measurement wearing a new hash
     old_time = int(subprocess.run(["git", "log", "-1", "--format=%ct", HEAD], cwd=ROOT,
                                   capture_output=True, text=True, check=True).stdout.strip()) - 3600
@@ -125,7 +127,7 @@ try:
                     "valid": False, "invalid_reason": "bypassed the pacer via requests: 1 request(s)"},
         "nostamp": {"recall@5": 0.834},
     }
-    raw.write_text(json.dumps({"methods": _rows}), encoding="utf-8")
+    raw.write_text(json.dumps({"questions": 500, "methods": _rows}), encoding="utf-8")
     os.utime(raw, None)
 
     def _one(row):
@@ -189,7 +191,7 @@ try:
         #: the auditor's MK15c: a commit git has never seen cannot vouch for anything
         "ghost":    {"measured_at": {"commit": "a" * 40, "utc": _utc(_head_t + 60)}, "recall@5": 0.834},
     }
-    raw.write_text(json.dumps({"methods": _k15}), encoding="utf-8")
+    raw.write_text(json.dumps({"questions": 500, "methods": _k15}), encoding="utf-8")
     os.utime(raw, None)
     restored, left, _ = _one("oldcode")
     check("a fresh-dated row measured on code whose closure differs from HEAD is refused",
@@ -213,7 +215,7 @@ try:
         rm._closure_moved = _saved_cm
 
     #: The call site, not only the function: with the guard disabled the same old row comes back.
-    raw.write_text(json.dumps({"methods": _rows}), encoding="utf-8")
+    raw.write_text(json.dumps({"questions": 500, "methods": _rows}), encoding="utf-8")
     os.utime(raw, None)
     _saved = rm.row_refusal
     try:
@@ -225,6 +227,54 @@ try:
         rm.row_refusal = _saved
 finally:
     raw.unlink(missing_ok=True)
+
+
+print("\n- b-j: a Wilson interval is recomputed from the RUN's n, read from the artifact -")
+_nraw_rel = "tests/_tmp_remeasure_n.json"
+_nraw = ROOT / _nraw_rel
+
+
+def _restore_n(artifact: dict, **claim_extra):
+    _nraw.write_text(json.dumps(artifact), encoding="utf-8")
+    os.utime(_nraw, None)
+    m = copy.deepcopy(man)
+    m["claims"][0].update({"raw": _nraw_rel, **claim_extra})
+    for k in [k for k, v in claim_extra.items() if v is None]:
+        m["claims"][0].pop(k)
+    restored, left, review = rm.restore(m, head=HEAD)
+    return m["claims"][0], restored, left, review
+
+
+try:
+    c, restored, left, review = _restore_n({"questions": 480, "methods": {"hybrid": {"recall@5": 0.834}}})
+    check("the run counted 480, the register said 500: n becomes 480", restored == ["r.rate"] and c["n"] == 480,
+          str((left, c.get("n"))))
+    check("and the interval is Wilson at n=480, not at the withdrawn run's 500",
+          (c["ci"]["low"], c["ci"]["high"]) == rm.wilson(0.834, 480) != rm.wilson(0.834, 500), str(c["ci"]))
+    check("the change of n is put up for review (a sentence may quote the sample size)",
+          any("n 500 -> 480" in x for x in review), str(review))
+    c, restored, left, review = _restore_n({"methods": {"hybrid": {"recall@5": 0.834, "n": 470}}}, n_pointer=None)
+    check("with no n_pointer, the nearest n on the value's path is the count", restored == ["r.rate"]
+          and c["n"] == 470, str((left, c.get("n"))))
+    c, restored, left, review = _restore_n({"methods": {"hybrid": {"recall@5": 0.834}}}, n_pointer=None)
+    check("an artifact that records no count cannot vouch for an interval: refused, naming n_pointer",
+          restored == [] and any("n_pointer" in x and "n=500" in x for x in left), str(left))
+    c, restored, left, review = _restore_n({"questions": "500", "methods": {"hybrid": {"recall@5": 0.834}}})
+    check("an n_pointer at something that is not a positive integer is refused",
+          restored == [] and any("not a positive integer" in x for x in left), str(left))
+    c, restored, left, review = _restore_n({"methods": {"hybrid": {"recall@5": 0.834}}}, n_pointer=None, ci=None)
+    check("control: a claim with no declared interval restores without any n", restored == ["r.rate"], str(left))
+    # mutation: artifact_n answers with the register's n - the defect b-j closes
+    _saved_an = rm.artifact_n
+    rm.artifact_n = lambda data, claim: (claim.get("n"), "register")
+    try:
+        c, restored, left, review = _restore_n({"questions": 480, "methods": {"hybrid": {"recall@5": 0.834}}})
+        check("mutation 'n from the register': the interval comes back at n=500 (would FAIL the n=480 checks)",
+              c["n"] == 500 and (c["ci"]["low"], c["ci"]["high"]) == rm.wilson(0.834, 500), str(c.get("n")))
+    finally:
+        rm.artifact_n = _saved_an
+finally:
+    _nraw.unlink(missing_ok=True)
 
 
 print("\n- K28 (the auditor's finding, 2026-09-24): a TIMING claim needs the pacer in "
@@ -255,18 +305,27 @@ _kj_raw = "research/results/k8_judge_eval.json"
 _lat_raw = "research/latency_bench.json"
 _srv_raw = "research/embed_universal/heldout/serving_check.json"
 
+#: Each K28 transport fixture below carries an idle record, so the refusal it expects can only be
+#: the TRANSPORT half's; the idle half has its own fixtures (b-g).
 _gb_pace = {"arms": {"guards_deterministic": {"ms_per_call": 12.3}},
-           "ollama_transport": {"mode": "pace", "calls": 40}}
+           "ollama_transport": {"mode": "pace", "calls": 40}, "machine_idle": {"idle": True}}
 _r = rm.row_refusal(_gb_pace, "arms.guards_deterministic.ms_per_call", 0, raw=_gb_raw)
 check("K28: a PACE-mode artifact refuses a timing claim (guard_bench's real pointer)",
       _r is not None and "observe" in _r, str(_r))
 
 _gb_observe = {"arms": {"guards_deterministic": {"ms_per_call": 12.3}},
-              "ollama_transport": {"mode": "observe", "calls": 40}}
+              "ollama_transport": {"mode": "observe", "calls": 40}, "machine_idle": {"idle": True}}
 _r = rm.row_refusal(_gb_observe, "arms.guards_deterministic.ms_per_call", 0, raw=_gb_raw)
-check("K28: an OBSERVE-mode artifact is allowed (same real pointer)", _r is None, str(_r))
+check("K28: an OBSERVE-mode artifact on an idle machine is allowed (same real pointer)", _r is None, str(_r))
+_gb_observe_busy = {"arms": {"guards_deterministic": {"ms_per_call": 12.3}},
+                   "ollama_transport": {"mode": "observe", "calls": 40}}
+_r = rm.row_refusal(_gb_observe_busy, "arms.guards_deterministic.ms_per_call", 0, raw=_gb_raw)
+check("P5 idle half: observe mode WITHOUT a machine_idle record is refused", _r is not None and "idle" in _r, str(_r))
+_r = rm.row_refusal({**_gb_observe_busy, "machine_idle": {"idle": False, "why": "gpu 97%"}},
+                    "arms.guards_deterministic.ms_per_call", 0, raw=_gb_raw)
+check("P5 idle half: a record that says the machine was NOT idle is refused too", _r is not None and "idle" in _r, str(_r))
 
-_kj_no_transport = {"pooled": {"seconds_per_pair": 0.8}}
+_kj_no_transport = {"pooled": {"seconds_per_pair": 0.8}, "machine_idle": {"idle": True}}
 _r = rm.row_refusal(_kj_no_transport, "pooled.seconds_per_pair", 0, raw=_kj_raw)
 check("K28: no ollama_transport at all refuses a timing claim (k8_judge_eval's real "
       "pointer, NOT a named exemption)", _r is not None and "no ollama_transport" in _r,
@@ -274,15 +333,37 @@ check("K28: no ollama_transport at all refuses a timing claim (k8_judge_eval's r
 
 #: the two named exemptions (latency_bench: stdlib-only, no network at all; serving_check: a
 #: failed call RAISES rather than silently falling back) - no transport, still restorable.
-_lat_data = {"measurements": {"cold_import": {"ms": 12.0}}}
+_lat_data = {"measurements": {"cold_import": {"ms": 12.0}}, "machine_idle": {"idle": True}}
 _r = rm.row_refusal(_lat_data, "measurements.cold_import.ms", 0, raw=_lat_raw)
 check("K28: latency_bench's real pointer is a NAMED exemption - restores with no "
-      "ollama_transport record", _r is None, str(_r))
+      "ollama_transport record (idle machine)", _r is None, str(_r))
 
-_srv_data = {"seconds": {"served": 1.2}}
+_srv_data = {"seconds": {"served": 1.2}, "machine_idle": {"idle": True}}
 _r = rm.row_refusal(_srv_data, "seconds.served", 0, raw=_srv_raw)
 check("K28: serving_check's real pointer is a NAMED exemption - restores with no "
-      "ollama_transport record", _r is None, str(_r))
+      "ollama_transport record (idle machine)", _r is None, str(_r))
+
+#: (б) b-g, the regression: `embed.serving.latency_ratio` - serving_check, a named TRANSPORT
+#: exemption - timed in the campaign beside other GPU work. The exemption answered "can this stand
+#: hide a silent fallback?", so restore let it through; only a hand-written rule kept it out.
+_r = rm.row_refusal({"seconds": {"served": 29.78, "texts": 2412}}, "seconds.served", 0, raw=_srv_raw,
+                    unit="ms per text")
+check("b-g: latency_ratio's shape - an EXEMPT raw with no machine_idle record - is refused",
+      _r is not None and "idle" in _r, str(_r))
+_r = rm.row_refusal({"measurements": {"cold_import": {"ms": 12.0}}}, "measurements.cold_import.ms", 0,
+                    raw=_lat_raw)
+check("b-g: the same for latency_bench, the other exemption", _r is not None and "idle" in _r, str(_r))
+
+#: the class, not the suffix table: a timing field a new stand names freely, with a time unit
+check("is_timing_claim: a pointer outside the suffix table with unit 'seconds' is a timing claim",
+      rm.is_timing_claim("arms.x.wall_total", "seconds") and not rm.is_timing_pointer("arms.x.wall_total"))
+check("is_timing_claim: the same pointer with a count unit is not",
+      not rm.is_timing_claim("arms.x.wall_total", "sessions") and not rm.is_timing_claim("x.recall", "fraction"))
+check("is_timing_claim: no pointer, no timing claim (restored by hand, never reaches row_refusal)",
+      not rm.is_timing_claim("", "milliseconds"))
+_r = rm.row_refusal({"arms": {"x": {"wall_total": 3.1}}, "ollama_transport": {"mode": "pace", "calls": 3}},
+                    "arms.x.wall_total", 0, raw=_gb_raw, unit="seconds")
+check("row_refusal: a timing claim recognised by its UNIT gets the K28 gate", _r is not None, str(_r))
 
 #: a non-timing pointer from the SAME artifact is untouched by any of this, even with no
 #: transport recorded anywhere - K28 must not become a blanket "every artifact needs a
@@ -296,6 +377,7 @@ check("K28: a non-timing pointer is unaffected - no ollama_transport requirement
 #: - a container ANYWHERE on the pointer's path with mode == 'observe' is enough, the root's
 #: own stale/unrelated record must not shadow the specific arm's real one.
 _h2h_nested_observe = {"ollama_transport": {"mode": "pace", "calls": 5},   # root: stale/unrelated
+                      "machine_idle": {"idle": True},
                       "arms": {"nevertwice": {"ms_per_call": 4.1,
                                               "ollama_transport": {"mode": "observe",
                                                                    "calls": 12}}}}
@@ -319,7 +401,8 @@ try:
         "pointer": "arms.guards_deterministic.ms_per_call"}]}
 
     _traw.write_text(json.dumps({"arms": {"guards_deterministic": {"ms_per_call": 12.3}},
-                                 "ollama_transport": {"mode": "pace", "calls": 40}}),
+                                 "ollama_transport": {"mode": "pace", "calls": 40},
+                                 "machine_idle": {"idle": True}}),
                      encoding="utf-8")
     os.utime(_traw, None)
     _m1 = copy.deepcopy(_tman)
@@ -328,7 +411,8 @@ try:
           "helper)", _restored == [] and any("observe" in x for x in _left), str(_left))
 
     _traw.write_text(json.dumps({"arms": {"guards_deterministic": {"ms_per_call": 11.9}},
-                                 "ollama_transport": {"mode": "observe", "calls": 40}}),
+                                 "ollama_transport": {"mode": "observe", "calls": 40},
+                                 "machine_idle": {"idle": True}}),
                      encoding="utf-8")
     os.utime(_traw, None)
     _m2 = copy.deepcopy(_tman)
@@ -343,22 +427,25 @@ try:
     # looked up by name from row_refusal's own module globals at call time, so patching the
     # module attribute reaches the check INSIDE row_refusal, not a copy of it).
     _traw.write_text(json.dumps({"arms": {"guards_deterministic": {"ms_per_call": 12.3}},
-                                 "ollama_transport": {"mode": "pace", "calls": 40}}),
+                                 "ollama_transport": {"mode": "pace", "calls": 40},
+                                 "machine_idle": {"idle": True}}),
                      encoding="utf-8")
     os.utime(_traw, None)
-    _saved_itp = rm.is_timing_pointer
-    rm.is_timing_pointer = lambda p: False
+    #: The gate is `is_timing_claim` since b-g (pointer OR unit); stubbing only the pointer rule
+    #: would leave this claim's unit "ms" to catch it - the mutation removes the whole gate.
+    _saved_itp = rm.is_timing_claim
+    rm.is_timing_claim = lambda p, u=None: False
     try:
         _m3 = copy.deepcopy(_tman)
         _restored, _left, _ = rm.restore(_m3, head=HEAD)
-        check("mutation 'K28 check removed (is_timing_pointer stubbed False)': the SAME "
+        check("mutation 'K28 check removed (is_timing_claim stubbed False)': the SAME "
               "pace-mode timing artifact now WRONGLY restores (would FAIL the pace-mode "
               "refusal check above)",
               _restored == ["guards.guards_deterministic.ms_per_call"], str(_left))
     finally:
-        rm.is_timing_pointer = _saved_itp
-    check("is_timing_pointer is restored to the real function",
-          rm.is_timing_pointer is _saved_itp)
+        rm.is_timing_claim = _saved_itp
+    check("is_timing_claim is restored to the real function",
+          rm.is_timing_claim is _saved_itp)
 finally:
     _traw.unlink(missing_ok=True)
 
@@ -375,7 +462,8 @@ print("\n- K28 follow-up (1) (the auditor's audit of 5acb609): restore() itself 
 _exempt_raw_rel = "tests/_tmp_remeasure_exempt.json"
 _exempt_raw = ROOT / _exempt_raw_rel
 try:
-    _exempt_raw.write_text(json.dumps({"measurements": {"cold_import": {"ms": 12.0}}}),
+    _exempt_raw.write_text(json.dumps({"measurements": {"cold_import": {"ms": 12.0}},
+                                       "machine_idle": {"idle": True}}),
                            encoding="utf-8")
     os.utime(_exempt_raw, None)
     _eman = {"claims": [{
@@ -400,9 +488,9 @@ try:
         _saved_row_refusal2 = rm.row_refusal
 
         def _row_refusal_dropping_raw(data, pointer, code_time, head=None, produced_by=None,
-                                      raw=None):
+                                      raw=None, unit=None):
             return _saved_row_refusal2(data, pointer, code_time, head=head,
-                                       produced_by=produced_by)          # raw=raw DROPPED (R4)
+                                       produced_by=produced_by, unit=unit)   # raw=raw DROPPED (R4)
         rm.row_refusal = _row_refusal_dropping_raw
         try:
             _e2 = copy.deepcopy(_eman)
@@ -418,6 +506,51 @@ try:
         rm._TIMING_TRANSPORT_EXEMPT_RAW = _saved_exempt
 finally:
     _exempt_raw.unlink(missing_ok=True)
+
+
+print("\n- b-g through restore() itself: the unit reaches row_refusal, the idle half has no exemption -")
+_ug_rel = "tests/_tmp_remeasure_unit_timing.json"
+_ug = ROOT / _ug_rel
+try:
+    _ug.write_text(json.dumps({"arms": {"x": {"wall_total": 3.1}},
+                               "ollama_transport": {"mode": "pace", "calls": 3}}), encoding="utf-8")
+    os.utime(_ug, None)
+    _uman = {"claims": [{
+        "id": "bg.unit_timing", "value": 3.1, "printed": ["3.1 s"], "unit": "seconds",
+        "statement": "the arm takes 3.1 s", "cited_in": [], "cited_in_pending": ["docs/BENCHMARKS.md"],
+        "stale": "needs the idle window", "withdrawn_on": "2026-09-23", "pending_remeasure": True,
+        "produced_by": ["sandbox_guard.py"], "commit": "0" * 40, "raw": _ug_rel,
+        "pointer": "arms.x.wall_total"}]}
+    _restored, _left, _ = rm.restore(copy.deepcopy(_uman), head=HEAD)
+    check("restore() refuses a pace-mode timing claim known only by its unit (the call site passes unit=)",
+          _restored == [] and any("observe" in x or "idle" in x for x in _left), str(_left))
+    _ug.write_text(json.dumps({"arms": {"x": {"wall_total": 3.1}}}), encoding="utf-8")
+    os.utime(_ug, None)
+    _saved_exempt3 = rm._TIMING_TRANSPORT_EXEMPT_RAW
+    rm._TIMING_TRANSPORT_EXEMPT_RAW = _saved_exempt3 | {_ug_rel}
+    try:
+        _restored, _left, _ = rm.restore(copy.deepcopy(_uman), head=HEAD)
+        check("restore() refuses an EXEMPT raw's timing claim with no machine_idle record (latency_ratio's case)",
+              _restored == [] and any("idle" in x for x in _left), str(_left))
+        # mutation: the idle half removed - `_idle_refusal` stubbed to never object
+        _saved_idle = rm._idle_refusal
+        rm._idle_refusal = lambda nodes: None
+        try:
+            _restored, _left, _ = rm.restore(copy.deepcopy(_uman), head=HEAD)
+            check("mutation 'idle half removed (_idle_refusal stubbed None)': the SAME claim now WRONGLY "
+                  "restores (would FAIL the check above)", _restored == ["bg.unit_timing"], str(_left))
+        finally:
+            rm._idle_refusal = _saved_idle
+        _ug.write_text(json.dumps({"arms": {"x": {"wall_total": 2.9}}, "machine_idle": {"idle": True}}),
+                       encoding="utf-8")
+        os.utime(_ug, None)
+        _restored, _left, _ = rm.restore(copy.deepcopy(_uman), head=HEAD)
+        check("control: with machine_idle.idle == true the exempt claim restores", _restored == ["bg.unit_timing"],
+              str(_left))
+    finally:
+        rm._TIMING_TRANSPORT_EXEMPT_RAW = _saved_exempt3
+finally:
+    _ug.unlink(missing_ok=True)
 
 
 print("\n- K28 follow-up (2): a drift guard - a claim whose pointer LOOKS time-like but "
@@ -622,10 +755,15 @@ print("- `--pending` warns where the command it prints cannot write its own arti
 #: something else - so the surface a person acts on printed a command that silently overwrites a
 #: merged artifact. The caveat is READ from the package at print time rather than stamped into
 #: the manifest: a copy would be a second source of truth, agreeing on the day it is written.
+#: Eleven then; seven since stage D ((б) b-i): the three pooled artifacts now record the
+#: `--pool ... --with ...` command that remakes the whole file from committed per-run files, and
+#: asof_recent's only "foreign" arm was the blocked mem0 row its own stand writes.
 _asm = rm._assembled_artifacts()
-check("the package declares artifacts their command cannot write", len(_asm) == 11, str(len(_asm)))
-check("and the one the campaign turns on is among them",
-      "research/results/supersession_v1_implicit.json" in _asm)
+check("the package declares artifacts their command cannot write", len(_asm) == 7, str(len(_asm)))
+check("a pooled artifact whose command now remakes it is no longer among them",
+      "research/results/supersession_v1_implicit.json" not in _asm)
+check("and one still assembled from runs not on disk is",
+      "research/results/supersession_v1_switch.json" in _asm, str(sorted(_asm)))
 
 _buf = io.StringIO()
 with contextlib.redirect_stdout(_buf):
@@ -685,7 +823,10 @@ _sraw = ROOT / _sraw_rel
 
 
 def _restore_one(printed, statement, value):
-    _sraw.write_text(json.dumps({"v": value}), encoding="utf-8")
+    #: unit "ms" makes this a timing claim (b-g: the unit is part of the class), so the artifact
+    #: carries what a legitimate timing run records - observe mode and the idle record.
+    _sraw.write_text(json.dumps({"v": value, "ollama_transport": {"mode": "observe", "calls": 0},
+                                 "machine_idle": {"idle": True}}), encoding="utf-8")
     m = {"claims": [{"id": "s.ms", "value": 0.0, "printed": list(printed), "unit": "ms",
                      "statement": statement, "cited_in": [], "cited_in_pending": [],
                      "stale": "timed on a loaded machine; the re-run needs the GPU box idle",

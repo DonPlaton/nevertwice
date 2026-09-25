@@ -219,6 +219,26 @@ def _save(p: Path, d: dict) -> None:
     os.replace(tmp, p)
 
 
+def resume_ingest_cache(cache_p: Path, key: dict) -> dict:
+    """The nevertwice_full ingest cache to resume from - only if EVERY field of `key` matches.
+
+    (б) b-k, stage D: the cache was keyed to the sandbox store alone, and the campaign-v2 b8 run
+    that was stopped mid-ingest left one behind (626 sessions, modified 13:03) that nothing marked
+    as belonging to that code: the runner had to remember to set it aside by hand before the next
+    frontier run. The key now names what produced the per-session note counts - the store, the
+    engine commit, the extractor model and its output cap - and a cache that matches none of a new
+    run's is SET ASIDE (renamed `.stale-<time>`), never silently overwritten and never resumed."""
+    done = _load(cache_p)
+    if done and all(done.get(k) == v for k, v in key.items()):
+        return done
+    if done:
+        stale = {k: done.get(k) for k in key if done.get(k) != key[k]}
+        aside = cache_p.with_name(f"{cache_p.stem}.stale-{time.strftime('%Y%m%d-%H%M%S')}{cache_p.suffix}")
+        os.replace(cache_p, aside)
+        print(f"  ingest cache was built under {stale}; set aside as {aside.name}, starting over", flush=True)
+    return dict(key)
+
+
 # ── item 9B/P0(a): the pacer's own transport record, folded into a cache safely ────────
 
 #: K35 (the auditor, 2026-09-24): counters this merge sums across runs - additive by
@@ -628,12 +648,9 @@ def contexts_nevertwice_full(data, pool) -> dict:
         raise RuntimeError(f"extractor bound to {api.m.OLLAMA_MODEL!r}, wanted {EXTRACTOR!r}")
     project = "lme"
     cache_p = DATA / "frontier_full_ingest_cache.json"
-    done = _load(cache_p)
-    store = str(sandbox_guard.store())
-    if done.get("_store") != store:
-        if done:
-            print(f"  ingest cache belongs to another store ({done.get('_store')}); starting over", flush=True)
-        done = {"_store": store}
+    done = resume_ingest_cache(cache_p, {"_store": str(sandbox_guard.store()), "_engine_commit": git_head(),
+                                         "_extractor": api.m.OLLAMA_MODEL,
+                                         "_num_predict": api.m.EXTRACT_NUM_PREDICT})
     t0 = time.time()
     for i, (sid, txt) in enumerate(pool.items()):
         if not txt.strip() or sid in done:

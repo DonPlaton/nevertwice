@@ -80,6 +80,41 @@ def resolve(data, pointer: str):
     return node
 
 
+def _is_count(v) -> bool:
+    return isinstance(v, int) and not isinstance(v, bool) and v > 0
+
+
+def artifact_n(data, claim: dict) -> tuple[int | None, str]:
+    """The sample size the ARTIFACT records for a claim's value, and where it was read.
+
+    (б) b-j, stage D: restore recomputed a declared Wilson interval from the register's `n` - the
+    size of the run that was withdrawn, not of the run being restored. Restore #2 caught three by
+    hand (182 -> 185, 22 -> 19, 1 -> 5); twelve more claims in the register (morphology) carry an
+    `n` their artifact no longer has (254 vs 232, 678 vs 936). The count is read from the artifact:
+    the claim's own `n_pointer` when it registers one, else the nearest integer `n` on the value's
+    pointer path (the container holding the value first, then its parents, the root last)."""
+    np_ = claim.get("n_pointer")
+    if np_:
+        try:
+            v = resolve(data, np_)
+        except (KeyError, IndexError, TypeError):
+            return None, f"n_pointer {np_} is missing in the artifact"
+        return (v, np_) if _is_count(v) else (None, f"n_pointer {np_} is not a positive integer ({v!r})")
+    node, found, where, path = data, None, "", ""
+    try:
+        for quoted, index, key in SEGMENT.findall(claim.get("pointer") or ""):
+            if isinstance(node, dict) and _is_count(node.get("n")):
+                found, where = node["n"], (path + ".n").lstrip(".")
+            step = key or quoted
+            path += f"[{index}]" if index else (f".{step}" if key else f'["{step}"]')
+            node = node[int(index)] if index else node[quoted or key]
+    except (KeyError, IndexError, TypeError):
+        return None, "the pointer cannot be walked"
+    if found is None:
+        return None, "no integer n on the pointer path and no n_pointer registered"
+    return found, where
+
+
 #: `pairs[2].p_mcnemar` - a pointer whose first step indexes a list by POSITION.
 PAIR_POINTER = re.compile(r"^(\w+)\[(\d+)\]")
 #: `supersession_implicit.mem0_vs_naive.discordant.naive` - the id names the two arms compared.
@@ -158,6 +193,13 @@ def _closure_moved(commit: str, head: str, produced_by: list[str]) -> str | None
 #: `embed_universal/serving_check.py` `seconds.served` - and zero non-timing pointers.
 _TIMING_POINTER_SUFFIXES = frozenset({"ms_per_call", "seconds_per_pair", "ms", "served"})
 
+#: A claim whose UNIT is a time is a timing claim whatever its pointer's last segment is called
+#: ((б), stage D): the suffix table above is a list, and a new stand's `wall_total` or `query_s`
+#: with unit "seconds" would pass it. Today the unit rule adds no pointer-bearing claim the
+#: suffixes miss (the four time-unit claims it alone would reach carry no pointer at all) - it is
+#: the class, so the next one is caught on the day it is registered.
+_TIME_UNIT = re.compile(r"\b(ms|msec|milliseconds?|s|secs?|seconds?|minutes?)\b", re.I)
+
 
 def is_timing_pointer(pointer: str) -> bool:
     """True iff `pointer`'s last segment names a wall-clock measurement.
@@ -169,6 +211,11 @@ def is_timing_pointer(pointer: str) -> bool:
     """
     segs = [quoted or key for quoted, index, key in SEGMENT.findall(pointer or "") if not index]
     return bool(segs) and segs[-1] in _TIMING_POINTER_SUFFIXES
+
+
+def is_timing_claim(pointer: str, unit: str | None = None) -> bool:
+    """A timing claim: its pointer's last segment is a timing field, or its unit is a time."""
+    return is_timing_pointer(pointer) or bool(pointer and unit and _TIME_UNIT.search(unit))
 
 
 #: The two timing-producing commands P5 rev 5's own reasoning does not reach, named explicitly
@@ -198,9 +245,33 @@ _TIMING_TRANSPORT_EXEMPT_RAW = frozenset({
 })
 
 
+#: The other half of P5, which the exemptions above were never about ((б), stage D): "timing
+#: claims are measured only in an idle window" (PREREG-V2 P5), "only ... on an idle machine and
+#: only with a machine-readable 'machine idle' record" (LOCAL-TASK-D §3.6, PREREG-V3 trap T12).
+#: The transport exemption answers "can this stand hide a silent fallback?"; it says nothing about
+#: whether the box was busy. Before this, `embed.serving.latency_ratio` - serving_check, exempt -
+#: would have restored mechanically from a pace-mode campaign run beside other GPU work; restore
+#: #2 kept it out only because a person named it in close_excluded_v2.py. So: every timing claim,
+#: exempt or not, restores only from a path on which some container carries
+#: `machine_idle: {"idle": true, ...}` - the stand's own record of the machine it ran on.
+IDLE_RECORD_KEY = "machine_idle"
+
+
+def _idle_refusal(nodes: list) -> str | None:
+    for n in nodes:
+        if isinstance(n, dict) and isinstance(n.get(IDLE_RECORD_KEY), dict) \
+                and n[IDLE_RECORD_KEY].get("idle") is True:
+            return None
+    return (f"a timing claim's artifact carries no machine-readable idle record "
+            f"({IDLE_RECORD_KEY}.idle == true) on its pointer path - a timing is published only "
+            f"from a run on an idle machine (PREREG-V2 P5, LOCAL-TASK-D §3.6); the transport "
+            f"exemptions do not cover this")
+
+
 def _timing_mode_refusal(nodes: list, raw: str | None) -> str | None:
-    """None when a timing claim's path proves it was measured under the pacer's observe mode
-    (or the claim is one of the two named exemptions above); otherwise the reason.
+    """None when a timing claim's path proves it was measured on an idle machine (`_idle_refusal`)
+    AND under the pacer's observe mode (or the claim is one of the two named transport exemptions
+    above); otherwise the reason. The idle record is checked first and has no exemption.
 
     `nodes` is the SAME root-included, value-excluded walk `row_refusal` already built for its
     own `valid`/`measured_at` checks, so `ollama_transport` is found wherever `attach()` actually
@@ -213,6 +284,9 @@ def _timing_mode_refusal(nodes: list, raw: str | None) -> str | None:
     unrelated container on the path happens to carry a stale one - which must not shadow a real
     observe-mode record found deeper (or shallower) on the same path.
     """
+    idle = _idle_refusal(nodes)
+    if idle:
+        return idle
     if raw in _TIMING_TRANSPORT_EXEMPT_RAW:
         return None
     found_modes = []
@@ -235,7 +309,8 @@ def _timing_mode_refusal(nodes: list, raw: str | None) -> str | None:
 
 
 def row_refusal(data, pointer: str, code_time: int, head: str | None = None,
-                produced_by: list[str] | None = None, raw: str | None = None) -> str | None:
+                produced_by: list[str] | None = None, raw: str | None = None,
+                unit: str | None = None) -> str | None:
     """Would restoring THIS row put a number back that no valid run at HEAD produced?
 
     Three ways it would, found before the v2 campaign (2026-09-24) unless noted:
@@ -246,8 +321,9 @@ def row_refusal(data, pointer: str, code_time: int, head: str | None = None,
       measured weeks ago. Restore #1 put twelve such claims back as if re-measured
       (`h2h_pinned.{mem0_infer,langmem_full,amem_full}`, rows stamped 2026-09-08 at f0ed080,
       restored at 358fa75).
-    - (K28) the claim is a TIMING pointer (`is_timing_pointer`) and no container on the path
-      carries `ollama_transport.mode == "observe"` - see `_timing_mode_refusal`.
+    - (K28) the claim is a TIMING claim (`is_timing_claim`: its pointer or its `unit`) and no
+      container on the path carries `ollama_transport.mode == "observe"`, or none carries the
+      idle record `machine_idle.idle == true` - see `_timing_mode_refusal`.
     Every container on the path is asked, the artifact root included; the deepest `measured_at`
     wins, because that is the stamp of the row the value was read from."""
     nodes, node = [data], data
@@ -283,7 +359,7 @@ def row_refusal(data, pointer: str, code_time: int, head: str | None = None,
             moved = _closure_moved(commit, head, list(produced_by or []))
             if moved:
                 return f"the row was measured at commit {commit[:7]}, and {moved}"
-    if is_timing_pointer(pointer):
+    if is_timing_claim(pointer, unit):
         refusal = _timing_mode_refusal(nodes[:-1], raw)
         if refusal:
             return refusal
@@ -534,13 +610,25 @@ def restore(manifest: dict, select: set[str] | None = None, head: str | None = N
         #: ...and so must the ROW, which a merging --save can carry over from an older run, and
         #: the row must not be one its own run marked invalid (see `row_refusal`).
         refusal = row_refusal(data, c["pointer"], code_time, head=head,
-                              produced_by=c.get("produced_by") or [], raw=raw)
+                              produced_by=c.get("produced_by") or [], raw=raw, unit=c.get("unit"))
         if refusal:
             left.append(f"{c['id']}: {refusal}")
             continue
         if (ROOT / raw).stat().st_mtime < code_time:
             left.append(f"{c['id']}: {raw} predates HEAD - re-run `{c.get('command', '?')}`")
             continue
+        #: A declared Wilson interval is recomputed from the RUN's sample size, never the register's
+        #: (b-j). An artifact that does not say how many it counted cannot vouch for an interval.
+        ci = c.get("ci")
+        wilson_declared = isinstance(ci, dict) and ci.get("method") == "wilson"
+        new_n, n_from = None, ""
+        if wilson_declared:
+            new_n, n_from = artifact_n(data, c)
+            if new_n is None:
+                left.append(f"{c['id']}: a Wilson interval is declared but its n cannot be read from "
+                            f"{raw} ({n_from}) - register an n_pointer; the register's n={c.get('n')} "
+                            f"is the withdrawn run's")
+                continue
         if dry_run:
             restored.append(c["id"])
             continue
@@ -566,10 +654,12 @@ def restore(manifest: dict, select: set[str] | None = None, head: str | None = N
         c["value"] = value
         c["printed"] = new_printed
         c["statement"] = stmt
-        ci = c.get("ci")
-        if isinstance(ci, dict) and ci.get("method") == "wilson" and c.get("n") \
-                and isinstance(value, (int, float)):
-            lo, hi = wilson(float(value), int(c["n"]))
+        if wilson_declared and isinstance(value, (int, float)):
+            if new_n != c.get("n"):
+                review.append(f"{c['id']}: n {c.get('n')} -> {new_n}, read from {raw} ({n_from}); "
+                              f"check any sentence that quotes the sample size")
+            c["n"] = new_n
+            lo, hi = wilson(float(value), int(new_n))
             ci["low"], ci["high"] = lo, hi
         c["commit"] = head
         c["cited_in"] = list(c.pop("cited_in_pending", []) or [])
@@ -583,9 +673,9 @@ def restore(manifest: dict, select: set[str] | None = None, head: str | None = N
 def _assembled_artifacts() -> dict[str, str]:
     """{artifact: why its recorded command cannot write it}, read from the package.
 
-    `research/reproduce.py` declares eleven entries whose recorded command produces a SMALLER
-    file than the committed one - arms that came from other runs merged in with `--with`. The
-    register carries the same commands for 281 claims and said nothing about it: measured
+    `research/reproduce.py` declares seven entries (eleven before stage D) whose recorded command
+    produces a SMALLER file than the committed one - arms that came from other runs merged in with
+    `--with`. The register carries the same commands for 281 claims and said nothing about it: measured
     2026-09-22, zero of those 281 mentioned the assembly, 171 had an empty `note` and the other
     110 talked about something else. `--pending` is the surface a person acts on - it prints the
     command they are about to run - so the caveat is printed HERE rather than copied into the

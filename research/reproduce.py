@@ -20,7 +20,10 @@ implies it is would fail the first stranger who tried:
 
 One more honesty, added 2026-09-22 after the recorded commands were compared with the artifacts
 they claim to make: eleven files here were assembled from SEVERAL runs, and the single command
-recorded beside them writes a strict subset of their arms. Those entries carry `assembled`,
+recorded beside them writes a strict subset of their arms (seven since stage D: three of them now
+record the `--pool`/`--with` command that remakes the whole file from committed per-run files, as
+campaign v2 wrote them, and asof_recent's only "foreign" arm was the blocked `mem0` row its own stand
+writes). Those entries carry `assembled`,
 naming the arms the command cannot write and why, and the report prints it. Running such a
 command does not reproduce the artifact - it replaces it with a smaller one under the same name,
 which is how a positional claim came to hold a neighbouring pair's number (`33b1481`).
@@ -208,22 +211,24 @@ ARTIFACTS = [
      "note": "the morphology ablation on the non-oracle pool: the same sessions and questions as "
              "longmem_s.json with the lexical arm tokenised without stop words or stems. "
              "Deterministic given the cache."},
+    #: (б) b-i, stage D: the command campaign v2 recorded as this file's writer (STATUS b6_asof). The
+    #: zep arm comes from the two committed per-run files named by --with; `mem0` is a blocked row the
+    #: stand writes itself (Mem0 has no as-of filter), so the command makes every arm on disk.
     {"file": "research/results/asof_v1.json",
-     "command": ["python", "research/asof_bench.py", "--arms", "nevertwice,naive", "--runs", "2",
+     "command": ["python", "research/asof_bench.py", "--arms", "nevertwice,naive", "--runs", "2", "--sleep",
+                 "--with", "research/results/v2_runs/asof_zep1.json", "research/results/v2_runs/asof_zep2.json",
                  "--out", "research/results/asof_v1.json"],
-     "assembled": {"arms": ["mem0", "nevertwice_after_sleep", "zep"],
-                    "how": "the command's arm list cannot write `mem0`, `nevertwice_after_sleep`, `zep`: those arms were measured by separate runs and merged into this file, and the per-run files are not on disk, so no invocation of this stand remakes it; the `_after_sleep` arms need `--sleep`, which this command does not carry."},
      "kind": HARDWARE, "task": "supersession",
      "inputs": ["research/data/supersession_v1.json",
-                "a local Ollama serving bge-m3 and the extraction model"],
+                "a local Ollama serving bge-m3 and the extraction model",
+                "research/results/v2_runs/asof_zep1.json and asof_zep2.json - `asof_bench.py --arms zep` "
+                "run twice in the graphiti environment (FalkorDB)"],
      "note": "as-of recall: the same corpus ingested with dates two months apart and asked for a "
              "day between the sessions and a day after. Two ingest runs pooled; the extractor is "
              "not deterministic, so a fresh run is a new measurement of the same design."},
     {"file": "research/results/asof_recent.json",
      "command": ["python", "research/asof_bench.py", "--recent", "--arms", "nevertwice", "--runs", "2",
                  "--out", "research/results/asof_recent.json"],
-     "assembled": {"arms": ["mem0"],
-                    "how": "the command's arm list cannot write `mem0`: those arms were measured by separate runs and merged into this file, and the per-run files are not on disk, so no invocation of this stand remakes it."},
      "kind": HARDWARE, "task": "supersession",
      "inputs": ["research/data/supersession_v1.json",
                 "a local Ollama serving bge-m3 and the extraction model"],
@@ -250,16 +255,20 @@ ARTIFACTS = [
      "note": "ledger K3: for every first session the as-of artifact marks as never written, what the "
              "extraction prompt returned (no items, items the writer rejected, a failure) beside what "
              "the public path wrote - a diagnosis of the extractor's silence on a two-sentence session."},
+    #: (б) b-i, stage D: the command campaign v2 recorded as this file's writer (STATUS b6_supimp_pool).
     {"file": "research/results/supersession_v1_implicit.json",
-     "command": ["python", "research/supersession_bench.py", "--dataset",
-                 "research/data/supersession_v1_implicit.json", "--arms", "nevertwice,naive",
-                 "--runs", "2", "--out", "research/results/supersession_v1_implicit.json"],
-     "assembled": {"arms": ["mem0", "nevertwice_after_sleep", "nevertwice_after_sleep_run2", "zep"],
-                    "how": "the command's arm list cannot write `mem0`, `nevertwice_after_sleep`, `nevertwice_after_sleep_run2`, `zep`: those arms were measured by separate runs and merged into this file, and the per-run files are not on disk, so no invocation of this stand remakes it; the `_after_sleep` arms need `--sleep`, which this command does not carry."},
+     "command": ["python", "research/supersession_bench.py",
+                 "--pool", "research/results/v2_runs/supimp.run1.json", "research/results/v2_runs/supimp.run2.json",
+                 "--with", "research/results/v2_runs/supimp_mem0.json", "research/results/v2_runs/supimp_zep1.json",
+                 "research/results/v2_runs/supimp_zep2.json",
+                 "--out", "research/results/supersession_v1_implicit.json"],
      "kind": HARDWARE, "task": "supersession",
      "inputs": ["research/data/supersession_v1_implicit.json",
-                "a local Ollama serving bge-m3 and the extraction model",
-                "mem0ai in its own environment for the Mem0 arm"],
+                "research/results/v2_runs/supimp.run1.json, supimp.run2.json - `supersession_bench.py --dataset "
+                "research/data/supersession_v1_implicit.json --arms nevertwice,naive --runs 2 --sleep --out "
+                "research/results/v2_runs/supimp.json` with a local Ollama serving bge-m3 and the extraction model",
+                "research/results/v2_runs/supimp_mem0.json - mem0ai in its own environment; supimp_zep1.json, "
+                "supimp_zep2.json - the zep arm, twice, in the graphiti environment"],
      "note": "the implicit-replacement variant: the committed artifact pools two engine runs with "
              "the Mem0 and naive arms carried beside them (--pool ... --with ...); the extractor "
              "is not deterministic."},
@@ -329,8 +338,8 @@ ARTIFACTS = [
                           "when the run happened. Redirect the output to "
                           "research/results/asof_k7_d07375e.json, or you overwrite the canonical "
                           "as-of artifact and the 29 claims that read it."),
-     "assembled": {"arms": ["mem0", "zep"],
-                    "how": "the command's arm list cannot write `mem0`, `zep`: those arms were measured by separate runs and merged into this file, and the per-run files are not on disk, so no invocation of this stand remakes it."},
+     "assembled": {"arms": ["zep"],
+                    "how": "the command's arm list cannot write `zep`: that arm was measured by separate runs in the graphiti environment and merged into this file, and those per-run files are not on disk, so no invocation of this stand remakes it. (`mem0` is the blocked row asof_bench writes on every run - Mem0 has no as-of filter - not an arm from elsewhere; corrected at stage D.)"},
      "kind": HARDWARE, "task": "supersession",
      "inputs": ["this repository at d07375e (the K5 retry and the K7 gate on)",
                 "research/data/supersession_v1.json",
@@ -432,16 +441,20 @@ ARTIFACTS = [
     # `register_supersession.py` refuses (MIN_RUNS). Caught by
     # `tests/_test_package_commands_match.py` on its first battery - the same shape as the
     # longmem entry corrected in `bd7f0d4`, in a second place.
+    #: (б) b-i, stage D: the command campaign v2 recorded as this file's writer (STATUS b6_sup_pool).
     {"file": "research/results/supersession_v1.json",
      "command": ["python", "research/supersession_bench.py",
-                 "--arms", "nevertwice,naive", "--runs", "2", "--out",
-                 "research/results/supersession_v1.json"],
-     "assembled": {"arms": ["mem0", "nevertwice_after_sleep", "nevertwice_after_sleep_run2", "zep"],
-                    "how": "the command's arm list cannot write `mem0`, `nevertwice_after_sleep`, `nevertwice_after_sleep_run2`, `zep`: those arms were measured by separate runs and merged into this file, and the per-run files are not on disk, so no invocation of this stand remakes it; the `_after_sleep` arms need `--sleep`, which this command does not carry."},
+                 "--pool", "research/results/v2_runs/sup.run1.json", "research/results/v2_runs/sup.run2.json",
+                 "--with", "research/results/v2_runs/sup_mem0.json", "research/results/v2_runs/sup_zep1.json",
+                 "research/results/v2_runs/sup_zep2.json",
+                 "--out", "research/results/supersession_v1.json"],
      "kind": HARDWARE, "task": "supersession",
      "inputs": ["research/data/supersession_v1.json",
-                "a local Ollama serving bge-m3 and qwen3-coder:30b",
-                "for the Mem0 arm: a separate environment with mem0ai[extras]"],
+                "research/results/v2_runs/sup.run1.json, sup.run2.json - `supersession_bench.py --arms "
+                "nevertwice,naive --runs 2 --sleep --out research/results/v2_runs/sup.json` with a local "
+                "Ollama serving bge-m3 and qwen3-coder:30b",
+                "research/results/v2_runs/sup_mem0.json - the Mem0 arm, from a separate environment with "
+                "mem0ai[extras]; sup_zep1.json, sup_zep2.json - the zep arm, twice, in the graphiti environment"],
      "volatile": ["seconds"],
      "note": "the three-arm supersession stand. The naive arm is deterministic and needs "
              "nothing; the two LLM arms call a local extraction model, so their per-case "
@@ -484,8 +497,8 @@ ARTIFACTS = [
     {"file": "research/results/asof_v1_switch.json",
      "command": ["python", "research/asof_bench.py", "--arms", "nevertwice,naive", "--runs", "2",
                  "--sleep", "--out", "research/results/asof_v1_switch.json"],
-     "assembled": {"arms": ["mem0", "zep"],
-                    "how": "the command's arm list cannot write `mem0`, `zep`: those arms were measured by separate runs and merged into this file, and the per-run files are not on disk, so no invocation of this stand remakes it."},
+     "assembled": {"arms": ["zep"],
+                    "how": "the command's arm list cannot write `zep`: that arm was measured by separate runs in the graphiti environment and merged into this file, and those per-run files are not on disk, so no invocation of this stand remakes it. (`mem0` is the blocked row asof_bench writes on every run - Mem0 has no as-of filter - not an arm from elsewhere; corrected at stage D.)"},
      "kind": HARDWARE, "task": "supersession",
      "inputs": ["research/data/supersession_v1.json",
                 "a local Ollama serving bge-m3 and qwen3-coder:30b",
@@ -495,8 +508,10 @@ ARTIFACTS = [
              "switch's effect is decided on the displacement corpora - and is kept because a mode "
              "that changes what is retired changes when a belief interval closes, and that is the "
              "measure this stand reads."},
+    #: (б) b-i: `--runs 3`, as campaign v2 wrote it (STATUS b6_abstention) - every retrieval sweep
+    #: statement reads "mean of 3 runs of one commit".
     {"file": "research/results/abstention_ab.json",
-     "command": ["python", "research/abstention_ab.py", "--part", "all",
+     "command": ["python", "research/abstention_ab.py", "--part", "all", "--runs", "3",
                  "--out", "research/results/abstention_ab.json"],
      "kind": HARDWARE, "task": "abstention",
      "inputs": ["research/data/supersession_v1.json",

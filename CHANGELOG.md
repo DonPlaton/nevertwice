@@ -575,6 +575,41 @@ empty.
 
 ### Fixed
 
+- **The test battery talked to the machine's model server and wrote into the repository.** The
+  server log counted 277 embed and 54 tag requests from one battery run, and a before/after
+  snapshot found two suites rewriting tracked files (an artifact byte for byte; `nevertwice/api.py`
+  edited and put back in a `finally`). A test process now refuses every connection to the local
+  Ollama port - at the socket and, on Windows, at the asyncio proactor, which connects without
+  the socket's `connect` - and every child it starts inherits closed endpoints under each name the
+  engine and the stands read. The battery fails a suite that changes a tracked file, and the two
+  suites work on temporary copies. A concurrent-writers test no longer asserts that a Windows
+  replace is never refused; a new test pins the bounded wait and the loud refusal on a clock it
+  controls.
+- **A benchmark artifact could name a model that did not run.** Stands labelled their output with
+  the model they meant to set, or read it from a second, stale engine object; the label now comes
+  from the engine that ran - the cloud backend's model when one is configured with a key, since
+  extraction tries it first. The supersession stand's per-session token counts had the same
+  cause: they were read from a second, idle engine object, and every one was zero.
+- **A timing measured on a busy machine could be restored as current.** Restoring a withdrawn
+  timing checked only the transport half of its rule, and two stands are exempt from that half,
+  so a serving-latency figure timed beside other GPU work would have come back; a hand-written
+  exclusion kept it out. Every timing claim - found by its unit too, not only by its field name -
+  now needs the stand's own `machine_idle` record, with no exemption.
+- **A restored confidence interval used the withdrawn run's sample size.** Restoring a claim
+  recomputed its Wilson interval from the register's `n`, not from the run being restored (restore
+  #2 fixed three by hand; twelve withdrawn claims still carry an `n` their artifact no longer has).
+  The count is now read from the artifact - the claim's `n_pointer`, or the nearest `n` on the
+  value's path - and a claim whose artifact records no count is not restored.
+- **The guard that a run uses its declared model compared by substring.** `qwen2.5-7b` passed
+  against `qwen2.5-7b-64k:latest`. `tools/check_llm_rows.py` compares the model tag exactly, and
+  head-to-head rows carry it as a field.
+- **A stopped benchmark's ingest cache could be resumed by a later run.** The frontier stand's
+  ingest cache was keyed to its store alone; it now names the engine commit, the extractor and its
+  output cap too, and a cache built under anything else is set aside, never resumed or overwritten.
+- **The reproduction package named commands that no longer wrote their files.** Four entries
+  lagged the commands the last campaign recorded; they now carry them (three remake the whole file
+  from committed per-run files), and three as-of entries stopped declaring as foreign an arm the
+  stand writes itself.
 - **Recall that fell back to word matching said nothing (B6).** A cold-loading embedder misses the
   hook's one-second ping or its query embed, and ranking silently fell to word overlap; the hook
   injected those hits as if nothing had changed. `retrieve_relevant` now records why semantic

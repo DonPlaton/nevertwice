@@ -85,7 +85,7 @@ MEM0_ERR_CAP_SUPERSESSION = 2
 MEM0_ERR_CAP_CONTROL = 1
 
 
-def _code_sha() -> str:
+def _code_sha(root: Path | None = None) -> str:
     """One hash over the program a run IS: this stand plus every module of the package.
 
     Why a hash at all. `--runs N` starts a fresh interpreter per run, so the sources on disk are
@@ -130,12 +130,15 @@ def _code_sha() -> str:
     # - checked - but `nevertwice/Z.py` beside `nevertwice/invariants/` is enough to
     # split them, and then one unchanged tree hashes differently on Windows and on Linux. The
     # refusal would land on the cross-OS CI run, which is exit criterion 4, and be false.
-    files = sorted(p.relative_to(ROOT).as_posix()
-                   for p in [Path(__file__).resolve()] + list((ROOT / "nevertwice").rglob("*.py")))
+    #: `root` lets a test hash a COPY of the tree (it edits a module and must not edit the real one).
+    root = ROOT if root is None else Path(root)
+    stand = root / Path(__file__).resolve().relative_to(ROOT)
+    files = sorted(p.relative_to(root).as_posix()
+                   for p in [stand] + list((root / "nevertwice").rglob("*.py")))
     h = hashlib.sha256()
     for rel in files:
         h.update(rel.encode() + b"\0")
-        h.update((ROOT / rel).read_bytes())
+        h.update((root / rel).read_bytes())
     return h.hexdigest()[:12]
 
 #: Deterministic extraction, which this stand had never actually asked for. The engine's default
@@ -479,9 +482,17 @@ def run_nevertwice(cases: list[dict], k: int, sleep: bool = False, third_session
     os.environ.setdefault("NEVERTWICE_EMBED_MODEL", EMBED_MODEL)
     try:
         from nevertwice import api
-        import memory_hook as m                       # noqa: PLC0415 - A9: per-session token deltas
     except Exception as e:                            # pragma: no cover - import-time only
         return {"blocked": f"nevertwice import failed ({type(e).__name__}: {e})"}
+    #: A9's per-session token deltas are read off the engine that RAN the captures. A bare
+    #: `import memory_hook` here was a second engine object with its own, never-touched
+    #: `_LLM_STATS` (the auditor's C4: `api.m is memory_hook` -> False), so every session_tokens
+    #: entry of supersession_v1.json at fe6ddff is 0/0 while code_sessions_eval, reading api.m,
+    #: has 148 of 150 non-zero.
+    m = api.m
+    # (б): the environment binds the model only on the engine's FIRST import; bound explicitly too,
+    # so a process that imported the engine earlier still extracts with the model it labels.
+    api.m.OLLAMA_MODEL = LLM
 
     rows, next_rows, t0 = [], [], time.time()
     #: What this pass DID, as opposed to what it found lying in the store. `capture_session`
@@ -1440,7 +1451,7 @@ def _one_run(data: dict, cases: list[dict], args, arm_names: list[str]) -> dict:
     `--pool` reads. Split out of `main` so `--runs N` can call it N times."""
     pacer.install()          # R-v2-ports: pace/retry/count every arm's own Ollama traffic
     out = {"dataset": {k: data[k] for k in ("name", "sha256", "path")},
-           "n_cases": len(cases), "k": args.k, "llm": LLM, "embedder": EMBED_MODEL,
+           "n_cases": len(cases), "k": args.k, "llm": prov.running_llm(LLM), "embedder": EMBED_MODEL,
            # Which sandbox this pass wrote into. `pool` refuses two engine runs that share one,
            # because a second pass over a store the first already filled is not a repeat - see
            # the `--runs` branch in `main` for the measurement that made that concrete.
