@@ -40,7 +40,9 @@ memory (refused, so neither reaches the provider; counted); and after each forwa
 to an in-memory parser (usage, fingerprint, finish reason, tools called, reasoning). One JSONL line per call holds
 counts and names, never a body; zero-tolerance events also land in flags.jsonl, read back at start (K35). The
 catcher tunnels a CONNECT only inside a declared window, only to that window's hosts (AQ1). /user/balance is
-forwarded on the scheduler port only. The Ollama leg is A2.7.
+forwarded on the scheduler port only. The Ollama leg (A2.7) gives an arm that needs one its own port to the local
+Ollama at 127.0.0.1:11434 - never the key, never another host - paced and retried by that arm's own copy of
+research/_ollama_pacer.py, and counted (a generation call from a cloud arm is fallback_local).
 
 Standard library only, Python 3.10+. Run as ``python research/_llm_proxy.py serve --config ... --key-file ...
 [--owner-claude-md ... --owner-rules-dir ...]``; tokens, canaries and the owner's identity arrive as one JSON line
@@ -82,7 +84,7 @@ MAX_BODY = 32 * 1024 * 1024
 _UNIT = re.compile(r"/u/([A-Za-z0-9._-]{1,128})(/.*)$")
 #: The only keys a proxy config file may carry; anything else (a CONNECT target, say) is refused at load.
 CONFIG_KEYS = frozenset({"arms", "run_dir", "thinking_branch", "upstream", "scan_roots", "via", "j3",
-                         "scheduler"})
+                         "scheduler", "ollama"})
 MAX_CONNECT_REPLY = 8 * 1024
 _FORWARDED_PREFIXES = ("/v1/", "/chat/", "/anthropic/", "/models")
 
@@ -128,6 +130,8 @@ class ArmConfig:
     pinned_model: str = ""                  # §4.3a: deepseek-flash on arm ports, deepseek-v4-pro on J3
     reader_model: str = ""                  # set: the arm also gets a reader port, pinned to this
     tools_allowed: tuple = ()               # §2.6.6
+    ollama_leg: bool = False                # A2.7: the arm gets an Ollama port (out-of-process arms, S8, embed ceiling)
+    cloud_arm: bool = True                  # its generation is DeepSeek's: an Ollama generation call is fallback_local
 
 
 @dataclass
@@ -142,6 +146,8 @@ class ProxyConfig:
     connect_timeout_s: float = 30.0
     scan_roots: tuple = ()                  # X3: besides run_dir, where /scan-files may look (e.g. the captures dir)
     via_port: int | None = None             # R4: the owner's loopback HTTP proxy, as a CONNECT hop (host 127.0.0.1)
+    ollama_mode: str = "pace"               # pace | observe (the pacer's own VALID_MODES)
+    ollama_upstream: tuple = ("127.0.0.1", 11434)
 
     def __post_init__(self):
         if self.upstream_tls and (self.upstream_host != UPSTREAM_HOST or self.upstream_port != UPSTREAM_PORT):
@@ -155,6 +161,8 @@ class ProxyConfig:
                 raise ValueError("the CONNECT hop's port must be an integer in 1..65535 (R4)")
         if self.thinking_branch not in ("unset", "a", "b"):
             raise ValueError("thinking_branch must be unset, a or b")
+        if tuple(self.ollama_upstream)[0] != "127.0.0.1":
+            raise ValueError("the Ollama leg goes only to the local server on 127.0.0.1")
 
     @classmethod
     def load(cls, path: str | os.PathLike, secrets: dict, *, test_upstream_ok: bool = False) -> "ProxyConfig":
@@ -184,8 +192,12 @@ class ProxyConfig:
         tokens = secrets.get("tokens") or {}
         arms = [ArmConfig(arm=a["arm"], mode=a.get("mode", "raw"), thinking_route=a.get("thinking_route", "documented"),
                           token=tokens.get(a["arm"], ""), pinned_model=a.get("pinned_model", ""),
-                          reader_model=a.get("reader_model", ""), tools_allowed=tuple(a.get("tools_allowed") or ()))
+                          reader_model=a.get("reader_model", ""), tools_allowed=tuple(a.get("tools_allowed") or ()),
+                          ollama_leg=bool(a.get("ollama_leg", False)), cloud_arm=bool(a.get("cloud_arm", True)))
                 for a in raw["arms"]]
+        oll = raw.get("ollama") or {}
+        if oll.get("upstream") is not None and not test_upstream_ok:
+            raise ValueError("the config file cannot change the Ollama upstream")
         for role in ("j3", "scheduler"):                  # single-port roles, always recorded
             if raw.get(role):
                 arms.append(ArmConfig(arm=role, mode="record", token=tokens.get(role, ""),
@@ -195,7 +207,9 @@ class ProxyConfig:
                    upstream_host=up.get("host", UPSTREAM_HOST), upstream_port=int(up.get("port", UPSTREAM_PORT)),
                    upstream_tls=bool(up.get("tls", True)), control_token=secrets.get("control_token", ""),
                    scan_roots=tuple(Path(p) for p in raw.get("scan_roots") or ()),
-                   via_port=via["port"] if via is not None else None)
+                   via_port=via["port"] if via is not None else None,
+                   ollama_mode=oll.get("mode", "pace"),
+                   ollama_upstream=tuple(oll.get("upstream") or ("127.0.0.1", 11434)))
 
 
 @dataclass
@@ -659,6 +673,200 @@ class TeeParser:
                 facts["finish_reason"] = ch["finish_reason"]
 
 
+
+# ── the Ollama leg (A2.7, §4.4): a counting pass-through under the pacer's own code ──
+
+OLLAMA_HOST, OLLAMA_PORT = "127.0.0.1", 11434          # the local server; never the key, never another host
+PACER_PATH = Path(__file__).resolve().parent / "_ollama_pacer.py"
+
+
+def load_pacer_copy(arm: str, mode: str = "pace"):
+    """One copy of research/_ollama_pacer.py per arm (plan O1a): its own pace schedule (the pacer's floor, per arm:
+    AQ8), its own counters, the pacer's own code and constants - nothing copied. ``install()`` is never called: the
+    leg calls ``_run_paced`` directly, so no process-wide hook is patched twice."""
+    import importlib.util  # noqa: PLC0415
+    spec = importlib.util.spec_from_file_location(f"_ollama_pacer_leg_{re.sub(r'[^A-Za-z0-9_]', '_', arm)}", PACER_PATH)
+    inst = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(inst)
+    if mode not in inst.VALID_MODES:
+        raise ValueError(f"pacer mode {mode!r} not in {sorted(inst.VALID_MODES)}")
+    inst._MODE = mode
+    return inst
+
+
+class LegHTTPError(Exception):
+    """An Ollama answer >= 400, shaped for the pacer's ``classify``/``_llm_retryable`` (``.code``, ``.read()``),
+    carrying the raw response bytes so the client still receives exactly what Ollama said."""
+
+    def __init__(self, code: int, raw: bytes, body: bytes):
+        super().__init__(f"ollama answered {code}")
+        self.code, self.raw, self._body = code, raw, body
+
+    def read(self) -> bytes:
+        return self._body
+
+
+def _read_response(sock: socket.socket, method: str) -> tuple[bytes, bytes, ResponseFramer]:
+    """A whole (small) response: raw bytes, decoded body, and its framer - for an error the pacer must classify."""
+    body = bytearray()
+    framer = ResponseFramer(method, body.extend)
+    raw = bytearray()
+    while not framer.done:
+        chunk = sock.recv(65536)
+        if not chunk:
+            framer.eof()
+            break
+        raw += chunk
+        framer.feed(chunk)
+    return bytes(raw), bytes(body), framer
+
+
+class OllamaLeg:
+    """One arm's Ollama port (§4.4): the request goes byte for byte to 127.0.0.1:11434 inside the arm's own pacer copy
+    - paced in pace mode, retried only as the pacer retries (port exhaustion; a generation-path 5xx twice, 15 s then
+    30 s; a 4xx never), in observe mode neither - and the answer comes back byte for byte, streamed. A generation
+    call from a cloud arm is counted as fallback_local (§4.5 zero tolerance)."""
+
+    def __init__(self, arm: str, *, mode: str, cloud_arm: bool, upstream: tuple[str, int], log: Callable[[str], None],
+                 run_dir: Path, connect: Callable[[tuple[str, int]], socket.socket] | None = None):
+        self.arm, self.cloud_arm, self.upstream, self.log, self.run_dir = arm, cloud_arm, upstream, log, run_dir
+        self.pacer = load_pacer_copy(arm, mode)
+        self.connect = connect or (lambda hp: socket.create_connection(hp, timeout=600))
+        self.fallback_local = 0
+        self.calls = 0
+
+    def transport(self) -> dict:
+        """The pacer's own ``ollama_transport`` record for this arm - written even with no traffic (calls: 0)."""
+        out: dict = {}
+        self.pacer.attach(out)
+        rec = out.get("ollama_transport") or {"calls": 0}
+        rec["fallback_local"] = self.fallback_local
+        return rec
+
+    def serve(self, cs: socket.socket, stage: dict) -> None:
+        buf = bytearray()
+        head = _read_head(cs, buf)
+        if head is None:
+            return
+        start, headers = _parse_head(head)
+        method, _, rest = start.partition(" ")
+        target = rest.rsplit(" ", 1)[0]
+        if any(ch in k or ch in v for k, v in headers for ch in ("\r", "\n", "\0")):
+            _send_local(cs, 400, "Bad Request", b"a header carries CR, LF or NUL")
+            return
+        if "chunked" in (_hget(headers, "transfer-encoding") or "").lower():
+            _send_local(cs, 411, "Length Required")
+            return
+        m = _UNIT.match(target)
+        unit, path = (m.group(1), m.group(2)) if m else (None, target)
+        if ".." in path or not path.startswith("/"):
+            _send_local(cs, 404, "Not Found")
+            return
+        length = int(_hget(headers, "content-length") or 0)
+        while len(buf) < length:
+            chunk = cs.recv(65536)
+            if not chunk:
+                return
+            buf += chunk
+        body = bytes(buf[:length])
+        lines = [f"{method} {path} HTTP/1.1", f"Host: {self.upstream[0]}:{self.upstream[1]}"]
+        lines += [f"{k}: {v}" for k, v in headers if k.lower() in ("content-type", "accept")]
+        lines += [f"Content-Length: {len(body)}", "Connection: close"]
+        out = ("\r\n".join(lines) + "\r\n\r\n").encode("latin-1") + body
+        url = f"http://{self.upstream[0]}:{self.upstream[1]}{path}"
+        is_embed, is_llm = self.pacer._is_embed_path(url), self.pacer._is_llm_path(url)
+        self.calls += 1
+        if is_llm and self.cloud_arm:
+            self.fallback_local += 1
+        t0 = time.time()
+
+        def call():
+            up = self.connect(self.upstream)                 # an OSError here (WinError 10048) is the pacer's to classify
+            try:
+                up.sendall(out)
+                first = bytearray()
+                while b"\r\n\r\n" not in first:
+                    chunk = up.recv(65536)
+                    if not chunk:
+                        raise ConnectionResetError("ollama closed before answering")
+                    first += chunk
+                code = int(first.split(b" ", 2)[1])
+                if code >= 400:
+                    rest_raw, _, _ = _read_response(_Prefixed(up, bytes(first)), method)
+                    head_end = rest_raw.index(b"\r\n\r\n") + 4
+                    up.close()
+                    raise LegHTTPError(code, rest_raw, _dechunk(rest_raw[head_end:], rest_raw[:head_end]))
+                return up, bytes(first)
+            except BaseException:
+                try:
+                    up.close()
+                except OSError:
+                    pass
+                raise
+
+        status, error = None, None
+        try:
+            up, first = self.pacer._run_paced(call, host_key=self.upstream, is_embed=is_embed, is_llm=is_llm)
+        except LegHTTPError as e:
+            status, error = e.code, "http"
+            try:
+                cs.sendall(e.raw)                            # exactly what Ollama said
+            except OSError:
+                pass
+        except OSError as e:
+            error = type(e).__name__
+            self.log(f"ollama leg failed: {type(e).__name__}")
+            _send_local(cs, 502, "Bad Gateway", b"ollama unreachable")
+        else:
+            try:
+                framer = ResponseFramer(method)
+                framer.feed(first)
+                cs.sendall(first)
+                status = framer.status
+                while not framer.done:
+                    chunk = up.recv(65536)
+                    if not chunk:
+                        framer.eof()
+                        break
+                    cs.sendall(chunk)                        # NDJSON streams through as it arrives
+                    framer.feed(chunk)
+            except OSError:
+                error = "client_or_upstream_closed"
+            finally:
+                up.close()
+        _append_jsonl(self.run_dir / "ollama.jsonl",
+                      {"arm": self.arm, "unit": unit, "path": path, "is_embed": is_embed, "is_llm": is_llm,
+                       "status": status, "error": error, "fallback_local": bool(is_llm and self.cloud_arm),
+                       "t0": _iso(t0), "t1": _iso(time.time()), **stage})
+
+
+class _Prefixed:
+    """A socket whose first bytes were already read: recv returns them first."""
+
+    def __init__(self, sock: socket.socket, prefix: bytes):
+        self.sock, self.prefix = sock, prefix
+
+    def recv(self, n: int) -> bytes:
+        if self.prefix:
+            d, self.prefix = self.prefix[:n], self.prefix[n:]
+            return d
+        return self.sock.recv(n)
+
+
+def _dechunk(body_raw: bytes, head: bytes) -> bytes:
+    if b"chunked" not in head.lower():
+        return body_raw
+    out, i = bytearray(), 0
+    while i < len(body_raw):
+        j = body_raw.index(b"\r\n", i)
+        size = int(body_raw[i:j].split(b";")[0] or b"0", 16)
+        if size == 0:
+            break
+        out += body_raw[j + 2:j + 2 + size]
+        i = j + 2 + size + 2
+    return bytes(out)
+
+
 # ── the proxy ───────────────────────────────────────────────────────────
 
 def _listen() -> socket.socket:
@@ -707,6 +915,9 @@ class Proxy:
         self.scan_refused = 0
         self._lock = threading.Lock()
         self.flags = self._load_flags()
+        self.legs = {a.arm: OllamaLeg(a.arm, mode=config.ollama_mode, cloud_arm=a.cloud_arm,
+                                      upstream=tuple(config.ollama_upstream), log=self.log, run_dir=config.run_dir)
+                     for a in config.arms if a.ollama_leg}
 
     # lifecycle ---------------------------------------------------------------------------------------------
     def start(self) -> dict:
@@ -725,6 +936,10 @@ class Proxy:
                 r = _listen()
                 self._serve(r, lambda s, a=arm: self._client(s, a, "reader"))
                 arm_ports[arm.arm]["reader"] = r.getsockname()[1]
+            if arm.arm in self.legs:
+                o = _listen()
+                self._serve(o, lambda s, leg=self.legs[arm.arm]: leg.serve(s, dict(self.stage)))
+                arm_ports[arm.arm]["ollama"] = o.getsockname()[1]
         ctl = _listen()
         self._serve(ctl, self._control)
         self.ports = {"arms": arm_ports, **special, "control": ctl.getsockname()[1]}
@@ -1209,6 +1424,8 @@ class Proxy:
             out = {a: {k: v for k, v in vars(c).items()} for a, c in self.counters.items()}
         elif path == "/flags":
             out = dict(self.flags)
+        elif path == "/ollama":
+            out = {a: leg.transport() for a, leg in self.legs.items()}
         elif path == "/stage" and method == "POST":
             self.stage = {"block": body.get("block"), "stage": body.get("stage")}
             out = {"ok": True}

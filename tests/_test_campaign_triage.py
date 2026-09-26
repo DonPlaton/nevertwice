@@ -160,7 +160,7 @@ _tracked = sorted(set(subprocess.run(["git", "ls-files", "*.py"], cwd=T.ROOT, ca
                                      text=True, encoding="utf-8").stdout.split()))
 _src = [f for f in _tracked if f not in T.CLOSURE_EXCLUDED_FILES and T.MODEL_CALL.search(
         (T.ROOT / f).read_text(encoding="utf-8", errors="replace"))]
-#: Nineteen, of which eleven CALL the endpoint and eight only quote it: this suite, the tool
+#: Twenty, of which eleven CALL the endpoint and nine only quote it: this suite, the tool
 #: itself, `_test_audit_fixes.py`, `tests/research/_test_ollama_pacer.py` (R-v2-ports' T7
 #: names `/api/generate` as a `httpx.MockTransport` path for its streaming-response case),
 #: and `research/_ollama_symmetry_probe.py` (its fake Ollama SERVES `/api/chat` and
@@ -172,7 +172,9 @@ _src = [f for f in _tracked if f not in T.CLOSURE_EXCLUDED_FILES and T.MODEL_CAL
 #: fake `urllib.request.urlopen` returns a canned `/api/generate`-shaped response so
 #: `k8_judge_eval.judge()`'s real parsing path runs, never an actual call to the string), and
 #: `tests/research/_test_guard_bench.py` (the auditor's G3 check: its FAKED `urlopen` answers
-#: `/api/generate` and `/api/chat` with a 500 so guards_llm blocks - never a real endpoint).
+#: `/api/generate` and `/api/chat` with a 500 so guards_llm blocks - never a real endpoint), and
+#: `tests/_test_llm_proxy_ollama.py` (PREREG-V3 step A2.7, the v3 proxy's Ollama leg: its fake Ollama on a
+#: loopback port SERVES a scripted `/api/generate` so the leg's pacing and retry run - never a real endpoint).
 #: That is the declared false-positive direction - a file wrongly read as touching a model is
 #: kept out of the deterministic group, which is the safe side for a campaign plan. The count
 #: is pinned so that narrowing the rule again reddens here instead of quietly returning it to
@@ -183,9 +185,9 @@ _src = [f for f in _tracked if f not in T.CLOSURE_EXCLUDED_FILES and T.MODEL_CAL
 #: closure walk uses, so the population this check pins stays the files whose mention is
 #: evidence a CALLER (not shared transport) touches a model. Integration of 9A-rest (2026-09-24):
 #: 16 + the _test_frontier.py, _test_k8_judge_eval.py and _test_guard_bench.py quotes = 19; the pacer
-#: is not counted.
-check("nineteen tracked sources name a generation endpoint, so the rule has a population",
-      len(_src) == 19, str(len(_src)))
+#: is not counted. PREREG-V3 A2.7 (2026-09-26): + the _test_llm_proxy_ollama.py quote = 20.
+check("twenty tracked sources name a generation endpoint, so the rule has a population",
+      len(_src) == 20, str(len(_src)))
 check("and the generators it could not see before are among them",
       {"research/gen_code_sessions.py", "research/frontier_eval.py",
        "research/token_ab.py"} <= set(_src))
