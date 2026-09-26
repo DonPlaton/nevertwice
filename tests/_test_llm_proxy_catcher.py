@@ -235,6 +235,10 @@ if made is not None:
           and len(ctr_done["fetch"]["catcher_hosts"]) == sum(1 for r in log_lines("w") if r["arm"] == "fetch")
           and len(log_lines("w")) == n_lines + 1, str((still_done, len(log_lines("w")), n_lines)))
     ctl(ports, "/window", {"name": "held", "state": "close"})
+    import inspect  # noqa: E402
+
+    check("F-P2-6: /counters is a snapshot taken under the proxy's lock",
+          "with self._lock:" in inspect.getsource(P.Proxy._control).split('path == "/counters"', 1)[1].split("elif", 1)[0])
     px.stop()
     hop.close()
 

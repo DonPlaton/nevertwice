@@ -280,7 +280,11 @@ def site_problems(site_packages: Path, names, baseline: list[str]) -> list[str]:
                 allowed.add(parts[0])
                 want = _record_hash(h)
                 f = site_packages.joinpath(*parts)
-                if want is not None and f.is_file() and hashlib.sha256(f.read_bytes()).hexdigest() != want:
+                if want is None:
+                    continue
+                if not f.is_file():                     # P5c: a hashed row whose file is gone
+                    problems.append(f"the installed file {rel} that its RECORD lists is missing")
+                elif hashlib.sha256(f.read_bytes()).hexdigest() != want:
                     problems.append(f"the installed file {rel} is not the sha256 its RECORD names")
     for top in top_level(site_packages):
         danger = top.endswith(".pth") or "customize" in top
@@ -484,6 +488,16 @@ def run_install(c, L, F, *, python: Path, venv: Path, run: str, via_port: int, p
     record["problems"] += list(rec["problems"]) + refused
     # 4. the check and the installed set
     site = next((p for p in venv.rglob("site-packages") if p.is_dir()), None)
+    # P6: the installed set and the site checks come BEFORE any interpreter starts in the venv - `python -I` still
+    # runs a site-packages .pth - and any problem skips the import step (its absence is recorded with the reason).
+    if not record["problems"] and site is not None:
+        try:
+            record["installed_set_sha256"], record["installed_files"] = installed_set(site, list(record["wheels"]))
+        except InstallRefused as e:
+            record["problems"].append(f"refused: {e}")
+        record["problems"] += site_problems(site, list(record["wheels"]), record["venv_top_level"])
+        if record["problems"]:
+            record["import_skipped"] = "the installed site has problems; no interpreter was started in the venv"
     if not record["problems"] and site is not None:
         imports = "; ".join(f"import {p}" for p in packages)
         versions = ", ".join(f"{p}.__version__" for p in packages)
@@ -494,11 +508,6 @@ def run_install(c, L, F, *, python: Path, venv: Path, run: str, via_port: int, p
         record["import_rc"], record["import_version"] = rc, out.decode("utf-8", "replace").strip()
         record["import_check"] = check_summary(chk1)
         record["problems"] += check_problems("import", record["import_check"])
-        try:
-            record["installed_set_sha256"], record["installed_files"] = installed_set(site, list(record["wheels"]))
-        except InstallRefused as e:
-            record["problems"].append(f"refused: {e}")
-        record["problems"] += site_problems(site, list(record["wheels"]), record["venv_top_level"])
         if rc != 0:
             record["problems"].append(f"the installed package does not import (exit {rc})")
         else:

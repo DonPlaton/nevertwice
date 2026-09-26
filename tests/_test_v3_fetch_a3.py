@@ -232,6 +232,30 @@ check("F-P2-6: a connection still open after the drain wait is named, and no cou
 check("F-P2-6: the drain waits for the open count to reach 0, then compares",
       F.drained_counters.__defaults__ is None and F.TUNNEL_DRAIN_S == 5.0)
 
+import types  # noqa: E402
+
+
+class Dialled(L.Witnesses):
+    """G2: the witness reports a window root's direct dial (as launch.py files it: native.window_hosts)."""
+
+    def end_check(self, check_id):
+        got = super().end_check(check_id)
+        return {**got, "native": {**(got.get("native") or {}), "window_hosts": ["1.2.3.4:443"]}}
+
+
+LD = types.SimpleNamespace(**{k: getattr(L, k) for k in dir(L) if not k.startswith("__")})
+LD.Witnesses = Dialled
+cd, bd = contract("dialled")
+recd = F.run_child_window(cd, LD, window="a3-discovery", hosts=[HF, GH], jobs=F.discovery_jobs(PINS), python=Path(sys.executable),
+                          via_port=hop.port, run="d1", parent_env=os.environ,
+                          native=L.NativeEgressWitness(sampler=AnySampler(), tick_s=60, jobs=None),
+                          fs=L.FsWitness([L.WatchSpec("watched", bd / "watched")]),
+                          child_env_extra={"SSL_CERT_FILE": str(made[0])}, volume=TMP)
+check("G2: a direct dial the witness saw reaches the record's check and is named - end to end, not only in judge()",
+      recd["check"]["window_hosts"] == ["1.2.3.4:443"]
+      and any(p.startswith("a window root dialled past the catcher") and "1.2.3.4:443" in p for p in recd["problems"]),
+      str((recd["check"].get("window_hosts"), recd["problems"])))
+
 print("\n- the problems, by name -")
 bad_job = {"hosts": [HF], "max_redirects": 0, "requests": [{"id": "missing", "url": f"https://{HF}/nothing/here",
                                                              "save": "x.json", "max_bytes": 1024}]}

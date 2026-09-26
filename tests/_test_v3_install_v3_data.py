@@ -281,16 +281,24 @@ fs_site = TMP / "fs_site"
     "demo-1.0.dist-info/RECORD,,\n../../Scripts/demo.exe,sha256=z,99\n", encoding="utf-8")
 (fs_site / "pip").mkdir()
 (fs_site / "pip" / "x.py").write_bytes(b"pip's own file\n")
-d1_, n1_ = I.installed_set(fs_site, ["Demo"])
+def iset(site, names):
+    """installed_set, or ("crash: ...", -1) - a refusal where none is due fails the check by its name."""
+    try:
+        return I.installed_set(site, names)
+    except Exception as e:  # noqa: BLE001
+        return (f"crash: {type(e).__name__}: {e}", -1)
+
+
+d1_, n1_ = iset(fs_site, ["Demo"])
 check("the installed set: the RECORD's files inside site-packages - no bytecode, no RECORD, no launcher, no pip",
       n1_ == 2 and d1_ == hashlib.sha256("\n".join(sorted([
           "demo/__init__.py\0" + hashlib.sha256(b"x = 1\n").hexdigest(),
           "demo-1.0.dist-info/METADATA\0" + hashlib.sha256(b"Name: demo\n").hexdigest()])).encode()).hexdigest(), str((d1_, n1_)))
 (fs_site / "demo" / "__pycache__" / "__init__.cpython-314.pyc").write_bytes(b"another mtime")
 (fs_site / "pip" / "x.py").write_bytes(b"pip changed\n")
-check("the installed set does not move with bytecode or pip's own files", I.installed_set(fs_site, ["demo"]) == (d1_, n1_))
+check("the installed set does not move with bytecode or pip's own files", iset(fs_site, ["demo"]) == (d1_, n1_))
 (fs_site / "demo" / "__init__.py").write_bytes(b"x = 2\n")
-check("the installed set moves with a pinned file's bytes", I.installed_set(fs_site, ["demo"])[0] != d1_)
+check("the installed set moves with a pinned file's bytes", iset(fs_site, ["demo"])[1] == n1_ and iset(fs_site, ["demo"])[0] != d1_)
 (fs_site / "demo" / "__init__.py").unlink()
 check("a file in the RECORD but not on disk is refused", refused(lambda: I.installed_set(fs_site, ["demo"]), I.InstallRefused,
                                                                  "not on disk"))
@@ -311,11 +319,17 @@ b64 = base64.urlsafe_b64encode(hashlib.sha256(body_ok).digest()).decode().rstrip
 BASE_TOP = ["pip", "pip-26.0.1.dist-info"]
 check("the site's top level: the venv's own names plus the pinned distributions' - no problem",
       I.site_problems(ok_site, ["demo"], BASE_TOP) == [], str(I.site_problems(ok_site, ["demo"], BASE_TOP)))
-digest_before = I.installed_set(ok_site, ["demo"])
+(ok_site / "stray_pkg").mkdir()
+check("a stray top-level name no one installed (not a .pth) is a named problem",
+      I.site_problems(ok_site, ["demo"], BASE_TOP)
+      == ["site-packages holds stray_pkg, which no pinned distribution and not the venv installed"],
+      str(I.site_problems(ok_site, ["demo"], BASE_TOP)))
+(ok_site / "stray_pkg").rmdir()
+digest_before = iset(ok_site, ["demo"])
 (ok_site / "evil.pth").write_bytes(b"import os\n")
 check("an extra evil.pth is a named problem (it runs code at every start), and the digest itself does not change",
       any("evil.pth" in x and "every interpreter start" in x for x in I.site_problems(ok_site, ["demo"], BASE_TOP))
-      and I.installed_set(ok_site, ["demo"]) == digest_before, str(I.site_problems(ok_site, ["demo"], BASE_TOP)))
+      and iset(ok_site, ["demo"]) == digest_before, str(I.site_problems(ok_site, ["demo"], BASE_TOP)))
 (ok_site / "evil.pth").unlink()
 (ok_site / "demo-1.0.dist-info" / "RECORD").write_text(
     f"demo/__init__.py,sha256={b64},6\nlisted.pth,,\ndemo-1.0.dist-info/RECORD,,\n", encoding="utf-8")
@@ -331,6 +345,11 @@ check("a *.pth the venv itself had is not the window's doing",
 check("a sitecustomize.py the window added is a named problem",
       any("sitecustomize.py" in x and "every interpreter start" in x for x in I.site_problems(ok_site, ["demo"], BASE_TOP)))
 (ok_site / "sitecustomize.py").unlink()
+(ok_site / "demo" / "__init__.py").write_bytes(b"x = 9\n")
+(ok_site / "demo" / "__init__.py").unlink()
+check("P5c: a hashed RECORD row whose file is missing is a named problem, naming the path",
+      I.site_problems(ok_site, ["demo"], BASE_TOP) == ["the installed file demo/__init__.py that its RECORD lists is missing"],
+      str(I.site_problems(ok_site, ["demo"], BASE_TOP)))
 (ok_site / "demo" / "__init__.py").write_bytes(b"x = 9\n")
 check("a listed file whose bytes are not its RECORD's sha256 is a named problem, naming the path",
       I.site_problems(ok_site, ["demo"], BASE_TOP) == ["the installed file demo/__init__.py is not the sha256 its RECORD names"],
@@ -458,6 +477,10 @@ check("no hard dependency was named, and none fetched", rec["dependencies"] == [
 check("the import in the venv gives the pinned version", rec["import_rc"] == 0 and rec["import_version"] == "1.2.0",
       str((rec.get("import_rc"), rec.get("import_version"))))
 check("the installed set is hashed", len(rec["installed_set_sha256"]) == 64 and rec["installed_files"] >= 2)
+ok_site_pkgs = next(s for s in (C.polygon_root / "v3_data").rglob("site-packages") if s.is_dir())
+check("the record's installed set is the pinned distributions' only - pip's own files are not in it",
+      (rec["installed_set_sha256"], rec["installed_files"]) == iset(ok_site_pkgs, list(rec["wheels"]))
+      and iset(ok_site_pkgs, list(rec["wheels"])) != iset(ok_site_pkgs, [*rec["wheels"], "pip"]), str(rec["installed_files"]))
 check("the window tunnelled only the index hosts", set(rec["window_record"]["tunnelled_hosts"]) <= {PY, FILES}
       and PY in rec["window_record"]["tunnelled_hosts"] and FILES in rec["window_record"]["tunnelled_hosts"],
       str(rec["window_record"]))
@@ -484,10 +507,11 @@ check("the record is written", json.loads((C.runs_root / "_install/a3-pyarrow/i1
 print("\n- refusals -")
 try:
     I.run_install(C, L, F, python=Path(sys.executable), venv=C.polygon_root / "v3_data", run="i2", via_port=1,
-                  parent_env=os.environ, packages=("nvt3fake",), tag=TAG)
-    check("an existing venv refuses the install", False)
-except I.InstallRefused:
-    check("an existing venv refuses the install", True)
+                  parent_env=os.environ, packages=("nvt3fake",), tag=TAG, need_bytes=1, volume=TMP)
+    check("G1: an existing venv refuses the install - by its own rule, not the disk floor", False)
+except Exception as e:  # noqa: BLE001 - any other exception, or another refusal, fails the check by name
+    check("G1: an existing venv refuses the install - by its own rule, not the disk floor",
+          isinstance(e, I.InstallRefused) and "already exists" in str(e), f"{type(e).__name__}: {e}")
 c13, b13 = contract("relabel")
 (c13.runs_root / "_install" / "a3-pyarrow" / "i1").mkdir(parents=True)
 try:
@@ -549,10 +573,15 @@ check("an incomplete check of the venv step stops the install before any window 
 rec7, _, _ = install("impchk", routes, L_=flaky("-check"))
 check("an incomplete check of the import step is a named problem",
       rec7["problems"] == ["the import check is not complete"] and rec7["import_rc"] == 0, str(rec7["problems"]))
-pth_r, _ = index_routes("nvt3fake", extra={"evil.pth": b"import os\n"})
+MARKER = TMP / "pth_ran.marker"
+pth_line = f"import pathlib; pathlib.Path({str(MARKER)!r}).write_text('ran')\n".encode()
+pth_r, _ = index_routes("nvt3fake", extra={"evil.pth": pth_line})
 recp, _, _ = install("pth", pth_r)
 check("an install whose wheel ships a *.pth is a named problem after the window",
       any("evil.pth" in p and "every interpreter start" in p for p in recp["problems"]), str(recp["problems"]))
+check("P6: the site checks run before any interpreter starts in the venv - the .pth never ran, the import was skipped",
+      not MARKER.exists() and "import_rc" not in recp and "no interpreter was started" in recp.get("import_skipped", ""),
+      str((MARKER.exists(), recp.get("import_rc"), recp.get("import_skipped"))))
 vm_r, _ = index_routes("nvt3fake", code_version="9.9")
 rec8, _, _ = install("vermis", vm_r)
 check("an imported version that is not the pinned one is a named problem",

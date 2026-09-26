@@ -1507,7 +1507,9 @@ class Proxy:
         if path == "/health":
             out = {"ok": True}
         elif path == "/counters":
-            out = {a: {k: v for k, v in vars(c).items()} for a, c in self.counters.items()}
+            with self._lock:                            # a snapshot: catcher_hosts and catcher_open move together
+                out = {a: {k: (list(v) if isinstance(v, list) else v) for k, v in vars(c).items()}
+                       for a, c in self.counters.items()}
         elif path == "/flags":
             out = dict(self.flags)
         elif path == "/ollama":
