@@ -212,6 +212,10 @@ _NEWER = ("hashlib.file_digest", "datetime.UTC", "import tomllib", "except*", "S
           "itertools.batched", "contextlib.chdir")
 _found = sorted(f"{p.name}: {n}" for p in (ROOT / "research" / "v3").glob("*.py")
                 for n in _NEWER if n in p.read_bytes().decode("utf-8"))
+big = TMP / "big.bin"
+big.write_bytes(bytes(range(256)) * 4096 + b"x")                 # 1 MiB + 1: more than one streamed block
+check("G2: the streamed sha256 of a file larger than one block is the whole file's",
+      P._sha256(big) == hashlib.sha256(big.read_bytes()).hexdigest())
 check("B1: no 3.11+ API in research/v3 (hashlib.file_digest broke place_local_v2 on 3.10 - CI 76cb0e9)", _found == [],
       str(_found))
 

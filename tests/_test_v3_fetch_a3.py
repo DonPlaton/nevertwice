@@ -289,8 +289,11 @@ else:
     gsp = [s for s in F._jsonl(L.spawns_log(cg)) if s.get("role") == "fetch"]
     check("... its spawn is required and declares GIT_TERMINAL_PROMPT", len(gsp) == 1
           and gsp[0]["witness"]["requirement"] == "required" and "GIT_TERMINAL_PROMPT" in gsp[0]["env_names"], str(gsp))
+    # The alias sleeps through THIS interpreter by its absolute path, never a `sleep` found on PATH: macOS keeps sleep in
+    # /bin, off the child's PATH, and sh exited 127 at once (CI fe1a8da, the four macOS legs).
+    slow_cmd = f'"{Path(sys.executable).as_posix()}" -c "import time; time.sleep(5)"'
     slow = {"child": "git", "exe": str(Path(GIT).resolve()),
-            "argv": ["-c", "alias.slow=!sleep 5", "slow"], "env": {}, "timeout_s": 0.5}
+            "argv": ["-c", f"alias.slow=!{slow_cmd}", "slow"], "env": {}, "timeout_s": 0.5}
     cs, bs = contract("gitslow")
     try:
         recs = F.run_child_window(cs, L, window="a3-git", hosts=["github.com"], jobs=[slow], python=Path(sys.executable),
@@ -302,6 +305,9 @@ else:
                 "problems": [f"crash: {type(e).__name__}: {e}"]}
     check("a job's own timeout_s bounds it: the child is stopped and the window names the failure",
           recs["jobs"][0]["rc"] is None and any("git" in p for p in recs["problems"]), str(recs["problems"]))
+    check("... the slow job was STOPPED by its timeout (rc None), never a quick 127 from a command it could not find",
+          recs["jobs"][0]["rc"] is None and not any("127" in p for p in recs["problems"]),
+          str((recs["jobs"][0]["rc"], recs["problems"])))
 
 print("\n- the problems, by name -")
 bad_job = {"hosts": [HF], "max_redirects": 0, "requests": [{"id": "missing", "url": f"https://{HF}/nothing/here",

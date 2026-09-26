@@ -131,9 +131,11 @@ try:
                 check("the witness read the tree's connections (rows seen > 0)", n["rows_seen"] > 0, str(n))
             else:
                 SKIPPED.append("the grandchild stays tracked / rows seen > 0 / the injected hit")
+                check("G3b: the skip rests on the witness's own declared limit (LIMIT_NO_JOBS is in the record)",
+                      L.LIMIT_NO_JOBS in n["limit"], n["limit"])
                 print("       SKIP (not Windows - CI 76cb0e9 class D): the child exits before the first tick and its "
                       "grandchild is re-parented to init; with no Job Object that orphan is the witness's declared "
-                      f"limit, so the three orphan checks run on Windows only: {n['limit'][-90:]}")
+                      f"limit, so the three orphan checks run on Windows only:{L.LIMIT_NO_JOBS}")
             check("a loopback-only tree gives 0 hits, and the check is complete", n["hits"] == 0 and n["complete"], str(n))
         elif os.name == "nt":
             check("a non-loopback row on the real grandchild's pid is exactly one hit",
@@ -223,5 +225,7 @@ finally:
         c.close()
     shutil.rmtree(TMP, ignore_errors=True)
 
-print(f"\nv3 launch psutil: {PASSED} passed, {FAILED} failed")
+check("G3: on Windows nothing is skipped - the orphan checks run where they matter", os.name != "nt" or not SKIPPED,
+      str(SKIPPED))
+print(f"\nv3 launch psutil: {PASSED} passed, {FAILED} failed, {len(SKIPPED)} skipped by name")
 sys.exit(1 if FAILED else 0)

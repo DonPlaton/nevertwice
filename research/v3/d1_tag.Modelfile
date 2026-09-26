@@ -1,0 +1,2 @@
+FROM bge-m3
+PARAMETER num_batch 2048

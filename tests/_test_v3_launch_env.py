@@ -398,6 +398,9 @@ if link(TMP / "root_link", TMP / "root_real"):
     check("A: a path written through the link above the roots is inside them (by its real path too)",
           L._within(TMP / "root_link" / "polygon" / "tool.exe", CL.polygon_root)
           and L._within(TMP / "root_link" / "polygon" / "runs" / "v3" / "x", CL.runs_root))
+    check("G1: ... and the root itself, written through its alias, is within it (the walk starts at the path, not its "
+          "parent)", L._within(TMP / "root_link" / "polygon", CL.polygon_root)
+          and L._within(TMP / "root_link" / "polygon" / "runs" / "v3", CL.runs_root))
     (TMP / "root_real" / "polygon" / "sub").mkdir(parents=True, exist_ok=True)
     if link(TMP / "j_sub", TMP / "root_real" / "polygon" / "sub"):
         check("A: ... but a junction to a place BELOW the root is no alias of it - refused",
