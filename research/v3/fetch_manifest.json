@@ -23,7 +23,7 @@
             "beam_run_evaluation", "mab_templates", "mab_eval_other_utils", "mab_eval_data_utils", "mab_fc_sh_6k",
             "mab_fc_sh_32k", "mab_fc_sh_64k", "mab_fc_sh_262k", "mab_fc_mh_6k", "mab_fc_mh_32k", "mab_fc_mh_64k",
             "mab_fc_mh_262k", "ama_judge_config", "ama_judge_config_api", "ama_judge_config_gpt5_mini", "ama_evaluate",
-            "ama_evaluation_metrics", "ama_licence"],
+            "ama_evaluation_metrics", "ama_licence", "amem_licence"],
    "max_redirects": 0
   },
   "a3-tiktoken": {

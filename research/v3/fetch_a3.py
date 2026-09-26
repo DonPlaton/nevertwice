@@ -10,7 +10,8 @@ The auditor's O1 ruling: the harness (this process, outside the contract) never 
    exact hosts for the arm "fetch";
 4. runs the window's jobs one after another, each a research/v3/fetch_child.py process spawned under the contract
    (requirement "required", its script the only read exception, HTTPS_PROXY = the arm's catcher); a job may be built
-   from the files the previous job saved (discovery's phases);
+   from the files the previous job saved (discovery's phases). A job {"child": "pip", "python", "argv", "env"} runs a
+   venv's pip the same way instead (the install windows): declared PIP_* variables, no stdin, ok = its exit code;
 5. closes the window and the check, shuts the proxy down, and writes one record: the jobs and their summaries (hashes,
    redirect hosts, peer issuers), the catcher's host log, the window log, the check, and the problems found.
 
@@ -160,25 +161,39 @@ def run_child_window(c, L, *, window: str, hosts: list[str], jobs: list, python:
                 if spec is None:
                     continue
                 unit = L.make_unit_dirs(c, stand, run, ARM, f"j{i}")
-                env = L.build_env(c, parent_env=parent_env, unit=unit, path_dirs=[Path(python).parent],
-                                  declared=dict(child_env_extra or {}), catcher_url=catcher)
-                child = L.spawn(c, [os.fspath(python), os.fspath(FETCH_CHILD)], env=env, cwd=unit.cwd,
+                pip = spec.get("child") == "pip"
+                exe = Path(spec["python"]) if pip else Path(python)
+                argv = [os.fspath(exe), *spec["argv"]] if pip else [os.fspath(python), os.fspath(FETCH_CHILD)]
+                declared = {**(spec.get("env") or {}), **(child_env_extra or {})} if pip else dict(child_env_extra or {})
+                env = L.build_env(c, parent_env=parent_env, unit=unit, path_dirs=[exe.parent], declared=declared,
+                                  catcher_url=catcher)
+                child = L.spawn(c, argv, env=env, cwd=unit.cwd,
                                 record={"role": "fetch", "stand": None, "run": f"{window}.{run}", "arm": ARM,
                                         "unit": f"j{i}"},
-                                parent_env=parent_env, catcher_url=catcher, argv_exception={1: FETCH_CHILD},
+                                parent_env=parent_env, catcher_url=catcher,
+                                argv_exception={} if pip else {1: FETCH_CHILD},
                                 witnesses=W, requirement="required", window=win,
-                                stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                child.process.stdin.write((json.dumps(spec) + "\n").encode("utf-8"))
-                child.process.stdin.close()
+                                stdin=subprocess.DEVNULL if pip else subprocess.PIPE,
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                if not pip:
+                    child.process.stdin.write((json.dumps(spec) + "\n").encode("utf-8"))
+                    child.process.stdin.close()
                 try:
-                    rc = child.process.wait(timeout=job_timeout)
+                    out, err = child.process.communicate(timeout=job_timeout)
+                    rc = child.process.returncode
                 except subprocess.TimeoutExpired:
                     child.kill_tree()
-                    rc = None
-                summary_f = unit.cwd / "fetch_summary.json"
-                summary = json.loads(summary_f.read_bytes()) if summary_f.is_file() else []
+                    rc, out, err = None, b"", b""
+                if pip:
+                    summary = [{"id": "pip", "ok": rc == 0,
+                                "error": None if rc == 0 else f"pip exited with {rc}: "
+                                + err.decode("utf-8", "replace")[-200:].replace("\n", " ")}]
+                else:
+                    summary_f = unit.cwd / "fetch_summary.json"
+                    summary = json.loads(summary_f.read_bytes()) if summary_f.is_file() else []
                 results.append({"index": i, "rc": rc, "unit": str(unit.cwd), "job": spec, "summary": summary,
-                                "stderr_tail": child.process.stderr.read().decode("utf-8", "replace")[-300:]})
+                                "stdout_tail": out.decode("utf-8", "replace")[-600:] if pip else "",
+                                "stderr_tail": err.decode("utf-8", "replace")[-300:]})
     except (L.ContractViolation, WindowRefused) as e:
         error = f"{type(e).__name__}: {e}"
     finally:

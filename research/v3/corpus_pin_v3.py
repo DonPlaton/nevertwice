@@ -182,9 +182,12 @@ PINS: dict[str, dict] = {
     "ama_licence": _at(_pin("licence-evidence", ["S7"], "github", GH_AMA, None, "MIT", "a3-github", 821),
                        REV_D2["gh_ama"], "LICENSE", record="d2"),
     # ── arm source (lines 229, 2306) ──
-    "amem_source": _at(_pin("arm-source", ["arm:a-mem"], "git", "agiresearch/A-mem", None, None, "a3-git", 229,
-                            note="the head commit at discovery; the clone must resolve to it; licence from the repository"),
+    "amem_source": _at(_pin("arm-source", ["arm:a-mem"], "git", "agiresearch/A-mem", None, "MIT", "a3-git", 229,
+                            note="the head commit at discovery; the clone must resolve to it; GitHub's spdx in d1: MIT"),
                        REV["gh_amem"]),
+    "amem_licence": _at(_pin("licence-evidence", ["arm:a-mem"], "github", "agiresearch/A-mem", None, "MIT", "a3-github", 229,
+                             note="the LICENSE at the pinned commit (d1 tree: 1068 bytes) is the evidence, as LoCoMo's"),
+                        REV["gh_amem"], "LICENSE"),
     # ── v2 pins reused by value (S4, S9) ──
     "locomo10": {**_pin("evaluation", ["S4"], "local-v2", "snap-research/locomo", V2_PINS["locomo10"]["path"],
                         "CC-BY-NC-4.0", None, 817), "sha256": V2_PINS["locomo10"]["sha256"],

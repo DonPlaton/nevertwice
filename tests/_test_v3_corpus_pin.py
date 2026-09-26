@@ -229,9 +229,16 @@ check("d2: BEAM's official scoring at mohammadtavakoli78/BEAM b2da22ea - compute
       and all(p["repo"] == "mohammadtavakoli78/BEAM" for n, p in P_.items() if n.startswith("beam_") and p["source"] == "github"))
 check("P6: a pin that declares no licence accepts only a known one",
       refused(lambda: CP.fill("amem_source", revision="r", sha256=sha, size=len(data), licence_found="WTFPL",
-                              pins=copy.deepcopy(CP.PINS)), CP.PinRefused, "unknown")
+                              pins=mutated("amem_source", licence=None)), CP.PinRefused, "unknown")
       and CP.fill("amem_source", revision="r", sha256=sha, size=len(data), licence_found="mit",
-                  pins=copy.deepcopy(CP.PINS))["licence_found"] == "mit")
+                  pins=mutated("amem_source", licence=None))["licence_found"] == "mit")
+check("every pin declares its licence before fill() - none is left to the fetch",
+      [n for n, p in CP.PINS.items() if p["licence"] is None] == [])
+check("A-mem: the source declares MIT (GitHub's spdx in d1), and its LICENSE at the same commit is licence evidence",
+      P_["amem_source"]["licence"] == P_["amem_licence"]["licence"] == "MIT"
+      and (P_["amem_licence"]["role"], P_["amem_licence"]["path"], P_["amem_licence"]["repo"])
+      == ("licence-evidence", "LICENSE", "agiresearch/A-mem")
+      and P_["amem_licence"]["revision"] == P_["amem_source"]["revision"] == "ceffb860f0712bbae97b184d440df62bc910ca8d")
 check("the disk rule is the auditor's: 100 GB floor, 3x the window, stop at a 10 GB file",
       MAN["disk"] == {"volume": "D:", "floor_gb": 100, "multiple_of_window_total": 3, "stop_single_file_gb": 10})
 
