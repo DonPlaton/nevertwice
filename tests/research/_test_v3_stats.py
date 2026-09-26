@@ -163,6 +163,15 @@ check("... adjusted p 0.02, 0.03, 0.06, 0.06",
 h = st.holm({"x": 0.02, "y": 0.02, "z": 0.049})
 check("the step-down stops: 0.049 <= 0.05 but the first step failed, nothing rejects",
       not any(v["reject"] for v in h.values()), str(h))
+# Where step-down Holm and Bonferroni part ways (the auditor's gate probe): at m = 4 Bonferroni's .0125 rejects only
+# a; Holm's thresholds .0125, .0167, .025, .05 reject all four. Adjusted p: max over the prefix of (m - j + 1) p_(j)
+# = max(4 x .012, 3 x .013, 2 x .020, 1 x .040) = .048 for every member.
+h = st.holm({"a": 0.012, "b": 0.013, "c": 0.020, "d": 0.040})
+check("Holm rejects all four of {.012, .013, .020, .040} where Bonferroni (.0125) rejects only a",
+      all(h[k]["reject"] for k in "abcd"), str({k: h[k]["reject"] for k in "abcd"}))
+check("... with thresholds .0125, .05/3, .025, .05 and every adjusted p exactly 4 x .012 = .048",
+      all(close(h[k]["threshold"], t) for k, t in zip("abcd", (0.0125, 0.05 / 3, 0.025, 0.05)))
+      and all(close(h[k]["p_adj"], 4 * 0.012) for k in "abcd"), str({k: (h[k]["threshold"], h[k]["p_adj"]) for k in "abcd"}))
 v = st.verdicts({"m1": {"estimate": 0.1, "p": 0.001, "p_tost": 0.9},
                  "m2": {"estimate": -0.1, "p": 0.002, "p_tost": 0.9},
                  "m3": {"estimate": 0.0, "p": 0.9, "p_tost": 0.001},
