@@ -114,7 +114,40 @@ def check(manifest: dict, git: Git) -> tuple[list[dict], list[dict], list[dict]]
         if moved:
             failures.append({"claim": claim, "moved": moved,
                              "reason": "source moved after the number was measured"})
+            continue
+        #: (б) b-b: a DERIVED artifact records the files it was computed from; the code closure
+        #: above cannot see an input being re-measured, this can.
+        raw = claim.get("raw")
+        if raw and (ROOT / raw).is_file():
+            try:
+                doc = json.loads((ROOT / raw).read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                doc = None
+            changed = inputs_moved(doc)
+            if changed:
+                failures.append({"claim": claim, "moved": [(c, "input") for c in changed],
+                                 "reason": "an input of this derived artifact changed after it was computed"})
     return failures, declared, cited_while_stale
+
+
+def _sha256_of(path: Path) -> str | None:
+    import hashlib  # noqa: PLC0415
+    return hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else None
+
+
+def inputs_moved(doc, root: Path = ROOT) -> list[str]:
+    """The recorded inputs of a derived artifact (`inputs: [{path, sha256}]`, written by
+    `research/_provenance.record_inputs` or a tool's own equivalent) whose file no longer hashes
+    the same - `"<path> (changed)"` or `"<path> (missing)"`. Empty when nothing is recorded."""
+    out = []
+    recs = doc.get("inputs") if isinstance(doc, dict) else None
+    for rec in recs if isinstance(recs, list) else []:
+        if not isinstance(rec, dict) or not rec.get("path"):
+            continue
+        now = _sha256_of(root / rec["path"])
+        if now != rec.get("sha256"):
+            out.append(f"{rec['path']} ({'missing' if now is None else 'changed'})")
+    return out
 
 
 def _print_failures(failures: list[dict], verbose: bool) -> None:

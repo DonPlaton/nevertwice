@@ -111,6 +111,29 @@ def running_llm(configured: str | None = None) -> str | None:
     return getattr(engine, "OLLAMA_MODEL", None) or configured
 
 
+def record_inputs(payload: dict, paths) -> dict:
+    """Name every committed file a DERIVED artifact was computed from, with its sha256, as
+    `payload["inputs"] = [{"path", "sha256"}]` - and return `payload`.
+
+    (б) b-b, stage D: a derived artifact (a pool over per-run files, a `--with` merge, a tool that
+    reads other artifacts) goes stale when an INPUT is re-measured, and its claims' `produced_by`
+    closure - the code - cannot see that. `tools/check_freshness.inputs_moved` reads this record:
+    a live claim whose artifact's inputs no longer hash the same is stale, and `remeasure
+    --restore` refuses it. Paths are repository-relative when they are inside the repository."""
+    import hashlib  # noqa: PLC0415
+    rec = []
+    for p in paths:
+        path = Path(p)
+        ab = path if path.is_absolute() else ROOT / path
+        try:
+            rel = ab.resolve().relative_to(ROOT.resolve()).as_posix()
+        except ValueError:
+            rel = str(p).replace("\\", "/")
+        rec.append({"path": rel, "sha256": hashlib.sha256(ab.read_bytes()).hexdigest() if ab.is_file() else None})
+    payload["inputs"] = rec
+    return payload
+
+
 def git_commit() -> str:
     """`HEAD`'s full SHA, or a `?(...)` placeholder naming the failure - never raises, because a
     stamp that crashes a run over a missing `git` binary is a worse failure than an honest '?'."""

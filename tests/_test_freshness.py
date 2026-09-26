@@ -278,10 +278,27 @@ def test_mutations_turn_it_red() -> None:
     #: published claim in register order is one (asof.gate.threshold), so the victim is the first
     #: published claim that HAS a closure.
     published = [c for c in MANIFEST["claims"] if not c.get("stale") and c.get("produced_by")]
+    base = MANIFEST
     if not published:
-        check("there is a published claim to mutate", False,
-              "every claim is withdrawn; the mutations below cannot run")
-        return
+        #: Stage D withdrew the last live claim with a closure (the draw_divergence four, b-b).
+        #: The mutations below still need a live claim, so a withdrawn one is revived in a COPY of
+        #: the register, stamped at HEAD - fresh by construction, which the control asserts - and
+        #: every mutation is applied to that copy. Nothing is ever green for want of a victim.
+        base = json.loads(json.dumps(MANIFEST))
+        donor = next((c for c in base["claims"] if c.get("produced_by") and c.get("raw")), None)
+        if donor is None:
+            check("there is a claim with a closure to mutate", False, "the register has none")
+            return
+        for k in ("stale", "withdrawn_on", "pending_remeasure", "excluded_because"):
+            donor.pop(k, None)
+        donor["commit"] = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"],
+                                         capture_output=True, text=True).stdout.strip()
+        donor["cited_in"] = []
+        failures, _, _ = cf.check(base, cf.Git())
+        check("control: a withdrawn claim revived at HEAD in a copy of the register reads fresh",
+              not any(f["claim"]["id"] == donor["id"] for f in failures), str([f["reason"] for f in failures
+                                                                               if f["claim"]["id"] == donor["id"]]))
+        published = [donor]
     victim = published[0]
 
     # 1. B8(f): roll the claim back to just before the newest change in its own closure.
@@ -297,7 +314,7 @@ def test_mutations_turn_it_red() -> None:
     if not stamp:
         check("the closure has a parent commit to roll back to", False, f"newest={newest}")
         return
-    mutated = json.loads(json.dumps(MANIFEST))
+    mutated = json.loads(json.dumps(base))
     for claim in mutated["claims"]:
         if claim["id"] == victim["id"]:
             claim["commit"] = stamp
@@ -307,7 +324,7 @@ def test_mutations_turn_it_red() -> None:
           f"stamped {stamp[:9]} (parent of {newest[:9]}) and the check stayed green")
 
     # 2. A claim with no closure must not pass by default.
-    mutated = json.loads(json.dumps(MANIFEST))
+    mutated = json.loads(json.dumps(base))
     for claim in mutated["claims"]:
         if claim["id"] == victim["id"]:
             claim.pop("produced_by", None)
@@ -316,7 +333,7 @@ def test_mutations_turn_it_red() -> None:
           any(f["claim"]["id"] == victim["id"] for f in failures))
 
     # 3. Withdrawal must not be a way to keep publishing.
-    mutated = json.loads(json.dumps(MANIFEST))
+    mutated = json.loads(json.dumps(base))
     for claim in mutated["claims"]:
         if claim["id"] == victim["id"]:
             claim["stale"] = "pretending this is withdrawn"

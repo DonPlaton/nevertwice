@@ -363,6 +363,12 @@ def row_refusal(data, pointer: str, code_time: int, head: str | None = None,
         refusal = _timing_mode_refusal(nodes[:-1], raw)
         if refusal:
             return refusal
+    #: (б) b-b: a derived artifact computed from inputs that have since been re-measured is the
+    #: old derivation wearing a fresh file - refuse it until it is re-derived.
+    changed = cf.inputs_moved(data)
+    if changed:
+        return (f"a derived artifact whose input(s) changed after it was computed: "
+                f"{', '.join(changed[:3])} - re-derive it")
     return None
 
 

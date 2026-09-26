@@ -1572,6 +1572,7 @@ def main() -> int:
         _print_pooled(res)
         if args.out:
             prov.stamp(res)
+            prov.record_inputs(res, list(args.pool) + list(args.others))   # (б) b-b: a derived artifact
             Path(args.out).write_text(json.dumps(res, indent=1, ensure_ascii=False),
                                       encoding="utf-8", newline="\n")
             print("wrote", args.out)

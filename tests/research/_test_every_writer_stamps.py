@@ -47,8 +47,8 @@ EXEMPT = {
     "research/lexical_morphology_probe.py": "reads the owner's live store - not run in stage D (§3.2)",
     "research/k8_vault_dryrun.py": "reads the owner's live store - not run in stage D (§3.2)",
     "tools/draw_divergence.py": "a derived tool over committed artifacts, reproduced byte for byte; its "
-                                "provenance is its input closure ((б) b-b, which must land before the "
-                                "campaign-v3 anchor), not a clock",
+                                "provenance is the inputs it records by sha256 ((б) b-b, "
+                                "tests/_test_input_closure.py), not a clock",
 }
 
 

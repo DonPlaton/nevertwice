@@ -168,10 +168,19 @@ def test_the_rule_bites() -> None:
     """A copy of a live claim's figure with one digit changed is an orphan; the same figure inside a
     generated region or a fence is not this suite's business."""
     print("\n- the rule catches what it is for -")
-    forms = vouched_forms(MANIFEST)
-    rules = non_metric_rules(MANIFEST)
-    live = next(str(c["printed"][0]) for c in MANIFEST["claims"]
-                if not c.get("stale") and re.fullmatch(r"0\.\d{3}", str(c["printed"][0])))
+    man = MANIFEST
+    live = next((str(c["printed"][0]) for c in MANIFEST["claims"]
+                 if not c.get("stale") and c.get("printed")
+                 and re.fullmatch(r"0\.\d{3}", str(c["printed"][0]))), None)
+    if live is None:
+        #: Stage D left no live claim with a three-decimal figure (only two declarations are live);
+        #: the rule is exercised on a copy of the register carrying one synthetic live figure, so it
+        #: is never green for want of something to vouch for.
+        man = json.loads(json.dumps(MANIFEST))
+        man["claims"].append({"id": "probe.live", "printed": ["0.482"], "value": 0.482})
+        live = "0.482"
+    forms = vouched_forms(man)
+    rules = non_metric_rules(man)
     drifted = live[:-1] + ("1" if live[-1] != "1" else "2")
     while drifted in forms:                              # a coincidence with another live form
         drifted = drifted[:-1] + str((int(drifted[-1]) + 1) % 10)

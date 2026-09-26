@@ -173,6 +173,21 @@ check("a zep arm whose calls the pacer never saw is refused by the stand itself"
 check("while the naive arm, which calls nothing, stays valid", "valid" not in (_arms.get("naive") or {"valid": "?"}),
       str(_arms.get("naive")))
 
+print("\n- head_to_head: a competitor arm with no paced call is refused; our cached arm is not asked -")
+import head_to_head as hh  # noqa: E402
+check("every competitor adapter is a model arm, our re-scoring arm is not",
+      hh.MODEL_ARMS == set(hh.ADAPTERS) - {"nevertwice"} and "mem0_infer" in hh.MODEL_ARMS, str(sorted(hh.MODEL_ARMS)))
+_saved_mem0 = hh.ADAPTERS["mem0"]
+hh.ADAPTERS["mem0"] = lambda data, pool: {"recall@5": 0.5, "n": 1, "mode": "fake, no call"}
+try:
+    pacer.install()
+    _row = hh.run_and_score_arm("mem0", [], {})
+finally:
+    hh.ADAPTERS["mem0"] = _saved_mem0
+    pacer.uninstall()
+check("a mem0 row whose calls the pacer never saw is invalid in the stand itself",
+      _row.get("valid") is False and "0 paced Ollama calls" in (_row.get("invalid_reason") or ""), str(_row)[:300])
+
 print("\n- the pacer reads every endpoint name a stand or a competitor can be pointed with -")
 sys.path.insert(0, str(ROOT))
 import sandbox_guard  # noqa: E402

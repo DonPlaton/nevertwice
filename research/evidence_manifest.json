@@ -59909,7 +59909,10 @@
    "produced_by": [
     "tools/draw_divergence.py"
    ],
-   "ci_note": "No interval: two byte-identical draws are one draw (PREREG-V2 P4), so a divergence rate has no sampling distribution to bound."
+   "ci_note": "No interval: two byte-identical draws are one draw (PREREG-V2 P4), so a divergence rate has no sampling distribution to bound.",
+   "stale": "(б) b-b changed the tool (it now records the four artifacts it reads, by sha256); a deterministic CPU re-derivation at the next commit or the campaign-v3 anchor, no model call",
+   "withdrawn_on": "2026-09-26",
+   "pending_remeasure": true
   },
   {
    "id": "instrument.draw_divergence.explicit_implicit",
@@ -59933,7 +59936,10 @@
    "produced_by": [
     "tools/draw_divergence.py"
    ],
-   "ci_note": "No interval: two byte-identical draws are one draw (PREREG-V2 P4), so a divergence rate has no sampling distribution to bound."
+   "ci_note": "No interval: two byte-identical draws are one draw (PREREG-V2 P4), so a divergence rate has no sampling distribution to bound.",
+   "stale": "(б) b-b changed the tool (it now records the four artifacts it reads, by sha256); a deterministic CPU re-derivation at the next commit or the campaign-v3 anchor, no model call",
+   "withdrawn_on": "2026-09-26",
+   "pending_remeasure": true
   },
   {
    "id": "instrument.draw_divergence.baseline",
@@ -59961,7 +59967,10 @@
    "cited_in_pending": [],
    "produced_by": [
     "tools/draw_divergence.py"
-   ]
+   ],
+   "stale": "(б) b-b changed the tool (it now records the four artifacts it reads, by sha256); a deterministic CPU re-derivation at the next commit or the campaign-v3 anchor, no model call",
+   "withdrawn_on": "2026-09-26",
+   "pending_remeasure": true
   },
   {
    "id": "instrument.draw_divergence.baseline_implicit",
@@ -59989,7 +59998,10 @@
    "cited_in_pending": [],
    "produced_by": [
     "tools/draw_divergence.py"
-   ]
+   ],
+   "stale": "(б) b-b changed the tool (it now records the four artifacts it reads, by sha256); a deterministic CPU re-derivation at the next commit or the campaign-v3 anchor, no model call",
+   "withdrawn_on": "2026-09-26",
+   "pending_remeasure": true
   }
  ],
  "external_citations": [

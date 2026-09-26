@@ -644,6 +644,8 @@ def main() -> int:
     if args.out:
         out["llm"] = prov.running_llm(out.get("llm"))   # (б): the model that ran, not the one meant
         prov.stamp(out)
+        if args.others:
+            prov.record_inputs(out, list(args.others))   # (б) b-b: the --with files it merged
         Path(args.out).write_text(json.dumps(out, indent=1, ensure_ascii=False), encoding="utf-8", newline="\n")
         print("wrote", args.out)
     return 0

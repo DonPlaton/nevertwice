@@ -599,8 +599,8 @@ empty.
   through `httpx2`, a separate package the pacer did not hook, so graphiti's (and, in principle,
   any openai-compatible client's) calls to the local model carried no transport record - the
   server log was the only witness. The pacer now hooks `httpx2` too; an installed pacer records a
-  quiet span as `calls: 0` instead of writing nothing; and the supersession and as-of stands mark
-  an arm that needs the model but shows no paced call as invalid. `research/_pacer_selftest.py`
+  quiet span as `calls: 0` instead of writing nothing; and the supersession, as-of and head-to-head
+  stands mark an arm that needs the model but shows no paced call as invalid. `research/_pacer_selftest.py`
   checks, inside any environment, that every HTTP client present there is seen.
 - **Most benchmark artifacts did not say which commit produced them, or when.** Every script the
   evidence register names as a writer now stamps `measured_at` (commit, UTC time, dirty tree) on
@@ -608,6 +608,11 @@ empty.
   reproduction ignores that stamp when it compares results. Five live figures whose stands
   changed for this (four from the embedder study, one token ratio) are withdrawn until the next
   campaign re-measures them.
+- **A figure derived from other artifacts stayed "fresh" after they were re-measured.** Its
+  freshness followed only the code that computed it. A derived artifact - the draw-divergence
+  figures, a pool over per-run files, a merge of competitor runs - now records each input file by
+  hash; a live figure whose inputs moved reads as stale, and a restore refuses it. The four
+  draw-divergence figures are withdrawn until they are re-derived with their inputs recorded.
 - **A restored confidence interval used the withdrawn run's sample size.** Restoring a claim
   recomputed its Wilson interval from the register's `n`, not from the run being restored (restore
   #2 fixed three by hand; twelve withdrawn claims still carry an `n` their artifact no longer has).

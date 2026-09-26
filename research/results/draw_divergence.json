@@ -38,5 +38,23 @@
     "current_absent": 5
    }
   }
- }
+ },
+ "inputs": [
+  {
+   "path": "research/results/supersession_v1.json",
+   "sha256": "11cb6c3e7e93a45636d0089db2b66ea220decc2cab01d7ca35ce14cceab4db7e"
+  },
+  {
+   "path": "research/results/supersession_v1_implicit.json",
+   "sha256": "8ac9a77ad1bf69828a8c0c06a457942a6f4105e3d01a23ba434b4d3031032a28"
+  },
+  {
+   "path": "research/results/supersession_baseline_ef8120d.json",
+   "sha256": "e639b0a967d9585a65e0f7012889375f155c72a100577d446c48c34d7003be56"
+  },
+  {
+   "path": "research/results/supersession_baseline_ef8120d_implicit.json",
+   "sha256": "3583f5ea66a21c80310ad61a7c0afeccfe9d34047d8428061b5cd1f83646e168"
+  }
+ ]
 }

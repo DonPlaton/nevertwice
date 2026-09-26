@@ -80,8 +80,29 @@ def test_every_artifact_behind_a_live_claim_is_listed() -> None:
     _live_raw = sorted({c["raw"] for c in json.loads(
         (ROOT / "research" / "evidence_manifest.json").read_text(encoding="utf-8"))["claims"]
         if not c.get("stale") and c.get("raw")})
-    check("live claims were actually found, so the rule is not vacuous",
-          len(sc["live_claims_backed_by"]) >= 1, str(sc["live_claims_backed_by"]))
+    if _live_raw:
+        check("live claims were actually found, so the rule is not vacuous",
+              len(sc["live_claims_backed_by"]) >= 1, str(sc["live_claims_backed_by"]))
+    else:
+        #: Stage D withdrew the last live claim that rests on an artifact (only declarations stay
+        #: live), so the register gives the rule nothing to see. It is exercised on a fixture root
+        #: instead: one live claim on an artifact the package does not list must be reported.
+        import tempfile  # noqa: PLC0415
+        with tempfile.TemporaryDirectory() as _td:
+            (Path(_td) / "research").mkdir()
+            (Path(_td) / "research" / "evidence_manifest.json").write_text(
+                json.dumps({"claims": [{"id": "probe.live", "raw": "research/probe_unlisted.json"}]}),
+                encoding="utf-8")
+            _saved_root = R.ROOT
+            R.ROOT = Path(_td)
+            try:
+                _fx = R.scope()
+            finally:
+                R.ROOT = _saved_root
+        check("with no live artifact in the register, the rule still bites on a fixture: a live claim "
+              "on an unlisted artifact is reported missing",
+              _fx["live_artifacts_missing_from_the_manifest"] == ["research/probe_unlisted.json"],
+              str(_fx["live_artifacts_missing_from_the_manifest"]))
     check("and the scope report names exactly the artifacts the register's live claims rest on",
           sorted(sc["live_claims_backed_by"]) == _live_raw,
           f"{sorted(sc['live_claims_backed_by'])} vs {_live_raw}")

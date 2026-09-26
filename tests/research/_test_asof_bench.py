@@ -373,7 +373,13 @@ with _isolated_pacer():
         out_path2 = Path(td2) / "out.json"
         result_mut = _run_mini(out_path2, with_files=[zep_path2])
     art_mut = result_mut["artifact"]
-    reason_mut = rm.row_refusal(art_mut, 'arms["nevertwice"].both_correct_rate', 0)
+    #: (б) b-b: the artifact records its --with file as an input, and that temporary file is gone by
+    #: now - the input-closure rule would refuse the row for THAT reason. The mutation is about the
+    #: root rule, so the input record is set aside here and only the root rule is asked.
+    check("b-b: the as-of artifact records the --with file it merged as an input",
+          [Path(r["path"]).name for r in art_mut.get("inputs") or []] == ["zep.json"], str(art_mut.get("inputs")))
+    reason_mut = rm.row_refusal({k: v for k, v in art_mut.items() if k != "inputs"},
+                                'arms["nevertwice"].both_correct_rate', 0)
     check("mutation 'root propagation removed': the root stays WRONGLY valid, and "
           "row_refusal no longer refuses the clean-looking nevertwice arm either (would "
           "FAIL the K25 checks above)",

@@ -222,6 +222,8 @@ def run_and_score_arm(name: str, data, pool) -> dict:
     r = fn(data, pool)
     r["_wall_s"] = round(time.time() - t0, 1)
     pacer.attach(r, since=snap)         # per-arm delta -> r["ollama_transport"]
+    if name in MODEL_ARMS:
+        pacer.require_traffic(r, name)  # (б), K45: a competitor that reached no model is not a row
     coverage_verdict(name, r)
     r["version"] = _pkg_ver(name)          # record what we actually compared against
     r["label"] = ARM_LABEL.get(name, name)
@@ -941,6 +943,11 @@ def run_cognee(data, pool) -> dict:
 ADAPTERS = {"nevertwice": run_nevertwice, "mem0": run_mem0, "mem0_infer": run_mem0_infer,
             "langmem": run_langmem, "langmem_full": run_langmem_full,
             "amem": run_amem, "amem_full": run_amem_full, "cognee": run_cognee, "zep": run_zep}
+#: The arms that cannot produce a row without the local model: every competitor embeds (and the
+#: `_full`/`_infer` ones extract) through Ollama on each run, so a row with `calls: 0` reached the
+#: model through a transport the pacer does not see, or not at all ((б), K45). Our own
+#: `nevertwice` arm re-scores from a committed vector cache and legitimately calls nothing.
+MODEL_ARMS = frozenset(ADAPTERS) - {"nevertwice"}
 
 
 def _locomo():

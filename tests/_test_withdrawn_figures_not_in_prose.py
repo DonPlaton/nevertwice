@@ -168,6 +168,14 @@ pages = (sorted((ROOT / "docs").rglob("*.md")) + sorted((ROOT / "research").glob
          + sorted((ROOT / "examples").rglob("*.md"))
          + [ROOT / "README.md"])
 
+#: The scan list is itself a check (the auditor's P4, stage D): dropping a root from it stayed green
+#: while that root's pages happened to be marked. One known page per root must be in it.
+_scanned = {p.relative_to(ROOT).as_posix() for p in pages}
+_one_per_root = {"README.md", "docs/DEMO.md", "docs/starter-issues/02-linter-arm-in-the-simulation.md",
+                 "research/SUPERSESSION.md", "research/embed_universal/hf_card/README.md", "examples/README.md"}
+check("the scan reaches every root it is meant to (one known page each: README, docs/, docs/ subdirs, "
+      "research/, research/**/README.md, examples/)", _one_per_root <= _scanned, str(sorted(_one_per_root - _scanned)))
+
 print("\n- no page quotes a withdrawn figure in its prose -")
 check("there are withdrawn figures to look for", len(dead) > 50, str(len(dead)))
 hits = []

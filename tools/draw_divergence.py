@@ -15,6 +15,7 @@ Standard library only.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -59,9 +60,16 @@ def divergence_all(root: Path = ROOT) -> dict:
     out = {"measured_by": "python tools/draw_divergence.py",
            "what": "cases whose outcome changes between the two draws of the SAME commit",
            "artifacts": {}}
+    #: (б) b-b: the files this figure is computed FROM, by content. The claims' `produced_by` is
+    #: this module alone, so re-measuring a supersession artifact left them "fresh" with a stale
+    #: number; `tools/check_freshness.inputs_moved` reads this list instead. Hashed here, not via
+    #: research/_provenance, so the closure stays this one file.
+    out["inputs"] = []
     for key in DIVERGENCE_SET:
-        doc = json.loads((root / "research" / "results" / f"{key}.json").read_text(encoding="utf-8"))
-        out["artifacts"][key] = divergence(doc)
+        rel = f"research/results/{key}.json"
+        raw = (root / rel).read_bytes()
+        out["inputs"].append({"path": rel, "sha256": hashlib.sha256(raw).hexdigest()})
+        out["artifacts"][key] = divergence(json.loads(raw.decode("utf-8")))
     return out
 
 

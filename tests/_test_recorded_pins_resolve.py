@@ -248,8 +248,10 @@ print("\n- and the inventory is pinned, so new pins cannot arrive unnoticed -")
 #: the store provenance K42 added and the corpus pins of the run files. Diffed against HEAD with
 #: this file's own walk(): none lost (the three kinds of corpus_census_heldout.json that a plain
 #: diff reports are the 12 MB skip above - that file is 33 MB and unchanged).
+#: 2026-09-26, stage D (б) b-b: +1 kind, all gained - research/results/draw_divergence.json now
+#: records `inputs[].sha256`, the four supersession artifacts it is computed from.
 check("the number of pinned artifacts has not moved", len(artifacts) == 193, str(len(artifacts)))
-check("and the number of pin KINDS has not moved", len(kinds) == 233,
+check("and the number of pin KINDS has not moved", len(kinds) == 234,
       f"{len(kinds)} kinds over {len(pins)} values")
 
 print(f"\n{'ALL OK' if not FAILS else f'{FAILS} FAILED'}")
