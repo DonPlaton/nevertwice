@@ -1,0 +1,37 @@
+{
+ "note": "PREREG-V3 plan step A3.d: the declared A3 fetch windows, fixed before any window runs. Every fetch is a child under the contract through the catch-mode proxy, whose catcher tunnels only a window's exact hosts through the declared hop (the auditor's O1 ruling). The a3-hf CDN hosts are fixed from the a3-discovery record by a later commit (Q-A3-3); a redirect to an unlisted host is refused and needs a new ruling. D: must hold max(100 GB, 3 x the window's discovered total) free before a window; any single file over 10 GB in discovery stops the step (Q-A3-2).",
+ "arms": ["fetch"],
+ "windows": {
+  "a3-discovery": {
+   "hosts": ["huggingface.co", "api.github.com"],
+   "purpose": "metadata only: HF revision shas, file trees (sizes, LFS oids), card licences and card links; HEAD on each resolve URL, the redirect host recorded, never followed; GitHub commit shas and trees for the repos the cards name",
+   "max_redirects": 0,
+   "bodies": "metadata JSON and cards only"
+  },
+  "a3-hf": {
+   "hosts": ["huggingface.co"],
+   "cdn_hosts_from_discovery": true,
+   "pins": ["lme_s_cleaned", "lme_m_cleaned", "lme_oracle_cleaned", "beam_128k", "beam_500k", "mab_conflict_resolution",
+            "mab_accurate_retrieval", "ama_swe", "ama_non_swe", "bge_m3_tokenizer"],
+   "max_redirects": 1
+  },
+  "a3-github": {
+   "hosts": ["api.github.com", "raw.githubusercontent.com"],
+   "pins": ["lme_evaluate_qa", "lme_answer_prompt", "locomo_j_prompt", "locomo_answer_prompt", "beam_scoring",
+            "mab_fc_files", "ama_judge_prompt"],
+   "max_redirects": 0
+  },
+  "a3-tiktoken": {
+   "hosts": ["openaipublic.blob.core.windows.net"],
+   "pins": ["tiktoken_cl100k_base"],
+   "max_redirects": 0
+  },
+  "a3-git": {
+   "hosts": ["github.com"],
+   "pins": ["amem_source"],
+   "child": "git clone --bare, under the contract, through the catcher",
+   "max_redirects": 0
+  }
+ },
+ "disk": {"volume": "D:", "floor_gb": 100, "multiple_of_window_total": 3, "stop_single_file_gb": 10}
+}
