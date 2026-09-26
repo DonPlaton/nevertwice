@@ -99,6 +99,15 @@ def recall(query: str, project: str | None = None, k: int = 5,
     return results
 
 
+def recall_stats() -> dict:
+    """A copy of this process's search counters: `searches`; `recall_degraded` (the store holds notes
+    for the filter but the vectors did not rank them - a transport or configuration failure);
+    `recall_empty_store` (the store holds no notes for the filter - the product's own outcome, not a
+    failure); `xrerank_calls`; `rerank_calls`. Running totals; a caller that wants its own share reads
+    them before and after its calls."""
+    return dict(_search.SEARCH_STATS)
+
+
 def format_note(result: dict) -> str:
     """Render a `recall()` result as a compact block for an LLM context window or a
     human: 'TYPE - title' then the description, then 'Prevention: …' (empties omitted).

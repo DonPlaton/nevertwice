@@ -120,6 +120,22 @@ def _lexical_only(query: str, project: str | None, k: int, cache: dict) -> list[
             for sc, s, r in scored[:k]]
 
 
+#: Running counters of this process's searches, read as deltas by a caller around its own calls
+#: (`api.recall_stats()`; PREREG-V3 TB3(e)). `api.recall()` drops the mode string, so without them
+#: nothing outside the process could tell a read the vectors ranked from one served by word matching.
+#: `recall_degraded`: a transport or configuration failure - the store holds notes for the filter but
+#: the vectors did not rank them: embedder unreachable, query embed failed, vectors from another
+#: embedder, or notes stored without vectors (their embed failed at write time).
+#: `recall_empty_store`: the store holds no notes for the filter at all - what an extractor that wrote
+#: nothing leaves behind. That is the product's own outcome, not a failure, and it is counted apart so
+#: that a benchmark never treats "we stored nothing" as a transport incident (the auditor's TB3(e)
+#: ruling: an empty store answers with what it has and counts toward the writer-yield figure, K76).
+#: A low-confidence result is neither: the vectors ran and abstained.
+#: `xrerank_calls` / `rerank_calls`: reorders by the trained cross-encoder / the cloud reranker.
+SEARCH_STATS = {"searches": 0, "recall_degraded": 0, "recall_empty_store": 0,
+                "xrerank_calls": 0, "rerank_calls": 0}
+
+
 def search_core(query: str, project: str | None = None, k: int = 10,
                 rerank: bool | None = None, xrerank: bool | None = None):
     """Rank memory notes for a query - calibrated score fusion of semantic (embedding
@@ -143,6 +159,7 @@ def search_core(query: str, project: str | None = None, k: int = 10,
     # Clamped HERE because this is the one funnel the CLI, the MCP server and api.recall
     # all reach (mcp_server.py clamps at its own door as well, for its 25-result ceiling).
     k = max(1, int(k))
+    SEARCH_STATS["searches"] += 1
     if rerank is None:
         rerank = m.RERANK_ENABLED
     if xrerank is None:
@@ -164,6 +181,9 @@ def search_core(query: str, project: str | None = None, k: int = 10,
         # gets recall, not silence. Only fall through to the embed-rebuild hint when
         # lexical also finds nothing.
         lex = _lexical_only(query, project, k, cache)
+        has_notes = bool(lex) or any(isinstance(r, dict) and (not project or r.get("project") == project)
+                                     for r in cache.values())
+        SEARCH_STATS["recall_degraded" if has_notes else "recall_empty_store"] += 1
         if lex:
             return m.pair_siblings(lex, attach=True), "lexical (no embedder)"
         # "nothing embedded at all" ≠ "this project has no notes" - don't tell the
@@ -207,6 +227,7 @@ def search_core(query: str, project: str | None = None, k: int = 10,
         # string, so omitting it silently bypassed the abstention gate for programmatic callers
         # (code-review 2026-07, HIGH).
         mode = "lexical (Ollama/GPU busy) (low-confidence)"
+        SEARCH_STATS["recall_degraded"] += 1
         qtok = m._tokens(query)
         for s, r in cands:
             sc = _lex_overlap(qtok, r, s)
@@ -254,9 +275,11 @@ def search_core(query: str, project: str | None = None, k: int = 10,
     results = m.pair_siblings(combined, attach=True)[:pool]
     if xrerank and len(results) > 1:                 # trained cross-encoder wins if both set
         results = _ce.reorder(query, results, k)
+        SEARCH_STATS["xrerank_calls"] += 1
         mode += " + xrerank"
     elif rerank and len(results) > 1:
         results = m.rerank_notes(query, results, k=k, project=project)
+        SEARCH_STATS["rerank_calls"] += 1
         mode += " + rerank"
     return results, mode
 

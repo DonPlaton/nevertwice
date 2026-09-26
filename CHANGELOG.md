@@ -16,6 +16,13 @@ empty.
 
 ### Added
 
+- **`api.recall_stats()`: the counters a caller needs to tell how a recall was served.** `api.recall()` drops the
+  mode string, so a read ranked by word matching alone - embedder unreachable, query embed failed, vectors
+  from another embedder, notes stored without vectors - looked the same as one the vectors ranked, and both
+  looked the same as a store with nothing in it. The search funnel now counts `searches`, `recall_degraded`
+  (notes exist, the vectors did not rank them), `recall_empty_store` (no notes for the filter: the product's
+  own outcome, not a failure), `xrerank_calls` and `rerank_calls`; the function returns a copy, read before
+  and after a caller's own calls.
 - **Q5, the principle layer (in progress): de-identified cross-project recall, no verdict-adjudication
   half.** `nevertwice/_engine_text.py::principle_scan` rejects an IP, URL/FQDN, Windows/POSIX path,
   email, host:port/bare port, version string, or a caller-named forbidden token (project slug,
