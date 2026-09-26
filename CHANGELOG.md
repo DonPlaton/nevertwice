@@ -580,6 +580,9 @@ empty.
   reasoning tokens counted against the 4,096-token cap and the JSON answer could be truncated. The
   DeepSeek backend now sends `thinking: disabled`, as the Ollama path already sends `think: false`;
   the other cloud backends are not sent the field.
+- **`NEVERTWICE_EXTRACT_TEMP` reached the Ollama backend only.** The cloud bodies (DeepSeek, Groq,
+  Cerebras, Gemini) hardcoded 0.2, so a benchmark that pinned extraction to 0 pinned the local backend
+  alone. Every backend now reads the variable per call; the default is still 0.2.
 - **The test battery talked to the machine's model server and wrote into the repository.** The
   server log counted 277 embed and 54 tag requests from one battery run, and a before/after
   snapshot found two suites rewriting tracked files (an artifact byte for byte; `nevertwice/api.py`

@@ -865,6 +865,16 @@ def _json_api_call(url: str, body: bytes, headers: dict, *, timeout: float,
     return {}
 
 
+def extract_temperature() -> float:
+    """The extraction temperature every backend sends: NEVERTWICE_EXTRACT_TEMP, default 0.2.
+
+    Read per call, so a benchmark can pin extraction deterministically (a stand sets it to 0); the
+    default keeps the live hook's behaviour. Until stage D only the Ollama body read it and the cloud
+    bodies hardcoded 0.2, so a stand that pinned it changed the local backend alone.
+    """
+    return float(os.environ.get("NEVERTWICE_EXTRACT_TEMP", "0.2"))
+
+
 def call_ollama(prompt: str) -> dict:
     payload = json.dumps({
         "model": OLLAMA_MODEL,
@@ -872,9 +882,7 @@ def call_ollama(prompt: str) -> dict:
         "format": "json",
         "stream": False,
         "think": False,  # qwen3.x "thinking" mode leaks structured output
-        # temperature overridable so a benchmark can pin extraction deterministically (seeds/repro):
-        # default 0.2 keeps the live hook's behaviour unchanged; a stand sets NEVERTWICE_EXTRACT_TEMP=0.
-        "options": {"temperature": float(os.environ.get("NEVERTWICE_EXTRACT_TEMP", "0.2")), "num_ctx": 16384,
+        "options": {"temperature": extract_temperature(), "num_ctx": 16384,
                     "num_predict": EXTRACT_NUM_PREDICT},     # B1: a runaway answer stops at the cap
     }).encode("utf-8")
 
@@ -911,7 +919,7 @@ def call_gemini(prompt: str) -> dict:
     url = GEMINI_URL.format(model=_safe_model_seg(GEMINI_MODEL))   # SSRF guard on the model seg
     body = json.dumps({
         "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {"temperature": 0.2,
+        "generationConfig": {"temperature": extract_temperature(),
                              "responseMimeType": "application/json",
                              "maxOutputTokens": EXTRACT_NUM_PREDICT},   # B1
     }).encode("utf-8")
@@ -957,7 +965,7 @@ def _call_openai_chat(prompt: str, base_url: str, api_key: str, model: str,
         "model": model,
         "messages": [{"role": "user", "content": prompt}],
         "response_format": {"type": "json_object"},
-        "temperature": 0.2,
+        "temperature": extract_temperature(),
         "max_tokens": EXTRACT_NUM_PREDICT,                   # B1
         **(extra or {}),                                     # a backend's own documented fields
     }).encode("utf-8")
