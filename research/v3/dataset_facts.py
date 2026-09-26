@@ -18,9 +18,14 @@ The rules, fixed before any fact was computed (the auditor's rulings of 2026-09-
   named problem; anchors per session and whether each sits on message 0 are recorded.
 * D-J4 FC: the question count per metadata.source; the sources must be exactly the 8.
 * D-J5 LoCoMo (the v2 pin): the per-category counts must be the multiset {841, 282, 321, 96, 446}.
-* D-J6 gold evidence per stand: S2/S1 LME answer_session_ids; S4 LoCoMo qa evidence; S5 BEAM source_chat_ids (a list,
-  or a dict of lists - flattened - pointing at chat message ids, coverage per ability); S6 FC metadata.haystack_sessions
-  (null -> absent); S7 AMA none (absent). Questions without ids are named for §9.3.
+* D-J6 gold evidence per stand: S2/S1 LME answer_session_ids; S4 LoCoMo qa evidence; S5 BEAM source_chat_ids (lists
+  and dicts at any depth, flattened to their int/str leaves - any other leaf named - pointing at chat message ids,
+  coverage per ability); S6 FC metadata.haystack_sessions (null -> absent); S7 AMA none (absent). Questions without ids
+  are named for §9.3. P-J11 (j2 stopped on a nested list): the reading is DECLARED, not proved - every leaf is a message
+  id and a nested list is a group of ids. D-J6 cannot tell [session, id] pairs from groups, because BEAM's message ids
+  start at 0 in every conversation, so the record carries the evidence instead: the shape label counts, and for each
+  question with a nested list its inner lengths and whether an inner list starts below that conversation's session
+  count.
 * D-J7 smoke: S7 only - the non-SOFTWARE trajectory closest to the SOFTWARE median by compact-JSON length.
 * D-J8 LME: questions per file, by question_type, and how many carry answer_session_ids.
 
@@ -85,7 +90,7 @@ def ama_facts(rows: list[dict]) -> tuple[dict, list[str]]:
         problems.append(f"D-J1: {n_q} {SOFTWARE} questions is not {AMA_QUESTIONS}")
     facts = {"domain_census": {str(k): v for k, v in sorted(census.items(), key=lambda kv: str(kv[0]))},
              "swe_domain": SOFTWARE, "swe_trajectories": len(swe), "swe_questions": n_q,
-             "gold_evidence": {"field": "qa_pairs[].evidence", "verdict": "absent"}}
+             "gold_evidence": {"field": "qa_pairs.evidence", "verdict": "absent"}}
     return facts, problems
 
 
@@ -108,16 +113,44 @@ def parse_probing(text: str) -> dict:
     return obj
 
 
-def _flat_ids(v) -> list:
-    if isinstance(v, dict):
-        return [x for vs in v.values() for x in (vs or [])]
-    return list(v or [])
+#: The reading of BEAM's source_chat_ids, declared in the record (P-J11) - D-J6 cannot prove it (see the docstring).
+BEAM_GOLD_READING = ("every source_chat_ids leaf is a message id and a nested list is a group of ids; D-J6 cannot tell "
+                     "[session, id] pairs from groups, because BEAM's message ids start at 0 in every conversation")
+
+
+def _flat_ids(v) -> tuple[list, int, str, list[list]]:
+    """source_chat_ids flattened over lists and dicts at any depth: (the id leaves - int or str, never bool; the number
+    of other leaves; the shape label - each leaf's container chain such as "list" or "dict.list.list", "_"-joined, or
+    "empty"; the inner lists - every list that sits inside a list)."""
+    ids, chains, inner, bad = [], set(), [], 0
+
+    def walk(x, chain: str, in_list: bool) -> None:
+        nonlocal bad
+        if isinstance(x, dict):
+            for y in x.values():
+                walk(y, f"{chain}.dict" if chain else "dict", False)
+        elif isinstance(x, (list, tuple)):
+            if in_list:
+                inner.append(list(x))
+            for y in x:
+                walk(y, f"{chain}.list" if chain else "list", True)
+        elif isinstance(x, (int, str)) and not isinstance(x, bool):
+            ids.append(x)
+            chains.add(chain or "scalar")
+        else:
+            bad += 1
+            chains.add(chain or "scalar")
+
+    if v is not None:
+        walk(v, "", False)
+    return ids, bad, "_".join(sorted(chains)) or "empty", inner
 
 
 def beam_facts(rows: list[dict]) -> tuple[dict, list[str]]:
     problems, per_ability, names = [], collections.Counter(), set()
     sessions = anchored = on_first = messages = 0
     covered, total_by, ids_found, ids_total, missing = collections.Counter(), collections.Counter(), 0, 0, []
+    shapes, nested = collections.Counter(), {}
     for ci, row in enumerate(rows):
         pq = parse_probing(row["probing_questions"])
         chat = row.get("chat") or []
@@ -134,7 +167,16 @@ def beam_facts(rows: list[dict]) -> tuple[dict, list[str]]:
             per_ability[ability] += len(qs or [])
             for qi, q in enumerate(qs or []):
                 total_by[ability] += 1
-                ids = _flat_ids((q or {}).get("source_chat_ids"))
+                ids, n_bad, shape, inner = _flat_ids((q or {}).get("source_chat_ids"))
+                shapes[shape] += 1
+                if n_bad:
+                    problems.append(f"D-J6: c{ci}:{ability}:{qi} has {n_bad} source_chat_ids leaf/leaves that are not an "
+                                    "id (int or str)")
+                if inner:
+                    nested[f"c{ci}:{ability}:{qi}"] = {
+                        "inner_lengths": [len(x) for x in inner],
+                        "first_below_sessions": any(bool(x) and isinstance(x[0], int) and not isinstance(x[0], bool)
+                                                    and x[0] < len(chat) for x in inner)}
                 if ids:
                     covered[ability] += 1
                 else:
@@ -158,8 +200,9 @@ def beam_facts(rows: list[dict]) -> tuple[dict, list[str]]:
                        "anchor_on_message_0": on_first, "messages": messages},
              "gold_evidence": {"field": "source_chat_ids", "verdict": "present" if ids_total else "absent",
                                "ids": ids_total, "ids_found_in_chat": ids_found,
-                               "coverage": {a: f"{covered[a]}/{total_by[a]}" for a in sorted(total_by)},
-                               "without_ids": missing}}
+                               "coverage": {a: {"covered": covered[a], "total": total_by[a]} for a in sorted(total_by)},
+                               "without_ids": missing, "reading": "leaf_is_message_id.nested_list_is_group",
+                               "shapes": dict(sorted(shapes.items())), "nested": dict(sorted(nested.items()))}}
     return facts, problems
 
 
@@ -171,7 +214,7 @@ def fc_facts(rows: list[dict]) -> tuple[dict, list[str]]:
     if verdict == "mixed":
         problems.append("D-J6: haystack_sessions is null in some FC rows only")
     return {"questions_per_row": dict(sorted(counts.items())),
-            "gold_evidence": {"field": "metadata.haystack_sessions[].has_answer", "verdict": verdict}}, problems
+            "gold_evidence": {"field": "metadata.haystack_sessions.has_answer", "verdict": verdict}}, problems
 
 
 def locomo_facts(samples: list[dict]) -> tuple[dict, list[str]]:
@@ -186,7 +229,7 @@ def locomo_facts(samples: list[dict]) -> tuple[dict, list[str]]:
     problems = [] if counts == sorted(LOCOMO_COUNTS, reverse=True) else [
         f"D-J5: the category counts {dict(sorted(by_cat.items(), key=lambda kv: str(kv[0])))} are not {LOCOMO_COUNTS} - re-pin before the anchor"]
     return {"questions": n, "per_category": {str(k): v for k, v in sorted(by_cat.items(), key=lambda kv: str(kv[0]))},
-            "gold_evidence": {"field": "qa[].evidence", "verdict": "present" if n - len(missing) else "absent",
+            "gold_evidence": {"field": "qa.evidence", "verdict": "present" if n - len(missing) else "absent",
                               "with_evidence": n - len(missing), "without": missing}}, problems
 
 
@@ -296,7 +339,8 @@ def run_facts(c, L, *, run: str, python: Path, parent_env, CP=None, native=None,
         raise FactsRefused("this facts run label was used before")
     base.mkdir(parents=True)
     record: dict = {"run": run, "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "problems": [], "files": {},
-                    "swe_identification": "no pinned upstream source names the SWE domain; identified by name among the census"}
+                    "swe_identification": "no pinned upstream source names the SWE domain; identified by name among the census",
+                    "beam_gold_reading": BEAM_GOLD_READING}
     paths = {}
     for key, name in FILES.items():
         path = CP.location(name, hf_hub=c.polygon_root / "hf_cache" / "hub", pins_root=c.runs_root / "_pins")

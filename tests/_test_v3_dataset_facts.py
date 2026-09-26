@@ -116,7 +116,9 @@ check("D-J3: an anchor on each session (message 0) is present; anchors per sessi
 check("D-J6: source_chat_ids from a list and from a dict of lists are flattened and found in the chat",
       fb["gold_evidence"]["verdict"] == "present" and fb["gold_evidence"]["ids"] == 20 * (0 + 2 * 2 + 16 * 2)
       and fb["gold_evidence"]["ids_found_in_chat"] == fb["gold_evidence"]["ids"]
-      and fb["gold_evidence"]["coverage"]["abstention"] == "0/40" and len(fb["gold_evidence"]["without_ids"]) == 40,
+      and fb["gold_evidence"]["coverage"]["abstention"] == {"covered": 0, "total": 40}
+      and fb["gold_evidence"]["coverage"]["event_ordering"] == {"covered": 320, "total": 320}
+      and len(fb["gold_evidence"]["without_ids"]) == 40,
       str(fb["gold_evidence"]["coverage"]))
 check("each ability is placed on §8.4 by name", fb["abilities_84"] == {"abstention": "short",
                                                                         "contradiction_resolution": "short", "event_ordering": "ordering"})
@@ -130,6 +132,43 @@ check("D-J3: some sessions anchored and some not is a named problem", fm["dates"
 fn, _ = D.beam_facts([conv(Q, first=False)] * 20)
 check("D-J3: an anchor that is not on message 0 still counts, and the record says so",
       fn["dates"]["verdict"] == "present" and fn["dates"]["anchor_on_message_0"] == 0)
+check("P-J11: the one-level shapes are labelled and counted; no nested list, no nested evidence",
+      fb["gold_evidence"]["shapes"] == {"dict.list": 40, "empty": 40, "list": 320} and fb["gold_evidence"]["nested"] == {}
+      and fb["gold_evidence"]["reading"] == "leaf_is_message_id.nested_list_is_group", str(fb["gold_evidence"]["shapes"]))
+def dj6(problems: list) -> list:
+    """A one-conversation fixture is a D-J2 count problem by design; the P-J11 rows judge their D-J6 problems only."""
+    return [p for p in problems if p.startswith("D-J6")]
+
+
+fll, pll = D.beam_facts([conv({"event_ordering": [{"source_chat_ids": [[0, 1], [10]]}]})])
+check("P-J11: a list of lists is flattened to its ids, found in the chat, with its inner lengths recorded",
+      dj6(pll) == [] and fll["gold_evidence"]["ids"] == 3 and fll["gold_evidence"]["ids_found_in_chat"] == 3
+      and fll["gold_evidence"]["shapes"] == {"list.list": 1}
+      and fll["gold_evidence"]["nested"] == {"c0:event_ordering:0": {"inner_lengths": [2, 1], "first_below_sessions": True}},
+      str((pll, fll["gold_evidence"])))
+fd, pd = D.beam_facts([conv({"contradiction_resolution": [{"source_chat_ids": {"first": [[0]], "second": [[10, 11]]}}]})])
+check("P-J11: a dict of lists of lists is flattened too",
+      dj6(pd) == [] and fd["gold_evidence"]["ids"] == 3 and fd["gold_evidence"]["ids_found_in_chat"] == 3
+      and fd["gold_evidence"]["shapes"] == {"dict.list.list": 1}
+      and fd["gold_evidence"]["nested"]["c0:contradiction_resolution:0"]["inner_lengths"] == [1, 2], str((pd, fd["gold_evidence"])))
+fx, px = D.beam_facts([conv({"event_ordering": [{"source_chat_ids": [[0, 1], 2]}]})])
+check("P-J11: a mixed row (a group beside a bare id) carries both chains in its shape label",
+      dj6(px) == [] and fx["gold_evidence"]["ids"] == 3 and fx["gold_evidence"]["shapes"] == {"list_list.list": 1}
+      and fx["gold_evidence"]["nested"]["c0:event_ordering:0"]["inner_lengths"] == [2], str((px, fx["gold_evidence"])))
+_, pbad = D.beam_facts([conv({"event_ordering": [{"source_chat_ids": [0, 1.5, None, True]}]})])
+check("P-J11: a leaf that is not an id (a float, a null, a bool) is named, never skipped",
+      any(p.startswith("D-J6: c0:event_ordering:0 has 3 source_chat_ids leaf/leaves that are not an id") for p in pbad), str(pbad))
+fp, pp = D.beam_facts([conv({"event_ordering": [{"source_chat_ids": [[1, 12]]}]})])
+check("P-J11: an inner [small, id] whose small is a valid id is read as two ids - the reading is declared, not proved",
+      dj6(pp) == [] and fp["gold_evidence"]["ids"] == 2 and fp["gold_evidence"]["ids_found_in_chat"] == 2
+      and fp["gold_evidence"]["reading"] == "leaf_is_message_id.nested_list_is_group"
+      and fp["gold_evidence"]["nested"] == {"c0:event_ordering:0": {"inner_lengths": [2], "first_below_sessions": True}},
+      str((pp, fp["gold_evidence"])))
+fq, _ = D.beam_facts([conv({"event_ordering": [{"source_chat_ids": [[10, 11]]}]})])
+check("P-J11: an inner list that starts at or above the session count is recorded as not starting below it",
+      fq["gold_evidence"]["nested"]["c0:event_ordering:0"]["first_below_sessions"] is False, str(fq["gold_evidence"]["nested"]))
+check("P-J11: the nested evidence passes the label guard (its keys and values are labels, ints or booleans)",
+      D.scan_labels(fll["gold_evidence"]) == [] and D.scan_labels(fx["gold_evidence"]) == [], str(D.scan_labels(fll["gold_evidence"])))
 _, pw = D.beam_facts([conv({"event_ordering": [{"source_chat_ids": [999]}]})])
 check("D-J6: an id that points at no chat message is named", any("point at no chat message" in p for p in pw), str(pw))
 _, pc = D.beam_facts(b_rows[:19])
@@ -159,6 +198,10 @@ fe = D.lme_facts([{"question_type": "temporal", "answer_session_ids": ["s1"]}, {
 check("LME: questions, by type, and how many carry answer_session_ids",
       fe == {"questions": 2, "by_question_type": {"temporal": 2}, "gold_evidence": {"field": "answer_session_ids",
                                                                                    "verdict": "present", "with_ids": 1}})
+
+check("B8: every stand's facts, as the rules build them, pass the child's label guard (BEAM coverage once printed 'x/y')",
+      D.scan_labels({"S7": {**f1, "smoke": sm}, "S5": fb, "S6": ff, "S4": fl, "lme_s": fe}) == [],
+      str(D.scan_labels({"S7": {**f1, "smoke": sm}, "S5": fb, "S6": ff, "S4": fl, "lme_s": fe})))
 
 print("\n- the reader and the output guard -")
 big = [{"question_type": "x", "answer_session_ids": [str(i)], "pad": "é" * (i % 7)} for i in range(500)]
@@ -245,6 +288,7 @@ rec, c1 = run("ok", GOOD)
 check("a clean run: every file verified first, the child's labels accepted, the record written with the SWE sentence",
       rec["problems"] == [] and len(rec["files"]) == len(D.FILES) and rec["facts"] == GOOD["facts"]
       and "no pinned upstream source names the SWE domain" in rec["swe_identification"]
+      and rec.get("beam_gold_reading") == D.BEAM_GOLD_READING and "a nested list is a group of ids" in D.BEAM_GOLD_READING
       and json.loads((c1.runs_root / "_facts" / "f1" / "facts.json").read_bytes())["facts"] == GOOD["facts"], str(rec["problems"]))
 rec2, _ = run("leak", {"facts": {"S7": {"q": "What did the user say?"}}, "problems": []})
 check("prints_answers: a child that prints a content string is refused, and no fact is recorded",
