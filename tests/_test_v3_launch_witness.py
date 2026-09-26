@@ -12,6 +12,10 @@
   time), or the port is a declared container gateway port; 127.0.0.1:11434 (Ollama) is no hit but is counted per
   tree as distinct (local port, 11434) pairs; an accepted connection on the tree's own listener is inbound; a
   listener that cannot be read fails the sample and is never read as clean; a window does not excuse it.
+* The amended Q1 (the py-base-314 window): an allowance can be revoked and the revocation is recorded; a window's
+  START names its hop (only 127.0.0.1:<port>); the hop is ONE declared value, <runs>\\_config\\network.json,
+  refused in any other shape; the hop's pid is read from the LISTEN row of its port, and an ambiguous or missing
+  row names no pid; py314 is in the watched idle set.
 * The filesystem witness: one appended byte, a touched mtime, a new file are each a hit; changes under .git, .loop,
   research/v3/results, __pycache__ and .claude/settings.local.json are not, while another file under .claude is
   (AQ15); no entry name reaches a persisted byte (UTF-8, UTF-16-LE, JSON-escaped); the quarantine is stat-ed by
@@ -569,6 +573,76 @@ check("a window is open inside and closed after, and the catcher is told both",
 wl = [json.loads(x) for x in (C2.runs_root / "_launch" / "windows.jsonl").read_bytes().decode("utf-8").splitlines()]
 check("START and END are recorded with the host allowlist", [w["event"] for w in wl] == ["START", "END"]
       and wl[0]["hosts"] == ["huggingface.co"])
+
+print("\n- the amended Q1: revocation, the window's hop, the declared hop value -")
+s_rv = FakeSampler()
+s_rv.procs = [(100, 1, 10.0), (300, 1, 30.0)]
+w_rv = L.NativeEgressWitness(sampler=s_rv, tick_s=60, jobs=None)
+w_rv.register(100)
+w_rv.allow_listener(300, "declared hop for window py-base-314")
+s_rv.rows, s_rv.listen = [(100, "127.0.0.1", 6200, "127.0.0.1", 10809, "ESTABLISHED")], {("tcp", 10809): {300}}
+w_rv.sample()
+inside_hits = w_rv.result.loopback_hits
+revoked = w_rv.revoke_listener(300)
+w_rv.sample()
+check("an allowed hop is no hit inside the window, and a hit once revoked", inside_hits == 0 and revoked
+      and w_rv.result.loopback_hits == 1, f"{inside_hits} -> {w_rv.result.loopback_hits}")
+rec_rv = w_rv.result.as_record()
+check("the revocation is recorded by reason and pid, and a second revoke is a no-op",
+      rec_rv["revoked_listeners"] == [{"reason": "declared hop for window py-base-314", "pid": 300}]
+      and w_rv.revoke_listener(300) is False)
+with L.fetch_window(C2, "py-base-314", ["api.nuget.org"], via="127.0.0.1:10809"):
+    pass
+wl = [json.loads(x) for x in (C2.runs_root / "_launch" / "windows.jsonl").read_bytes().decode("utf-8").splitlines()]
+check("a window's START names its hop next to its hosts", wl[-2]["event"] == "START" and wl[-2].get("via") == "127.0.0.1:10809"
+      and wl[-2]["hosts"] == ["api.nuget.org"] and wl[-1]["event"] == "END", str(wl[-2:]))
+check("a window without a hop records via null", wl[0]["via"] is None if "via" in wl[0] else False, str(wl[0]))
+for bad in ("10.0.0.5:3128", "localhost:10809", "http://127.0.0.1:10809", "127.0.0.1"):
+    try:
+        with L.fetch_window(C2, "bad", ["x"], via=bad):
+            pass
+        check(f"a window hop {bad!r} is refused", False)
+    except L.ContractViolation:
+        check(f"a window hop {bad!r} is refused", True)
+cfgdir = C2.runs_root / "_config"
+cfgdir.mkdir(parents=True, exist_ok=True)
+check("no network.json: no hop", L.network_via_port(C2) is None)
+(cfgdir / "network.json").write_bytes(json.dumps({"via": {"host": "127.0.0.1", "port": 10809}}).encode())
+check("network.json {via: {127.0.0.1, port}} gives the port", L.network_via_port(C2) == 10809)
+for label, raw in (("another host", {"via": {"host": "10.0.0.5", "port": 3128}}),
+                   ("a target beside the hop", {"via": {"host": "127.0.0.1", "port": 1, "target": "x:443"}}),
+                   ("a port as text", {"via": {"host": "127.0.0.1", "port": "10809"}}),
+                   ("a port as a bool", {"via": {"host": "127.0.0.1", "port": True}}),
+                   ("an extra top-level key", {"via": {"host": "127.0.0.1", "port": 10809}, "cafile": "x"})):
+    (cfgdir / "network.json").write_bytes(json.dumps(raw).encode())
+    try:
+        L.network_via_port(C2)
+        check(f"network.json with {label} is refused", False)
+    except L.ContractViolation:
+        check(f"network.json with {label} is refused", True)
+
+
+class ListenSampler:
+    def __init__(self, table):
+        self.table = table
+
+    def connections(self, pids):
+        return [], 0
+
+    def listeners(self):
+        return self.table
+
+
+check("the hop's pid is the one LISTEN owner of its port",
+      L.hop_listener_pid(10809, sampler=ListenSampler({("tcp", 10809): {4242}, ("tcp", 10808): {4242}})) == 4242)
+check("no owner, two owners, an unreadable owner or no table: no pid",
+      L.hop_listener_pid(10809, sampler=ListenSampler({})) is None
+      and L.hop_listener_pid(10809, sampler=ListenSampler({("tcp", 10809): {1, 2}})) is None
+      and L.hop_listener_pid(10809, sampler=ListenSampler({("tcp", 10809): {None}})) is None
+      and L.hop_listener_pid(10809, sampler=ListenSampler(None)) is None
+      and L.hop_listener_pid(10809, sampler=ListenSampler({("udp", 10809): {7}})) is None)
+check("py314 is in the watched idle set of the machine's contract", "py314" in L.Contract.default().polygon_idle
+      and any(s.label == "polygon_py314" for s in L.watched_set(L.Contract.default())))
 
 if made:
     try:

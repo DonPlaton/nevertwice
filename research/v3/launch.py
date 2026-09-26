@@ -170,7 +170,7 @@ class Contract:
             conservation_known=("2026-09-25",),
             polygon_idle=("backups", "core_bare", "bare314", "mem0_eval", "graphiti_eval", "amem_eval", "llama.cpp",
                           "h2h_v2_stores", "h2h_v2_stores.pre-v2-fe6ddff-055329",
-                          "h2h_v2_stores.pre-v2-fe6ddff-062907"),
+                          "h2h_v2_stores.pre-v2-fe6ddff-062907", "py314"),
         )
 
     def deny_roots(self) -> tuple[Path, ...]:
@@ -792,6 +792,7 @@ class EgressResult:
     undetermined_loopback: int = 0                      # W7: loopback rows whose listener could not be read
     ollama_direct: dict = field(default_factory=dict)   # W7: tree label -> {(local port, 11434)}
     allowed_listeners: list = field(default_factory=list)   # W7: [(reason, pid)]
+    revoked_listeners: list = field(default_factory=list)   # W7: [(reason, pid)] revoked, e.g. at a window's END
     allowed_ports: list = field(default_factory=list)       # W7: declared container gateway ports
     tick_s: float = DEFAULT_TICK_S
     elapsed_s: float = 0.0
@@ -817,6 +818,7 @@ class EgressResult:
                 "loopback_hits": self.loopback_hits, "undetermined_loopback": self.undetermined_loopback,
                 "ollama_direct_conns": {k: len(v) for k, v in sorted(self.ollama_direct.items())},
                 "allowed_listeners": [{"reason": r, "pid": pid} for r, pid in self.allowed_listeners],
+                "revoked_listeners": [{"reason": r, "pid": pid} for r, pid in self.revoked_listeners],
                 "allowed_ports": sorted(self.allowed_ports),
                 "tick_s": self.tick_s, "elapsed_s": round(self.elapsed_s, 3),
                 "expected_samples": self.expected_samples, "sample_cost_ms": round(self.sample_cost_ms, 2),
@@ -1139,6 +1141,15 @@ class NativeEgressWitness(_Ticker):
                 return False
             self.allowed[pid] = (ct, reason)
             self.result.allowed_listeners.append((reason, pid))
+            return True
+
+    def revoke_listener(self, pid: int) -> bool:
+        """W7: end an allowance - the owner's hop allowed only inside a declared window is revoked at its END."""
+        with self._lock:
+            got = self.allowed.pop(pid, None)
+            if got is None:
+                return False
+            self.result.revoked_listeners.append((got[1], pid))
             return True
 
     def allow_port(self, port: int) -> None:
@@ -1540,13 +1551,16 @@ class Window:
 
 @contextlib.contextmanager
 def fetch_window(c: Contract, name: str, hosts: Sequence[str], *, witnesses: Witnesses | None = None,
-                 proxy_control: Callable[[str, str, Sequence[str]], None] | None = None):
+                 proxy_control: Callable[[str, str, Sequence[str]], None] | None = None, via: str | None = None):
     """A declared fetch or install window (§2.6.5, AQ1): START and END are recorded; the catcher tunnels only to
     ``hosts`` while it is open; and the egress witnesses file non-loopback remotes as window hosts only for the
-    trees of the spawns made inside it (spawn(..., window=w)). Every other tree's egress stays a hit (W3)."""
+    trees of the spawns made inside it (spawn(..., window=w)). Every other tree's egress stays a hit (W3).
+    ``via`` names the declared hop ("127.0.0.1:<port>", the R4 ruling) in the START record next to the hosts."""
+    if via is not None and not re.fullmatch(r"127\.0\.0\.1:\d{1,5}", via):
+        raise ContractViolation(["a window's hop must be 127.0.0.1:<port>"])
     log = c.runs_root / "_launch" / "windows.jsonl"
     win = Window(name=name, hosts=tuple(hosts))
-    _append_jsonl(log, {"event": "START", "window": name, "hosts": list(hosts),
+    _append_jsonl(log, {"event": "START", "window": name, "hosts": list(hosts), "via": via,
                         "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())})
     ws = [w for w in ((witnesses.native, *witnesses.containers) if witnesses else ()) if w is not None]
     for w in ws:
@@ -1561,6 +1575,30 @@ def fetch_window(c: Contract, name: str, hosts: Sequence[str], *, witnesses: Wit
         if proxy_control:
             proxy_control("close", name, hosts)
         _append_jsonl(log, {"event": "END", "window": name, "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())})
+
+
+def network_via_port(c: Contract) -> int | None:
+    """The R4 ruling's hop as ONE declared value, <runs>\\_config\\network.json = {"via": {"host": "127.0.0.1",
+    "port": N}}: the proxy's config and every instrument's fetch take the port from here, never from the
+    environment. No file, no hop (None). Anything but exactly that shape is refused."""
+    p = c.runs_root / "_config" / "network.json"
+    if not p.is_file():
+        return None
+    raw = json.loads(p.read_text(encoding="utf-8"))
+    via = raw.get("via") if isinstance(raw, dict) and set(raw) == {"via"} else None
+    if not isinstance(via, dict) or set(via) != {"host", "port"} or via["host"] != "127.0.0.1" \
+            or isinstance(via["port"], bool) or not isinstance(via["port"], int) or not 1 <= via["port"] <= 65535:
+        raise ContractViolation(["network.json must be exactly {\"via\": {\"host\": \"127.0.0.1\", \"port\": N}}"])
+    return via["port"]
+
+
+def hop_listener_pid(port: int, *, sampler=None) -> int | None:
+    """The pid listening on 127.0.0.1:<port> (TCP), read from the socket table - the hop process a window may allow."""
+    s = sampler if sampler is not None else PsutilSampler()
+    s.connections(set())
+    owners = (s.listeners() or {}).get(("tcp", port)) or set()
+    pids = [p for p in owners if p is not None]
+    return pids[0] if len(pids) == 1 else None
 
 
 # ── tool lockdown and Claude Code (A2.3, §2.6.6) ────────────────────────
