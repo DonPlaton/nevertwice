@@ -693,6 +693,10 @@
    "governance": "exempt",
    "reason": "a preregistration states hypotheses, endpoints and decision rules BEFORE the confirmatory run. Its numbers are prospective thresholds and power targets, not measurements to reproduce, and every retrospective figure it refers to is cited by artifact rather than reprinted."
   },
+  "research/v3/PREREG-V3-rev1.md": {
+   "governance": "exempt",
+   "reason": "the v3 campaign's pre-registration, fixed before its first number and committed byte-identical to the sha the auditor cleared: its numbers are configuration, thresholds, sizes and budgets, not measurements, and the few v2 figures it uses as design inputs are cited by artifact path and sha256."
+  },
   "research/QA_ACCURACY.md": {
    "governance": "backlog",
    "budget": 85,

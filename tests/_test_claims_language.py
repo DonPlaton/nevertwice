@@ -73,6 +73,12 @@ RX = re.compile("|".join(ABSOLUTE_PATTERNS), re.I)
 ALLOWED: list[tuple[str, str, str]] = [
     ("research/ABSTRACTIVE.md", "the field's load-bearing question",
      "names an open research question rather than claiming superiority over anyone"),
+    ("research/v3/PREREG-V3-rev1.md", "against every competitor in LOCAL-TASK-D",
+     "a scope statement: the campaign measures each competitor the task names, and asserts nothing about them"),
+    ("research/v3/PREREG-V3-rev1.md", "set to every other tool the binary offers",
+     "a Claude Code flag setting (deny every tool but four), not a statement about other systems"),
+    ("research/v3/PREREG-V3-rev1.md", "a member of the field's standard pair",
+     "why a benchmark was chosen - it is commonly used - not a claim of superiority"),
 ]
 
 
