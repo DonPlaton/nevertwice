@@ -302,10 +302,11 @@ def location(name: str, *, hf_hub: Path, pins_root: Path, sha256: str | None = N
     """Where a fetched pin's file lives after its window (the A3.f placement), so a reader never imports fetch code:
     an HF file in the hub cache layout at its revision, a GitHub file under <pins_root>/github/<commit>, the tiktoken
     file under <pins_root>/url/<its sha256>, and the A-MEM source's ls-tree listing (Q-A3F-1) under
-    <pins_root>/git/<commit>. A local-v2 pin has its own path."""
+    <pins_root>/git/<commit>. A local-v2 pin is placed once from its repository path (gitignored: only the main working
+    tree has it) to <pins_root>/local-v2/<sha256>/<basename> by place_local_v2.py (O2), so a clean worktree finds it."""
     p = (pins or PINS)[name]
     if p["source"] == "local-v2":
-        return REPO / p["path"]
+        return Path(pins_root) / "local-v2" / p["sha256"] / p["path"].rsplit("/", 1)[-1]
     if p["source"] in ("hf-dataset", "hf-model"):
         kind = "datasets" if p["source"] == "hf-dataset" else "models"
         return Path(hf_hub) / f"{kind}--{p['repo'].replace('/', '--')}" / "snapshots" / p["revision"] / Path(*p["path"].split("/"))

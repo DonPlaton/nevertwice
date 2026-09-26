@@ -249,7 +249,7 @@ check("A3.g: a3-git runs on its own arm fetch-git, declared at the top; every ot
       and all("arms" not in w for k, w in MAN["windows"].items() if k != "a3-git"))
 HUB, PR = Path("H:/hub"), Path("R:/runs/_pins")
 check("location(): each source has one place - the hub layout, _pins/github/<commit>, _pins/url/<sha256>, "
-      "_pins/git/<commit>/ls-tree.txt, a v2 pin its own path",
+      "_pins/git/<commit>/ls-tree.txt, a v2 pin _pins/local-v2/<sha256> (O2: never the code's own tree)",
       CP.location("beam_128k", hf_hub=HUB, pins_root=PR)
       == HUB / "datasets--Mohammadta--BEAM" / "snapshots" / CP.REV["beam"] / "data" / "100K-00000-of-00001.parquet"
       and CP.location("bge_m3_tokenizer_json", hf_hub=HUB, pins_root=PR)
@@ -259,7 +259,7 @@ check("location(): each source has one place - the hub layout, _pins/github/<com
       and CP.location("tiktoken_cl100k_base", hf_hub=HUB, pins_root=PR, sha256="1" * 64)
       == PR / "url" / ("1" * 64) / "cl100k_base.tiktoken"
       and CP.location("amem_source", hf_hub=HUB, pins_root=PR) == PR / "git" / P_["amem_source"]["revision"] / "ls-tree.txt"
-      and CP.location("locomo10", hf_hub=HUB, pins_root=PR) == CP.REPO / "research" / "data" / "locomo10.json")
+      and CP.location("locomo10", hf_hub=HUB, pins_root=PR) == PR / "local-v2" / P_["locomo10"]["sha256"] / "locomo10.json")
 check("location(): a URL pin with no sha256 has no place yet",
       refused(lambda: CP.location("tiktoken_cl100k_base", hf_hub=HUB, pins_root=PR, pins=CP.PINS_DECLARED), CP.PinMismatch,
               "sha256"))
