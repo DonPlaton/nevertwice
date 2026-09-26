@@ -176,17 +176,29 @@ check("a child that never imports _env_guard (an example, a stand) resolves the 
 #: process also reads the system proxy settings (the Windows registry), which under load took long
 #: enough to trip a 500 ms bound once in a bare-interpreter pass beside a running battery. The
 #: defect this guards costs 2037 ms per attempt, so 1000 ms separates the two with room.
+#: The fastest of three connects is compared, not one: a single timing still went red once in a bare
+#: pass beside running batteries. A load spike slows some attempts, never all three by a second, while
+#: the defect's connect timeout is paid by every attempt - so the minimum keeps the bound and loses
+#: only the noise.
 _host, _port = urllib.parse.urlsplit(sandbox_guard.CLOSED_OLLAMA["OLLAMA_EMBED_URL"]).hostname, \
     urllib.parse.urlsplit(sandbox_guard.CLOSED_OLLAMA["OLLAMA_EMBED_URL"]).port
-_t0 = time.perf_counter()
-try:
-    socket.create_connection((_host, _port), timeout=5).close()
-    _how = "connected"
-except OSError as e:
-    _how = type(e).__name__
-_ms = (time.perf_counter() - _t0) * 1000
-check("the closed endpoint fails at once, not after a connect timeout (< 1000 ms at the socket)",
-      _how != "connected" and _ms < 1000, f"{_how} after {_ms:.0f} ms")
+
+
+def _connect_once() -> tuple[str, float]:
+    t0 = time.perf_counter()
+    try:
+        socket.create_connection((_host, _port), timeout=5).close()
+        how = "connected"
+    except OSError as e:
+        how = type(e).__name__
+    return how, (time.perf_counter() - t0) * 1000
+
+
+_tries = [_connect_once() for _ in range(3)]
+_ms = min(ms for _, ms in _tries)
+check("the closed endpoint fails at once, not after a connect timeout (< 1000 ms at the socket, fastest of 3)",
+      all(how != "connected" for how, _ in _tries) and _ms < 1000,
+      ", ".join(f"{how} after {ms:.0f} ms" for how, ms in _tries))
 try:
     urllib.request.urlopen(sandbox_guard.CLOSED_OLLAMA["OLLAMA_EMBED_URL"], timeout=5)
     _how = "answered"
