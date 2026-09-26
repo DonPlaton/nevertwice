@@ -17,6 +17,21 @@
   ports file's sha256, the control port answering, a clean shutdown; its read exceptions are its script and the key
   file at their argv indexes, nothing wider (the auditor's X6).
 * The auditor's X7: with the real key, a run_dir or scan root outside the polygon runs tree is refused at load.
+* The auditor's R4 ruling, the CONNECT hop: ``via`` is exactly {host 127.0.0.1, port}; any other host, key (a
+  target, a scheme, userinfo) or top-level config key is refused at load, and a hop with a plain-text upstream is
+  refused. Through a fake hop on loopback the proxy sends ``CONNECT api.deepseek.com:443`` with the matching Host,
+  and after a 200 its next bytes are a TLS ClientHello naming api.deepseek.com - never the key or an HTTP request
+  in clear. A reply other than 200, or stray bytes after it, sends nothing more, is a 502 counted as
+  connect_refused, and is not retried. At start main() probes the TLS upstream and, if the hop refuses, exits with
+  UPSTREAM_FAILED before READY. main() never hands in its own TLS context.
+* TLS verification inside the tunnel (the auditor's H3): the hop answers 200 and tunnels to a local TLS server whose
+  self-signed *.deepseek.com certificate is made at test time (``cryptography`` if importable, else the ``openssl``
+  CLI; never committed). The proxy's default verification refuses it: no handshake completes, the server receives
+  0 bytes of application data - so no key - and the client gets 502. A control run whose TLS context trusts that
+  certificate completes the round trip (200), and the key reaches the server only inside TLS, never in clear on the
+  hop. With neither tool available the check prints a named SKIP and is not counted as passed.
+* The auditor's A2.6 early probe: after a response to a request that said ``Connection: close`` - or was HTTP/1.0
+  without keep-alive - the client sees EOF at once; HTTP/1.1 by default and HTTP/1.0 with keep-alive stay open.
 * The auditor's X1-X5: the key goes only to api.deepseek.com:443 over TLS - another host or port is refused in the
   config and in the config file, and a test upstream (plain text, 127.0.0.1) is accepted only when the key is not
   the real one; /scan-files opens nothing outside the run directory and its declared roots, nothing naming the
@@ -36,8 +51,11 @@ import json
 import os
 import shutil
 import socket
+import ssl
+import subprocess
 import sys
 import tempfile
+import threading
 import time
 from pathlib import Path
 
@@ -259,6 +277,394 @@ last = (TMP / "run" / "catcher.jsonl").read_bytes().decode().splitlines()[-1]
 rec5 = json.loads(last)
 check("X5 the catcher records <invalid> and the length for a host that is not a hostname",
       rec5["host"] == "<invalid>" and rec5["host_len"] > 5000 and len(last) < 1000, last[:100])
+px.stop()
+up.close()
+
+
+print("\n- R4: the CONNECT hop through the owner's loopback proxy -")
+
+
+class FakeHop:
+    """A loopback HTTP proxy that answers CONNECT with ``reply`` and records what follows (it never completes TLS)."""
+
+    def __init__(self, reply: bytes):
+        self.reply = reply
+        self.sock = socket.socket()
+        self.sock.bind(("127.0.0.1", 0))
+        self.sock.listen(8)
+        self.port = self.sock.getsockname()[1]
+        self.heads: list[bytes] = []
+        self.after: list[bytes] = []
+        self.everything = bytearray()
+        self.connections = 0
+        threading.Thread(target=self._loop, daemon=True).start()
+
+    def _loop(self):
+        while True:
+            try:
+                c, _ = self.sock.accept()
+            except OSError:
+                return
+            self.connections += 1
+            threading.Thread(target=self._conn, args=(c,), daemon=True).start()
+
+    def _conn(self, c):
+        c.settimeout(2.0)
+        buf = bytearray()
+        try:
+            while b"\r\n\r\n" not in buf:
+                chunk = c.recv(4096)
+                if not chunk:
+                    return
+                buf += chunk
+            end = buf.index(b"\r\n\r\n") + 4
+            self.heads.append(bytes(buf[:end]))
+            self.everything += buf
+            c.sendall(self.reply)
+            rest = bytearray(buf[end:])
+            try:
+                while len(rest) < 16384:
+                    chunk = c.recv(4096)
+                    if not chunk:
+                        break
+                    rest += chunk
+            except OSError:
+                pass
+            self.after.append(bytes(rest))
+            self.everything += rest
+        except OSError:
+            pass
+        finally:
+            c.close()
+
+    def close(self):
+        self.sock.close()
+
+
+def hop_proxy(hop: FakeHop):
+    cfg = P.ProxyConfig(arms=[P.ArmConfig(arm="a1", token=ST.TOKEN)], run_dir=TMP / "hop", via_port=hop.port,
+                        control_token="ctl", connect_timeout_s=5)
+    px = P.Proxy(cfg, P.read_key(TMP / "deepseek.env"), log=logs.append)
+    return px, px.start()
+
+
+hopcfg = TMP / "via.json"
+for label, raw in (("a hop on another host", {"via": {"host": "10.0.0.5", "port": 3128}}),
+                   ("a hop named localhost (only the literal 127.0.0.1)", {"via": {"host": "localhost", "port": 3128}}),
+                   ("a hop that also names a CONNECT target", {"via": {"host": "127.0.0.1", "port": 3128,
+                                                                        "target": "collector.example:443"}}),
+                   ("a hop with a scheme", {"via": {"host": "127.0.0.1", "port": 3128, "scheme": "https"}}),
+                   ("a hop with userinfo", {"via": {"host": "127.0.0.1", "port": 3128, "userinfo": "u:p"}}),
+                   ("a hop given as a URL string", {"via": "http://127.0.0.1:3128"}),
+                   ("a top-level CONNECT target", {"connect_target": "collector.example:443"}),
+                   ("a top-level TLS trust file", {"cafile": str(TMP / "evil-ca.pem")})):
+    hopcfg.write_bytes(json.dumps({"arms": [], "run_dir": str(TMP / "hopcfg"), **raw}).encode())
+    try:
+        P.ProxyConfig.load(hopcfg, {}, test_upstream_ok=True)
+        check(f"R4 {label} is refused at load", False)
+    except ValueError as e:
+        check(f"R4 {label} is refused at load", True, str(e))
+for label, kw in (("a hop port 0", {"via_port": 0}), ("a hop port 70000", {"via_port": 70000}),
+                  ("a hop port given as text", {"via_port": "3128"}), ("a hop port given as a bool", {"via_port": True}),
+                  ("a hop in front of a plain-text test upstream", {"via_port": 3128, "upstream_host": "127.0.0.1",
+                                                                     "upstream_tls": False})):
+    try:
+        P.ProxyConfig(arms=[], run_dir=TMP, **kw)
+        check(f"R4 {label} is refused", False)
+    except ValueError:
+        check(f"R4 {label} is refused", True)
+hopcfg.write_bytes(json.dumps({"arms": [], "run_dir": str(TMP / "hopcfg"), "via": {"host": "127.0.0.1", "port": 3128}}).encode())
+okcfg = P.ProxyConfig.load(hopcfg, {}, test_upstream_ok=True)
+check("R4 a hop of exactly {127.0.0.1, port} is accepted, and the upstream stays api.deepseek.com:443 over TLS",
+      okcfg.via_port == 3128 and okcfg.upstream_host == "api.deepseek.com" and okcfg.upstream_port == 443
+      and okcfg.upstream_tls)
+
+hop = FakeHop(b"HTTP/1.1 200 Connection established\r\n\r\n")
+px, ports = hop_proxy(hop)
+wp = ports["arms"]["a1"]["write"]
+got = exchange(wp, request(wp, "/v1/chat/completions", BODY), timeout=8)
+time.sleep(0.3)
+check("R4 the proxy sends CONNECT to the code's constant target, with the matching Host",
+      hop.heads[:1] == [b"CONNECT api.deepseek.com:443 HTTP/1.1\r\nHost: api.deepseek.com:443\r\n\r\n"], str(hop.heads[:1]))
+first = hop.after[0] if hop.after else b""
+check("R4 after a 200 the next bytes are a TLS handshake record (ClientHello) naming api.deepseek.com (SNI)",
+      first[:1] == b"\x16" and first[1:2] == b"\x03" and b"api.deepseek.com" in first, repr(first[:12]))
+check("R4 ... and never the key or an HTTP request in clear on the hop",
+      KEY not in bytes(hop.everything) and b"POST " not in bytes(hop.everything)
+      and b"Authorization" not in bytes(hop.everything))
+check("R4 a tunnel whose TLS never completes is a 502 upstream error, not retried",
+      got.startswith(b"HTTP/1.1 502") and px.counters["a1"].upstream_errors == 1 and hop.connections == 1
+      and px.counters["a1"].connect_refused == 0, f"{got[:30]!r} {vars(px.counters['a1'])}")
+px.stop()
+hop.close()
+for label, reply in (("a 403 reply", b"HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\n\r\n"),
+                     ("a 200 reply followed by stray bytes", b"HTTP/1.1 200 OK\r\n\r\nSTRAY")):
+    hop = FakeHop(reply)
+    px, ports = hop_proxy(hop)
+    wp = ports["arms"]["a1"]["write"]
+    got = exchange(wp, request(wp, "/v1/chat/completions", BODY), timeout=8)
+    time.sleep(0.3)
+    ctr = px.counters["a1"]
+    check(f"R4 {label}: nothing more is sent, the client gets 502, counted as connect_refused, no retry",
+          got.startswith(b"HTTP/1.1 502") and ctr.connect_refused == 1 and ctr.upstream_errors == 1
+          and hop.connections == 1 and hop.after == [b""] and KEY not in bytes(hop.everything),
+          f"{got[:30]!r} {vars(ctr)} after={hop.after!r}")
+    px.stop()
+    hop.close()
+hop = FakeHop(b"HTTP/1.1 403 Forbidden\r\n\r\n")
+try:
+    hop_proxy(hop)[0].probe_upstream()
+    check("R4 probe_upstream through a refusing hop raises ConnectRefused", False)
+except P.ConnectRefused:
+    check("R4 probe_upstream through a refusing hop raises ConnectRefused", True)
+mcfg = TMP / "main_via.json"
+mrun = TMP / "main_via_run"
+mcfg.write_bytes(json.dumps({"arms": [{"arm": "a1"}], "run_dir": str(mrun), "via": {"host": "127.0.0.1", "port": hop.port}}).encode())
+try:                                                   # a real process: a proxy that skipped the probe would serve forever
+    r_main = subprocess.run([sys.executable, str(ROOT / "research" / "_llm_proxy.py"), "serve", "--config", str(mcfg),
+                             "--key-file", str(TMP / "deepseek.env")], input=b"{}\n", capture_output=True, timeout=20)
+    rc_main, printed = r_main.returncode, r_main.stdout.decode("utf-8", "replace")
+except subprocess.TimeoutExpired as e:
+    rc_main, printed = None, (e.stdout or b"").decode("utf-8", "replace")
+check("R4 main() probes the TLS upstream first: a refusing hop is UPSTREAM_FAILED, exit 4, no READY, no ports file",
+      rc_main == 4 and printed.startswith("UPSTREAM_FAILED ConnectRefused") and "READY" not in printed
+      and not (mrun / "ports.json").exists(), f"{rc_main} {printed!r}")
+hop.close()
+import inspect  # noqa: E402
+
+check("R4 main() never hands the proxy its own TLS context (verification is the default context's)",
+      "ssl_context" not in inspect.getsource(P.main) and "CERT_NONE" not in inspect.getsource(P)
+      and "check_hostname = False" not in inspect.getsource(P))
+
+print("\n- R4: TLS verification inside the tunnel (H3) -")
+
+
+def make_test_cert(d: Path):
+    """A throwaway self-signed certificate for api.deepseek.com, made now and never committed: (cert, key, how)."""
+    d.mkdir(parents=True, exist_ok=True)
+    cert, keyf = d / "tls_cert.pem", d / "tls_key.pem"
+    try:
+        import datetime  # noqa: PLC0415
+
+        from cryptography import x509  # noqa: PLC0415
+        from cryptography.hazmat.primitives import hashes, serialization  # noqa: PLC0415
+        from cryptography.hazmat.primitives.asymmetric import ec  # noqa: PLC0415
+        from cryptography.x509.oid import NameOID  # noqa: PLC0415
+    except ImportError:
+        x509 = None
+    if x509 is not None:
+        k = ec.generate_private_key(ec.SECP256R1())
+        name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "*.deepseek.com")])
+        now = datetime.datetime.now(datetime.timezone.utc)
+        c = (x509.CertificateBuilder().subject_name(name).issuer_name(name).public_key(k.public_key())
+             .serial_number(x509.random_serial_number()).not_valid_before(now - datetime.timedelta(minutes=5))
+             .not_valid_after(now + datetime.timedelta(days=1))
+             .add_extension(x509.SubjectAlternativeName([x509.DNSName("api.deepseek.com")]), critical=False)
+             .add_extension(x509.BasicConstraints(ca=True, path_length=None), critical=True)
+             .add_extension(x509.KeyUsage(digital_signature=True, content_commitment=False, key_encipherment=False,
+                                          data_encipherment=False, key_agreement=False, key_cert_sign=True,
+                                          crl_sign=False, encipher_only=False, decipher_only=False), critical=True)
+             .add_extension(x509.SubjectKeyIdentifier.from_public_key(k.public_key()), critical=False)
+             .add_extension(x509.AuthorityKeyIdentifier.from_issuer_public_key(k.public_key()), critical=False)
+             .sign(k, hashes.SHA256()))
+        keyf.write_bytes(k.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8,
+                                         serialization.NoEncryption()))
+        cert.write_bytes(c.public_bytes(serialization.Encoding.PEM))
+        return cert, keyf, "cryptography"
+    exe = shutil.which("openssl")
+    if exe:
+        env = dict(os.environ, MSYS_NO_PATHCONV="1", MSYS2_ARG_CONV_EXCL="*")
+        r = subprocess.run([exe, "req", "-x509", "-newkey", "rsa:2048", "-nodes", "-days", "1",
+                            "-subj", "/CN=*.deepseek.com", "-addext", "subjectAltName=DNS:api.deepseek.com",
+                            "-keyout", str(keyf), "-out", str(cert)], capture_output=True, timeout=120, env=env)
+        if r.returncode == 0 and cert.is_file() and keyf.is_file():
+            return cert, keyf, "openssl"
+    return None
+
+
+class TlsServer:
+    """A local TLS server with the throwaway certificate: counts completed handshakes and application bytes."""
+
+    def __init__(self, cert: Path, keyf: Path):
+        self.ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        self.ctx.load_cert_chain(str(cert), str(keyf))
+        self.sock = socket.socket()
+        self.sock.bind(("127.0.0.1", 0))
+        self.sock.listen(8)
+        self.port = self.sock.getsockname()[1]
+        self.handshakes = 0
+        self.app = bytearray()
+        self.errors: list[str] = []
+        threading.Thread(target=self._loop, daemon=True).start()
+
+    def _loop(self):
+        while True:
+            try:
+                c, _ = self.sock.accept()
+            except OSError:
+                return
+            threading.Thread(target=self._conn, args=(c,), daemon=True).start()
+
+    def _conn(self, c):
+        c.settimeout(5)
+        try:
+            s = self.ctx.wrap_socket(c, server_side=True)
+        except (ssl.SSLError, OSError) as e:
+            self.errors.append(type(e).__name__)
+            c.close()
+            return
+        self.handshakes += 1
+        try:
+            buf = bytearray()
+            while b"\r\n\r\n" not in buf:
+                chunk = s.recv(65536)
+                if not chunk:
+                    break
+                buf += chunk
+            self.app += buf
+            s.sendall(b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 2\r\n\r\n{}")
+        except (ssl.SSLError, OSError) as e:
+            self.errors.append(type(e).__name__)
+        finally:
+            s.close()
+
+    def close(self):
+        self.sock.close()
+
+
+class TunnelHop:
+    """A loopback HTTP proxy that answers CONNECT with 200 and then pipes bytes to a local target port."""
+
+    def __init__(self, target_port: int):
+        self.target_port = target_port
+        self.sock = socket.socket()
+        self.sock.bind(("127.0.0.1", 0))
+        self.sock.listen(8)
+        self.port = self.sock.getsockname()[1]
+        self.seen = bytearray()                          # everything the proxy sent to the hop, head included
+        threading.Thread(target=self._loop, daemon=True).start()
+
+    def _loop(self):
+        while True:
+            try:
+                c, _ = self.sock.accept()
+            except OSError:
+                return
+            threading.Thread(target=self._conn, args=(c,), daemon=True).start()
+
+    def _pipe(self, a, b, record: bool):
+        try:
+            while True:
+                chunk = a.recv(65536)
+                if not chunk:
+                    break
+                if record:
+                    self.seen.extend(chunk)
+                b.sendall(chunk)
+        except OSError:
+            pass
+        finally:
+            for s in (a, b):
+                try:
+                    s.shutdown(socket.SHUT_RDWR)
+                except OSError:
+                    pass
+
+    def _conn(self, c):
+        buf = bytearray()
+        while b"\r\n\r\n" not in buf:
+            chunk = c.recv(4096)
+            if not chunk:
+                c.close()
+                return
+            buf += chunk
+        self.seen.extend(buf)
+        c.sendall(b"HTTP/1.1 200 Connection established\r\n\r\n")
+        t = socket.create_connection(("127.0.0.1", self.target_port))
+        a = threading.Thread(target=self._pipe, args=(c, t, True), daemon=True)
+        b = threading.Thread(target=self._pipe, args=(t, c, False), daemon=True)
+        a.start()
+        b.start()
+        a.join(10)
+        b.join(10)
+        c.close()
+        t.close()
+
+    def close(self):
+        self.sock.close()
+
+
+made = make_test_cert(TMP / "tlscert")
+if made is None:
+    print("  SKIP R4 TLS verification inside the tunnel: neither cryptography nor openssl is available (not passed)")
+else:
+    cert, keyf, how = made
+    print(f"       (throwaway certificate made with {how})")
+    for label, mode in (("default verification", None), ("control: a context that trusts the test certificate", "trust")):
+        srv = TlsServer(cert, keyf)
+        th = TunnelHop(srv.port)
+        cfg = P.ProxyConfig(arms=[P.ArmConfig(arm="a1", token=ST.TOKEN)], run_dir=TMP / "hoptls", via_port=th.port,
+                            control_token="ctl", connect_timeout_s=5)
+        trusted = ssl.create_default_context(cafile=str(cert)) if mode == "trust" else None
+        px = P.Proxy(cfg, P.read_key(TMP / "deepseek.env"), log=logs.append, ssl_context=trusted)
+        wp = px.start()["arms"]["a1"]["write"]
+        got = exchange(wp, request(wp, "/v1/chat/completions", BODY), timeout=8)
+        time.sleep(0.3)
+        if mode is None:
+            check("H3 the proxy's default verification refuses the untrusted certificate: no handshake completes",
+                  srv.handshakes == 0, f"handshakes={srv.handshakes} errors={srv.errors}")
+            check("H3 ... the TLS server receives 0 bytes of application data (no request, no key)",
+                  len(srv.app) == 0 and KEY not in bytes(srv.app), f"{len(srv.app)} B")
+            check("H3 ... and the client gets 502", got.startswith(b"HTTP/1.1 502"), repr(got[:30]))
+        else:
+            check("H3 control: with the certificate trusted, the round trip through the tunnel completes (200)",
+                  got.startswith(b"HTTP/1.1 200") and got.endswith(b"{}") and srv.handshakes == 1,
+                  f"{got[:30]!r} handshakes={srv.handshakes} errors={srv.errors}")
+            check("H3 control: the key reaches the server only inside TLS - never in clear on the hop",
+                  f"Authorization: Bearer {ST.SENTINEL_KEY}".encode() in bytes(srv.app) and KEY not in bytes(th.seen)
+                  and b"Authorization" not in bytes(th.seen), f"{len(th.seen)} B on the hop")
+        px.stop()
+        th.close()
+        srv.close()
+
+print("\n- Connection: close is honoured (the auditor's A2.6 early probe) -")
+
+
+def read_eof(port: int, raw: bytes, wait: float) -> tuple[bytes, float, bool]:
+    """Send, read until EOF or ``wait`` seconds of silence: (bytes, seconds, whether EOF came)."""
+    s = socket.create_connection(("127.0.0.1", port))
+    s.sendall(raw)
+    s.settimeout(wait)
+    t0, out, eof = time.monotonic(), bytearray(), False
+    try:
+        while True:
+            chunk = s.recv(65536)
+            if not chunk:
+                eof = True
+                break
+            out += chunk
+    except OSError:
+        pass
+    s.close()
+    return bytes(out), time.monotonic() - t0, eof
+
+
+px, ports, up = serve()
+wp = ports["arms"]["a1"]["write"]
+base = ST._request(wp, "/v1/chat/completions", body=BODY)
+for label, raw, want_eof in (
+        ("HTTP/1.1 with Connection: close", base.replace(b"User-Agent: selftest\r\n", b"Connection: close\r\n"), True),
+        ("HTTP/1.0 without keep-alive", base.replace(b" HTTP/1.1\r\n", b" HTTP/1.0\r\n", 1), True),
+        ("HTTP/1.0 with Connection: keep-alive", base.replace(b" HTTP/1.1\r\n", b" HTTP/1.0\r\n", 1)
+         .replace(b"User-Agent: selftest\r\n", b"Connection: keep-alive\r\n"), False),
+        ("HTTP/1.1 by default", base, False)):
+    got, secs, eof = read_eof(wp, raw, wait=1.5)
+    if want_eof:
+        check(f"{label}: EOF right after the response", got.startswith(b"HTTP/1.1 200") and eof and secs < 1.0,
+              f"eof={eof} {secs:.2f}s")
+    else:
+        check(f"{label}: the connection stays open after the response", got.startswith(b"HTTP/1.1 200") and not eof,
+              f"eof={eof} {secs:.2f}s")
 px.stop()
 up.close()
 

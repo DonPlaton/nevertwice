@@ -17,12 +17,19 @@ proxy answers 401 itself and opens no upstream connection. With it, the proxy:
 
 The key is bound to its host (X1/X2): the upstream is api.deepseek.com:443 over TLS, fixed in code; the only other
 upstream ever accepted is plain text on 127.0.0.1, and only when the key file is not the real one under
-D:\\Coding\\_secrets (tests with a sentinel key). A header name or value carrying CR, LF or NUL is refused (X4); the
+D:\\Coding\\_secrets (tests with a sentinel key). The auditor's R4 ruling: on a machine where the name resolves only
+through the owner's local HTTP proxy, the config may name that proxy as a hop - ``"via": {"host": "127.0.0.1",
+"port": N}``, loopback, plain HTTP, nothing else. The proxy then sends ``CONNECT api.deepseek.com:443`` (the target
+is the code's constant; the config can name only the hop), treats any reply but 200 as an upstream error, and runs
+TLS with SNI and verification end to end inside the tunnel, so the key travels only inside that TLS. At start it
+opens one tunnel, completes the handshake without sending a request, and records the peer certificate's issuer
+(O, CN) and notAfter. The proxy's own environment still carries no proxy variable (AQ13); arms never use the hop. A header name or value carrying CR, LF or NUL is refused (X4); the
 catcher records a host only as a bounded hostname (X5); /scan-files opens nothing outside the run directory and the
 declared scan roots (X3).
 
 Each client connection gets its own upstream connection (1:1), so a client that keeps its connection alive keeps
-the upstream one too. A chunked request body is refused (411); ``Expect: 100-continue`` is answered locally; a
+the upstream one too; a request that says ``Connection: close`` (or is HTTP/1.0 without keep-alive) has both
+connections closed right after its response, so a client that reads to EOF never waits on the proxy. A chunked request body is refused (411); ``Expect: 100-continue`` is answered locally; a
 pipelined request is refused. Accept-Encoding is not forwarded, so every response comes back identity-encoded for
 every arm (AQ5). The catcher records the host of any request a child sends through HTTP(S)_PROXY and refuses it.
 
@@ -64,6 +71,9 @@ _HOSTNAME = re.compile(r"[A-Za-z0-9._:\[\]-]{1,253}")
 MAX_HEAD = 64 * 1024
 MAX_BODY = 32 * 1024 * 1024
 _UNIT = re.compile(r"/u/([A-Za-z0-9._-]{1,128})(/.*)$")
+#: The only keys a proxy config file may carry; anything else (a CONNECT target, say) is refused at load.
+CONFIG_KEYS = frozenset({"arms", "run_dir", "thinking_branch", "upstream", "scan_roots", "via"})
+MAX_CONNECT_REPLY = 8 * 1024
 _FORWARDED_PREFIXES = ("/v1/", "/chat/", "/anthropic/", "/models")
 
 
@@ -118,12 +128,18 @@ class ProxyConfig:
     control_token: str = ""
     connect_timeout_s: float = 30.0
     scan_roots: tuple = ()                  # X3: besides run_dir, where /scan-files may look (e.g. the captures dir)
+    via_port: int | None = None             # R4: the owner's loopback HTTP proxy, as a CONNECT hop (host 127.0.0.1)
 
     def __post_init__(self):
         if self.upstream_tls and (self.upstream_host != UPSTREAM_HOST or self.upstream_port != UPSTREAM_PORT):
             raise ValueError(f"the key goes only to {UPSTREAM_HOST}:{UPSTREAM_PORT} over TLS (X1)")
         if not self.upstream_tls and self.upstream_host != "127.0.0.1":
             raise ValueError("a plain-text upstream is allowed only on 127.0.0.1 (tests)")
+        if self.via_port is not None:
+            if not self.upstream_tls:
+                raise ValueError("the CONNECT hop serves only the TLS upstream (R4)")
+            if isinstance(self.via_port, bool) or not isinstance(self.via_port, int) or not 1 <= self.via_port <= 65535:
+                raise ValueError("the CONNECT hop's port must be an integer in 1..65535 (R4)")
         if self.thinking_branch not in ("unset", "a", "b"):
             raise ValueError("thinking_branch must be unset, a or b")
 
@@ -133,6 +149,15 @@ class ProxyConfig:
         (``test_upstream_ok``, which main() grants only when the key file is not under SECRETS_ROOT), and even
         then only plain text on 127.0.0.1."""
         raw = json.loads(Path(path).read_text(encoding="utf-8"))
+        extra = sorted(set(raw) - CONFIG_KEYS)
+        if extra:
+            raise ValueError(f"unknown config keys refused: {', '.join(extra)}")
+        via = raw.get("via")
+        if via is not None:                               # R4: the hop only, loopback, plain HTTP, no userinfo
+            if not isinstance(via, dict) or set(via) != {"host", "port"}:
+                raise ValueError("via names exactly a host and a port - never a target, scheme or userinfo (R4)")
+            if via["host"] != "127.0.0.1":
+                raise ValueError("the CONNECT hop must be on 127.0.0.1 (R4)")
         up = raw.get("upstream")
         if up is not None:
             if not test_upstream_ok:
@@ -150,12 +175,14 @@ class ProxyConfig:
         return cls(arms=arms, run_dir=Path(raw["run_dir"]), thinking_branch=raw.get("thinking_branch", "unset"),
                    upstream_host=up.get("host", UPSTREAM_HOST), upstream_port=int(up.get("port", UPSTREAM_PORT)),
                    upstream_tls=bool(up.get("tls", True)), control_token=secrets.get("control_token", ""),
-                   scan_roots=tuple(Path(p) for p in raw.get("scan_roots") or ()))
+                   scan_roots=tuple(Path(p) for p in raw.get("scan_roots") or ()),
+                   via_port=via["port"] if via is not None else None)
 
 
 @dataclass
 class Counters:
     requests: int = 0
+    connect_refused: int = 0                # R4: the hop answered CONNECT with anything but 200
     refused_auth: int = 0
     refused_path: int = 0
     refused_chunked: int = 0
@@ -171,6 +198,10 @@ class Counters:
 
 
 # ── HTTP/1.1 pieces ─────────────────────────────────────────────────────
+
+class ConnectRefused(OSError):
+    """R4: the CONNECT hop did not open a tunnel. An upstream error: counted, never retried."""
+
 
 class ProtocolError(Exception):
     pass
@@ -349,9 +380,13 @@ def _send_local(sock: socket.socket, status: int, reason: str, body: bytes = b""
 
 
 class Proxy:
-    def __init__(self, config: ProxyConfig, key: _Key, *, log: Callable[[str], None] | None = None):
+    def __init__(self, config: ProxyConfig, key: _Key, *, log: Callable[[str], None] | None = None,
+                 ssl_context: ssl.SSLContext | None = None):
         self.config = config
         self._key = key
+        #: Verification is always on: ssl.create_default_context(). A test may hand in its own verifying context;
+        #: the config file cannot, and main() never does.
+        self._ssl = ssl_context
         self.log = log or (lambda msg: print(msg, file=sys.stderr, flush=True))
         self.arms = {a.arm: a for a in config.arms}
         self.counters = {a.arm: Counters() for a in config.arms}
@@ -422,11 +457,56 @@ class Proxy:
 
     def _upstream(self) -> socket.socket:
         cfg = self.config
-        raw = socket.create_connection((cfg.upstream_host, cfg.upstream_port), timeout=cfg.connect_timeout_s)
-        raw.settimeout(None)
+        if cfg.via_port is not None:                     # R4: CONNECT through the owner's loopback proxy
+            raw = socket.create_connection(("127.0.0.1", cfg.via_port), timeout=cfg.connect_timeout_s)
+            try:
+                self._connect_tunnel(raw)
+            except BaseException:
+                raw.close()
+                raise
+        else:
+            raw = socket.create_connection((cfg.upstream_host, cfg.upstream_port), timeout=cfg.connect_timeout_s)
         if cfg.upstream_tls:
-            return ssl.create_default_context().wrap_socket(raw, server_hostname=cfg.upstream_host)
+            ctx = self._ssl or ssl.create_default_context()
+            tls = ctx.wrap_socket(raw, server_hostname=UPSTREAM_HOST)
+            tls.settimeout(None)
+            return tls
+        raw.settimeout(None)
         return raw
+
+    @staticmethod
+    def _connect_tunnel(raw: socket.socket) -> None:
+        """CONNECT to the code's constant target; anything but a 200 reply is an upstream error (no retry). Nothing
+        is sent after the request until the reply head has been read whole."""
+        target = f"{UPSTREAM_HOST}:{UPSTREAM_PORT}"
+        raw.sendall(f"CONNECT {target} HTTP/1.1\r\nHost: {target}\r\n\r\n".encode("ascii"))
+        buf = bytearray()
+        while b"\r\n\r\n" not in buf:
+            chunk = raw.recv(1024)
+            if not chunk:
+                raise ConnectRefused("the hop closed during CONNECT")
+            buf += chunk
+            if len(buf) > MAX_CONNECT_REPLY:
+                raise ConnectRefused("the hop's CONNECT reply is too large")
+        end = buf.index(b"\r\n\r\n") + 4
+        parts = bytes(buf[:end]).split(b"\r\n", 1)[0].split(b" ", 2)
+        if len(parts) < 2 or parts[1] != b"200":
+            raise ConnectRefused("the hop did not answer CONNECT with 200")
+        if len(buf) > end:
+            raise ConnectRefused("the hop sent bytes before the TLS handshake")
+
+    def probe_upstream(self) -> dict:
+        """One tunnel and one TLS handshake, no request: the peer certificate's issuer (O, CN) and notAfter, for
+        the log and FREEZE-V3's proxy_upstream_via. Names only; nothing is sent inside the TLS."""
+        s = self._upstream()
+        try:
+            cert = s.getpeercert() if isinstance(s, ssl.SSLSocket) else {}
+            issuer = dict(x[0] for x in cert.get("issuer", ()))
+            return {"via": None if self.config.via_port is None else {"host": "127.0.0.1", "port": self.config.via_port},
+                    "issuer_o": issuer.get("organizationName"), "issuer_cn": issuer.get("commonName"),
+                    "not_after": cert.get("notAfter"), "tls_version": s.version() if isinstance(s, ssl.SSLSocket) else None}
+        finally:
+            s.close()
 
     def _client(self, cs: socket.socket, arm: ArmConfig) -> None:
         ctr = self.counters[arm.arm]
@@ -486,6 +566,8 @@ class Proxy:
                         ctr.upstream_connections += 1
                     except OSError as e:
                         ctr.upstream_errors += 1
+                        if isinstance(e, ConnectRefused):
+                            ctr.connect_refused += 1
                         self.log(f"upstream connect failed: {type(e).__name__}")
                         _send_local(cs, 502, "Bad Gateway", b"upstream unreachable")
                         return
@@ -498,8 +580,10 @@ class Proxy:
                     return
                 ctr.bytes_up += len(out) + len(body)
                 keep = self._pipe_response(cs, up, method, ctr)
-                if not keep:
-                    return
+                version = rest.rsplit(" ", 1)[-1].upper()
+                conn = (_hget(headers, "connection") or "").lower()
+                if not keep or "close" in conn or (version == "HTTP/1.0" and "keep-alive" not in conn):
+                    return                               # the finally closes upstream; _guard closes the client
         finally:
             if up is not None:
                 try:
@@ -728,6 +812,15 @@ def main(argv: list[str] | None = None) -> int:
     config = ProxyConfig.load(args.config, secrets, test_upstream_ok=not real_key)
     key = read_key(args.key_file)
     proxy = Proxy(config, key)
+    if config.upstream_tls:                              # R4: the path works and whose certificate it shows
+        try:
+            info = proxy.probe_upstream()
+        except (OSError, ssl.SSLError) as e:
+            print(f"UPSTREAM_FAILED {type(e).__name__}", flush=True)
+            return 4
+        _append_jsonl(config.run_dir / "upstream_tls.jsonl", {**info, "utc": _utc()})
+        proxy.log(f"upstream via {info['via']}: issuer O={info['issuer_o']!r} CN={info['issuer_cn']!r} "
+                  f"notAfter={info['not_after']!r}")
     ports = proxy.start()
     digest = write_ports(config.run_dir, ports)
     print(f"READY {digest}", flush=True)
