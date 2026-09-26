@@ -1,0 +1,326 @@
+#!/usr/bin/env python3
+"""PREREG-V3 TB1, step A2.6: the proxy's recording mode records what §4.4 lists, refuses what §4.3/§2.6 forbid,
+and writes nothing it must not.
+
+A fake upstream answers in DeepSeek's shapes: /v1 JSON with usage (cache hit and miss, reasoning tokens), /v1 SSE
+with the usage chunk, tool calls in deltas, /anthropic SSE with a thinking block and a tool_use block.
+
+* One JSONL line per call: response model, fingerprint, usage, finish reason, json_ok, content_empty, tools called,
+  thinking, the request key (stable across key order and whitespace, different across arms), the stage stamp.
+* Refused locally with no upstream request, counted and flagged: a model other than the port's pin (arm, reader,
+  J3), an unparsable body, an offered tool outside the arm's set or matching a forbidden pattern (any case), a
+  canary - raw or \\u-escaped - and an owner marker (a name in Latin or Cyrillic, an email, a home path with doubled
+  backslashes, an 8-word shingle of the owner's rules). The ancestor canary is counted, not refused. A lone first
+  name is not a marker; a marker that fires on smoke text is dropped, and only the count is kept.
+* A reasoning response is a thinking call (flagged); flags survive a restart; the log only grows; the request body
+  is forwarded byte for byte; /user/balance goes out on the scheduler port only; the catcher tunnels a CONNECT only
+  inside an open window, only to its hosts.
+* No written file holds a body, a key, a canary, a marker's text, or a name from the owner's files.
+
+    python tests/_test_llm_proxy_record.py
+"""
+from __future__ import annotations
+
+import importlib.util
+import json
+import shutil
+import socket
+import sys
+import tempfile
+import threading
+import time
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parent
+sys.path.insert(0, str(HERE))
+
+import _env_guard  # noqa: F401,E402  hermetic like every suite
+
+
+def _load(name: str, path: Path):
+    spec = importlib.util.spec_from_file_location(name, path)
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[name] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+P = _load("v3_llm_proxy_r", ROOT / "research" / "_llm_proxy.py")
+ST = _load("v3_llm_proxy_selftest_r", ROOT / "research" / "_llm_proxy_selftest.py")
+
+PASSED = FAILED = 0
+
+
+def check(name: str, cond: bool, detail: str = "") -> None:
+    global PASSED, FAILED
+    if cond:
+        PASSED += 1
+        print(f"  ok   {name}")
+    else:
+        FAILED += 1
+        print(f"  FAIL {name}" + (f" - {detail}" if detail else ""))
+
+
+TMP = Path(tempfile.mkdtemp(prefix="nvt3_proxy_rec_"))
+KEYFILE = TMP / "deepseek.env"
+KEYFILE.write_bytes(f"DEEPSEEK_API_KEY={ST.SENTINEL_KEY}\n".encode())
+
+V1_JSON = (b'{"id":"c1","model":"deepseek-flash","system_fingerprint":"fp_abc123","choices":[{"index":0,"message":'
+           b'{"role":"assistant","content":"{\\"ok\\": true}"},"finish_reason":"stop"}],"usage":{"prompt_tokens":120,'
+           b'"completion_tokens":7,"prompt_cache_hit_tokens":64,"prompt_cache_miss_tokens":56,'
+           b'"completion_tokens_details":{"reasoning_tokens":0}}}')
+V1_REASON = V1_JSON.replace(b'"reasoning_tokens":0', b'"reasoning_tokens":42')
+V1_SSE = (b': keep-alive\n\n'
+          b'data: {"id":"s","model":"deepseek-flash","system_fingerprint":"fp_s1","choices":[{"delta":{"content":"he"}}]}\n\n'
+          b'data: {"id":"s","model":"deepseek-flash","choices":[{"delta":{"tool_calls":[{"index":0,"function":'
+          b'{"name":"lookup_memory","arguments":""}}]}}]}\n\n'
+          b'data: {"id":"s","model":"deepseek-flash","choices":[{"delta":{},"finish_reason":"tool_calls"}]}\n\n'
+          b'data: {"id":"s","model":"deepseek-flash","choices":[],"usage":{"prompt_tokens":30,"completion_tokens":9,'
+          b'"prompt_cache_hit_tokens":0,"prompt_cache_miss_tokens":30}}\n\n'
+          b'data: [DONE]\n\n')
+ANTH_SSE = (b'event: message_start\ndata: {"type":"message_start","message":{"model":"deepseek-flash","usage":'
+            b'{"input_tokens":50}}}\n\n'
+            b'event: content_block_start\ndata: {"type":"content_block_start","index":0,"content_block":'
+            b'{"type":"thinking","thinking":""}}\n\n'
+            b'event: content_block_start\ndata: {"type":"content_block_start","index":1,"content_block":'
+            b'{"type":"tool_use","name":"Read","input":{}}}\n\n'
+            b'event: message_delta\ndata: {"type":"message_delta","delta":{"stop_reason":"tool_use"},"usage":'
+            b'{"output_tokens":11}}\n\n'
+            b'event: message_stop\ndata: {"type":"message_stop"}\n\n')
+
+
+class Upstream(ST.FakeUpstream):
+    def _serve(self, c, path):
+        if path.startswith(b"/v1/chat/completions/reason"):
+            body = V1_REASON
+        elif path.startswith(b"/v1/chat/completions"):
+            body = V1_JSON
+        elif path.startswith(b"/user/balance"):
+            body = b'{"is_available":true}'
+        elif path.startswith(b"/v1/sse") or path.startswith(b"/anthropic/"):
+            sse = ANTH_SSE if path.startswith(b"/anthropic/") else V1_SSE
+            self._send(c, b"HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nTransfer-Encoding: chunked\r\n\r\n")
+            for piece in sse.split(b"\n\n")[:-1]:
+                piece += b"\n\n"
+                self._send(c, b"%x\r\n%s\r\n" % (len(piece), piece))
+            self._send(c, b"0\r\n\r\n")
+            return True
+        else:
+            return super()._serve(c, path)
+        self._send(c, b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: "
+                   + str(len(body)).encode() + b"\r\n\r\n" + body)
+        return True
+
+
+IDENTITY = {"name": "Ivan Testov", "email": "ivan.testov@example.org", "home": "C:\\Users\\ivantestov"}
+RULE_TEXT = "Always keep the purple elephant ledger sorted by the third column before lunch every day."
+CANARIES = {"decoy_env": "nvt3c-decoy_env-" + "a" * 32, "decoy_claude_md": "nvt3c-decoy_claude_md-" + "b" * 32,
+            "decoy_credentials": "nvt3c-decoy_credentials-" + "c" * 32, "ancestor": "nvt3c-ancestor-" + "d" * 32}
+T_ARM, T_LETTA, T_J3, T_SCHED = ST.TOKEN, ST.TOKEN + "l", ST.TOKEN + "j", ST.TOKEN + "s"
+
+
+def make(run: str):
+    up = Upstream()
+    arms = [P.ArmConfig(arm="nevertwice", mode="record", token=T_ARM, pinned_model="deepseek-flash",
+                        reader_model="deepseek-flash"),
+            P.ArmConfig(arm="letta", mode="record", token=T_LETTA, pinned_model="deepseek-flash",
+                        tools_allowed=("send_message", "archival_memory_insert", "Read", "BASH_RUNNER")),
+            P.ArmConfig(arm="j3", mode="record", token=T_J3, pinned_model="deepseek-v4-pro"),
+            P.ArmConfig(arm="scheduler", mode="record", token=T_SCHED, pinned_model="deepseek-flash")]
+    cfg = P.ProxyConfig(arms=arms, run_dir=TMP / run, upstream_host="127.0.0.1", upstream_port=up.port,
+                        upstream_tls=False, control_token="ctl-token")
+    markers = P.OwnerMarkers(IDENTITY, [RULE_TEXT])
+    px = P.Proxy(cfg, P.read_key(KEYFILE), markers=markers, canaries=CANARIES, log=lambda m: None)
+    return px, px.start(), up
+
+
+def call(port: int, path: str, obj=None, *, token=T_ARM, raw: bytes | None = None, method="POST") -> bytes:
+    body = raw if raw is not None else (json.dumps(obj).encode() if obj is not None else b"")
+    req = (f"{method} {path} HTTP/1.1\r\nHost: x\r\nAuthorization: Bearer {token}\r\nContent-Type: application/json\r\n"
+           f"Connection: close\r\nContent-Length: {len(body)}\r\n\r\n").encode() + body
+    s = socket.create_connection(("127.0.0.1", port))
+    s.sendall(req)
+    got = ST._read_all(s, 5)
+    s.close()
+    time.sleep(0.05)
+    return got
+
+
+def records(px) -> list[dict]:
+    f = px.config.run_dir / "calls.jsonl"
+    return [json.loads(x) for x in f.read_bytes().decode().splitlines()] if f.exists() else []
+
+
+pxc, portsc, upc = make("run_close")                   # the auditor's A2.6 probe, on its own instance
+wc = portsc["arms"]["nevertwice"]["write"]
+t0 = time.monotonic()
+gotc = call(wc, "/u/u1/v1/chat/completions", {"model": "deepseek-flash", "messages": [], "thinking": {"type": "disabled"}})
+dtc = time.monotonic() - t0
+check("a recording arm's request with Connection: close gets EOF right after the response",
+      gotc.startswith(b"HTTP/1.1 200") and dtc < 1.0 and len(records(pxc)) == 1, f"{dtc:.2f}s {gotc[:30]!r}")
+pxc.stop()
+upc.close()
+
+px, ports, up = make("run1")
+W = ports["arms"]["nevertwice"]["write"]
+R = ports["arms"]["nevertwice"]["reader"]
+LW = ports["arms"]["letta"]["write"]
+MSG = {"model": "deepseek-flash", "messages": [{"role": "user", "content": "extract"}], "temperature": 0.2,
+       "max_tokens": 4096, "response_format": {"type": "json_object"}, "thinking": {"type": "disabled"}}
+
+print("\n- one record per call, from the parsed copy -")
+ctl = lambda path, obj: call(ports["control"], path, obj, token="ctl-token")  # noqa: E731
+ctl("/stage", {"block": "b1", "stage": "write"})
+body_bytes = b'{"model":"deepseek-flash",  "messages":[{"role":"user","content":"x"}],"temperature":0.2}'
+call(W, "/u/unit-7/v1/chat/completions", raw=body_bytes)
+check("the request body reaches the upstream byte for byte in recording mode", up.requests[-1].endswith(body_bytes))
+call(W, "/u/unit-7/v1/chat/completions", MSG)
+r = records(px)[-1]
+check("response model, fingerprint, finish reason", (r["response_model"], r["system_fingerprint"], r["finish_reason"])
+      == ("deepseek-flash", "fp_abc123", "stop"), str(r))
+check("usage: prompt, completion, cache hit, cache miss, reasoning",
+      r["usage"] == {"prompt": 120, "completion": 7, "cache_hit": 64, "cache_miss": 56, "reasoning": 0}, str(r["usage"]))
+check("json_object content parsed (json_ok), content not empty", r["json_ok"] is True and r["content_empty"] is False)
+check("as sent: model, temperature, max_tokens, response_format, thinking",
+      (r["requested_model"], r["temperature"], r["max_tokens"], r["response_format"], r["thinking_sent"])
+      == ("deepseek-flash", 0.2, 4096, "json_object", "disabled"), str(r))
+check("unit from the /u/ prefix, the stage stamp, the port role", (r["unit"], r["block"], r["stage"], r["port_role"])
+      == ("unit-7", "b1", "write", "write"), str(r))
+check("no thinking on a zero-reasoning answer", r["thinking"] is False and px.counters["nevertwice"].thinking_calls == 0)
+call(W, "/v1/sse", dict(MSG, stream=True))
+r = records(px)[-1]
+check("SSE: usage from the last chunk, the tool called in a delta, the finish reason",
+      r["usage"]["prompt"] == 30 and r["usage"]["cache_miss"] == 30 and r["tools_called"] == ["lookup_memory"]
+      and r["finish_reason"] == "tool_calls" and r["system_fingerprint"] == "fp_s1", str(r))
+call(W, "/v1/chat/completions/reason", MSG)
+r = records(px)[-1]
+check("reasoning tokens > 0 is a thinking call, counted and flagged",
+      r["thinking"] is True and px.counters["nevertwice"].thinking_calls == 1 and px.flags.get("thinking_call") == 1)
+call(LW, "/anthropic/v1/messages", {"model": "deepseek-flash", "messages": [], "stream": True}, token=T_LETTA)
+r = records(px)[-1]
+check("/anthropic SSE: model, input and output tokens, a thinking block, the tool_use name",
+      r["response_model"] == "deepseek-flash" and r["usage"]["prompt"] == 50 and r["usage"]["completion"] == 11
+      and r["thinking"] is True and r["tools_called"] == ["Read"] and r["system_fingerprint"] is None, str(r))
+
+print("\n- the request key -")
+k1 = P.request_key({"a": 1, "b": [1, 2]}, "nevertwice")
+check("the request key ignores key order and whitespace", k1 == P.request_key(json.loads('{ "b":[1,2], "a":1 }'), "nevertwice"))
+check("the request key differs across arms", k1 != P.request_key({"a": 1, "b": [1, 2]}, "letta"))
+
+print("\n- refused locally, with no upstream request -")
+
+
+def refused(label: str, port: int, obj=None, *, kind: str, token=T_ARM, raw=None, path="/v1/chat/completions"):
+    n0 = len(up.requests)
+    got = call(port, path, obj, token=token, raw=raw)
+    r = records(px)[-1]
+    check(f"{label}: 400, refused={kind}, no upstream request",
+          got.startswith(b"HTTP/1.1 400") and r["refused"] == kind and len(up.requests) == n0,
+          f"{got[:30]!r} {r.get('refused')} {len(up.requests) - n0}")
+
+
+refused("deepseek-v4-pro on an arm port", W, dict(MSG, model="deepseek-v4-pro"), kind="model_mismatch")
+refused("a Claude model on an arm port", W, dict(MSG, model="claude-opus-4"), kind="model_mismatch")
+refused("deepseek-flash on the J3 port", ports["j3"], MSG, kind="model_mismatch", token=T_J3)
+refused("deepseek-v4-pro on the reader port", R, dict(MSG, model="deepseek-v4-pro"), kind="model_mismatch")
+refused("an unparsable body", W, raw=b'{"model": "deepseek-flash", ', kind="unparsable")
+refused("an offered Bash tool", W, dict(MSG, tools=[{"type": "function", "function": {"name": "Bash"}}]),
+        kind="tool_violation")
+refused("a legacy functions entry outside the set", LW, dict(MSG, functions=[{"name": "delete_everything"}]),
+        kind="tool_violation", token=T_LETTA)
+refused("an Anthropic tool BASH_RUNNER (upper case), even though the arm's own set lists it",
+        LW, {"model": "deepseek-flash", "tools": [{"name": "BASH_RUNNER"}]},
+        kind="tool_violation", token=T_LETTA, path="/anthropic/v1/messages")
+n0 = len(up.requests)
+call(LW, "/v1/chat/completions", dict(MSG, tools=[{"type": "function", "function": {"name": "archival_memory_insert"}}]),
+     token=T_LETTA)
+check("a tool in the arm's own set is forwarded", len(up.requests) == n0 + 1 and records(px)[-1]["refused"] is None)
+refused("a raw canary", W, dict(MSG, messages=[{"role": "user", "content": "x " + CANARIES["decoy_claude_md"]}]), kind="canary")
+esc = json.dumps({"model": "deepseek-flash", "messages": [{"role": "user", "content": CANARIES["decoy_env"]}]},
+                 ensure_ascii=True).replace("nvt3c", "\\u006evt3c").encode()
+refused("a \\u-escaped canary", W, raw=esc, kind="canary")
+n0 = len(up.requests)
+call(W, "/v1/chat/completions", dict(MSG, messages=[{"role": "user", "content": "note " + CANARIES["ancestor"]}]))
+r = records(px)[-1]
+check("the ancestor canary is counted, and not refused", r["ancestor_canary_hits"] == 1 and r["refused"] is None
+      and len(up.requests) == n0 + 1)
+for label, text in (("the full name", "hello ivan   TESTOV how are you"),
+                    ("the Cyrillic name, \\u-escaped", None),
+                    ("the email", "write to ivan.testov@example.org"),
+                    ("the home path with doubled backslashes", None),
+                    ("an 8-word shingle of the owner's rules", "note: keep the purple elephant ledger sorted by the third column")):
+    if label.startswith("the Cyrillic"):
+        raw = json.dumps({"model": "deepseek-flash", "messages": [{"role": "user", "content": "Иван Тестов"}]},
+                         ensure_ascii=True).encode()
+        refused(f"owner marker: {label}", W, raw=raw, kind="owner_marker")
+    elif label.startswith("the home"):
+        raw = b'{"model":"deepseek-flash","messages":[{"role":"user","content":"C:\\\\Users\\\\ivantestov\\\\x"}]}'
+        refused(f"owner marker: {label}", W, raw=raw, kind="owner_marker")
+    else:
+        refused(f"owner marker: {label}", W, dict(MSG, messages=[{"role": "user", "content": text}]), kind="owner_marker")
+n0 = len(up.requests)
+call(W, "/v1/chat/completions", dict(MSG, messages=[{"role": "user", "content": "Ivan the Terrible, and Plato"}]))
+check("a lone first name is not a marker (forwarded)", len(up.requests) == n0 + 1 and records(px)[-1]["owner_marker_hits"] == 0)
+m2 = P.OwnerMarkers(IDENTITY, [RULE_TEXT])
+dropped = m2.drop_firing(["a smoke unit that happens to mention Ivan Testov"])
+check("a marker that fires on smoke text is dropped; only the count is kept",
+      dropped >= 1 and not m2.hit(["Ivan Testov"]) and m2.hit(["ivan.testov@example.org"]), str(dropped))
+
+print("\n- scheduler port, catcher windows, flags, the log -")
+got_arm = call(W, "/user/balance", method="GET")
+got_sched = call(ports["scheduler"], "/user/balance", method="GET", token=T_SCHED)
+check("/user/balance: 404 on an arm port, forwarded on the scheduler port",
+      got_arm.startswith(b"HTTP/1.1 404") and got_sched.startswith(b"HTTP/1.1 200"), f"{got_arm[:14]!r} {got_sched[:14]!r}")
+target = socket.socket()
+target.bind(("127.0.0.1", 0))
+target.listen(1)
+tport = target.getsockname()[1]
+
+
+def echo_once():
+    c, _ = target.accept()
+    c.sendall(b"hello-from-target")
+    c.close()
+
+
+threading.Thread(target=echo_once, daemon=True).start()
+cp = ports["arms"]["nevertwice"]["catcher"]
+connect = f"CONNECT 127.0.0.1:{tport} HTTP/1.1\r\nHost: 127.0.0.1:{tport}\r\n\r\n".encode()
+s = socket.create_connection(("127.0.0.1", cp))
+s.sendall(connect)
+outside = ST._read_all(s, 3)
+s.close()
+ctl("/window", {"name": "w-test", "hosts": ["127.0.0.1"], "state": "open"})
+s = socket.create_connection(("127.0.0.1", cp))
+s.sendall(connect)
+inside = ST._read_all(s, 3)
+s.close()
+ctl("/window", {"name": "w-test", "state": "close"})
+check("the catcher refuses a CONNECT outside a window (403)", outside.startswith(b"HTTP/1.1 403"))
+check("inside an open window it tunnels to an allowed host", inside.startswith(b"HTTP/1.1 200") and inside.endswith(b"hello-from-target"),
+      inside[:60].decode("latin-1"))
+target.close()
+n_lines = len(records(px))
+flags_before = dict(px.flags)
+px.stop()
+up.close()
+px2 = P.Proxy(px.config, P.read_key(KEYFILE), log=lambda m: None)
+check("flags survive a restart (read back from flags.jsonl)", px2.flags == flags_before and flags_before.get("model_mismatch", 0) >= 4,
+      f"{px2.flags} vs {flags_before}")
+n_records = sum(c.records for c in px.counters.values())
+check("the log only grows: one line per record written, all of them kept", n_lines == n_records and n_lines >= 20,
+      f"{n_lines} lines, {n_records} records")
+
+print("\n- nothing written holds what it must not -")
+forbidden = [ST.SENTINEL_KEY, *CANARIES.values(), "Ivan Testov", "ivan.testov@example.org", "ivantestov",
+             "purple elephant", "Иван", "extract", "hello-from-target"]
+files = [f for f in TMP.rglob("*") if f.is_file() and f.name != "deepseek.env"]
+leaks = [(f.name, w) for f in files for w in forbidden if w.encode("utf-8") in f.read_bytes()]
+check(f"no key, canary, marker text, name or body in the {len(files)} written files", leaks == [], str(leaks[:5]))
+check("the run directory holds only the logs", {f.name for f in files} <= {"calls.jsonl", "flags.jsonl", "catcher.jsonl"},
+      str(sorted({f.name for f in files})))
+
+shutil.rmtree(TMP, ignore_errors=True)
+print(f"\nproxy recording: {PASSED} passed, {FAILED} failed")
+sys.exit(1 if FAILED else 0)
