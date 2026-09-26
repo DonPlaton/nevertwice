@@ -689,7 +689,7 @@ def spawn(c: Contract, argv: Sequence[str], *, env: Mapping[str, str], cwd: str 
     proc = popen([binary.path, *argv[1:]], env=dict(env), cwd=os.fspath(cwd), **popen_kw)
     if native is not None:
         handle = getattr(proc, "_handle", None) if jobs is not None else None
-        ok = native.register(proc.pid, handle=int(handle) if handle is not None else None)
+        ok = native.register(proc.pid, handle=int(handle) if handle is not None else None, label=spawn_id)
         if jobs is not None and handle is not None:
             if not ok or not jobs.resume(int(handle)):      # W1: never let a child run outside its job
                 try:
@@ -769,6 +769,12 @@ DEFAULT_TICK_S = 0.5
 LIMIT_TEXT = ("sampled every {tick} s; a connection shorter than a tick is not seen (on Windows a closed "
               "connection's TIME_WAIT row belongs to pid 0); the catcher covers clients that honour HTTP(S)_PROXY")
 LIMIT_NO_JOBS = "; off Windows, a process re-parented to init before a tick sees it is not tracked"
+#: W7: a loopback destination is judged by its listener as seen in the same tick's socket table.
+LIMIT_LOOPBACK = ("; a loopback destination is judged by the listener of its port in the same tick (TCP LISTEN, or "
+                  "an unconnected UDP socket); a listener that is gone or has no readable pid fails the sample")
+#: W7: the Ollama server's port. A tree's direct connections to it are allowed, and counted per tree
+#: (``ollama_direct_conns``) so the reconciliation can flag an arm that should have gone through the proxy's leg.
+OLLAMA_PORT = 11434
 
 
 @dataclass
@@ -782,6 +788,11 @@ class EgressResult:
     process_errors: int = 0
     rows_seen: int = 0                                  # connections of tracked processes read, loopback included
     unwitnessed_registrations: int = 0                  # W2: a child whose identity could not be read
+    loopback_hits: int = 0                              # W7: loopback connections to a listener nobody allowed
+    undetermined_loopback: int = 0                      # W7: loopback rows whose listener could not be read
+    ollama_direct: dict = field(default_factory=dict)   # W7: tree label -> {(local port, 11434)}
+    allowed_listeners: list = field(default_factory=list)   # W7: [(reason, pid)]
+    allowed_ports: list = field(default_factory=list)       # W7: declared container gateway ports
     tick_s: float = DEFAULT_TICK_S
     elapsed_s: float = 0.0
     sample_cost_ms: float = 0.0
@@ -803,6 +814,10 @@ class EgressResult:
                 "listen_nonloopback": self.listen_nonloopback, "samples": self.samples,
                 "failed_samples": self.failed_samples, "process_errors": self.process_errors,
                 "rows_seen": self.rows_seen, "unwitnessed_registrations": self.unwitnessed_registrations,
+                "loopback_hits": self.loopback_hits, "undetermined_loopback": self.undetermined_loopback,
+                "ollama_direct_conns": {k: len(v) for k, v in sorted(self.ollama_direct.items())},
+                "allowed_listeners": [{"reason": r, "pid": pid} for r, pid in self.allowed_listeners],
+                "allowed_ports": sorted(self.allowed_ports),
                 "tick_s": self.tick_s, "elapsed_s": round(self.elapsed_s, 3),
                 "expected_samples": self.expected_samples, "sample_cost_ms": round(self.sample_cost_ms, 2),
                 "limit": self.limit, "complete": self.complete}
@@ -900,14 +915,18 @@ class PsutilSampler:
         return out
 
     def connections(self, pids: set[int]) -> tuple[list[tuple[int, str, int, str | None, int | None, str]], int]:
-        """(connections of ``pids`` as (pid, local ip, local port, remote ip, remote port, status), process errors)."""
+        """(connections of ``pids`` as (pid, local ip, local port, remote ip, remote port, status), process errors).
+        The same socket table gives ``listeners()`` for this tick (W7); the per-process fallback leaves it unknown."""
         ps, rows, errors = self.psutil, [], 0
+        self._listeners = None
         try:
             conns = ps.net_connections(kind="inet")
             for c in conns:
                 if c.pid in pids:
                     rows.append((c.pid, c.laddr.ip if c.laddr else "", c.laddr.port if c.laddr else 0,
                                  c.raddr.ip if c.raddr else None, c.raddr.port if c.raddr else None, c.status))
+            self._listeners = listener_map((c.pid, c.laddr.ip if c.laddr else "", c.laddr.port if c.laddr else 0,
+                                            bool(c.raddr), c.status) for c in conns)
             return rows, 0
         except ps.AccessDenied:
             pass
@@ -921,6 +940,27 @@ class PsutilSampler:
             except (ps.AccessDenied, ps.NoSuchProcess, ps.ZombieProcess):
                 errors += 1
         return rows, errors
+
+    def listeners(self) -> dict | None:
+        """W7: {(proto, port): {pid or None}} from the last ``connections`` call's table; None when it was not read."""
+        return getattr(self, "_listeners", None)
+
+
+def _proto(status: str) -> str:
+    """psutil reports a UDP socket with status NONE; every TCP socket has a TCP state."""
+    return "udp" if status == "NONE" else "tcp"
+
+
+def listener_map(entries) -> dict:
+    """W7: from (pid, local ip, local port, has_remote, status) rows, who can be reached at 127.0.0.1:<port> - a TCP
+    LISTEN socket or an unconnected UDP socket bound to a loopback or unspecified address - as
+    {(proto, port): {pid, ...}}. A pid psutil could not read stays as None."""
+    out: dict = {}
+    for pid, lip, lport, has_remote, status in entries:
+        bindable = _is_loopback(lip) or lip in ("0.0.0.0", "::", "")
+        if bindable and lport and (status == "LISTEN" or (status == "NONE" and not has_remote)):
+            out.setdefault((_proto(status), lport), set()).add(pid)
+    return out
 
 
 # ── Windows job objects (W1): the whole tree, orphans included ──────────
@@ -1060,8 +1100,11 @@ class NativeEgressWitness(_Ticker):
         self.jobs = jobs or None
         self.tracked: dict[int, float] = {}          # pid -> create_time
         self.root_of: dict[int, int] = {}            # pid -> the root of its tree
+        self.label_of: dict[int, str] = {}           # root pid -> its spawn id (W7's per-tree counters)
+        self.allowed: dict[int, tuple[float, str]] = {}   # W7: listener pid -> (create_time, reason)
+        self.allowed_ports: set[int] = set()         # W7: declared container gateway ports on loopback
         self.result = EgressResult(tick_s=tick_s, limit=LIMIT_TEXT.format(tick=tick_s)
-                                   + ("" if self.jobs else LIMIT_NO_JOBS))
+                                   + ("" if self.jobs else LIMIT_NO_JOBS) + LIMIT_LOOPBACK)
         self._lock = threading.Lock()
 
     def _identity(self, pid: int) -> float | None:
@@ -1072,7 +1115,7 @@ class NativeEgressWitness(_Ticker):
         ident = getattr(self.sampler, "identity", None)
         return ident(pid) if ident else None
 
-    def register(self, pid: int, handle: int | None = None) -> bool:
+    def register(self, pid: int, handle: int | None = None, label: str | None = None) -> bool:
         """Track a tree from its root. With job objects the root is assigned to its own job here (spawn creates it
         suspended first, so nothing escapes before). No identity, no tracking - never a wildcard (W2)."""
         with self._lock:
@@ -1084,7 +1127,52 @@ class NativeEgressWitness(_Ticker):
                 return False
             self.tracked[pid] = ct
             self.root_of[pid] = pid
+            self.label_of[pid] = label or str(pid)
             return True
+
+    def allow_listener(self, pid: int, reason: str) -> bool:
+        """W7: a process whose listening ports a witnessed tree may reach on loopback (the v3 proxy). Held by
+        (pid, create time), so a reused pid is not allowed. No identity, not allowed."""
+        with self._lock:
+            ct = self._identity(pid)
+            if ct is None:
+                return False
+            self.allowed[pid] = (ct, reason)
+            self.result.allowed_listeners.append((reason, pid))
+            return True
+
+    def allow_port(self, port: int) -> None:
+        """W7: a declared container gateway port on loopback (e.g. a published Letta or FalkorDB port)."""
+        with self._lock:
+            self.allowed_ports.add(int(port))
+            self.result.allowed_ports = sorted(self.allowed_ports)
+
+    def _loopback_verdict(self, pid: int, lport: int, rport: int | None, status: str, listeners: dict | None,
+                          ct_of: dict) -> str:
+        """W7: "inbound" (an accepted connection on this process's own listener), "ok", "ollama", "hit" or
+        "undetermined". Never "ok" without a listener that is allowed, in the same tree, or on an allowed port."""
+        if listeners is None:
+            return "undetermined"
+        proto = _proto(status)
+        if pid in listeners.get((proto, lport), ()):
+            return "inbound"
+        if rport == OLLAMA_PORT and proto == "tcp":
+            return "ollama"
+        if rport in self.allowed_ports:
+            return "ok"
+        owners = listeners.get((proto, rport))
+        if not owners:
+            return "undetermined"
+        root = self.root_of.get(pid)
+        for lp in owners:
+            if lp is None:
+                continue
+            if lp in self.tracked and self.root_of.get(lp) == root and self._same(ct_of.get(lp, -1.0),
+                                                                                self.tracked[lp]):
+                return "ok"
+            if lp in self.allowed and self._same(ct_of.get(lp, -1.0), self.allowed[lp][0]):
+                return "ok"
+        return "undetermined" if None in owners else "hit"
 
     def kill_tree(self, root: int) -> bool:
         return self.jobs is not None and self.jobs.terminate(root)
@@ -1117,6 +1205,8 @@ class NativeEgressWitness(_Ticker):
                             grew = True
                 alive = {pid for pid, _pp, ct in procs if pid in self.tracked and self._same(self.tracked[pid], ct)}
                 rows, errors = self.sampler.connections(alive)
+                get_listeners = getattr(self.sampler, "listeners", None)
+                listeners = get_listeners() if get_listeners else None
             except WitnessUnavailable:
                 raise
             except Exception:                            # noqa: BLE001 - a failed sample is failed, never clean
@@ -1125,13 +1215,26 @@ class NativeEgressWitness(_Ticker):
             self.result.samples += 1
             self.result.process_errors += errors
             self.result.rows_seen += len(rows)
+            undetermined = 0
             for pid, lip, _lport, rip, rport, status in rows:
                 if status == "LISTEN":
                     if not _is_loopback(lip):
                         self.result.listen_nonloopback += 1
                         self.result.hits += 1
                     continue
-                if not rip or _is_loopback(rip):
+                if not rip:
+                    continue
+                if _is_loopback(rip):
+                    verdict = self._loopback_verdict(pid, _lport, rport, status, listeners, ct_of)
+                    if verdict == "hit":                 # W7: e.g. a local HTTP/SOCKS proxy nobody allowed
+                        self.result.hits += 1
+                        self.result.loopback_hits += 1
+                        self.result.hit_remotes.add(f"{rip}:{rport}")
+                    elif verdict == "undetermined":
+                        undetermined += 1
+                    elif verdict == "ollama":
+                        label = self.label_of.get(self.root_of.get(pid, pid), str(pid))
+                        self.result.ollama_direct.setdefault(label, set()).add((_lport, rport))
                     continue
                 root = self.root_of.get(pid)
                 if any(root in roots for roots in self.windows.values()):
@@ -1139,6 +1242,9 @@ class NativeEgressWitness(_Ticker):
                 else:
                     self.result.hits += 1
                     self.result.hit_remotes.add(f"{rip}:{rport}")
+            if undetermined:                             # W7: never read an unknown listener as clean
+                self.result.undetermined_loopback += undetermined
+                self.result.failed_samples += 1
 
 
 class ContainerEgressWitness(_Ticker):
@@ -1647,14 +1753,17 @@ def _walk_items(obj):
 
 def spawn_proxy(c: Contract, python: str | os.PathLike, *, script: Path, config_path: Path, key_file: Path,
                 stdin_secrets: Mapping, unit: UnitDirs, parent_env: Mapping[str, str], ready_timeout: float = 30.0,
-                popen: Callable[..., subprocess.Popen] = subprocess.Popen) -> tuple[Child, dict]:
+                popen: Callable[..., subprocess.Popen] = subprocess.Popen,
+                witnesses: "Witnesses | None" = None) -> tuple[Child, dict]:
     """Start research/_llm_proxy.py under the contract (§2.6.1): the only spawn whose argv may name the key file.
 
     Its read exceptions are exact paths at exact argv indexes (X6): its own script (1) and the key file (6) - never
     the repository or the secrets directory as a root; the repository is on no import path (the proxy imports only
     the standard library). Its environment carries no key, no token and no proxy variable; the tokens arrive as
     one JSON line on stdin, then EOF. It is started unwitnessed by the arm witness, with that reason recorded: its own upstream is the cloud,
-    and every call it makes is its own record. Returns (child, ports) once READY names the ports file's sha256."""
+    and every call it makes is its own record. With ``witnesses``, its pid becomes an allowed loopback listener for
+    the witnessed trees (W7) - its write, reader and catcher ports. Returns (child, ports) once READY names the
+    ports file's sha256."""
     env = build_env(c, parent_env=parent_env, unit=unit, path_dirs=[Path(python).parent], declared={},
                     catcher_url="", proxies=False)
     argv = [os.fspath(python), os.fspath(script), "serve", "--config", os.fspath(config_path),
@@ -1678,4 +1787,8 @@ def spawn_proxy(c: Contract, python: str | os.PathLike, *, script: Path, config_
     if hashlib.sha256(data).hexdigest() != got.split(" ", 1)[1]:
         child.kill_tree()
         raise ContractViolation(["the ports file does not match the READY line"])
+    if witnesses is not None and witnesses.native is not None and not witnesses.native.allow_listener(
+            child.process.pid, "the v3 proxy"):
+        child.kill_tree()
+        raise ContractViolation(["the proxy's identity could not be read, so its ports cannot be allowed (W7)"])
     return child, json.loads(data)

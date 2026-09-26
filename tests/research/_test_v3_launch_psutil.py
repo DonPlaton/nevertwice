@@ -108,6 +108,7 @@ class Inject(L.PsutilSampler):
 try:
     for label, sampler in (("real", L.PsutilSampler()), ("injected", Inject())):
         nat = L.NativeEgressWitness(sampler=sampler, tick_s=0.2)
+        nat.allow_listener(os.getpid(), "the test's own server")      # W7: the loopback server lives in this process
         W = L.Witnesses(C, native=nat, fs=None)
         unit = L.make_unit_dirs(C, "s", "r", "a", f"u-{label}")
         env = L.build_env(C, parent_env=os.environ, unit=unit, path_dirs=[Path(sys.executable).parent], declared={},
@@ -137,6 +138,7 @@ try:
     # W1 on real processes: an orphaned grandchild, its parent gone before the first tick
     sampler = L.PsutilSampler()
     nat = L.NativeEgressWitness(sampler=sampler)
+    nat.allow_listener(os.getpid(), "the test's own server")
     W = L.Witnesses(C, native=nat, fs=None)
     grand = (f"import socket, time; time.sleep(1.2); s = socket.create_connection(('127.0.0.1', {PORT})); "
              "time.sleep(2.5); s.close()")
@@ -163,6 +165,51 @@ try:
     print(f"       measured: one native sample costs {n['sample_cost_ms']:.1f} ms at a {n['tick_s']} s tick "
           f"({n['samples']}/{n['expected_samples']} samples)")
     check("W5 one sample costs well under the tick (< 50 %)", n["sample_cost_ms"] < 500 * n["tick_s"], str(n["sample_cost_ms"]))
+
+    # W7 on real processes: a listener outside the tree (a stand-in for a local HTTP/SOCKS proxy), then allowed,
+    # then a listener inside the tree.
+    outside = subprocess.Popen([sys.executable, "-c", "import socket, sys, time; s = socket.socket(); "
+                                "s.bind(('127.0.0.1', 0)); s.listen(4); print(s.getsockname()[1], flush=True); "
+                                "c = [s.accept() for _ in range(2)]; time.sleep(6)"],
+                               stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL)
+    OUT_PORT = int(outside.stdout.readline().decode().strip())
+    HOLD = f"import socket, time; s = socket.create_connection(('127.0.0.1', {OUT_PORT})); time.sleep(2.5); s.close()"
+    for label, allow in (("w7-outside", False), ("w7-allowed", True)):
+        nat = L.NativeEgressWitness(sampler=L.PsutilSampler(), tick_s=0.2)
+        if allow:
+            nat.allow_listener(outside.pid, "stand-in for the v3 proxy")
+        W = L.Witnesses(C, native=nat, fs=None)
+        unit = L.make_unit_dirs(C, "s", "r", "a", f"u-{label}")
+        env = L.build_env(C, parent_env=os.environ, unit=unit, path_dirs=[Path(sys.executable).parent], declared={},
+                          catcher_url="http://127.0.0.1:47003")
+        W.begin_check(f"chk-{label}")
+        kid = L.spawn(C, [sys.executable, "-c", HOLD], env=env, cwd=unit.cwd, record={"role": "test"},
+                      parent_env=os.environ, catcher_url="http://127.0.0.1:47003", witnesses=W)
+        kid.process.wait(timeout=60)
+        n = W.end_check(f"chk-{label}")["native"]
+        if allow:
+            check("W7 the same connection to an allowed listener (the proxy's role) is no hit, check complete",
+                  n["hits"] == 0 and n["loopback_hits"] == 0 and n["complete"], str(n))
+        else:
+            check("W7 a real child's loopback connection to a listener outside its tree is a hit",
+                  n["loopback_hits"] >= 1 and f"127.0.0.1:{OUT_PORT}" in n["hit_remotes"] and n["failed_samples"] == 0,
+                  str(n))
+    outside.kill()
+    SELF = ("import socket, threading, time; s = socket.socket(); s.bind(('127.0.0.1', 0)); s.listen(1); "
+            "threading.Thread(target=s.accept, daemon=True).start(); "
+            "c = socket.create_connection(s.getsockname()); time.sleep(2.5); c.close()")
+    nat = L.NativeEgressWitness(sampler=L.PsutilSampler(), tick_s=0.2)
+    W = L.Witnesses(C, native=nat, fs=None)
+    unit = L.make_unit_dirs(C, "s", "r", "a", "u-w7-self")
+    env = L.build_env(C, parent_env=os.environ, unit=unit, path_dirs=[Path(sys.executable).parent], declared={},
+                      catcher_url="http://127.0.0.1:47003")
+    W.begin_check("chk-w7-self")
+    kid = L.spawn(C, [sys.executable, "-c", SELF], env=env, cwd=unit.cwd, record={"role": "test"},
+                  parent_env=os.environ, catcher_url="http://127.0.0.1:47003", witnesses=W)
+    kid.process.wait(timeout=60)
+    n = W.end_check("chk-w7-self")["native"]
+    check("W7 a real child talking to its own listener is no hit, and its accepted side is not undetermined",
+          n["hits"] == 0 and n["undetermined_loopback"] == 0 and n["rows_seen"] > 0 and n["complete"], str(n))
 finally:
     srv.close()
     for c in held:

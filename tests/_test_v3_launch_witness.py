@@ -4,9 +4,14 @@
 * /proc/net/tcp and tcp6 parse (IPv4 as one little-endian word, IPv6 as four); the container witness ignores a
   listener, in-container loopback and the host gateway on an allowed port, counts the gateway on another port and
   any other remote, and records a failed ``docker exec`` as a failed sample.
-* The native witness tracks a tree by (pid, create time), keeps a grandchild after its parent exits, ignores
-  127.0.0.2 and ::ffff:127.0.0.1, counts a non-loopback listener (AQ16), files a remote as a window host only while
-  a fetch window is open, and records a sampler failure as a failed sample.
+* The native witness tracks a tree by (pid, create time), keeps a grandchild after its parent exits, treats
+  127.0.0.2 and ::ffff:127.0.0.1 as loopback, counts a non-loopback listener (AQ16), files a remote as a window host
+  only while a fetch window is open, and records a sampler failure as a failed sample.
+* The auditor's W7 (loopback is not neutral: a local HTTP or SOCKS proxy is a path out): a loopback connection is a
+  hit unless its port's listener is in the same tree, is an allowed listener (the v3 proxy, held by pid and create
+  time), or the port is a declared container gateway port; 127.0.0.1:11434 (Ollama) is no hit but is counted per
+  tree as distinct (local port, 11434) pairs; an accepted connection on the tree's own listener is inbound; a
+  listener that cannot be read fails the sample and is never read as clean; a window does not excuse it.
 * The filesystem witness: one appended byte, a touched mtime, a new file are each a hit; changes under .git, .loop,
   research/v3/results, __pycache__ and .claude/settings.local.json are not, while another file under .claude is
   (AQ15); no entry name reaches a persisted byte (UTF-8, UTF-16-LE, JSON-escaped); the quarantine is stat-ed by
@@ -147,7 +152,11 @@ class FakeSampler:
     def __init__(self):
         self.procs = [(100, 1, 10.0), (101, 100, 11.0), (102, 101, 12.0), (200, 999, 5.0)]
         self.rows = []
+        self.listen: dict | None = {}                    # W7: {(proto, port): {pid}} for this tick
         self.fail = False
+
+    def listeners(self):
+        return self.listen
 
     def processes(self):
         if self.fail:
@@ -174,6 +183,7 @@ fs_.rows = [(102, "10.0.0.5", 5000, "93.184.216.34", 443, "ESTABLISHED"),
             (100, "0.0.0.0", 7000, None, None, "LISTEN"),
             (100, "127.0.0.1", 7001, None, None, "LISTEN"),
             (200, "10.0.0.5", 5001, "8.8.8.8", 53, "ESTABLISHED")]
+fs_.listen = {("tcp", 80): {102}, ("tcp", 81): {100}, ("tcp", 7000): {100}, ("tcp", 7001): {100}}   # in-tree servers
 nw.sample()
 check("a grandchild stays tracked after its parent exits, and its remote is a hit",
       "93.184.216.34:443" in nw.result.hit_remotes, str(nw.result.hit_remotes))
@@ -191,6 +201,87 @@ check("after the window closes the same remote is a hit", "13.35.1.1:443" in nw.
 fs_.fail = True
 nw.sample()
 check("a failed sample is recorded as failed, and the check is incomplete", nw.result.failed_samples == 1 and not nw.result.complete)
+
+print("\n- W7: a loopback destination is judged by its listener -")
+PROXY_PID, XRAY_PID, OTHER_ROOT = 300, 400, 500
+
+
+def w7(rows, listen, *, allow=True, ports=(), window=False, other_tree=False):
+    s = FakeSampler()
+    s.procs = [(100, 1, 10.0), (101, 100, 11.0), (PROXY_PID, 1, 30.0), (XRAY_PID, 1, 40.0), (OTHER_ROOT, 1, 50.0)]
+    s.rows, s.listen = rows, listen
+    w = L.NativeEgressWitness(sampler=s, tick_s=60, jobs=None)
+    w.register(100, label="spawn-a")
+    if other_tree:
+        w.register(OTHER_ROOT, label="spawn-b")
+    if allow:
+        check("W7 the proxy is allowed by its identity", w.allow_listener(PROXY_PID, "the v3 proxy"))
+    for port in ports:
+        w.allow_port(port)
+    if window:
+        w.open_window("hf", {100})
+    w.sample()
+    return w.result
+
+
+XRAY = {("tcp", 10809): {XRAY_PID}, ("tcp", 10808): {XRAY_PID}}
+r = w7([(101, "127.0.0.1", 6100, "127.0.0.1", 10809, "ESTABLISHED")], XRAY)
+check("W7 a tree's connection to a listener outside it (a local HTTP proxy) is a hit",
+      r.hits == 1 and r.loopback_hits == 1 and "127.0.0.1:10809" in r.hit_remotes and r.failed_samples == 0,
+      str(r.as_record()))
+r = w7([(101, "127.0.0.1", 6101, "127.0.0.1", 10808, "ESTABLISHED")], XRAY, window=True)
+check("W7 ... the SOCKS port too, and an open window for the tree does not excuse it",
+      r.loopback_hits == 1 and not r.window_hosts)
+r = w7([(101, "127.0.0.1", 6102, "127.0.0.1", 47001, "ESTABLISHED")], {("tcp", 47001): {PROXY_PID}})
+check("W7 the proxy's port is no hit", r.hits == 0 and r.failed_samples == 0 and r.loopback_hits == 0, str(r.as_record()))
+r = w7([(101, "127.0.0.1", 6102, "127.0.0.1", 47001, "ESTABLISHED")], {("tcp", 47001): {PROXY_PID}}, allow=False)
+check("W7 ... but without allow_listener the same port is a hit", r.loopback_hits == 1)
+s_reuse = FakeSampler()
+s_reuse.procs = [(100, 1, 10.0), (PROXY_PID, 1, 30.0)]
+w_reuse = L.NativeEgressWitness(sampler=s_reuse, tick_s=60, jobs=None)
+w_reuse.register(100)
+w_reuse.allow_listener(PROXY_PID, "the v3 proxy")
+s_reuse.procs = [(100, 1, 10.0), (PROXY_PID, 1, 99.0)]                   # the proxy died; its pid was reused
+s_reuse.rows, s_reuse.listen = [(100, "127.0.0.1", 6103, "127.0.0.1", 47001, "ESTABLISHED")], {("tcp", 47001): {PROXY_PID}}
+w_reuse.sample()
+check("W7 an allowed pid reused by another process is not allowed", w_reuse.result.loopback_hits == 1)
+r = w7([(101, "127.0.0.1", 6104, "127.0.0.1", 8000, "ESTABLISHED"), (100, "127.0.0.1", 8000, "127.0.0.1", 6104,
+        "ESTABLISHED"), (100, "127.0.0.1", 8000, None, None, "LISTEN")], {("tcp", 8000): {100}})
+check("W7 an in-tree listener is no hit, and its accepted side is inbound, not undetermined",
+      r.hits == 0 and r.failed_samples == 0 and r.undetermined_loopback == 0, str(r.as_record()))
+r = w7([(101, "127.0.0.1", 6105, "127.0.0.1", 8001, "ESTABLISHED")], {("tcp", 8001): {OTHER_ROOT}}, other_tree=True)
+check("W7 a listener in another witnessed tree (another arm) is a hit", r.loopback_hits == 1)
+r = w7([(101, "127.0.0.1", 6106, "127.0.0.1", 11434, "ESTABLISHED"),
+        (101, "127.0.0.1", 6107, "127.0.0.1", 11434, "ESTABLISHED")], {("tcp", 11434): {999}})
+check("W7 Ollama's 11434 is no hit, counted per tree as distinct (local port, 11434) pairs",
+      r.hits == 0 and r.as_record()["ollama_direct_conns"] == {"spawn-a": 2}, str(r.as_record()["ollama_direct_conns"]))
+s_ol = FakeSampler()
+s_ol.procs = [(100, 1, 10.0)]
+w_ol = L.NativeEgressWitness(sampler=s_ol, tick_s=60, jobs=None)
+w_ol.register(100, label="spawn-a")
+s_ol.rows, s_ol.listen = [(100, "127.0.0.1", 6108, "127.0.0.1", 11434, "ESTABLISHED")], {("tcp", 11434): {999}}
+w_ol.sample()
+w_ol.sample()
+check("W7 ... the same connection seen in two ticks counts once", w_ol.result.as_record()["ollama_direct_conns"] == {"spawn-a": 1})
+r = w7([(101, "127.0.0.1", 6109, "127.0.0.1", 47005, "ESTABLISHED")], {("tcp", 47005): {12345}}, ports=(47005,))
+check("W7 a declared container gateway port is no hit", r.hits == 0 and r.as_record()["allowed_ports"] == [47005])
+r = w7([(101, "127.0.0.1", 6110, "127.0.0.1", 9999, "ESTABLISHED")], {})
+check("W7 a loopback port with no readable listener fails the sample: incomplete, never clean",
+      r.hits == 0 and r.undetermined_loopback == 1 and r.failed_samples == 1 and not r.complete, str(r.as_record()))
+r = w7([(101, "127.0.0.1", 6111, "127.0.0.1", 9998, "ESTABLISHED")], {("tcp", 9998): {None}})
+check("W7 a listener whose pid psutil could not read fails the sample", r.failed_samples == 1 and r.loopback_hits == 0)
+r = w7([(101, "127.0.0.1", 6112, "127.0.0.1", 10809, "ESTABLISHED")], None)
+check("W7 a sampler that gives no listener table fails the sample", r.failed_samples == 1 and r.loopback_hits == 0)
+r = w7([(101, "127.0.0.1", 6113, "127.0.0.1", 10808, "NONE")], {("tcp", 10808): {101}, ("udp", 10808): {XRAY_PID}})
+check("W7 UDP is judged by the UDP owner of the port, not a TCP listener on the same number", r.loopback_hits == 1)
+check("W7 the record names loopback_hits, undetermined_loopback, ollama_direct_conns and the allowed listeners",
+      {"loopback_hits", "undetermined_loopback", "ollama_direct_conns", "allowed_listeners", "allowed_ports"}
+      <= set(r.as_record()) and r.as_record()["allowed_listeners"] == [{"reason": "the v3 proxy", "pid": PROXY_PID}])
+check("W7 the listener map keeps TCP LISTEN and unconnected UDP on loopback or unspecified addresses only",
+      L.listener_map([(1, "127.0.0.1", 80, False, "LISTEN"), (2, "0.0.0.0", 81, False, "LISTEN"),
+                      (3, "10.0.0.5", 82, False, "LISTEN"), (4, "::", 83, False, "NONE"),
+                      (5, "127.0.0.1", 84, True, "NONE"), (6, "127.0.0.1", 85, True, "ESTABLISHED")])
+      == {("tcp", 80): {1}, ("tcp", 81): {2}, ("udp", 83): {4}})
 
 print("\n- the filesystem witness -")
 REPO = TMP / "repo"
