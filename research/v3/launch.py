@@ -336,8 +336,11 @@ def new_token(arm: str) -> str:
 
 
 def build_env(c: Contract, *, parent_env: Mapping[str, str], unit: UnitDirs, path_dirs: Sequence[str | os.PathLike],
-              declared: Mapping[str, str], catcher_url: str, hf_offline: bool = False) -> dict[str, str]:
-    """The child's environment, from the allowlist of §2.6.2. The parent is read for the essentials only."""
+              declared: Mapping[str, str], catcher_url: str, hf_offline: bool = False,
+              proxies: bool = True) -> dict[str, str]:
+    """The child's environment, from the allowlist of §2.6.2. The parent is read for the essentials only.
+    ``proxies=False`` is the proxy process's own environment (AQ13): its sockets ignore the environment, so it
+    gets no HTTP(S)_PROXY at all."""
     env: dict[str, str] = {}
     for name in WINDOWS_ESSENTIALS:
         v = _lookup(parent_env, name, c.case_insensitive_env)
@@ -350,9 +353,10 @@ def build_env(c: Contract, *, parent_env: Mapping[str, str], unit: UnitDirs, pat
     env["APPDATA"] = os.fspath(unit.appdata)
     env["LOCALAPPDATA"] = os.fspath(unit.localappdata)
     env["PYTHONPYCACHEPREFIX"] = os.fspath(unit.pycache)
-    env["NO_PROXY"] = NO_PROXY_VALUE
-    for name in PROXY_NAMES:
-        env[name] = catcher_url
+    if proxies:
+        env["NO_PROXY"] = NO_PROXY_VALUE
+        for name in PROXY_NAMES:
+            env[name] = catcher_url
     hf = c.hf_home or (c.polygon_root / "hf_cache")
     env["HF_HOME"] = os.fspath(hf)
     env["HF_HUB_CACHE"] = env["TRANSFORMERS_CACHE"] = os.fspath(hf / "hub")
@@ -1637,3 +1641,41 @@ def _walk_items(obj):
     elif isinstance(obj, (list, tuple)):
         for v in obj:
             yield from _walk_items(v)
+
+
+# ── the proxy process (A2.4) ────────────────────────────────────────────
+
+def spawn_proxy(c: Contract, python: str | os.PathLike, *, script: Path, config_path: Path, key_file: Path,
+                stdin_secrets: Mapping, unit: UnitDirs, parent_env: Mapping[str, str], ready_timeout: float = 30.0,
+                popen: Callable[..., subprocess.Popen] = subprocess.Popen) -> tuple[Child, dict]:
+    """Start research/_llm_proxy.py under the contract (§2.6.1): the only spawn whose argv may name the key file.
+
+    Its read exceptions are exact paths at exact argv indexes (X6): its own script (1) and the key file (6) - never
+    the repository or the secrets directory as a root; the repository is on no import path (the proxy imports only
+    the standard library). Its environment carries no key, no token and no proxy variable; the tokens arrive as
+    one JSON line on stdin, then EOF. It is started unwitnessed by the arm witness, with that reason recorded: its own upstream is the cloud,
+    and every call it makes is its own record. Returns (child, ports) once READY names the ports file's sha256."""
+    env = build_env(c, parent_env=parent_env, unit=unit, path_dirs=[Path(python).parent], declared={},
+                    catcher_url="", proxies=False)
+    argv = [os.fspath(python), os.fspath(script), "serve", "--config", os.fspath(config_path),
+            "--key-file", os.fspath(key_file)]
+    child = spawn(c, argv, env=env, cwd=unit.cwd, record={"role": "proxy"}, parent_env=parent_env, catcher_url="",
+                  argv_exception={1: Path(script), 6: Path(key_file)}, popen=popen, requirement="optional",
+                  unwitnessed_reason="the proxy is the instrument: its upstream is the cloud and it records each call",
+                  stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    child.process.stdin.write((json.dumps(dict(stdin_secrets)) + "\n").encode("utf-8"))
+    child.process.stdin.close()
+    line: list[bytes] = []
+    reader = threading.Thread(target=lambda: line.append(child.process.stdout.readline()), daemon=True)
+    reader.start()
+    reader.join(ready_timeout)
+    got = line[0].decode("utf-8", "replace").strip() if line else ""
+    if not got.startswith("READY "):
+        child.kill_tree()
+        raise ContractViolation(["the proxy did not report READY in time"])
+    run_dir = Path(json.loads(Path(config_path).read_text(encoding="utf-8"))["run_dir"])
+    data = (run_dir / "ports.json").read_bytes()
+    if hashlib.sha256(data).hexdigest() != got.split(" ", 1)[1]:
+        child.kill_tree()
+        raise ContractViolation(["the ports file does not match the READY line"])
+    return child, json.loads(data)
