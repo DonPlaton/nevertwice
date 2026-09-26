@@ -949,7 +949,7 @@ def call_gemini(prompt: str) -> dict:
 
 
 def _call_openai_chat(prompt: str, base_url: str, api_key: str, model: str,
-                      label: str) -> dict:
+                      label: str, extra: dict | None = None) -> dict:
     """OpenAI-compatible chat completion in JSON mode (Cerebras, Groq). Returns
     {} on any failure so the caller falls back to Ollama. Browser UA because
     Cerebras sits behind Cloudflare. Retries transient 503/429/500/timeout."""
@@ -959,6 +959,7 @@ def _call_openai_chat(prompt: str, base_url: str, api_key: str, model: str,
         "response_format": {"type": "json_object"},
         "temperature": 0.2,
         "max_tokens": EXTRACT_NUM_PREDICT,                   # B1
+        **(extra or {}),                                     # a backend's own documented fields
     }).encode("utf-8")
     headers = {"Content-Type": "application/json",
                "Authorization": f"Bearer {api_key}", "User-Agent": _UA}
@@ -996,9 +997,17 @@ def call_groq(prompt: str) -> dict:
     return _call_openai_chat(prompt, GROQ_URL, provider_key("groq"), GROQ_MODEL, "Groq")
 
 
+#: DeepSeek documents thinking as ON by default (effort high; read 2026-09-26), switched off only by
+#: this body field. With it on, reasoning tokens count against B1's output cap and the JSON answer is
+#: cut - every DeepSeek-backend user extracted that way. The Ollama path sends think:false for the
+#: same reason (stage D, PREREG-V3 TB3(b)). Only DeepSeek documents the field; Groq and Cerebras are
+#: not sent it.
+DEEPSEEK_THINKING_OFF = {"thinking": {"type": "disabled"}}
+
+
 def call_deepseek(prompt: str) -> dict:
     return _call_openai_chat(prompt, DEEPSEEK_URL, provider_key("deepseek"),
-                             DEEPSEEK_MODEL, "DeepSeek")
+                             DEEPSEEK_MODEL, "DeepSeek", extra=DEEPSEEK_THINKING_OFF)
 
 
 def call_cloud(prompt: str) -> dict:

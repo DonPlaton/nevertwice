@@ -575,6 +575,11 @@ empty.
 
 ### Fixed
 
+- **A DeepSeek-backed extraction ran with reasoning on and could be cut at the output cap.** DeepSeek
+  documents thinking as its default, switched off only by a request field; the engine sent none, so
+  reasoning tokens counted against the 4,096-token cap and the JSON answer could be truncated. The
+  DeepSeek backend now sends `thinking: disabled`, as the Ollama path already sends `think: false`;
+  the other cloud backends are not sent the field.
 - **The test battery talked to the machine's model server and wrote into the repository.** The
   server log counted 277 embed and 54 tag requests from one battery run, and a before/after
   snapshot found two suites rewriting tracked files (an artifact byte for byte; `nevertwice/api.py`
