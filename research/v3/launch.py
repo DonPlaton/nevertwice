@@ -134,6 +134,8 @@ class Contract:
     quarantine_known: tuple[str, ...] = ()
     conservation_known: tuple[str, ...] = ()      # AQ15: {2026-09-25}, from the owner's instructions, never listed
     polygon_idle: tuple[str, ...] = ()            # §2.6.9 watched: the polygon's idle entries
+    claude_code_binary: Path | None = None        # §2.6.6: the polygon-pinned Claude Code (set at A8)
+    claude_code_version: str | None = None
     case_insensitive_env: bool = os.name == "nt"
     require_systemroot: bool = os.name == "nt"
 
@@ -516,6 +518,8 @@ def assert_argv(c: Contract, argv: Sequence[str], *, argv_exception: Mapping[int
             out.append(f"argument {i} names a denied path")
         if _PROVIDER_KEY.search(a):
             out.append(f"argument {i} holds a value shaped like a provider key")
+    if any(_bypass_in(str(a)) for a in argv):
+        out.append("argv names a bypass permission mode")          # §2.6.6: refused on every spawn, any case
     return out
 
 
@@ -618,6 +622,43 @@ def spawn(c: Contract, argv: Sequence[str], *, env: Mapping[str, str], cwd: str 
     reasons += assert_env(c, env, parent_env=parent_env, catcher_url=catcher_url, token_names=token_names,
                           claude_names=claude_names, env_exception=env_exception, canaries=canaries)
     reasons += assert_argv(c, argv, argv_exception=argv_exception)
+    # §2.6.6 / §2.6.9 (the auditor's L2): a Claude Code spawn - by arm, by role, or by the binary's own name, so no
+    # caller label switches this off - runs only fully locked down.
+    pinned_cc = c.claude_code_binary
+    node_form = len(argv) > 1 and _in_claude_package(str(argv[1]))
+    is_claude = (record.get("arm") == "claude-code-memory" or record.get("role") == "claude-code"
+                 or Path(str(argv[0])).name.lower() in ("claude", "claude.exe", "claude.cmd")
+                 or any(_in_claude_package(str(a)) for a in argv)                          # D6: node + cli.js
+                 or (pinned_cc is not None and any(_norm(str(a)) == _norm(pinned_cc) for a in argv)))
+    claude_rec = None
+    if is_claude:
+        unit_home = Path(os.path.abspath(os.fspath(cwd)) + ".home")
+        memdir = unit_home / "memory"
+        sp = argv[list(argv).index("--settings") + 1] if "--settings" in argv[:-1] else None
+        try:
+            settings = json.loads(Path(sp).read_text(encoding="utf-8")) if sp else None
+        except (OSError, ValueError):
+            settings = None
+        if settings is None or not sp or not _within(sp, unit_home):
+            reasons.append("the Claude Code settings file is missing or outside this unit's fake home")
+        reasons += check_claude_code(argv, settings or {}, memdir=memdir,
+                                     launcher=list(argv[:2]) if node_form else None)
+        if check_ancestors_for_claude(c)["found"]:
+            reasons.append("a CLAUDE.md, CLAUDE.local.md or .claude sits in an ancestor of the runs tree")
+        cfg = env.get("CLAUDE_CONFIG_DIR")
+        if not cfg or not _within(cfg, unit_home) or not os.path.isdir(cfg):
+            reasons.append("CLAUDE_CONFIG_DIR is not a directory inside this unit's fake home")
+        elif set(os.listdir(cfg)) != CLAUDE_CONFIG_ALLOWED:
+            reasons.append("CLAUDE_CONFIG_DIR holds something other than exactly our settings.json")   # D4/D5
+        cc_file = str(argv[1]) if node_form else str(argv[0])
+        if (pinned_cc is None or _norm(cc_file) != _norm(pinned_cc) or _norm(_real(cc_file)) != _norm(_real(pinned_cc))
+                or (not node_form and (binary is None or _norm(binary.path) != _norm(pinned_cc)))):
+            reasons.append("the binary is not the polygon-pinned Claude Code")
+        cc_sha = _sha256_file(cc_file) if os.path.isfile(cc_file) else None
+        if not _OFFERED.get("tools") or _OFFERED.get("sha256") != cc_sha:                          # D7
+            reasons.append("no A8 record of the tools this pinned Claude Code offers")
+        claude_rec = {"version": c.claude_code_version, "binary_pinned": pinned_cc is not None,
+                      "form": "node+cli.js" if node_form else "binary", "sha256": cc_sha}
     entry = {
         "spawn_id": spawn_id, "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         **{k: record.get(k) for k in ("role", "stand", "run", "arm", "unit")},
@@ -631,6 +672,7 @@ def spawn(c: Contract, argv: Sequence[str], *, env: Mapping[str, str], cwd: str 
         "argv_exception": {str(i): str(p) for i, p in (argv_exception or {}).items()},
         "witness": {"native": "on" if native is not None else "off", "requirement": requirement,
                     "unwitnessed_reason": None if native is not None else unwitnessed_reason},
+        "claude_code": claude_rec,
     }
     _append_jsonl(spawns_log(c), entry)
     if reasons:
@@ -1409,3 +1451,189 @@ def fetch_window(c: Contract, name: str, hosts: Sequence[str], *, witnesses: Wit
         if proxy_control:
             proxy_control("close", name, hosts)
         _append_jsonl(log, {"event": "END", "window": name, "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())})
+
+
+# ── tool lockdown and Claude Code (A2.3, §2.6.6) ────────────────────────
+
+#: §2.6.6, fixed 2026-09-26 from vendor docs and source; A8 may only remove names.
+TOOLS_ALLOWED_BASELINE: dict[str, frozenset[str]] = {
+    "nevertwice": frozenset(),
+    "mem0": frozenset(),
+    "zep-graphiti": frozenset(),
+    "langmem": frozenset({"Memory", "PatchDoc", "RemoveDoc", "PatchFunctionErrors", "PatchFunctionName"}),
+    "a-mem": frozenset(),
+    "cognee": frozenset(),          # or its installed response-model names, fixed by rule before the pilot (C4)
+    "letta": frozenset({"send_message", "conversation_search", "archival_memory_insert", "archival_memory_search",
+                        "core_memory_append", "core_memory_replace", "memory_insert", "memory_replace",
+                        "memory_rethink", "memory_finish_edits"}),
+    "supermemory-local": frozenset(),
+    "claude-code-memory": frozenset({"Read", "Write", "Edit", "MultiEdit", "memory"}),
+    "reader": frozenset(),
+    "judge": frozenset(),
+}
+#: §2.6.6: forbidden regardless of any list, case-insensitively, as substrings; plus the mcp__ prefix.
+FORBIDDEN_TOOL_SUBSTRINGS = ("bash", "shell", "powershell", "cmd", "terminal", "exec", "run_code", "code_interpreter",
+                             "python", "computer", "browser", "web", "fetch", "http", "url", "download", "task",
+                             "agent", "notebook", "kill")
+FORBIDDEN_TOOL_PREFIX = "mcp__"
+#: §2.6.6: the harness refuses a spawn whose argv or settings name any of these, in any case, anywhere.
+BYPASS_TOKENS = ("bypasspermissions", "acceptedits", "--dangerously-skip-permissions", "dangerously-skip-permissions")
+CLAUDE_CODE_FILE_TOOLS = ("Read", "Write", "Edit", "MultiEdit")
+#: L1: until A8 records the tools the pinned binary offers, these must at least be disallowed.
+MIN_DISALLOWED = frozenset({"Bash", "WebFetch", "Task"})
+#: What a unit's CLAUDE_CONFIG_DIR holds at spawn, exactly (D4/D5): our settings file. A CLAUDE.md there is loaded
+#: as user memory and a .credentials.json is used as credentials; the decoys live in <unit>.home/.claude instead,
+#: where they show whether CLAUDE_CONFIG_DIR is honoured.
+CLAUDE_CONFIG_ALLOWED = frozenset({"settings.json"})
+_CLAUDE_PACKAGE = ("@anthropic-ai", "claude-code")
+
+
+def _in_claude_package(arg: str) -> bool:
+    """D6: an argument inside the @anthropic-ai/claude-code package (the npm install's cli.js run by node)."""
+    parts = [p.lower() for p in Path(arg).parts] if arg else []
+    return any(parts[i:i + 2] == list(_CLAUDE_PACKAGE) for i in range(len(parts) - 1))
+_OFFERED: dict = {}
+
+
+def record_offered_tools(binary_sha256: str, tools: Sequence[str]) -> None:
+    """A8: the tool names the pinned binary offers, read from it and recorded; --disallowedTools must then equal
+    them minus the four file tools, exactly (L1). Never passed in by a spawn's caller."""
+    _OFFERED["sha256"], _OFFERED["tools"] = binary_sha256, tuple(tools)
+
+
+def make_claude_config(unit: "UnitDirs") -> tuple[Path, Path]:
+    """A fresh CLAUDE_CONFIG_DIR inside the unit's fake home holding only our settings.json, and the empty MCP
+    config beside it. Returns (config dir, settings path)."""
+    cfg = unit.home / "claude_config"
+    cfg.mkdir(parents=True, exist_ok=False)
+    settings = cfg / "settings.json"
+    settings.write_bytes(json.dumps(claude_code_settings(unit.memdir), sort_keys=True).encode("utf-8"))
+    (unit.home / "empty-mcp.json").write_bytes(b'{"mcpServers": {}}')
+    return cfg, settings
+
+
+def tool_violation(name: str, allowed: frozenset[str] | set[str]) -> bool:
+    """A tool name offered or called outside the arm's allowed set, or matching a forbidden pattern (zero tolerance)."""
+    low = name.lower()
+    if low.startswith(FORBIDDEN_TOOL_PREFIX) or any(s in low for s in FORBIDDEN_TOOL_SUBSTRINGS):
+        return True
+    return name not in allowed
+
+
+def _bypass_in(text: str) -> bool:
+    low = text.lower()
+    return any(tok in low for tok in BYPASS_TOKENS)
+
+
+def claude_code_settings(memdir: Path) -> dict:
+    """The unit's settings.json: hooks off, the default permission mode, nothing else (L1: exactly this)."""
+    return {"disableAllHooks": True, "permissions": {"defaultMode": "default"}}
+
+
+def claude_code_argv(binary: str | os.PathLike, *, settings_path: Path, empty_mcp_path: Path, memdir: Path,
+                     offered_tools: Sequence[str]) -> list[str]:
+    """The fixed argv of §2.6.6. The prompt goes on stdin. The rule path form is the one A8 confirms against the
+    pinned binary; a rejected flag or form blocks the arm (blocked:unsupported-surface), nothing is substituted.
+    L3: A8 also runs a functional control on the real binary, because a rule form that is accepted but matches
+    nothing would silently stop the arm writing its own memory - an asymmetry against it. Positive: a Write then a
+    Read in the memory directory succeed. Negative: a Write outside it is refused, and the decoy CLAUDE.md in the
+    fake home is not read - and READS outside it too: a Read of a decoy file in <unit>.home and of the runs-root
+    decoy is refused, and so are Glob and Grep if the binary offers them at all. If the positive control fails, or a
+    read outside the memory directory is not refused, in every rule form the docs allow, the arm is
+    blocked:unsupported-surface and is not scored."""
+    root = memdir.as_posix().rstrip("/")
+    allowed_rules = [f"{t}({root}/**)" for t in CLAUDE_CODE_FILE_TOOLS]
+    disallowed = sorted(t for t in offered_tools if t not in CLAUDE_CODE_FILE_TOOLS)
+    return [os.fspath(binary), "-p", "--output-format", "json", "--permission-mode", "default",
+            "--setting-sources", "user", "--settings", os.fspath(settings_path), "--strict-mcp-config",
+            "--mcp-config", os.fspath(empty_mcp_path), "--allowedTools", *allowed_rules,
+            "--disallowedTools", *disallowed]
+
+
+def _walk_values(obj):
+    if isinstance(obj, Mapping):
+        for k, v in obj.items():
+            yield str(k)
+            yield from _walk_values(v)
+    elif isinstance(obj, (list, tuple)):
+        for v in obj:
+            yield from _walk_values(v)
+    else:
+        yield str(obj)
+
+
+def check_claude_code(argv: Sequence[str], settings: Mapping, *, memdir: Path,
+                      offered_tools: Sequence[str] | None = None, launcher: Sequence[str] | None = None) -> list[str]:
+    """Everything §2.6.6 fixes for the Claude Code arm; each finding names a rule, never a value. L1: the argv must
+    EQUAL the canonical argv and the settings must EQUAL the unit settings - a flag added on top (a second
+    --permission-mode, --add-dir, a second --mcp-config or --settings, an alias like --allowed-tools) or a key added
+    to the settings (permissions.allow, apiKeyHelper, statusLine, env, additionalDirectories) is refused. The
+    offered-tool list is A8's record of the pinned binary; before it exists, MIN_DISALLOWED must be disallowed."""
+    out = []
+    args0 = list(argv[1:])
+
+    def first_after(flag: str) -> str | None:
+        return args0[args0.index(flag) + 1] if flag in args0 and args0.index(flag) + 1 < len(args0) else None
+
+    offered = list(offered_tools) if offered_tools is not None else list(_OFFERED.get("tools") or [])
+    if not offered:
+        dis = []
+        if "--disallowedTools" in args0:
+            for a in args0[args0.index("--disallowedTools") + 1:]:
+                if a.startswith("--"):
+                    break
+                dis.append(a)
+        missing = sorted(MIN_DISALLOWED - set(dis))
+        if missing:
+            out.append("--disallowedTools misses tools the binary always offers: " + ", ".join(missing))
+        offered = list(CLAUDE_CODE_FILE_TOOLS) + dis
+    canonical = claude_code_argv(argv[0], settings_path=first_after("--settings") or "",
+                                 empty_mcp_path=first_after("--mcp-config") or "", memdir=memdir, offered_tools=offered)
+    if launcher:                                          # node + cli.js: the same flags after the two-word launcher
+        canonical = list(launcher) + canonical[1:]
+    if list(argv) != canonical:
+        out.append("argv is not exactly the §2.6.6 argv")
+    if dict(settings) != claude_code_settings(memdir):
+        out.append("settings are not exactly the unit settings")
+    if any(_bypass_in(a) for a in argv):
+        out.append("argv names a bypass permission mode")
+    if any(_bypass_in(v) for v in _walk_values(settings)):
+        out.append("settings name a bypass permission mode")
+    args = list(argv[1:])
+
+    def after(flag: str) -> str | None:
+        return args[args.index(flag) + 1] if flag in args and args.index(flag) + 1 < len(args) else None
+
+    for flag, want in (("--output-format", "json"), ("--permission-mode", "default"), ("--setting-sources", "user")):
+        if after(flag) != want:
+            out.append(f"{flag} is not {want}")
+    if any(a.startswith("--permission-mode=") for a in args):
+        out.append("--permission-mode in = form")
+    for flag in ("-p", "--strict-mcp-config", "--settings", "--mcp-config", "--allowedTools", "--disallowedTools"):
+        if flag not in args:
+            out.append(f"missing {flag}")
+    if "--allowedTools" in args:
+        i = args.index("--allowedTools") + 1
+        got = []
+        while i < len(args) and not args[i].startswith("--"):
+            got.append(args[i])
+            i += 1
+        root = memdir.as_posix().rstrip("/")
+        if sorted(got) != sorted(f"{t}({root}/**)" for t in CLAUDE_CODE_FILE_TOOLS):
+            out.append("--allowedTools is not exactly the four memory-directory rules")
+    if settings.get("disableAllHooks") is not True:
+        out.append("settings do not disable all hooks")
+    modes = [v for k, v in _walk_items(settings) if k == "defaultMode"]
+    if any(m != "default" for m in modes):
+        out.append("settings carry a defaultMode other than default")
+    return out
+
+
+def _walk_items(obj):
+    if isinstance(obj, Mapping):
+        for k, v in obj.items():
+            yield str(k), v
+            yield from _walk_items(v)
+    elif isinstance(obj, (list, tuple)):
+        for v in obj:
+            yield from _walk_items(v)
