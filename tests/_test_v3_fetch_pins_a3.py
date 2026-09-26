@@ -42,6 +42,9 @@ def _load(name: str, path: Path):
 
 CP = _load("v3_corpus_pin_fp", ROOT / "research" / "v3" / "corpus_pin_v3.py")
 P = _load("v3_fetch_pins", ROOT / "research" / "v3" / "fetch_pins_a3.py")
+# The table fetch_pins_a3 itself loaded (its own module instance, not CP): the real-table guards below watch this one,
+# from before the first check.
+REAL_PINS_BEFORE = copy.deepcopy(P.CP.PINS)
 
 PASSED = FAILED = 0
 
@@ -333,7 +336,8 @@ check("fill: every pin of every placed file gets revision, sha256, bytes and the
       probs == [] and sorted(inputs) == ["hf_lfs", "hf_small", "hf_twin"]
       and inputs["hf_lfs"] == {"revision": REV_HF, "sha256": hashlib.sha256(BODY_LFS).hexdigest(), "bytes": len(BODY_LFS),
                                "licence_found": "mit", "licence_source": "d1 card org/ds"}, str((probs, inputs.get("hf_lfs"))))
-check("fill never touches the real table", all(v["sha256"] is None for k, v in CP.PINS.items() if k in ("lme_s_cleaned",)))
+check("fill never touches the real table: its values are the declared ones or FILLED's, nothing else",
+      all(P.CP.PINS[n]["sha256"] == (P.CP.FILLED.get(n) or {}).get("sha256", P.CP.PINS_DECLARED[n]["sha256"]) for n in P.CP.PINS))
 _, out2, base2 = placed("again", before=lambda pl, rec, b: [
     (Path(it.dest).parent.mkdir(parents=True, exist_ok=True), Path(it.dest).write_bytes(BOD[it.names[0]])) for it in pl.items])
 check("P12: an identical file already in place is 'already-placed'", out2["problems"] == []
@@ -779,8 +783,7 @@ check("main() hands the children no CA file and no extra variable; a window's ho
       "child_env_extra" not in inspect.getsource(P.main) and "SSL_CERT_FILE" not in inspect.getsource(P)
       and "manifest=" not in inspect.getsource(P.main) and "need_bytes_override" not in inspect.getsource(P.main)
       and P.run_pin_window.__kwdefaults__["need_bytes_override"] is None)
-pins_before = copy.deepcopy(CP.PINS)
-check("nothing here touches the real pin table", CP.PINS == pins_before)
+check("nothing here touches the real pin table (fetch_pins_a3's own, since the suite began)", P.CP.PINS == REAL_PINS_BEFORE)
 
 shutil.rmtree(TMP, ignore_errors=True)
 print(f"\nv3 fetch pins a3: {PASSED} passed, {FAILED} failed")

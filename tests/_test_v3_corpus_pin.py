@@ -75,7 +75,7 @@ def refused(fn, exc, words: str = "") -> bool:
 TMP = Path(tempfile.mkdtemp(prefix="nvt3_pin_"))
 
 print("\n- the table, before any data -")
-v3_only = {n: p for n, p in CP.PINS.items() if p["source"] != "local-v2"}
+v3_only = {n: p for n, p in CP.PINS_DECLARED.items() if p["source"] != "local-v2"}
 import re  # noqa: E402
 
 check("no v3 pin carries a sha256 or a size before its window - but the oracle, which is the v2 pin by value (Q-A3F-8)",
@@ -87,7 +87,7 @@ check("Q-A3F-8: lme_oracle_cleaned is ONE pin - the v2 oracle's sha256 and size,
       and CP.PINS["lme_oracle_cleaned"].get("alias_of") == "v2:longmemeval_oracle"
       and [n for n, p in CP.PINS.items() if p.get("alias_of")] == ["lme_oracle_cleaned"]
       and refused(lambda: CP.fill("lme_oracle_cleaned", revision="r", sha256="0" * 64, size=1, licence_found="MIT",
-                                  pins=copy.deepcopy(CP.PINS)), CP.PinRefused, "already pinned"))
+                                  pins=copy.deepcopy(CP.PINS_DECLARED)), CP.PinRefused, "already pinned"))
 check("a v3 pin's revision is None or a 40-hex sha declared by a discovery record (d1 or d2), which it names",
       all(p["revision"] is None or (re.fullmatch(r"[0-9a-f]{40}", p["revision"]) and p["revision_from"] in (
           f"a3-discovery d1 {CP.DISCOVERY_D1[:12]}", f"a3-discovery d2 {CP.DISCOVERY_D2[:12]}"))
@@ -104,7 +104,7 @@ check("no declared licence is ND, and ND is not on the list", not any(CP._ND.sea
 
 
 def mutated(name, **change):
-    pins = copy.deepcopy(CP.PINS)
+    pins = copy.deepcopy(CP.PINS_DECLARED)
     pins[name].update(change)
     return pins
 
@@ -133,7 +133,7 @@ for declared, found, role, want in (("MIT", "mit", "evaluation", True), ("MIT", 
           CP.licence_matches(declared, found, role) is want)
 
 print("\n- fill once, verify raises -")
-pins = copy.deepcopy(CP.PINS)
+pins = copy.deepcopy(CP.PINS_DECLARED)
 data = b'{"synthetic": true}\n' * 100
 f = TMP / "x.json"
 f.write_bytes(data)
@@ -144,7 +144,7 @@ check("verify raises on an unfilled pin, saying it is not pinned",
       refused(lambda: CP.verify("lme_s_cleaned", f, pins=pins), CP.PinMismatch, "not pinned yet"))
 check("a card's lower-case SPDX id fills a pin declared in upper case",
       CP.fill("lme_m_cleaned", revision="r", sha256=sha, size=len(data), licence_found="mit",
-              pins=copy.deepcopy(CP.PINS))["licence_found"] == "mit")
+              pins=copy.deepcopy(CP.PINS_DECLARED))["licence_found"] == "mit")
 check("a found licence that differs from the declared one is refused",
       refused(lambda: CP.fill("lme_s_cleaned", revision="r", sha256=sha, size=len(data), licence_found="Apache-2.0",
                               pins=pins), CP.PinRefused))
@@ -261,7 +261,8 @@ check("location(): each source has one place - the hub layout, _pins/github/<com
       and CP.location("amem_source", hf_hub=HUB, pins_root=PR) == PR / "git" / P_["amem_source"]["revision"] / "ls-tree.txt"
       and CP.location("locomo10", hf_hub=HUB, pins_root=PR) == CP.REPO / "research" / "data" / "locomo10.json")
 check("location(): a URL pin with no sha256 has no place yet",
-      refused(lambda: CP.location("tiktoken_cl100k_base", hf_hub=HUB, pins_root=PR), CP.PinMismatch, "sha256"))
+      refused(lambda: CP.location("tiktoken_cl100k_base", hf_hub=HUB, pins_root=PR, pins=CP.PINS_DECLARED), CP.PinMismatch,
+              "sha256"))
 check("every pin declares its licence before fill() - none is left to the fetch",
       [n for n, p in CP.PINS.items() if p["licence"] is None] == [])
 check("A-mem: the source declares MIT (GitHub's spdx in d1), and its LICENSE at the same commit is licence evidence",

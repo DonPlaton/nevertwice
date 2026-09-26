@@ -6,7 +6,9 @@
 * every value passes fill()'s own rules on a copy first; one refusal writes nothing (the table stays byte-identical);
 * an alias is only confirmed, never written; a pin already filled is refused;
 * the table applies FILLED through fill() at every import, so a hand-edited value that breaks a rule fails the import;
-* the real table has its markers exactly once and an empty FILLED until the PINS commit.
+* the real table has its markers exactly once; its FILLED holds values only from the four window runs the auditor
+  cleared (a3-hf h2, a3-github g1, a3-tiktoken t1, a3-git r1), each bound to its pin_fill sha256 - and, once filled,
+  every v3 pin but the alias.
 
     python tests/_test_v3_pins_apply.py
 """
@@ -15,6 +17,7 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import json
+import re
 import shutil
 import sys
 import tempfile
@@ -66,7 +69,10 @@ TMP = Path(tempfile.mkdtemp(prefix="nvt3_pinsapply_"))
 def table_copy(tag: str) -> Path:
     d = TMP / tag / "research" / "v3"
     d.mkdir(parents=True)
-    shutil.copy(ROOT / "research" / "v3" / "corpus_pin_v3.py", d / "corpus_pin_v3.py")
+    text = (ROOT / "research" / "v3" / "corpus_pin_v3.py").read_bytes().decode("utf-8")
+    text = re.sub(re.escape(A.BEGIN) + r"\n.*?\n" + re.escape(A.END), A.BEGIN + "\nFILLED: dict[str, dict] = {\n}\n" + A.END,
+                  text, count=1, flags=re.S)                  # an empty FILLED, whatever the real table holds
+    (d / "corpus_pin_v3.py").write_bytes(text.encode("utf-8"))
     return d / "corpus_pin_v3.py"
 
 
@@ -98,7 +104,7 @@ def whole_window(window: str, *, base: dict, override: dict | None = None) -> di
     return out
 
 
-P_ = CP.PINS
+P_ = CP.PINS_DECLARED
 GH_VALUES = whole_window("a3-github", base={}, override={"mab_fc_sh_6k": {
     "revision": P_["mab_fc_sh_6k"]["revision"], "sha256": "a" * 64, "bytes": 303, "licence_found": "MIT",
     "licence_source": "d1 repo HUST-AI-HYZ/MemoryAgentBench"}})
@@ -111,7 +117,14 @@ TK_VALUE = {"revision": "b" * 64, "sha256": "b" * 64, "bytes": 10, "licence_foun
 print("\n- the real table -")
 real = (ROOT / "research" / "v3" / "corpus_pin_v3.py").read_bytes().decode("utf-8")
 check("the real table carries the FILLED markers exactly once", real.count(A.BEGIN) == 1 and real.count(A.END) == 1)
-check("... and FILLED is empty until the PINS commit", CP.FILLED == {})
+CLEARED = {'a3-hf h2': 'c23ea9cd3549', 'a3-github g1': '0949dd56da65', 'a3-tiktoken t1': 'ab54c52a1117', 'a3-git r1': 'ba0f9248f430'}
+check("FILLED holds values only from the four cleared window runs, each by its pin_fill sha256",
+      all(any(v["from"] == f"{w} pin_fill {s}" for w, s in CLEARED.items()) for v in CP.FILLED.values()),
+      str(sorted({v["from"] for v in CP.FILLED.values()})))
+check("once filled, FILLED covers every v3 pin but the alias (44), and neither the alias nor a v2 pin",
+      (not CP.FILLED or (len(CP.FILLED) == 44 and all(p["sha256"] is not None for p in CP.PINS.values())))
+      and not any(n in CP.FILLED for n, p in CP.PINS.items() if p.get("alias_of") or p["source"] == "local-v2"),
+      str(len(CP.FILLED)))
 
 print("\n- a clean apply -")
 t1 = table_copy("t1")
@@ -171,6 +184,17 @@ check("(1) a pin_fill that is not at <runs>/_fetch/<window>/<run>/ is refused",
 before1 = t1.read_bytes()
 check("a pin already filled is refused - a pin is filled once", refused(lambda: A.apply(t1, [GH]), "filled once")
       and t1.read_bytes() == before1)
+t_twice = table_copy("twice")
+t_twice.write_bytes(t_twice.read_bytes() + ("\n" + A.BEGIN + "\nFILLED: dict[str, dict] = {\n}\n" + A.END + "\n").encode())
+before_twice = t_twice.read_bytes()
+check("PA8: a table with the FILLED markers twice is refused, its bytes unchanged (a stale block would shadow the written one)",
+      refused(lambda: A.apply(t_twice, [GH]), "markers") and t_twice.read_bytes() == before_twice)
+gh_noside = fill_file("noside", "a3-github", "g11", GH_VALUES)
+(gh_noside[0].parent / "place_record.json").unlink()
+t_ns = table_copy("noside_t")
+before_ns = t_ns.read_bytes()
+check("PA9: a pin_fill whose place_record.json is missing is refused, nothing written",
+      refused(lambda: A.apply(t_ns, [gh_noside]), "has no place_record.json") and t_ns.read_bytes() == before_ns)
 t_nomark = table_copy("nomark")
 t_nomark.write_bytes(t_nomark.read_bytes().replace(A.END.encode(), b"# gone"))
 check("a table whose markers are not there exactly once is refused", refused(lambda: A.apply(t_nomark, [GH]), "markers"))

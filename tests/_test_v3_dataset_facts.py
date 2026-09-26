@@ -175,6 +175,8 @@ check("a truncated JSON array is refused by name", ok_tr)
 check("the guard passes labels, numbers and booleans",
       D.scan_labels({"S5": {"per_ability": {"event_ordering": 40}, "dates": {"verdict": "present"}, "ok": True,
                             "without_ids": ["c0:abstention:1"]}}) == [])
+check("J10: a key that is not a label is named too",
+      D.scan_labels({"S7": {"What did the user say?": 1}}) == ["/S7/<key>"], str(D.scan_labels({"S7": {"What did the user say?": 1}})))
 check("the guard names any string that is not a label - a question or an answer",
       D.scan_labels({"S7": {"smoke": {"domain": "WEB", "leak": "What did the user say about the cat?"}}}) == ["/S7/smoke/leak"])
 

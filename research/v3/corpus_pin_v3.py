@@ -335,6 +335,8 @@ def _apply_filled(pins: dict | None = None) -> None:
         (pins or PINS)[name]["filled_from"] = v["from"]
 
 
+#: The table as declared, before FILLED - the rule tests fill and verify copies of this one.
+PINS_DECLARED = __import__("copy").deepcopy(PINS)
 _apply_filled()
 
 
