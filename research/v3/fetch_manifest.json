@@ -1,5 +1,5 @@
 {
- "note": "PREREG-V3 plan step A3.d: the declared A3 fetch windows, fixed before any window runs. Every fetch is a child under the contract through the catch-mode proxy, whose catcher tunnels only a window's exact hosts through the declared hop (the auditor's O1 ruling). The a3-hf CDN hosts are fixed from the a3-discovery record by a later commit (Q-A3-3); a redirect to an unlisted host is refused and needs a new ruling. D: must hold max(100 GB, 3 x the window's discovered total) free before a window; any single file over 10 GB in discovery stops the step (Q-A3-2).",
+ "note": "PREREG-V3 plan step A3.d: the declared A3 fetch windows, fixed before any window runs. Every fetch is a child under the contract through the catch-mode proxy, whose catcher tunnels only a window's exact hosts through the declared hop (the auditor's O1 ruling). The a3-hf hosts come from the a3-discovery record d1 (P5, Q-A3-3); a redirect to an unlisted host is refused and needs a new ruling. D: must hold max(100 GB, 3 x the window's discovered total) free before a window; any single file over 10 GB in discovery stops the step (Q-A3-2). A pin whose repository or path is still undeclared is not fetched.",
  "arms": ["fetch"],
  "windows": {
   "a3-discovery": {
@@ -9,21 +9,33 @@
    "bodies": "metadata JSON and cards only"
   },
   "a3-hf": {
-   "hosts": ["huggingface.co"],
-   "cdn_hosts_from_discovery": true,
+   "hosts": ["huggingface.co", "us.aws.cdn.hf.co", "cdn-lfs-us-1.hf.co"],
+   "hosts_from_record": "db131b4983a91629ef3f8906e5b1f6659a7c3f17b4713a2b84e4b9afdff18210",
    "pins": ["lme_s_cleaned", "lme_m_cleaned", "lme_oracle_cleaned", "beam_128k", "beam_500k", "mab_conflict_resolution",
-            "mab_accurate_retrieval", "ama_swe", "ama_non_swe", "bge_m3_tokenizer"],
+            "mab_accurate_retrieval", "ama_swe", "ama_non_swe", "bge_m3_tokenizer_json", "bge_m3_sentencepiece",
+            "bge_m3_tokenizer_config", "bge_m3_special_tokens"],
    "max_redirects": 1
   },
   "a3-github": {
    "hosts": ["api.github.com", "raw.githubusercontent.com"],
-   "pins": ["lme_evaluate_qa", "lme_answer_prompt", "locomo_j_prompt", "locomo_answer_prompt", "beam_scoring",
-            "mab_fc_files", "ama_judge_prompt"],
+   "pins": ["lme_evaluate_qa", "lme_answer_prompt", "locomo_evaluate_qa", "locomo_evaluation", "locomo_answer_prompt",
+            "locomo_licence_txt", "locomo_j_prompt", "locomo_j_prompts", "beam_compute_metrics", "beam_prompts",
+            "beam_run_evaluation", "mab_templates", "mab_eval_other_utils", "mab_eval_data_utils", "mab_fc_sh_6k",
+            "mab_fc_sh_32k", "mab_fc_sh_64k", "mab_fc_sh_262k", "mab_fc_mh_6k", "mab_fc_mh_32k", "mab_fc_mh_64k",
+            "mab_fc_mh_262k", "ama_judge_config", "ama_judge_config_api", "ama_judge_config_gpt5_mini", "ama_evaluate",
+            "ama_evaluation_metrics", "ama_licence"],
    "max_redirects": 0
   },
   "a3-tiktoken": {
    "hosts": ["openaipublic.blob.core.windows.net"],
    "pins": ["tiktoken_cl100k_base"],
+   "max_redirects": 0
+  },
+  "a3-pyarrow": {
+   "hosts": ["pypi.org", "files.pythonhosted.org"],
+   "install": "the polygon venv v3_data on py314 (the auditor's P2): pip --require-hashes --no-deps --only-binary=:all:",
+   "packages": ["pyarrow"],
+   "tag": "cp314-cp314-win_amd64",
    "max_redirects": 0
   },
   "a3-git": {

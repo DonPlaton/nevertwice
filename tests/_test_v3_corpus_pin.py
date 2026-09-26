@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
 """PREREG-V3 plan step A3.c/A3.d: the v3 pin table, the fetch manifest and the smoke rules - declared before data.
 
-* The table: every pin but the reused v2 ones is unfilled (no revision, sha256 or size) until its window; the v2 pins
+* The table: every pin but the reused v2 ones has no sha256 or size until its window, and a revision only when the
+  a3-discovery record d1 declared it (a 40-hex sha, its source named); the v2 pins
   are copied by value and equal research/corpus_pin.CORPORA; the rules hold (no ND licence anywhere, the found licence
   must equal the declared one, a smoke pin serves only smoke stands, no absolute path); a pin is filled once, with a
   64-hex sha256; verify() raises on an unfilled pin, a missing file, a wrong size or a wrong sha256, and passes on the
   pinned file; the FREEZE fragment lists every pin once, in its group.
 * The manifest: every pin with a window is listed in exactly that window, and every listed pin exists; the window
-  hosts are the declared exact names (a3-hf holds only huggingface.co until discovery fixes its CDN hosts).
+  hosts are the declared exact names - a3-hf's CDN hosts are the ones the discovery record d1 names (P5).
+* The auditor's P3/P7/P8/P9: BEAM's scored pin is the HF split 100K and its smoke pin 500K; LoCoMo's LICENSE.txt is a
+  licence-evidence pin; the prompt and scoring files are named at their discovery commits; both AMA pins name the one
+  file; the bge-m3 weights are never a pin; the pins still waiting (Mem0 J, AMA judge, BEAM scoring) name no path.
 * The smoke rules (§9.4 with the auditor's Q-A3-4 interpretation): S5 keeps the sessions that END within 128K tokens
   and drops a straddling one; S6 and S7 pick the closest, ties to the earlier in dataset order; S7's length is the
   compact, non-ASCII-preserving json.dumps of the trajectory; S1 is positions 481-500 of the nested order.
@@ -72,9 +76,15 @@ TMP = Path(tempfile.mkdtemp(prefix="nvt3_pin_"))
 
 print("\n- the table, before any data -")
 v3_only = {n: p for n, p in CP.PINS.items() if p["source"] != "local-v2"}
-check("no v3 pin is filled before its window: revision, sha256 and size are all None",
-      all(p["revision"] is None and p["sha256"] is None and p["bytes"] is None for p in v3_only.values()),
+import re  # noqa: E402
+
+check("no v3 pin carries a sha256 or a size before its window",
+      all(p["sha256"] is None and p["bytes"] is None for p in v3_only.values()),
       str([n for n, p in v3_only.items() if p["sha256"] is not None]))
+check("a v3 pin's revision is None or a 40-hex sha declared by a discovery record (d1 or d2), which it names",
+      all(p["revision"] is None or (re.fullmatch(r"[0-9a-f]{40}", p["revision"]) and p["revision_from"] in (
+          f"a3-discovery d1 {CP.DISCOVERY_D1[:12]}", f"a3-discovery d2 {CP.DISCOVERY_D2[:12]}"))
+          for p in v3_only.values()), str([(n, p["revision"]) for n, p in v3_only.items() if p["revision"]][:3]))
 check("the reused v2 pins equal research/corpus_pin.CORPORA, value for value",
       all(CP.V2_PINS[n][k] == V2.CORPORA[n][k] for n in CP.V2_PINS for k in ("sha256", "bytes", "path"))
       and CP.PINS["locomo10"]["sha256"] == V2.CORPORA["locomo10"]["sha256"]
@@ -92,14 +102,28 @@ def mutated(name, **change):
     return pins
 
 
-check("an ND licence is refused", refused(lambda: CP.check_rules(mutated("lme_s_cleaned", licence="CC-BY-NC-ND-4.0")),
-                                          CP.PinRefused))
+check("an ND licence is refused - by the ND rule itself, declared or found",
+      refused(lambda: CP.check_rules(mutated("lme_s_cleaned", licence="CC-BY-NC-ND-4.0")), CP.PinRefused, "an ND licence")
+      and refused(lambda: CP.check_rules(mutated("lme_s_cleaned", licence_found="CC-BY-ND-4.0")), CP.PinRefused, "an ND licence"))
 check("a licence off the declared list is refused",
       refused(lambda: CP.check_rules(mutated("lme_s_cleaned", licence="proprietary")), CP.PinRefused))
 check("a smoke pin on a scored stand is refused",
       refused(lambda: CP.check_rules(mutated("beam_500k", stands=("S5",))), CP.PinRefused))
 check("an absolute path is refused", refused(lambda: CP.check_rules(mutated("lme_s_cleaned", path="D:/data/x.json")),
                                              CP.PinRefused))
+
+print("\n- P6: the licence found is judged against the declared one, declared rules -")
+for declared, found, role, want in (("MIT", "mit", "evaluation", True), ("MIT", "Apache-2.0", "evaluation", False),
+                                    ("CC-BY-SA-4.0 (data); MIT (code)", "cc-by-sa-4.0", "evaluation", True),
+                                    ("CC-BY-SA-4.0 (data); MIT (code)", "cc-by-sa-4.0", "scoring", False),
+                                    ("CC-BY-SA-4.0 (data); MIT (code)", "MIT", "scoring", True),
+                                    ("CC-BY-SA-4.0 (data); MIT (code)", "MIT", "smoke", False),
+                                    ("CC-BY-NC-4.0", "cc-by-nc-4.0", "evaluation", True),
+                                    ("CC-BY-NC-4.0", "CC-BY-NC-ND-4.0", "evaluation", False),
+                                    ("CC-BY-ND-4.0", "cc-by-nd-4.0", "evaluation", False),
+                                    ("MIT", "NOASSERTION", "prompt", False)):
+    check(f"licence {found!r} against {declared!r} for a {role} pin: {'match' if want else 'no match'}",
+          CP.licence_matches(declared, found, role) is want)
 
 print("\n- fill once, verify raises -")
 pins = copy.deepcopy(CP.PINS)
@@ -111,6 +135,9 @@ import hashlib  # noqa: E402
 sha = hashlib.sha256(data).hexdigest()
 check("verify raises on an unfilled pin, saying it is not pinned",
       refused(lambda: CP.verify("lme_s_cleaned", f, pins=pins), CP.PinMismatch, "not pinned yet"))
+check("a card's lower-case SPDX id fills a pin declared in upper case",
+      CP.fill("lme_m_cleaned", revision="r", sha256=sha, size=len(data), licence_found="mit",
+              pins=copy.deepcopy(CP.PINS))["licence_found"] == "mit")
 check("a found licence that differs from the declared one is refused",
       refused(lambda: CP.fill("lme_s_cleaned", revision="r", sha256=sha, size=len(data), licence_found="Apache-2.0",
                               pins=pins), CP.PinRefused))
@@ -119,7 +146,7 @@ check("an ND licence found at fetch is refused",
                               pins=pins), CP.PinRefused))
 check("... by the ND rule itself, even where no licence was declared (a pin whose licence comes from the fetch)",
       refused(lambda: CP.fill("locomo_j_prompt", revision="r", sha256=sha, size=len(data), licence_found="CC-BY-NC-ND-4.0",
-                              pins=copy.deepcopy(CP.PINS)), CP.PinRefused, "ND"))
+                              pins=mutated("locomo_j_prompt", licence=None)), CP.PinRefused, "the licence found at fetch is ND"))
 check("a malformed sha256 is refused",
       refused(lambda: CP.fill("lme_s_cleaned", revision="r", sha256="ABC", size=len(data), licence_found="MIT", pins=pins),
               CP.PinRefused))
@@ -138,7 +165,8 @@ check("verify raises on a missing file", refused(lambda: CP.verify("lme_s_cleane
 frag = CP.freeze_fragment()
 listed = [n for grp in frag.values() for n in grp]
 check("the FREEZE fragment lists every pin exactly once, in its group",
-      sorted(listed) == sorted(CP.PINS) and set(frag) == {"datasets", "tokenizers", "prompt_files", "arm_sources"}
+      sorted(listed) == sorted(CP.PINS)
+      and set(frag) == {"datasets", "tokenizers", "prompt_files", "arm_sources", "licence_evidence"}
       and "tiktoken_cl100k_base" in frag["tokenizers"] and "amem_source" in frag["arm_sources"])
 
 print("\n- the manifest agrees with the table -")
@@ -150,11 +178,60 @@ for name, p in CP.PINS.items():
 check("every manifest pin exists in the table", set().union(*win_pins.values()) <= set(CP.PINS))
 check("the window hosts are the declared exact names",
       {w: sorted(v["hosts"]) for w, v in MAN["windows"].items()} == {
-          "a3-discovery": ["api.github.com", "huggingface.co"], "a3-hf": ["huggingface.co"],
+          "a3-discovery": ["api.github.com", "huggingface.co"],
+          "a3-hf": ["cdn-lfs-us-1.hf.co", "huggingface.co", "us.aws.cdn.hf.co"],
           "a3-github": ["api.github.com", "raw.githubusercontent.com"],
-          "a3-tiktoken": ["openaipublic.blob.core.windows.net"], "a3-git": ["github.com"]})
-check("a3-hf's CDN hosts wait for discovery; discovery follows no redirect",
-      MAN["windows"]["a3-hf"]["cdn_hosts_from_discovery"] is True and MAN["windows"]["a3-discovery"]["max_redirects"] == 0)
+          "a3-tiktoken": ["openaipublic.blob.core.windows.net"], "a3-git": ["github.com"],
+          "a3-pyarrow": ["files.pythonhosted.org", "pypi.org"]})
+check("a3-hf's hosts come from the discovery record d1; discovery follows no redirect",
+      MAN["windows"]["a3-hf"]["hosts_from_record"] == CP.DISCOVERY_D1 and MAN["windows"]["a3-discovery"]["max_redirects"] == 0)
+
+print("\n- the auditor's P3, P7, P8, P9 -")
+P_ = CP.PINS
+check("P3: BEAM's scored pin is the HF split 100K, its smoke pin 500K",
+      P_["beam_128k"]["path"] == "data/100K-00000-of-00001.parquet" and P_["beam_500k"]["path"] == "data/500K-00000-of-00001.parquet"
+      and P_["beam_128k"]["revision"] == P_["beam_500k"]["revision"] == CP.REV["beam"])
+check("P7: LoCoMo's LICENSE.txt is a licence-evidence pin at the pinned commit",
+      P_["locomo_licence_txt"]["role"] == "licence-evidence" and P_["locomo_licence_txt"]["path"] == "LICENSE.txt"
+      and P_["locomo_licence_txt"]["revision"] == CP.REV["gh_locomo"] == P_["locomo_answer_prompt"]["revision"])
+check("P8: the prompt and scoring files are named at their discovery commits",
+      (P_["lme_evaluate_qa"]["repo"], P_["lme_evaluate_qa"]["path"]) == ("xiaowu0162/LongMemEval", "src/evaluation/evaluate_qa.py")
+      and P_["locomo_evaluation"]["path"] == "task_eval/evaluation.py" and P_["mab_templates"]["path"] == "utils/templates.py"
+      and sum(1 for n in P_ if n.startswith("mab_fc_")) == 8
+      and P_["mab_fc_mh_262k"]["path"] == "configs/data_conf/Conflict_Resolution/Factconsolidation_mh_262k.yaml")
+check("P9: both AMA pins name the one file at one revision",
+      P_["ama_swe"]["path"] == P_["ama_non_swe"]["path"] == "test/open_end_qa_set.jsonl"
+      and P_["ama_swe"]["revision"] == P_["ama_non_swe"]["revision"])
+check("the bge-m3 weights are never a pin; its four tokenizer files are",
+      not any(str(p["path"]).endswith((".bin", ".onnx", ".onnx_data", ".pt")) for p in P_.values())
+      and sorted(p["path"] for n, p in P_.items() if n.startswith("bge_m3_"))
+      == ["sentencepiece.bpe.model", "special_tokens_map.json", "tokenizer.json", "tokenizer_config.json"])
+check("the pins cite the two discovery records the auditor received, by value",
+      (CP.DISCOVERY_D1, CP.DISCOVERY_D2) == ("db131b4983a91629ef3f8906e5b1f6659a7c3f17b4713a2b84e4b9afdff18210",
+                                             "f793c59a6ec980a94255a8abe0530a3c72d3c782d213df30375adabbd8a360d4"))
+check("no pin is left waiting: every fetched pin names a repository (or URL), a path and a revision",
+      all((p["repo"] or p["source"] == "url") and (p["path"] or p["source"] == "git") and (p["revision"] or p["source"] == "url")
+          for n, p in P_.items() if p["source"] != "local-v2"),
+      str([n for n, p in P_.items() if p["source"] != "local-v2" and not p["revision"] and p["source"] != "url"]))
+check("d2: Mem0 J at the deletion's first parent b3ede5b7, llm_judge.py and prompts.py",
+      (P_["locomo_j_prompt"]["repo"], P_["locomo_j_prompt"]["revision"], P_["locomo_j_prompt"]["path"])
+      == ("mem0ai/mem0", "b3ede5b7c0ac0e847b03786a603c107ac943b3ee", "evaluation/metrics/llm_judge.py")
+      and P_["locomo_j_prompts"]["path"] == "evaluation/prompts.py")
+check("d2: AMA's judge files at AMA-Bench/AMA-Bench ddfd319e - the three configs, evaluate.py, the twin, LICENSE",
+      sorted(p["path"] for n, p in P_.items() if n.startswith("ama_") and p["source"] == "github")
+      == sorted(["configs/llm_judge.yaml", "configs/llm_judge_api.yaml", "configs/llm_judge_gpt5_mini.yaml",
+                 "src/evaluate.py", "utils/evaluation_metrics.py", "LICENSE"])
+      and all(p["revision"] == "ddfd319e0be33424288c13806f1eafc63e625b59" for n, p in P_.items()
+              if n.startswith("ama_") and p["source"] == "github"))
+check("d2: BEAM's official scoring at mohammadtavakoli78/BEAM b2da22ea - compute_metrics, prompts, run_evaluation",
+      sorted(p["path"] for n, p in P_.items() if n.startswith("beam_") and p["source"] == "github")
+      == ["src/evaluation/compute_metrics.py", "src/evaluation/run_evaluation.py", "src/prompts.py"]
+      and all(p["repo"] == "mohammadtavakoli78/BEAM" for n, p in P_.items() if n.startswith("beam_") and p["source"] == "github"))
+check("P6: a pin that declares no licence accepts only a known one",
+      refused(lambda: CP.fill("amem_source", revision="r", sha256=sha, size=len(data), licence_found="WTFPL",
+                              pins=copy.deepcopy(CP.PINS)), CP.PinRefused, "unknown")
+      and CP.fill("amem_source", revision="r", sha256=sha, size=len(data), licence_found="mit",
+                  pins=copy.deepcopy(CP.PINS))["licence_found"] == "mit")
 check("the disk rule is the auditor's: 100 GB floor, 3x the window, stop at a 10 GB file",
       MAN["disk"] == {"volume": "D:", "floor_gb": 100, "multiple_of_window_total": 3, "stop_single_file_gb": 10})
 

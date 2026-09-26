@@ -314,7 +314,7 @@ def d2_routes(*, newest_holds=False, ama_location=f"https://{GH}/repositories/77
 
 
 srv.routes.update(d2_routes())
-rec5, _, _ = window("d2", F.d2_jobs(), hosts=F.D2_HOSTS)
+rec5, C5, _ = window("d2", F.d2_jobs(), hosts=F.D2_HOSTS)
 rep5 = F.d2_report(rec5)
 n_req = sum(len(j["summary"]) for j in rec5["jobs"])
 check("d2 runs clean on api.github.com only, within 12 requests",
@@ -332,6 +332,12 @@ check("d2: the newest mem0 commit is the deletion, so the pin is its first paren
       rep5["mem0"]["newest"] == C_DEL and rep5["mem0"]["newest_holds_evaluation"] is False
       and rep5["mem0"]["pinned_commit"] == C_PAR and "first parent" in rep5["mem0"]["why"]
       and rep5["mem0"]["evaluation_files"] == ["evaluation/metrics/llm_judge.py", "evaluation/prompts.py"], str(rep5["mem0"]))
+start5 = F._jsonl(C5.runs_root / "_launch" / "windows.jsonl")[0]
+check("D2-m1: the d2 window holds exactly api.github.com - the plan's hosts, every job's, its START and the catcher's /window",
+      F.D2_HOSTS == ["api.github.com"] and all(j["job"]["hosts"] == ["api.github.com"] for j in rec5["jobs"])
+      and start5["event"] == "START" and start5["hosts"] == ["api.github.com"]
+      and rec5["windows_proxy"][0]["hosts"] == ["api.github.com"],
+      str((start5.get("hosts"), [j["job"]["hosts"] for j in rec5["jobs"]], rec5["windows_proxy"][:1])))
 srv.routes.update(d2_routes(newest_holds=True))
 rec6, _, _ = window("d2hold", F.d2_jobs(), hosts=F.D2_HOSTS)
 rep6 = F.d2_report(rec6)

@@ -29,17 +29,20 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent.parent
 
-ROLES = ("evaluation", "bracket", "smoke", "tokenizer", "prompt", "scoring", "arm-source")
+ROLES = ("evaluation", "bracket", "smoke", "tokenizer", "prompt", "scoring", "arm-source", "licence-evidence")
 SOURCES = ("hf-dataset", "hf-model", "url", "github", "git", "local-v2")
 #: The licences the declared pins may carry (§3.1). Anything with ND is refused wherever it appears.
 LICENCES = frozenset({"MIT", "Apache-2.0", "CC-BY-4.0", "CC-BY-SA-4.0", "CC-BY-NC-4.0", "BSD-3-Clause",
                       "CC-BY-SA-4.0 (data); MIT (code)"})
+#: The single licences a fetch may find on a pin that declares none (P6: anything else is refused).
+SINGLE_LICENCES = frozenset(x for x in LICENCES if "(" not in x)
 _ND = re.compile(r"(?i)(\bND\b|no[-\s]?deriv)")
 
 
 def _pin(role, stands, source, repo, path, licence, window, prereg, note="", cross_check=None):
     return {"role": role, "stands": tuple(stands), "source": source, "repo": repo, "path": path,
-            "revision": None, "sha256": None, "bytes": None, "licence": licence, "licence_found": None,
+            "revision": None, "revision_from": None, "sha256": None, "bytes": None, "licence": licence,
+            "licence_found": None,
             "window": window, "prereg": prereg, "note": note, "cross_check": cross_check}
 
 
@@ -54,52 +57,134 @@ V2_PINS = {
                            "bytes": 15388478, "path": "research/data/longmemeval_oracle.json"},
 }
 
+#: The a3-discovery record the revisions and paths below come from (runs\\_fetch\\a3-discovery\\d1\\record.json), with the
+#: auditor's rulings P3/P5/P7/P8/P9 (2026-09-26). A sha256 and a size are filled only by a fetch window.
+DISCOVERY_D1 = "db131b4983a91629ef3f8906e5b1f6659a7c3f17b4713a2b84e4b9afdff18210"
+REV = {"lme": "98d7416c24c778c2fee6e6f3006e7a073259d48f", "beam": "3205395e897e7318c7b094ef4e6047b9b82dbb03",
+       "mab": "7ea066982b140a19337e17e60d45d4076e042faf", "ama": "a5777378066f53229a94557a7b192435cd027909",
+       "bge": "5617a9f61b028005a4858fdac845db406aefb181", "gh_lme": "9e0b455f4ef0e2ab8f2e582289761153549043fc",
+       "gh_locomo": "3eb6f2c585f5e1699204e3c3bdf7adc5c28cb376", "gh_mab": "538026089d1a8a8eff05121d0db89b388f360eba",
+       "gh_amem": "ceffb860f0712bbae97b184d440df62bc910ca8d"}
+#: The follow-up record d2 (the auditor's P1/P4/P10): AMA-Hub moved to AMA-Bench/AMA-Bench; mem0's evaluation/ was
+#: deleted in 9315e303, so its pin is that commit's first parent; BEAM's official repository, named from the paper.
+DISCOVERY_D2 = "f793c59a6ec980a94255a8abe0530a3c72d3c782d213df30375adabbd8a360d4"
+REV_D2 = {"gh_mem0": "b3ede5b7c0ac0e847b03786a603c107ac943b3ee", "gh_ama": "ddfd319e0be33424288c13806f1eafc63e625b59",
+          "gh_beam": "b2da22eac88bb0874c64665f13457eb99835774a"}
+
+
+def _at(pin: dict, revision: str, path: str | None = None, *, record: str = "d1") -> dict:
+    """A pin whose revision (and path) a discovery record declares (d1 or d2)."""
+    rec_sha = DISCOVERY_D1 if record == "d1" else DISCOVERY_D2
+    pin.update(revision=revision, revision_from=f"a3-discovery {record} {rec_sha[:12]}")
+    if path is not None:
+        pin["path"] = path
+    return pin
+
+
 LME = "xiaowu0162/longmemeval-cleaned"
+BEAM, MABD, AMAD, BGE = "Mohammadta/BEAM", "ai-hyz/MemoryAgentBench", "AMA-bench/AMA-bench", "BAAI/bge-m3"
+GH_LME, GH_LOCOMO, GH_MAB = "xiaowu0162/LongMemEval", "snap-research/locomo", "HUST-AI-HYZ/MemoryAgentBench"
+GH_MEM0, GH_AMA, GH_BEAM = "mem0ai/mem0", "AMA-Bench/AMA-Bench", "mohammadtavakoli78/BEAM"
+BEAM_LIC = "CC-BY-SA-4.0 (data); MIT (code)"
 PINS: dict[str, dict] = {
     # ── evaluation and bracket data (§3.1, lines 814-823) ──
-    "lme_s_cleaned": _pin("evaluation", ["S1"], "hf-dataset", LME, "longmemeval_s_cleaned.json", "MIT", "a3-hf", 814),
-    "lme_m_cleaned": _pin("evaluation", ["S2"], "hf-dataset", LME, "longmemeval_m_cleaned.json", "MIT", "a3-hf", 815),
-    "lme_oracle_cleaned": _pin("bracket", ["S3"], "hf-dataset", LME, "longmemeval_oracle.json", "MIT", "a3-hf", 816,
-                               note="one pin if byte-identical to the v2 longmemeval_oracle pin (821a2034)"),
-    "beam_128k": _pin("evaluation", ["S5"], "hf-dataset", "Mohammadta/BEAM", None, "CC-BY-SA-4.0 (data); MIT (code)",
-                      "a3-hf", 818, note="the 128K split (README 128K, card 100K); path and HF config name at discovery"),
-    "mab_conflict_resolution": _pin("evaluation", ["S6", "S6L"], "hf-dataset", "ai-hyz/MemoryAgentBench", None, "MIT",
-                                    "a3-hf", 819, note="Conflict_Resolution: FC-SH and FC-MH x 6K/32K/64K/262K"),
-    "ama_swe": _pin("evaluation", ["S7"], "hf-dataset", "AMA-bench/AMA-bench", None, "MIT", "a3-hf", 821,
-                    note="the SWE domain; 34 or 36 trajectories and 432 questions, confirmed at fetch"),
+    "lme_s_cleaned": _at(_pin("evaluation", ["S1"], "hf-dataset", LME, "longmemeval_s_cleaned.json", "MIT", "a3-hf", 814),
+                         REV["lme"]),
+    "lme_m_cleaned": _at(_pin("evaluation", ["S2"], "hf-dataset", LME, "longmemeval_m_cleaned.json", "MIT", "a3-hf", 815),
+                         REV["lme"]),
+    "lme_oracle_cleaned": _at(_pin("bracket", ["S3"], "hf-dataset", LME, "longmemeval_oracle.json", "MIT", "a3-hf", 816,
+                                   note="one pin if byte-identical to the v2 longmemeval_oracle pin (821a2034); same size"),
+                              REV["lme"]),
+    "beam_128k": _at(_pin("evaluation", ["S5"], "hf-dataset", BEAM, None, BEAM_LIC, "a3-hf", 818,
+                          note="§3.1's 128K split is the HF split 100K (README 128K, HF 100K; P3)"),
+                     REV["beam"], "data/100K-00000-of-00001.parquet"),
+    "mab_conflict_resolution": _at(_pin("evaluation", ["S6", "S6L"], "hf-dataset", MABD, None, "MIT", "a3-hf", 819,
+                                        note="Conflict_Resolution: FC-SH and FC-MH x 6K/32K/64K/262K"),
+                                   REV["mab"], "data/Conflict_Resolution-00000-of-00001.parquet"),
+    "ama_swe": _at(_pin("evaluation", ["S7"], "hf-dataset", AMAD, None, "MIT", "a3-hf", 821,
+                        note="one file for both domains (P9): the domain rule selects SWE (34 or 36 trajectories, 432 QA)"),
+                   REV["ama"], "test/open_end_qa_set.jsonl"),
     # ── smoke data, outside every scored list (§9.4, lines 1801-1806) ──
-    "beam_500k": _pin("smoke", ["S5-smoke"], "hf-dataset", "Mohammadta/BEAM", None, "CC-BY-SA-4.0 (data); MIT (code)",
-                      "a3-hf", 1801, note="the 500K split, whole file; its first conversation, cut at 128K cl100k tokens"),
-    "mab_accurate_retrieval": _pin("smoke", ["S6-smoke"], "hf-dataset", "ai-hyz/MemoryAgentBench", None, "MIT", "a3-hf",
-                                   1803, note="the Accurate_Retrieval row closest to 32K cl100k tokens"),
-    "ama_non_swe": _pin("smoke", ["S7-smoke"], "hf-dataset", "AMA-bench/AMA-bench", None, "MIT", "a3-hf", 1805,
-                        note="non-SWE domains; the trajectory closest to the SWE median character length"),
-    # ── tokenizers (§5.1 line 1302, §5.2 line 1325) ──
-    "bge_m3_tokenizer": _pin("tokenizer", ["all"], "hf-model", "BAAI/bge-m3", None, "MIT", "a3-hf", 1302,
-                             note="the tokenizer files only (tokenizer.json, sentencepiece.bpe.model, configs)"),
+    "beam_500k": _at(_pin("smoke", ["S5-smoke"], "hf-dataset", BEAM, None, BEAM_LIC, "a3-hf", 1801,
+                          note="the 500K split, whole file; its first conversation, cut at 128K cl100k tokens"),
+                     REV["beam"], "data/500K-00000-of-00001.parquet"),
+    "mab_accurate_retrieval": _at(_pin("smoke", ["S6-smoke"], "hf-dataset", MABD, None, "MIT", "a3-hf", 1803,
+                                       note="the Accurate_Retrieval row closest to 32K cl100k tokens"),
+                                  REV["mab"], "data/Accurate_Retrieval-00000-of-00001.parquet"),
+    "ama_non_swe": _at(_pin("smoke", ["S7-smoke"], "hf-dataset", AMAD, None, "MIT", "a3-hf", 1805,
+                            note="the same file as ama_swe (P9); the non-SWE domains only, disjoint by trajectory id"),
+                       REV["ama"], "test/open_end_qa_set.jsonl"),
+    # ── tokenizers (§5.1 line 1302, §5.2 line 1325); the bge-m3 weights are never fetched ──
+    "bge_m3_tokenizer_json": _at(_pin("tokenizer", ["all"], "hf-model", BGE, None, "MIT", "a3-hf", 1302), REV["bge"],
+                                 "tokenizer.json"),
+    "bge_m3_sentencepiece": _at(_pin("tokenizer", ["all"], "hf-model", BGE, None, "MIT", "a3-hf", 1302), REV["bge"],
+                                "sentencepiece.bpe.model"),
+    "bge_m3_tokenizer_config": _at(_pin("tokenizer", ["all"], "hf-model", BGE, None, "MIT", "a3-hf", 1302), REV["bge"],
+                                   "tokenizer_config.json"),
+    "bge_m3_special_tokens": _at(_pin("tokenizer", ["all"], "hf-model", BGE, None, "MIT", "a3-hf", 1302), REV["bge"],
+                                 "special_tokens_map.json"),
     "tiktoken_cl100k_base": _pin("tokenizer", ["all"], "url", None,
                                  "https://openaipublic.blob.core.windows.net/encodings/cl100k_base.tiktoken", "MIT",
                                  "a3-tiktoken", 1325,
                                  cross_check={"sha256": "223921b76ee99bde995b7ff738513eef100fb51d18c93597a113bcffe865b2a7",
                                               "source": "tiktoken's openai_public.py expected_hash [to confirm at fetch]"}),
-    # ── official prompts and scoring files: pinned by sha only, never committed (Q-A3-6; lines 1557-1563, 1607-1612) ──
-    "lme_evaluate_qa": _pin("scoring", ["S1", "S2", "S3"], "github", None, None, "MIT", "a3-github", 1608,
-                            note="LongMemEval evaluate_qa.py per-type judge prompts, at a pinned commit; repo from discovery"),
-    "lme_answer_prompt": _pin("prompt", ["S1", "S2", "S3"], "github", None, None, "MIT", "a3-github", 1557,
-                              note="the benchmark's own answer prompt; repo and path from discovery"),
-    "locomo_j_prompt": _pin("scoring", ["S4"], "github", None, None, None, "a3-github", 1609,
-                            note="the Mem0-paper J prompt; repo, path and licence from discovery"),
-    "locomo_answer_prompt": _pin("prompt", ["S4"], "github", None, None, "CC-BY-NC-4.0", "a3-github", 1557,
-                                 note="LoCoMo's answer prompt with the cat-5 'No information available' instruction"),
-    "beam_scoring": _pin("scoring", ["S5"], "github", None, None, "CC-BY-SA-4.0 (data); MIT (code)", "a3-github", 818,
-                         note="the official scoring code and nugget rubric; repo from the HF card at discovery"),
-    "mab_fc_files": _pin("scoring", ["S6", "S6L"], "github", None, None, "MIT", "a3-github", 819,
-                         note="the FC template, the exact-match scorer and the 512-token chunker (and its tokenizer)"),
-    "ama_judge_prompt": _pin("scoring", ["S7"], "github", None, None, "MIT", "a3-github", 1611,
-                             note="the AMA-Bench judge prompt; repo from the HF card at discovery"),
+    # ── official prompts and scoring files: pinned by sha only, never committed (Q-A3-6; P8) ──
+    "lme_evaluate_qa": _at(_pin("scoring", ["S1", "S2", "S3"], "github", GH_LME, None, "MIT", "a3-github", 1608,
+                                note="the per-type judge prompts"), REV["gh_lme"], "src/evaluation/evaluate_qa.py"),
+    "lme_answer_prompt": _at(_pin("prompt", ["S1", "S2", "S3"], "github", GH_LME, None, "MIT", "a3-github", 1557),
+                             REV["gh_lme"], "src/generation/run_generation.py"),
+    "locomo_evaluate_qa": _at(_pin("scoring", ["S4"], "github", GH_LOCOMO, None, "CC-BY-NC-4.0", "a3-github", 1557),
+                              REV["gh_locomo"], "task_eval/evaluate_qa.py"),
+    "locomo_evaluation": _at(_pin("scoring", ["S4"], "github", GH_LOCOMO, None, "CC-BY-NC-4.0", "a3-github", 1557,
+                                  note="the official token F1 and the cat-5 string check"),
+                             REV["gh_locomo"], "task_eval/evaluation.py"),
+    "locomo_answer_prompt": _at(_pin("prompt", ["S4"], "github", GH_LOCOMO, None, "CC-BY-NC-4.0", "a3-github", 1557,
+                                     note="the answer prompt with the cat-5 'No information available' instruction"),
+                                REV["gh_locomo"], "task_eval/gpt_utils.py"),
+    "locomo_licence_txt": _at(_pin("licence-evidence", ["S4"], "github", GH_LOCOMO, None, "CC-BY-NC-4.0", "a3-github", 817,
+                                   note="P7: GitHub reports NOASSERTION; this file at the pinned commit is the evidence"),
+                              REV["gh_locomo"], "LICENSE.txt"),
+    "locomo_j_prompt": _at(_pin("scoring", ["S4"], "github", GH_MEM0, None, "Apache-2.0", "a3-github", 1609,
+                                note="the Mem0-paper J prompt; evaluation/ deleted in 9315e303, pinned at its parent"),
+                           REV_D2["gh_mem0"], "evaluation/metrics/llm_judge.py", record="d2"),
+    "locomo_j_prompts": _at(_pin("scoring", ["S4"], "github", GH_MEM0, None, "Apache-2.0", "a3-github", 1609,
+                                 note="needed if llm_judge.py takes its prompt from here - confirmed at fetch"),
+                            REV_D2["gh_mem0"], "evaluation/prompts.py", record="d2"),
+    "beam_compute_metrics": _at(_pin("scoring", ["S5"], "github", GH_BEAM, None, BEAM_LIC, "a3-github", 818,
+                                     note="nugget-judge averaging and kendalltau(variant='b') - confirmed at fetch"),
+                                REV_D2["gh_beam"], "src/evaluation/compute_metrics.py", record="d2"),
+    "beam_prompts": _at(_pin("scoring", ["S5"], "github", GH_BEAM, None, BEAM_LIC, "a3-github", 818,
+                             note="the nugget rubric; the 0/0.5/1 scale confirmed at fetch"),
+                        REV_D2["gh_beam"], "src/prompts.py", record="d2"),
+    "beam_run_evaluation": _at(_pin("scoring", ["S5"], "github", GH_BEAM, None, BEAM_LIC, "a3-github", 818,
+                                    note="the entry point: how the rubric and tau-b are applied"),
+                               REV_D2["gh_beam"], "src/evaluation/run_evaluation.py", record="d2"),
+    "mab_templates": _at(_pin("prompt", ["S6", "S6L"], "github", GH_MAB, None, "MIT", "a3-github", 819,
+                              note="the FC template"), REV["gh_mab"], "utils/templates.py"),
+    "mab_eval_other_utils": _at(_pin("scoring", ["S6", "S6L"], "github", GH_MAB, None, "MIT", "a3-github", 819,
+                                     note="the exact-match scorer"), REV["gh_mab"], "utils/eval_other_utils.py"),
+    "mab_eval_data_utils": _at(_pin("scoring", ["S6", "S6L"], "github", GH_MAB, None, "MIT", "a3-github", 819,
+                                    note="the 512-token chunker; its tokenizer confirmed at A3.j"),
+                               REV["gh_mab"], "utils/eval_data_utils.py"),
+    **{f"mab_fc_{hop}_{size}": _at(_pin("scoring", ["S6", "S6L"], "github", GH_MAB, None, "MIT", "a3-github", 819,
+                                        note="the row's config: chunk size and tokenizer, confirmed at A3.j"),
+                                   REV["gh_mab"], f"configs/data_conf/Conflict_Resolution/Factconsolidation_{hop}_{size}.yaml")
+       for hop in ("sh", "mh") for size in ("6k", "32k", "64k", "262k")},
+    **{f"ama_judge_{v}": _at(_pin("scoring", ["S7"], "github", GH_AMA, None, "MIT", "a3-github", 1611,
+                                  note="which config carries the judge prompt text is confirmed at fetch; different texts = stop"),
+                             REV_D2["gh_ama"], f"configs/{f}.yaml", record="d2")
+       for v, f in (("config", "llm_judge"), ("config_api", "llm_judge_api"), ("config_gpt5_mini", "llm_judge_gpt5_mini"))},
+    "ama_evaluate": _at(_pin("scoring", ["S7"], "github", GH_AMA, None, "MIT", "a3-github", 1611,
+                             note="the evaluation entry point: which judge config is the default"),
+                        REV_D2["gh_ama"], "src/evaluate.py", record="d2"),
+    "ama_evaluation_metrics": _at(_pin("scoring", ["S7"], "github", GH_AMA, None, "MIT", "a3-github", 1611,
+                                       note="the EM/F1 twin"), REV_D2["gh_ama"], "utils/evaluation_metrics.py", record="d2"),
+    "ama_licence": _at(_pin("licence-evidence", ["S7"], "github", GH_AMA, None, "MIT", "a3-github", 821),
+                       REV_D2["gh_ama"], "LICENSE", record="d2"),
     # ── arm source (lines 229, 2306) ──
-    "amem_source": _pin("arm-source", ["arm:a-mem"], "git", "agiresearch/A-mem", None, None, "a3-git", 229,
-                        note="the upstream commit fixed at fetch; licence from the repository at that commit"),
+    "amem_source": _at(_pin("arm-source", ["arm:a-mem"], "git", "agiresearch/A-mem", None, None, "a3-git", 229,
+                            note="the head commit at discovery; the clone must resolve to it; licence from the repository"),
+                       REV["gh_amem"]),
     # ── v2 pins reused by value (S4, S9) ──
     "locomo10": {**_pin("evaluation", ["S4"], "local-v2", "snap-research/locomo", V2_PINS["locomo10"]["path"],
                         "CC-BY-NC-4.0", None, 817), "sha256": V2_PINS["locomo10"]["sha256"],
@@ -109,6 +194,26 @@ PINS: dict[str, dict] = {
                       "sha256": V2_PINS["longmemeval_s"]["sha256"], "bytes": V2_PINS["longmemeval_s"]["bytes"],
                       "revision": "v2-pin"},
 }
+
+
+#: Which part of a compound declaration ("X (data); Y (code)") a pin's role is judged on (P6).
+DATA_ROLES = frozenset({"evaluation", "bracket", "smoke"})
+
+
+def _norm_licence(s: str) -> str:
+    return re.sub(r"[\s_]+", "-", s.strip()).casefold()
+
+
+def licence_matches(declared: str, found: str, role: str) -> bool:
+    """P6: the licence a card or repository states against the declared one - case-insensitive SPDX identifiers
+    ("mit" == "MIT"); a compound declaration "X (data); Y (code)" is judged on its data part for data files and on
+    its code part for code, prompt and tokenizer files. An ND licence never matches."""
+    if _ND.search(found) or _ND.search(declared):
+        return False
+    parts = dict((m.group(2).casefold(), _norm_licence(m.group(1)))
+                 for m in re.finditer(r"([^;()]+?)\s*\((data|code)\)", declared))
+    want = parts.get("data" if role in DATA_ROLES else "code") if parts else _norm_licence(declared)
+    return want is not None and want == _norm_licence(found)
 
 
 class PinMismatch(RuntimeError):
@@ -148,7 +253,11 @@ def fill(name: str, *, revision: str, sha256: str, size: int, licence_found: str
         raise PinRefused(f"{name}: sha256 must be 64 lower-case hex characters")
     if licence_found is not None and _ND.search(licence_found):
         raise PinRefused(f"{name}: the licence found at fetch is ND")
-    if p["licence"] is not None and licence_found is not None and licence_found != p["licence"]:
+    if p["licence"] is None and licence_found is not None and not any(
+            _norm_licence(licence_found) == _norm_licence(x) for x in SINGLE_LICENCES):
+        raise PinRefused(f"{name}: licence found {licence_found!r} is unknown - refused (P6)")
+    if p["licence"] is not None and licence_found is not None and not licence_matches(p["licence"], licence_found,
+                                                                                       p["role"]):
         raise PinRefused(f"{name}: licence found {licence_found!r} is not the declared {p['licence']!r}")
     p.update(revision=revision, sha256=sha256, bytes=int(size), licence_found=licence_found,
              **({"path": path} if path is not None else {}))
@@ -182,7 +291,8 @@ def verify(name: str, path: str | Path, *, pins: dict | None = None) -> dict:
 def freeze_fragment(pins: dict | None = None) -> dict:
     """The FREEZE-V3 ``datasets`` shape: per role group, name -> {repo, path, revision, sha256, bytes, licence}."""
     groups = {"datasets": ("evaluation", "bracket", "smoke"), "tokenizers": ("tokenizer",),
-              "prompt_files": ("prompt", "scoring"), "arm_sources": ("arm-source",)}
+              "prompt_files": ("prompt", "scoring"), "arm_sources": ("arm-source",),
+              "licence_evidence": ("licence-evidence",)}
     out: dict = {g: {} for g in groups}
     for name, p in sorted((pins or PINS).items()):
         g = next(k for k, roles in groups.items() if p["role"] in roles)
