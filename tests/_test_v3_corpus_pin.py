@@ -78,9 +78,16 @@ print("\n- the table, before any data -")
 v3_only = {n: p for n, p in CP.PINS.items() if p["source"] != "local-v2"}
 import re  # noqa: E402
 
-check("no v3 pin carries a sha256 or a size before its window",
-      all(p["sha256"] is None and p["bytes"] is None for p in v3_only.values()),
+check("no v3 pin carries a sha256 or a size before its window - but the oracle, which is the v2 pin by value (Q-A3F-8)",
+      all(p["sha256"] is None and p["bytes"] is None for n, p in v3_only.items() if n != "lme_oracle_cleaned"),
       str([n for n, p in v3_only.items() if p["sha256"] is not None]))
+check("Q-A3F-8: lme_oracle_cleaned is ONE pin - the v2 oracle's sha256 and size, marked as its alias, never filled again",
+      (CP.PINS["lme_oracle_cleaned"]["sha256"], CP.PINS["lme_oracle_cleaned"]["bytes"])
+      == (V2.CORPORA["longmemeval_oracle"]["sha256"], V2.CORPORA["longmemeval_oracle"]["bytes"])
+      and CP.PINS["lme_oracle_cleaned"].get("alias_of") == "v2:longmemeval_oracle"
+      and [n for n, p in CP.PINS.items() if p.get("alias_of")] == ["lme_oracle_cleaned"]
+      and refused(lambda: CP.fill("lme_oracle_cleaned", revision="r", sha256="0" * 64, size=1, licence_found="MIT",
+                                  pins=copy.deepcopy(CP.PINS)), CP.PinRefused, "already pinned"))
 check("a v3 pin's revision is None or a 40-hex sha declared by a discovery record (d1 or d2), which it names",
       all(p["revision"] is None or (re.fullmatch(r"[0-9a-f]{40}", p["revision"]) and p["revision_from"] in (
           f"a3-discovery d1 {CP.DISCOVERY_D1[:12]}", f"a3-discovery d2 {CP.DISCOVERY_D2[:12]}"))
@@ -180,7 +187,7 @@ check("the window hosts are the declared exact names",
       {w: sorted(v["hosts"]) for w, v in MAN["windows"].items()} == {
           "a3-discovery": ["api.github.com", "huggingface.co"],
           "a3-hf": ["cdn-lfs-us-1.hf.co", "huggingface.co", "us.aws.cdn.hf.co"],
-          "a3-github": ["api.github.com", "raw.githubusercontent.com"],
+          "a3-github": ["raw.githubusercontent.com"],
           "a3-tiktoken": ["openaipublic.blob.core.windows.net"], "a3-git": ["github.com"],
           "a3-pyarrow": ["files.pythonhosted.org", "pypi.org"]})
 check("a3-hf's hosts come from the discovery record d1; discovery follows no redirect",
@@ -232,6 +239,29 @@ check("P6: a pin that declares no licence accepts only a known one",
                               pins=mutated("amem_source", licence=None)), CP.PinRefused, "unknown")
       and CP.fill("amem_source", revision="r", sha256=sha, size=len(data), licence_found="mit",
                   pins=mutated("amem_source", licence=None))["licence_found"] == "mit")
+check("Q-A3F-6: mem0's LICENSE at the pinned commit b3ede5b7 is licence evidence for its two scoring pins",
+      (P_["mem0_licence"]["role"], P_["mem0_licence"]["repo"], P_["mem0_licence"]["path"], P_["mem0_licence"]["revision"])
+      == ("licence-evidence", "mem0ai/mem0", "LICENSE", "b3ede5b7c0ac0e847b03786a603c107ac943b3ee")
+      and P_["mem0_licence"]["revision"] == P_["locomo_j_prompt"]["revision"] == P_["locomo_j_prompts"]["revision"]
+      and P_["mem0_licence"]["licence"] == "Apache-2.0")
+check("A3.g: a3-git runs on its own arm fetch-git, declared at the top; every other window on fetch",
+      MAN["windows"]["a3-git"].get("arms") == ["fetch-git"] and MAN.get("arms") == ["fetch", "fetch-git"]
+      and all("arms" not in w for k, w in MAN["windows"].items() if k != "a3-git"))
+HUB, PR = Path("H:/hub"), Path("R:/runs/_pins")
+check("location(): each source has one place - the hub layout, _pins/github/<commit>, _pins/url/<sha256>, "
+      "_pins/git/<commit>/ls-tree.txt, a v2 pin its own path",
+      CP.location("beam_128k", hf_hub=HUB, pins_root=PR)
+      == HUB / "datasets--Mohammadta--BEAM" / "snapshots" / CP.REV["beam"] / "data" / "100K-00000-of-00001.parquet"
+      and CP.location("bge_m3_tokenizer_json", hf_hub=HUB, pins_root=PR)
+      == HUB / "models--BAAI--bge-m3" / "snapshots" / P_["bge_m3_tokenizer_json"]["revision"] / "tokenizer.json"
+      and CP.location("mab_fc_sh_6k", hf_hub=HUB, pins_root=PR)
+      == PR / "github" / P_["mab_fc_sh_6k"]["revision"] / "configs" / "data_conf" / "Conflict_Resolution" / "Factconsolidation_sh_6k.yaml"
+      and CP.location("tiktoken_cl100k_base", hf_hub=HUB, pins_root=PR, sha256="1" * 64)
+      == PR / "url" / ("1" * 64) / "cl100k_base.tiktoken"
+      and CP.location("amem_source", hf_hub=HUB, pins_root=PR) == PR / "git" / P_["amem_source"]["revision"] / "ls-tree.txt"
+      and CP.location("locomo10", hf_hub=HUB, pins_root=PR) == CP.REPO / "research" / "data" / "locomo10.json")
+check("location(): a URL pin with no sha256 has no place yet",
+      refused(lambda: CP.location("tiktoken_cl100k_base", hf_hub=HUB, pins_root=PR), CP.PinMismatch, "sha256"))
 check("every pin declares its licence before fill() - none is left to the fetch",
       [n for n, p in CP.PINS.items() if p["licence"] is None] == [])
 check("A-mem: the source declares MIT (GitHub's spdx in d1), and its LICENSE at the same commit is licence evidence",

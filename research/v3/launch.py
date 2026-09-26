@@ -1507,8 +1507,11 @@ class Witnesses:
         self._before: dict | None = None
         self._check: str | None = None
 
-    def begin_check(self, check_id: str) -> None:
+    def begin_check(self, check_id: str, *, tags: dict | None = None) -> None:
+        """``tags`` (a window's name, run and arm) are written into the witness record, so a reader finds a window's
+        own check by what it says, not by its id alone."""
         self._check = check_id
+        self._tags = dict(tags or {})
         self._begin_utc = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         self._before = self.fs.snapshot() if self.fs else None
         for w in (self.native, *self.containers):
@@ -1517,7 +1520,7 @@ class Witnesses:
 
     def end_check(self, check_id: str) -> dict:
         egress = [w.stop().as_record() if w is not None else None for w in (self.native, *self.containers)]
-        record = {"check_id": check_id, "begin_utc": getattr(self, "_begin_utc", None),
+        record = {"check_id": check_id, "tags": getattr(self, "_tags", {}), "begin_utc": getattr(self, "_begin_utc", None),
                   "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                   "native": egress[0], "containers": egress[1:],
                   "canary_hashes": self.canaries.hashes() if self.canaries else {},

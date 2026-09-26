@@ -12,9 +12,9 @@ import threading
 from pathlib import Path
 
 
-def make_test_cert(d: Path, host: str, extra_hosts: tuple = ()):
-    """A self-signed certificate for ``host`` (CN, and SAN with ``extra_hosts``): (cert, key, how), or None with
-    neither tool present."""
+def make_test_cert(d: Path, host: str, extra_hosts: tuple = (), org: str | None = None):
+    """A self-signed certificate for ``host`` (CN, and SAN with ``extra_hosts``; O = ``org`` when given, so a
+    child records an issuer organisation): (cert, key, how), or None with neither tool present."""
     d.mkdir(parents=True, exist_ok=True)
     cert, keyf = d / f"{host}.pem", d / f"{host}.key"
     try:
@@ -28,7 +28,8 @@ def make_test_cert(d: Path, host: str, extra_hosts: tuple = ()):
         x509 = None
     if x509 is not None:
         k = ec.generate_private_key(ec.SECP256R1())
-        name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, host)])
+        name = x509.Name([*([x509.NameAttribute(NameOID.ORGANIZATION_NAME, org)] if org else []),
+                          x509.NameAttribute(NameOID.COMMON_NAME, host)])
         now = datetime.datetime.now(datetime.timezone.utc)
         c = (x509.CertificateBuilder().subject_name(name).issuer_name(name).public_key(k.public_key())
              .serial_number(x509.random_serial_number()).not_valid_before(now - datetime.timedelta(minutes=5))
@@ -48,7 +49,7 @@ def make_test_cert(d: Path, host: str, extra_hosts: tuple = ()):
     exe = shutil.which("openssl")
     if exe:
         env = dict(os.environ, MSYS_NO_PATHCONV="1", MSYS2_ARG_CONV_EXCL="*")
-        r = subprocess.run([exe, "req", "-x509", "-newkey", "rsa:2048", "-nodes", "-days", "1", "-subj", f"/CN={host}",
+        r = subprocess.run([exe, "req", "-x509", "-newkey", "rsa:2048", "-nodes", "-days", "1", "-subj", (f"/O={org}" if org else "") + f"/CN={host}",
                             "-addext", "subjectAltName=" + ",".join(f"DNS:{h}" for h in (host, *extra_hosts)),
                             "-keyout", str(keyf), "-out", str(cert)],
                            capture_output=True, timeout=120, env=env)

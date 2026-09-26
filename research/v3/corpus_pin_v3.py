@@ -92,9 +92,13 @@ PINS: dict[str, dict] = {
                          REV["lme"]),
     "lme_m_cleaned": _at(_pin("evaluation", ["S2"], "hf-dataset", LME, "longmemeval_m_cleaned.json", "MIT", "a3-hf", 815),
                          REV["lme"]),
-    "lme_oracle_cleaned": _at(_pin("bracket", ["S3"], "hf-dataset", LME, "longmemeval_oracle.json", "MIT", "a3-hf", 816,
-                                   note="one pin if byte-identical to the v2 longmemeval_oracle pin (821a2034); same size"),
-                              REV["lme"]),
+    # Q-A3F-8: one pin, the v2 oracle's value (S3: "one pin if byte-identical"; d1's LFS oid is 821a2034) - the a3-hf
+    # window still fetches it and records the byte identity; fill() never runs on it.
+    "lme_oracle_cleaned": {**_at(_pin("bracket", ["S3"], "hf-dataset", LME, "longmemeval_oracle.json", "MIT", "a3-hf", 816,
+                                      note="the v2 longmemeval_oracle pin (821a2034), byte-identical per d1; confirmed at fetch"),
+                                 REV["lme"]),
+                           "sha256": V2_PINS["longmemeval_oracle"]["sha256"], "bytes": V2_PINS["longmemeval_oracle"]["bytes"],
+                           "alias_of": "v2:longmemeval_oracle"},
     "beam_128k": _at(_pin("evaluation", ["S5"], "hf-dataset", BEAM, None, BEAM_LIC, "a3-hf", 818,
                           note="§3.1's 128K split is the HF split 100K (README 128K, HF 100K; P3)"),
                      REV["beam"], "data/100K-00000-of-00001.parquet"),
@@ -147,6 +151,9 @@ PINS: dict[str, dict] = {
     "locomo_j_prompt": _at(_pin("scoring", ["S4"], "github", GH_MEM0, None, "Apache-2.0", "a3-github", 1609,
                                 note="the Mem0-paper J prompt; evaluation/ deleted in 9315e303, pinned at its parent"),
                            REV_D2["gh_mem0"], "evaluation/metrics/llm_judge.py", record="d2"),
+    "mem0_licence": _at(_pin("licence-evidence", ["S4"], "github", GH_MEM0, None, "Apache-2.0", "a3-github", 1609,
+                             note="Q-A3F-6: the LICENSE at the pinned commit; the repository's current licence is not evidence"),
+                        REV_D2["gh_mem0"], "LICENSE", record="d2"),
     "locomo_j_prompts": _at(_pin("scoring", ["S4"], "github", GH_MEM0, None, "Apache-2.0", "a3-github", 1609,
                                  note="needed if llm_judge.py takes its prompt from here - confirmed at fetch"),
                             REV_D2["gh_mem0"], "evaluation/prompts.py", record="d2"),
@@ -289,6 +296,27 @@ def verify(name: str, path: str | Path, *, pins: dict | None = None) -> dict:
     if got != p["sha256"]:
         raise PinMismatch(f"{name}: sha256 {got[:12]}... is not the pinned {p['sha256'][:12]}...")
     return {"pin": name, "sha256": got, "bytes": p["bytes"], "revision": p["revision"]}
+
+
+def location(name: str, *, hf_hub: Path, pins_root: Path, sha256: str | None = None, pins: dict | None = None) -> Path:
+    """Where a fetched pin's file lives after its window (the A3.f placement), so a reader never imports fetch code:
+    an HF file in the hub cache layout at its revision, a GitHub file under <pins_root>/github/<commit>, the tiktoken
+    file under <pins_root>/url/<its sha256>, and the A-MEM source's ls-tree listing (Q-A3F-1) under
+    <pins_root>/git/<commit>. A local-v2 pin has its own path."""
+    p = (pins or PINS)[name]
+    if p["source"] == "local-v2":
+        return REPO / p["path"]
+    if p["source"] in ("hf-dataset", "hf-model"):
+        kind = "datasets" if p["source"] == "hf-dataset" else "models"
+        return Path(hf_hub) / f"{kind}--{p['repo'].replace('/', '--')}" / "snapshots" / p["revision"] / Path(*p["path"].split("/"))
+    if p["source"] == "github":
+        return Path(pins_root) / "github" / p["revision"] / Path(*p["path"].split("/"))
+    if p["source"] == "url":
+        sha = sha256 or p["sha256"]
+        if not (isinstance(sha, str) and re.fullmatch(r"[0-9a-f]{64}", sha)):
+            raise PinMismatch(f"{name}: a URL pin is located by its sha256, and none is given")
+        return Path(pins_root) / "url" / sha / p["path"].rsplit("/", 1)[-1]
+    return Path(pins_root) / "git" / p["revision"] / "ls-tree.txt"
 
 
 def freeze_fragment(pins: dict | None = None) -> dict:

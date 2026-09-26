@@ -1,6 +1,6 @@
 {
  "note": "PREREG-V3 plan step A3.d: the declared A3 fetch windows, fixed before any window runs. Every fetch is a child under the contract through the catch-mode proxy, whose catcher tunnels only a window's exact hosts through the declared hop (the auditor's O1 ruling). The a3-hf hosts come from the a3-discovery record d1 (P5, Q-A3-3); a redirect to an unlisted host is refused and needs a new ruling. D: must hold max(100 GB, 3 x the window's discovered total) free before a window; any single file over 10 GB in discovery stops the step (Q-A3-2). A pin whose repository or path is still undeclared is not fetched.",
- "arms": ["fetch"],
+ "arms": ["fetch", "fetch-git"],
  "windows": {
   "a3-discovery": {
    "hosts": ["huggingface.co", "api.github.com"],
@@ -17,9 +17,9 @@
    "max_redirects": 1
   },
   "a3-github": {
-   "hosts": ["api.github.com", "raw.githubusercontent.com"],
+   "hosts": ["raw.githubusercontent.com"],
    "pins": ["lme_evaluate_qa", "lme_answer_prompt", "locomo_evaluate_qa", "locomo_evaluation", "locomo_answer_prompt",
-            "locomo_licence_txt", "locomo_j_prompt", "locomo_j_prompts", "beam_compute_metrics", "beam_prompts",
+            "locomo_licence_txt", "locomo_j_prompt", "locomo_j_prompts", "mem0_licence", "beam_compute_metrics", "beam_prompts",
             "beam_run_evaluation", "mab_templates", "mab_eval_other_utils", "mab_eval_data_utils", "mab_fc_sh_6k",
             "mab_fc_sh_32k", "mab_fc_sh_64k", "mab_fc_sh_262k", "mab_fc_mh_6k", "mab_fc_mh_32k", "mab_fc_mh_64k",
             "mab_fc_mh_262k", "ama_judge_config", "ama_judge_config_api", "ama_judge_config_gpt5_mini", "ama_evaluate",
@@ -41,7 +41,8 @@
   "a3-git": {
    "hosts": ["github.com"],
    "pins": ["amem_source"],
-   "child": "git clone --bare, under the contract, through the catcher",
+   "arms": ["fetch-git"],
+   "child": "git clone --bare, under the contract, through the catcher; one fetch-child GET of info/refs only to record github.com's issuer (Q-A3F-2)",
    "max_redirects": 0
   }
  },

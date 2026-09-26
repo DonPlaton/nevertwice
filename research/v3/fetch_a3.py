@@ -12,6 +12,7 @@ The auditor's O1 ruling: the harness (this process, outside the contract) never 
    (requirement "required", its script the only read exception, HTTPS_PROXY = the arm's catcher); a job may be built
    from the files the previous job saved (discovery's phases). A job {"child": "pip", "python", "argv", "env"} runs a
    venv's pip the same way instead (the install windows): declared PIP_* variables, no stdin, ok = its exit code;
+   {"child": "git", "exe", "argv", "env"} runs git so (A3.g); a job's own "timeout_s" bounds it (Q-A3F-11);
 5. closes the window and the check, shuts the proxy down, and writes one record: the jobs and their summaries (hashes,
    redirect hosts, peer issuers), the catcher's host log, the window log, the check, and the problems found.
 
@@ -145,6 +146,11 @@ def judge(record: dict) -> list[str]:
         problems.append(f"the catcher refused {len(refused)} request(s): {sorted({c['host'] for c in refused})}")
     for b in record.get("log_problems") or []:
         problems.append(f"a window log is not whole: {b}")
+    tunnelled = {c.get("host") for c in record["catcher"] if c.get("tunnelled")}
+    bypass = sorted({r["final_host"] for j in record["jobs"] for r in j["summary"]
+                     if r.get("ok") and r.get("final_host") and r["final_host"] not in tunnelled})
+    if bypass:
+        problems.append(f"a request succeeded on {bypass} with no catcher tunnel - past the catcher")
     limited = [r.get("id") for j in record["jobs"] for r in j["summary"] if r.get("rate_limited")]
     if limited:
         problems.append(f"rate-limited: {limited[0]} - the job stopped, nothing retried")
@@ -166,9 +172,10 @@ def judge(record: dict) -> list[str]:
 
 def run_child_window(c, L, *, window: str, hosts: list[str], jobs: list, python: Path, via_port: int, run: str,
                      parent_env, native=None, fs=None, child_env_extra: dict | None = None, need_bytes: int = 0,
-                     volume: Path | None = None, job_timeout: float = 3600.0) -> dict:
-    """One declared window, its jobs as fetch children. ``jobs``: dicts, or callables(results so far) -> dict.
-    ``child_env_extra`` is for tests only (a CA file for the fake TLS server); a real window passes none."""
+                     volume: Path | None = None, job_timeout: float = 3600.0, arm: str = ARM) -> dict:
+    """One declared window, its jobs as fetch children on ``arm`` (the catcher's arm; a3-git has its own). ``jobs``:
+    dicts, or callables(results so far) -> dict. ``child_env_extra`` is for tests only (a CA file for the fake TLS
+    server); a real window passes none."""
     base = c.runs_root / "_fetch" / window / run
     if base.exists():
         raise WindowRefused("this window run label was used before")
@@ -181,12 +188,12 @@ def run_child_window(c, L, *, window: str, hosts: list[str], jobs: list, python:
     proxy_unit = L.make_unit_dirs(c, stand, run, "proxy", "p1")
     cfg_path = pdir / "catch_config.json"
     cfg_path.write_bytes(json.dumps({"run_dir": str(pdir), "via": {"host": "127.0.0.1", "port": via_port},
-                                     "catchers": [ARM]}, sort_keys=True).encode("utf-8"))
+                                     "catchers": [arm]}, sort_keys=True).encode("utf-8"))
     token = "ctl-" + _secrets.token_hex(24)
     W = L.Witnesses(c, native=native if native is not None else L.NativeEgressWitness(),
                     fs=fs if fs is not None else L.FsWitness(L.watched_set(c)))
     check_id = f"fetch-{window}-{run}"
-    W.begin_check(check_id)
+    W.begin_check(check_id, tags={"window": window, "run": run, "arm": arm})
     results: list[dict] = []
     proxy = None
     error = None
@@ -194,12 +201,12 @@ def run_child_window(c, L, *, window: str, hosts: list[str], jobs: list, python:
         proxy, ports = L.spawn_proxy(c, python, script=PROXY_SCRIPT, config_path=cfg_path,
                                      stdin_secrets={"control_token": token}, unit=proxy_unit, parent_env=parent_env,
                                      witnesses=W, catcher_only=True)
-        catcher = f"http://127.0.0.1:{ports['arms'][ARM]['catcher']}"
+        catcher = f"http://127.0.0.1:{ports['arms'][arm]['catcher']}"
 
         def proxy_control(action: str, name: str, win_hosts) -> None:
             body = {"name": name, "state": "open" if action == "open" else "close"}
             if action == "open":
-                body.update(hosts=list(win_hosts), arms=[ARM])
+                body.update(hosts=list(win_hosts), arms=[arm])
             got = _control(ports["control"], token, "/window", body)
             if not got.startswith(b"HTTP/1.1 200"):
                 raise WindowRefused(f"the catcher refused the window {action}")
@@ -210,15 +217,16 @@ def run_child_window(c, L, *, window: str, hosts: list[str], jobs: list, python:
                 spec = job(results) if callable(job) else job
                 if spec is None:
                     continue
-                unit = L.make_unit_dirs(c, stand, run, ARM, f"j{i}")
-                pip = spec.get("child") == "pip"
-                exe = Path(spec["python"]) if pip else Path(python)
+                unit = L.make_unit_dirs(c, stand, run, arm, f"j{i}")
+                mode = spec.get("child")
+                pip = mode in ("pip", "git")                    # a program of its own, not the fetch child
+                exe = Path(spec["python"] if mode == "pip" else spec["exe"]) if pip else Path(python)
                 argv = [os.fspath(exe), *spec["argv"]] if pip else [os.fspath(python), os.fspath(FETCH_CHILD)]
                 declared = {**(spec.get("env") or {}), **(child_env_extra or {})} if pip else dict(child_env_extra or {})
                 env = L.build_env(c, parent_env=parent_env, unit=unit, path_dirs=[exe.parent], declared=declared,
                                   catcher_url=catcher)
                 child = L.spawn(c, argv, env=env, cwd=unit.cwd,
-                                record={"role": "fetch", "stand": None, "run": f"{window}.{run}", "arm": ARM,
+                                record={"role": "fetch", "stand": None, "run": f"{window}.{run}", "arm": arm,
                                         "unit": f"j{i}"},
                                 parent_env=parent_env, catcher_url=catcher,
                                 argv_exception={} if pip else {1: FETCH_CHILD},
@@ -229,14 +237,14 @@ def run_child_window(c, L, *, window: str, hosts: list[str], jobs: list, python:
                     child.process.stdin.write((json.dumps(spec) + "\n").encode("utf-8"))
                     child.process.stdin.close()
                 try:
-                    out, err = child.process.communicate(timeout=job_timeout)
+                    out, err = child.process.communicate(timeout=spec.get("timeout_s", job_timeout))
                     rc = child.process.returncode
                 except subprocess.TimeoutExpired:
                     child.kill_tree()
                     rc, out, err = None, b"", b""
                 if pip:
-                    summary = [{"id": "pip", "ok": rc == 0,
-                                "error": None if rc == 0 else f"pip exited with {rc}: "
+                    summary = [{"id": mode, "ok": rc == 0,
+                                "error": None if rc == 0 else f"{mode} exited with {rc}: "
                                 + err.decode("utf-8", "replace")[-200:].replace("\n", " ")}]
                 else:
                     summary_f = unit.cwd / "fetch_summary.json"
@@ -261,7 +269,7 @@ def run_child_window(c, L, *, window: str, hosts: list[str], jobs: list, python:
         chk = W.end_check(check_id)
     native_rec = chk.get("native") or {}
     log_bad: list[str] = []
-    record = {"window": window, "run": run, "hosts": list(hosts), "via": {"host": "127.0.0.1", "port": via_port},
+    record = {"window": window, "run": run, "arm": arm, "hosts": list(hosts), "via": {"host": "127.0.0.1", "port": via_port},
               "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "error": error, "jobs": results,
               "catcher": _jsonl(pdir / "catcher.jsonl", log_bad), "windows_proxy": _jsonl(pdir / "windows_proxy.jsonl", log_bad),
               "issuers": sorted({(r.get("final_host"), r.get("issuer_o"), r.get("issuer_cn")) for j in results

@@ -172,6 +172,9 @@ check("the window log names the hop and the hosts; the catcher window opened and
       and F._jsonl(C.runs_root / "_launch" / "windows.jsonl")[0]["via"] == f"127.0.0.1:{hop.port}"
       and [w["event"] for w in rec["windows_proxy"]] == ["open", "close"] and rec["windows_proxy"][0]["arms"] == ["fetch"])
 check("the issuers are recorded per host", {i[0] for i in rec["issuers"]} == {HF, GH}, str(rec["issuers"]))
+wit = json.loads((C.runs_root / "_witness" / "fetch-a3-discovery-d1.json").read_bytes())
+check("the window's witness record names its window, run and arm", wit["tags"] == {"window": "a3-discovery", "run": "d1",
+                                                                                   "arm": "fetch"}, str(wit.get("tags")))
 check("the check is complete with 0 hits and 0 fs hits",
       rec["check"]["complete"] is True and rec["check"]["native_hits"] == 0 and rec["check"]["fs_hits"] == 0, str(rec["check"]))
 check("the record carries the witness's window_hosts - no child dialled past the catcher", rec["check"]["window_hosts"] == [],
@@ -255,6 +258,50 @@ check("G2: a direct dial the witness saw reaches the record's check and is named
       recd["check"]["window_hosts"] == ["1.2.3.4:443"]
       and any(p.startswith("a window root dialled past the catcher") and "1.2.3.4:443" in p for p in recd["problems"]),
       str((recd["check"].get("window_hosts"), recd["problems"])))
+
+print("\n- a window on its own arm, a git child, a job's own timeout (A3.g) -")
+GIT = shutil.which("git")
+if GIT is None:
+    print("  SKIP the git-child window: no git on PATH (not passed)")
+else:
+    _TEST_EXC[str(Path(GIT).resolve())] = "the system git (test)"
+    cg, bg = contract("gitarm")
+    gspec = {"child": "git", "exe": str(Path(GIT).resolve()), "argv": ["--version"], "env": {"GIT_TERMINAL_PROMPT": "0"},
+             "timeout_s": 120}
+    CRASHED = {"arm": None, "problems": ["crash"], "windows_proxy": [{}], "jobs": [{"rc": None, "summary": [], "unit": ".",
+                                                                                 "stdout_tail": ""}]}
+    try:
+        recg = F.run_child_window(cg, L, window="a3-git", hosts=["github.com"], jobs=[gspec], python=Path(sys.executable),
+                                  via_port=hop.port, run="g1", parent_env=os.environ, arm="fetch-git",
+                                  native=L.NativeEgressWitness(sampler=AnySampler(), tick_s=60, jobs=None),
+                                  fs=L.FsWitness([L.WatchSpec("watched", bg / "watched")]), volume=TMP)
+    except Exception as e:  # noqa: BLE001 - a crash fails the named checks below
+        recg = {**CRASHED, "problems": [f"crash: {type(e).__name__}: {e}"]}
+    cfg_f = cg.runs_root / "_fetch" / "a3-git" / "g1" / "_proxy" / "catch_config.json"
+    cfg = json.loads(cfg_f.read_bytes()) if cfg_f.is_file() else {}
+    check("a window on the fetch-git arm: the catcher, the /window arms, the units and the record all name it",
+          recg["arm"] == "fetch-git" and cfg.get("catchers") == ["fetch-git"]
+          and recg["windows_proxy"][0].get("arms") == ["fetch-git"]
+          and Path(recg["jobs"][0]["unit"]).parent.name == "fetch-git", str((recg.get("arm"), cfg.get("catchers"))))
+    check("a git child runs under the contract: required, witnessed, its own variables declared, its exit its verdict",
+          recg["problems"] == [] and recg["jobs"][0]["summary"] == [{"id": "git", "ok": True, "error": None}]
+          and "git version" in recg["jobs"][0]["stdout_tail"], str((recg["problems"], recg["jobs"][0]["summary"])))
+    gsp = [s for s in F._jsonl(L.spawns_log(cg)) if s.get("role") == "fetch"]
+    check("... its spawn is required and declares GIT_TERMINAL_PROMPT", len(gsp) == 1
+          and gsp[0]["witness"]["requirement"] == "required" and "GIT_TERMINAL_PROMPT" in gsp[0]["env_names"], str(gsp))
+    slow = {"child": "git", "exe": str(Path(GIT).resolve()),
+            "argv": ["-c", "alias.slow=!sleep 5", "slow"], "env": {}, "timeout_s": 0.5}
+    cs, bs = contract("gitslow")
+    try:
+        recs = F.run_child_window(cs, L, window="a3-git", hosts=["github.com"], jobs=[slow], python=Path(sys.executable),
+                                  via_port=hop.port, run="g2", parent_env=os.environ, arm="fetch-git",
+                                  native=L.NativeEgressWitness(sampler=AnySampler(), tick_s=60, jobs=None),
+                                  fs=L.FsWitness([L.WatchSpec("watched", bs / "watched")]), volume=TMP)
+    except Exception as e:  # noqa: BLE001
+        recs = {**CRASHED, "jobs": [{"rc": "crash", "summary": [], "unit": ".", "stdout_tail": ""}],
+                "problems": [f"crash: {type(e).__name__}: {e}"]}
+    check("a job's own timeout_s bounds it: the child is stopped and the window names the failure",
+          recs["jobs"][0]["rc"] is None and any("git" in p for p in recs["problems"]), str(recs["problems"]))
 
 print("\n- the problems, by name -")
 bad_job = {"hosts": [HF], "max_redirects": 0, "requests": [{"id": "missing", "url": f"https://{HF}/nothing/here",
@@ -346,6 +393,8 @@ for label, rec, want in (
         ("fs_hits 1", with_(check={**ck, "fs_hits": 1}), "file-system"),
         ("a direct dial by a window root", with_(check={**ck, "window_hosts": ["140.82.121.4:443"]}), "past the catcher"),
         ("a torn log line", with_(log_problems=["catcher.jsonl line 3 does not parse"]), "a window log is not whole"),
+        ("a success with no catcher tunnel", with_(jobs=[{"index": 0, "rc": 0, "summary": [
+            {"id": "a", "ok": True, "final_host": "cdn.example"}]}]), "no catcher tunnel"),
         ("an unknown window_hosts list", with_(check={**ck, "window_hosts": None}), "past the catcher"),
         ("a catcher refusal", with_(catcher=[{"host": HF, "tunnelled": True}, {"host": "evil.example", "tunnelled": False}]),
          "catcher refused"),
