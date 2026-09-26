@@ -79,8 +79,51 @@ def _control(port: int, token: str, path: str, body: dict) -> bytes:
         s.close()
 
 
-def _jsonl(path: Path) -> list[dict]:
-    return [json.loads(x) for x in path.read_bytes().decode("utf-8").splitlines()] if path.is_file() else []
+def _jsonl(path: Path, bad: list | None = None) -> list[dict]:
+    """A JSONL log, line by line. F-P2-6: an unparseable line is skipped and named in ``bad`` (when given) - the
+    window's record is still written, and judge() names it - instead of crashing the window."""
+    out = []
+    if not path.is_file():
+        return out
+    for n, line in enumerate(path.read_bytes().decode("utf-8", "replace").splitlines(), 1):
+        try:
+            out.append(json.loads(line))
+        except ValueError:
+            if bad is None:
+                raise
+            bad.append(f"{path.name} line {n} does not parse")
+    return out
+
+
+#: F-P2-6: how long the harness waits, after the window, for the catcher's open connections to reach 0.
+TUNNEL_DRAIN_S = 5.0
+
+
+def drained_counters(port: int, token: str, *, wait_s: float | None = None) -> tuple[dict | None, dict | None]:
+    """(the catcher's counters once no connection is open, None) - or (the last counters read, the arms still open)
+    when ``wait_s`` passes first. A connection's log line is written when it closes, so only then may the counts be
+    compared with the log."""
+    deadline = time.monotonic() + (TUNNEL_DRAIN_S if wait_s is None else wait_s)
+    while True:
+        ctr = _control_json(port, token, "/counters")
+        if ctr is not None:
+            still = {a: c.get("catcher_open") for a, c in ctr.items() if c.get("catcher_open") != 0}
+            if not still:
+                return ctr, None
+        else:
+            still = None
+        if time.monotonic() >= deadline:
+            return ctr, still
+        time.sleep(0.1)
+
+
+def _control_json(port: int, token: str, path: str) -> dict | None:
+    """A control endpoint's JSON body, or None."""
+    try:
+        raw = _control(port, token, path, {})
+        return json.loads(raw.split(b"\r\n\r\n", 1)[1]) if raw.startswith(b"HTTP/1.1 200") else None
+    except (OSError, ValueError, IndexError):
+        return None
 
 
 def disk_floor_ok(volume: Path, need_bytes: int) -> tuple[bool, int]:
@@ -100,6 +143,8 @@ def judge(record: dict) -> list[str]:
     refused = [c for c in record["catcher"] if not c.get("tunnelled")]
     if refused:
         problems.append(f"the catcher refused {len(refused)} request(s): {sorted({c['host'] for c in refused})}")
+    for b in record.get("log_problems") or []:
+        problems.append(f"a window log is not whole: {b}")
     limited = [r.get("id") for j in record["jobs"] for r in j["summary"] if r.get("rate_limited")]
     if limited:
         problems.append(f"rate-limited: {limited[0]} - the job stopped, nothing retried")
@@ -111,6 +156,11 @@ def judge(record: dict) -> list[str]:
         problems.append("the boundary check is not complete")
     if chk.get("fs_hits") != 0:
         problems.append("the file-system witness counted a change in the watched set")
+    # A window root's non-loopback connection is filed by the witness under window_hosts, not hits (launch.py): the
+    # harness-fetch windows meant it. Every A3 fetch is a child through the loopback catcher (O1), so any remote a
+    # child dialled itself went past the catcher - a problem; an unknown list is one too.
+    if chk.get("window_hosts") != []:
+        problems.append(f"a window root dialled past the catcher: {chk.get('window_hosts')}")
     return problems
 
 
@@ -197,7 +247,9 @@ def run_child_window(c, L, *, window: str, hosts: list[str], jobs: list, python:
     except (L.ContractViolation, WindowRefused) as e:
         error = f"{type(e).__name__}: {e}"
     finally:
+        counters = still_open = None
         if proxy is not None:
+            counters, still_open = drained_counters(ports["control"], token)
             try:
                 _control(ports["control"], token, "/shutdown", {})
             except OSError:
@@ -208,13 +260,27 @@ def run_child_window(c, L, *, window: str, hosts: list[str], jobs: list, python:
                 proxy.kill_tree()
         chk = W.end_check(check_id)
     native_rec = chk.get("native") or {}
+    log_bad: list[str] = []
     record = {"window": window, "run": run, "hosts": list(hosts), "via": {"host": "127.0.0.1", "port": via_port},
               "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "error": error, "jobs": results,
-              "catcher": _jsonl(pdir / "catcher.jsonl"), "windows_proxy": _jsonl(pdir / "windows_proxy.jsonl"),
+              "catcher": _jsonl(pdir / "catcher.jsonl", log_bad), "windows_proxy": _jsonl(pdir / "windows_proxy.jsonl", log_bad),
               "issuers": sorted({(r.get("final_host"), r.get("issuer_o"), r.get("issuer_cn")) for j in results
                                  for r in j["summary"] if r.get("issuer_cn")}),
               "check": {"id": check_id, "complete": chk.get("complete"), "native_hits": native_rec.get("hits"),
-                        "loopback_hits": native_rec.get("loopback_hits"), "fs_hits": (chk.get("fs") or {}).get("fs_hits")}}
+                        "loopback_hits": native_rec.get("loopback_hits"), "fs_hits": (chk.get("fs") or {}).get("fs_hits"),
+                        "window_hosts": sorted(native_rec["window_hosts"]) if "window_hosts" in native_rec else None}}
+    # the catcher's own count of the CONNECTs it saw against the lines its log holds (F-P2-6's "should"), once no
+    # connection is open (each line is written when its connection closes)
+    for a, ctr in sorted((counters or {}).items() if not still_open else []):
+        n_log = sum(1 for x in record["catcher"] if x.get("arm") == a)
+        if len(ctr.get("catcher_hosts") or []) != n_log:
+            log_bad.append(f"catcher.jsonl holds {n_log} line(s) for arm {a}, the catcher counted "
+                           f"{len(ctr.get('catcher_hosts') or [])}")
+    if proxy is not None and counters is None:
+        log_bad.append("the catcher's counters could not be read")
+    elif still_open:
+        log_bad.append(f"catcher connections still open {TUNNEL_DRAIN_S:g} s after the window: {still_open}")
+    record["log_problems"] = log_bad
     record["problems"] = ([error] if error else []) + judge(record)
     (base / "record.json").write_bytes((json.dumps(record, indent=1, sort_keys=True, default=list) + "\n").encode("utf-8"))
     return record

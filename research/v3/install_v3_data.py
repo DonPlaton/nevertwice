@@ -22,7 +22,14 @@ The rules are declared here, before any metadata is read:
 * a dependency: the same, or - when that release has no wheel for the tag - exactly one py3-none-any wheel; its
   specifier may hold lower bounds only (>=, >), each met by the version chosen; an upper bound, a pin, a compatible-
   release or exclusion clause, an extra ``[x]`` or an environment marker is refused by name - picking "the newest" is
-  not a resolver, and --no-deps would install whatever the requirements file says.
+  not a resolver, and --no-deps would install whatever the requirements file says;
+* the chosen release must be the index's latest (``info.version``): PyPI's ``info`` - Requires-Dist included -
+  describes that version only, so any other choice is refused, naming each newer release and why it was skipped;
+* the tool installs one level: every hard requirement of every chosen release must already be chosen, its lower
+  bounds met; a marker ``extra == ...`` without ``or`` is extra-only and dropped, one with ``or`` is refused;
+* pip's trust is OpenSSL with its vendored certifi (``--use-deprecated=legacy-certs`` from pip 24.2, where truststore
+  became the default and would ask the machine's CryptoAPI, whose AIA and root-update fetches go past the catcher);
+  the record carries pip's version and the sha256 of the certifi bundle.
 
 A refusal, a failed request or a failed check is a named problem in the record; nothing after it runs. The record
 carries the version, the wheel names, their sha256s, the dependencies, pip's output tail, every check, and the
@@ -50,6 +57,9 @@ TARGET_TAG = "cp314-cp314-win_amd64"
 PURE_TAG = "py3-none-any"
 META_MAX = 64 * 1024 * 1024
 STEP_TIMEOUT = 600
+#: The auditor's Q-A3-2 floor (fetch_manifest.json "disk"): max(100 GB, 3 x the window). A pyarrow window is tens of
+#: MB, so the floor is the 100 GB; it is checked before the venv is made, and again when the window opens.
+DISK_FLOOR = 100 * (1 << 30)
 
 
 class InstallRefused(RuntimeError):
@@ -68,37 +78,75 @@ def _vkey(v: str) -> tuple[int, ...]:
     return tuple(k)
 
 
+def _finals(meta: dict) -> list[str]:
+    return sorted((v for v in meta.get("releases", {}) if re.fullmatch(r"\d+(\.\d+)*", v)), key=_vkey, reverse=True)
+
+
+def _verdict(files: list, tag: str, pure_ok: bool) -> tuple[dict | None, str]:
+    """(the one wheel, "ok") for a release, or (None, why not): no tag wheel, yanked, ambiguous, unhashed."""
+    wheels = [f for f in files if f.get("packagetype") == "bdist_wheel"]
+    why = "no tag wheel"
+    for t in (tag, PURE_TAG) if pure_ok else (tag,):
+        tagged = [f for f in wheels if f.get("filename", "").endswith(f"-{t}.whl")]
+        live = [f for f in tagged if not f.get("yanked")]
+        if len(live) == 1 and re.fullmatch(r"[0-9a-f]{64}", (live[0].get("digests") or {}).get("sha256", "")):
+            return live[0], "ok"
+        if live:                                        # a tag wheel that is ambiguous or unhashed: never fall back
+            return None, "ambiguous" if len(live) > 1 else "unhashed"
+        if tagged and why == "no tag wheel":
+            why = "yanked"
+    return None, why
+
+
 def pick_release(meta: dict, tag: str, *, pure_ok: bool = False) -> tuple[str, dict]:
     """The declared rule: the newest version (PyPI's own ordering of release keys by packaging's order is not
     available in the standard library, so: the highest version by numeric components, pre-releases excluded) that
     ships exactly one wheel for ``tag`` - or, with ``pure_ok`` (dependencies only), exactly one py3-none-any wheel
     when it has none for ``tag``. Yanked files never count. Returns (version, the wheel's url entry)."""
-    finals = [v for v in meta.get("releases", {}) if re.fullmatch(r"\d+(\.\d+)*", v)]
-    for v in sorted(finals, key=_vkey, reverse=True):
-        files = [f for f in meta["releases"][v] if f.get("packagetype") == "bdist_wheel" and not f.get("yanked")]
-        for t in (tag, PURE_TAG) if pure_ok else (tag,):
-            wheels = [f for f in files if f.get("filename", "").endswith(f"-{t}.whl")]
-            if len(wheels) == 1 and re.fullmatch(r"[0-9a-f]{64}", (wheels[0].get("digests") or {}).get("sha256", "")):
-                return v, wheels[0]
-            if wheels:
-                break                                   # a tag wheel that is ambiguous or unhashed: never fall back
+    for v in _finals(meta):
+        wheel, _ = _verdict(meta["releases"][v], tag, pure_ok)
+        if wheel is not None:
+            return v, wheel
     raise InstallRefused(f"no release ships exactly one {tag} wheel" + (f" or one {PURE_TAG} wheel" if pure_ok else ""))
 
 
+def skipped_newer(meta: dict, tag: str, version: str, *, pure_ok: bool = False) -> list[tuple[str, str]]:
+    """Each final release newer than ``version``, with why the rule skipped it."""
+    return [(v, _verdict(meta["releases"][v], tag, pure_ok)[1]) for v in _finals(meta) if _vkey(v) > _vkey(version)]
+
+
+def pick_latest(meta: dict, tag: str, *, pure_ok: bool = False) -> tuple[str, dict]:
+    """F-P2-1: :func:`pick_release`, which must pick the index's latest - PyPI's ``info`` (Requires-Dist included)
+    describes ``info.version`` only, so a choice of another release would install it with the latest's dependencies."""
+    version, wheel = pick_release(meta, tag, pure_ok=pure_ok)
+    latest = (meta.get("info") or {}).get("version")
+    if version != latest:
+        raise InstallRefused(f"the chosen release {version} is not the index's latest {latest!r}, the one its metadata "
+                             f"describes; skipped: {skipped_newer(meta, tag, version, pure_ok=pure_ok)}")
+    return version, wheel
+
+
+def norm_name(name: str) -> str:
+    """PEP 503's normalised project name."""
+    return re.sub(r"[-_.]+", "-", name).lower()
+
+
 def hard_requirements(requires_dist: list | None) -> list[tuple[str, str, str, str]]:
-    """(name, specifier, marker, extras) for each Requires-Dist entry with no ``extra ==`` marker: the dependencies
-    pip would install without --no-deps. The old "name (>=1)" form is read too."""
+    """(name, specifier, marker, extras) for each Requires-Dist entry pip would install without --no-deps. A marker
+    ``extra == ...`` with no ``or`` is extra-only (a conjunction with an extra is one) and is dropped; any other
+    marker - ``A or extra == "x"`` included, a hard dependency whenever A holds - is kept, for the caller to refuse.
+    The old "name (>=1)" form is read too."""
     out = []
     for req in requires_dist or []:
         head, _, marker = req.partition(";")
-        if "extra" in marker:
+        if re.search(r"\bextra\s*==", marker) and not re.search(r"\bor\b", marker):
             continue
         m = re.match(r"\s*([A-Za-z0-9][A-Za-z0-9._-]*)\s*(\[[^\]]*\])?\s*(.*)$", head)
         if m:
             spec = m.group(3).strip()
             if spec.startswith("(") and spec.endswith(")"):
                 spec = spec[1:-1].strip()
-            out.append((m.group(1).lower(), spec, marker.strip(), m.group(2) or ""))
+            out.append((norm_name(m.group(1)), spec, marker.strip(), m.group(2) or ""))
     return out
 
 
@@ -136,24 +184,137 @@ def wanted_dependencies(metas: dict[str, dict], packages) -> dict[str, str]:
 
 
 def pick_dependency(meta: dict, tag: str, spec: str) -> tuple[str, dict]:
-    """The dependency rule: the release :func:`pick_release` picks with ``pure_ok``, whose version meets ``spec``,
+    """The dependency rule: the release :func:`pick_latest` picks with ``pure_ok``, whose version meets ``spec``,
     lower bounds only."""
-    version, wheel = pick_release(meta, tag, pure_ok=True)
+    version, wheel = pick_latest(meta, tag, pure_ok=True)
     if not lower_bounds_ok(spec, version):
         raise InstallRefused(f"{spec!r} is not lower bounds met by the newest release {version}")
     return version, wheel
+
+
+def one_level(metas: dict[str, dict], versions: dict[str, str]) -> None:
+    """F-P2-2: the tool installs one level. Every hard requirement of every chosen release (``metas`` describe the
+    chosen versions, by F-P2-1) must already be chosen, with its lower bounds met; a marker or an extra is refused."""
+    for n in sorted(metas):
+        for name, spec, marker, extras in hard_requirements((metas[n].get("info") or {}).get("requires_dist")):
+            if marker or extras:
+                raise InstallRefused(f"{n} requires {name}{extras} ({marker or 'no marker'}): an extra or a marker the "
+                                     "tool does not evaluate")
+            if name not in versions:
+                raise InstallRefused(f"the tool installs one level: {n} requires {name}, which is not among the "
+                                     f"chosen {sorted(versions)}")
+            if not lower_bounds_ok(spec, versions[name]):
+                raise InstallRefused(f"{n} requires {name} {spec!r}, not lower bounds met by the chosen {versions[name]}")
+
+
+def pip_trust(version: str) -> tuple[list[str], str]:
+    """F-P2-4: pip's trust is OpenSSL with its vendored certifi. From pip 24.2 truststore is the default (the
+    machine's CryptoAPI chain engine, whose AIA and root-update fetches run in-process past the catcher), so the
+    old path is asked for by name; an older pip has only that path."""
+    if _vkey(version) >= (24, 2):
+        return ["--use-deprecated=legacy-certs"], "certifi (legacy-certs)"
+    return [], "certifi (pip < 24.2)"
+
+
+def metadata_version(text: str) -> str:
+    """The one "Version:" line of a METADATA file, a final release; anything else is refused (never a default)."""
+    found = [line[len("Version:"):].strip() for line in text.splitlines() if line.startswith("Version:")]
+    if len(found) != 1 or not re.fullmatch(r"\d+(\.\d+)*", found[0]):
+        raise InstallRefused(f"pip's METADATA version is missing, ambiguous or unparseable: {found}")
+    return found[0]
+
+
+def pip_facts(venv: Path) -> dict:
+    """The venv's pip: its version (its dist-info METADATA "Version:" line) and the sha256 of its certifi bundle."""
+    site = next((s for s in venv.rglob("site-packages") if s.is_dir()), None)
+    infos = sorted(site.glob("pip-*.dist-info")) if site is not None else []
+    if len(infos) != 1:
+        raise InstallRefused(f"the venv holds {len(infos)} pip dist-info directories, not one")
+    meta = infos[0] / "METADATA"
+    version = metadata_version(meta.read_text(encoding="utf-8", errors="replace") if meta.is_file() else "")
+    cacert = site / "pip" / "_vendor" / "certifi" / "cacert.pem"
+    if not cacert.is_file():
+        raise InstallRefused("the venv's pip has no vendored certifi bundle")
+    args, trust = pip_trust(version)
+    return {"version": version, "certifi_sha256": hashlib.sha256(cacert.read_bytes()).hexdigest(), "trust": trust,
+            "args": args}
 
 
 def requirements_line(name: str, version: str, wheel: dict) -> str:
     return f"{name}=={version} --hash=sha256:{wheel['digests']['sha256']}"
 
 
-def installed_set(site_packages: Path) -> tuple[str, int]:
-    rows = []
-    for p in sorted(site_packages.rglob("*")):
-        if p.is_file() and "__pycache__" not in p.parts:
-            rows.append(f"{p.relative_to(site_packages).as_posix()}\0{hashlib.sha256(p.read_bytes()).hexdigest()}")
-    return hashlib.sha256("\n".join(rows).encode("utf-8")).hexdigest(), len(rows)
+def top_level(site_packages: Path) -> list[str]:
+    return sorted(p.name for p in site_packages.iterdir()) if site_packages.is_dir() else []
+
+
+def _record_hash(value: str) -> str | None:
+    """A RECORD row's "sha256=<urlsafe base64, no padding>" as hex, or None when the row carries no sha256."""
+    import base64  # noqa: PLC0415
+    if not value.startswith("sha256="):
+        return None
+    b64 = value[len("sha256="):]
+    return base64.urlsafe_b64decode(b64 + "=" * (-len(b64) % 4)).hex()
+
+
+def site_problems(site_packages: Path, names, baseline: list[str]) -> list[str]:
+    """The auditor's two conditions on the installed set: (1) the top-level names are the venv's own (``baseline``,
+    recorded before the window) plus the pinned distributions' - anything else is a problem, and a *.pth or a
+    *customize*.py the window added always is one (either runs code at every interpreter start); (2) every RECORD row
+    that carries a sha256 matches the file on disk - the pinned distributions' and the baseline's own (pip ran in
+    the window; a change to its files would otherwise be invisible)."""
+    problems, allowed = [], set(baseline) | {"__pycache__"}
+    base_dists = [b[:-len(".dist-info")].rsplit("-", 1)[0] for b in baseline if b.endswith(".dist-info")]
+    for name in [*names, *base_dists]:                  # (a): the baseline's own (pip) is checked too
+        for d in site_packages.glob("*.dist-info"):
+            if norm_name(d.name[:-len(".dist-info")].rsplit("-", 1)[0]) != norm_name(name) or not (d / "RECORD").is_file():
+                continue
+            allowed.add(d.name)
+            for line in (d / "RECORD").read_text(encoding="utf-8").splitlines():
+                if line.count(",") < 2:
+                    continue
+                rel, h, _ = line.rsplit(",", 2)
+                parts = rel.split("/")
+                if not rel or ".." in parts:
+                    continue
+                allowed.add(parts[0])
+                want = _record_hash(h)
+                f = site_packages.joinpath(*parts)
+                if want is not None and f.is_file() and hashlib.sha256(f.read_bytes()).hexdigest() != want:
+                    problems.append(f"the installed file {rel} is not the sha256 its RECORD names")
+    for top in top_level(site_packages):
+        danger = top.endswith(".pth") or "customize" in top
+        if danger and top not in baseline:             # even when a pinned distribution lists it
+            problems.append(f"site-packages holds {top}, which the venv did not have - it runs code at every "
+                            "interpreter start")
+        elif top not in allowed:
+            problems.append(f"site-packages holds {top}, which no pinned distribution and not the venv installed")
+    return problems
+
+
+def installed_set(site_packages: Path, names) -> tuple[str, int]:
+    """F-P2-5: (sha256, file count) over the pinned distributions' own files - each ``names`` distribution's
+    dist-info RECORD, the entries inside site-packages, by (relpath, sha256 on disk). Left out: bytecode (it carries
+    the source's mtime), the RECORD itself, and anything outside site-packages (launchers embed the venv's path).
+    pip's own files are not the pin (its version and certifi digest are recorded apart); a missing RECORD or a
+    listed file missing on disk is refused."""
+    rows = set()
+    for name in names:
+        infos = [d for d in site_packages.glob("*.dist-info")
+                 if norm_name(d.name[:-len(".dist-info")].rsplit("-", 1)[0]) == norm_name(name)]
+        if len(infos) != 1 or not (infos[0] / "RECORD").is_file():
+            raise InstallRefused(f"the installed set: {name} has {len(infos)} dist-info directories with a RECORD, not one")
+        for line in (infos[0] / "RECORD").read_text(encoding="utf-8").splitlines():
+            rel = line.rsplit(",", 2)[0] if line.count(",") >= 2 else ""
+            parts = rel.split("/")
+            if not rel or ".." in parts or "__pycache__" in parts or rel.endswith(".pyc") or rel == f"{infos[0].name}/RECORD":
+                continue
+            f = site_packages.joinpath(*parts)
+            if not f.is_file():
+                raise InstallRefused(f"the installed set: {rel} is in {name}'s RECORD but not on disk")
+            rows.add(f"{rel}\0{hashlib.sha256(f.read_bytes()).hexdigest()}")
+    ordered = sorted(rows)
+    return hashlib.sha256("\n".join(ordered).encode("utf-8")).hexdigest(), len(ordered)
 
 
 def check_summary(chk: dict) -> dict:
@@ -209,11 +370,15 @@ def _write(base: Path, record: dict) -> dict:
 
 def run_install(c, L, F, *, python: Path, venv: Path, run: str, via_port: int, parent_env, packages=PACKAGES,
                 tag: str = TARGET_TAG, native=None, fs=None, child_env_extra: dict | None = None,
-                index_host: str = "pypi.org") -> dict:
-    """The whole install. ``child_env_extra`` is for tests only (a CA file for the fake index); a real run passes none.
-    ``F`` is research/v3/fetch_a3 (its window mechanism)."""
+                index_host: str = "pypi.org", need_bytes: int = DISK_FLOOR, volume: Path | None = None) -> dict:
+    """The whole install. ``child_env_extra`` is for tests only (a CA file for the fake index); a real run passes none,
+    and keeps the default floor. ``F`` is research/v3/fetch_a3 (its window mechanism)."""
     if venv.exists():
         raise InstallRefused("the venv already exists: an install window creates it fresh")
+    volume = volume or Path(c.runs_root.anchor)
+    ok, free = F.disk_floor_ok(volume, need_bytes)
+    if not ok:
+        raise InstallRefused(f"the free space ({free >> 30} GB) is under the floor ({need_bytes >> 30} GB)")
     base = c.runs_root / "_install" / WINDOW / run
     if base.exists():
         raise InstallRefused("this install run label was used before")
@@ -232,11 +397,19 @@ def run_install(c, L, F, *, python: Path, venv: Path, run: str, via_port: int, p
     if rc != 0 or not venv_python(venv).is_file():
         record["problems"].append(f"the venv could not be created (exit {rc}): "
                                   + err.decode("utf-8", "replace")[-200:].replace("\n", " "))
+    if not record["problems"]:
+        try:
+            record["pip"] = pip_facts(venv)
+        except InstallRefused as e:
+            record["problems"].append(f"refused: {e}")
+        base_site = next((s for s in venv.rglob("site-packages") if s.is_dir()), None)
+        record["venv_top_level"] = top_level(base_site) if base_site is not None else []
     if record["problems"]:
         return _write(base, record)                     # no window opens after a failed offline step
     req_path = base / "requirements.txt"
     pip_cache = c.polygon_root / "pip_cache"
     chosen: dict = {}
+    package_metas: dict = {}
     refused: list[str] = []
 
     def failed(results) -> bool:
@@ -253,8 +426,9 @@ def run_install(c, L, F, *, python: Path, venv: Path, run: str, via_port: int, p
         try:
             metas = {p: json.loads((Path(results[0]["unit"]) / "pypi" / f"{p}.json").read_bytes()) for p in packages}
             for p in packages:
-                chosen[p] = pick_release(metas[p], tag)
+                chosen[p] = pick_latest(metas[p], tag)
             wanted = wanted_dependencies(metas, packages)
+            package_metas.update(metas)
         except InstallRefused as e:
             refused.append(f"refused: {e}")
             return None
@@ -271,6 +445,7 @@ def run_install(c, L, F, *, python: Path, venv: Path, run: str, via_port: int, p
             return None
         lines = [requirements_line(p, *chosen[p]) for p in packages]
         deps: dict = {}
+        metas = dict(package_metas)
         try:
             for d in record["dependencies"]:
                 meta = json.loads((Path(results[1]["unit"]) / "pypi" / f"{d}.json").read_bytes())
@@ -278,8 +453,10 @@ def run_install(c, L, F, *, python: Path, venv: Path, run: str, via_port: int, p
                     version, wheel = pick_dependency(meta, tag, record["dependency_specifiers"][d])
                 except InstallRefused as e:
                     raise InstallRefused(f"the dependency {d}: {e}") from None
-                deps[d] = (version, wheel)
+                deps[d], metas[d] = (version, wheel), meta
                 lines.append(requirements_line(d, version, wheel))
+            one_level({norm_name(n): m for n, m in metas.items()},
+                      {norm_name(n): v for n, (v, _) in {**chosen, **deps}.items()})
         except InstallRefused as e:
             refused.append(f"refused: {e}")
             return None
@@ -288,8 +465,8 @@ def run_install(c, L, F, *, python: Path, venv: Path, run: str, via_port: int, p
         record["wheels"] = {p: {"version": v, "filename": w["filename"], "sha256": w["digests"]["sha256"]}
                             for p, (v, w) in {**chosen, **deps}.items()}
         return {"child": "pip", "python": os.fspath(venv_python(venv)),
-                "argv": ["-I", "-B", "-m", "pip", "install", "--require-hashes", "--no-deps", "--only-binary=:all:",
-                         "--no-input", "--disable-pip-version-check", "-r", os.fspath(req_path)],
+                "argv": ["-I", "-B", "-m", "pip", "install", *record["pip"]["args"], "--require-hashes", "--no-deps",
+                         "--only-binary=:all:", "--no-input", "--disable-pip-version-check", "-r", os.fspath(req_path)],
                 "env": {"PIP_CACHE_DIR": os.fspath(pip_cache), "PIP_CONFIG_FILE": os.devnull,
                         "PIP_INDEX_URL": f"https://{index_host}/simple", "PIP_NO_INPUT": "1"}}
 
@@ -297,9 +474,12 @@ def run_install(c, L, F, *, python: Path, venv: Path, run: str, via_port: int, p
     rec = F.run_child_window(c, L, window=WINDOW, hosts=list(HOSTS) if index_host == "pypi.org" else [index_host, *HOSTS[1:]],
                              jobs=[meta_job, deps_job, pip_job], python=python, via_port=via_port, run=run,
                              parent_env=parent_env, native=native, fs=fs, child_env_extra=child_env_extra,
-                             volume=Path(c.runs_root.anchor))
+                             need_bytes=need_bytes, volume=volume)
     record["window_record"] = {k: rec[k] for k in ("problems", "check", "issuers")}
     record["window_record"]["tunnelled_hosts"] = sorted({x["host"] for x in rec["catcher"] if x.get("tunnelled")})
+    record["window_record"]["issuer_notes"] = {
+        HOSTS[1]: "reached by pip only, so no fetch child records its issuer; pip's trust is its vendored certifi "
+                  "(--use-deprecated=legacy-certs, F-P2-4), and a local interception root fails pip's verification"}
     record["pip_ran"] = any((j.get("job") or {}).get("child") == "pip" for j in rec["jobs"])
     record["problems"] += list(rec["problems"]) + refused
     # 4. the check and the installed set
@@ -314,7 +494,11 @@ def run_install(c, L, F, *, python: Path, venv: Path, run: str, via_port: int, p
         record["import_rc"], record["import_version"] = rc, out.decode("utf-8", "replace").strip()
         record["import_check"] = check_summary(chk1)
         record["problems"] += check_problems("import", record["import_check"])
-        record["installed_set_sha256"], record["installed_files"] = installed_set(site)
+        try:
+            record["installed_set_sha256"], record["installed_files"] = installed_set(site, list(record["wheels"]))
+        except InstallRefused as e:
+            record["problems"].append(f"refused: {e}")
+        record["problems"] += site_problems(site, list(record["wheels"]), record["venv_top_level"])
         if rc != 0:
             record["problems"].append(f"the installed package does not import (exit {rc})")
         else:

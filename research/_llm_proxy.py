@@ -265,6 +265,7 @@ class Counters:
     thinking_calls: int = 0
     records: int = 0
     catcher_hosts: list = field(default_factory=list)
+    catcher_open: int = 0                   # F-P2-6: catcher connections whose log line is not written yet
 
 
 # ── HTTP/1.1 pieces ─────────────────────────────────────────────────────
@@ -1420,63 +1421,69 @@ class Proxy:
         window = None
         if method.upper() == "CONNECT" and port == 443 and host != "<invalid>":
             window = next((n for n, w in list(self.windows.items()) if name in w["hosts"] and arm.arm in w["arms"]), None)
-        self.counters[arm.arm].catcher_hosts.append(host)
-        via = None if self.config.via_port is None else f"127.0.0.1:{self.config.via_port}"
-        rec = {"arm": arm.arm, "host": host, "host_len": host_len, "port": port, "utc": _utc(), "window": window,
-               "via": via, "tunnelled": False, "refused": True, "hop_status": None, "bytes_up": 0, "bytes_down": 0}
-        if window is None:
-            _append_jsonl(self.config.run_dir / "catcher.jsonl", rec)
-            _send_local(s, 403, "Forbidden", b"egress refused by the v3 launch contract")
-            return
-        if self.config.via_port is None:                 # never a direct dial: without the hop there is no path
-            rec["hop_status"] = "no-hop"
-            _append_jsonl(self.config.run_dir / "catcher.jsonl", rec)
-            _send_local(s, 502, "Bad Gateway", b"no declared hop")
-            return
+        with self._lock:
+            self.counters[arm.arm].catcher_hosts.append(host)
+            self.counters[arm.arm].catcher_open += 1
         try:
-            far = self._hop_tunnel(name)
-        except ConnectRefused:
-            self.counters[arm.arm].connect_refused += 1
-            rec["hop_status"] = "refused"
-            _append_jsonl(self.config.run_dir / "catcher.jsonl", rec)
-            _send_local(s, 502, "Bad Gateway")
-            return
-        except OSError as e:
-            rec["hop_status"] = f"error:{type(e).__name__}"
-            _append_jsonl(self.config.run_dir / "catcher.jsonl", rec)
-            _send_local(s, 502, "Bad Gateway")
-            return
-        rec.update(hop_status=200, tunnelled=True, refused=False)
-        up = down = 0
-        try:
-            s.sendall(b"HTTP/1.1 200 Connection Established\r\n\r\n")
-            if buf:
-                far.sendall(bytes(buf))
-                up += len(buf)
-            sel = selectors.DefaultSelector()
-            sel.register(s, selectors.EVENT_READ, (far, "up"))
-            sel.register(far, selectors.EVENT_READ, (s, "down"))
+            via = None if self.config.via_port is None else f"127.0.0.1:{self.config.via_port}"
+            rec = {"arm": arm.arm, "host": host, "host_len": host_len, "port": port, "utc": _utc(), "window": window,
+                   "via": via, "tunnelled": False, "refused": True, "hop_status": None, "bytes_up": 0, "bytes_down": 0}
+            if window is None:
+                _append_jsonl(self.config.run_dir / "catcher.jsonl", rec)
+                _send_local(s, 403, "Forbidden", b"egress refused by the v3 launch contract")
+                return
+            if self.config.via_port is None:                 # never a direct dial: without the hop there is no path
+                rec["hop_status"] = "no-hop"
+                _append_jsonl(self.config.run_dir / "catcher.jsonl", rec)
+                _send_local(s, 502, "Bad Gateway", b"no declared hop")
+                return
             try:
-                done = False
-                while not done and not self._stop.is_set():
-                    for k, _ in sel.select(timeout=1.0):
-                        data = k.fileobj.recv(65536)
-                        if not data:
-                            done = True
-                            break
-                        k.data[0].sendall(data)
-                        if k.data[1] == "up":
-                            up += len(data)
-                        else:
-                            down += len(data)
+                far = self._hop_tunnel(name)
+            except ConnectRefused:
+                self.counters[arm.arm].connect_refused += 1
+                rec["hop_status"] = "refused"
+                _append_jsonl(self.config.run_dir / "catcher.jsonl", rec)
+                _send_local(s, 502, "Bad Gateway")
+                return
+            except OSError as e:
+                rec["hop_status"] = f"error:{type(e).__name__}"
+                _append_jsonl(self.config.run_dir / "catcher.jsonl", rec)
+                _send_local(s, 502, "Bad Gateway")
+                return
+            rec.update(hop_status=200, tunnelled=True, refused=False)
+            up = down = 0
+            try:
+                s.sendall(b"HTTP/1.1 200 Connection Established\r\n\r\n")
+                if buf:
+                    far.sendall(bytes(buf))
+                    up += len(buf)
+                sel = selectors.DefaultSelector()
+                sel.register(s, selectors.EVENT_READ, (far, "up"))
+                sel.register(far, selectors.EVENT_READ, (s, "down"))
+                try:
+                    done = False
+                    while not done and not self._stop.is_set():
+                        for k, _ in sel.select(timeout=1.0):
+                            data = k.fileobj.recv(65536)
+                            if not data:
+                                done = True
+                                break
+                            k.data[0].sendall(data)
+                            if k.data[1] == "up":
+                                up += len(data)
+                            else:
+                                down += len(data)
+                finally:
+                    sel.close()
+            except OSError:
+                pass
             finally:
-                sel.close()
-        except OSError:
-            pass
+                far.close()
+                rec.update(bytes_up=up, bytes_down=down, t_end=_utc())
+                _append_jsonl(self.config.run_dir / "catcher.jsonl", rec)
         finally:
-            far.close()
-            rec.update(bytes_up=up, bytes_down=down, t_end=_utc())
-            _append_jsonl(self.config.run_dir / "catcher.jsonl", rec)
+            with self._lock:                            # only after this connection's line is in the log
+                self.counters[arm.arm].catcher_open -= 1
 
     # the control port ---------------------------------------------------------------------------------------------
     def _control(self, s: socket.socket) -> None:
@@ -1588,11 +1595,19 @@ def _iso(t: float) -> str:
     return time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime(t)) + f".{int((t % 1) * 1000):03d}Z"
 
 
+#: F-P2-6: the proxy runs one thread per connection, and on Windows an "ab" append is a seek then a write - two
+#: tunnels closing together overwrote or lost each other's lines. Every JSONL append in this process takes this one
+#: lock (catcher.jsonl, windows_proxy.jsonl, ollama.jsonl and the rest), so each line lands whole and none is lost.
+_APPEND_LOCK = threading.Lock()
+
+
 def _append_jsonl(path: Path, record: dict) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path, "ab") as f:
-        f.write((json.dumps(record, sort_keys=True) + "\n").encode("utf-8"))
-        f.flush()
+    line = (json.dumps(record, sort_keys=True) + "\n").encode("utf-8")
+    with _APPEND_LOCK:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with open(path, "ab") as f:
+            f.write(line)
+            f.flush()
 
 
 def write_ports(run_dir: Path, ports: dict) -> str:

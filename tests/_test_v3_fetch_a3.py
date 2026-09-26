@@ -174,6 +174,19 @@ check("the window log names the hop and the hosts; the catcher window opened and
 check("the issuers are recorded per host", {i[0] for i in rec["issuers"]} == {HF, GH}, str(rec["issuers"]))
 check("the check is complete with 0 hits and 0 fs hits",
       rec["check"]["complete"] is True and rec["check"]["native_hits"] == 0 and rec["check"]["fs_hits"] == 0, str(rec["check"]))
+check("the record carries the witness's window_hosts - no child dialled past the catcher", rec["check"]["window_hosts"] == [],
+      str(rec["check"]))
+check("F-P2-6: the catcher's own count matches its log, line for line; nothing is torn", rec["log_problems"] == [],
+      str(rec["log_problems"]))
+torn = TMP / "torn.jsonl"
+torn.write_bytes(b'{"a": 1}\n{"a": 2}{"a"\n{"a": 3}\n')
+bad_lines: list = []
+try:
+    torn_rows = F._jsonl(torn, bad_lines)
+except Exception as e:  # noqa: BLE001 - a crash fails the check by its name
+    torn_rows = f"crash: {type(e).__name__}"
+check("F-P2-6: a torn log line is named, the rest still read - never a crash",
+      torn_rows == [{"a": 1}, {"a": 3}] and bad_lines == ["torn.jsonl line 2 does not parse"], str((torn_rows, bad_lines)))
 spawns = F._jsonl(L.spawns_log(C))
 fetch_sp = [s for s in spawns if s.get("role") == "fetch"]
 proxy_sp = [s for s in spawns if s.get("role") == "proxy"]
@@ -184,6 +197,40 @@ check("the proxy was the catcher-only one: no key file in its argv",
       len(proxy_sp) == 1 and proxy_sp[0]["argv_exception"] == {"1": str(F.PROXY_SCRIPT)})
 check("the record is written beside the window's run", json.loads((C.runs_root / "_fetch/a3-discovery/d1/record.json")
                                                                  .read_bytes())["problems"] == [])
+
+orig_jsonl, orig_cj = F._jsonl, F._control_json
+
+
+def dropping(path, bad=None):
+    rows = orig_jsonl(path, bad)
+    return rows[1:] if Path(path).name == "catcher.jsonl" else rows
+
+
+F._jsonl = dropping
+try:
+    rec_lost, _, _ = window("lostline", F.discovery_jobs(PINS))
+finally:
+    F._jsonl = orig_jsonl
+check("F-P2-6: a catcher line lost from the log is named against the catcher's own count",
+      any("catcher.jsonl holds" in p and "the catcher counted" in p for p in rec_lost["problems"]), str(rec_lost["problems"]))
+F._control_json = lambda *a, **k: None
+try:
+    rec_nc, _, _ = window("nocounters", F.discovery_jobs(PINS))
+finally:
+    F._control_json = orig_cj
+check("F-P2-6: counters that cannot be read are named, never taken as matching",
+      any("counters could not be read" in p for p in rec_nc["problems"]), str(rec_nc["problems"]))
+F._control_json = lambda *a, **k: {"fetch": {"catcher_hosts": ["huggingface.co"], "catcher_open": 1}}
+F.TUNNEL_DRAIN_S = 0.3
+try:
+    rec_open, _, _ = window("stillopen", F.discovery_jobs(PINS))
+finally:
+    F._control_json, F.TUNNEL_DRAIN_S = orig_cj, 5.0
+check("F-P2-6: a connection still open after the drain wait is named, and no count is compared",
+      any("still open 0.3 s after the window: {'fetch': 1}" in p for p in rec_open["problems"])
+      and not any("catcher.jsonl holds" in p for p in rec_open["problems"]), str(rec_open["problems"]))
+check("F-P2-6: the drain waits for the open count to reach 0, then compares",
+      F.drained_counters.__defaults__ is None and F.TUNNEL_DRAIN_S == 5.0)
 
 print("\n- the problems, by name -")
 bad_job = {"hosts": [HF], "max_redirects": 0, "requests": [{"id": "missing", "url": f"https://{HF}/nothing/here",
@@ -256,7 +303,7 @@ check("phase 4 requests a tree only for a directory whose name maps back to a va
 
 print("\n- judge(), table-tested -")
 CLEAN = {"jobs": [{"index": 0, "rc": 0, "summary": [{"id": "a", "ok": True}]}], "catcher": [{"host": HF, "tunnelled": True}],
-         "check": {"complete": True, "native_hits": 0, "loopback_hits": 0, "fs_hits": 0}}
+         "check": {"complete": True, "native_hits": 0, "loopback_hits": 0, "fs_hits": 0, "window_hosts": []}}
 check("a clean record has no problem", F.judge(CLEAN) == [], str(F.judge(CLEAN)))
 
 
@@ -273,6 +320,9 @@ for label, rec, want in (
         ("a loopback hit (counted in hits too)", with_(check={**ck, "native_hits": 1, "loopback_hits": 1}), "1 of them loopback"),
         ("complete False", with_(check={**ck, "complete": False}), "not complete"),
         ("fs_hits 1", with_(check={**ck, "fs_hits": 1}), "file-system"),
+        ("a direct dial by a window root", with_(check={**ck, "window_hosts": ["140.82.121.4:443"]}), "past the catcher"),
+        ("a torn log line", with_(log_problems=["catcher.jsonl line 3 does not parse"]), "a window log is not whole"),
+        ("an unknown window_hosts list", with_(check={**ck, "window_hosts": None}), "past the catcher"),
         ("a catcher refusal", with_(catcher=[{"host": HF, "tunnelled": True}, {"host": "evil.example", "tunnelled": False}]),
          "catcher refused"),
         ("a request not ok", with_(jobs=[{"index": 0, "rc": 0, "summary": [{"id": "a", "ok": False, "error": "status 404"}]}]),

@@ -212,6 +212,29 @@ if made is not None:
         got = ctl(ports, "/window", {"name": "bad", "state": "open", **body})
         check(f"/window refuses {label} (400)", got.startswith(b"HTTP/1.1 400"), got[:30].decode("latin-1"))
     check("the proxy never dialled a window host directly", direct_dials() == [], str(direct_dials()))
+    print("\n- F-P2-6: a connection's line is written when it closes; the open count says so -")
+    F = _load("v3_fetch_a3_ct", ROOT / "research" / "v3" / "fetch_a3.py")
+    ctl(ports, "/window", {"name": "held", "state": "open", "hosts": [HOST], "arms": ["fetch"]})
+    held = _real_connect(("127.0.0.1", fetch_p))
+    held.settimeout(10)
+    held.sendall(f"CONNECT {HOST}:443 HTTP/1.1\r\nHost: {HOST}:443\r\n\r\n".encode())
+    got_head = b""
+    while b"\r\n\r\n" not in got_head:
+        got_head += held.recv(1)
+    time.sleep(0.2)
+    n_lines = len(log_lines("w"))
+    ctr_open, still = F.drained_counters(ports["control"], "ctl", wait_s=0.3)
+    check("F-P2-6: a tunnel held open by a slow peer counts as open - the drain names it, and its line is not written yet",
+          got_head.startswith(b"HTTP/1.1 200") and still == {"fetch": 1} and ctr_open["fetch"]["catcher_open"] == 1
+          and len(ctr_open["fetch"]["catcher_hosts"]) == sum(1 for r in log_lines("w") if r["arm"] == "fetch") + 1,
+          str((still, n_lines)))
+    held.close()
+    ctr_done, still_done = F.drained_counters(ports["control"], "ctl", wait_s=5)
+    check("F-P2-6: once the peer closes, the drain reaches 0 and the count equals the log, line for line",
+          still_done is None and ctr_done["fetch"]["catcher_open"] == 0
+          and len(ctr_done["fetch"]["catcher_hosts"]) == sum(1 for r in log_lines("w") if r["arm"] == "fetch")
+          and len(log_lines("w")) == n_lines + 1, str((still_done, len(log_lines("w")), n_lines)))
+    ctl(ports, "/window", {"name": "held", "state": "close"})
     px.stop()
     hop.close()
 
@@ -310,6 +333,42 @@ for label, kw in (("catcher-only with a key file", {"catcher_only": True, "key_f
         check(f"spawn_proxy refuses {label}", True)
 
 socket.create_connection = _real_connect
+print("\n- F-P2-6: concurrent appends land whole, none lost -")
+import threading  # noqa: E402
+
+RACE_THREADS, RACE_LINES = 8, 200
+
+
+def race(path: Path) -> tuple[int, int, int]:
+    """(lines, unparseable, distinct records) after RACE_THREADS threads append RACE_LINES records each at once."""
+    go = threading.Event()
+
+    def worker(k: int) -> None:
+        go.wait()
+        for i in range(RACE_LINES):
+            P._append_jsonl(path, {"arm": "fetch", "host": "huggingface.co", "k": k, "i": i, "pad": "x" * 64})
+
+    ts = [threading.Thread(target=worker, args=(k,)) for k in range(RACE_THREADS)]
+    for th in ts:
+        th.start()
+    go.set()
+    for th in ts:
+        th.join()
+    lines = path.read_bytes().decode("utf-8", "replace").splitlines()
+    parsed, bad = [], 0
+    for line in lines:
+        try:
+            parsed.append(json.loads(line))
+        except ValueError:
+            bad += 1
+    return len(lines), bad, len({(r["k"], r["i"]) for r in parsed})
+
+
+got = [race(TMP / f"race{n}.jsonl") for n in range(3)]
+want = RACE_THREADS * RACE_LINES
+check("F-P2-6: 8 threads x 200 appends at once, three times - every line whole, none lost, every record once",
+      all(g == (want, 0, want) for g in got), str(got))
+
 shutil.rmtree(TMP, ignore_errors=True)
 print(f"\nproxy catcher (A3.a): {PASSED} passed, {FAILED} failed")
 sys.exit(1 if FAILED else 0)
