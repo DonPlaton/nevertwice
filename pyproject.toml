@@ -66,7 +66,12 @@ research = ["networkx>=3", "numpy>=1.26", "scipy>=1.11", "statsmodels>=0.14",
             # research job actually exercises that tripwire test; `aiohttp` is NOT declared
             # (heavier, and the tripwire test degrades to a printed note without it, the
             # same guard T7 already uses for httpx).
-            "requests>=2.31"]  # local checks, wheel
+            "requests>=2.31",
+            # PREREG-V3 TB9 (the auditor's AQ2 ruling): the launch contract's native egress
+            # witness samples each arm's process tree with psutil (`net_connections`, new in
+            # 6.0). Declared so CI's research job runs tests/research/_test_v3_launch_psutil.py
+            # on real processes; without it a required spawn is refused, never unwitnessed.
+            "psutil>=6,<8"]  # local checks, wheel
 # hypothesis is used by tests/_test_properties.py when present and never required: the
 # core CI matrix installs nothing, so every property there also has a deterministic
 # corpus. A suite that only runs for people who installed an extra stops running.

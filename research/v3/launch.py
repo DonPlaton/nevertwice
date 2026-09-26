@@ -28,20 +28,32 @@ record - names only, never values - is written before the process starts.
 * ``spawn`` accepts only the Popen arguments on its allowlist (never ``executable``, ``shell`` or ``env``); it
   writes the record, then starts the process - or writes the refusal and raises.
 
-Witnesses (egress, filesystem), canaries, the fetch window and the Claude Code lockdown come in the next steps
-(A2.2, A2.3); ``spawn`` gains them there. Standard library only, Python 3.10+.
+Step A2.2 adds the witnesses of §2.6.9: the native egress witness (psutil, imported only there: without it a
+required spawn is refused, an optional one needs a recorded reason; on Windows each tree is a Job Object, created
+suspended, assigned, then resumed, so no descendant escapes), the container egress witness (/proc/net/tcp through
+``docker exec``), the filesystem witness on the fixed watched set (names, sizes and mtimes; only digests leave
+memory; the quarantine and Conservation are stat-ed by root and already-known name, never listed), canaries (the
+decoy secret planted in the scheduler's own environment included), the ancestor check for Claude Code, and declared
+fetch windows that cover only their own spawns' trees. A check that could not complete - no sample, a failed one,
+coverage under 0.9 of its ticks, an unwitnessed child - never reads as zero hits; every egress count carries its
+declared limit. The launch and window logs are hash-chained. The Claude Code lockdown comes in A2.3. Standard
+library only, Python 3.10+.
 
     python tests/_test_v3_launch_env.py
+    python tests/_test_v3_launch_witness.py
 """
 from __future__ import annotations
 
+import contextlib
 import hashlib
+import ipaddress
 import json
 import os
 import re
 import secrets
 import stat
 import subprocess
+import threading
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -91,6 +103,8 @@ _PROVIDER_KEY = re.compile(r"(?<![A-Za-z0-9])sk-[A-Za-z0-9_-]{20,}")
 #: The only Popen arguments a caller may pass (B2): never ``executable``, ``shell``, ``env``, ``cwd``, ``preexec_fn``.
 POPEN_ALLOWED = frozenset({"stdin", "stdout", "stderr", "text", "encoding", "errors", "bufsize", "creationflags",
                            "universal_newlines"})
+CREATE_SUSPENDED = 0x00000004
+CREATE_BREAKAWAY_FROM_JOB = 0x01000000
 
 
 class ContractViolation(Exception):
@@ -116,6 +130,10 @@ class Contract:
     system_dirs: tuple[Path, ...] = ()            # System32, then the system Git (PATH tail)
     binary_exceptions: Mapping[str, str] = field(default_factory=dict)   # exact path -> reason
     hf_home: Path | None = None
+    #: §2.6.4 - the quarantine's already-known top-level names (stat-ed, never listed) and today's two additions.
+    quarantine_known: tuple[str, ...] = ()
+    conservation_known: tuple[str, ...] = ()      # AQ15: {2026-09-25}, from the owner's instructions, never listed
+    polygon_idle: tuple[str, ...] = ()            # §2.6.9 watched: the polygon's idle entries
     case_insensitive_env: bool = os.name == "nt"
     require_systemroot: bool = os.name == "nt"
 
@@ -144,6 +162,13 @@ class Contract:
             binary_exceptions={str(git): "the system Git (our engine's git snapshot)",
                                str(docker): "the system docker CLI"},
             hf_home=polygon / "hf_cache",
+            quarantine_known=("code_heldout", "heldout_marks.json", "quarantine_live", "stores", "embed_specialize",
+                              "corpus_heldout", "polygon_unknown", "research_data_code_heldout",
+                              "loop_campaign_v2_heldout"),
+            conservation_known=("2026-09-25",),
+            polygon_idle=("backups", "core_bare", "bare314", "mem0_eval", "graphiti_eval", "amem_eval", "llama.cpp",
+                          "h2h_v2_stores", "h2h_v2_stores.pre-v2-fe6ddff-055329",
+                          "h2h_v2_stores.pre-v2-fe6ddff-062907"),
         )
 
     def deny_roots(self) -> tuple[Path, ...]:
@@ -496,13 +521,38 @@ def assert_argv(c: Contract, argv: Sequence[str], *, argv_exception: Mapping[int
 
 # ── spawn ───────────────────────────────────────────────────────────────
 
+def _last_line(path: Path) -> bytes:
+    if not path.exists():
+        return b""
+    lines = path.read_bytes().rstrip(b"\n").split(b"\n")
+    return lines[-1] if lines and lines[-1] else b""
+
+
 def _append_jsonl(path: Path, record: Mapping) -> None:
+    """One record, chained to the previous line by its sha256 ("prev"), so an edit anywhere breaks the chain (R1:
+    these logs sit in the runs tree, which children can write)."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    line = (json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n").encode("utf-8")
+    prev = _last_line(path)
+    rec = dict(record, prev=hashlib.sha256(prev).hexdigest() if prev else "0" * 64)
+    line = (json.dumps(rec, ensure_ascii=False, sort_keys=True) + "\n").encode("utf-8")
     with open(path, "ab") as f:
         f.write(line)
         f.flush()
         os.fsync(f.fileno())
+
+
+def verify_chain(path: Path) -> bool:
+    """True when every line's "prev" is the sha256 of the line before it (the first: zeros)."""
+    prev = b""
+    for line in path.read_bytes().rstrip(b"\n").split(b"\n") if path.exists() else []:
+        want = hashlib.sha256(prev).hexdigest() if prev else "0" * 64
+        try:
+            if json.loads(line).get("prev") != want:
+                return False
+        except ValueError:
+            return False
+        prev = line
+    return True
 
 
 def spawns_log(c: Contract) -> Path:
@@ -513,9 +563,29 @@ def spawns_log(c: Contract) -> Path:
 class Child:
     spawn_id: str
     process: subprocess.Popen
+    witness: "NativeEgressWitness | None" = None
 
     def wait(self, timeout: float | None = None) -> int:
         return self.process.wait(timeout)
+
+    def kill_tree(self) -> None:
+        """The whole tree: its Job Object when there is one (W1), else children first through psutil (WP9:
+        terminate() on Windows kills the root only), else the root alone."""
+        if self.witness is not None and self.witness.kill_tree(self.process.pid):
+            return
+        try:
+            import psutil  # noqa: PLC0415
+        except ImportError:
+            self.process.kill()
+            return
+        try:
+            root = psutil.Process(self.process.pid)
+            for ch in root.children(recursive=True):
+                with contextlib.suppress(psutil.Error):
+                    ch.kill()
+            root.kill()
+        except psutil.Error:
+            pass
 
 
 def spawn(c: Contract, argv: Sequence[str], *, env: Mapping[str, str], cwd: str | os.PathLike,
@@ -523,14 +593,27 @@ def spawn(c: Contract, argv: Sequence[str], *, env: Mapping[str, str], cwd: str 
           token_names: Sequence[str] = (), claude_names: Sequence[str] = (),
           env_exception: Mapping[str, Sequence[Path]] | None = None, argv_exception: Mapping[int, Path] | None = None,
           canaries: Sequence[str] = (), popen: Callable[..., subprocess.Popen] = subprocess.Popen,
-          **popen_kw) -> Child:
-    """Check everything, write the record, then start the child. A refusal is recorded too, then raised."""
+          witnesses: "Witnesses | None" = None, requirement: str = "required", unwitnessed_reason: str | None = None,
+          window: "Window | None" = None, **popen_kw) -> Child:
+    """Check everything, write the record, then start the child and register it with the native egress witness.
+    A refusal is recorded too, then raised. A required spawn needs the native witness (AQ2); an optional one
+    without it needs a written reason of at least 12 characters, which the record keeps."""
     spawn_id = uuid.uuid4().hex
     reasons: list[str] = [f"Popen argument not allowed: {k}" for k in sorted(popen_kw) if k not in POPEN_ALLOWED]
+    native = witnesses.native if witnesses is not None else None
+    if requirement not in ("required", "optional"):
+        reasons.append("unknown witness requirement")
+    elif native is None and requirement == "required":
+        reasons.append("no native egress witness for a required spawn")
+    elif native is None and len((unwitnessed_reason or "").strip()) < 12:
+        reasons.append("an unwitnessed optional spawn needs a written reason")
+    if int(popen_kw.get("creationflags") or 0) & CREATE_BREAKAWAY_FROM_JOB:
+        reasons.append("creationflags ask to break away from the job")
     try:
         binary = resolve_binary(c, argv[0])
     except ContractViolation as e:
-        binary, reasons = None, list(e.reasons)
+        binary = None
+        reasons += list(e.reasons)                 # added to, never replacing, the reasons already found
     reasons += check_cwd(c, cwd)
     reasons += assert_env(c, env, parent_env=parent_env, catcher_url=catcher_url, token_names=token_names,
                           claude_names=claude_names, env_exception=env_exception, canaries=canaries)
@@ -546,12 +629,783 @@ def spawn(c: Contract, argv: Sequence[str], *, env: Mapping[str, str], cwd: str 
         "env_names": sorted(env), "refused": bool(reasons), "reasons": reasons,
         "env_exception": {k: [str(p) for p in v] for k, v in (env_exception or {}).items()},
         "argv_exception": {str(i): str(p) for i, p in (argv_exception or {}).items()},
+        "witness": {"native": "on" if native is not None else "off", "requirement": requirement,
+                    "unwitnessed_reason": None if native is not None else unwitnessed_reason},
     }
     _append_jsonl(spawns_log(c), entry)
     if reasons:
         raise ContractViolation(reasons)
     _FRESH.discard(_norm(cwd))                     # handed to a child: no longer fresh
+    jobs = native.jobs if native is not None else None
     if os.name == "nt":
-        popen_kw.setdefault("creationflags", subprocess.CREATE_NEW_PROCESS_GROUP)
+        popen_kw["creationflags"] = int(popen_kw.get("creationflags") or 0) | subprocess.CREATE_NEW_PROCESS_GROUP \
+            | (CREATE_SUSPENDED if jobs is not None else 0)
     proc = popen([binary.path, *argv[1:]], env=dict(env), cwd=os.fspath(cwd), **popen_kw)
-    return Child(spawn_id=spawn_id, process=proc)
+    if native is not None:
+        handle = getattr(proc, "_handle", None) if jobs is not None else None
+        ok = native.register(proc.pid, handle=int(handle) if handle is not None else None)
+        if jobs is not None and handle is not None:
+            if not ok or not jobs.resume(int(handle)):      # W1: never let a child run outside its job
+                try:
+                    proc.kill()
+                except OSError:
+                    pass
+                _append_jsonl(spawns_log(c), {"spawn_id": spawn_id, "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ",
+                              time.gmtime()), "role": record.get("role"), "stand": record.get("stand"),
+                              "arm": record.get("arm"), "refused": True,
+                              "reasons": ["the child could not be put in its job object"],
+                              "witness": {"native": "on", "requirement": requirement}})
+                raise ContractViolation(["the child could not be put in its job object"])
+        if window is not None:
+            window.roots.add(proc.pid)
+    return Child(spawn_id=spawn_id, process=proc, witness=native)
+
+
+# ── witnesses (A2.2): egress, filesystem, canaries, the ancestor check, fetch windows ──
+
+class WitnessUnavailable(RuntimeError):
+    """A witness cannot run (psutil missing, docker unreachable). Never read as 'nothing seen'."""
+
+
+def _is_loopback(ip: str | None) -> bool:
+    if not ip:
+        return False
+    try:
+        addr = ipaddress.ip_address(ip.split("%", 1)[0])
+    except ValueError:
+        return False
+    mapped = getattr(addr, "ipv4_mapped", None)
+    return bool(addr.is_loopback or (mapped is not None and mapped.is_loopback))
+
+
+@dataclass(frozen=True)
+class Conn:
+    local_ip: str
+    local_port: int
+    remote_ip: str
+    remote_port: int
+    state: str
+
+
+_TCP_STATES = {"01": "ESTABLISHED", "02": "SYN_SENT", "03": "SYN_RECV", "04": "FIN_WAIT1", "05": "FIN_WAIT2",
+               "06": "TIME_WAIT", "07": "CLOSE", "08": "CLOSE_WAIT", "09": "LAST_ACK", "0A": "LISTEN", "0B": "CLOSING"}
+
+
+def _hex_addr(field_: str, v6: bool) -> tuple[str, int]:
+    host, port = field_.split(":")
+    raw = bytes.fromhex(host)
+    if v6:
+        raw = b"".join(raw[i:i + 4][::-1] for i in range(0, 16, 4))   # four little-endian 32-bit words
+        ip = str(ipaddress.IPv6Address(raw))
+    else:
+        ip = str(ipaddress.IPv4Address(raw[::-1]))                     # one little-endian 32-bit word
+    return ip, int(port, 16)
+
+
+def parse_proc_net_tcp(text: str, *, v6: bool | None = None) -> list[Conn]:
+    """Lines of /proc/net/tcp or /proc/net/tcp6 (header lines skipped). ``v6=None`` decides per line by length."""
+    out = []
+    for line in text.splitlines():
+        cols = line.split()
+        if len(cols) < 4 or not cols[0].rstrip(":").isdigit():
+            continue
+        six = v6 if v6 is not None else len(cols[1].split(":")[0]) == 32
+        lip, lport = _hex_addr(cols[1], six)
+        rip, rport = _hex_addr(cols[2], six)
+        out.append(Conn(lip, lport, rip, rport, _TCP_STATES.get(cols[3].upper(), cols[3])))
+    return out
+
+
+#: The sampling period of the egress witnesses. §2.6.9's "every second" is a floor, not a ceiling (the auditor's W5);
+#: the measured cost of one native sample is recorded beside every check.
+DEFAULT_TICK_S = 0.5
+#: W5: what a sampling witness cannot see, published beside every egress count.
+LIMIT_TEXT = ("sampled every {tick} s; a connection shorter than a tick is not seen (on Windows a closed "
+              "connection's TIME_WAIT row belongs to pid 0); the catcher covers clients that honour HTTP(S)_PROXY")
+LIMIT_NO_JOBS = "; off Windows, a process re-parented to init before a tick sees it is not tracked"
+
+
+@dataclass
+class EgressResult:
+    hits: int = 0
+    hit_remotes: set = field(default_factory=set)       # "ip:port" - addresses, never owner data
+    window_hosts: set = field(default_factory=set)
+    listen_nonloopback: int = 0
+    samples: int = 0
+    failed_samples: int = 0
+    process_errors: int = 0
+    rows_seen: int = 0                                  # connections of tracked processes read, loopback included
+    unwitnessed_registrations: int = 0                  # W2: a child whose identity could not be read
+    tick_s: float = DEFAULT_TICK_S
+    elapsed_s: float = 0.0
+    sample_cost_ms: float = 0.0
+    limit: str = ""
+
+    @property
+    def expected_samples(self) -> int:
+        return max(1, int(self.elapsed_s / self.tick_s)) if self.tick_s > 0 else 1
+
+    @property
+    def complete(self) -> bool:
+        """W4: a sample, none failed, coverage >= 0.9 of the ticks the check lasted, and no child unwitnessed.
+        An incomplete check never reads as zero hits."""
+        return (self.samples > 0 and self.failed_samples == 0 and self.unwitnessed_registrations == 0
+                and self.samples >= 0.9 * self.expected_samples)
+
+    def as_record(self) -> dict:
+        return {"hits": self.hits, "hit_remotes": sorted(self.hit_remotes), "window_hosts": sorted(self.window_hosts),
+                "listen_nonloopback": self.listen_nonloopback, "samples": self.samples,
+                "failed_samples": self.failed_samples, "process_errors": self.process_errors,
+                "rows_seen": self.rows_seen, "unwitnessed_registrations": self.unwitnessed_registrations,
+                "tick_s": self.tick_s, "elapsed_s": round(self.elapsed_s, 3),
+                "expected_samples": self.expected_samples, "sample_cost_ms": round(self.sample_cost_ms, 2),
+                "limit": self.limit, "complete": self.complete}
+
+
+class _Ticker:
+    """Samples on an absolute schedule (start + k x tick) until stopped, then once more. The thread never dies: any
+    exception in a sample - a parse error included - is a failed sample (W4). Coverage is judged at stop."""
+
+    def __init__(self, tick_s: float):
+        self.tick_s = tick_s
+        self._stop = threading.Event()
+        self._thread: threading.Thread | None = None
+        self._t0: float | None = None
+        self._cost = 0.0
+        self._costn = 0
+        self.windows: dict[str, set] = {}               # W3: window name -> the tree roots it covers
+
+    def start(self) -> None:
+        self._stop.clear()
+        self._t0 = time.monotonic()
+        self._thread = threading.Thread(target=self._loop, daemon=True)
+        self._thread.start()
+
+    def _loop(self) -> None:
+        k = 1
+        while True:
+            delay = self._t0 + k * self.tick_s - time.monotonic()
+            if delay > 0 and self._stop.wait(delay):
+                return
+            if self._stop.is_set():
+                return
+            self._safe_sample()
+            k = max(k + 1, int((time.monotonic() - self._t0) / self.tick_s) + 1)   # missed ticks stay missed
+
+    def _safe_sample(self) -> None:
+        t = time.perf_counter()
+        try:
+            self.sample()
+        except Exception:                                # noqa: BLE001 - a failed sample, never a dead thread
+            self.result.failed_samples += 1
+        self._cost += time.perf_counter() - t
+        self._costn += 1
+
+    def stop(self):
+        self._stop.set()
+        if self._thread is not None:
+            self._thread.join(timeout=max(5.0, 3 * self.tick_s))
+        self._safe_sample()
+        r = self.result
+        r.tick_s = self.tick_s
+        r.elapsed_s = (time.monotonic() - self._t0) if self._t0 is not None else 0.0
+        r.sample_cost_ms = 1000 * self._cost / self._costn if self._costn else 0.0
+        return r
+
+    def open_window(self, name: str, roots: set | None = None) -> None:
+        """A window covers only the trees rooted at ``roots`` (W3); any other tree's egress stays a hit."""
+        self.windows[name] = roots if roots is not None else set()
+
+    def close_window(self, name: str | None = None) -> None:
+        if name is None:
+            self.windows.clear()
+        else:
+            self.windows.pop(name, None)
+
+    def sample(self) -> None:  # pragma: no cover - overridden
+        raise NotImplementedError
+
+
+class PsutilSampler:
+    """What the native witness reads each tick. Constructing it without psutil raises WitnessUnavailable."""
+
+    def __init__(self):
+        try:
+            import psutil  # noqa: PLC0415 - optional: declared in the research extra (AQ2)
+        except ImportError as e:
+            raise WitnessUnavailable("psutil is not installed in this interpreter") from e
+        self.psutil = psutil
+        # The first pass over every process is slow on Windows (measured: 4.3 s for 511 processes, then 0.07 s):
+        # paid here, before a check starts, so the first tick of a check is not seconds late.
+        self.processes()
+
+    def identity(self, pid: int) -> float | None:
+        try:
+            return float(self.psutil.Process(pid).create_time())
+        except self.psutil.Error:
+            return None
+
+    def processes(self) -> list[tuple[int, int, float]]:
+        out = []
+        for p in self.psutil.process_iter(["pid", "ppid", "create_time"]):
+            i = p.info
+            if i.get("create_time") is not None:
+                out.append((i["pid"], i.get("ppid") or 0, float(i["create_time"])))
+        return out
+
+    def connections(self, pids: set[int]) -> tuple[list[tuple[int, str, int, str | None, int | None, str]], int]:
+        """(connections of ``pids`` as (pid, local ip, local port, remote ip, remote port, status), process errors)."""
+        ps, rows, errors = self.psutil, [], 0
+        try:
+            conns = ps.net_connections(kind="inet")
+            for c in conns:
+                if c.pid in pids:
+                    rows.append((c.pid, c.laddr.ip if c.laddr else "", c.laddr.port if c.laddr else 0,
+                                 c.raddr.ip if c.raddr else None, c.raddr.port if c.raddr else None, c.status))
+            return rows, 0
+        except ps.AccessDenied:
+            pass
+        for pid in pids:
+            try:
+                proc = ps.Process(pid)
+                get = getattr(proc, "net_connections", None) or proc.connections
+                for c in get(kind="inet"):
+                    rows.append((pid, c.laddr.ip if c.laddr else "", c.laddr.port if c.laddr else 0,
+                                 c.raddr.ip if c.raddr else None, c.raddr.port if c.raddr else None, c.status))
+            except (ps.AccessDenied, ps.NoSuchProcess, ps.ZombieProcess):
+                errors += 1
+        return rows, errors
+
+
+# ── Windows job objects (W1): the whole tree, orphans included ──────────
+
+class WinJobs:
+    """One Job Object per registered tree root (W1). A process assigned to a job keeps every descendant in it -
+    an orphan whose parent exited at once included - and no breakaway is allowed (neither BREAKAWAY_OK nor
+    SILENT_BREAKAWAY). The tree is read from JobObjectBasicProcessIdList; TerminateJobObject kills it whole.
+    KILL_ON_JOB_CLOSE: if the scheduler dies, its arms die with it. Standard-library ctypes; no machine setting
+    changes. Construct only on Windows."""
+
+    JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE = 0x2000
+    PROCESS_SET_QUOTA, PROCESS_TERMINATE, PROCESS_QUERY_LIMITED = 0x0100, 0x0001, 0x1000
+
+    def __init__(self):
+        import ctypes  # noqa: PLC0415
+        from ctypes import wintypes  # noqa: PLC0415
+        self.ct, self.wt = ctypes, wintypes
+        self.k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        self.ntdll = ctypes.WinDLL("ntdll")
+        k = self.k32
+        k.CreateJobObjectW.restype = wintypes.HANDLE
+        k.CreateJobObjectW.argtypes = [ctypes.c_void_p, wintypes.LPCWSTR]
+        k.OpenProcess.restype = wintypes.HANDLE
+        k.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+        k.AssignProcessToJobObject.argtypes = [wintypes.HANDLE, wintypes.HANDLE]
+        k.SetInformationJobObject.argtypes = [wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p, wintypes.DWORD]
+        k.QueryInformationJobObject.argtypes = [wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p, wintypes.DWORD,
+                                                ctypes.POINTER(wintypes.DWORD)]
+        k.TerminateJobObject.argtypes = [wintypes.HANDLE, ctypes.c_uint]
+        k.GetProcessTimes.argtypes = [wintypes.HANDLE] + [ctypes.POINTER(wintypes.FILETIME)] * 4
+        k.CloseHandle.argtypes = [wintypes.HANDLE]
+        self.ntdll.NtResumeProcess.argtypes = [wintypes.HANDLE]
+        self.jobs: dict[int, int] = {}                  # root pid -> job handle
+
+    def _new_job(self) -> int:
+        ct, wt = self.ct, self.wt
+
+        class BASIC(ct.Structure):
+            _fields_ = [("PerProcessUserTimeLimit", ct.c_int64), ("PerJobUserTimeLimit", ct.c_int64),
+                        ("LimitFlags", wt.DWORD), ("MinimumWorkingSetSize", ct.c_size_t),
+                        ("MaximumWorkingSetSize", ct.c_size_t), ("ActiveProcessLimit", wt.DWORD),
+                        ("Affinity", ct.c_size_t), ("PriorityClass", wt.DWORD), ("SchedulingClass", wt.DWORD)]
+
+        class IO(ct.Structure):
+            _fields_ = [(n, ct.c_uint64) for n in ("r", "w", "o", "rb", "wb", "ob")]
+
+        class EXT(ct.Structure):
+            _fields_ = [("Basic", BASIC), ("Io", IO), ("ProcessMemoryLimit", ct.c_size_t),
+                        ("JobMemoryLimit", ct.c_size_t), ("PeakProcessMemoryUsed", ct.c_size_t),
+                        ("PeakJobMemoryUsed", ct.c_size_t)]
+
+        job = self.k32.CreateJobObjectW(None, None)
+        if not job:
+            raise OSError(ct.get_last_error(), "CreateJobObject failed")
+        info = EXT()
+        info.Basic.LimitFlags = self.JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE      # and no breakaway flag of any kind
+        if not self.k32.SetInformationJobObject(job, 9, ct.byref(info), ct.sizeof(info)):
+            raise OSError(ct.get_last_error(), "SetInformationJobObject failed")
+        return job
+
+    def _open(self, pid: int, access: int) -> int:
+        return self.k32.OpenProcess(access, False, pid) or 0
+
+    def created_at(self, handle: int) -> float | None:
+        """The process's creation time, epoch seconds - readable after exit while a handle is open (W2)."""
+        ft = [self.wt.FILETIME() for _ in range(4)]
+        if not self.k32.GetProcessTimes(handle, *[self.ct.byref(f) for f in ft]):
+            return None
+        v = (ft[0].dwHighDateTime << 32) | ft[0].dwLowDateTime
+        return (v - 116444736000000000) / 1e7
+
+    def identity(self, pid: int) -> float | None:
+        h = self._open(pid, self.PROCESS_QUERY_LIMITED)
+        if not h:
+            return None
+        try:
+            return self.created_at(h)
+        finally:
+            self.k32.CloseHandle(h)
+
+    def adopt(self, pid: int, handle: int | None = None) -> float | None:
+        """Put ``pid`` (by its handle when we hold one) in a job of its own; returns its creation time, or None."""
+        own = handle is None
+        h = self._open(pid, self.PROCESS_SET_QUOTA | self.PROCESS_TERMINATE | self.PROCESS_QUERY_LIMITED) if own else handle
+        if not h:
+            return None
+        try:
+            job = self._new_job()
+            if not self.k32.AssignProcessToJobObject(job, h):
+                self.k32.CloseHandle(job)
+                return None
+            self.jobs[pid] = job
+            return self.created_at(h)
+        finally:
+            if own:
+                self.k32.CloseHandle(h)
+
+    def resume(self, handle: int) -> bool:
+        return self.ntdll.NtResumeProcess(handle) == 0
+
+    def members(self, root: int) -> list[int]:
+        job = self.jobs.get(root)
+        if not job:
+            return []
+        ct, wt = self.ct, self.wt
+        n = 4096
+
+        class PIDLIST(ct.Structure):
+            _fields_ = [("assigned", wt.DWORD), ("inlist", wt.DWORD), ("ids", ct.c_size_t * n)]
+
+        lst = PIDLIST()
+        if not self.k32.QueryInformationJobObject(job, 3, ct.byref(lst), ct.sizeof(lst), None):
+            raise OSError(ct.get_last_error(), "QueryInformationJobObject failed")
+        return [int(lst.ids[i]) for i in range(lst.inlist)]
+
+    def terminate(self, root: int) -> bool:
+        job = self.jobs.get(root)
+        return bool(job) and bool(self.k32.TerminateJobObject(job, 1))
+
+
+class NativeEgressWitness(_Ticker):
+    """§2.6.9: each tick, the connections of every process in the registered trees. On Windows a tree is its Job
+    Object (W1), so an orphaned grandchild stays in it; elsewhere it is followed by parent identity and create time,
+    with that limit declared. A child whose identity cannot be read is never a pid wildcard: it is counted as an
+    unwitnessed registration and the check is incomplete (W2). Loopback is ignored; a non-loopback remote is a hit
+    unless a window covering that tree is open (W3); a listener on a non-loopback interface is a hit (AQ16)."""
+
+    def __init__(self, *, sampler=None, tick_s: float = DEFAULT_TICK_S, jobs: "WinJobs | None | bool" = True):
+        super().__init__(tick_s)
+        self.sampler = sampler if sampler is not None else PsutilSampler()
+        if jobs is True:
+            try:
+                jobs = WinJobs() if os.name == "nt" else None
+            except (OSError, AttributeError):
+                jobs = None
+        self.jobs = jobs or None
+        self.tracked: dict[int, float] = {}          # pid -> create_time
+        self.root_of: dict[int, int] = {}            # pid -> the root of its tree
+        self.result = EgressResult(tick_s=tick_s, limit=LIMIT_TEXT.format(tick=tick_s)
+                                   + ("" if self.jobs else LIMIT_NO_JOBS))
+        self._lock = threading.Lock()
+
+    def _identity(self, pid: int) -> float | None:
+        if self.jobs is not None:
+            ct = self.jobs.identity(pid)
+            if ct is not None:
+                return ct
+        ident = getattr(self.sampler, "identity", None)
+        return ident(pid) if ident else None
+
+    def register(self, pid: int, handle: int | None = None) -> bool:
+        """Track a tree from its root. With job objects the root is assigned to its own job here (spawn creates it
+        suspended first, so nothing escapes before). No identity, no tracking - never a wildcard (W2)."""
+        with self._lock:
+            ct = self.jobs.adopt(pid, handle) if self.jobs is not None else None
+            if ct is None:
+                ct = self._identity(pid)
+            if ct is None:
+                self.result.unwitnessed_registrations += 1
+                return False
+            self.tracked[pid] = ct
+            self.root_of[pid] = pid
+            return True
+
+    def kill_tree(self, root: int) -> bool:
+        return self.jobs is not None and self.jobs.terminate(root)
+
+    @staticmethod
+    def _same(a: float, b: float) -> bool:
+        return abs(a - b) < 0.01
+
+    def sample(self) -> None:
+        with self._lock:
+            try:
+                procs = self.sampler.processes()
+                ct_of = {pid: ct for pid, _pp, ct in procs}
+                if self.jobs is not None:                # W1: the job is the tree, orphans included
+                    for root in list(self.jobs.jobs):
+                        for pid in self.jobs.members(root):
+                            if pid not in self.tracked:
+                                ct = ct_of.get(pid) or self._identity(pid)
+                                if ct is not None:
+                                    self.tracked[pid] = ct
+                                    self.root_of[pid] = self.root_of.get(root, root)
+                grew = True
+                while grew:                              # parent identity and birth order (all platforms)
+                    grew = False
+                    for pid, ppid, ct in procs:
+                        if (pid not in self.tracked and ppid in self.tracked and ct >= self.tracked[ppid]
+                                and ppid in ct_of and self._same(ct_of[ppid], self.tracked[ppid])):
+                            self.tracked[pid] = ct
+                            self.root_of[pid] = self.root_of.get(ppid, ppid)
+                            grew = True
+                alive = {pid for pid, _pp, ct in procs if pid in self.tracked and self._same(self.tracked[pid], ct)}
+                rows, errors = self.sampler.connections(alive)
+            except WitnessUnavailable:
+                raise
+            except Exception:                            # noqa: BLE001 - a failed sample is failed, never clean
+                self.result.failed_samples += 1
+                return
+            self.result.samples += 1
+            self.result.process_errors += errors
+            self.result.rows_seen += len(rows)
+            for pid, lip, _lport, rip, rport, status in rows:
+                if status == "LISTEN":
+                    if not _is_loopback(lip):
+                        self.result.listen_nonloopback += 1
+                        self.result.hits += 1
+                    continue
+                if not rip or _is_loopback(rip):
+                    continue
+                root = self.root_of.get(pid)
+                if any(root in roots for roots in self.windows.values()):
+                    self.result.window_hosts.add(f"{rip}:{rport}")
+                else:
+                    self.result.hits += 1
+                    self.result.hit_remotes.add(f"{rip}:{rport}")
+
+
+class ContainerEgressWitness(_Ticker):
+    """§2.6.9, containers (Letta, FalkorDB): each tick, /proc/net/tcp{,6} read through ``docker exec``. Not a hit:
+    a listener, in-container loopback, the host gateway on an allowed port. A failed docker call or an unparsable
+    line is a failed sample, never 'no connections'. A window covers a container only if its name is among the
+    window's roots. TCP only: UDP and DNS are a declared limit."""
+
+    def __init__(self, container: str, *, gateway_ip: str, allowed_ports: Sequence[int],
+                 run_docker: Callable[[list[str]], tuple[int, str]], tick_s: float = 5.0):
+        super().__init__(tick_s)
+        self.container, self.gateway_ip, self.allowed_ports = container, gateway_ip, set(allowed_ports)
+        self.run_docker = run_docker
+        self.result = EgressResult(tick_s=tick_s, limit=LIMIT_TEXT.format(tick=tick_s) + "; TCP only (UDP and DNS "
+                                   "are not read)")
+
+    def sample(self) -> None:
+        rc, text = self.run_docker(["exec", self.container, "cat", "/proc/net/tcp", "/proc/net/tcp6"])
+        if rc != 0:
+            self.result.failed_samples += 1
+            return
+        conns = parse_proc_net_tcp(text)                 # raises on a malformed line: a failed sample
+        self.result.samples += 1
+        covered = any(self.container in roots for roots in self.windows.values())
+        for conn in conns:
+            if conn.state == "LISTEN" or conn.remote_port == 0 or _is_loopback(conn.remote_ip):
+                continue
+            if conn.remote_ip == self.gateway_ip and conn.remote_port in self.allowed_ports:
+                continue
+            if covered:
+                self.result.window_hosts.add(f"{conn.remote_ip}:{conn.remote_port}")
+            else:
+                self.result.hits += 1
+                self.result.hit_remotes.add(f"{conn.remote_ip}:{conn.remote_port}")
+
+
+# ── the filesystem witness ──────────────────────────────────────────────
+
+FILE_ATTRIBUTE_REPARSE_POINT = 0x400
+
+
+@dataclass(frozen=True)
+class WatchSpec:
+    """One label of the fixed watched set. ``mode``: "tree" (walked, no link or junction followed), "path" (a file
+    or a tree, absent allowed), "stat_known" (only the root and its already-known top-level names are stat-ed;
+    nothing is listed - the quarantine and the Conservation directory)."""
+    label: str
+    root: Path
+    mode: str = "tree"
+    known: tuple[str, ...] = ()
+    exclude_rel: tuple[str, ...] = ()        # relative paths, "/"-separated, dirs or files
+    exclude_names: tuple[str, ...] = ()      # directory names skipped at any depth
+
+
+class OsFs:
+    """The file-system calls the witness makes; a seam, so a test can log every call."""
+
+    def scandir(self, path: str):
+        return os.scandir(path)
+
+    def stat(self, path: str):
+        return os.stat(path, follow_symlinks=False)
+
+
+def _is_link_like(entry) -> bool:
+    try:
+        if entry.is_symlink() or getattr(entry, "is_junction", lambda: False)():
+            return True
+        st = entry.stat(follow_symlinks=False)
+        return bool(getattr(st, "st_file_attributes", 0) & FILE_ATTRIBUTE_REPARSE_POINT)
+    except OSError:
+        return True
+
+
+def _row(name: str, kind: str, size: int, mtime_ns: int) -> bytes:
+    return f"{name}\0{kind}\0{size}\0{mtime_ns}".encode("utf-8", "surrogatepass")
+
+
+def _digest(rows: list[bytes]) -> str:
+    return hashlib.sha256(b"\n".join(sorted(rows))).hexdigest()
+
+
+class FsWitness:
+    """§2.6.9 [RULING] G1: names, sizes and mtimes before and after a check; no content read. Only per-directory
+    digests leave memory, rolled up per label; names never do."""
+
+    def __init__(self, specs: Sequence[WatchSpec], *, fs: OsFs | None = None):
+        self.specs = tuple(specs)
+        self.fs = fs or OsFs()
+
+    def snapshot(self) -> dict[str, dict[str, str]]:
+        return {s.label: self._label(s) for s in self.specs}
+
+    def _label(self, s: WatchSpec) -> dict[str, str]:
+        if s.mode == "stat_known":
+            rows = []
+            for name, p in (("", s.root), *((n, s.root / n) for n in s.known)):
+                try:
+                    st = self.fs.stat(os.fspath(p))
+                    rows.append(_row(name, "e", st.st_size, st.st_mtime_ns))
+                except OSError:
+                    rows.append(_row(name, "absent", 0, 0))
+            return {"": _digest(rows)}
+        out: dict[str, str] = {}
+        try:
+            st = self.fs.stat(os.fspath(s.root))
+        except OSError:
+            return {"": _digest([_row("", "absent", 0, 0)])}
+        import stat as _stat  # noqa: PLC0415
+        if not _stat.S_ISDIR(st.st_mode):
+            return {"": _digest([_row("", "f", st.st_size, st.st_mtime_ns)])}
+        self._walk(s, s.root, "", out)
+        return out
+
+    def _walk(self, s: WatchSpec, path: Path, rel: str, out: dict[str, str]) -> None:
+        rows, subdirs = [], []
+        try:
+            with self.fs.scandir(os.fspath(path)) as it:
+                entries = list(it)
+        except OSError:
+            out[rel] = _digest([_row("", "unreadable", 0, 0)])
+            return
+        for e in entries:
+            child_rel = f"{rel}/{e.name}" if rel else e.name
+            if child_rel in s.exclude_rel:
+                continue
+            try:
+                st = e.stat(follow_symlinks=False)
+            except OSError:
+                rows.append(_row(e.name, "unreadable", 0, 0))
+                continue
+            if _is_link_like(e):
+                rows.append(_row(e.name, "link", st.st_size, st.st_mtime_ns))    # recorded, never followed
+                continue
+            if e.is_dir(follow_symlinks=False):
+                if e.name in s.exclude_names:
+                    continue
+                rows.append(_row(e.name, "d", 0, 0))
+                subdirs.append((Path(e.path), child_rel))
+            else:
+                rows.append(_row(e.name, "f", st.st_size, st.st_mtime_ns))
+        out[rel] = _digest(rows)
+        for p, r in subdirs:
+            self._walk(s, p, r, out)
+
+    @staticmethod
+    def persistable(snap: Mapping[str, Mapping[str, str]]) -> dict[str, dict]:
+        """Per label, the number of directories and one digest over their digests - no name leaves memory."""
+        return {label: {"dirs": len(d), "digest": hashlib.sha256("\n".join(sorted(
+            hashlib.sha256(k.encode("utf-8", "surrogatepass")).hexdigest() + v for k, v in d.items())).encode()
+        ).hexdigest()} for label, d in snap.items()}
+
+    @staticmethod
+    def diff(before: Mapping[str, Mapping[str, str]], after: Mapping[str, Mapping[str, str]]) -> dict:
+        changed: dict[str, int] = {}
+        for label in set(before) | set(after):
+            b, a = before.get(label, {}), after.get(label, {})
+            n = sum(1 for k in set(b) | set(a) if b.get(k) != a.get(k))
+            if n:
+                changed[label] = n
+        return {"fs_hits": sum(changed.values()), "changed_labels": sorted(changed)}
+
+
+def watched_set(c: Contract) -> list[WatchSpec]:
+    """The fixed watched set of §2.6.9, AQ15 applied: the repository minus .git, .loop, research/v3/results, every
+    __pycache__ and .claude/settings.local.json (the one file live sessions write); the owner's fixed config paths;
+    the polygon's idle entries; the secrets; the worktrees; the quarantine and Conservation by root and known names."""
+    h = c.owner_home
+    specs = [WatchSpec("repo", c.repo_root, exclude_rel=(".git", ".loop", "research/v3/results",
+                                                         ".claude/settings.local.json"),
+                       exclude_names=("__pycache__",))]
+    for i, p in enumerate((h / ".claude" / "settings.json", h / ".claude" / "CLAUDE.md", h / ".claude" / "rules",
+                           h / ".claude" / "hooks", h / ".claude" / "scripts", h / ".codex" / "config.toml",
+                           h / ".mem0", h / ".gitconfig", h / ".npmrc", h / ".config" / "git")):
+        specs.append(WatchSpec(f"owner_config_{i}", p, mode="path"))
+    for name in c.polygon_idle:
+        specs.append(WatchSpec(f"polygon_{name}", c.polygon_root / name, mode="path"))
+    specs.append(WatchSpec("secrets", c.secrets_dir, mode="path"))
+    for i, w in enumerate(c.worktrees):
+        specs.append(WatchSpec(f"worktree_{i}", w, mode="path"))
+    specs.append(WatchSpec("quarantine", c.quarantine_root, mode="stat_known", known=c.quarantine_known))
+    specs.append(WatchSpec("conservation", c.conservation_root, mode="stat_known", known=c.conservation_known))
+    return specs
+
+
+# ── canaries and the ancestor check ─────────────────────────────────────
+
+@dataclass(frozen=True)
+class Canaries:
+    values: Mapping[str, str]
+
+    @classmethod
+    def generate(cls) -> "Canaries":
+        return cls({k: f"nvt3c-{k}-{secrets.token_hex(16)}" for k in
+                    ("decoy_env", "decoy_claude_md", "decoy_credentials", "ancestor")})
+
+    def hashes(self) -> dict[str, str]:
+        return {k: hashlib.sha256(v.encode()).hexdigest() for k, v in self.values.items()}
+
+
+#: W6: the decoy secret in the scheduler's own environment, under a secret-shaped name. build_env never copies it;
+#: assert_env refuses it if it ever reaches a child, and the proxy counts it if it ever reaches a request body.
+DECOY_ENV_NAME = "NVT3_DECOY_TOKEN"
+
+
+def plant_decoy_env(canaries: Canaries, environ: dict | None = None) -> str:
+    """Plant the decoy_env canary in this (the scheduler's) process environment; returns its name."""
+    value = canaries.values["decoy_env"]
+    if environ is None:
+        os.environ[DECOY_ENV_NAME] = value
+    else:
+        environ[DECOY_ENV_NAME] = value
+    return DECOY_ENV_NAME
+
+
+def plant_canaries(unit: UnitDirs, canaries: Canaries) -> None:
+    """A decoy CLAUDE.md and credentials file in the unit's fake home: read only if a child ignores its config."""
+    d = unit.home / ".claude"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "CLAUDE.md").write_bytes(f"Project note {canaries.values['decoy_claude_md']}\n".encode())
+    (d / ".credentials.json").write_bytes(json.dumps(
+        {"claudeAiOauth": {"accessToken": canaries.values["decoy_credentials"]}}).encode())
+
+
+def plant_runs_root_decoy(c: Contract, canaries: Canaries) -> None:
+    """The decoy at the runs-tree root that shows whether ancestor discovery is active (§2.6.9)."""
+    c.runs_root.mkdir(parents=True, exist_ok=True)
+    (c.runs_root / "CLAUDE.md").write_bytes(f"Runs note {canaries.values['ancestor']}\n".encode())
+
+
+def check_ancestors_for_claude(c: Contract) -> dict[str, int]:
+    """By name only: CLAUDE.md, CLAUDE.local.md or .claude in any ancestor of the runs tree."""
+    checked = found = 0
+    for anc in c.runs_root.parents:
+        checked += 1
+        found += sum(os.path.lexists(anc / n) for n in ("CLAUDE.md", "CLAUDE.local.md", ".claude"))
+    return {"checked": checked, "found": found}
+
+
+# ── checks and windows ──────────────────────────────────────────────────
+
+class Witnesses:
+    """One boundary check: the file system before and after, the egress witnesses across it."""
+
+    def __init__(self, c: Contract, *, native: NativeEgressWitness | None, containers: Sequence = (),
+                 fs: FsWitness | None = None, canaries: Canaries | None = None):
+        self.c, self.native, self.containers, self.fs = c, native, tuple(containers), fs
+        self.canaries = canaries
+        self._before: dict | None = None
+        self._check: str | None = None
+
+    def begin_check(self, check_id: str) -> None:
+        self._check = check_id
+        self._begin_utc = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        self._before = self.fs.snapshot() if self.fs else None
+        for w in (self.native, *self.containers):
+            if w is not None:
+                w.start()
+
+    def end_check(self, check_id: str) -> dict:
+        egress = [w.stop().as_record() if w is not None else None for w in (self.native, *self.containers)]
+        record = {"check_id": check_id, "begin_utc": getattr(self, "_begin_utc", None),
+                  "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                  "native": egress[0], "containers": egress[1:],
+                  "canary_hashes": self.canaries.hashes() if self.canaries else {},
+                  "ancestor_claude": check_ancestors_for_claude(self.c)}
+        complete = all(e is None or e["complete"] for e in egress) and self.native is not None
+        if self.fs is not None:
+            after = self.fs.snapshot()
+            if self._before is None:
+                complete = False
+                record["fs"] = {"fs_hits": None, "complete": False}
+            else:
+                record["fs"] = {**FsWitness.diff(self._before, after), "labels": FsWitness.persistable(after)}
+        else:
+            complete = False
+            record["fs"] = {"fs_hits": None, "complete": False}
+        record["complete"] = complete
+        path = self.c.runs_root / "_witness" / f"{check_id}.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(json.dumps(record, sort_keys=True, indent=1).encode("utf-8"))
+        return record
+
+
+@dataclass
+class Window:
+    """A declared fetch or install window. ``roots`` are the pids of the spawns made inside it (spawn(window=...)
+    adds them); only those trees' egress is filed as window hosts (W3)."""
+    name: str
+    hosts: tuple
+    roots: set = field(default_factory=set)
+
+
+@contextlib.contextmanager
+def fetch_window(c: Contract, name: str, hosts: Sequence[str], *, witnesses: Witnesses | None = None,
+                 proxy_control: Callable[[str, str, Sequence[str]], None] | None = None):
+    """A declared fetch or install window (§2.6.5, AQ1): START and END are recorded; the catcher tunnels only to
+    ``hosts`` while it is open; and the egress witnesses file non-loopback remotes as window hosts only for the
+    trees of the spawns made inside it (spawn(..., window=w)). Every other tree's egress stays a hit (W3)."""
+    log = c.runs_root / "_launch" / "windows.jsonl"
+    win = Window(name=name, hosts=tuple(hosts))
+    _append_jsonl(log, {"event": "START", "window": name, "hosts": list(hosts),
+                        "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())})
+    ws = [w for w in ((witnesses.native, *witnesses.containers) if witnesses else ()) if w is not None]
+    for w in ws:
+        w.open_window(name, win.roots)
+    if proxy_control:
+        proxy_control("open", name, hosts)
+    try:
+        yield win
+    finally:
+        for w in ws:
+            w.close_window(name)
+        if proxy_control:
+            proxy_control("close", name, hosts)
+        _append_jsonl(log, {"event": "END", "window": name, "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())})

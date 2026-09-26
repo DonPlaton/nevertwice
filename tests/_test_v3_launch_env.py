@@ -80,6 +80,8 @@ def contract(runs: Path | None = None, **kw) -> "L.Contract":
 C = contract()
 (TMP / "owner_home").mkdir()
 CATCHER = "http://127.0.0.1:47001"
+#: The witnesses are A2.2's suite; these children make no network call, and say so in the record.
+OPTIONAL = "core env suite: the child makes no network call"
 HOSTILE = {
     "CLOUDFLARE_API_TOKEN": "cf-token-value-0001",
     "GITHUB_TOKEN": "ghp_hostile_value_0002",
@@ -235,7 +237,8 @@ class _FakePopen:
 R = fresh("u-rec")
 env_r = dict(ENV, NVT3_PLANT="planted-value-0042")
 child = L.spawn(C, [sys.executable, "-c", "pass"], env=env_r, cwd=R.cwd, record={"role": "test", "arm": "arm"},
-                parent_env=HOSTILE, catcher_url=CATCHER, popen=_FakePopen)
+                parent_env=HOSTILE, catcher_url=CATCHER, popen=_FakePopen, requirement="optional",
+                unwitnessed_reason=OPTIONAL)
 check("the spawn record exists at every moment a process is started",
       bool(seen_at_popen) and all(any(json.loads(x)["spawn_id"] == child.spawn_id for x in lines)
                                   for lines in seen_at_popen), f"{len(seen_at_popen)} Popen call(s)")
@@ -246,7 +249,8 @@ check("the record holds names, not values (a planted value and the proxy token a
 Q = fresh("u-refused")
 try:
     L.spawn(C, [sys.executable, "-c", "pass"], env=dict(ENV, GITHUB_TOKEN="x" * 12), cwd=Q.cwd, record={"role": "test"},
-            parent_env=HOSTILE, catcher_url=CATCHER, popen=_FakePopen)
+            parent_env=HOSTILE, catcher_url=CATCHER, popen=_FakePopen, requirement="optional",
+                unwitnessed_reason=OPTIONAL)
     check("a violating spawn is refused", False)
 except L.ContractViolation:
     last = json.loads(L.spawns_log(C).read_bytes().decode("utf-8").splitlines()[-1])
@@ -293,6 +297,19 @@ for bad in ({"executable": str(TMP / "outside" / "tool.exe")}, {"shell": True}, 
         check(f"B2 Popen argument {name}= is refused", False)
     except L.ContractViolation as e:
         check(f"B2 Popen argument {name}= is refused by name", f"Popen argument not allowed: {name}" in e.reasons, str(e.reasons))
+# every reason is kept: a bad Popen argument and a bad binary both reach the record
+foreign_bin = TMP / "outside" / "tool.exe"
+try:
+    u = fresh("u-both")
+    L.spawn(C, [str(foreign_bin), "-c", "pass"], env=L.build_env(C, parent_env=HOSTILE, unit=u, path_dirs=[],
+            declared={}, catcher_url=CATCHER), cwd=u.cwd, record={"role": "t"}, parent_env=HOSTILE,
+            catcher_url=CATCHER, popen=_FakePopen, shell=True)
+    check("a spawn refused for two reasons records both (Popen argument and binary)", False)
+except L.ContractViolation as e:
+    last = json.loads(L.spawns_log(C).read_bytes().decode("utf-8").splitlines()[-1])
+    check("a spawn refused for two reasons records both (Popen argument and binary)",
+          "Popen argument not allowed: shell" in last["reasons"] and any("polygon" in r for r in last["reasons"]),
+          str(last["reasons"]))
 # B3: real paths
 made = []
 
@@ -370,7 +387,8 @@ try:
             "'pycache': sys.pycache_prefix}))")
     import subprocess
     kid = L.spawn(C, [sys.executable, "-c", code], env=env_k, cwd=K.cwd, record={"role": "test"},
-                  parent_env=os.environ, catcher_url=CATCHER, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                  parent_env=os.environ, catcher_url=CATCHER, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                  requirement="optional", unwitnessed_reason=OPTIONAL)
     out, err = kid.process.communicate(timeout=60)
     rep = json.loads(out.decode("utf-8") or "{}") if kid.process.returncode == 0 else {}
     check("the child started", kid.process.returncode == 0, err.decode("utf-8", "replace")[-300:])
