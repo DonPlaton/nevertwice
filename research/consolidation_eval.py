@@ -250,6 +250,8 @@ def main():
                "capped": stats.get("capped", 0),               # B1: answers that reached the output cap
                "wall_s": round(dt, 1), "ship_supported": bool(verdict_ship)}
         p = HERE / "consolidation_eval.json"
+        import _provenance as prov  # noqa: PLC0415 - (б) b-c: measured_at on every register artifact
+        prov.stamp(out)
         p.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
         print(f"\n  saved aggregate metrics -> {p}")
     print(bar)

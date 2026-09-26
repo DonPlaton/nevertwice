@@ -1,5 +1,5 @@
 ---
-title: "The 31x headline assumes every pitfall needs memory - add a linter arm"
+title: "The 31x headline (withdrawn at stage D) assumes every pitfall needs memory - add a linter arm"
 labels: help wanted, research
 ---
 
@@ -16,9 +16,9 @@ as stale, so the headline it targeted is no longer published.
 
 ## The problem
 
-Exactly **one** comparative claim is still published: `longitudinal.active_vs_inject_token_ratio`
+The comparative claim this issue is about, `longitudinal.active_vs_inject_token_ratio`
 — *"active guards deliver the same prevention for 31x fewer memory tokens than always-injecting
-the recalled text"*, cited in `README.md`.
+the recalled text"* - was withdrawn at stage D: the simulation's writer changed, the next campaign re-derives it; until then no comparative claim is published.
 
 It comes from a simulation (`research/longitudinal_improvement.py`, n=200 tasks, 25 seeds), and
 its baseline matrix in `research/BASELINES.md` shows three cells still `not_compared`. The
@@ -65,7 +65,7 @@ The ratio might survive this. It might not. Nobody has run it.
 - `research/longitudinal_improvement.py` — the simulation; it declares `sandbox_guard.isolate()`
   so it never touches a real store.
 - `research/longitudinal_results.json` — `arms.v1.mem_tokens` / `arms.v2.mem_tokens`, where the
-  31x comes from.
+  31x (withdrawn at stage D) comes from.
 - `research/BASELINES.md` — the matrix and what `not_compared` means.
 - `research/cheap_baselines_rules.json` → `linter_or_test.coverage` — the per-class judgements
   F2 made, and the `generosity_note` explaining that they lean in the baseline's favour.

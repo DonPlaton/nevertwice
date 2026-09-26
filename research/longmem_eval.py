@@ -569,6 +569,8 @@ def evaluate():
              n, len(data), "questions"),
         ])
         target = Path(OUT) if OUT else (HERE / "longmem_results.json")
+        import _provenance as prov  # noqa: PLC0415 - (б) b-c: measured_at on every register artifact
+        prov.stamp(res)
         target.write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
         print(f"  saved → {target}")
     print("=" * 74)

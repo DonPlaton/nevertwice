@@ -100,7 +100,7 @@ PORT_WINERRORS = (10048, 10055)
 #: reading `OLLAMA_BASE_URL` at its own import time.
 _DEFAULT_HOSTS = frozenset({("127.0.0.1", 11434), ("localhost", 11434), ("::1", 11434)})
 _HOST_ENV_VARS = ("OLLAMA_URL", "OLLAMA_TAGS_URL", "OLLAMA_EMBED_URL", "OLLAMA_BASE_URL",
-                  "OLLAMA_HOST")
+                  "OLLAMA_HOST", "OLLAMA_OPENAI_BASE", "OLLAMA_API_BASE")   # (б): graphiti, litellm
 
 # ── overridable clock/sleep seams (fake-clock tests never sleep for real) ───────────────
 _now: Callable[[], float] = time.monotonic
@@ -441,11 +441,12 @@ def _is_llm_retryable_transport_exc(obj) -> bool:
     candidates = (obj, getattr(obj, "reason", None), getattr(obj, "__cause__", None),
                  getattr(obj, "__context__", None))
     types: tuple = (TimeoutError, ConnectionResetError, ConnectionRefusedError)
-    try:
-        import httpx
-        types = types + (httpx.TimeoutException, httpx.ConnectError)
-    except ImportError:
-        pass
+    for lib in ("httpx", "httpx2"):          # (б) b-a: httpx2 raises its own, unrelated classes
+        try:
+            mod = __import__(lib)
+            types = types + (mod.TimeoutException, mod.ConnectError)
+        except (ImportError, AttributeError):
+            pass
     return any(isinstance(c, types) for c in candidates if c is not None)
 
 
@@ -812,11 +813,26 @@ def _maybe_record_llm_response_failure(response, *, is_llm: bool) -> None:
         _record_llm_failure(response)
 
 
-def _paced_httpx_send(self, request, **kwargs):
-    import httpx  # noqa: PLC0415 - only reachable when httpx installed this got patched
+def _httpx_sync_send(orig_key: str):
+    """The paced `Client.send` for one httpx-shaped library - `httpx`, or `httpx2`, the fork the
+    openai SDK 3.x sends through (graphiti's AsyncOpenAI reaches Ollama that way, K45). The two
+    libraries' classes are unrelated (httpx2.Client is not an httpx.Client), so each gets its own
+    patch over its own original; the pacing, retry and classification are the same code."""
+    def send(self, request, **kwargs):
+        return _paced_httpx_send_via(orig_key, self, request, kwargs)
+    return send
+
+
+def _httpx_async_send(orig_key: str):
+    async def send(self, request, **kwargs):
+        return await _paced_httpx_async_send_via(orig_key, self, request, kwargs)
+    return send
+
+
+def _paced_httpx_send_via(orig_key: str, self, request, kwargs):
     host, port = (request.url.host or "").lower(), (
         request.url.port or (443 if request.url.scheme == "https" else 80))
-    orig = _ORIG["httpx_send"]
+    orig = _ORIG[orig_key]
     if not is_ollama_host(host, port):
         return orig(self, request, **kwargs)
     stream = bool(kwargs.get("stream", False))
@@ -840,14 +856,12 @@ def _paced_httpx_send(self, request, **kwargs):
         return marker.response          # retries exhausted; hand back the last 400 as-is
     except _LLMRetryableResponse as marker:
         return marker.response          # K33: retries exhausted; hand back the last 5xx as-is
-    except httpx.HTTPError:
-        raise
 
 
-async def _paced_httpx_async_send(self, request, **kwargs):
+async def _paced_httpx_async_send_via(orig_key: str, self, request, kwargs):
     host, port = (request.url.host or "").lower(), (
         request.url.port or (443 if request.url.scheme == "https" else 80))
-    orig = _ORIG["httpx_async_send"]
+    orig = _ORIG[orig_key]
     if not is_ollama_host(host, port):
         return await orig(self, request, **kwargs)
     stream = bool(kwargs.get("stream", False))
@@ -870,6 +884,12 @@ async def _paced_httpx_async_send(self, request, **kwargs):
         return marker.response
     except _LLMRetryableResponse as marker:
         return marker.response
+
+
+_paced_httpx_send = _httpx_sync_send("httpx_send")
+_paced_httpx_async_send = _httpx_async_send("httpx_async_send")
+_paced_httpx2_send = _httpx_sync_send("httpx2_send")
+_paced_httpx2_async_send = _httpx_async_send("httpx2_async_send")
 
 
 # ── tripwire: requests / aiohttp - COUNT-ONLY, never paced or retried ──────────────────
@@ -978,6 +998,18 @@ def install(mode: str = "pace") -> None:
             _ORIG["httpx_async_send"] = httpx.AsyncClient.send
             httpx.Client.send = _paced_httpx_send
             httpx.AsyncClient.send = _paced_httpx_async_send
+        #: (б) b-a, K45: the openai SDK 3.x sends through `httpx2`, a separate package whose
+        #: classes are not httpx's - graphiti's Ollama traffic passed this module unseen (the zep
+        #: rows carry no transport record; the server log was the only witness).
+        try:
+            import httpx2
+        except ImportError:
+            httpx2 = None
+        if httpx2 is not None and httpx2.Client is not getattr(httpx, "Client", None):
+            _ORIG["httpx2_send"] = httpx2.Client.send
+            _ORIG["httpx2_async_send"] = httpx2.AsyncClient.send
+            httpx2.Client.send = _paced_httpx2_send
+            httpx2.AsyncClient.send = _paced_httpx2_async_send
         try:
             import requests
         except ImportError:
@@ -1006,6 +1038,10 @@ def uninstall() -> None:
             import httpx  # noqa: PLC0415 - only present if install() found it importable
             httpx.Client.send = _ORIG.pop("httpx_send")
             httpx.AsyncClient.send = _ORIG.pop("httpx_async_send")
+        if "httpx2_send" in _ORIG:
+            import httpx2  # noqa: PLC0415 - only present if install() found it importable
+            httpx2.Client.send = _ORIG.pop("httpx2_send")
+            httpx2.AsyncClient.send = _ORIG.pop("httpx2_async_send")
         if "requests_send" in _ORIG:
             import requests  # noqa: PLC0415
             requests.Session.send = _ORIG.pop("requests_send")
@@ -1070,10 +1106,10 @@ def calls_by_host(since: dict | None = None) -> dict:
 
 def attach(out: dict, *, since: dict | None = None) -> None:
     """Write `out["ollama_transport"]` with this process's counters (or, with `since`, the
-    DELTA against an earlier `snapshot()`). Writes NOTHING when the span covers zero paced
-    calls AND zero tripwire hits - `install()` with no traffic (an LLM-only arm, `--dry`,
-    a run that never reached this module) must not claim a transport it never used, and a
-    reader can treat the KEY's presence as proof traffic passed through here at all.
+    DELTA against an earlier `snapshot()`). While installed it ALWAYS writes - a span with no
+    traffic records `calls: 0` ((б) b-a, K45: an absent key used to mean either "no traffic" or
+    "traffic this module never saw"). It writes NOTHING only when the pacer is not installed and
+    the span saw nothing: then there is no transport to report, and the key's absence says so.
 
     When the tripwire counted a genuine BYPASS (`bypass_requests`/`bypass_aiohttp` > 0 - a
     stand reached Ollama through `requests` or `aiohttp` OUTSIDE any paced call), out
@@ -1116,7 +1152,12 @@ def attach(out: dict, *, since: dict | None = None) -> None:
         failed_by_exc_llm = _dict_delta(_LLM_FAILURES["by_exception_type"],
                                         base_lf["by_exception_type"])
         failed_gave_up_llm = _LLM_FAILURES["gave_up"] - base_lf["gave_up"]
-        if (calls <= 0 and bypass_requests <= 0 and bypass_aiohttp <= 0
+        #: (б) b-a, K45: an INSTALLED pacer that saw no traffic now says so - `calls: 0` - instead
+        #: of writing nothing: an absent key could not tell "this arm made no Ollama call" from
+        #: "its calls went through a transport this module never hooked" (graphiti's httpx2),
+        #: and that ambiguity is how the zep rows reached the register with no record. Absent
+        #: now means only "the pacer was not installed" - the untracked case.
+        if (not _INSTALLED and calls <= 0 and bypass_requests <= 0 and bypass_aiohttp <= 0
                 and nested_requests <= 0 and nested_aiohttp <= 0
                 and not failed_by_status and not failed_by_exc and failed_gave_up <= 0
                 and not failed_by_status_llm and not failed_by_exc_llm
@@ -1192,6 +1233,26 @@ def attach(out: dict, *, since: dict | None = None) -> None:
     if reasons:
         out["valid"] = False
         out["invalid_reason"] = "; ".join(reasons)
+
+
+def require_traffic(arm: dict, name: str) -> None:
+    """Mark `arm` invalid when it must reach Ollama and its record shows no paced call.
+
+    (б) b-a, K45: an arm that embeds or extracts through the local model and recorded
+    `calls: 0` either never reached the model (its numbers measure nothing) or reached it through
+    a transport this module does not hook - graphiti's httpx2, before b-a - so its record says
+    nothing about failures or retries. Either way the row is not what it claims. A blocked arm has
+    no numbers and is left alone; an existing invalid reason is kept and extended. Called by the
+    stands for the arms that cannot run without Ollama - never for a naive or lexical arm."""
+    if arm.get("blocked"):
+        return
+    calls = (arm.get("ollama_transport") or {}).get("calls", 0)
+    if calls > 0:
+        return
+    why = (f"{name}: 0 paced Ollama calls for an arm that cannot run without the model - it reached "
+           f"none, or reached it through a transport the pacer does not see (K45)")
+    arm["valid"] = False
+    arm["invalid_reason"] = "; ".join(r for r in (arm.get("invalid_reason"), why) if r)
 
 
 def _reset_for_tests() -> None:

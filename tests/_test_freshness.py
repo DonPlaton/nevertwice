@@ -274,7 +274,10 @@ def test_mutations_turn_it_red() -> None:
         print("       (skipped: this checkout has no git history)")
         return
 
-    published = [c for c in MANIFEST["claims"] if not c.get("stale")]
+    #: A declaration (no `produced_by`) has no closure to roll back - after stage D's b-c the first
+    #: published claim in register order is one (asof.gate.threshold), so the victim is the first
+    #: published claim that HAS a closure.
+    published = [c for c in MANIFEST["claims"] if not c.get("stale") and c.get("produced_by")]
     if not published:
         check("there is a published claim to mutate", False,
               "every claim is withdrawn; the mutations below cannot run")

@@ -514,6 +514,8 @@ def main(argv: list[str] | None = None) -> int:
     decided = payload["summary"]["grep_labels"]["true"] + payload["summary"]["grep_labels"]["false"]
     payload["summary"]["grep_precision"] = (
         round(payload["summary"]["grep_labels"]["true"] / decided, 4) if decided else None)
+    import _provenance as prov  # noqa: PLC0415 - (б) b-c: measured_at on every register artifact
+    prov.stamp(payload)
     Path(args.out).write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8", newline="\n")
     report(payload)
     return 0

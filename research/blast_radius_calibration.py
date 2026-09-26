@@ -430,6 +430,8 @@ def main(argv: list[str] | None = None) -> int:
         "arms": arms,
         "proposed_budgets": proposed_budgets(arms["declared"]["summary"]),
     }
+    import _provenance as prov  # noqa: PLC0415 - (б) b-c: measured_at on every register artifact
+    prov.stamp(payload)
     Path(args.out).write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8", newline="\n")
     report(payload)
     return 0

@@ -658,7 +658,7 @@ def test_t7_httpx_client_and_asyncclient_are_paced_through_mocktransport() -> No
 # ── T8: attach(out) - writes the key only when this module actually did something ──────
 
 def test_t8_attach_writes_the_key_only_when_something_ran_through_it() -> None:
-    print("\n- T8: attach(out) writes ollama_transport only when install()'d AND used -")
+    print("\n- T8: attach(out) writes ollama_transport whenever install()'d, calls: 0 included -")
     with _isolated():
         out: dict = {}
         pacer.attach(out)
@@ -668,8 +668,10 @@ def test_t8_attach_writes_the_key_only_when_something_ran_through_it() -> None:
         pacer.install()
         out2: dict = {}
         pacer.attach(out2)
-        check("installed but zero calls through it -> attach() still writes NOTHING",
-              "ollama_transport" not in out2, str(out2))
+        #: (б) b-a, K45: installed with no traffic is a RECORD of zero, not silence - silence
+        #: could not be told apart from traffic that went through a transport never hooked.
+        check("installed but zero calls through it -> attach() writes an explicit calls: 0",
+              (out2.get("ollama_transport") or {}).get("calls") == 0 and "valid" not in out2, str(out2))
 
         clock = FakeClock()
         pacer._now, pacer._sleep = clock.now, clock.sleep
@@ -703,9 +705,14 @@ def test_t8_attach_writes_the_key_only_when_something_ran_through_it() -> None:
         mid = pacer.snapshot()
         out5: dict = {}
         pacer.attach(out5, since=mid)
-        check("attach(since=a snapshot taken AFTER the last call) writes nothing - this "
-              "arm made no calls of its OWN in that span",
-              "ollama_transport" not in out5, str(out5))
+        check("attach(since=a snapshot taken AFTER the last call) records calls: 0 - this "
+              "arm made no calls of its OWN in that span, and the record says so",
+              (out5.get("ollama_transport") or {}).get("calls") == 0, str(out5))
+        pacer.uninstall()
+        out6: dict = {}
+        pacer.attach(out6, since=pacer.snapshot())
+        check("uninstalled and nothing in the span -> attach() writes NOTHING (the untracked case)",
+              "ollama_transport" not in out6, str(out6))
 
 
 def test_t8b_calls_by_host_distinguishes_two_recognised_ollama_hosts() -> None:

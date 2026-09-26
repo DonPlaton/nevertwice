@@ -266,10 +266,13 @@ with _isolated_pacer():
         out_path3 = Path(td3) / "out.json"
         result_no_attach = _run_mini(out_path3)
     arm3 = result_no_attach["artifact"].get("arms", {}).get("nevertwice", {})
-    check("mutation 'attach() removed': no ollama_transport is written and the arm stays "
-          "WRONGLY valid (the pacer paced the call but the artifact never learns it - "
-          "would FAIL the same checks above)",
-          "ollama_transport" not in arm3 and "valid" not in arm3, str(sorted(arm3)))
+    #: Before (б) b-a this mutation left the arm WRONGLY valid. The calls>0 rule
+    #: (`pacer.require_traffic`, K45) now refuses an Ollama arm whose record shows no paced call -
+    #: so a lost attach() is caught too, by that rule's own reason.
+    check("mutation 'attach() removed': no ollama_transport is written, and the arm is refused "
+          "by the calls>0 rule instead of staying valid",
+          "ollama_transport" not in arm3 and arm3.get("valid") is False
+          and "0 paced Ollama calls" in (arm3.get("invalid_reason") or ""), str(sorted(arm3)))
 ab.pacer.attach = saved_attach
 
 check("ab.pacer.install/attach are restored to the real functions after the mutations",

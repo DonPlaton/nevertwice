@@ -1,5 +1,13 @@
 # nevertwice-embed universal v1 — plan and protocol
 
+<!-- withdrawn-banner -->
+> **Withdrawn: figures on this page must not be quoted.** They were retracted and remain
+> here because deleting a result one was wrong about destroys the record of having been
+> wrong. The design, the method and the caveats stand; the numbers do not. Each figure's
+> own reason and date are in
+> [`research/evidence_manifest.json`](../evidence_manifest.json), and
+> `python tools/check_freshness.py --list-stale` lists every one.
+
 **Goal:** a UNIVERSAL drop-in improvement over stock `bge-m3` for the memory-note domain —
 shipped as a ready model (`ollama pull`-able), zero fine-tuning on the user's side. The
 per-vault prototype (research/EMBED_SPECIALIZE.md) proved the training signal; this project

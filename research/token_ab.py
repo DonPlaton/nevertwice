@@ -422,6 +422,8 @@ def main():
                "note": "modeled net (escalate-on-miss) + measured distillation ratio + a live "
                        "two-arm run with real Ollama prompt-token counts (small sample)"}
         target = HERE / "token_ab.json"
+        import _provenance as prov  # noqa: PLC0415 - (б) b-c: measured_at on every register artifact
+        prov.stamp(out)
         target.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
         print(f"  saved → {target}")
 

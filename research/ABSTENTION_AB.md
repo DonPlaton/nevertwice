@@ -65,7 +65,7 @@ and a half. That is a hypothesis, and it is written here as one.
 `NEVERTWICE_INJECT_MIN_VALUE`, on the path capped at 2200 characters.
 
 The sweep is identical to C1's, and that is the result: **the mean payload on this corpus is
-457.7 characters (mean of 3 runs; withdrawn since the engine moved in stage D), so the cap never binds and the two paths differ in nothing the measurement can
+457.7 characters (mean of 3 runs, withdrawn since the engine moved in stage D), so the cap never binds and the two paths differ in nothing the measurement can
 see.** The gate written for it - 15% smaller with no loss of the top-ranked lesson - is
 **vacuous as written**: the top item scores 1.0 by construction and cannot be dropped at any
 threshold below 1.0, so the second half is satisfied by arithmetic rather than by evidence.

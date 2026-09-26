@@ -446,6 +446,8 @@ def run():
             "settings": results,
         }
         out = HERE / OUTNAME
+        import _provenance as prov  # noqa: PLC0415 - (б) b-c: measured_at on every register artifact
+        prov.stamp(summary)
         out.write_text(json.dumps(summary, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
         print(f"  saved → {out}")
     return results

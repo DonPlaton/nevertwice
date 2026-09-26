@@ -10,7 +10,7 @@ Artifact: `research/embed_universal/heldout/serving_check.json`.
 | | declared before the run | measured | |
 |---|---|---|---|
 | **V1** served vs local, both axes | within ±0.02 | **0.000**, both axes, both cutoffs | pass |
-| **V2** vector agreement | median cosine ≥ 0.99 | **median 1.0000, minimum 0.9997** | pass |
+| **V2** vector agreement | median cosine ≥ 0.99 | **median 1.0000, minimum 0.9997** (withdrawn at stage D: the stand changed, the next campaign re-measures it) | pass |
 
 Zero of 2412 vectors fall below 0.99. Zero fall below 0.95. Every one of the 624 retrieval
 queries ranks its documents **identically** through both paths — the paired deltas are not small,

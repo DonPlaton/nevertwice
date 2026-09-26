@@ -201,8 +201,10 @@ try:
     check("arm 1: calls == 3 (its OWN delta)",
           r1.get("ollama_transport", {}).get("calls") == 3, str(r1.get("ollama_transport")))
     check("arm 1: valid is False (the requests bypass)", r1.get("valid") is False, str(r1))
-    check("arm 2: NO ollama_transport at all - it made zero calls of its own",
-          "ollama_transport" not in r2, str(r2))
+    #: (б) b-a, K45: an installed pacer records a quiet arm as calls: 0 rather than omitting it -
+    #: what this check guards is that arm 1's traffic does not leak into arm 2's delta.
+    check("arm 2: its record says zero calls of its own (arm 1's three did not leak in)",
+          (r2.get("ollama_transport") or {}).get("calls") == 0, str(r2.get("ollama_transport")))
     check("arm 2: NO valid key - arm 1's bypass must not leak onto a later arm",
           "valid" not in r2, str(r2))
 

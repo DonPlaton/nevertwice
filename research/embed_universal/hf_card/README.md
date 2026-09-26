@@ -21,6 +21,14 @@ language:
 
 # nevertwice-embed
 
+<!-- withdrawn-banner -->
+> **Withdrawn: figures on this page must not be quoted.** They were retracted and remain
+> here because deleting a result one was wrong about destroys the record of having been
+> wrong. The design, the method and the caveats stand; the numbers do not. Each figure's
+> own reason and date are in
+> [`research/evidence_manifest.json`](../../evidence_manifest.json), and
+> `python tools/check_freshness.py --list-stale` lists every one.
+
 [BAAI/bge-m3](https://huggingface.co/BAAI/bge-m3), LoRA-specialised for **AI-agent memory**: telling
 *"the same lesson, re-phrased"* from *"a different lesson on the same topic"*, and finding the note
 that matches a situation you are heading into.

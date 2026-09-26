@@ -316,6 +316,8 @@ def main() -> int:
         ])
         target = Path(args.out) if args.out else (HERE / "results" / "locomo.json")
         target.parent.mkdir(parents=True, exist_ok=True)
+        import _provenance as prov  # noqa: PLC0415 - (б) b-c: measured_at on every register artifact
+        prov.stamp(res)
         target.write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
         print(f"\n  saved -> {target}")
     print("=" * 74)

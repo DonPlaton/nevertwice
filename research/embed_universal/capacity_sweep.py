@@ -228,6 +228,9 @@ def main(argv: list[str] | None = None) -> int:
             "train_pairs.jsonl. Per-language results are reported instead and are NOT a "
             "substitute for that test."),
     }
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))   # research/, for _provenance
+    import _provenance as prov  # noqa: PLC0415 - (б) b-c: measured_at on every register artifact
+    prov.stamp(payload)
     Path(args.out).write_bytes(
         (json.dumps(payload, indent=1, ensure_ascii=False, sort_keys=True) + "\n").encode("utf-8"))
     report(payload)

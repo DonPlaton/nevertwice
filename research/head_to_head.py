@@ -151,11 +151,11 @@ def _git_head() -> str:
 def _measured_at() -> dict:
     """The commit and the moment an arm's row was produced. Rows are merged into one artifact
     across runs (a competitor arm is not re-run when only our engine changed), so each row
-    carries its own stamp rather than inheriting the file's."""
-    import datetime                                              # noqa: PLC0415
-    head = _git_head()
-    return {"commit": head, "utc": datetime.datetime.now(datetime.timezone.utc)
-            .strftime("%Y-%m-%dT%H:%M:%SZ")}
+    carries its own stamp rather than inheriting the file's. The one stamp every stand writes -
+    `_provenance.measured_at()`, {commit, utc, dirty} - since stage D ((б) b-c): this stand's own
+    copy lacked `dirty`, so a row measured on a modified tree read like a clean one."""
+    import _provenance as prov                                   # noqa: PLC0415
+    return prov.measured_at()
 
 
 # ── shared stand + metric ─────────────────────────────────────────────────────

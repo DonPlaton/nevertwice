@@ -53,7 +53,7 @@ print(what_breaks("prism-orchestrator", project="myproj"))     # downstream impa
 
 From any MCP client the same three are `memory_guard_check`, `memory_anticipate`, and
 `memory_what_breaks`. On a task series, active interventions match always-inject's
-error-prevention for **31× fewer memory tokens**
+error-prevention for **31× fewer memory tokens** (withdrawn at stage D: the simulation's writer changed, the next campaign re-derives it)
 ([`research/ACTIVE_MEMORY.md`](../research/ACTIVE_MEMORY.md)); the live repeat-error figure that
 stood here was withdrawn in 2026-08 with the rest of the paid-API corpus - `python
 tools/check_freshness.py --list-stale` says why.

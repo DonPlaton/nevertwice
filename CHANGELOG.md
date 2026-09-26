@@ -595,6 +595,19 @@ empty.
   so a serving-latency figure timed beside other GPU work would have come back; a hand-written
   exclusion kept it out. Every timing claim - found by its unit too, not only by its field name -
   now needs the stand's own `machine_idle` record, with no exemption.
+- **A competitor's model traffic could pass the benchmark pacer unseen.** The openai SDK 3.x sends
+  through `httpx2`, a separate package the pacer did not hook, so graphiti's (and, in principle,
+  any openai-compatible client's) calls to the local model carried no transport record - the
+  server log was the only witness. The pacer now hooks `httpx2` too; an installed pacer records a
+  quiet span as `calls: 0` instead of writing nothing; and the supersession and as-of stands mark
+  an arm that needs the model but shows no paced call as invalid. `research/_pacer_selftest.py`
+  checks, inside any environment, that every HTTP client present there is seen.
+- **Most benchmark artifacts did not say which commit produced them, or when.** Every script the
+  evidence register names as a writer now stamps `measured_at` (commit, UTC time, dirty tree) on
+  its artifact - the product's guard-pack count through a small stand that stamps it - and
+  reproduction ignores that stamp when it compares results. Five live figures whose stands
+  changed for this (four from the embedder study, one token ratio) are withdrawn until the next
+  campaign re-measures them.
 - **A restored confidence interval used the withdrawn run's sample size.** Restoring a claim
   recomputed its Wilson interval from the register's `n`, not from the run being restored (restore
   #2 fixed three by hand; twelve withdrawn claims still carry an `n` their artifact no longer has).

@@ -902,6 +902,9 @@ def run_zep(cases: list[dict], k: int) -> dict:
 
 
 ARMS = {"nevertwice": run_nevertwice, "mem0": run_mem0, "naive": run_naive, "zep": run_zep}
+#: The arms that cannot run without the local model - their record must show paced calls
+#: (`_ollama_pacer.require_traffic`). The naive arm reads the corpus and calls nothing.
+OLLAMA_ARMS = frozenset({"nevertwice", "mem0", "zep"})
 
 
 def compare_arms(loaded: dict[str, dict[str, dict]]) -> list[dict]:
@@ -1474,6 +1477,8 @@ def _one_run(data: dict, cases: list[dict], args, arm_names: list[str]) -> dict:
         # (by reference, from the first file loaded) into a pooled artifact unchanged, so
         # the flag survives pooling too, never just the single-run artifact.
         pacer.attach(res, since=snap)
+        if name in OLLAMA_ARMS:
+            pacer.require_traffic(res, name)          # (б) b-a, K45: 0 calls = an unseen transport
         out["arms"][name] = res
         if res.get("blocked"):
             print(f"  BLOCKED: {res['blocked']}\n")

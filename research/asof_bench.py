@@ -341,6 +341,9 @@ def run_zep(cases: list[dict], k: int) -> dict:
 
 
 ARMS = {"nevertwice": run_nevertwice, "naive": run_naive, "zep": run_zep}
+#: The arms that cannot run without the local model - their record must show paced calls
+#: (`_ollama_pacer.require_traffic`, (б) b-a). The naive arm calls nothing.
+OLLAMA_ARMS = frozenset({"nevertwice", "zep"})
 RUNS = 1
 
 
@@ -572,6 +575,8 @@ def main() -> int:
         # `arms["nevertwice"].both_correct_rate`), the same pattern supersession_bench's
         # `_one_run` uses.
         pacer.attach(res, since=snap)
+        if name in OLLAMA_ARMS:
+            pacer.require_traffic(res, name)          # (б) b-a, K45: 0 calls = an unseen transport
         out["arms"][name] = res
         if res.get("after_sleep"):
             after = res.pop("after_sleep")

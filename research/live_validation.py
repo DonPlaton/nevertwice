@@ -392,8 +392,10 @@ def main():
         name = next((a.split("=", 1)[1] for a in argv if a.startswith("--out=")),
                     "live_validation_results.json")
         p = HERE / name
-        p.write_text(json.dumps({"model": model, "trials": trials, "tasks": results,
-                                 "summary": summ}, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
+        import _provenance as prov  # noqa: PLC0415 - (б) b-c: measured_at on every register artifact
+        p.write_text(json.dumps(prov.stamp({"model": model, "trials": trials, "tasks": results,
+                                            "summary": summ}), ensure_ascii=False, indent=1),
+                     encoding="utf-8", newline="\n")
         print(f"  saved → {p}")
     print("=" * 74)
     return results

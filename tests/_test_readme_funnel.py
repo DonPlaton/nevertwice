@@ -53,7 +53,12 @@ ACQUISITION = {
     # by task B8 along with the rest of the corpus it belonged to. The funnel still has to
     # carry *a* measured result above the fold, so the needle is the one that survived
     # re-measurement at HEAD, not the one that read best.
-    "the measured headline": "31×",
+    # Stage D ((б) b-c) withdrew that last one too - the 31x token ratio: its simulation's writer
+    # changed - so until campaign v3 restores a measured figure, what the fold must carry is the
+    # statement of that withdrawal, where the number stood. The needle returns to a number with
+    # the restore, never to a withdrawn one (tests/_test_freshness.py refuses those in README).
+    "the measured headline, or where it stood the statement of its withdrawal":
+        "withdrawn on 2026-09-26: stage D changed the simulation's writer",
     "the withdrawal, stated where the evidence was": "Withdrawn 2026-08",
     "the head-to-head table": "<!-- claims:head-to-head -->",
     "the architecture visual": "docs/architecture.svg",

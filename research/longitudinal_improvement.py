@@ -225,6 +225,8 @@ def main():
                           "eff": EFF},
                "arms": out, "sensitivity": rows}
         p = HERE / "longitudinal_results.json"
+        import _provenance as prov  # noqa: PLC0415 - (б) b-c: measured_at on every register artifact
+        prov.stamp(res)
         p.write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8")
         print(f"\n  saved → {p}")
     print("=" * 78)

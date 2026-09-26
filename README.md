@@ -86,7 +86,7 @@ What the second campaign measured on 2026-09-25, and where each row stands now:
 |---|---|---|
 | external retrieval, one pool and one embedder for everyone | withdrawn on 2026-09-25, a day after the second campaign measured it: the stage-D bug fixes moved the engine code under it, so the figure no longer describes the code in this repository, and campaign v3 re-measures it on its own anchor. The page it links to keeps the method and the figures withdrawn in 2026-08, and why | [EXTERNAL_RETRIEVAL.md](research/EXTERNAL_RETRIEVAL.md) |
 | handing back a fact that has since been **retracted** | withdrawn on 2026-09-25 for the same reason. The study page keeps the method and the design it measures: nothing is retired unless a rule proves the replacement or the sleep-time judge rules on it, and an unproven pair is served whole, newest first | [SUPERSESSION.md](research/SUPERSESSION.md) |
-| acting vs *always-injecting* the same lesson | same error prevention for **31×** fewer memory tokens - a simulation over a fixed task family, not a live agent run. The study page it links to is otherwise withdrawn, so read the ratio here and the method there | [ACTIVE_MEMORY.md](research/ACTIVE_MEMORY.md) |
+| acting vs *always-injecting* the same lesson | withdrawn on 2026-09-26: stage D changed the simulation's writer (it now stamps the commit and time on its artifact), so the token ratio is re-derived in campaign v3 - a deterministic CPU re-run, not a model call. A simulation over a fixed task family, not a live agent run; the study page keeps the method | [ACTIVE_MEMORY.md](research/ACTIVE_MEMORY.md) |
 | memory-poisoning acceptance attacks | withdrawn on 2026-09-25 for the same reason; the study page, withdrawn with it, keeps the four attack families and the method | [POISONING.md](research/POISONING.md) |
 | what being there costs | PreToolUse fell by well over a third once the hook stopped recompiling the engine on every call, and costs zero context tokens until a guard fires; the millisecond figure is withdrawn until it is timed on an idle machine - a timing is published only from such a run, and the campaign ran with models loaded | [BENCHMARKS.md](docs/BENCHMARKS.md) |
 
@@ -157,7 +157,7 @@ With no backend at all, extraction pauses loudly (sessions are kept and retried,
 recall runs on lexical search until an embedder shows up. The five-minute walkthrough is in
 [QUICKSTART.md](QUICKSTART.md); every environment variable is in [CONFIG.md](docs/CONFIG.md).
 
-Contributing: `pip install -e ".[dev]"`, then `python -m pytest -q`. Two hundred fifty-two hermetic suites -
+Contributing: `pip install -e ".[dev]"`, then `python -m pytest -q`. Two hundred fifty-four hermetic suites -
 LLMs, embedders, the optional reranker, network and GPU execution are disabled or mocked, and a lint
 fails the build if a script reaches a memory store without declaring which store it means. CI runs
 them on Linux, Windows and macOS across four Python versions. One is a golden store - same sessions

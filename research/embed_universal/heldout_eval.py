@@ -377,6 +377,9 @@ def main(argv: list[str] | None = None) -> int:
         "paired_vs_shipped": paired(results, reference="nevertwice-embed"),
         "per_query": {label: r["per_query"] for label, r in results.items()},
     }
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))   # research/, for _provenance
+    import _provenance as prov  # noqa: PLC0415 - (б) b-c: measured_at on every register artifact
+    prov.stamp(payload)
     Path(args.out).write_bytes(
         (json.dumps(payload, indent=1, ensure_ascii=False, sort_keys=True) + "\n").encode("utf-8"))
     report(payload)

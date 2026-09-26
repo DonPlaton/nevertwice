@@ -151,33 +151,58 @@ import re  # noqa: E402
 LINK = re.compile(r"\[[^\]]+\]\(([^)#]+)(?:#[^)]*)?\)")
 WARNS = ("withdrawn", "retracted", "still registered", "still live")
 
-live_claims = [c for c in manifest["claims"] if not (c.get("stale") or c.get("withdrawn_on"))]
-unwarned = []
-checked = 0
-for c in live_claims:
-    forms = [str(f) for f in (c.get("printed") or []) if str(f).strip()]
-    for rel in (c.get("cited_in") or []):
-        page = ROOT / rel
-        if not page.exists():
+def unwarned_links(claims: list, root: Path) -> tuple[list, int]:
+    """(live claims whose cited line links a retracted page without saying so, links checked)."""
+    unwarned, checked = [], 0
+    for c in claims:
+        if c.get("stale") or c.get("withdrawn_on"):
             continue
-        for line in page.read_text(encoding="utf-8").splitlines():
-            if not any(f in line for f in forms):
+        forms = [str(f) for f in (c.get("printed") or []) if str(f).strip()]
+        for rel in (c.get("cited_in") or []):
+            page = root / rel
+            if not page.exists():
                 continue
-            for target in LINK.findall(line):
-                dest = (page.parent / target).resolve()
-                if not dest.is_file() or dest.suffix != ".md":
+            for line in page.read_text(encoding="utf-8").splitlines():
+                if not any(f in line for f in forms):
                     continue
-                checked += 1
-                head = dest.read_text(encoding="utf-8", errors="replace")[:4000].lower()
-                if not any(m in head for m in sw.MARKERS):
-                    continue
-                if not any(w in line.lower() for w in WARNS):
-                    unwarned.append(f"{rel}: {c['id']} -> {target}")
+                for target in LINK.findall(line):
+                    dest = (page.parent / target).resolve()
+                    if not dest.is_file() or dest.suffix != ".md":
+                        continue
+                    checked += 1
+                    head = dest.read_text(encoding="utf-8", errors="replace")[:4000].lower()
+                    if not any(m in head for m in sw.MARKERS):
+                        continue
+                    if not any(w in line.lower() for w in WARNS):
+                        unwarned.append(f"{rel}: {c['id']} -> {target}")
+    return unwarned, checked
 
+
+unwarned, checked = unwarned_links(manifest["claims"], ROOT)
 check(f"a live number's evidence link says so when it lands on a retracted page "
       f"({checked} link(s) checked)", not unwarned, "; ".join(unwarned[:4]))
-check("and at least one such link exists, so the check above proved something", checked > 0,
-      "no live claim's citation carries a link to a markdown page")
+#: The population. Until stage D the README's token ratio was a live, cited claim linking a
+#: retracted page; b-c withdrew it (the simulation's writer changed), and no live claim is cited
+#: now. The rule is then exercised on a fixture of that exact shape, so a green line above still
+#: means the check can fail - it is never green for want of anything to look at.
+import tempfile  # noqa: E402
+with tempfile.TemporaryDirectory() as _td:
+    _root = Path(_td)
+    (_root / "research").mkdir()
+    (_root / "research" / "STUDY.md").write_text(
+        "# Study\n\n" + sw.BANNER_ID + "\n> Withdrawn: figures on this page must not be quoted.\n",
+        encoding="utf-8")
+    _claim = {"id": "fixture.ratio", "printed": ["31x"], "cited_in": ["README.md"]}
+    (_root / "README.md").write_text("| ratio | 31x fewer tokens | [STUDY.md](research/STUDY.md) |\n",
+                                     encoding="utf-8")
+    _bad, _n = unwarned_links([_claim], _root)
+    (_root / "README.md").write_text(
+        "| ratio | 31x fewer tokens, the page is withdrawn | [STUDY.md](research/STUDY.md) |\n",
+        encoding="utf-8")
+    _good, _ = unwarned_links([_claim], _root)
+check("and the rule has a population: the register's own links, or the fixture of their shape",
+      checked > 0 or (_n == 1 and _bad == ["README.md: fixture.ratio -> research/STUDY.md"] and not _good),
+      f"register links {checked}; fixture flagged {_bad}, warned line flagged {_good}")
 
 print(f"\nwithdrawn pages: {len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")
 sys.exit(1 if FAILED else 0)

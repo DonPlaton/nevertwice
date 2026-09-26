@@ -25,14 +25,14 @@ On the seeded project it shows, measured live:
 
 | mechanism | what it does | result |
 |---|---|---|
-| **Recall + token economy** | surface the right lesson for a task | **5.9× leaner** than dumping the store (93 vs 553 tokens) |
+| **Recall + token economy** | surface the right lesson for a task | **5.9× leaner** than dumping the store (93 vs 553 tokens) - withdrawn: the demo prints the current figure when run |
 | **Guards** | catch a repeat before it happens | 4 guards, **0 tokens** until one fires; benign edits stay silent |
 | **Anticipation** | predict the failure the plan is heading toward | flags an N+1 repeat on a *new* endpoint (risk 0.30) |
 | **Counterfactual** | "what breaks if I change X?" | a synthesized answer in **2.2× fewer tokens** than a note dump |
 | **Supersession** | resolve a contradiction at write time | 1 fact revised; recall returns only the current truth |
 
 At `--scale=20` the same store holds ~220 notes across 20 projects: the recall-vs-dump economy
-grows to **44×** (the ratio scales with the store), and the offline guard generator catches **3/4**
+grows to **44×** (withdrawn - the demo prints the current figure; the ratio scales with the store), and the offline guard generator catches **3/4**
 of a battery of repeat-actions (the default LLM generator is far more precise - the live study
 measures a **−86%** real error rate, `research/LIVE_VALIDATION.md`).
 

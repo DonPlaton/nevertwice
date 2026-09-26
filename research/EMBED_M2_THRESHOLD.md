@@ -34,13 +34,13 @@ M1 measured all three axes of the frozen external set:
 |---|---|---|
 | `twin` | every model at AUC 1.000, untuned included | **no** — saturated |
 | `retrieval_title` | 0.95–0.97 recall@1 for all three | **no** — at ceiling |
-| `retrieval_situation` | 0.551 / 0.579 / 0.537 recall@1 | **yes** — the only axis that separates |
+| `retrieval_situation` | 0.551 / 0.579 / 0.537 recall@1 (the second figure withdrawn at stage D: the stand changed) | **yes** — the only axis that separates |
 
 A gain declared on a saturated axis or one at ceiling is unfalsifiable, so the threshold lives on
 `retrieval_situation` and nowhere else.
 
 Within that axis, **recall@5** is where the measured headroom is. The cross-encoder — the thing
-being distilled from — gains recall@5 +0.106 [0.056, 0.162] over stock and gains *nothing* at
+being distilled from — gains recall@5 +0.106 [0.056, 0.162] (withdrawn at stage D: the stand changed) over stock and gains *nothing* at
 recall@1 (−0.014 [−0.074, 0.042]). Mining teaches a bi-encoder to separate near-misses, which is
 the recall@5 skill. Declaring the threshold on recall@1 would be declaring it where the source
 signal is known not to be.
@@ -72,7 +72,7 @@ rejected as false negatives, and at what score.
 ## What this run can and cannot detect
 
 216 queries. The tightest paired interval M1 produced on this axis had a half-width of about
-**0.053** (the reranker's Δ recall@5, ±0.053 around 0.106). So this comparison can resolve a true
+**0.053** (the reranker's Δ recall@5, ±0.053 around 0.106 - that figure withdrawn at stage D). So this comparison can resolve a true
 improvement of roughly **five points of recall@5 and no smaller**.
 
 That is stated now, before the result, because it determines what a failure means: **N1 failing

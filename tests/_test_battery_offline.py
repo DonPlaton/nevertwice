@@ -29,6 +29,7 @@ import tempfile
 import threading
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -171,15 +172,27 @@ check("a child that never imports _env_guard (an example, a stand) resolves the 
       ":0/" in str(seen.get("embed")) and ":0/" in str(seen.get("tags")), str(seen))
 #: The closed endpoint must fail FAST: a refused loopback connect on Windows costs ~2 s per attempt,
 #: which a battery pays on every retry of every call a child makes (measured: 127.0.0.1:9 2037 ms).
+#: Timed at the socket, the property the port choice is about: a first `urlopen` in a fresh
+#: process also reads the system proxy settings (the Windows registry), which under load took long
+#: enough to trip a 500 ms bound once in a bare-interpreter pass beside a running battery. The
+#: defect this guards costs 2037 ms per attempt, so 1000 ms separates the two with room.
+_host, _port = urllib.parse.urlsplit(sandbox_guard.CLOSED_OLLAMA["OLLAMA_EMBED_URL"]).hostname, \
+    urllib.parse.urlsplit(sandbox_guard.CLOSED_OLLAMA["OLLAMA_EMBED_URL"]).port
 _t0 = time.perf_counter()
+try:
+    socket.create_connection((_host, _port), timeout=5).close()
+    _how = "connected"
+except OSError as e:
+    _how = type(e).__name__
+_ms = (time.perf_counter() - _t0) * 1000
+check("the closed endpoint fails at once, not after a connect timeout (< 1000 ms at the socket)",
+      _how != "connected" and _ms < 1000, f"{_how} after {_ms:.0f} ms")
 try:
     urllib.request.urlopen(sandbox_guard.CLOSED_OLLAMA["OLLAMA_EMBED_URL"], timeout=5)
     _how = "answered"
 except (urllib.error.URLError, OSError) as e:
     _how = type(e).__name__
-_ms = (time.perf_counter() - _t0) * 1000
-check("the closed endpoint fails at once, not after a connect timeout (< 500 ms)",
-      _how != "answered" and _ms < 500, f"{_how} after {_ms:.0f} ms")
+check("... and a client library going to it is refused, not answered", _how != "answered", _how)
 #: Only the address is closed: the pacer and the stand suites' fakes classify a call by its PATH,
 #: and a made-up path turned every failed embed into an unclassified call - five stand suites lost
 #: their P0(a) invalidity at once (battery e170629).

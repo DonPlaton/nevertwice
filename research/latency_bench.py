@@ -197,7 +197,8 @@ def main() -> None:
 
     if "--save" in sys.argv:
         out = ROOT / "research" / "latency_bench.json"
-        out.write_text(json.dumps({
+        import _provenance as prov  # noqa: PLC0415 - (б) b-c: measured_at on every register artifact
+        out.write_text(json.dumps(prov.stamp({
             "platform": sys.platform,
             "python": sys.version.split()[0],
             "commit": _head_commit(),
@@ -211,7 +212,7 @@ def main() -> None:
                          "least-contended observation, so a busy host can only push these "
                          "numbers up - which is the direction an honest latency claim should "
                          "err in. Nothing here pins CPU affinity or waits for an idle stand.",
-        }, indent=1) + "\n", encoding="utf-8", newline="\n")
+        }), indent=1) + "\n", encoding="utf-8", newline="\n")
         print(f"\n  saved -> {out}")
 
 

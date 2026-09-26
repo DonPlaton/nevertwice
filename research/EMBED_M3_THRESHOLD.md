@@ -19,7 +19,7 @@ that teacher is better than the student:
 
 | paired vs stock, situation queries | Δ recall@1 | Δ recall@5 |
 |---|---|---|
-| the teacher | −0.014 [−0.074, 0.042] | **+0.106 [0.056, 0.162]** |
+| the teacher | −0.014 [−0.074, 0.042] | **+0.106 [0.056, 0.162]** (withdrawn at stage D: the stand changed) |
 
 So the teacher has something to teach, it is concentrated at recall@5, and it is measured rather
 than assumed. That is the difference from M2, where the signal's shape was never checked against
@@ -60,7 +60,7 @@ say it might, so it is guarded rather than hoped about.
 ### D3 — reported, not gating
 
 Δ MRR@10; the twin axis (that it stays saturated rather than breaking); the fraction of the
-teacher's recall@5 advantage recovered — `Δ student / 0.106` — which is the number that says
+teacher's recall@5 advantage recovered — `Δ student / 0.106` (that figure withdrawn at stage D) — which is the number that says
 whether distillation is worth continuing even if D1 fails narrowly.
 
 ## What this run can detect

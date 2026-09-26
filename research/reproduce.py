@@ -556,9 +556,10 @@ ARTIFACTS = [
     # `--out` flag gives it an artifact; the scope rule then requires that artifact to be
     # reproducible, which is this entry. Read-only: `pack` alone installs the pack into the live
     # ledger, and a claim's command may not do that.
+    #: (б) b-c, G5: the product's `guards pack --count --out`, run by a stand that also stamps
+    #: measured_at - the product itself does not import research tooling.
     {"file": "research/results/guards_pack.json",
-     "command": ["python", "-m", "nevertwice.guards", "pack", "--count",
-                 "--out", "research/results/guards_pack.json"],
+     "command": ["python", "research/guards_pack.py", "--out", "research/results/guards_pack.json"],
      "kind": DETERMINISTIC, "task": "prior",
      "inputs": [], "note": "the shipped universal guard pack, counted read-only"},
     {"file": "research/forgetting.json",
@@ -769,7 +770,10 @@ def canonical(path: Path, volatile: list) -> str | None:
         data = json.loads(path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError):
         return None
-    _strip(data, set(volatile or ()))
+    #: `measured_at` ({commit, utc, dirty}, `_provenance.stamp`) describes the RUN, not the result:
+    #: every register writer stamps it since stage D ((б) b-c), and two reproductions of a
+    #: deterministic artifact differ in it by construction.
+    _strip(data, set(volatile or ()) | {"measured_at"})
     return hashlib.sha256(
         json.dumps(data, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()
 

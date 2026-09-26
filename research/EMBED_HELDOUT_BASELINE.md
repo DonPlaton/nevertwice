@@ -20,7 +20,7 @@ resolved from noise.**
 
 | paired against stock, same queries | Δ recall@1 | Δ recall@5 | McNemar (won/lost) |
 |---|---|---|---|
-| nevertwice-embed, situation queries | +0.028 [−0.005, 0.065] | +0.032 [−0.005, 0.069] | 10 / 4, p = .18 |
+| nevertwice-embed, situation queries | +0.028 [−0.005, 0.065] (withdrawn at stage D: the stand changed, the next campaign re-measures it) | +0.032 [−0.005, 0.069] | 10 / 4, p = .18 |
 | nevertwice-embed, title queries | −0.010 [−0.025, 0.003] | 0.000 [0.000, 0.000] | 2 / 6, p = .29 |
 
 Both intervals on the difference contain zero. The point estimate leans the right way on the
@@ -73,7 +73,7 @@ one.
 | model | recall@1 | recall@5 | MRR@10 |
 |---|---|---|---|
 | stock bge-m3 | 0.551 [0.486, 0.620] | 0.801 [0.745, 0.852] | 0.662 [0.609, 0.717] |
-| nevertwice-embed | 0.579 [0.509, 0.643] | 0.833 [0.782, 0.880] | 0.683 [0.628, 0.735] |
+| nevertwice-embed | 0.579 [0.509, 0.643] (withdrawn at stage D: the stand changed, the next campaign re-measures it) | 0.833 [0.782, 0.880] | 0.683 [0.628, 0.735] |
 | **bge-reranker-v2-m3** | 0.537 [0.472, 0.602] | **0.907 [0.870, 0.944]** | 0.682 [0.631, 0.730] |
 
 216 queries: a forward-looking *prevention* sentence that must find a note it does not quote.
@@ -87,7 +87,7 @@ retriever's recall@50 — **0.968** on situation queries, which is the real ceil
 cascade and is reported so the cap is visible rather than implied.
 
 Against stock, paired: **Δ recall@5 = +0.106 [0.056, 0.162]**, the only interval in this study
-that excludes zero. At recall@1 it gains nothing (−0.014 [−0.074, 0.042]) and it is *worse* on
+that excludes zero (withdrawn at stage D: the stand changed, the next campaign re-measures it). At recall@1 it gains nothing (−0.014 [−0.074, 0.042]) and it is *worse* on
 the title axis.
 
 Read together that is a specific, actionable finding rather than "the cross-encoder is better":

@@ -21,7 +21,9 @@ What it does NOT flag, each by rule rather than by silence:
 What that leaves to a reader. The paragraph that motivated this suite - SUPERSESSION.md's Graphiti
 paragraph, 2026-09-25 - was written in WORDS, and put back today it would pass; so would "34%"
 for 34.2%. This suite catches a withdrawn figure quoted in its printed form, nothing more. Prose
-is still read by eye before a withdrawn claim's page loses its banner.
+is still read by eye before a withdrawn claim's page loses its banner. The same holds for a
+rendering the register does not list: EMBED_SERVING.md printed the withdrawn median cosine as
+"1.0000" while its printed forms are 1.0 / 1.00 / 1 - found by reading, not by this suite (stage D).
 
     python tests/_test_withdrawn_figures_not_in_prose.py
 """
@@ -46,6 +48,12 @@ def check(name, cond, detail=""):
 #: A form specific enough to be a quotation: three or more decimals, a percentage with a decimal,
 #: or a number with three integer digits and a decimal part.
 DISTINCT = re.compile(r"\d+\.\d{3,}%?|\d+\.\d+%|\d{3,}\.\d+")
+#: A multiplier - "31×", "5.9x", "~7×" - is how a headline ratio is quoted. A withdrawn claim's
+#: OWN printed multiplier is specific enough even with one digit: the pages are few and a real
+#: collision goes to REVIEWED_COINCIDENCES (auditor, stage D: the withdrawn 31× stood unmarked on
+#: five pages, and 5.9×, 44× and ~7× on three more, because only decimals counted as distinct).
+#: `×` and `x` are one character here - the register printed "44x", DEMO.md wrote "44×".
+MULTIPLIER = re.compile(r"\d+(?:\.\d+)?\s?[×x]")
 TRIVIAL = {"0.000", "1.000", "0.0%", "100.0%"}
 REGION = re.compile(r"<!--\s*(claims|comparison):([\w-]+)\s*-->.*?<!--\s*/\1:\2\s*-->", re.S)
 FENCE = re.compile(r"```.*?```", re.S)
@@ -69,14 +77,19 @@ REVIEWED_COINCIDENCES = {
     ("research/EMBED_HELDOUT_BASELINE.md", "0.662"): "an embedder's retrieval score on held-out data, not LoCoMo raw",
     ("research/EMBED_HELDOUT_BASELINE.md", "0.782"): "a confidence bound of an embedder's score, not LongMemEval",
     ("research/EMBED_HELDOUT_BASELINE.md", "0.042"): "a confidence bound of a distillation delta, not the capacity claim",
-    ("research/EMBED_M2_THRESHOLD.md", "0.042"): "the same distillation delta's bound, not the capacity claim",
     ("research/EMBED_M3_THRESHOLD.md", "0.042"): "the same distillation delta's bound, not the capacity claim",
-    ("research/EMBED_SERVING.md", "1.0000"): "a median cosine of served vectors, not a dilution p-value",
 }
 
 
 def forms(claim) -> set:
-    out = {str(p) for p in claim.get("printed") or [] if DISTINCT.fullmatch(str(p))}
+    out = set()
+    for p in claim.get("printed") or []:
+        s = str(p)
+        if DISTINCT.fullmatch(s):
+            out.add(s)
+        elif MULTIPLIER.fullmatch(s):
+            #: a page writes "44×" where the register printed "44x", and the other way round
+            out |= {s.replace("×", "x"), s.replace("x", "×")}
     v = claim.get("value")
     if isinstance(v, (int, float)) and not isinstance(v, bool) and 0 < v < 1:
         out.add(f"{v * 100:.1f}%")
@@ -101,7 +114,11 @@ def _blank(match) -> str:
 #: Where a sentence ends: terminal punctuation (and any closing quote, bracket or emphasis) before
 #: whitespace, a blank line, or a new list item, heading or table row. A figure's own decimal
 #: point is followed by a digit, so it never ends one.
-SENTENCE_END = re.compile(r"[.!?][\"')\]*_]*(?=\s)|\n[ \t]*\n|\n(?=[ \t]*(?:[-*+]|\d+\.|#+|\|)\s)")
+#: A semicolon ends the unit too (a clause): docs/INTEGRATIONS.md put the withdrawn 31× and "the
+#: live repeat-error figure that stood here was withdrawn in 2026-08" in one sentence, two clauses
+#: apart, and the second clause's "withdrawn" - about another figure - let the first through
+#: (auditor, stage D).
+SENTENCE_END = re.compile(r"[.!?;][\"')\]*_]*(?=\s)|\n[ \t]*\n|\n(?=[ \t]*(?:[-*+]|\d+\.|#+|\|)\s)")
 
 
 def unit(prose: str, start: int, end: int) -> str:
@@ -135,7 +152,7 @@ def scan(page: str, text: str, dead: dict) -> list:
     prose = COMMENT.sub(_blank, REGION.sub(_blank, FENCE.sub(_blank, text)))
     hits = []
     for form, ids in dead.items():
-        for m in re.finditer(r"(?<![\d.])" + re.escape(form) + r"(?![\d])", prose):
+        for m in re.finditer(r"(?<![\d.])" + re.escape(form) + r"(?![\dA-Za-z])", prose):
             if "withdrawn" in unit(prose, m.start(), m.end()).lower():
                 continue
             hits.append((page, prose.count("\n", 0, m.start()) + 1, form, ids[0]))
@@ -143,7 +160,12 @@ def scan(page: str, text: str, dead: dict) -> list:
 
 
 dead = withdrawn_forms(MANIFEST["claims"])
-pages = (sorted((ROOT / "docs").glob("*.md")) + sorted((ROOT / "research").glob("*.md"))
+#: docs/ recursively (starter issues quote headlines), the top-level research pages, every README
+#: under research/ (the embedder's model card is published text), and the repository README.
+pages = (sorted((ROOT / "docs").rglob("*.md")) + sorted((ROOT / "research").glob("*.md"))
+         + sorted(p for p in (ROOT / "research").rglob("README.md")
+                  if p.parent != ROOT / "research" and "data" not in p.relative_to(ROOT).parts)
+         + sorted((ROOT / "examples").rglob("*.md"))
          + [ROOT / "README.md"])
 
 print("\n- no page quotes a withdrawn figure in its prose -")
@@ -169,6 +191,15 @@ check("the probe line is flagged, naming a withdrawn Zep claim",
 marked = probe.replace("in 34.2% of the explicit cases.", "in 34.2% of the explicit cases (withdrawn).")
 check("and the same line is let through once it says the figure is withdrawn",
       not [h for h in scan("research/SUPERSESSION.md", marked, dead) if h[2] == "34.2%"])
+
+#: Multipliers, both spellings: the register printed "44x", DEMO.md wrote "44×" (stage D).
+_mdead = withdrawn_forms([{"id": "probe.ratio", "stale": "probe", "printed": ["44x"]}])
+check("a withdrawn multiplier printed '44x' is found where a page writes '44×'",
+      [h[2] for h in scan("docs/PROBE.md", "The economy grows to **44×** on a big store.\n", _mdead)] == ["44×"],
+      str(sorted(_mdead)))
+check("and a one-digit multiplier of a withdrawn claim ('~7×') is found too",
+      [h[2] for h in scan("docs/PROBE.md", "It is ~7× cheaper than a dump.\n",
+                          withdrawn_forms([{"id": "p7", "stale": "p", "printed": ["7x"]}]))] == ["7×"])
 
 
 def _zep(page: str, text: str) -> list:
