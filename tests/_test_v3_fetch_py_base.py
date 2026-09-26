@@ -117,7 +117,9 @@ else:
     cl = F.NugetClient(hop.port, ssl_context=TRUST)
     pkg, info = F.fetch_package(cl, VER)
     cl.close()
-    check("the tunnel is CONNECT api.nuget.org:443", hop.connects[:1] == [b"CONNECT api.nuget.org:443 HTTP/1.1"],
+    # The method, host and port - not the HTTP version: http.client sends CONNECT as HTTP/1.0 before 3.11 (CI 76cb0e9, B2).
+    check("the tunnel is CONNECT api.nuget.org:443", len(hop.connects) >= 1
+          and hop.connects[0] in (b"CONNECT api.nuget.org:443 HTTP/1.1", b"CONNECT api.nuget.org:443 HTTP/1.0"),
           str(hop.connects))
     check("registration leaf -> catalog entry -> package, in that order, on one connection",
           cl.requests == [REG, CAT, PKGP] and srv.handshakes == 1, f"{cl.requests} handshakes={srv.handshakes}")

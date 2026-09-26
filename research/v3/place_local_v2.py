@@ -45,8 +45,12 @@ class PlaceRefused(RuntimeError):
 
 
 def _sha256(path: Path) -> str:
+    """Streamed in 1 MiB blocks: hashlib's file helper is 3.11+, and CI runs 3.10 (76cb0e9, class B1)."""
+    h = hashlib.sha256()
     with open(path, "rb") as f:
-        return hashlib.file_digest(f, "sha256").hexdigest()
+        for block in iter(lambda: f.read(1 << 20), b""):
+            h.update(block)
+    return h.hexdigest()
 
 
 def _bound(path: Path, p: dict) -> str | None:

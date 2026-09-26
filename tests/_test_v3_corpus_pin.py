@@ -118,6 +118,12 @@ check("a smoke pin on a scored stand is refused",
       refused(lambda: CP.check_rules(mutated("beam_500k", stands=("S5",))), CP.PinRefused))
 check("an absolute path is refused", refused(lambda: CP.check_rules(mutated("lme_s_cleaned", path="D:/data/x.json")),
                                              CP.PinRefused))
+for label, ap in (("a POSIX absolute path", "/data/x.json"), ("a UNC path", "\\\\server\\share\\x.json"),
+                  ("a drive-relative path", "D:x.json"), ("a backslash-rooted path", "\\data\\x.json")):
+    check(f"C1: {label} is refused on every OS", refused(lambda a=ap: CP.check_rules(mutated("lme_s_cleaned", path=a)),
+                                                           CP.PinRefused), ap)
+check("C1: ... while a relative repository path is not", not refused(
+    lambda: CP.check_rules(mutated("lme_s_cleaned", path="data/lme/x.json")), CP.PinRefused))
 
 print("\n- P6: the licence found is judged against the declared one, declared rules -")
 for declared, found, role, want in (("MIT", "mit", "evaluation", True), ("MIT", "Apache-2.0", "evaluation", False),

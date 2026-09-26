@@ -93,6 +93,7 @@ CHILD = ("import subprocess, sys; "
          "stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL); print(p.pid, flush=True)")
 
 GC_PID = [None]
+SKIPPED: list[str] = []            # named, printed skips (never a silent pass) - the auditor reads them from the log
 
 
 class Inject(L.PsutilSampler):
@@ -125,10 +126,16 @@ try:
         if label == "real":
             check("the child ran and printed its child's pid", kid.process.returncode == 0 and GC_PID[0] > 0,
                   err.decode("utf-8", "replace")[-300:])
-            check("the grandchild stays tracked after its parent exited", GC_PID[0] in nat.tracked, str(sorted(nat.tracked)))
-            check("the witness read the tree's connections (rows seen > 0)", n["rows_seen"] > 0, str(n))
+            if os.name == "nt":
+                check("the grandchild stays tracked after its parent exited", GC_PID[0] in nat.tracked, str(sorted(nat.tracked)))
+                check("the witness read the tree's connections (rows seen > 0)", n["rows_seen"] > 0, str(n))
+            else:
+                SKIPPED.append("the grandchild stays tracked / rows seen > 0 / the injected hit")
+                print("       SKIP (not Windows - CI 76cb0e9 class D): the child exits before the first tick and its "
+                      "grandchild is re-parented to init; with no Job Object that orphan is the witness's declared "
+                      f"limit, so the three orphan checks run on Windows only: {n['limit'][-90:]}")
             check("a loopback-only tree gives 0 hits, and the check is complete", n["hits"] == 0 and n["complete"], str(n))
-        else:
+        elif os.name == "nt":
             check("a non-loopback row on the real grandchild's pid is exactly one hit",
                   n["hits"] >= 1 and n["hit_remotes"] == ["192.0.2.10:443"], str(n))
         try:

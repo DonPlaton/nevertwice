@@ -24,7 +24,7 @@ import hashlib
 import json
 import re
 import sys
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent.parent
@@ -247,8 +247,15 @@ def check_rules(pins: dict | None = None) -> None:
             raise PinRefused(f"{name}: licence {p['licence']!r} is not on the declared list")
         if p["role"] == "smoke" and not all(s.endswith("-smoke") for s in p["stands"]):
             raise PinRefused(f"{name}: a smoke pin serves only smoke stands (§3.1)")
-        if p["source"] != "local-v2" and p["path"] and not p["path"].startswith("https://") and Path(p["path"]).is_absolute():
+        if p["source"] != "local-v2" and p["path"] and not p["path"].startswith("https://") and _absolute_anywhere(p["path"]):
             raise PinRefused(f"{name}: a pin names a repository path, never an absolute one")
+
+
+def _absolute_anywhere(path: str) -> bool:
+    """Absolute on ANY OS, not only the running one (CI 76cb0e9, class C1): a drive ("D:/x", "D:x"), a UNC share, or a
+    leading slash of either kind."""
+    w = PureWindowsPath(path)
+    return bool(w.drive) or w.is_absolute() or PurePosixPath(path).is_absolute() or path.startswith(("/", "\\"))
 
 
 def fill(name: str, *, revision: str, sha256: str, size: int, licence_found: str | None, path: str | None = None,

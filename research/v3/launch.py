@@ -139,6 +139,13 @@ class Contract:
     case_insensitive_env: bool = os.name == "nt"
     require_systemroot: bool = os.name == "nt"
 
+    def __post_init__(self) -> None:
+        # CI class A (76cb0e9): the roots below which a link is refused are taken at their real paths, once. A link ABOVE
+        # them is the machine's (macOS TMPDIR under /var -> /private/var, a Windows runner's 8.3 C:\Users\RUNNER~1); a
+        # link INSIDE the polygon or the runs tree is still refused (_link_in_chain walks from the leaf up to the root).
+        for name in ("polygon_root", "runs_root"):
+            object.__setattr__(self, name, Path(_real(getattr(self, name))))
+
     @classmethod
     def default(cls) -> "Contract":
         """The real machine's contract. Only the scheduler calls this. The owner's home is the literal path §2.6.4
@@ -198,8 +205,19 @@ def _real(p: str | os.PathLike) -> str:
 
 
 def _within(child: str | os.PathLike, root: str | os.PathLike) -> bool:
-    """Inside ``root`` by its written path AND by its real path (B3): a junction cannot carry it out."""
-    return _inside(child, root) and _inside(_real(child), _real(root))
+    """Inside ``root`` by its real path (B3: a junction cannot carry it out), and written under ``root`` - or under a
+    path that resolves to exactly ``root``: a link ABOVE the root is the machine's (CI class A: macOS /var ->
+    /private/var, a runner's 8.3 name), never a junction to somewhere below it."""
+    if not _inside(_real(child), _real(root)):
+        return False
+    if _inside(child, root):
+        return True
+    target, p = _norm(_real(root)), Path(os.path.abspath(child))
+    while p.parent != p:
+        if _norm(_real(p)) == target:
+            return True
+        p = p.parent
+    return False
 
 
 def _touches(child: str | os.PathLike, root: str | os.PathLike) -> bool:

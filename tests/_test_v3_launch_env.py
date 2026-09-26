@@ -370,6 +370,38 @@ check("B6 the default contract pins the owner's home literally, whatever USERPRO
       L._norm(D.owner_home) == L._norm(r"C:\Users\Platon"), str(D.owner_home))
 check("B6 ... and denies a USERPROFILE that differs from it", any(L._norm(p) == L._norm(TMP / "fake_profile") for p in D.other_deny),
       str(D.other_deny))
+# CI class A (76cb0e9): macOS keeps TMPDIR under /var -> /private/var and Windows runners give C:\Users\RUNNER~1 (an 8.3
+# name) - a link ABOVE the contract's roots belongs to the machine. The roots are taken at their real paths once, and a
+# link BELOW them is still refused.
+(TMP / "root_real").mkdir()
+if link(TMP / "root_link", TMP / "root_real"):
+    CL = contract(polygon_root=TMP / "root_link" / "polygon", runs=TMP / "root_link" / "polygon" / "runs" / "v3", worktrees=())
+    check("A: a contract whose roots are given through a link takes them at their real paths",
+          L._norm(CL.runs_root) == L._norm(os.path.realpath(TMP / "root_real" / "polygon" / "runs" / "v3"))
+          and L._norm(CL.polygon_root) == L._norm(os.path.realpath(TMP / "root_real" / "polygon")), str(CL.runs_root))
+    (TMP / "root_link" / "polygon" / "runs" / "v3").mkdir(parents=True, exist_ok=True)   # as on CI: the runs root exists
+    try:
+        ud_a = L.make_unit_dirs(CL, "s4", "r", "arm", "u")
+        made_a = ud_a.cwd.is_dir() and L._inside(ud_a.cwd, CL.runs_root)
+    except L.ContractViolation as e:
+        made_a = False
+        print(f"       {e.reasons}")
+    check("A: ... and a unit is made under them - the link above the roots is not part of the unit path", made_a)
+    (CL.runs_root / "s5" / "r").mkdir(parents=True)
+    if link(CL.runs_root / "s5" / "r" / "arm", TMP / "owner_home"):
+        try:
+            L.make_unit_dirs(CL, "s5", "r", "arm", "u")
+            below = False
+        except L.ContractViolation as e:
+            below = any("link or junction" in r for r in e.reasons)
+        check("A: ... while a link BELOW the resolved roots is still refused", below)
+    check("A: a path written through the link above the roots is inside them (by its real path too)",
+          L._within(TMP / "root_link" / "polygon" / "tool.exe", CL.polygon_root)
+          and L._within(TMP / "root_link" / "polygon" / "runs" / "v3" / "x", CL.runs_root))
+    (TMP / "root_real" / "polygon" / "sub").mkdir(parents=True, exist_ok=True)
+    if link(TMP / "j_sub", TMP / "root_real" / "polygon" / "sub"):
+        check("A: ... but a junction to a place BELOW the root is no alias of it - refused",
+              not L._within(TMP / "j_sub" / "tool.exe", CL.polygon_root))
 for m_ in reversed(made):
     try:
         os.rmdir(m_) if os.name == "nt" else os.unlink(m_)

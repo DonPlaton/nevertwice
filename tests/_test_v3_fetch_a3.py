@@ -491,6 +491,11 @@ check("d2: a 403 from api.github.com is a rate limit - a named problem, the job 
       any(p.startswith("rate-limited") for p in rec8["problems"]), str(rec8["problems"]))
 
 hop.close()
+import inspect as _inspect  # noqa: E402
+_rcw = _inspect.getsource(F.run_child_window)
+check("B3: the fetch child's job goes in through communicate(input=...), never a stdin closed by hand first (POSIX "
+      "before 3.13 flushes the closed file: ValueError - CI 76cb0e9)",
+      "communicate(input=payload" in _rcw and "stdin.close()" not in _rcw and "stdin.write(" not in _rcw)
 srv.close()
 shutil.rmtree(TMP, ignore_errors=True)
 print(f"\nv3 fetch a3: {PASSED} passed, {FAILED} failed")

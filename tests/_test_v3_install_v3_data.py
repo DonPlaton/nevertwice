@@ -45,6 +45,11 @@ import _tls_fake as TF  # noqa: E402
 _TEST_EXC = {sys.executable: "the test interpreter"}
 if getattr(sys, "_base_executable", sys.executable) != sys.executable:
     _TEST_EXC[sys._base_executable] = "the test interpreter's base"
+# CI class C2 (76cb0e9): a POSIX venv's bin/python is a symlink to its base interpreter, so the test venv's launcher
+# resolves to the CI interpreter - outside the test polygon. The test names that interpreter's real path as well;
+# production is unchanged (on Windows a venv launcher is a file, and the campaign's base, py314, lives in the polygon).
+for _exe in list(_TEST_EXC):
+    _TEST_EXC.setdefault(os.path.realpath(_exe), "the test interpreter's real path")
 
 
 def _load(name: str, path: Path):

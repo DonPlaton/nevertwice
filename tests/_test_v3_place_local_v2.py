@@ -172,12 +172,48 @@ rec6, _, pr6, _ = place("bad_copy", copy=bad_copy)
 check("L4: a copy that is not the pinned bytes is re-hashed and refused - nothing placed, no .partial left",
       all(any(p.startswith(f"L4 {n}:") for p in rec6["problems"]) for n in LOCAL)
       and not any(dest(pr6, n).exists() for n in LOCAL) and not list(pr6.rglob("*.partial")), str(rec6["problems"]))
+print("\n- O2-a: the same size with other bytes is caught by the sha256, at the source, the place and the copy -")
+
+
+def flip(b: bytes) -> bytes:
+    return bytes([b[0] ^ 1]) + b[1:]
+
+
+rec7, _, pr7, _ = place("same_size_src", bodies={"locomo10": flip(BODY["locomo10"]), "longmemeval_s": BODY["longmemeval_s"]})
+check("O2-a L2: a source of the pinned size but other bytes is never copied",
+      any(p.startswith("L2 locomo10:") and "sha256" in p for p in rec7["problems"]) and not dest(pr7, "locomo10").exists(),
+      str(rec7["problems"]))
+src8, pr8, rr8 = roots("same_size_dest")
+dest(pr8, "locomo10").parent.mkdir(parents=True, exist_ok=True)
+dest(pr8, "locomo10").write_bytes(flip(BODY["locomo10"]))
+rec8 = P.place(src8, pr8, rr8, "l1", pins=T)
+check("O2-a L3: a file of the pinned size but other bytes at the place is never overwritten",
+      any(p.startswith("L3 locomo10:") and "sha256" in p for p in rec8["problems"])
+      and dest(pr8, "locomo10").read_bytes() == flip(BODY["locomo10"]), str(rec8["problems"]))
+
+
+def flip_copy(s, d) -> None:
+    Path(d).write_bytes(flip(Path(s).read_bytes()))
+
+
+rec9, _, pr9, _ = place("same_size_copy", copy=flip_copy)
+check("O2-a L4: a copy of the pinned size but other bytes is refused - nothing placed, no .partial",
+      all(any(p.startswith(f"L4 {n}:") and "sha256" in p for p in rec9["problems"]) for n in LOCAL)
+      and not any(dest(pr9, n).exists() for n in LOCAL) and not list(pr9.rglob("*.partial")), str(rec9["problems"]))
 check("the problems never print a file's bytes", not any("CONTENT-7f3a" in p for p in rec4["problems"] + rec6["problems"]),
       str(rec4["problems"]))
 
 print("\n- the CLI -")
 check("the CLI takes the source root explicitly (no default: it is the main working tree, named by the GO)",
       P.main.__doc__ is not None and "--source-root" in P.main.__doc__)
+
+print("\n- B1: CI runs 3.10 -")
+_NEWER = ("hashlib.file_digest", "datetime.UTC", "import tomllib", "except*", "StrEnum", "typing.Self", "TaskGroup",
+          "itertools.batched", "contextlib.chdir")
+_found = sorted(f"{p.name}: {n}" for p in (ROOT / "research" / "v3").glob("*.py")
+                for n in _NEWER if n in p.read_bytes().decode("utf-8"))
+check("B1: no 3.11+ API in research/v3 (hashlib.file_digest broke place_local_v2 on 3.10 - CI 76cb0e9)", _found == [],
+      str(_found))
 
 shutil.rmtree(TMP, ignore_errors=True)
 print(f"\nv3 place local-v2: {PASSED} passed, {FAILED} failed")

@@ -233,11 +233,11 @@ def run_child_window(c, L, *, window: str, hosts: list[str], jobs: list, python:
                                 witnesses=W, requirement="required", window=win,
                                 stdin=subprocess.DEVNULL if pip else subprocess.PIPE,
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                if not pip:
-                    child.process.stdin.write((json.dumps(spec) + "\n").encode("utf-8"))
-                    child.process.stdin.close()
+                # The job goes in through communicate(input=...), never a hand-written stdin closed before
+                # communicate(): on POSIX before 3.13 that flushes a closed file (ValueError - CI 76cb0e9, class B3).
+                payload = None if pip else (json.dumps(spec) + "\n").encode("utf-8")
                 try:
-                    out, err = child.process.communicate(timeout=spec.get("timeout_s", job_timeout))
+                    out, err = child.process.communicate(input=payload, timeout=spec.get("timeout_s", job_timeout))
                     rc = child.process.returncode
                 except subprocess.TimeoutExpired:
                     child.kill_tree()
