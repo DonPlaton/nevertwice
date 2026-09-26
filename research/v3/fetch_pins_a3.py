@@ -229,7 +229,7 @@ def metadata_licence(path: Path) -> tuple[str | None, str]:
                   if line.startswith(("License-Expression:", "License:")))
     value = (fields.get("License-Expression") or fields.get("License") or "").strip()
     spdx = {"mit": "MIT", "mit license": "MIT"}.get(value.casefold())
-    return spdx, f"METADATA {Path(path).name} sha256 {hashlib.sha256(raw).hexdigest()[:12]}"
+    return spdx, f"METADATA {Path(path)} sha256 {hashlib.sha256(raw).hexdigest()}"
 
 
 def apache_licence(text: str) -> str | None:

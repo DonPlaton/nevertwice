@@ -237,7 +237,7 @@ check("a3-tiktoken: the committed cross_check is the expectation, the file place
 md = TMP / "METADATA"
 md.write_text("Metadata-Version: 2.4\nName: tiktoken\nVersion: 0.14.0\nLicense: MIT License\n", encoding="utf-8")
 check("Q-A3F-4: the tiktoken licence is its package METADATA's, with the file's sha256 as its source",
-      P.metadata_licence(md) == ("MIT", f"METADATA METADATA sha256 {hashlib.sha256(md.read_bytes()).hexdigest()[:12]}")
+      P.metadata_licence(md) == ("MIT", f"METADATA {md} sha256 {hashlib.sha256(md.read_bytes()).hexdigest()}")
       and P.plan_window("a3-tiktoken", disc=D, pins=T, manifest=MANI, hf_hub=HUB, pins_root=PR, unit_root=UR,
                         url_licence=P.metadata_licence(md)).licences["tk"][0] == "MIT"
       and tp.licences["tk"] == (None, "no METADATA given"))
@@ -370,6 +370,24 @@ _, o, _ = placed("short", before=lambda pl, rec, b: (b / "unit_j0" / pl.items[0]
 check("P6: a size that is not the expected one stops", any(x.startswith("P6 ") for x in o["problems"]))
 _, o, _ = placed("claim", rec_kw={"summary_edit": {"hf_lfs": {"sha256": "0" * 64}}})
 check("P8: a child's claim that differs from the disk stops", any(x.startswith("P8 ") for x in o["problems"]))
+def behind_link(pl, rec, b):
+    """T1: the download's directory is a junction (Windows, no privilege needed) or a symlink (POSIX) to outside."""
+    import subprocess  # noqa: PLC0415
+    outside = b / "outside_hf"
+    (b / "unit_j0" / "hf").rename(outside)
+    link = b / "unit_j0" / "hf"
+    if os.name == "nt":
+        subprocess.run(["cmd", "/c", "mklink", "/J", str(link), str(outside)], check=True, capture_output=True)
+    else:
+        os.symlink(outside, link, target_is_directory=True)
+
+
+import os  # noqa: E402
+
+_, o, b_link = placed("junction", before=behind_link)
+check("T1: a download that sits behind a junction or symlink is P5, and nothing is placed from it",
+      any(x.startswith("P5 hf_lfs: download_is_link or outside its unit") for x in o["problems"])
+      and not Path(o["entries"]["hf_lfs"]["dest"]).exists(), str(o["problems"]))
 _, o, _ = placed("gone", before=lambda pl, rec, b: (b / "unit_j0" / pl.items[0].save).unlink())
 check("P5: a missing download stops", any(x.startswith("P5 hf_lfs: download_missing") for x in o["problems"]))
 
@@ -450,6 +468,42 @@ bare_rec = {"problems": [], "hosts": ["github.com"], "catcher": [], "jobs": [
 gi, gp = P._git_after(None, None, bare_rec, GPLAN, pins={"amem_x": pin("git", "agiresearch/A-mem", None, "c" * 40, window="a3-git")},
                       disc=None, run="r1", parent_env={}, native=None, fs=None, git_exe=P.GIT_EXE, via_port=1,
                       pins_root=TMP / "gp", base=TMP / "gbase", issuer_orgs=P.PUBLIC_ISSUER_ORGS, pre={})
+def t2_case():
+    """T2: git_verify passes, but the listing that lands in place is not the verified one - the re-check names it."""
+    base = TMP / "t2"
+    unit = base / "unit"
+    (unit / "A-mem.git").mkdir(parents=True)
+    (base / "gb" / "verify").mkdir(parents=True)
+    (base / "gb" / "verify" / "ls-tree.txt").write_bytes(b"100644 blob x\ta.py\n")
+    (base / "gb" / "verify" / "A-mem.tar").write_bytes(b"tar")
+    rec_ok = {"problems": [], "hosts": ["github.com"],
+              "catcher": [{"arm": "fetch-git", "host": "github.com", "tunnelled": True, "via": "127.0.0.1:1"}],
+              "jobs": [{"index": 0, "rc": 0, "unit": str(unit), "job": {"hosts": ["github.com"]},
+                        "summary": [{"id": "probe:github.com", "ok": True, "final_host": "github.com",
+                                     "issuer_o": "Sectigo Limited", "issuer_cn": "x"}]},
+                       {"index": 1, "rc": 0, "unit": str(unit), "job": {"child": "git"}, "summary": []}]}
+    facts = {"resolved": "c" * 40, "listing_sha256": hashlib.sha256(b"100644 blob x\ta.py\n").hexdigest(),
+             "listing_bytes": 20, "tar_sha256": "0" * 64, "git_version": "git version x", "head_at_fetch": "c" * 40}
+    orig_gv, orig_replace = P.git_verify, P.os.replace
+
+    def replace_tampering(a, b_):
+        orig_replace(a, b_)
+        if str(b_).endswith("ls-tree.txt"):
+            Path(b_).write_bytes(b"other bytes\n")
+    P.git_verify = lambda *a, **k: (dict(facts), [])
+    P.os.replace = replace_tampering
+    try:
+        import types  # noqa: PLC0415
+        return P._git_after(types.SimpleNamespace(polygon_root=base / "poly"), None, rec_ok, GPLAN, pins={"amem_x": pin("git", "agiresearch/A-mem", None, "c" * 40, window="a3-git")},
+                            disc=None, run="r1", parent_env={}, native=None, fs=None, git_exe=P.GIT_EXE, via_port=1,
+                            pins_root=base / "pins", base=base / "gb", issuer_orgs=P.PUBLIC_ISSUER_ORGS, pre={})
+    finally:
+        P.git_verify, P.os.replace = orig_gv, orig_replace
+
+
+t2_inputs, t2_probs = t2_case()
+check("T2: a placed listing that is not the verified one is P7, and nothing is filled",
+      t2_inputs == {} and any(x.startswith("P7 amem_x: hash_mismatch: the placed listing") for x in t2_probs), str(t2_probs))
 check("G2: a clone with no catcher tunnel for fetch-git through the hop is named; G1: no clone is named; nothing filled",
       gi == {} and any(x.startswith("G2 ") for x in gp) and any(x.startswith("G1 ") for x in gp)
       and json.loads((TMP / "gbase" / "place_record.json").read_bytes())["problems"] == gp, str(gp))

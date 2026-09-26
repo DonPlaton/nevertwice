@@ -76,7 +76,7 @@ def _open(host: str, port: int, ctx: ssl.SSLContext, timeout: float) -> http.cli
 def run_request(req: dict, *, hosts: frozenset, max_redirects: int, port: int, cwd: Path,
                 ctx: ssl.SSLContext | None = None, timeout: float = 300.0) -> dict:
     """One request of the job. Returns its summary; never raises for a refusal or a network error."""
-    out = {"id": req.get("id"), "status": None, "final_host": None, "redirect_host": None, "bytes": 0,
+    out = {"id": req.get("id"), "status": None, "final_host": None, "redirect_host": None, "bytes": 0, "bytes_received": 0,
            "sha256": None, "git_blob_sha1": None, "issuer_o": None, "issuer_cn": None, "rate_limited": False,
            "ok": False, "error": None}
     ctx = ctx or ssl.create_default_context()
@@ -143,6 +143,7 @@ def run_request(req: dict, *, hosts: frozenset, max_redirects: int, port: int, c
                         if not data:
                             break
                         total += len(data)
+                        out["bytes_received"] = total    # what arrived, even if the request then fails
                         if total > limit:
                             raise Refused("the body is larger than max_bytes")
                         h256.update(data)
@@ -179,6 +180,7 @@ def run_request(req: dict, *, hosts: frozenset, max_redirects: int, port: int, c
                 conn.close()
     except (Refused, OSError, ssl.SSLError, http.client.HTTPException, ValueError, KeyError) as e:
         out["error"] = f"{type(e).__name__}: {str(e)[:200]}"
+        out["bytes"] = None                          # no file: bytes_received says how much came before the error
         if req.get("save"):
             try:
                 p = cwd.joinpath(*_safe_rel(req["save"]).parts)

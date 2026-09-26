@@ -189,6 +189,13 @@ for label, req, kw, want in cases:
     saved = [p.relative_to(cwd).as_posix() for p in cwd.rglob("*") if p.is_file()]
     check(f"{label}: refused by name, nothing written", not res["ok"] and want in (res["error"] or "") and saved == [],
           f"{res['error']} saved={saved}")
+(r_mis,), _ = job([{"id": "mis", "url": f"https://{CDN}/blob/data.json", "save": "r/n.json", "max_bytes": 1 << 20,
+                     "expect": {"sha256": "0" * 64}}], cwd_name="recv")
+check("a failed request says how much arrived before it failed: bytes None, bytes_received the body's length",
+      r_mis["ok"] is False and r_mis["bytes"] is None and r_mis.get("bytes_received") == len(DATA), str(r_mis))
+(r_404,), _ = job([{"id": "nf", "url": f"https://{HF}/missing", "save": "r/o.json", "max_bytes": 1 << 20}], cwd_name="recv404")
+check("a request refused before any body byte has bytes_received 0", r_404["bytes"] is None and r_404.get("bytes_received") == 0,
+      str(r_404))
 check("no request ever reached evil.example through the catcher",
       not any(r.get("host") == "evil.example" and r.get("tunnelled")
               for r in (json.loads(x) for x in (TMP / "proxy" / "catcher.jsonl").read_bytes().decode().splitlines())))
