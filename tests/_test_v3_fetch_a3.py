@@ -218,9 +218,18 @@ check("main() never hands the children a CA file or any extra variable",
       "child_env_extra" not in inspect.getsource(F.main) and "SSL_CERT_FILE" not in inspect.getsource(F))
 check("GitHub links in cards are found, deduplicated, after the named ones",
       F.github_candidates(["see https://github.com/a/b and github.com/a/b.git and github.com/c/d"])
-      == ([*F.GITHUB_NAMED, "a/b", "c/d"], []))
+      == ([*F.GITHUB_NAMED, "a/b", "c/d"], [], []))
+got_inv = F.github_candidates(["github.com/../x github.com/a/.git github.com/a__b/c github.com/-a/b github.com/a-/b "
+                               "github.com/a--b/c github.com/ok/.. github.com/ok/. github.com/ok/repo github.com/ok/.x"])
+check("a card link whose name breaks GitHub's rules is named as invalid and never requested",
+      got_inv == ([*F.GITHUB_NAMED, "ok/repo", "ok/.x"], [],
+                  ["../x", "a/", "a__b/c", "-a/b", "a-/b", "a--b/c", "ok/..", "ok/."]), str(got_inv))
+check("GitHub's name rule: 39-character owners pass, 40 do not; 100-character repositories pass, 101 do not",
+      F.gh_name_ok("a" * 39 + "/r") and not F.gh_name_ok("a" * 40 + "/r")
+      and F.gh_name_ok("o/" + "r" * 100) and not F.gh_name_ok("o/" + "r" * 101)
+      and not F.gh_name_ok(None) and not F.gh_name_ok("o/r\n") and not F.gh_name_ok("o/r/"))
 many = " ".join(f"https://github.com/o{i}/r{i}" for i in range(20)) + " https://github.com/mem0ai/mem0"
-req, skipped = F.github_candidates([many])
+req, skipped, _ = F.github_candidates([many])
 check("the card-linked repositories are capped at 12, in card order; the rest are named, not requested",
       F.CARD_LINK_CAP == 12 and req == [*F.GITHUB_NAMED, *(f"o{i}/r{i}" for i in range(12))]
       and skipped == [f"o{i}/r{i}" for i in range(12, 20)], str((len(req), skipped)))
@@ -229,12 +238,21 @@ u0, u1 = TMP / "p1", TMP / "p2"
 (u0 / "meta/datasets/org__ds/revision.json").write_text(json.dumps({"sha": S_DS}), encoding="utf-8")
 (u1 / "meta/datasets/org__ds").mkdir(parents=True)
 (u1 / "meta/datasets/org__ds/tree.json").write_text("[]", encoding="utf-8")
-(u1 / "meta/datasets/org__ds/README.md").write_text(many, encoding="utf-8")
+(u1 / "meta/datasets/org__ds/README.md").write_text(many + " https://github.com/../x", encoding="utf-8")
 job3 = F.discovery_phase3({"ds": PINS["ds"]})([{"unit": str(u0)}, {"unit": str(u1)}])
 gh_repos = sorted({r["id"].split(":", 1)[1] for r in job3["requests"] if r["id"].startswith("gh:")})
 check("phase 3 requests only the named and the first 12 card-linked repositories, and records the rest by name",
       len(gh_repos) == 4 + 12 and job3["card_links_skipped"] == [f"o{i}/r{i}" for i in range(12, 20)]
-      and not any("o15/r15" in r["url"] for r in job3["requests"]), str((len(gh_repos), job3.get("card_links_skipped"))))
+      and job3["card_links_invalid"] == ["../x"]
+      and not any("o15/r15" in r["url"] or "/.." in r["url"] for r in job3["requests"]),
+      str((len(gh_repos), job3.get("card_links_skipped"), job3.get("card_links_invalid"))))
+u2 = TMP / "p3"
+for dname in ("ok__repo", "a_b__c", "..__x"):
+    (u2 / "gh" / dname).mkdir(parents=True)
+    (u2 / "gh" / dname / "head.json").write_text(json.dumps({"sha": "a" * 40}), encoding="utf-8")
+job4 = F.discovery_phase4()([{}, {}, {"unit": str(u2)}])
+check("phase 4 requests a tree only for a directory whose name maps back to a valid GitHub name",
+      [r["id"] for r in job4["requests"]] == ["ghtree:ok/repo"], str([r["id"] for r in job4["requests"]]))
 
 print("\n- judge(), table-tested -")
 CLEAN = {"jobs": [{"index": 0, "rc": 0, "summary": [{"id": "a", "ok": True}]}], "catcher": [{"host": HF, "tunnelled": True}],
@@ -305,7 +323,7 @@ check("d2 runs clean on api.github.com only, within 12 requests",
 check("d2 phase A follows AMA-Hub's one redirect, staying on api.github.com",
       all(r["ok"] and r["final_host"] == GH for r in rec5["jobs"][0]["summary"]) and rec5["jobs"][0]["job"]["max_redirects"] == 1)
 check("d2 reads AMA-Hub's tree at its head under the name the redirect led to",
-      rep5["ama_hub"] == {"asked": "AMA-Bench/AMA-Hub", "full_name": "AMA-Bench/AMA-Hub-v2", "licence": "MIT",
+      rep5["ama_hub"] == {"asked": "AMA-Bench/AMA-Hub", "full_name": "AMA-Bench/AMA-Hub-v2", "full_name_valid": True, "licence": "MIT",
                           "head_sha": A_SHA, "tree_entries": 1, "tree_truncated": False}, str(rep5["ama_hub"]))
 check("d2 reads BEAM's official repository (P4): its head and its evaluation files, names only",
       rep5["beam"]["head_sha"] == "9" * 40 and rep5["beam"]["licence"] == "MIT"
@@ -324,6 +342,20 @@ rec7, _, _ = window("d2off", F.d2_jobs(), hosts=F.D2_HOSTS)
 check("d2: a redirect off api.github.com is refused by name",
       any("AMA-Hub" in p and "not an allowed" in p for p in rec7["problems"])
       and not any(x["host"] == "evil.example" and x["tunnelled"] for x in rec7["catcher"]), str(rec7["problems"]))
+for i_bad, bad_name in enumerate(("a/b/c", "AMA-Bench/x?y", "AMA-Bench/has space", "../AMA-Bench", "AMA-Bench/..")):
+    routes_bad = d2_routes()
+    routes_bad["/repositories/777"] = J({"full_name": bad_name, "license": {"spdx_id": "MIT"}})
+    srv.routes.update(routes_bad)
+    n_heads = len(srv.heads)
+    rec_b, _, _ = window(f"d2bad{i_bad}", F.d2_jobs(), hosts=F.D2_HOSTS)
+    rep_b = F.d2_report(rec_b)
+    trees_b = {r["id"] for j in rec_b["jobs"] for r in j["summary"] if r["id"].startswith("ghtree:")}
+    check(f"D2-m2: a malformed full_name {bad_name!r} is never requested (no AMA tree reaches the server), "
+          "and the report names it as invalid, with an empty tree",
+          trees_b == {f"ghtree:{F.BEAM_GH}", f"ghtree:{F.MEM0}@newest", f"ghtree:{F.MEM0}@parent"}
+          and not any(f"/git/trees/{A_SHA}".encode() in h.split(b"\r\n", 1)[0] for h in srv.heads[n_heads:])
+          and rep_b["ama_hub"]["full_name"] == bad_name and rep_b["ama_hub"]["full_name_valid"] is False
+          and rep_b["ama_hub"]["tree_entries"] == 0, str((sorted(trees_b), rep_b["ama_hub"])))
 srv.routes.update(d2_routes(mem0_status=403))
 rec8, _, _ = window("d2rl", F.d2_jobs(), hosts=F.D2_HOSTS)
 check("d2: a 403 from api.github.com is a rate limit - a named problem, the job stopped",

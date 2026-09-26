@@ -47,6 +47,15 @@ GITHUB_NAMED = ("xiaowu0162/LongMemEval", "snap-research/locomo", "agiresearch/A
 #: api.github.com's 60 unauthenticated requests an hour. Links beyond it are recorded by name, never requested.
 CARD_LINK_CAP = 12
 _GH_LINK = re.compile(r"github\.com/([A-Za-z0-9_.-]{1,100})/([A-Za-z0-9_.-]{1,100})")
+#: GitHub's own naming rules: an owner is 1-39 alphanumerics with single inner hyphens (so never "__", which keeps
+#: _safe() reversible); a repository is 1-100 of [A-Za-z0-9_.-] and never "." or "..". A name that external content
+#: supplies (a card link, an API's full_name) and that breaks them is named in the record and never requested -
+#: "../x" would otherwise walk the API's own path.
+_GH_NAME = re.compile(r"[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}/(?!\.{1,2}\Z)[A-Za-z0-9_.-]{1,100}")
+
+
+def gh_name_ok(name: object) -> bool:
+    return isinstance(name, str) and _GH_NAME.fullmatch(name) is not None
 
 
 class WindowRefused(RuntimeError):
@@ -246,16 +255,19 @@ def discovery_phase2(pins: dict):
     return build
 
 
-def github_candidates(card_texts: list[str], cap: int = CARD_LINK_CAP) -> tuple[list[str], list[str]]:
-    """(requested, skipped): the named repositories, then the github.com/<owner>/<repo> links the cards carry, in
-    card order, deduplicated, at most ``cap`` of them; the links beyond the cap are returned by name, not requested."""
+def github_candidates(card_texts: list[str], cap: int = CARD_LINK_CAP) -> tuple[list[str], list[str], list[str]]:
+    """(requested, skipped, invalid): the named repositories, then the github.com/<owner>/<repo> links the cards carry,
+    in card order, deduplicated, at most ``cap`` of them; the valid links beyond the cap, and the links whose name
+    breaks GitHub's rules, are returned by name, not requested."""
     linked: list[str] = []
+    invalid: list[str] = []
     for text in card_texts:
         for owner, repo in _GH_LINK.findall(text):
             name = f"{owner}/{repo.removesuffix('.git')}"
-            if name not in GITHUB_NAMED and name not in linked:
-                linked.append(name)
-    return [*GITHUB_NAMED, *linked[:cap]], linked[cap:]
+            if name in GITHUB_NAMED or name in linked or name in invalid:
+                continue
+            (linked if gh_name_ok(name) else invalid).append(name)
+    return [*GITHUB_NAMED, *linked[:cap]], linked[cap:], invalid
 
 
 def discovery_phase3(pins: dict):
@@ -275,14 +287,14 @@ def discovery_phase3(pins: dict):
             for path in lfs[:50]:
                 reqs.append({"id": f"head:{k}:{r}:{path}", "method": "HEAD",
                              "url": f"https://huggingface.co/{prefix}{r}/resolve/{sha}/{path}"})
-        requested, skipped = github_candidates(cards)
+        requested, skipped, invalid = github_candidates(cards)
         for name in requested:
             reqs.append({"id": f"gh:{name}", "url": f"https://api.github.com/repos/{name}",
                          "save": f"gh/{_safe(name)}/repo.json", "max_bytes": META_MAX})
             reqs.append({"id": f"ghhead:{name}", "url": f"https://api.github.com/repos/{name}/commits/HEAD",
                          "save": f"gh/{_safe(name)}/head.json", "max_bytes": META_MAX})
         return {"hosts": ["huggingface.co", "api.github.com"], "max_redirects": 0, "requests": reqs,
-                "card_links_skipped": skipped}
+                "card_links_skipped": skipped, "card_links_invalid": invalid}
     return build
 
 
@@ -295,7 +307,7 @@ def discovery_phase4():
             head = json.loads((d / "head.json").read_bytes()) if (d / "head.json").is_file() else {}
             sha = head.get("sha")
             name = d.name.replace("__", "/", 1)
-            if isinstance(sha, str) and re.fullmatch(r"[0-9a-f]{40}", sha):
+            if gh_name_ok(name) and isinstance(sha, str) and re.fullmatch(r"[0-9a-f]{40}", sha):
                 reqs.append({"id": f"ghtree:{name}", "url": f"https://api.github.com/repos/{name}/git/trees/{sha}?recursive=1",
                              "save": f"gh/{d.name}/tree.json", "max_bytes": META_MAX})
         return {"hosts": ["api.github.com"], "max_redirects": 0, "requests": reqs} if reqs else None
@@ -344,8 +356,7 @@ def d2_phase_b():
         repo = _read_prev(results, 0, f"gh/{_safe(AMA_HUB)}/repo.json") or {}
         head = _read_prev(results, 0, f"gh/{_safe(AMA_HUB)}/head.json") or {}
         name, sha = repo.get("full_name"), head.get("sha")
-        if isinstance(name, str) and re.fullmatch(r"[A-Za-z0-9_.-]{1,100}/[A-Za-z0-9_.-]{1,100}", name) \
-                and isinstance(sha, str) and _SHA.fullmatch(sha):
+        if gh_name_ok(name) and isinstance(sha, str) and _SHA.fullmatch(sha):
             reqs.append({"id": f"ghtree:{name}", "url": f"https://api.github.com/repos/{name}/git/trees/{sha}?recursive=1",
                          "save": f"gh/{_safe(AMA_HUB)}/tree.json", "max_bytes": META_MAX})
         beam_head = (_read_prev(results, 0, f"gh/{_safe(BEAM_GH)}/head.json") or {}).get("sha")
@@ -406,7 +417,8 @@ def d2_report(record: dict) -> dict:
                      "evaluation_files": sorted(e["path"] for e in beam_tree.get("tree") or []
                                                 if e.get("type") == "blob" and (e["path"].startswith("src/evaluation/")
                                                                                 or e["path"] == "src/prompts.py"))},
-            "ama_hub": {"asked": AMA_HUB, "full_name": repo.get("full_name"), "licence": (repo.get("license") or {}).get("spdx_id"),
+            "ama_hub": {"asked": AMA_HUB, "full_name": repo.get("full_name"), "full_name_valid": gh_name_ok(repo.get("full_name")),
+                        "licence": (repo.get("license") or {}).get("spdx_id"),
                         "head_sha": head.get("sha"), "tree_entries": len(ama_tree.get("tree") or []),
                         "tree_truncated": ama_tree.get("truncated")},
             "mem0": {"evaluation_commits": [c.get("sha") for c in commits], "newest": newest.get("sha"),
