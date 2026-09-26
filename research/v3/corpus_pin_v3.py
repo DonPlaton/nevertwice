@@ -319,6 +319,25 @@ def location(name: str, *, hf_hub: Path, pins_root: Path, sha256: str | None = N
     return Path(pins_root) / "git" / p["revision"] / "ls-tree.txt"
 
 
+#: The values the A3 windows found: each from a window's pin_fill.json that the auditor verified, written by
+#: research/v3/pins_apply.py between these markers - never by hand - with its window, run and pin_fill sha256.
+# >>> FILLED
+FILLED: dict[str, dict] = {
+}
+# <<< FILLED
+
+
+def _apply_filled(pins: dict | None = None) -> None:
+    """FILLED into the table through fill() itself, so its rules hold at every import: a 64-hex sha256, the licence
+    found against the declared one (P6), a pin filled once."""
+    for name, v in FILLED.items():
+        fill(name, revision=v["revision"], sha256=v["sha256"], size=v["bytes"], licence_found=v["licence_found"], pins=pins)
+        (pins or PINS)[name]["filled_from"] = v["from"]
+
+
+_apply_filled()
+
+
 def freeze_fragment(pins: dict | None = None) -> dict:
     """The FREEZE-V3 ``datasets`` shape: per role group, name -> {repo, path, revision, sha256, bytes, licence}."""
     groups = {"datasets": ("evaluation", "bracket", "smoke"), "tokenizers": ("tokenizer",),
