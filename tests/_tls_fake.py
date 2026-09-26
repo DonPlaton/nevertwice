@@ -12,8 +12,9 @@ import threading
 from pathlib import Path
 
 
-def make_test_cert(d: Path, host: str):
-    """A self-signed certificate for ``host`` (CN and SAN): (cert, key, how), or None with neither tool present."""
+def make_test_cert(d: Path, host: str, extra_hosts: tuple = ()):
+    """A self-signed certificate for ``host`` (CN, and SAN with ``extra_hosts``): (cert, key, how), or None with
+    neither tool present."""
     d.mkdir(parents=True, exist_ok=True)
     cert, keyf = d / f"{host}.pem", d / f"{host}.key"
     try:
@@ -32,7 +33,7 @@ def make_test_cert(d: Path, host: str):
         c = (x509.CertificateBuilder().subject_name(name).issuer_name(name).public_key(k.public_key())
              .serial_number(x509.random_serial_number()).not_valid_before(now - datetime.timedelta(minutes=5))
              .not_valid_after(now + datetime.timedelta(days=1))
-             .add_extension(x509.SubjectAlternativeName([x509.DNSName(host)]), critical=False)
+             .add_extension(x509.SubjectAlternativeName([x509.DNSName(h) for h in (host, *extra_hosts)]), critical=False)
              .add_extension(x509.BasicConstraints(ca=True, path_length=None), critical=True)
              .add_extension(x509.KeyUsage(digital_signature=True, content_commitment=False, key_encipherment=False,
                                           data_encipherment=False, key_agreement=False, key_cert_sign=True,
@@ -48,7 +49,8 @@ def make_test_cert(d: Path, host: str):
     if exe:
         env = dict(os.environ, MSYS_NO_PATHCONV="1", MSYS2_ARG_CONV_EXCL="*")
         r = subprocess.run([exe, "req", "-x509", "-newkey", "rsa:2048", "-nodes", "-days", "1", "-subj", f"/CN={host}",
-                            "-addext", f"subjectAltName=DNS:{host}", "-keyout", str(keyf), "-out", str(cert)],
+                            "-addext", "subjectAltName=" + ",".join(f"DNS:{h}" for h in (host, *extra_hosts)),
+                            "-keyout", str(keyf), "-out", str(cert)],
                            capture_output=True, timeout=120, env=env)
         if r.returncode == 0 and cert.is_file() and keyf.is_file():
             return cert, keyf, "openssl"
@@ -103,8 +105,14 @@ class TlsHttpServer:
                 self.heads.append(head)
                 path = head.split(b" ", 2)[1].decode("latin-1")
                 status, headers, body = self.routes.get(path, (404, [], b""))
-                lines = [f"HTTP/1.1 {status} X", *(f"{k}: {v}" for k, v in headers), f"Content-Length: {len(body)}"]
-                s.sendall(("\r\n".join(lines) + "\r\n\r\n").encode("latin-1") + body)
+                chunked = any(k.lower() == "transfer-encoding" for k, _ in headers)   # a route may ask for chunking
+                lines = [f"HTTP/1.1 {status} X", *(f"{k}: {v}" for k, v in headers)]
+                if not chunked:
+                    lines.append(f"Content-Length: {len(body)}")
+                payload = body
+                if chunked:
+                    payload = (b"%x\r\n%s\r\n" % (len(body), body) if body else b"") + b"0\r\n\r\n"
+                s.sendall(("\r\n".join(lines) + "\r\n\r\n").encode("latin-1") + payload)
         except (ssl.SSLError, OSError) as e:
             self.errors.append(type(e).__name__)
         finally:
