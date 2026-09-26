@@ -126,6 +126,40 @@ check("once filled, FILLED covers every v3 pin but the alias (44), and neither t
       and not any(n in CP.FILLED for n, p in CP.PINS.items() if p.get("alias_of") or p["source"] == "local-v2"),
       str(len(CP.FILLED)))
 
+print("\n- FILLED re-derived from the cleared pin_fill files, committed as evidence (FD4) -")
+#: The four files the auditor cleared, bytes as they came out of their window runs (runs\v3\_fetch\<window>\<run>\), by
+#: their full sha256 as the auditor named them. A value edited by hand in FILLED that keeps its "from" goes red here,
+#: in CI, with no polygon data.
+FIX = ROOT / "tests" / "fixtures" / "v3_pin_fill"
+CLEARED_FILES = {("a3-hf", "h2"): "c23ea9cd354963e63305ccc280a553ac1870a4fdf9942575540dec9ba587a3eb",
+                 ("a3-github", "g1"): "0949dd56da65c36adae21dfa1613b6d8af3d559bade22c9348ac7460f536c4b0",
+                 ("a3-tiktoken", "t1"): "ab54c52a11176332a72d10851d83a5cad9133cc0b646f395ee8520c7b5459a97",
+                 ("a3-git", "r1"): "ba0f9248f430b15878c975ed3295059e11e7747a1f43902a6da2e8dafc4e8ab6"}
+evidence = {}
+for (w, r), sha in CLEARED_FILES.items():
+    raw = (FIX / w / r / "pin_fill.json").read_bytes()
+    d = json.loads(raw)
+    check(f"FD4: the fixture {w}/{r}/pin_fill.json is the cleared file, by its full sha256, of its own window run",
+          hashlib.sha256(raw).hexdigest() == sha and (d["window"], d["run"]) == (w, r), hashlib.sha256(raw).hexdigest()[:12])
+    evidence[f"{w} {r} pin_fill {sha[:12]}"] = (d, sha)
+check("FD4: the fixtures are exactly the four cleared files", sorted(p_.relative_to(FIX).as_posix() for p_ in FIX.rglob("*") if p_.is_file())
+      == sorted(f"{w}/{r}/pin_fill.json" for w, r in CLEARED_FILES), str(sorted(FIX.rglob("*"))))
+KEYS_ = ("revision", "sha256", "bytes", "licence_found", "licence_source")
+drift = [n for n, v in CP.FILLED.items()
+         if v["from"] not in evidence or {k: v[k] for k in KEYS_}
+         != {k: (int(x) if k == "bytes" else x) for k, x in ((k, evidence[v["from"]][0]["pins"].get(n, {}).get(k)) for k in KEYS_)}]
+check("FD4: every FILLED value equals the value its own source file gives - revision, sha256, bytes, licence", drift == [], str(drift))
+import types  # noqa: E402
+_declared = types.SimpleNamespace(PINS=CP.PINS_DECLARED, fill=CP.fill, PinRefused=CP.PinRefused)
+try:
+    rederived, realiases = A.plan_values([evidence[k] for k in sorted(evidence)], _declared)
+except A.ApplyRefused as e:
+    rederived, realiases = {"refused": str(e)}, []
+check("FD4: FILLED is exactly what pins_apply derives from the four files on the declared table - nothing more, nothing less",
+      CP.FILLED == rederived, str(sorted(set(CP.FILLED) ^ set(rederived)) or [n for n in CP.FILLED if CP.FILLED[n] != rederived.get(n)]))
+check("FD4: ... and the one alias it confirms is the oracle, from a3-hf h2",
+      realiases == ["lme_oracle_cleaned = v2:longmemeval_oracle (a3-hf h2 pin_fill c23ea9cd3549)"], str(realiases))
+
 print("\n- a clean apply -")
 t1 = table_copy("t1")
 try:

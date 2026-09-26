@@ -1,0 +1,13 @@
+{
+ "pins": {
+  "tiktoken_cl100k_base": {
+   "bytes": 1681126,
+   "licence_found": "MIT",
+   "licence_source": "METADATA METADATA sha256 2dab7998e235",
+   "revision": "223921b76ee99bde995b7ff738513eef100fb51d18c93597a113bcffe865b2a7",
+   "sha256": "223921b76ee99bde995b7ff738513eef100fb51d18c93597a113bcffe865b2a7"
+  }
+ },
+ "run": "t1",
+ "window": "a3-tiktoken"
+}

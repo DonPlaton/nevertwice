@@ -240,7 +240,7 @@ srv.shutdown()
 check("a server on a random port answers", body == b"ok", repr(body))
 
 print("\n- the battery's tracked-file guard can fail -")
-with tempfile.TemporaryDirectory(prefix="nevertwice_tracked_") as td:
+with tempfile.TemporaryDirectory(prefix="nevertwice_tracked_", ignore_cleanup_errors=True) as td:
     repo = Path(td)
     env = {**os.environ, "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@example.invalid",
            "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@example.invalid"}
@@ -278,6 +278,40 @@ check("... takes the difference AFTER the run, from a fresh snapshot",
       _diff is not None and _run_at is not None and _diff[0] > _run_at, str(_diff))
 check("... and asserts that difference is empty", _assert is not None and _diff is not None and _assert > _diff[0],
       str(_assert))
+
+print("\n- a temporary git repo cannot turn a suite red on cleanup -")
+#: The auditor on 002f84e: this suite passed all its checks and then crashed in the cleanup of its temporary git repo
+#: (WinError 32/5 - another process, likely Defender on a fresh .git, held a file for a moment); six such leftovers sat
+#: in %TEMP% from one day. A cleanup error is not the suite's verdict. Every `with TemporaryDirectory(...)` block in
+#: tests/ whose body makes a git repo (git init / clone / worktree) passes ignore_cleanup_errors=True.
+_GIT_MAKE = ("init", "clone", "worktree")
+
+
+def _makes_git_repo(body: list) -> bool:
+    for n in ast.walk(ast.Module(body=body, type_ignores=[])):
+        if isinstance(n, ast.Call):
+            consts = [c.value for c in ast.walk(n) if isinstance(c, ast.Constant) and isinstance(c.value, str)]
+            if "git" in ast.unparse(n.func) + " ".join(consts) and any(m in consts for m in _GIT_MAKE):
+                return True
+    return False
+
+
+_strict = []
+for _f in sorted(list(HERE.glob("_test_*.py")) + list((HERE / "research").glob("_test_*.py"))):
+    for _n in ast.walk(ast.parse(_f.read_bytes().decode("utf-8"))):
+        if isinstance(_n, ast.With):
+            for _it in _n.items:
+                _c = _it.context_expr
+                if (isinstance(_c, ast.Call) and ast.unparse(_c.func).endswith("TemporaryDirectory")
+                        and not any(k.arg == "ignore_cleanup_errors" for k in _c.keywords) and _makes_git_repo(_n.body)):
+                    _strict.append(f"{_f.relative_to(ROOT).as_posix()}:{_n.lineno}")
+check("no TemporaryDirectory that holds a git repo cleans up strictly (ignore_cleanup_errors=True)", _strict == [],
+      str(_strict))
+check("... and the scan sees the blocks it guards (four at 002f84e)",
+      sum(1 for _f in sorted(list(HERE.glob("_test_*.py")) + list((HERE / "research").glob("_test_*.py")))
+          for _n in ast.walk(ast.parse(_f.read_bytes().decode("utf-8"))) if isinstance(_n, ast.With)
+          for _it in _n.items if isinstance(_it.context_expr, ast.Call)
+          and ast.unparse(_it.context_expr.func).endswith("TemporaryDirectory") and _makes_git_repo(_n.body)) >= 4)
 
 print(f"\nbattery offline: {PASSED} passed, {FAILED} failed")
 sys.exit(1 if FAILED else 0)

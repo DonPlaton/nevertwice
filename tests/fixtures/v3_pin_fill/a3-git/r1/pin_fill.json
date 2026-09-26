@@ -1,0 +1,20 @@
+{
+ "ca_bundle": "C:\\Program Files\\Git\\mingw64\\etc\\ssl\\certs\\ca-bundle.crt",
+ "ca_bundle_sha256": "73d34a874eb28b5e7bf2e721a7c1322a6847d5ee4f1044f721c40054db8aa97e",
+ "git_exe": "C:\\Program Files\\Git\\cmd\\git.exe",
+ "git_exe_sha256": "dc1ede5d773e55d28f93ba10b7ad2aeb2d562ad514039bd93f4d396831f6db7b",
+ "pins": {
+  "amem_source": {
+   "bytes": 1409,
+   "git_version": "git version 2.45.1.windows.1",
+   "head_at_fetch": "ceffb860f0712bbae97b184d440df62bc910ca8d",
+   "licence_found": "MIT",
+   "licence_source": "d1 repo agiresearch/A-mem",
+   "revision": "ceffb860f0712bbae97b184d440df62bc910ca8d",
+   "sha256": "ca8e0a6373f9e9c27a0952657fe403816d4b20125156b9d485976a1174f37eb9",
+   "tar_sha256": "73bf50099fc98d08890882d21630952210329840fb23d534cba000b6e5e0c2d3"
+  }
+ },
+ "run": "r1",
+ "window": "a3-git"
+}

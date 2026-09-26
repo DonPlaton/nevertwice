@@ -477,7 +477,7 @@ def test_the_documented_rollback_does_not_destroy_what_it_restores() -> None:
     The test follows the instruction literally, because that is what a person does with it.
     """
     print("\n- the rollback restores the store, history included -")
-    with tempfile.TemporaryDirectory() as td:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as td:
         store = Path(td) / "store"
         (store / "Mistakes").mkdir(parents=True)
         (store / "Mistakes" / "note.md").write_text(
@@ -527,7 +527,7 @@ def test_the_rollback_text_says_what_the_rollback_costs() -> None:
     the two.
     """
     print("\n- the rollback text describes the rollback -")
-    with tempfile.TemporaryDirectory() as td:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as td:
         store = Path(td) / "store"
         (store / "Mistakes").mkdir(parents=True)
         (store / "Mistakes" / "before.md").write_text(

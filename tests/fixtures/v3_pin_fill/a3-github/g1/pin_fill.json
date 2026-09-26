@@ -1,0 +1,216 @@
+{
+ "pins": {
+  "ama_evaluate": {
+   "bytes": 10350,
+   "licence_found": "MIT",
+   "licence_source": "d2 repo AMA-Bench/AMA-Bench",
+   "revision": "ddfd319e0be33424288c13806f1eafc63e625b59",
+   "sha256": "32c5b33e63fc79c9e9e6973484d515d1ea14c65c4f1ab27197a074ba0d111cd9"
+  },
+  "ama_evaluation_metrics": {
+   "bytes": 9129,
+   "licence_found": "MIT",
+   "licence_source": "d2 repo AMA-Bench/AMA-Bench",
+   "revision": "ddfd319e0be33424288c13806f1eafc63e625b59",
+   "sha256": "0586637d76b0547f09189078f500b5d0b27ca90ce5b722f4278d8d26f5d783b6"
+  },
+  "ama_judge_config": {
+   "bytes": 314,
+   "licence_found": "MIT",
+   "licence_source": "d2 repo AMA-Bench/AMA-Bench",
+   "revision": "ddfd319e0be33424288c13806f1eafc63e625b59",
+   "sha256": "d4a1d483220128c1de9bdcf147f480169c7e4c6263514415ded48c8dc9e9d153"
+  },
+  "ama_judge_config_api": {
+   "bytes": 287,
+   "licence_found": "MIT",
+   "licence_source": "d2 repo AMA-Bench/AMA-Bench",
+   "revision": "ddfd319e0be33424288c13806f1eafc63e625b59",
+   "sha256": "2b2d7157701bdb837afd506285499e8618f673929f2f95ea3cc0dca7c606677f"
+  },
+  "ama_judge_config_gpt5_mini": {
+   "bytes": 291,
+   "licence_found": "MIT",
+   "licence_source": "d2 repo AMA-Bench/AMA-Bench",
+   "revision": "ddfd319e0be33424288c13806f1eafc63e625b59",
+   "sha256": "5e75845da7b3d1a89f2b1ef255131f6905b999fe5faba9edaf5573368892ade4"
+  },
+  "ama_licence": {
+   "bytes": 1071,
+   "licence_found": "MIT",
+   "licence_source": "d2 repo AMA-Bench/AMA-Bench",
+   "revision": "ddfd319e0be33424288c13806f1eafc63e625b59",
+   "sha256": "3c8bff7214b9a3f79e2b1e76413104fff6df8b315d6598b2e8d16a9cadd2e244"
+  },
+  "amem_licence": {
+   "bytes": 1068,
+   "licence_found": "MIT",
+   "licence_source": "d1 repo agiresearch/A-mem",
+   "revision": "ceffb860f0712bbae97b184d440df62bc910ca8d",
+   "sha256": "c8a51c83455b8afc3a11b085ce57c7b9b34c6725d6b2329ce3dd9a273f0add6d"
+  },
+  "beam_compute_metrics": {
+   "bytes": 19830,
+   "licence_found": "MIT",
+   "licence_source": "d2 repo mohammadtavakoli78/BEAM",
+   "revision": "b2da22eac88bb0874c64665f13457eb99835774a",
+   "sha256": "e72bf25d36d521d166862063ec94f8e7875328193142d1edddb9b4677d47780d"
+  },
+  "beam_prompts": {
+   "bytes": 633361,
+   "licence_found": "MIT",
+   "licence_source": "d2 repo mohammadtavakoli78/BEAM",
+   "revision": "b2da22eac88bb0874c64665f13457eb99835774a",
+   "sha256": "81fe51ab2bcd7e8ad218b3a9a969a340c38d31f90ac2d93fa78a3bb890ba157b"
+  },
+  "beam_run_evaluation": {
+   "bytes": 10458,
+   "licence_found": "MIT",
+   "licence_source": "d2 repo mohammadtavakoli78/BEAM",
+   "revision": "b2da22eac88bb0874c64665f13457eb99835774a",
+   "sha256": "518894ab65860043a24259457ddf3b1ab8ae18427b6e01e5aa90cd29c4256a3b"
+  },
+  "lme_answer_prompt": {
+   "bytes": 21608,
+   "licence_found": "MIT",
+   "licence_source": "d1 repo xiaowu0162/LongMemEval",
+   "revision": "9e0b455f4ef0e2ab8f2e582289761153549043fc",
+   "sha256": "4f1eb3c69d7ad40f04065b9c0bc86f6582441018fc6ff751d162d66c95baf672"
+  },
+  "lme_evaluate_qa": {
+   "bytes": 7436,
+   "licence_found": "MIT",
+   "licence_source": "d1 repo xiaowu0162/LongMemEval",
+   "revision": "9e0b455f4ef0e2ab8f2e582289761153549043fc",
+   "sha256": "ecce9c4c79dc89d99534ac17b383a5cbb5b9f0c69ee98adaf0684742e3d95251"
+  },
+  "locomo_answer_prompt": {
+   "bytes": 15800,
+   "licence_found": "CC-BY-NC-4.0",
+   "licence_source": "evidence locomo_licence_txt",
+   "revision": "3eb6f2c585f5e1699204e3c3bdf7adc5c28cb376",
+   "sha256": "5fc977375878199735acd28fba5ae6f4d657fa0e000c0d2918a90c07b6035793"
+  },
+  "locomo_evaluate_qa": {
+   "bytes": 4381,
+   "licence_found": "CC-BY-NC-4.0",
+   "licence_source": "evidence locomo_licence_txt",
+   "revision": "3eb6f2c585f5e1699204e3c3bdf7adc5c28cb376",
+   "sha256": "dde7c1c6b5501486f96ce31398d6e49de76abbfa656e980b137e54fc69e9f6ee"
+  },
+  "locomo_evaluation": {
+   "bytes": 9441,
+   "licence_found": "CC-BY-NC-4.0",
+   "licence_source": "evidence locomo_licence_txt",
+   "revision": "3eb6f2c585f5e1699204e3c3bdf7adc5c28cb376",
+   "sha256": "8e3be5d57ff2ff9ec5cd05939592f468c5f3f1fd95d13e431932bdf6bf0fd6fd"
+  },
+  "locomo_j_prompt": {
+   "bytes": 4872,
+   "licence_found": "Apache-2.0",
+   "licence_source": "evidence mem0_licence",
+   "revision": "b3ede5b7c0ac0e847b03786a603c107ac943b3ee",
+   "sha256": "ac2e242f6ea0b817ba1b229ff9e5271f6846b7b8a9aefa8a5a5a81ea58df3b3c"
+  },
+  "locomo_j_prompts": {
+   "bytes": 7266,
+   "licence_found": "Apache-2.0",
+   "licence_source": "evidence mem0_licence",
+   "revision": "b3ede5b7c0ac0e847b03786a603c107ac943b3ee",
+   "sha256": "407bea1c1453dc6832c234bb1ed936d401d796fabcc0b28337a47ba63517d3ba"
+  },
+  "locomo_licence_txt": {
+   "bytes": 19347,
+   "licence_found": "CC-BY-NC-4.0",
+   "licence_source": "evidence locomo_licence_txt",
+   "revision": "3eb6f2c585f5e1699204e3c3bdf7adc5c28cb376",
+   "sha256": "41003d4a74749c0220e33dd415042164b5a1093ed401f36277234f772d22d3d0"
+  },
+  "mab_eval_data_utils": {
+   "bytes": 13034,
+   "licence_found": "MIT",
+   "licence_source": "d1 repo HUST-AI-HYZ/MemoryAgentBench",
+   "revision": "538026089d1a8a8eff05121d0db89b388f360eba",
+   "sha256": "f5d564996d63a07454999e94ab01087d4d07939f69936045c700fd57d338cb68"
+  },
+  "mab_eval_other_utils": {
+   "bytes": 23895,
+   "licence_found": "MIT",
+   "licence_source": "d1 repo HUST-AI-HYZ/MemoryAgentBench",
+   "revision": "538026089d1a8a8eff05121d0db89b388f360eba",
+   "sha256": "d77976be409298970614d477a9d8003850caddb0510e56a7e821a037d98493a2"
+  },
+  "mab_fc_mh_262k": {
+   "bytes": 306,
+   "licence_found": "MIT",
+   "licence_source": "d1 repo HUST-AI-HYZ/MemoryAgentBench",
+   "revision": "538026089d1a8a8eff05121d0db89b388f360eba",
+   "sha256": "c90ba80205a4fb0e7aecbc35e8e11638adb606a6514f5cd4b45b46eab6a877a8"
+  },
+  "mab_fc_mh_32k": {
+   "bytes": 304,
+   "licence_found": "MIT",
+   "licence_source": "d1 repo HUST-AI-HYZ/MemoryAgentBench",
+   "revision": "538026089d1a8a8eff05121d0db89b388f360eba",
+   "sha256": "3687a04532e89859b10ec864162eeea8edf48ef0b7d513a93dd39884da5e4b4e"
+  },
+  "mab_fc_mh_64k": {
+   "bytes": 304,
+   "licence_found": "MIT",
+   "licence_source": "d1 repo HUST-AI-HYZ/MemoryAgentBench",
+   "revision": "538026089d1a8a8eff05121d0db89b388f360eba",
+   "sha256": "893ba410975471b8f8663f936f380f1c5aba0e025777aa0067ae0917a38b02c4"
+  },
+  "mab_fc_mh_6k": {
+   "bytes": 302,
+   "licence_found": "MIT",
+   "licence_source": "d1 repo HUST-AI-HYZ/MemoryAgentBench",
+   "revision": "538026089d1a8a8eff05121d0db89b388f360eba",
+   "sha256": "63312c1dd54a06490f3747e97632d39284ec8eeba2128ee5c599dae72defa6fc"
+  },
+  "mab_fc_sh_262k": {
+   "bytes": 306,
+   "licence_found": "MIT",
+   "licence_source": "d1 repo HUST-AI-HYZ/MemoryAgentBench",
+   "revision": "538026089d1a8a8eff05121d0db89b388f360eba",
+   "sha256": "c11528e6b316bdd3d8608ea7e5c6e5ca3944cc7655d0d43a589473eb5ba0f14d"
+  },
+  "mab_fc_sh_32k": {
+   "bytes": 304,
+   "licence_found": "MIT",
+   "licence_source": "d1 repo HUST-AI-HYZ/MemoryAgentBench",
+   "revision": "538026089d1a8a8eff05121d0db89b388f360eba",
+   "sha256": "e58f475b2a0ee7382b88f2299ea70302048231a832e92de6938a24f9e2779c5b"
+  },
+  "mab_fc_sh_64k": {
+   "bytes": 304,
+   "licence_found": "MIT",
+   "licence_source": "d1 repo HUST-AI-HYZ/MemoryAgentBench",
+   "revision": "538026089d1a8a8eff05121d0db89b388f360eba",
+   "sha256": "003eddd0b9454354ae2bd0afbb90168b34c7a9fbf08151bd9bf42d5cb2c40896"
+  },
+  "mab_fc_sh_6k": {
+   "bytes": 303,
+   "licence_found": "MIT",
+   "licence_source": "d1 repo HUST-AI-HYZ/MemoryAgentBench",
+   "revision": "538026089d1a8a8eff05121d0db89b388f360eba",
+   "sha256": "814bf2eca1d07018262a860819db8fc7ddcb7d1a866839caec53ef2993c625e6"
+  },
+  "mab_templates": {
+   "bytes": 11961,
+   "licence_found": "MIT",
+   "licence_source": "d1 repo HUST-AI-HYZ/MemoryAgentBench",
+   "revision": "538026089d1a8a8eff05121d0db89b388f360eba",
+   "sha256": "148c40d48d19f155ae845482c4417ba59cfa7ae4e194019509e023bd3a8755dd"
+  },
+  "mem0_licence": {
+   "bytes": 11349,
+   "licence_found": "Apache-2.0",
+   "licence_source": "evidence mem0_licence",
+   "revision": "b3ede5b7c0ac0e847b03786a603c107ac943b3ee",
+   "sha256": "0bbcbe931c353293a2fafce08326181dfeea0e568c566afd4ce8337a70f5e219"
+  }
+ },
+ "run": "g1",
+ "window": "a3-github"
+}

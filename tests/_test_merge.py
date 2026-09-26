@@ -115,7 +115,7 @@ def test_end_to_end_real_git_merge():
     def git(cwd, *args):
         return subprocess.run(["git", "-C", str(cwd), *args], capture_output=True, text=True)
 
-    with tempfile.TemporaryDirectory() as d:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as d:
         repo = Path(d) / "vault"
         repo.mkdir()
         if git(repo.parent, "--version").returncode != 0:   # no git on this box → skip
