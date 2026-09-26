@@ -17,7 +17,11 @@ file - the one thing a real window never passes):
 * judge() over a record, table-tested: egress hits (loopback ones included, counted once), an incomplete check, fs
   hits, a catcher refusal, a request not ok, a child's exit 3 and a rate limit each yield exactly one named problem;
 * the auditor's cap: after the four named repositories, at most 12 card-linked ones are requested, in card order;
-  the rest are recorded by name in the job, never requested.
+  the rest are recorded by name in the job, never requested;
+* plan d2 (the auditor's P1 + P10): api.github.com only, at most 12 requests - AMA-Hub's moved repository is followed
+  through one redirect that stays on api.github.com and its tree read under the new name; mem0's newest commit that
+  touches evaluation/ is read, and when its tree no longer holds evaluation/ (the deletion) the tree at its first
+  parent is the pin, with the reason recorded; a redirect off api.github.com and a rate limit are named problems.
 
     python tests/_test_v3_fetch_a3.py
 """
@@ -261,6 +265,69 @@ for label, rec, want in (
             {"id": "gh:y", "ok": False, "rate_limited": False, "error": "not sent: rate-limited earlier"}]}]), "rate-limited")):
     got = F.judge(rec)
     check(f"{label}: exactly one named problem", len(got) == 1 and want in got[0], str(got))
+
+print("\n- plan d2: AMA-Hub moved, mem0's evaluation/ deleted -")
+A_SHA, C_DEL, C_PAR = "4" * 40, "5" * 40, "6" * 40
+
+
+def d2_routes(*, newest_holds=False, ama_location=f"https://{GH}/repositories/777", mem0_status=200):
+    return {
+        "/repos/AMA-Bench/AMA-Hub": (301, [("Location", ama_location)], b""),
+        "/repositories/777": J({"full_name": "AMA-Bench/AMA-Hub-v2", "license": {"spdx_id": "MIT"}}),
+        "/repos/AMA-Bench/AMA-Hub/commits/HEAD": (301, [("Location", f"https://{GH}/repositories/777/commits/HEAD")], b""),
+        "/repositories/777/commits/HEAD": J({"sha": A_SHA}),
+        "/repos/mem0ai/mem0/commits?path=evaluation&per_page=5": (
+            J([{"sha": C_DEL, "parents": [{"sha": C_PAR}]}, {"sha": "7" * 40, "parents": [{"sha": "8" * 40}]}])
+            if mem0_status == 200 else (mem0_status, [], b'{"message": "API rate limit exceeded"}')),
+        f"/repos/AMA-Bench/AMA-Hub-v2/git/trees/{A_SHA}?recursive=1": J({"tree": [{"path": "judge/prompt.py", "type": "blob"}],
+                                                                        "truncated": False}),
+        f"/repos/mem0ai/mem0/git/trees/{C_DEL}?recursive=1": J({"tree": [{"path": "docs/x.md", "type": "blob"}]
+                                                                + ([{"path": "evaluation/metrics/llm_judge.py", "type": "blob"}]
+                                                                   if newest_holds else [])}),
+        "/repos/mohammadtavakoli78/BEAM": J({"full_name": "mohammadtavakoli78/BEAM", "license": {"spdx_id": "MIT"}}),
+        "/repos/mohammadtavakoli78/BEAM/commits/HEAD": J({"sha": "9" * 40}),
+        f"/repos/mohammadtavakoli78/BEAM/git/trees/{'9' * 40}?recursive=1": J({"tree": [
+            {"path": "src/evaluation/compute_metrics.py", "type": "blob"}, {"path": "src/prompts.py", "type": "blob"},
+            {"path": "README.md", "type": "blob"}], "truncated": False}),
+        f"/repos/mem0ai/mem0/git/trees/{C_PAR}?recursive=1": J({"tree": [{"path": "evaluation", "type": "tree"},
+                                                                         {"path": "evaluation/metrics/llm_judge.py", "type": "blob"},
+                                                                         {"path": "evaluation/prompts.py", "type": "blob"}]}),
+    }
+
+
+srv.routes.update(d2_routes())
+rec5, _, _ = window("d2", F.d2_jobs(), hosts=F.D2_HOSTS)
+rep5 = F.d2_report(rec5)
+n_req = sum(len(j["summary"]) for j in rec5["jobs"])
+check("d2 runs clean on api.github.com only, within 12 requests",
+      rec5["problems"] == [] and n_req <= 12 and {x["host"] for x in rec5["catcher"] if x["tunnelled"]} == {GH},
+      f"{rec5['problems']} requests={n_req}")
+check("d2 phase A follows AMA-Hub's one redirect, staying on api.github.com",
+      all(r["ok"] and r["final_host"] == GH for r in rec5["jobs"][0]["summary"]) and rec5["jobs"][0]["job"]["max_redirects"] == 1)
+check("d2 reads AMA-Hub's tree at its head under the name the redirect led to",
+      rep5["ama_hub"] == {"asked": "AMA-Bench/AMA-Hub", "full_name": "AMA-Bench/AMA-Hub-v2", "licence": "MIT",
+                          "head_sha": A_SHA, "tree_entries": 1, "tree_truncated": False}, str(rep5["ama_hub"]))
+check("d2 reads BEAM's official repository (P4): its head and its evaluation files, names only",
+      rep5["beam"]["head_sha"] == "9" * 40 and rep5["beam"]["licence"] == "MIT"
+      and rep5["beam"]["evaluation_files"] == ["src/evaluation/compute_metrics.py", "src/prompts.py"], str(rep5["beam"]))
+check("d2: the newest mem0 commit is the deletion, so the pin is its first parent, with the reason",
+      rep5["mem0"]["newest"] == C_DEL and rep5["mem0"]["newest_holds_evaluation"] is False
+      and rep5["mem0"]["pinned_commit"] == C_PAR and "first parent" in rep5["mem0"]["why"]
+      and rep5["mem0"]["evaluation_files"] == ["evaluation/metrics/llm_judge.py", "evaluation/prompts.py"], str(rep5["mem0"]))
+srv.routes.update(d2_routes(newest_holds=True))
+rec6, _, _ = window("d2hold", F.d2_jobs(), hosts=F.D2_HOSTS)
+rep6 = F.d2_report(rec6)
+check("d2: when the newest commit still holds evaluation/, it is the pin and no parent tree is read",
+      rec6["problems"] == [] and len(rec6["jobs"]) == 2 and rep6["mem0"]["pinned_commit"] == C_DEL, str((len(rec6["jobs"]), rep6["mem0"])))
+srv.routes.update(d2_routes(ama_location="https://evil.example/repositories/777"))
+rec7, _, _ = window("d2off", F.d2_jobs(), hosts=F.D2_HOSTS)
+check("d2: a redirect off api.github.com is refused by name",
+      any("AMA-Hub" in p and "not an allowed" in p for p in rec7["problems"])
+      and not any(x["host"] == "evil.example" and x["tunnelled"] for x in rec7["catcher"]), str(rec7["problems"]))
+srv.routes.update(d2_routes(mem0_status=403))
+rec8, _, _ = window("d2rl", F.d2_jobs(), hosts=F.D2_HOSTS)
+check("d2: a 403 from api.github.com is a rate limit - a named problem, the job stopped",
+      any(p.startswith("rate-limited") for p in rec8["problems"]), str(rec8["problems"]))
 
 hop.close()
 srv.close()

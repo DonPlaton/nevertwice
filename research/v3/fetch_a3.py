@@ -306,6 +306,118 @@ def discovery_jobs(pins: dict) -> list:
     return [discovery_phase1(pins), discovery_phase2(pins), discovery_phase3(pins), discovery_phase4()]
 
 
+# ── a3-discovery plan d2 (the auditor's P1 + P10): api.github.com only, at most 12 requests ──
+
+D2_HOSTS = ["api.github.com"]
+AMA_HUB = "AMA-Bench/AMA-Hub"
+MEM0 = "mem0ai/mem0"
+#: The auditor's P4 naming: BEAM's official code, linked from the paper itself (arXiv:2510.27246 v2, footnote 1).
+BEAM_GH = "mohammadtavakoli78/BEAM"
+_SHA = re.compile(r"[0-9a-f]{40}")
+
+
+def d2_phase_a() -> dict:
+    """AMA-Hub's repository and head (one redirect allowed, and only to api.github.com: the card's link moved), and
+    the newest commits of mem0 that touch evaluation/ (the Mem0 paper's J prompt left mem0's main)."""
+    return {"hosts": D2_HOSTS, "max_redirects": 1, "requests": [
+        {"id": f"gh:{AMA_HUB}", "url": f"https://api.github.com/repos/{AMA_HUB}", "save": f"gh/{_safe(AMA_HUB)}/repo.json",
+         "max_bytes": META_MAX},
+        {"id": f"ghhead:{AMA_HUB}", "url": f"https://api.github.com/repos/{AMA_HUB}/commits/HEAD",
+         "save": f"gh/{_safe(AMA_HUB)}/head.json", "max_bytes": META_MAX},
+        {"id": f"ghcommits:{MEM0}:evaluation", "url": f"https://api.github.com/repos/{MEM0}/commits?path=evaluation&per_page=5",
+         "save": f"gh/{_safe(MEM0)}/evaluation_commits.json", "max_bytes": META_MAX},
+        {"id": f"gh:{BEAM_GH}", "url": f"https://api.github.com/repos/{BEAM_GH}", "save": f"gh/{_safe(BEAM_GH)}/repo.json",
+         "max_bytes": META_MAX},
+        {"id": f"ghhead:{BEAM_GH}", "url": f"https://api.github.com/repos/{BEAM_GH}/commits/HEAD",
+         "save": f"gh/{_safe(BEAM_GH)}/head.json", "max_bytes": META_MAX}]}
+
+
+def _newest_mem0(results) -> dict | None:
+    commits = _read_prev(results, 0, f"gh/{_safe(MEM0)}/evaluation_commits.json")
+    return commits[0] if isinstance(commits, list) and commits and isinstance(commits[0], dict) else None
+
+
+def d2_phase_b():
+    """AMA-Hub's tree at its head, under the name the redirect led to; the tree at the newest mem0 commit found."""
+    def build(results):
+        reqs = []
+        repo = _read_prev(results, 0, f"gh/{_safe(AMA_HUB)}/repo.json") or {}
+        head = _read_prev(results, 0, f"gh/{_safe(AMA_HUB)}/head.json") or {}
+        name, sha = repo.get("full_name"), head.get("sha")
+        if isinstance(name, str) and re.fullmatch(r"[A-Za-z0-9_.-]{1,100}/[A-Za-z0-9_.-]{1,100}", name) \
+                and isinstance(sha, str) and _SHA.fullmatch(sha):
+            reqs.append({"id": f"ghtree:{name}", "url": f"https://api.github.com/repos/{name}/git/trees/{sha}?recursive=1",
+                         "save": f"gh/{_safe(AMA_HUB)}/tree.json", "max_bytes": META_MAX})
+        beam_head = (_read_prev(results, 0, f"gh/{_safe(BEAM_GH)}/head.json") or {}).get("sha")
+        if isinstance(beam_head, str) and _SHA.fullmatch(beam_head):
+            reqs.append({"id": f"ghtree:{BEAM_GH}", "url": f"https://api.github.com/repos/{BEAM_GH}/git/trees/{beam_head}?recursive=1",
+                         "save": f"gh/{_safe(BEAM_GH)}/tree.json", "max_bytes": META_MAX})
+        newest = _newest_mem0(results)
+        if newest and isinstance(newest.get("sha"), str) and _SHA.fullmatch(newest["sha"]):
+            reqs.append({"id": f"ghtree:{MEM0}@newest", "url": f"https://api.github.com/repos/{MEM0}/git/trees/{newest['sha']}?recursive=1",
+                         "save": f"gh/{_safe(MEM0)}/tree_newest.json", "max_bytes": META_MAX})
+        return {"hosts": D2_HOSTS, "max_redirects": 0, "requests": reqs} if reqs else None
+    return build
+
+
+def holds_evaluation(tree: dict | None) -> bool:
+    return any(isinstance(e, dict) and str(e.get("path", "")).startswith("evaluation/") for e in (tree or {}).get("tree") or [])
+
+
+def d2_phase_c():
+    """If the newest mem0 commit's tree no longer holds evaluation/ (it is the deletion), the tree at its first
+    parent - the newest tree that still holds it. Otherwise nothing."""
+    def build(results):
+        newest = _newest_mem0(results)
+        tree = _read_prev(results, 1, f"gh/{_safe(MEM0)}/tree_newest.json") if len(results) > 1 else None
+        if not newest or holds_evaluation(tree):
+            return None
+        parents = newest.get("parents") or []
+        parent = parents[0].get("sha") if parents and isinstance(parents[0], dict) else None
+        if not (isinstance(parent, str) and _SHA.fullmatch(parent)):
+            return None
+        return {"hosts": D2_HOSTS, "max_redirects": 0, "requests": [
+            {"id": f"ghtree:{MEM0}@parent", "url": f"https://api.github.com/repos/{MEM0}/git/trees/{parent}?recursive=1",
+             "save": f"gh/{_safe(MEM0)}/tree_parent.json", "max_bytes": META_MAX}]}
+    return build
+
+
+def d2_jobs() -> list:
+    return [d2_phase_a(), d2_phase_b(), d2_phase_c()]
+
+
+def d2_report(record: dict) -> dict:
+    """Names only: AMA-Hub's new name, head and tree size; mem0's newest evaluation commit, whether its tree holds
+    evaluation/, the pinned commit (the newest whose tree holds it) and why, and the evaluation/ file names."""
+    units = [Path(j["unit"]) for j in record["jobs"]]
+    rd = lambda i, rel: json.loads((units[i] / rel).read_bytes()) if i < len(units) and (units[i] / rel).is_file() else None  # noqa: E731
+    repo, head = rd(0, f"gh/{_safe(AMA_HUB)}/repo.json") or {}, rd(0, f"gh/{_safe(AMA_HUB)}/head.json") or {}
+    ama_tree = rd(1, f"gh/{_safe(AMA_HUB)}/tree.json") or {}
+    commits = rd(0, f"gh/{_safe(MEM0)}/evaluation_commits.json") or []
+    newest_tree, parent_tree = rd(1, f"gh/{_safe(MEM0)}/tree_newest.json"), rd(2, f"gh/{_safe(MEM0)}/tree_parent.json")
+    newest = commits[0] if commits else {}
+    pinned_tree = newest_tree if holds_evaluation(newest_tree) else parent_tree
+    pinned = newest.get("sha") if holds_evaluation(newest_tree) else ((newest.get("parents") or [{}])[0].get("sha"))
+    beam_repo, beam_head = rd(0, f"gh/{_safe(BEAM_GH)}/repo.json") or {}, rd(0, f"gh/{_safe(BEAM_GH)}/head.json") or {}
+    beam_tree = rd(1, f"gh/{_safe(BEAM_GH)}/tree.json") or {}
+    return {"beam": {"repo": BEAM_GH, "full_name": beam_repo.get("full_name"),
+                     "licence": (beam_repo.get("license") or {}).get("spdx_id"), "head_sha": beam_head.get("sha"),
+                     "tree_entries": len(beam_tree.get("tree") or []), "tree_truncated": beam_tree.get("truncated"),
+                     "evaluation_files": sorted(e["path"] for e in beam_tree.get("tree") or []
+                                                if e.get("type") == "blob" and (e["path"].startswith("src/evaluation/")
+                                                                                or e["path"] == "src/prompts.py"))},
+            "ama_hub": {"asked": AMA_HUB, "full_name": repo.get("full_name"), "licence": (repo.get("license") or {}).get("spdx_id"),
+                        "head_sha": head.get("sha"), "tree_entries": len(ama_tree.get("tree") or []),
+                        "tree_truncated": ama_tree.get("truncated")},
+            "mem0": {"evaluation_commits": [c.get("sha") for c in commits], "newest": newest.get("sha"),
+                     "newest_holds_evaluation": holds_evaluation(newest_tree),
+                     "pinned_commit": pinned if holds_evaluation(pinned_tree) else None,
+                     "why": "the newest commit whose tree still holds evaluation/"
+                            + ("" if holds_evaluation(newest_tree) else " - the newest one is the deletion; its first parent"),
+                     "evaluation_files": sorted(e["path"] for e in (pinned_tree or {}).get("tree") or []
+                                                if str(e.get("path", "")).startswith("evaluation/") and e.get("type") == "blob")}}
+
+
 # ── the command line ──────────────────────────────────────────────────────
 
 def _load(name: str, path: Path):
@@ -321,6 +433,7 @@ def _load(name: str, path: Path):
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="the A3 fetch windows (children under the contract)")
     ap.add_argument("--window", required=True, choices=["a3-discovery"])
+    ap.add_argument("--plan", default="d1", choices=["d1", "d2"], help="d1: the full discovery; d2: the P1/P10 follow-up")
     ap.add_argument("--run", required=True)
     ap.add_argument("--python", required=True, help="the polygon's py314 interpreter")
     args = ap.parse_args(argv)
@@ -334,9 +447,12 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     win = manifest["windows"][args.window]
     floor = manifest["disk"]["floor_gb"] * GB
-    rec = run_child_window(c, L, window=args.window, hosts=win["hosts"], jobs=discovery_jobs(CP.PINS),
+    hosts, jobs = (win["hosts"], discovery_jobs(CP.PINS)) if args.plan == "d1" else (D2_HOSTS, d2_jobs())
+    rec = run_child_window(c, L, window=args.window, hosts=hosts, jobs=jobs,
                            python=Path(args.python), via_port=via, run=args.run, parent_env=os.environ,
                            need_bytes=floor, volume=Path("D:/"))
+    if args.plan == "d2":
+        print(json.dumps(d2_report(rec), indent=1))
     print(json.dumps({"problems": rec["problems"], "check": rec["check"], "jobs": [
         {"index": j["index"], "rc": j["rc"], "requests": len(j["summary"]),
          "ok": sum(1 for r in j["summary"] if r.get("ok"))} for j in rec["jobs"]],
