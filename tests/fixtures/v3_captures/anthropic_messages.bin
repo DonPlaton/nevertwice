@@ -1,0 +1,20 @@
+HTTP/1.1 200 OK
+Content-Type: application/json
+Transfer-Encoding: chunked
+Connection: keep-alive
+Date: Sat, 26 Sep 2026 07:06:15 GMT
+X-Content-Type-Options: xxxxxxx
+Server: xxx
+vary: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+access-control-allow-credentials: xxxx
+x-ds-trace-id: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+Strict-Transport-Security: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+X-Cache: xxxxxxxxxxxxxxxxxxxx
+Via: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+X-Amz-Cf-Pop: xxxxxxxx
+X-Amz-Cf-Id: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+202
+{"id":"0ebf48d4-bc12-4336-b2b4-c064ac833f19","type":"message","role":"assistant","model":"deepseek-flash","content":[{"type":"thinking","thinking":"We need answer user: \"Say hello in one word.\" Need one word. So \"Hello\". Must be one word. final.","signature":"0ebf48d4-bc12-4336-b2b4-c064ac833f19"},{"type":"text","text":"Hello"}],"stop_reason":"end_turn","stop_sequence":null,"usage":{"input_tokens":36,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":29,"service_tier":"standard"}}
+0
+

@@ -1,0 +1,20 @@
+HTTP/1.1 200 OK
+Content-Type: application/json
+Transfer-Encoding: chunked
+Connection: keep-alive
+Date: Sat, 26 Sep 2026 07:06:10 GMT
+X-Content-Type-Options: xxxxxxx
+Server: xxx
+vary: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+access-control-allow-credentials: xxxx
+x-ds-trace-id: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+Strict-Transport-Security: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+X-Cache: xxxxxxxxxxxxxxxxxxxx
+Via: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+X-Amz-Cf-Pop: xxxxxxxx
+X-Amz-Cf-Id: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+1da
+{"id":"a39ae81f-fc32-4373-901c-1b97f5bf4f43","object":"chat.completion","created":1790406370,"model":"deepseek-flash","choices":[{"index":0,"message":{"role":"assistant","content":"{\"fruit\": \"apple\"}"},"logprobs":null,"finish_reason":"stop"}],"usage":{"prompt_tokens":47,"completion_tokens":6,"total_tokens":53,"prompt_tokens_details":{"cached_tokens":0},"prompt_cache_hit_tokens":0,"prompt_cache_miss_tokens":47},"system_fingerprint":"aeb56401ca74e127821c4f9126dcb669"}
+0
+
