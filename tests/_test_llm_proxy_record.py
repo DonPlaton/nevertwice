@@ -272,35 +272,26 @@ got_arm = call(W, "/user/balance", method="GET")
 got_sched = call(ports["scheduler"], "/user/balance", method="GET", token=T_SCHED)
 check("/user/balance: 404 on an arm port, forwarded on the scheduler port",
       got_arm.startswith(b"HTTP/1.1 404") and got_sched.startswith(b"HTTP/1.1 200"), f"{got_arm[:14]!r} {got_sched[:14]!r}")
-target = socket.socket()
-target.bind(("127.0.0.1", 0))
-target.listen(1)
-tport = target.getsockname()[1]
-
-
-def echo_once():
-    c, _ = target.accept()
-    c.sendall(b"hello-from-target")
-    c.close()
-
-
-threading.Thread(target=echo_once, daemon=True).start()
 cp = ports["arms"]["nevertwice"]["catcher"]
-connect = f"CONNECT 127.0.0.1:{tport} HTTP/1.1\r\nHost: 127.0.0.1:{tport}\r\n\r\n".encode()
-s = socket.create_connection(("127.0.0.1", cp))
-s.sendall(connect)
-outside = ST._read_all(s, 3)
-s.close()
-ctl("/window", {"name": "w-test", "hosts": ["127.0.0.1"], "state": "open"})
-s = socket.create_connection(("127.0.0.1", cp))
-s.sendall(connect)
-inside = ST._read_all(s, 3)
-s.close()
+
+
+def via_catcher(target: str) -> bytes:
+    s = socket.create_connection(("127.0.0.1", cp))
+    s.sendall(f"CONNECT {target} HTTP/1.1\r\nHost: {target}\r\n\r\n".encode())
+    got = ST._read_all(s, 3)
+    s.close()
+    return got
+
+
+outside = via_catcher("huggingface.co:443")
+ctl("/window", {"name": "w-test", "hosts": ["huggingface.co"], "arms": ["nevertwice"], "state": "open"})
+wrong_port = via_catcher("huggingface.co:8443")
+no_hop = via_catcher("huggingface.co:443")
 ctl("/window", {"name": "w-test", "state": "close"})
 check("the catcher refuses a CONNECT outside a window (403)", outside.startswith(b"HTTP/1.1 403"))
-check("inside an open window it tunnels to an allowed host", inside.startswith(b"HTTP/1.1 200") and inside.endswith(b"hello-from-target"),
-      inside[:60].decode("latin-1"))
-target.close()
+check("inside an open window a port other than 443 is still refused (403)", wrong_port.startswith(b"HTTP/1.1 403"))
+check("inside an open window, with no declared hop, the catcher answers 502 and dials nothing (A3.a)",
+      no_hop.startswith(b"HTTP/1.1 502"), no_hop[:40].decode("latin-1"))
 n_lines = len(records(px))
 flags_before = dict(px.flags)
 px.stop()
@@ -318,7 +309,8 @@ forbidden = [ST.SENTINEL_KEY, *CANARIES.values(), "Ivan Testov", "ivan.testov@ex
 files = [f for f in TMP.rglob("*") if f.is_file() and f.name != "deepseek.env"]
 leaks = [(f.name, w) for f in files for w in forbidden if w.encode("utf-8") in f.read_bytes()]
 check(f"no key, canary, marker text, name or body in the {len(files)} written files", leaks == [], str(leaks[:5]))
-check("the run directory holds only the logs", {f.name for f in files} <= {"calls.jsonl", "flags.jsonl", "catcher.jsonl"},
+check("the run directory holds only the logs", {f.name for f in files} <= {"calls.jsonl", "flags.jsonl", "catcher.jsonl",
+                                                                          "windows_proxy.jsonl"},
       str(sorted({f.name for f in files})))
 
 shutil.rmtree(TMP, ignore_errors=True)

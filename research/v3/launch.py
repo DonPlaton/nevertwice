@@ -1789,10 +1789,10 @@ def _walk_items(obj):
 
 # ── the proxy process (A2.4) ────────────────────────────────────────────
 
-def spawn_proxy(c: Contract, python: str | os.PathLike, *, script: Path, config_path: Path, key_file: Path,
+def spawn_proxy(c: Contract, python: str | os.PathLike, *, script: Path, config_path: Path, key_file: Path | None = None,
                 stdin_secrets: Mapping, unit: UnitDirs, parent_env: Mapping[str, str], ready_timeout: float = 30.0,
                 popen: Callable[..., subprocess.Popen] = subprocess.Popen,
-                witnesses: "Witnesses | None" = None) -> tuple[Child, dict]:
+                witnesses: "Witnesses | None" = None, catcher_only: bool = False) -> tuple[Child, dict]:
     """Start research/_llm_proxy.py under the contract (§2.6.1): the only spawn whose argv may name the key file.
 
     Its read exceptions are exact paths at exact argv indexes (X6): its own script (1) and the key file (6) - never
@@ -1801,14 +1801,26 @@ def spawn_proxy(c: Contract, python: str | os.PathLike, *, script: Path, config_
     one JSON line on stdin, then EOF. It is started unwitnessed by the arm witness, with that reason recorded: its own upstream is the cloud,
     and every call it makes is its own record. With ``witnesses``, its pid becomes an allowed loopback listener for
     the witnessed trees (W7) - its write, reader and catcher ports. Returns (child, ports) once READY names the
-    ports file's sha256."""
+    ports file's sha256.
+
+    ``catcher_only`` (A3.a, the auditor's O3a) starts the `catch` mode for fetch windows: no key file in argv (its only
+    read exception is its script), no arm write port, no upstream probe; its catcher tunnels a window's hosts
+    through the declared hop."""
+    if catcher_only == (key_file is not None):
+        raise ContractViolation(["the proxy takes the key file exactly when it is not catcher-only"])
     env = build_env(c, parent_env=parent_env, unit=unit, path_dirs=[Path(python).parent], declared={},
                     catcher_url="", proxies=False)
-    argv = [os.fspath(python), os.fspath(script), "serve", "--config", os.fspath(config_path),
-            "--key-file", os.fspath(key_file)]
+    if catcher_only:
+        argv = [os.fspath(python), os.fspath(script), "catch", "--config", os.fspath(config_path)]
+        exc = {1: Path(script)}
+        reason = "the catcher-only proxy is the instrument: it reads no key and tunnels declared window hosts"
+    else:
+        argv = [os.fspath(python), os.fspath(script), "serve", "--config", os.fspath(config_path),
+                "--key-file", os.fspath(key_file)]
+        exc = {1: Path(script), 6: Path(key_file)}
+        reason = "the proxy is the instrument: its upstream is the cloud and it records each call"
     child = spawn(c, argv, env=env, cwd=unit.cwd, record={"role": "proxy"}, parent_env=parent_env, catcher_url="",
-                  argv_exception={1: Path(script), 6: Path(key_file)}, popen=popen, requirement="optional",
-                  unwitnessed_reason="the proxy is the instrument: its upstream is the cloud and it records each call",
+                  argv_exception=exc, popen=popen, requirement="optional", unwitnessed_reason=reason,
                   stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     child.process.stdin.write((json.dumps(dict(stdin_secrets)) + "\n").encode("utf-8"))
     child.process.stdin.close()

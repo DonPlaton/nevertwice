@@ -86,6 +86,17 @@ _UNIT = re.compile(r"/u/([A-Za-z0-9._-]{1,128})(/.*)$")
 CONFIG_KEYS = frozenset({"arms", "run_dir", "thinking_branch", "upstream", "scan_roots", "via", "j3",
                          "scheduler", "ollama"})
 MAX_CONNECT_REPLY = 8 * 1024
+#: The keys of a catcher-only (`catch`) config: the fetch windows of A3/A8 need the catcher and nothing else.
+CATCH_CONFIG_KEYS = frozenset({"run_dir", "via", "catchers"})
+#: A window host: a lower-case DNS name with at least one dot - never an IP literal, a port, a scheme or a wildcard.
+_WINDOW_HOST = re.compile(r"[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+")
+_ARM_NAME = re.compile(r"[A-Za-z0-9._-]{1,64}")
+
+
+def _window_host_ok(h) -> bool:
+    """An exact DNS name for a window: lower case, dotted, and a last label that is not all digits - so an IP
+    literal (whose labels are digits) is never a window host."""
+    return isinstance(h, str) and _WINDOW_HOST.fullmatch(h) is not None and not h.rsplit(".", 1)[-1].isdigit()
 _FORWARDED_PREFIXES = ("/v1/", "/chat/", "/anthropic/", "/models")
 
 
@@ -124,7 +135,7 @@ def read_key(path: str | os.PathLike, name: str = "DEEPSEEK_API_KEY") -> _Key:
 @dataclass
 class ArmConfig:
     arm: str
-    mode: str = "raw"                       # raw | record
+    mode: str = "raw"                       # raw | record | catch (a catcher port only; A3.a)
     thinking_route: str = "documented"      # documented | fallback
     token: str = ""
     pinned_model: str = ""                  # §4.3a: deepseek-flash on arm ports, deepseek-v4-pro on J3
@@ -210,6 +221,24 @@ class ProxyConfig:
                    via_port=via["port"] if via is not None else None,
                    ollama_mode=oll.get("mode", "pace"),
                    ollama_upstream=tuple(oll.get("upstream") or ("127.0.0.1", 11434)))
+
+
+def load_catch_config(path: str | os.PathLike, secrets: dict) -> ProxyConfig:
+    """A3.a: a catcher-only config - {run_dir, via?, catchers: [arm names]} and nothing else. No key is involved: no
+    arm write port exists, so no request can reach the upstream; the catcher's window tunnels go through the hop."""
+    raw = json.loads(Path(path).read_text(encoding="utf-8"))
+    extra = sorted(set(raw) - CATCH_CONFIG_KEYS)
+    if extra:
+        raise ValueError(f"unknown catch config keys refused: {', '.join(extra)}")
+    via = raw.get("via")
+    if via is not None and (not isinstance(via, dict) or set(via) != {"host", "port"} or via["host"] != "127.0.0.1"):
+        raise ValueError("via names exactly {host: 127.0.0.1, port} (R4)")
+    names = raw.get("catchers") or []
+    if not names or not all(isinstance(n, str) and _ARM_NAME.fullmatch(n) for n in names) or len(set(names)) != len(names):
+        raise ValueError("catchers must be a non-empty list of distinct arm names")
+    return ProxyConfig(arms=[ArmConfig(arm=n, mode="catch") for n in names], run_dir=Path(raw["run_dir"]),
+                       control_token=secrets.get("control_token", ""),
+                       via_port=via["port"] if via is not None else None)
 
 
 @dataclass
@@ -893,9 +922,11 @@ SPECIAL_ROLES = ("j3", "scheduler")
 
 
 class Proxy:
-    def __init__(self, config: ProxyConfig, key: _Key, *, log: Callable[[str], None] | None = None,
+    def __init__(self, config: ProxyConfig, key: _Key | None, *, log: Callable[[str], None] | None = None,
                  ssl_context: ssl.SSLContext | None = None,
                  markers: OwnerMarkers | None = None, canaries: dict | None = None):
+        if key is None and any(a.mode != "catch" for a in config.arms):
+            raise ValueError("only a catcher-only proxy runs without the key")
         self.config = config
         self._key = key
         #: Verification is always on: ssl.create_default_context(). A test may hand in its own verifying context;
@@ -908,7 +939,7 @@ class Proxy:
         self._canaries = {k: v for k, v in (canaries or {}).items() if v}
         self.ports: dict = {}
         self.stage = {"block": None, "stage": None}
-        self.windows: dict[str, list[str]] = {}
+        self.windows: dict[str, dict] = {}          # A3.a: name -> {"hosts": frozenset, "arms": frozenset}
         self._listeners: list[socket.socket] = []
         self._stop = threading.Event()
         self._threads: list[threading.Thread] = []
@@ -923,6 +954,11 @@ class Proxy:
     def start(self) -> dict:
         arm_ports, special = {}, {}
         for arm in self.config.arms:
+            if arm.mode == "catch":                      # A3.a: a catcher port and nothing else
+                c = _listen()
+                self._serve(c, lambda s, a=arm: self._catcher(s, a))
+                arm_ports[arm.arm] = {"catcher": c.getsockname()[1]}
+                continue
             if arm.arm in SPECIAL_ROLES:
                 p = _listen()
                 self._serve(p, lambda s, a=arm: self._client(s, a, a.arm))
@@ -1030,10 +1066,10 @@ class Proxy:
         return raw
 
     @staticmethod
-    def _connect_tunnel(raw: socket.socket) -> None:
-        """CONNECT to the code's constant target; anything but a 200 reply is an upstream error (no retry). Nothing
-        is sent after the request until the reply head has been read whole."""
-        target = f"{UPSTREAM_HOST}:{UPSTREAM_PORT}"
+    def _connect_tunnel(raw: socket.socket, target: str = f"{UPSTREAM_HOST}:{UPSTREAM_PORT}") -> None:
+        """CONNECT to ``target`` - the code's constant for the key's upstream; a window host:443 for the catcher
+        (A3.a). Anything but a 200 reply is an error (no retry). Nothing is sent after the request until the reply
+        head has been read whole."""
         raw.sendall(f"CONNECT {target} HTTP/1.1\r\nHost: {target}\r\n\r\n".encode("ascii"))
         buf = bytearray()
         while b"\r\n\r\n" not in buf:
@@ -1049,6 +1085,18 @@ class Proxy:
             raise ConnectRefused("the hop did not answer CONNECT with 200")
         if len(buf) > end:
             raise ConnectRefused("the hop sent bytes before the TLS handshake")
+
+    def _hop_tunnel(self, host: str) -> socket.socket:
+        """A3.a: a raw tunnel to ``host``:443 through the declared hop - the only way the catcher reaches a window
+        host. TLS stays end to end between the child and the host; the proxy only relays bytes."""
+        raw = socket.create_connection(("127.0.0.1", self.config.via_port), timeout=self.config.connect_timeout_s)
+        try:
+            self._connect_tunnel(raw, f"{host}:443")
+        except BaseException:
+            raw.close()
+            raise
+        raw.settimeout(None)
+        return raw
 
     def probe_upstream(self) -> dict:
         """One tunnel and one TLS handshake, no request: the peer certificate's issuer (O, CN) and notAfter, for
@@ -1349,8 +1397,10 @@ class Proxy:
 
     # the catcher ------------------------------------------------------------------------------------------------
     def _catcher(self, s: socket.socket, arm: ArmConfig) -> None:
-        """Refuses everything - except, inside a declared window, a CONNECT to one of that window's hosts, which is
-        tunnelled (AQ1). Every host is recorded, never a byte of the traffic."""
+        """Refuses everything - except, inside a declared window, a CONNECT to port 443 of one of that window's hosts
+        (exact name) from one of that window's arms, which is tunnelled through the declared hop (AQ1, A3.a) and never
+        dialled directly. Every request is recorded - host, port, window, the hop's answer, byte counts - never a byte
+        of the traffic."""
         buf = bytearray()
         head = _read_head(s, buf)
         if head is None:
@@ -1366,38 +1416,67 @@ class Proxy:
             mm = re.match(r"https?://([^/:]+)", target)
             host = mm.group(1) if mm else (_hget(headers, "host") or "?").split(":")[0]
         host, host_len = _safe_host(host)                # X5: a bounded hostname or "<invalid>", never raw bytes
-        window = None if host == "<invalid>" else next((n for n, hosts in self.windows.items() if host.lower() in hosts), None)
-        tunnel = window is not None and method.upper() == "CONNECT"
+        name = host.lower()
+        window = None
+        if method.upper() == "CONNECT" and port == 443 and host != "<invalid>":
+            window = next((n for n, w in list(self.windows.items()) if name in w["hosts"] and arm.arm in w["arms"]), None)
         self.counters[arm.arm].catcher_hosts.append(host)
-        _append_jsonl(self.config.run_dir / "catcher.jsonl",
-                      {"arm": arm.arm, "host": host, "host_len": host_len, "utc": _utc(), "window": window,
-                       "tunnelled": tunnel, "refused": not tunnel})
-        if not tunnel:
+        via = None if self.config.via_port is None else f"127.0.0.1:{self.config.via_port}"
+        rec = {"arm": arm.arm, "host": host, "host_len": host_len, "port": port, "utc": _utc(), "window": window,
+               "via": via, "tunnelled": False, "refused": True, "hop_status": None, "bytes_up": 0, "bytes_down": 0}
+        if window is None:
+            _append_jsonl(self.config.run_dir / "catcher.jsonl", rec)
             _send_local(s, 403, "Forbidden", b"egress refused by the v3 launch contract")
             return
+        if self.config.via_port is None:                 # never a direct dial: without the hop there is no path
+            rec["hop_status"] = "no-hop"
+            _append_jsonl(self.config.run_dir / "catcher.jsonl", rec)
+            _send_local(s, 502, "Bad Gateway", b"no declared hop")
+            return
         try:
-            far = socket.create_connection((host, port), timeout=30)
-        except OSError:
+            far = self._hop_tunnel(name)
+        except ConnectRefused:
+            self.counters[arm.arm].connect_refused += 1
+            rec["hop_status"] = "refused"
+            _append_jsonl(self.config.run_dir / "catcher.jsonl", rec)
             _send_local(s, 502, "Bad Gateway")
             return
-        s.sendall(b"HTTP/1.1 200 Connection Established\r\n\r\n")
-        if buf:
-            far.sendall(bytes(buf))
-        sel = selectors.DefaultSelector()
-        sel.register(s, selectors.EVENT_READ, far)
-        sel.register(far, selectors.EVENT_READ, s)
-        try:
-            while not self._stop.is_set():
-                for k, _ in sel.select(timeout=1.0):
-                    data = k.fileobj.recv(65536)
-                    if not data:
-                        return
-                    k.data.sendall(data)
-        except OSError:
+        except OSError as e:
+            rec["hop_status"] = f"error:{type(e).__name__}"
+            _append_jsonl(self.config.run_dir / "catcher.jsonl", rec)
+            _send_local(s, 502, "Bad Gateway")
             return
+        rec.update(hop_status=200, tunnelled=True, refused=False)
+        up = down = 0
+        try:
+            s.sendall(b"HTTP/1.1 200 Connection Established\r\n\r\n")
+            if buf:
+                far.sendall(bytes(buf))
+                up += len(buf)
+            sel = selectors.DefaultSelector()
+            sel.register(s, selectors.EVENT_READ, (far, "up"))
+            sel.register(far, selectors.EVENT_READ, (s, "down"))
+            try:
+                done = False
+                while not done and not self._stop.is_set():
+                    for k, _ in sel.select(timeout=1.0):
+                        data = k.fileobj.recv(65536)
+                        if not data:
+                            done = True
+                            break
+                        k.data[0].sendall(data)
+                        if k.data[1] == "up":
+                            up += len(data)
+                        else:
+                            down += len(data)
+            finally:
+                sel.close()
+        except OSError:
+            pass
         finally:
-            sel.close()
             far.close()
+            rec.update(bytes_up=up, bytes_down=down, t_end=_utc())
+            _append_jsonl(self.config.run_dir / "catcher.jsonl", rec)
 
     # the control port ---------------------------------------------------------------------------------------------
     def _control(self, s: socket.socket) -> None:
@@ -1431,10 +1510,21 @@ class Proxy:
             out = {"ok": True}
         elif path == "/window" and method == "POST":
             name = str(body.get("name") or "")
-            if body.get("state") == "open":
-                self.windows[name] = [h.lower() for h in body.get("hosts") or []]
+            if not _ARM_NAME.fullmatch(name):
+                _send_local(s, 400, "Bad Request", b"a window needs a name")
+                return
+            if body.get("state") == "open":             # A3.a: exact hosts and the arms the window is for
+                hosts, arms = body.get("hosts") or [], body.get("arms") or []
+                if (not hosts or not all(_window_host_ok(h) for h in hosts)
+                        or not arms or not all(isinstance(a, str) and a in self.arms for a in arms)):
+                    _send_local(s, 400, "Bad Request", b"a window needs exact lower-case hosts and known arms")
+                    return
+                self.windows[name] = {"hosts": frozenset(hosts), "arms": frozenset(arms)}
+                _append_jsonl(self.config.run_dir / "windows_proxy.jsonl",
+                              {"event": "open", "window": name, "hosts": sorted(hosts), "arms": sorted(arms), "utc": _utc()})
             else:
                 self.windows.pop(name, None)
+                _append_jsonl(self.config.run_dir / "windows_proxy.jsonl", {"event": "close", "window": name, "utc": _utc()})
             out = {"ok": True, "open": sorted(self.windows)}
         elif path == "/scan-files" and method == "POST":
             out = {"key_hits": self._scan_files(body.get("paths") or [])}
@@ -1531,6 +1621,15 @@ def _owner_texts(claude_md: str | None, rules_dir: str | None) -> list[str]:
     return texts
 
 
+def start_catch(config_path: str | os.PathLike, secrets: dict):
+    """A3.a: the catcher-only proxy - no key read, no upstream probe, catcher ports and the control port only.
+    Returns (proxy, ports, sha256 of the ports file)."""
+    config = load_catch_config(config_path, secrets)
+    proxy = Proxy(config, None)
+    ports = proxy.start()
+    return proxy, ports, write_ports(config.run_dir, ports)
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="the v3 recording proxy")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -1539,8 +1638,19 @@ def main(argv: list[str] | None = None) -> int:
     sv.add_argument("--key-file", required=True)
     sv.add_argument("--owner-claude-md")
     sv.add_argument("--owner-rules-dir")
+    ct = sub.add_parser("catch")
+    ct.add_argument("--config", required=True)
     args = ap.parse_args(argv)
     secrets = json.loads(sys.stdin.readline() or "{}")          # tokens: never argv, file or environment
+    if args.cmd == "catch":
+        proxy, _ports, digest = start_catch(args.config, secrets)
+        print(f"READY {digest}", flush=True)
+        try:
+            while not proxy._stop.is_set():
+                time.sleep(0.2)
+        except KeyboardInterrupt:
+            proxy.stop()
+        return 0
     real_key = _under(os.path.realpath(args.key_file), os.path.realpath(SECRETS_ROOT)) or _under(args.key_file, SECRETS_ROOT)
     config = ProxyConfig.load(args.config, secrets, test_upstream_ok=not real_key)
     key = read_key(args.key_file)
