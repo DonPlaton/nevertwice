@@ -6,3 +6,7 @@
 # checkout unchanged - no eol normalisation, on any platform.
 research/embed_universal/heldout/external_heldout_v1.json -text
 research/embed_universal/heldout/MANIFEST.json -text
+
+# A2.5 DeepSeek captures: raw HTTP bytes (CRLF framing), pinned by sha256 in their manifest.
+*.bin binary
+tests/fixtures/v3_captures/MANIFEST.json -text
