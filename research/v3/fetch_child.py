@@ -17,7 +17,10 @@ A job: {"hosts": [exact host names], "max_redirects": 0|1, "requests": [
   proxy, no direct connection. TLS is verified end to end (the default context).
 * Identity encoding only. A body larger than ``max_bytes`` is abandoned. A saved file is streamed to
   ``<save>.partial`` with running sha256 and git-blob sha1, checked against ``expect``, and only then renamed.
-* The summary - one JSON object per request: id, status, final host, redirect host, bytes, sha256, git_blob_sha1, ok,
+* A rate limit stops the job: a 429 from any host, or a 403 from api.github.com (its unauthenticated limit), marks
+  the request ``rate_limited`` and every later request of the job is recorded as not sent - never retried.
+* The summary - one JSON object per request: id, status, final host, redirect host, bytes, sha256, git_blob_sha1,
+  the peer certificate's issuer (O, CN; R-A3-7: the catcher relays ciphertext, so only the child can see it), ok,
   error - is written to fetch_summary.json in the working directory and printed as one line. No body is printed.
 
     <py314>\\python.exe research\\v3\\fetch_child.py   (the job on stdin)
@@ -74,7 +77,8 @@ def run_request(req: dict, *, hosts: frozenset, max_redirects: int, port: int, c
                 ctx: ssl.SSLContext | None = None, timeout: float = 300.0) -> dict:
     """One request of the job. Returns its summary; never raises for a refusal or a network error."""
     out = {"id": req.get("id"), "status": None, "final_host": None, "redirect_host": None, "bytes": 0,
-           "sha256": None, "git_blob_sha1": None, "ok": False, "error": None}
+           "sha256": None, "git_blob_sha1": None, "issuer_o": None, "issuer_cn": None, "rate_limited": False,
+           "ok": False, "error": None}
     ctx = ctx or ssl.create_default_context()
     method = req.get("method", "GET")
     try:
@@ -89,6 +93,9 @@ def run_request(req: dict, *, hosts: frozenset, max_redirects: int, port: int, c
                 conn.request(method, path, headers={"User-Agent": "nvt3-fetch/1", "Accept-Encoding": "identity"})
                 r = conn.getresponse()
                 out["status"], out["final_host"] = r.status, host
+                if isinstance(conn.sock, ssl.SSLSocket):  # the last host's certificate (a redirect's target wins)
+                    issuer = dict(x[0] for x in conn.sock.getpeercert().get("issuer", ()))
+                    out["issuer_o"], out["issuer_cn"] = issuer.get("organizationName"), issuer.get("commonName")
                 if r.status in (301, 302, 303, 307, 308):
                     loc = r.getheader("Location") or ""
                     target = urllib.parse.urljoin(f"https://{host}{path}", loc)
@@ -102,6 +109,9 @@ def run_request(req: dict, *, hosts: frozenset, max_redirects: int, port: int, c
                     host, path = _check_url(target, hosts)
                     hops += 1
                     continue
+                if r.status == 429 or (r.status == 403 and host == "api.github.com"):
+                    out["rate_limited"] = True
+                    raise Refused(f"rate-limited: status {r.status}")
                 if r.status != 200:
                     raise Refused(f"status {r.status}")
                 if (r.getheader("Content-Encoding") or "identity").lower() != "identity":
@@ -183,8 +193,16 @@ def run_job(job: dict, *, cwd: Path, port: int, ctx: ssl.SSLContext | None = Non
     max_redirects = int(job.get("max_redirects", 0))
     if max_redirects not in (0, 1):
         raise Refused("max_redirects is 0 or 1")
-    return [run_request(r, hosts=hosts, max_redirects=max_redirects, port=port, cwd=cwd, ctx=ctx)
-            for r in job.get("requests") or []]
+    out: list[dict] = []
+    stopped = False
+    for r in job.get("requests") or []:
+        if stopped:                                      # a rate limit stops the job: nothing more is sent
+            out.append({"id": r.get("id"), "ok": False, "rate_limited": False, "error": "not sent: rate-limited earlier"})
+            continue
+        res = run_request(r, hosts=hosts, max_redirects=max_redirects, port=port, cwd=cwd, ctx=ctx)
+        stopped = bool(res.get("rate_limited"))
+        out.append(res)
+    return out
 
 
 def main() -> int:

@@ -14,7 +14,10 @@ cdn-lfs.hf.co (a throwaway certificate made at test time):
   body, a hash or size mismatch, a status other than 200/redirect;
 * the child only ever talks to the catcher: the contract's HTTPS_PROXY must be the loopback catcher (anything else
   refuses the job), every tunnel shows in the catcher's log and on the hop, and nothing dials a host directly;
-* its own main(), with the default TLS context, refuses the untrusted test certificate: nothing is saved.
+* its own main(), with the default TLS context, refuses the untrusted test certificate: nothing is saved;
+* a rate limit stops the job (the auditor's ruling): a 429 from any host, or a 403 from api.github.com, marks the
+  request rate-limited and every later request is recorded as not sent - the server sees none of them; a 403 from
+  another host is an ordinary refusal and the job goes on.
 
     python tests/_test_v3_fetch_child.py
 """
@@ -87,7 +90,8 @@ def blob_sha1(data: bytes) -> str:
 META = json.dumps({"sha": "0123456789abcdef0123456789abcdef01234567", "cardData": {"license": "mit"}}).encode()
 DATA = b'{"question": "synthetic", "answer": "synthetic"}\n' * 200
 BIG = b"x" * 5000
-made = TF.make_test_cert(TMP / "cert", HF, extra_hosts=(CDN, "evil.example"))
+GHAPI = "api.github.com"
+made = TF.make_test_cert(TMP / "cert", HF, extra_hosts=(CDN, "evil.example", GHAPI))
 if made is None:
     print("  SKIP the fetch child checks: neither cryptography nor openssl is available (not passed)")
     sys.exit(0 if FAILED == 0 else 1)
@@ -101,6 +105,9 @@ ROUTES = {
     "/chunked.json": (200, [("Transfer-Encoding", "chunked")], DATA),
     "/gz.json": (200, [("Content-Encoding", "gzip")], DATA),
     "/big.bin": (200, [], BIG),
+    "/limited": (429, [("Retry-After", "60")], b""),
+    "/repos/o/r": (403, [], b'{"message": "API rate limit exceeded"}'),
+    "/forbidden": (403, [], b""),
 }
 srv = TF.TlsHttpServer(made[0], made[1], ROUTES)
 hop = TF.TunnelHop(srv.port)
@@ -109,7 +116,7 @@ cfg = P.ProxyConfig(arms=[P.ArmConfig(arm="fetch", mode="catch")], run_dir=TMP /
 px = P.Proxy(cfg, None, log=lambda m: None)
 ports = px.start()
 CATCHER = ports["arms"]["fetch"]["catcher"]
-px.windows["a3-test"] = {"hosts": frozenset({HF, CDN}), "arms": frozenset({"fetch"})}
+px.windows["a3-test"] = {"hosts": frozenset({HF, CDN, GHAPI}), "arms": frozenset({"fetch"})}
 
 
 def job(requests, *, hosts=(HF, CDN), max_redirects=1, cwd_name="w"):
@@ -137,6 +144,9 @@ check("a metadata GET is saved with its sha256 and git blob sha1",
 check("a file behind one redirect to an allowed host is fetched, checked and renamed from .partial",
       r_file["ok"] and r_file["final_host"] == CDN and (cwd / "files" / "data.json").read_bytes() == DATA
       and not (cwd / "files" / "data.json.partial").exists() and r_file["git_blob_sha1"] == blob_sha1(DATA), str(r_file))
+check("each request records its peer certificate's issuer (the target of a redirect for a redirected one)",
+      r_meta["issuer_cn"] == HF and r_file["issuer_cn"] == HF and r_file["final_host"] == CDN, str((r_meta["issuer_cn"],
+                                                                                                 r_file["issuer_cn"])))
 check("a chunked body (no length) still gets its git blob sha1, from the saved file",
       r_chunk["ok"] and r_chunk["git_blob_sha1"] == blob_sha1(DATA) and r_chunk["bytes"] == len(DATA), str(r_chunk))
 n_blob = sum(1 for h in srv.heads if h.startswith(b"GET /blob/data.json"))
@@ -183,6 +193,23 @@ check("no request ever reached evil.example through the catcher",
       not any(r.get("host") == "evil.example" and r.get("tunnelled")
               for r in (json.loads(x) for x in (TMP / "proxy" / "catcher.jsonl").read_bytes().decode().splitlines())))
 
+print("\n- a rate limit stops the job -")
+for label, first_url in (("a 429", f"https://{HF}/limited"), ("a 403 from api.github.com", f"https://{GHAPI}/repos/o/r")):
+    before = len(srv.heads)
+    (r1, r2, r3), _ = job([{"id": "first", "url": first_url, "save": "rl/a.json", "max_bytes": 1 << 20},
+                           {"id": "second", "url": f"https://{CDN}/blob/data.json", "save": "rl/b.json", "max_bytes": 1 << 20},
+                           {"id": "third", "url": f"https://{HF}/api/datasets/x/revision/main", "save": "rl/c.json",
+                            "max_bytes": 1 << 20}], hosts=(HF, CDN, GHAPI), cwd_name=f"rl{len(label)}")
+    sent_after = len(srv.heads) - before
+    check(f"{label}: rate-limited, the rest of the job not sent, the server saw only the first",
+          r1["rate_limited"] and "rate-limited" in (r1["error"] or "") and not r1["ok"]
+          and r2["error"] == r3["error"] == "not sent: rate-limited earlier" and sent_after == 1, f"{r1} {r2} {sent_after}")
+(f1, f2), _ = job([{"id": "f", "url": f"https://{HF}/forbidden", "save": "fb/a.json", "max_bytes": 1 << 20},
+                   {"id": "g", "url": f"https://{CDN}/blob/data.json", "save": "fb/b.json", "max_bytes": 1 << 20}],
+                  cwd_name="fb")
+check("a 403 from another host is an ordinary refusal and the job goes on",
+      not f1["rate_limited"] and "status 403" in (f1["error"] or "") and f2["ok"], f"{f1} {f2}")
+
 print("\n- only through the catcher -")
 for label, env in (("unset", {}), ("another host", {"HTTPS_PROXY": "http://10.0.0.5:3128"}),
                    ("https scheme", {"HTTPS_PROXY": "https://127.0.0.1:1234"}), ("with a path", {"HTTPS_PROXY": "http://127.0.0.1:1/x"})):
@@ -194,7 +221,7 @@ for label, env in (("unset", {}), ("another host", {"HTTPS_PROXY": "http://10.0.
 check("the loopback catcher is accepted", FC.catcher_port({"HTTPS_PROXY": f"http://127.0.0.1:{CATCHER}"}) == CATCHER)
 log = [json.loads(x) for x in (TMP / "proxy" / "catcher.jsonl").read_bytes().decode().splitlines()]
 check("every fetch was a catcher tunnel through the hop, recorded", all(r["via"] == f"127.0.0.1:{hop.port}" for r in log)
-      and {r["host"] for r in log if r["tunnelled"]} == {HF, CDN}, str({(r["host"], r["tunnelled"]) for r in log}))
+      and {r["host"] for r in log if r["tunnelled"]} == {HF, CDN, GHAPI}, str({(r["host"], r["tunnelled"]) for r in log}))
 check("nothing dialled a host directly", [d for d in DIALS if d[0] not in ("127.0.0.1", "localhost", "::1")] == [])
 
 print("\n- its own main(): the default TLS context -")

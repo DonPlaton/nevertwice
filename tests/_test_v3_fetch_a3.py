@@ -1,0 +1,269 @@
+#!/usr/bin/env python3
+"""PREREG-V3 plan step A3 (harness): research/v3/fetch_a3.py, offline, with real processes under the contract.
+
+The a3-discovery window runs end to end: the catcher-only proxy (a real process, no key), the window opened in
+windows.jsonl (hosts + the declared hop) and in the catcher (exact hosts, arm "fetch"), four fetch-child jobs (real
+processes, requirement "required", the child script the only read exception) against a fake huggingface.co and
+api.github.com behind a fake hop and a local TLS server (a throwaway certificate; the test hands the children its CA
+file - the one thing a real window never passes):
+
+* phase 1 finds each HF repo's revision; phase 2 its tree and card at that revision; phase 3 HEADs its LFS files
+  (the redirect host recorded, never followed) and reads the GitHub repositories named before discovery plus the ones
+  a card links; phase 4 each repository's tree at its head commit;
+* the record carries every job's summary, the catcher's log (every host tunnelled through the hop), the window log,
+  the issuers and a complete check - and no problem;
+* the problems are named: a failing request, a host the window does not hold (the catcher refuses it even when the
+  child's job allows it), a used run label and a disk under the floor refuse the window before anything starts;
+* judge() over a record, table-tested: egress hits (loopback ones included, counted once), an incomplete check, fs
+  hits, a catcher refusal, a request not ok, a child's exit 3 and a rate limit each yield exactly one named problem;
+* the auditor's cap: after the four named repositories, at most 12 card-linked ones are requested, in card order;
+  the rest are recorded by name in the job, never requested.
+
+    python tests/_test_v3_fetch_a3.py
+"""
+from __future__ import annotations
+
+import importlib.util
+import inspect
+import json
+import os
+import shutil
+import sys
+import tempfile
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parent
+sys.path.insert(0, str(HERE))
+
+import _env_guard  # noqa: F401,E402  hermetic like every suite
+import _tls_fake as TF  # noqa: E402
+
+_TEST_EXC = {sys.executable: "the test interpreter"}
+if getattr(sys, "_base_executable", sys.executable) != sys.executable:
+    _TEST_EXC[sys._base_executable] = "the test interpreter's base"
+
+
+def _load(name: str, path: Path):
+    spec = importlib.util.spec_from_file_location(name, path)
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[name] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+L = _load("v3_launch_fa3", ROOT / "research" / "v3" / "launch.py")
+F = _load("v3_fetch_a3", ROOT / "research" / "v3" / "fetch_a3.py")
+
+PASSED = FAILED = 0
+
+
+def check(name: str, cond: bool, detail: str = "") -> None:
+    global PASSED, FAILED
+    if cond:
+        PASSED += 1
+        print(f"  ok   {name}")
+    else:
+        FAILED += 1
+        print(f"  FAIL {name}" + (f" - {detail}" if detail else ""))
+
+
+TMP = Path(tempfile.mkdtemp(prefix="nvt3_fetch_a3_"))
+HF, GH, CDN = "huggingface.co", "api.github.com", "cdn-lfs.hf.co"
+made = TF.make_test_cert(TMP / "cert", HF, extra_hosts=(GH, CDN, "evil.example"))
+if made is None:
+    print("  SKIP the discovery window checks: neither cryptography nor openssl is available (not passed)")
+    shutil.rmtree(TMP, ignore_errors=True)
+    print(f"\nv3 fetch a3: {PASSED} passed, {FAILED} failed")
+    sys.exit(1 if FAILED else 0)
+
+S_DS, S_MOD, S_GH = "1" * 40, "2" * 40, "3" * 40
+PINS = {"ds": {"source": "hf-dataset", "repo": "org/ds"}, "tok": {"source": "hf-model", "repo": "org/model"},
+        "gh": {"source": "github", "repo": None}}
+J = lambda o: (200, [("Content-Type", "application/json")], json.dumps(o).encode())  # noqa: E731
+routes = {
+    "/api/datasets/org/ds/revision/main": J({"sha": S_DS, "cardData": {"license": "mit"}}),
+    "/api/models/org/model/revision/main": J({"sha": S_MOD}),
+    f"/api/datasets/org/ds/tree/{S_DS}?recursive=true": J([
+        {"type": "file", "path": "data.json", "size": 9, "oid": "a" * 40, "lfs": {"oid": "b" * 64, "size": 9}},
+        {"type": "file", "path": "README.md", "size": 30, "oid": "c" * 40}]),
+    f"/api/models/org/model/tree/{S_MOD}?recursive=true": J([
+        {"type": "file", "path": "tokenizer.json", "size": 5, "oid": "d" * 40, "lfs": {"oid": "e" * 64, "size": 5}}]),
+    f"/datasets/org/ds/raw/{S_DS}/README.md": (200, [("Content-Type", "text/plain")],
+                                               b"# ds\nCode: https://github.com/cardowner/cardrepo\n"),
+    f"/org/model/raw/{S_MOD}/README.md": (200, [("Content-Type", "text/plain")], b"# model\n"),
+    f"/datasets/org/ds/resolve/{S_DS}/data.json": (302, [("Location", f"https://{CDN}/blob/1")], b""),
+    f"/org/model/resolve/{S_MOD}/tokenizer.json": (302, [("Location", f"https://{CDN}/blob/2")], b""),
+}
+for name in (*F.GITHUB_NAMED, "cardowner/cardrepo"):
+    routes[f"/repos/{name}"] = J({"full_name": name, "default_branch": "main", "license": {"spdx_id": "MIT"}})
+    routes[f"/repos/{name}/commits/HEAD"] = J({"sha": S_GH})
+    routes[f"/repos/{name}/git/trees/{S_GH}?recursive=1"] = J({"sha": S_GH, "tree": [{"path": "x.py", "type": "blob",
+                                                                                     "sha": "f" * 40}]})
+srv = TF.TlsHttpServer(made[0], made[1], routes)
+hop = TF.TunnelHop(srv.port)
+
+
+class AnySampler:
+    def processes(self):
+        return []
+
+    def identity(self, pid):
+        return 1.0
+
+    def connections(self, pids):
+        return [], 0
+
+    def listeners(self):
+        return {}
+
+
+def contract(tag):
+    base = TMP / tag
+    (base / "watched").mkdir(parents=True)
+    (base / "watched" / "idle.txt").write_bytes(b"idle")
+    c = L.Contract(polygon_root=base / "polygon", runs_root=base / "polygon" / "runs" / "v3", repo_root=ROOT,
+                   owner_home=base / "owner", secrets_dir=base / "secrets", quarantine_root=base / "quarantine",
+                   conservation_root=base / "conservation", binary_exceptions=_TEST_EXC,
+                   system_dirs=(Path(sys.executable).parent,))
+    return c, base
+
+
+def window(tag, jobs, hosts=(HF, GH), **kw):
+    c, base = contract(tag)
+    rec = F.run_child_window(c, L, window="a3-discovery", hosts=list(hosts), jobs=jobs, python=Path(sys.executable),
+                             via_port=hop.port, run="d1", parent_env=os.environ,
+                             native=L.NativeEgressWitness(sampler=AnySampler(), tick_s=60, jobs=None),
+                             fs=L.FsWitness([L.WatchSpec("watched", base / "watched")]),
+                             child_env_extra={"SSL_CERT_FILE": str(made[0])}, volume=TMP, **kw)
+    return rec, c, base
+
+
+print("\n- a3-discovery end to end -")
+rec, C, BASE = window("ok", F.discovery_jobs(PINS))
+check("the window has no problem", rec["problems"] == [], str(rec["problems"]))
+check("four jobs ran, every request ok", len(rec["jobs"]) == 4 and all(j["rc"] == 0 for j in rec["jobs"])
+      and all(r["ok"] for j in rec["jobs"] for r in j["summary"]), str([(j["rc"], len(j["summary"])) for j in rec["jobs"]]))
+units = [Path(j["unit"]) for j in rec["jobs"]]
+check("phase 1 saved each HF repo's revision", json.loads((units[0] / "meta/datasets/org__ds/revision.json").read_bytes())["sha"]
+      == S_DS and (units[0] / "meta/models/org__model/revision.json").is_file())
+check("phase 2 saved each repo's tree and card at that revision",
+      (units[1] / "meta/datasets/org__ds/tree.json").is_file() and (units[1] / "meta/models/org__model/README.md").is_file())
+heads = [r for r in rec["jobs"][2]["summary"] if r["id"].startswith("head:")]
+check("phase 3 HEADs each LFS file and records the redirect host, following none",
+      len(heads) == 2 and all(r["ok"] and r["status"] == 302 and r["redirect_host"] == CDN for r in heads)
+      and sum(1 for h in srv.heads if h.startswith(b"HEAD ") and b"/resolve/" in h.split(b"\r\n", 1)[0]) == 2
+      and not any(h.startswith(b"GET ") and b"/resolve/" in h.split(b"\r\n", 1)[0] for h in srv.heads)
+      and not any(h.startswith(b"GET /blob") or h.startswith(b"HEAD /blob") for h in srv.heads), str(heads))
+gh_ids = sorted(r["id"] for r in rec["jobs"][2]["summary"] if r["id"].startswith("gh:"))
+check("phase 3 reads the named GitHub repositories and the one a card links",
+      gh_ids == sorted(f"gh:{n}" for n in (*F.GITHUB_NAMED, "cardowner/cardrepo")), str(gh_ids))
+check("phase 4 reads each repository's tree at its head commit",
+      sorted(r["id"] for r in rec["jobs"][3]["summary"]) == sorted(f"ghtree:{n}" for n in (*F.GITHUB_NAMED, "cardowner/cardrepo")))
+check("the catcher tunnelled only the window's hosts, every one through the hop",
+      {x["host"] for x in rec["catcher"] if x["tunnelled"]} == {HF, GH}
+      and all(x["via"] == f"127.0.0.1:{hop.port}" for x in rec["catcher"]), str({(x["host"], x["tunnelled"]) for x in rec["catcher"]}))
+check("the window log names the hop and the hosts; the catcher window opened and closed for the arm",
+      [w["event"] for w in F._jsonl(C.runs_root / "_launch" / "windows.jsonl")] == ["START", "END"]
+      and F._jsonl(C.runs_root / "_launch" / "windows.jsonl")[0]["via"] == f"127.0.0.1:{hop.port}"
+      and [w["event"] for w in rec["windows_proxy"]] == ["open", "close"] and rec["windows_proxy"][0]["arms"] == ["fetch"])
+check("the issuers are recorded per host", {i[0] for i in rec["issuers"]} == {HF, GH}, str(rec["issuers"]))
+check("the check is complete with 0 hits and 0 fs hits",
+      rec["check"]["complete"] is True and rec["check"]["native_hits"] == 0 and rec["check"]["fs_hits"] == 0, str(rec["check"]))
+spawns = F._jsonl(L.spawns_log(C))
+fetch_sp = [s for s in spawns if s.get("role") == "fetch"]
+proxy_sp = [s for s in spawns if s.get("role") == "proxy"]
+check("every fetch child was spawned required and witnessed, its script the only read exception",
+      len(fetch_sp) == 4 and all(s["witness"]["requirement"] == "required" and s["witness"]["native"] == "on"
+                                 and s["argv_exception"] == {"1": str(F.FETCH_CHILD)} for s in fetch_sp))
+check("the proxy was the catcher-only one: no key file in its argv",
+      len(proxy_sp) == 1 and proxy_sp[0]["argv_exception"] == {"1": str(F.PROXY_SCRIPT)})
+check("the record is written beside the window's run", json.loads((C.runs_root / "_fetch/a3-discovery/d1/record.json")
+                                                                 .read_bytes())["problems"] == [])
+
+print("\n- the problems, by name -")
+bad_job = {"hosts": [HF], "max_redirects": 0, "requests": [{"id": "missing", "url": f"https://{HF}/nothing/here",
+                                                             "save": "x.json", "max_bytes": 1024}]}
+rec2, _, _ = window("fail", [bad_job])
+check("a failing request is a named problem", any("missing" in p and "404" in p for p in rec2["problems"]), str(rec2["problems"]))
+off_window = {"hosts": [HF, "evil.example"], "max_redirects": 0, "requests": [
+    {"id": "evil", "url": "https://evil.example/x", "save": "e.json", "max_bytes": 1024}]}
+rec3, _, _ = window("off", [off_window])
+check("a host the window does not hold is refused by the catcher even when the job allows it, and named",
+      any("catcher refused" in p and "evil.example" in p for p in rec3["problems"])
+      and not any(x["host"] == "evil.example" and x["tunnelled"] for x in rec3["catcher"]), str(rec3["problems"]))
+try:
+    F.run_child_window(C, L, window="a3-discovery", hosts=[HF], jobs=[], python=Path(sys.executable), via_port=hop.port,
+                       run="d1", parent_env=os.environ, volume=TMP)
+    check("a used run label refuses the window", False)
+except F.WindowRefused:
+    check("a used run label refuses the window", True)
+except Exception as e:  # noqa: BLE001 - another failure is a failed check, by name
+    check("a used run label refuses the window", False, type(e).__name__)
+c4, _ = contract("disk")
+try:
+    F.run_child_window(c4, L, window="a3-discovery", hosts=[HF], jobs=[], python=Path(sys.executable), via_port=hop.port,
+                       run="d1", parent_env=os.environ, need_bytes=1 << 62, volume=TMP)
+    check("a disk under the floor refuses the window before anything starts", False)
+except F.WindowRefused:
+    check("a disk under the floor refuses the window before anything starts",
+          not (c4.runs_root / "_launch" / "windows.jsonl").exists() and not (c4.runs_root / "_fetch").exists())
+except Exception as e:  # noqa: BLE001
+    check("a disk under the floor refuses the window before anything starts", False, type(e).__name__)
+check("main() never hands the children a CA file or any extra variable",
+      "child_env_extra" not in inspect.getsource(F.main) and "SSL_CERT_FILE" not in inspect.getsource(F))
+check("GitHub links in cards are found, deduplicated, after the named ones",
+      F.github_candidates(["see https://github.com/a/b and github.com/a/b.git and github.com/c/d"])
+      == ([*F.GITHUB_NAMED, "a/b", "c/d"], []))
+many = " ".join(f"https://github.com/o{i}/r{i}" for i in range(20)) + " https://github.com/mem0ai/mem0"
+req, skipped = F.github_candidates([many])
+check("the card-linked repositories are capped at 12, in card order; the rest are named, not requested",
+      F.CARD_LINK_CAP == 12 and req == [*F.GITHUB_NAMED, *(f"o{i}/r{i}" for i in range(12))]
+      and skipped == [f"o{i}/r{i}" for i in range(12, 20)], str((len(req), skipped)))
+u0, u1 = TMP / "p1", TMP / "p2"
+(u0 / "meta/datasets/org__ds").mkdir(parents=True)
+(u0 / "meta/datasets/org__ds/revision.json").write_text(json.dumps({"sha": S_DS}), encoding="utf-8")
+(u1 / "meta/datasets/org__ds").mkdir(parents=True)
+(u1 / "meta/datasets/org__ds/tree.json").write_text("[]", encoding="utf-8")
+(u1 / "meta/datasets/org__ds/README.md").write_text(many, encoding="utf-8")
+job3 = F.discovery_phase3({"ds": PINS["ds"]})([{"unit": str(u0)}, {"unit": str(u1)}])
+gh_repos = sorted({r["id"].split(":", 1)[1] for r in job3["requests"] if r["id"].startswith("gh:")})
+check("phase 3 requests only the named and the first 12 card-linked repositories, and records the rest by name",
+      len(gh_repos) == 4 + 12 and job3["card_links_skipped"] == [f"o{i}/r{i}" for i in range(12, 20)]
+      and not any("o15/r15" in r["url"] for r in job3["requests"]), str((len(gh_repos), job3.get("card_links_skipped"))))
+
+print("\n- judge(), table-tested -")
+CLEAN = {"jobs": [{"index": 0, "rc": 0, "summary": [{"id": "a", "ok": True}]}], "catcher": [{"host": HF, "tunnelled": True}],
+         "check": {"complete": True, "native_hits": 0, "loopback_hits": 0, "fs_hits": 0}}
+check("a clean record has no problem", F.judge(CLEAN) == [], str(F.judge(CLEAN)))
+
+
+def with_(**change):
+    rec = json.loads(json.dumps(CLEAN))
+    for k, v in change.items():
+        rec[k] = v
+    return rec
+
+
+ck = CLEAN["check"]
+for label, rec, want in (
+        ("native_hits 1", with_(check={**ck, "native_hits": 1}), "1 egress hit"),
+        ("a loopback hit (counted in hits too)", with_(check={**ck, "native_hits": 1, "loopback_hits": 1}), "1 of them loopback"),
+        ("complete False", with_(check={**ck, "complete": False}), "not complete"),
+        ("fs_hits 1", with_(check={**ck, "fs_hits": 1}), "file-system"),
+        ("a catcher refusal", with_(catcher=[{"host": HF, "tunnelled": True}, {"host": "evil.example", "tunnelled": False}]),
+         "catcher refused"),
+        ("a request not ok", with_(jobs=[{"index": 0, "rc": 0, "summary": [{"id": "a", "ok": False, "error": "status 404"}]}]),
+         "request a: status 404"),
+        ("a child's exit 3", with_(jobs=[{"index": 0, "rc": 3, "summary": [{"id": "a", "ok": True}]}]), "exited with 3"),
+        ("a rate limit", with_(jobs=[{"index": 0, "rc": 0, "summary": [
+            {"id": "gh:x", "ok": False, "rate_limited": True, "error": "Refused: rate-limited: status 403"},
+            {"id": "gh:y", "ok": False, "rate_limited": False, "error": "not sent: rate-limited earlier"}]}]), "rate-limited")):
+    got = F.judge(rec)
+    check(f"{label}: exactly one named problem", len(got) == 1 and want in got[0], str(got))
+
+hop.close()
+srv.close()
+shutil.rmtree(TMP, ignore_errors=True)
+print(f"\nv3 fetch a3: {PASSED} passed, {FAILED} failed")
+sys.exit(1 if FAILED else 0)
