@@ -567,7 +567,8 @@ def _num(v) -> bool:
 
 def p0j(row: Mapping, ctx: P0Context, arm: str) -> list[str]:
     """K87 checks 1-2 inside the row's branch of the reconciliation-granularity slot, one predicate per branch:
-    (a) the adapter's HTTP calls equal the proxy's, exactly; (b) the product's logical calls and the tokens within 1 %
+    (a) the adapter's HTTP calls equal the proxy's, exactly, and a tokens delta, when the row has one, is exactly 0
+    (Q-K87-1); (b) the product's logical calls and the tokens within 1 %
     of the proxy's, the bound inclusive (tokens_delta_pct is the product's delta against the proxy, in percent);
     in (a) and (b) logical calls never exceed HTTP calls; (c) single-witness only when single_witness_ok holds for this
     arm (the recording-vs-raw-forward A/B passed for its surface class and every unit's footprint is > 0)."""
@@ -587,6 +588,9 @@ def p0j(row: Mapping, ctx: P0Context, arm: str) -> list[str]:
             out.append("P0j: branch a without the adapter counter")
         elif ad != http:
             out.append(f"P0j: the adapter counted {ad} HTTP calls, the proxy {http} - branch a is exact")
+        td = rec.get("tokens_delta_pct")
+        if td is not None and not (_num(td) and td == 0.0):
+            out.append(f"P0j: tokens {td!r} % against the proxy - branch a is exact (Q-K87-1)")
     if branch == "b":
         td = rec.get("tokens_delta_pct")
         if not _int(logical) or not _num(td):

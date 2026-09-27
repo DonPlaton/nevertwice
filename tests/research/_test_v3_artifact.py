@@ -9,7 +9,8 @@
 * files: run_record stamps measured_at now and never overwrites; build() hashes the canonical input_manifest, names
   exactly its status_ids in run_files, keeps brackets to Point B product (Q7), refuses a blocked arm with numbers;
 * P0: each clause a-j fires on its own trigger and stays silent on the clean fixture; P0j reads K87 checks 1-2 inside
-  the row's branch (B-DUP): (a) exact against the adapter, (b) calls and tokens within 1 % of the proxy's, the bound
+  the row's branch (B-DUP): (a) exact against the adapter, and a tokens delta, when there is one, exactly 0
+  (Q-K87-1), (b) calls and tokens within 1 % of the proxy's, the bound
   inclusive, logical <= HTTP calls in (a) and (b), (c) single-witness only with the context's single_witness_ok;
 * the auditor's tools, where present (.loop - outside the repository by design, R12; a named SKIP in CI): m5 v3 --freeze
   PASSes F-A1 (product B), F-A2 (retrieval) and F-A3 (the all-0 sensitivity row) and FAILs each one-field asymmetry
@@ -424,6 +425,18 @@ check("P0j (a): no adapter counter on an adapter branch", any("adapter" in x for
 check("P0j (a): logical calls above HTTP calls", any("logical" in x for x in rec({"product_logical_calls": 13})))
 check("P0j (a), (b): no HTTP call count from the proxy", any("HTTP call count" in x for x in rec({"proxy_calls": None}))
       and any("HTTP call count" in x for x in rec({"proxy_calls": None}, base=REC_B)))
+check("P0j (a), (b): a negative HTTP call count is not a count (K6)", any("HTTP call count" in x for x in rec({"proxy_calls": -1}))
+      and any("HTTP call count" in x for x in rec({"proxy_calls": -1}, base=REC_B)))
+check("P0j (b): a bool is not a tokens delta - True is not 1 % (K7)",
+      any("product-side counter" in x for x in rec({"tokens_delta_pct": True}, base=REC_B)))
+check("P0j (b): NaN is not a tokens delta (K9)",
+      any("product-side counter" in x for x in rec({"tokens_delta_pct": float("nan")}, base=REC_B)))
+check("Q-K87-1 (a) is exact in tokens too: a delta of 0.3 % against the adapter branch is P0j",
+      any("tokens" in x and "branch a" in x for x in rec({"tokens_delta_pct": 0.3})), str(rec({"tokens_delta_pct": 0.3})))
+check("Q-K87-1 ... no tokens delta on an adapter branch is not P0j (the adapter counts calls, not tokens)",
+      not has(rec({"tokens_delta_pct": None}), "j"), str(rec({"tokens_delta_pct": None})))
+check("Q-K87-1 ... a bool or NaN delta on an adapter branch is P0j, never read as 0",
+      has(rec({"tokens_delta_pct": False}), "j") and has(rec({"tokens_delta_pct": float("nan")}), "j"))
 check("K87 (b): calls and tokens at exactly -1 % are inside the tolerance (the boundary is inclusive)",
       not has(rec({}, base=REC_B), "j"), str(rec({}, base=REC_B)))
 check("K87 (b): ... and tokens at exactly +1 % too", not has(rec({"tokens_delta_pct": 1.0}, base=REC_B), "j"))
