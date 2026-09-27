@@ -1649,12 +1649,16 @@ _APPEND_LOCK = threading.Lock()
 
 
 def _append_jsonl(path: Path, record: dict) -> None:
+    """One record, on the disk before the proxy goes on (R-FSYNC): flushed, then fsynced - a hard kill of the proxy
+    loses no call, catcher, flag or ollama record, and accounting counts the losses from these files. Every append the
+    proxy makes goes through here (a row of the record suite checks it)."""
     line = (json.dumps(record, sort_keys=True) + "\n").encode("utf-8")
     with _APPEND_LOCK:
         path.parent.mkdir(parents=True, exist_ok=True)
         with open(path, "ab") as f:
             f.write(line)
             f.flush()
+            os.fsync(f.fileno())
 
 
 def write_ports(run_dir: Path, ports: dict) -> str:

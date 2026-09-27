@@ -384,6 +384,54 @@ check("the run directory holds only the logs", {f.name for f in files} <= {"call
                                                                           "windows_proxy.jsonl"},
       str(sorted({f.name for f in files})))
 
+print("\n- R-FSYNC: a record is on the disk before the proxy goes on - flushed, then fsynced -")
+import ast as _ast  # noqa: E402
+import os as _os  # noqa: E402
+
+_fsynced: list = []
+_real_fsync = _os.fsync
+
+
+def _count_fsync(fd):
+    _fsynced.append(_os.fstat(fd).st_size)        # what the file holds at the fsync
+    return _real_fsync(fd)
+
+
+_os.fsync = _count_fsync                          # the proxy module's os is this os
+try:
+    _fp = TMP / "fsync_probe" / "calls.jsonl"
+    P._append_jsonl(_fp, {"a": 1})
+    P._append_jsonl(_fp, {"b": 22})
+finally:
+    _os.fsync = _real_fsync
+_one = len((json.dumps({"a": 1}, sort_keys=True) + "\n").encode("utf-8"))
+check("R-FSYNC: each appended record is fsynced once, after its whole line is flushed (a hard kill loses no call)",
+      _fsynced == [_one, _fp.stat().st_size], f"{_fsynced} vs {[_one, _fp.stat().st_size]}")
+
+
+def _appends_outside(src: str) -> list:
+    """Functions other than _append_jsonl that open a file for appending (open(..., "a..") or Path.open("a..."))."""
+    out = []
+    for fn in _ast.walk(_ast.parse(src)):
+        if not isinstance(fn, (_ast.FunctionDef, _ast.AsyncFunctionDef)) or fn.name == "_append_jsonl":
+            continue
+        for n in _ast.walk(fn):
+            if not isinstance(n, _ast.Call):
+                continue
+            name = getattr(n.func, "id", None) or getattr(n.func, "attr", None)
+            if name != "open":
+                continue
+            modes = [a for a in (n.args[1:2] if getattr(n.func, "id", None) else n.args[:1])]
+            modes += [k.value for k in n.keywords if k.arg == "mode"]
+            if any(isinstance(m, _ast.Constant) and isinstance(m.value, str) and "a" in m.value for m in modes):
+                out.append(fn.name)
+    return out
+
+
+check("R-FSYNC: the proxy appends to a file only through _append_jsonl - calls, catcher, flags and ollama records all "
+      "take the fsync path", _appends_outside((ROOT / "research" / "_llm_proxy.py").read_text(encoding="utf-8")) == [],
+      str(_appends_outside((ROOT / "research" / "_llm_proxy.py").read_text(encoding="utf-8"))))
+
 shutil.rmtree(TMP, ignore_errors=True)
 print(f"\nproxy recording: {PASSED} passed, {FAILED} failed")
 sys.exit(1 if FAILED else 0)

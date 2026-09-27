@@ -5,7 +5,8 @@ Ollama's model residency - each refusing, before a byte is sent, anything outsid
 * ProxyControl: 127.0.0.1 only, the bearer token on every call. stage(block, stage) posts exactly {"block", "stage"}:
   a stage of scheduler.STAGES with its block, or both None - the reset between blocks, after which a stray call is
   loud in accounting instead of being charged to a stage. window(name, state, hosts, arms): open needs the exact
-  hosts and the arms it is for, close needs neither. counters(), flags(), ollama(), health() are GETs.
+  hosts and the arms it is for, close needs neither. counters(), flags(), ollama(), health() are GETs; shutdown()
+  posts {} to /shutdown - the proxy stops itself (R-FSYNC).
   fetch_window_control(pc, arms) adapts launch.fetch_window's proxy_control(action, name, hosts) to /window.
 * OllamaCtl: 127.0.0.1 only. The allowlist is GET /api/ps, POST /api/generate {model, keep_alive: 0} and POST
   /api/embed {model, input: [], keep_alive: 0} - an unload and nothing else (R5: an embedding-only tag is unloaded
@@ -109,6 +110,10 @@ class ProxyControl:
 
     def ollama(self) -> Any:
         return self._call("GET", "/ollama")
+
+    def shutdown(self) -> Any:
+        """The proxy's own stop (R-FSYNC): every record it wrote is already fsynced; the orchestrator never kills it."""
+        return self._call("POST", "/shutdown", {})
 
 
 def fetch_window_control(pc: ProxyControl, arms: Sequence[str]) -> Callable[[str, str, Sequence[str]], None]:

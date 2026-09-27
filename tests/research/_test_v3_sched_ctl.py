@@ -137,6 +137,10 @@ try:
     check("counters, flags and ollama are GETs with the token",
           pc.counters() == {"ok": True} and fk.seen[-1][:3] == ("GET", "/counters", "Bearer ctl-token")
           and pc.flags() == {"ok": True} and fk.seen[-1][1] == "/flags" and pc.ollama() == {"ok": True})
+    got = pc.shutdown() if hasattr(pc, "shutdown") else "no shutdown()"
+    check("R-FSYNC: shutdown() posts {} to /shutdown with the bearer token - the proxy stops itself, never killed",
+          got == {"ok": True} and fk.seen[-1][:3] == ("POST", "/shutdown", "Bearer ctl-token")
+          and json.loads(fk.seen[-1][3]) == {}, f"{got} {fk.seen[-1]}")
     fwc = CT.fetch_window_control(pc, ["catcher-arm"])
     fwc("open", "a7-y", ["api.github.com"])
     fwc("close", "a7-y", ["api.github.com"])
