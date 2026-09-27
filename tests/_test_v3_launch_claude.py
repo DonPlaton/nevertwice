@@ -19,6 +19,9 @@
   fake home holding exactly our settings.json (no CLAUDE.md, no .credentials.json there: D4/D5), the binary is the
   polygon-pinned one (its version recorded), a node + cli.js launch of the package is recognised whatever its
   label (D6), and A8 has recorded the tools that exact pinned file offers, by its sha256 (D7).
+* Q-47-6: the sessions of one claude-code-memory unit run in that unit's directory one after another (Claude Code binds
+  its memory to the project's working directory); another unit, another arm, a directory that is not empty, or a
+  session while the previous one still runs is refused; each reuse is a line of the spawn journal.
 
     python tests/_test_v3_launch_claude.py
 """
@@ -118,8 +121,14 @@ called = []
 
 
 class _Popen:
+    running = False                                  # Q-47-6: a session that has not exited yet
+
     def __init__(self, *a, **kw):
         called.append(a)
+        self._running = _Popen.running              # fixed when the session starts
+
+    def poll(self):
+        return None if self._running else 0
 
 
 u = L.make_unit_dirs(C, "s", "r", "cc", "u1")
@@ -284,6 +293,70 @@ check("D6 an honest node + cli.js launch of the pinned package starts, recorded 
 L.record_offered_tools(L._sha256_file(CC.claude_code_binary), OFFERED)
 refused("D8 a binary that is not the pinned one (node in claude's place)", "polygon-pinned",
         mutate=lambda u, cfg, av, env: ([str(NODE)] + av[1:], env))
+
+print("\n- Q-47-6: the sessions of one claude-code-memory unit share its directory, one after another -")
+u_r = L.make_unit_dirs(CC, "cc", "r", "claude-code-memory", "reuse1")
+
+
+def cc_session(unit_dirs, record, *, mutate=None):
+    cfg_dir = unit_dirs.home / "claude_config"
+    if cfg_dir.exists():
+        shutil.rmtree(cfg_dir)
+        (unit_dirs.home / "empty-mcp.json").unlink()
+    cfg, settings = L.make_claude_config(unit_dirs)
+    av = L.claude_code_argv(CC.claude_code_binary, settings_path=settings, empty_mcp_path=unit_dirs.home / "empty-mcp.json",
+                            memdir=unit_dirs.memdir, offered_tools=OFFERED)
+    env = L.build_env(CC, parent_env=os.environ, unit=unit_dirs, path_dirs=[], catcher_url="http://127.0.0.1:47004",
+                      declared={"CLAUDE_CONFIG_DIR": str(cfg)})
+    if mutate:
+        mutate(unit_dirs)
+    try:
+        L.spawn(CC, av, env=env, cwd=unit_dirs.cwd, record=record, parent_env=os.environ,
+                catcher_url="http://127.0.0.1:47004", popen=_Popen, requirement="optional",
+                unwitnessed_reason="lockdown suite: never started")
+        return []
+    except L.ContractViolation as e:
+        return e.reasons
+
+
+REC = {"role": "claude-code", "arm": "claude-code-memory", "stand": "cc", "run": "r", "unit": "reuse1"}
+check("Q-47-6 the unit's first session starts in its fresh directory", cc_session(u_r, REC) == [])
+got = cc_session(u_r, REC)
+last = json.loads(L.spawns_log(CC).read_bytes().decode().splitlines()[-1])
+check("Q-47-6 its second session reuses the directory, and the spawn journal says so (session 2)",
+      got == [] and (last.get("cwd_reuse") or {}).get("session") == 2, str(got or last.get("cwd_reuse")))
+got = cc_session(u_r, dict(REC, unit="reuse2"))
+check("Q-47-6 a session of ANOTHER unit may not reuse it", any("belongs to another unit" in r for r in got), str(got))
+got = cc_session(u_r, dict(REC, arm="mem0", role="arm"))
+check("Q-47-6 another arm may not reuse it (the exception is claude-code-memory's only)",
+      any("claude-code-memory arm only" in r for r in got), str(got))
+got = cc_session(u_r, REC, mutate=lambda d: (d.cwd / "left-behind.txt").write_bytes(b"x"))
+check("Q-47-6 a directory that is not empty before the spawn is refused", any("cwd is not empty" in r for r in got),
+      str(got))
+(u_r.cwd / "left-behind.txt").unlink()
+_Popen.running = True
+check("Q-47-6 while the unit's session is running, the next one waits (a first spawn under the flag)",
+      cc_session(u_r, REC) == [])
+got = cc_session(u_r, REC)
+check("Q-47-6 ... and a second session while the previous one still runs is refused (sequential only)",
+      any("still running" in r for r in got), str(got))
+_Popen.running = False
+u_other = L.make_unit_dirs(CC, "cc", "r", "mem0", "reuse3")
+L.spawn(CC, [sys.executable, "-c", "pass"], env=L.build_env(CC, parent_env=os.environ, unit=u_other, path_dirs=[],
+                                                          declared={}, catcher_url="http://127.0.0.1:47004"),
+        cwd=u_other.cwd, record={"role": "arm", "arm": "mem0", "stand": "cc", "run": "r", "unit": "reuse3"},
+        parent_env=os.environ, catcher_url="http://127.0.0.1:47004", popen=_Popen, requirement="optional",
+        unwitnessed_reason="lockdown suite: never started")
+try:
+    L.spawn(CC, [sys.executable, "-c", "pass"], env=L.build_env(CC, parent_env=os.environ, unit=u_other, path_dirs=[],
+                                                              declared={}, catcher_url="http://127.0.0.1:47004"),
+            cwd=u_other.cwd, record={"role": "arm", "arm": "mem0", "stand": "cc", "run": "r", "unit": "reuse3"},
+            parent_env=os.environ, catcher_url="http://127.0.0.1:47004", popen=_Popen, requirement="optional",
+            unwitnessed_reason="lockdown suite: never started")
+    check("Q-47-6 another arm's unit directory is never reusable, even by its own unit", False)
+except L.ContractViolation as e:
+    check("Q-47-6 another arm's unit directory is never reusable, even by its own unit",
+          any("not created fresh" in r for r in e.reasons), str(e.reasons))
 L.check_ancestors_for_claude = real_ancestors
 
 shutil.rmtree(TMP, ignore_errors=True)

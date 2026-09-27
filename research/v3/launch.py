@@ -278,6 +278,11 @@ class UnitDirs:
 
 
 _FRESH: set[str] = set()          # unit directories this process created and has not handed to a child yet
+#: Q-47-6, the one named exception to "a fresh cwd per spawn": Claude Code binds its own memory to the project's working
+#: directory, so the sessions of one claude-code-memory unit run in that unit's directory, one after another. Each such
+#: directory is registered here when this process creates it: {norm(cwd): {stand, run, unit, uses, child}}.
+CC_ARM = "claude-code-memory"
+_CC_UNITS: dict[str, dict] = {}
 
 
 def make_unit_dirs(c: Contract, stand: str, run: str, arm: str, unit: str) -> UnitDirs:
@@ -304,11 +309,30 @@ def make_unit_dirs(c: Contract, stand: str, run: str, arm: str, unit: str) -> Un
     dirs.gitconfig_global.write_bytes(b"")
     dirs.gitconfig_system.write_bytes(b"")
     _FRESH.add(_norm(cwd))
+    if arm == CC_ARM:
+        _CC_UNITS[_norm(cwd)] = {"stand": stand, "run": run, "unit": unit, "uses": 0, "child": None}
     return dirs
 
 
-def check_cwd(c: Contract, path: str | os.PathLike) -> list[str]:
-    """§2.6.3: the reasons this directory may not be a child's cwd (empty list = allowed)."""
+def _cc_reuse_reason(path, record: Mapping) -> str | None:
+    """Q-47-6: None when this spawn may reuse a claude-code-memory unit's directory, else why it may not. The spawn must
+    be that arm's, for that very unit, and the unit's previous session must have exited."""
+    entry = _CC_UNITS.get(_norm(path))
+    if entry is None:
+        return "cwd was not created fresh by this process"
+    if record.get("arm") != CC_ARM:
+        return "cwd reuse (Q-47-6) is for the claude-code-memory arm only"
+    if (record.get("stand"), record.get("run"), record.get("unit")) != (entry["stand"], entry["run"], entry["unit"]):
+        return "cwd reuse (Q-47-6): the directory belongs to another unit"
+    child = entry["child"]
+    if child is not None and child.process.poll() is None:
+        return "cwd reuse (Q-47-6): the unit's previous session is still running"
+    return None
+
+
+def check_cwd(c: Contract, path: str | os.PathLike, record: Mapping | None = None) -> list[str]:
+    """§2.6.3: the reasons this directory may not be a child's cwd (empty list = allowed). A directory no longer fresh is
+    allowed only under Q-47-6 (``record`` says whose spawn it is); it must still be empty."""
     reasons = []
     if not _within(path, c.runs_root):
         reasons.append("cwd is outside the runs root (by its path or its real path)")
@@ -323,7 +347,9 @@ def check_cwd(c: Contract, path: str | os.PathLike) -> list[str]:
     if _link_in_chain(c.runs_root, Path(path)):
         reasons.append("a component of the cwd is a link or junction")
     if _norm(path) not in _FRESH:
-        reasons.append("cwd was not created fresh by this process")
+        why = _cc_reuse_reason(path, record or {})
+        if why:
+            reasons.append(why)
     p = Path(path)
     if not p.is_dir():
         reasons.append("cwd does not exist")
@@ -740,7 +766,8 @@ def spawn(c: Contract, argv: Sequence[str], *, env: Mapping[str, str], cwd: str 
     except ContractViolation as e:
         binary = None
         reasons += list(e.reasons)                 # added to, never replacing, the reasons already found
-    reasons += check_cwd(c, cwd)
+    reuse = _norm(cwd) not in _FRESH and _norm(cwd) in _CC_UNITS
+    reasons += check_cwd(c, cwd, record)
     try:
         held = secret_values(c)
     except ContractViolation as e:
@@ -801,6 +828,7 @@ def spawn(c: Contract, argv: Sequence[str], *, env: Mapping[str, str], cwd: str 
         "witness": {"native": "on" if native is not None else "off", "requirement": requirement,
                     "unwitnessed_reason": None if native is not None else unwitnessed_reason},
         "claude_code": claude_rec,
+        "cwd_reuse": ({"rule": "Q-47-6", "session": _CC_UNITS[_norm(cwd)]["uses"] + 1} if reuse else None),
     }
     _append_jsonl(spawns_log(c), entry)
     if reasons:
@@ -828,7 +856,11 @@ def spawn(c: Contract, argv: Sequence[str], *, env: Mapping[str, str], cwd: str 
                 raise ContractViolation(["the child could not be put in its job object"])
         if window is not None:
             window.roots.add(proc.pid)
-    return Child(spawn_id=spawn_id, process=proc, witness=native)
+    child = Child(spawn_id=spawn_id, process=proc, witness=native)
+    if _norm(cwd) in _CC_UNITS:                    # Q-47-6: the unit's latest session, and how many it has had
+        _CC_UNITS[_norm(cwd)]["uses"] += 1
+        _CC_UNITS[_norm(cwd)]["child"] = child
+    return child
 
 
 # ── witnesses (A2.2): egress, filesystem, canaries, the ancestor check, fetch windows ──
