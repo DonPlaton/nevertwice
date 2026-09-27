@@ -19,7 +19,10 @@ the §5.1 truncator with a whitespace tokenizer, a temporary runs tree):
 """
 from __future__ import annotations
 
+import ast
+import hashlib
 import importlib.util
+import json
 import shutil
 import sys
 import tempfile
@@ -107,8 +110,14 @@ try:
           "S6" in r6 and "unit ids" in rid and "repeats" in rdup, f"{r6} | {rid} | {rdup}")
 
     print("\n- dates (§5.3, Q-A4-4) -")
-    got = (PL.iso_datetime("2023/05/20 (Sat) 02:21"), PL.iso_day("2023/05/20 (Sat) 02:21"),
-           PL.iso_datetime("1:56 pm on 8 May, 2023"), PL.iso_datetime("March-15-2024"), PL.iso_day("2024-01-02"))
+    def safe(fn, *a):
+        try:
+            return fn(*a)
+        except Exception as e:  # noqa: BLE001 - the row's FAIL, by name
+            return f"raised {type(e).__name__}: {e}"
+    got = (safe(PL.iso_datetime, "2023/05/20 (Sat) 02:21"), safe(PL.iso_day, "2023/05/20 (Sat) 02:21"),
+           safe(PL.iso_datetime, "1:56 pm on 8 May, 2023"), safe(PL.iso_datetime, "March-15-2024"),
+           safe(PL.iso_day, "2024-01-02"))
     check("PL-dates: LME, LoCoMo, BEAM and ISO forms to ISO (naive local time, as the dataset gives it)",
           got == ("2023-05-20T02:21:00", "2023-05-20", "2023-05-08T13:56:00", "2024-03-15T00:00:00", "2024-01-02"),
           str(got))
@@ -138,6 +147,8 @@ try:
     rb = refused(lambda: PL.write_ops(PL.arm_spec("mem0"), LOC_BAD, dated=True, smap=SMAP))
     check("PL-authors: a LoCoMo speaker outside the sample's two is refused by name (Q-A4-1)",
           "Bob" in rb and "Q-A4-1" in rb, rb)
+    check("PL-map-sha: one map in two insertion orders has one sha",
+          PL.map_sha256({"Caroline": "user", "Mel": "assistant"}) == PL.map_sha256({"Mel": "assistant", "Caroline": "user"}))
     check("PL-map-sha: the map's sha is stable and names which speaker is which",
           PL.map_sha256(SMAP) == PL.map_sha256(dict(SMAP))
           and PL.map_sha256(SMAP) != PL.map_sha256({"Caroline": "assistant", "Mel": "user"}))
@@ -164,6 +175,14 @@ try:
           len(lg) == 1 and lg[0]["item"]["messages"] == [{"role": "user", "speaker": "Caroline", "text": "hey Mel"},
                                                          {"role": "assistant", "speaker": "Mel", "text": "hi Caroline"}],
           str(lg))
+    import copy  # noqa: PLC0415
+    lg2 = copy.deepcopy(lg)
+    lg2[0]["item"]["messages"][1]["text"] = "hi Caroline!"
+    want_sha = hashlib.sha256(json.dumps(lg[0]["item"]["messages"], sort_keys=True, ensure_ascii=False)
+                              .encode("utf-8")).hexdigest()
+    check("PL-ops: a thread op's sha is its messages' canonical JSON, and one changed message changes it",
+          PL.item_shas(lg) == {lg[0]["item"]["item_id"]: want_sha} and PL.item_shas(lg2) != PL.item_shas(lg),
+          f"{PL.item_shas(lg)} {want_sha}")
     check("PL-ops: a memory-store arm's spec is 'both'; an arm without an adapter is refused by name (A8)",
           PL.arm_spec("langmem").store_persistence == "memory" and PL.arm_spec("a-mem").store_persistence == "memory"
           and "A8" in refused(lambda: PL.arm_spec("cognee")) and "not an arm" in refused(lambda: PL.arm_spec("zz")))
@@ -187,8 +206,38 @@ try:
     check("PL-retrieval: a header-and-prefix string over the cap is cut as ONE string by §5.1 (a prefix of it, the "
           "header kept)", cut == "Conversation from 2023-05-20:\nuser: one" and full.startswith(cut)
           and small.truncated == 1, repr(cut))
+    rbr = refused(lambda: PL.write_ops(PL.arm_spec("bm25-floor"), LOC_BAD, dated=True, smap=SMAP, truncate=tr.cut))
+    check("PL-retrieval: a LoCoMo speaker outside the sample's two is refused for the retrieval tier too - the same "
+          "refusal for every arm", "Bob" in rbr and "Q-A4-1" in rbr, rbr)
     check("PL-retrieval: no truncator, no retrieval ops", "truncator" in refused(
         lambda: PL.write_ops(PL.arm_spec("bm25-floor"), LME, dated=True)))
+
+    ARMS_DIR = ROOT / "research" / "v3" / "arms"
+    LOCALS = {p_.stem: p_ for p_ in ARMS_DIR.glob("*.py")} | {"_ollama_pacer": ROOT / "research" / "_ollama_pacer.py"}
+
+    def local_imports(path: Path, seen: set) -> set:
+        """The local modules a file imports, transitively (AST: import X / from X import ..., at any depth)."""
+        out = set()
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+            names = [a.name for a in node.names] if isinstance(node, ast.Import) else \
+                [node.module] if isinstance(node, ast.ImportFrom) and node.module and not node.level else []
+            for n in names:
+                top = n.split(".")[0]
+                if top in LOCALS and top not in seen:
+                    seen.add(top)
+                    out |= {top} | local_imports(LOCALS[top], seen)
+        return out
+
+    gaps = {}
+    for name, spec in PL.ARMS.items():
+        if spec.ours:
+            continue
+        need = {f"{m}.py" for m in local_imports(ARMS_DIR / spec.adapter, {Path(spec.adapter).stem})}
+        missing = sorted(need - set(spec.code) - {spec.adapter})
+        if missing:
+            gaps[name] = missing
+    check("PL-code-copy: every local module a competitor adapter imports, transitively, is in its Q9 copy",
+          gaps == {}, str(gaps))
 
     print("\n- reads and code -")
     rp = PL.read_plan(LME, points=("B", "K"), read_req=SC.ReadReq, k_at=PT.K_AT)
