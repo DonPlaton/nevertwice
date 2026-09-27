@@ -129,6 +129,7 @@ DOC = {
 }
 
 C = R.Call
+STR_SCHEMA = {"type": "string"}
 CALLS = {
     "create": C("POST", "/v1/pets/", body=("name", "kind", "tags", "collar.size", "collar.colour", "toys[].name",
                                            "toys[].squeaks"), response=("id", "name", "owner.email")),
@@ -212,7 +213,27 @@ check("a $ref cycle is a named problem, not a hang", named(R.conformance(CALLS, 
 d5 = copy.deepcopy(DOC)
 d5["paths"]["/v1/pets/"]["post"]["responses"] = {"422": {}}
 check("an operation without a 2xx JSON response cannot have its fields checked",
-      named(R.conformance(CALLS, d5), "create", "2xx"), str(R.conformance(CALLS, d5)))
+      named(R.conformance(CALLS, d5), "create", "no 2xx JSON response schema"), str(R.conformance(CALLS, d5)))
+for label, responses in (("only a 204", {"204": {"description": "no content"}}),
+                         ("a 200 in text/plain only", {"200": {"content": {"text/plain": {"schema": STR_SCHEMA}}}})):
+    d6 = copy.deepcopy(DOC)
+    d6["paths"]["/v1/pets/"]["post"]["responses"] = responses
+    ps = R.conformance(CALLS, d6)
+    check(f"R8 a call that reads response fields from an operation with {label} is a named problem",
+          named(ps, "create", "no 2xx JSON response schema") and not any("is not in the 2xx schema" in p for p in ps),
+          str(ps))
+d7 = copy.deepcopy(DOC)
+d7["paths"]["/v1/pets/"]["post"]["responses"] = {"204": {"description": "no content"}}
+check("a call that reads no response fields needs no 2xx JSON schema",
+      R.conformance({"create": C("POST", "/v1/pets/", body=("name",))}, d7) == [],
+      str(R.conformance({"create": C("POST", "/v1/pets/", body=("name",))}, d7)))
+d8 = copy.deepcopy(DOC)
+d8["paths"]["/v1/pets/{pet_id}/notes"]["post"]["requestBody"]["required"] = True
+ps = R.conformance(dict(CALLS, add_notes=C("POST", "/v1/pets/{pet_id}/notes")), d8)
+check("R5 an operation whose request body is required, called without a body declaration, is a named problem",
+      named(ps, "add_notes", "requires a request body"), str(ps))
+ps = R.conformance(dict(CALLS, add_notes=C("POST", "/v1/pets/{pet_id}/notes")), DOC)
+check("an optional request body may be left out", not any("add_notes" in p for p in ps), str(ps))
 check("a call declared with an unknown method is refused at construction",
       raises(lambda: C("FETCH", "/v1/pets/"), ValueError) is not None)
 check("a path without a leading slash is refused at construction",
