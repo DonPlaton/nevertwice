@@ -248,7 +248,7 @@ def launcher(name: str, *, expect: int, knobs=None, store="disk"):
         return {"arm": name, "run": run, "unit": unit, "stage": stage, "shared": str(SHARED), "expect": expect,
                 "knobs": (knobs or {}).get((run, unit), {}),
                 "write_dir": str(write_dirs.cwd) if write_dirs is not None else None}
-    return SC.ChildArmLauncher(name, argv_for=lambda p: [str(ARM_PY), "-B", str(FAKE_DIR / "fake_arm.py"), str(p)],
+    return SC.ChildArmLauncher(name, argv_for=lambda p, **_: [str(ARM_PY), "-B", str(FAKE_DIR / "fake_arm.py"), str(p)],
                                spec_for=spec_for, store_persistence=store, path_dirs=(str(ARM_PY.parent),))
 
 
@@ -388,8 +388,9 @@ try:
 
     SP = SC.StandPlan(stand="SY", runs=("r1", "r2"), launchers=arms6, campaign_seed=20260927,     # b01: a3, a1, a2
                       unit_tokens={u: 1000 for u in ("v1", "v2", "v3", "v4")}, medians={},
-                      write_ops=lambda a, r, u: OPS(r, u), read_plan=lambda u: [SC.ReadReq(qid=f"{u}-q1", query="x")],
-                      answer=answer, embed_tag="nvt3-bge-m3-d1:latest", commit="c" * 40, dirty=False)
+                      write_ops=lambda a, r, u: OPS(r, u), read_plan=lambda a, u: [SC.ReadReq(qid=f"{u}-q1-{a}", query="x")],
+                      answer=answer, embed_tag="nvt3-bge-m3-d1:latest", commit="c" * 40, dirty=False,
+                      record_extra=lambda a, r, us: {"arm": a, "run": r, "units": list(us)})
     status2.stand("SY", "START", model="m", changelog="2026-09-10", order=1)
     res1, e_b1 = attempt(lambda: s2.run_block(SP, SC.BlockPlan(block="b01", units=("v1", "v2"))))
     res2, e_b2 = attempt(lambda: s2.run_block(SP, SC.BlockPlan(block="b02", units=("v3", "v4"), barrier_read=True)))
@@ -412,6 +413,10 @@ try:
     check("T14: every read answers from its OWN run's store (the marker is its own <run>/<unit>)",
           reads and all(o["marker"] == f"{o['run']}/{o['unit']}" for o in reads)
           and all(m == f"{r}/{u}" for _a, r, u, _q, m in answers), str([o for o in reads if o["marker"] != f"{o['run']}/{o['unit']}"][:3]))
+    check("Q-12-3: each arm's reads are its own - the read plan is asked for (arm, unit), and every arm read every unit "
+          "with its own questions", answers and all(q_.endswith(f"-{a_}") for a_, _r, _u, q_, _m in answers)
+          and {(a_, u_) for a_, _r, u_, _q, _m in answers} == {(a_, u_) for a_ in arms6 for u_ in ("v1", "v2", "v3", "v4")},
+          str(sorted({(a_, q_) for a_, _r, _u, q_, _m in answers})[:6]))
     disk_reads = [o for o in reads if o["arm"] in ("a1", "a2")]
     check("T14: a disk arm reads in a fresh <unit>.q process, never in the write stage's directory",
           disk_reads and all(Path(o["cwd"]).name == f"{o['unit']}.q" for o in disk_reads), str(disk_reads[:2]))
@@ -450,6 +455,10 @@ try:
           "START..END (Q2)", set(one["units"]) and all(v["write"]["footprint"] == 2 and v["write"]["end_write_utc"]
                                                         for v in one["units"].values())
           and one.get("measured_at", {}).get("commit") == "c" * 40, str(one)[:300])
+    plans = [json.loads((C.runs_root / r["path"]).read_text(encoding="utf-8")) for r in recs]
+    check("the A5 condition: each run record carries the plan's own record of ITS arm-run and block (record_extra) "
+          "under 'plan'", plans and all(p_.get("plan") == {"arm": p_["arm"], "run": p_["run"], "units": sorted(p_["units"])}
+                                        for p_ in plans), str([p_.get("plan") for p_ in plans[:2]]))
 
     print("\n- A7: run_stand - the tree check, STAND lines, the gate, the judges one model at a time -")
 
@@ -536,7 +545,7 @@ try:
                          catcher_url="http://127.0.0.1:47001", hooks=StandHooks(ev, tree_ok, gate))
         sp = SC.StandPlan(stand=stand, runs=("r1",), launchers={"a1": launcher("a1", expect=1)}, campaign_seed=20260927,
                           unit_tokens={u: 1000 for u in ("w1", "w2")}, medians={("a1", stand): 0.001},
-                          write_ops=lambda a, r, u: OPS(r, u), read_plan=lambda u: [SC.ReadReq(qid=f"{u}-q", query="x")],
+                          write_ops=lambda a, r, u: OPS(r, u), read_plan=lambda a, u: [SC.ReadReq(qid=f"{u}-q", query="x")],
                           answer=lambda *a_: {"sha256": "2" * 64}, embed_tag="nvt3-bge-m3-d1:latest", commit="c" * 40,
                           dirty=False)
         judges = [Judge("J1", "gpt-oss:20b", gpu, ev, TMP / sfile, stand), Judge("J2", "qwen3:32b", gpu, ev, TMP / sfile, stand)]
@@ -620,7 +629,7 @@ try:
         sp = SC.StandPlan(stand=stand, runs=("r1",), launchers={"a1": launcher("a1", expect=1, knobs=knobs)},
                           campaign_seed=20260927, unit_tokens={"x1": 1000}, medians={("a1", stand): 0.0001},
                           write_ops=lambda a, r, u: OPS(r, u),
-                          read_plan=lambda u: [SC.ReadReq(qid=f"{u}-q1", query="x"), SC.ReadReq(qid=f"{u}-q2", query="y")],
+                          read_plan=lambda a, u: [SC.ReadReq(qid=f"{u}-q1", query="x"), SC.ReadReq(qid=f"{u}-q2", query="y")],
                           answer=answer, embed_tag=None, commit="c" * 40, dirty=False)
         st.stand(stand, "START", model="m", changelog="2026-09-10", order=1)
         res, err = attempt(lambda: s.run_block(sp, SC.BlockPlan(block="b01", units=("x1",))))
@@ -663,7 +672,7 @@ try:
 
     def refused_launcher(name):
         """A launcher whose child the launch contract refuses (the binary does not exist): no process is ever made."""
-        return SC.ChildArmLauncher(name, argv_for=lambda p: [str(FAKE_DIR / "no_such_arm.exe"), str(p)],
+        return SC.ChildArmLauncher(name, argv_for=lambda p, **_: [str(FAKE_DIR / "no_such_arm.exe"), str(p)],
                                    spec_for=lambda *a_, **k_: {}, path_dirs=(str(Path(sys.executable).parent),))
 
     class FakeClient:
@@ -913,7 +922,7 @@ try:
                     if SC.arm_order(names, campaign_seed=x, stand=stand, block="b01")[0] == names)   # the rows' order
         sp = SC.StandPlan(stand=stand, runs=("r1",), launchers=launchers, campaign_seed=seed,
                           unit_tokens={u: 1000 for u in units}, medians=medians if medians is not None else {},
-                          write_ops=lambda a, r, u: OPS(r, u), read_plan=lambda u: [SC.ReadReq(qid=f"{u}-q", query="x")],
+                          write_ops=lambda a, r, u: OPS(r, u), read_plan=lambda a, u: [SC.ReadReq(qid=f"{u}-q", query="x")],
                           answer=answer or (lambda *a_: {"sha256": "5" * 64}), embed_tag=None, commit="c" * 40,
                           dirty=False)
         st.stand(stand, "START", model="m", changelog="2026-09-10", order=1)
@@ -947,7 +956,7 @@ try:
         """A launcher whose child for one unit is refused (its binary does not exist); its other units run."""
         good = launcher(name, **kw)
         return SC.ChildArmLauncher(
-            name, argv_for=lambda p: ([str(FAKE_DIR / "no_such_arm.exe")] if f"{bad_unit}.home" in str(p)
+            name, argv_for=lambda p, **_: ([str(FAKE_DIR / "no_such_arm.exe")] if f"{bad_unit}.home" in str(p)
                                       else [str(ARM_PY), "-B", str(FAKE_DIR / "fake_arm.py")]) + [str(p)],
             spec_for=good.spec_for, store_persistence=good.store_persistence, path_dirs=good.path_dirs)
 
@@ -1041,6 +1050,81 @@ try:
           and " STAND SB1 END model=unread changelog=unread " in text, f"{err!r} {j} {text[-300:]}")
     check("... and the stand's file passes the writer's own replay", SL.self_check(TMP / "STATUS27") == [],
           str(SL.self_check(TMP / "STATUS27")))
+
+    print("\n- O1 (B-P3, Q-A4-6 (1)): a unit's own environment, the argv exception, the names fixed per arm -")
+
+    class Built(Exception):
+        """Raised by the capturing scheduler once open() has built its LaunchSpec - nothing is spawned."""
+
+    O1_SEQ = __import__('itertools').count(1)               # one home per capture, never reused
+
+    class CaptureSched:
+        def __init__(self):
+            self.specs, self.n = [], 0
+
+        def spawn_child(self, build, **kw):
+            self.n += 1
+            home = TMP / "o1" / f"h{next(O1_SEQ)}"
+            home.mkdir(parents=True)
+            self.specs.append((kw, build(SimpleNamespace(home=home, cwd=TMP / "o1" / f"c{next(O1_SEQ)}"))))
+            raise Built()
+
+    def o1_launcher(declared_for, *, argv_exception=None):
+        return SC.ChildArmLauncher("o1", argv_for=lambda p, *, stage, stand, run, unit: ["py", f"{stage}:{run}.{unit}",
+                                                                                         str(p)],
+                                   spec_for=lambda *a_, **k_: {}, path_dirs=("pydir",), declared={"CONST": "1"},
+                                   token_names=("DEEPSEEK_API_KEY",), declared_for=declared_for,
+                                   argv_exception=argv_exception)
+
+    def o1_open(ln, cs, run, unit, stage="write"):
+        try:
+            ln.open(stage, sched=cs, stand="SO", run=run, unit=unit)
+            return "opened"
+        except Built:
+            return "built"
+        except SC.SchedulerError as e:
+            return str(e)
+
+    cs = CaptureSched()
+    ln = o1_launcher(lambda stage, *, stand, run, unit, dirs, write_dirs: {"URL": f"http://x/u/{run}.{unit}/v1"},
+                     argv_exception={2: "script-in-repo"})
+    got = [o1_open(ln, cs, r, u) for r, u in (("r1", "u1"), ("r1", "u2"), ("r2", "u1"))]
+    specs = [s for _kw, s in cs.specs]
+    check("O1: each unit's child gets the arm's constant values and its own - a URL naming its run and unit - and the "
+          "argv names the stage, run and unit it was built for", got == ["built"] * 3
+          and [s.declared for s in specs] == [{"CONST": "1", "URL": f"http://x/u/{r}.{u}/v1"}
+                                              for r, u in (("r1", "u1"), ("r1", "u2"), ("r2", "u1"))]
+          and [s.argv[1] for s in specs] == ["write:r1.u1", "write:r1.u2", "write:r2.u1"], f"{got} {specs}")
+    check("O1: the arm's argv exception reaches every LaunchSpec (Q9: our arms run from the repository), and so do its "
+          "token names and path dirs", specs and all(s.argv_exception == {2: "script-in-repo"}
+                                                      and s.token_names == ("DEEPSEEK_API_KEY",)
+                                                      and s.path_dirs == ("pydir",) for s in specs), str(specs))
+    cs2 = CaptureSched()
+    drift = o1_launcher(lambda stage, *, stand, run, unit, dirs, write_dirs:
+                        ({"URL": "u"} if unit == "u1" else {"URL": "u", "EXTRA": "x"}))
+    got2 = [o1_open(drift, cs2, "r1", u) for u in ("u1", "u2")]
+    check("Q-A4-6 (1): a unit whose environment names differ from the arm's first unit's in the same stage is refused "
+          "by name before its spawn", got2[0] == "built" and "EXTRA" in got2[1] and "differ from its first write unit"
+          in got2[1] and len(cs2.specs) == 1, str(got2))
+    cs4 = CaptureSched()
+    staged = o1_launcher(lambda stage, *, stand, run, unit, dirs, write_dirs:
+                         ({"URL": "w"} if stage == "write" else {"URL": "w", "READER_URL": "r"}))
+    got4 = [o1_open(staged, cs4, "r1", u, stage=s) for s, u in (("write", "u1"), ("read", "u1"), ("write", "u2"),
+                                                                ("read", "u2"))]
+    check("Q-A4-6 (1): the write and read stages of one arm may differ (the reader's URL) - the names are fixed per "
+          "(arm, stage), not per arm", got4 == ["built"] * 4, str(got4))
+    clash = o1_open(o1_launcher(lambda stage, *, stand, run, unit, dirs, write_dirs: {"CONST": "2"}), CaptureSched(),
+                    "r1", "u1")
+    same = o1_open(o1_launcher(lambda stage, *, stand, run, unit, dirs, write_dirs: {"CONST": "1"}), CaptureSched(),
+                   "r1", "u1")
+    check("O1: declared_for may not set a name the arm's constant values set to another value - the same value is no "
+          "clash", "another value" in clash and "CONST" in clash and same == "built", f"{clash} | {same}")
+    plain = o1_launcher(None)
+    cs3 = CaptureSched()
+    o1_open(plain, cs3, "r1", "u1")
+    check("O1: an arm with no per-unit values and no exception - its declared values as they are, no argv exception",
+          cs3.specs and cs3.specs[0][1].declared == {"CONST": "1"} and cs3.specs[0][1].argv_exception is None,
+          str(cs3.specs))
 finally:
     shutil.rmtree(TMP, ignore_errors=True)
 

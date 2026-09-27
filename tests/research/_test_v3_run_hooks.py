@@ -177,7 +177,7 @@ try:
         s = SC.Scheduler(C, None, st, L, Clock(), None, tag=tag, witnesses=Witnesses(), parent_env=dict(os.environ),
                          catcher_url="http://127.0.0.1:47001", popen=spy, hooks=h)
         sp = SC.StandPlan(stand="SH", runs=("r1",), launchers={}, campaign_seed=1, unit_tokens={}, medians={},
-                          write_ops=lambda *a: [], read_plan=lambda u: [], answer=lambda *a: {}, embed_tag=None,
+                          write_ops=lambda *a: [], read_plan=lambda a, u: [], answer=lambda *a: {}, embed_tag=None,
                           commit="0" * 40, dirty=True)
         h.bind(s, sp)
         return h, s, sp, st

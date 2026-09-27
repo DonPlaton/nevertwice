@@ -415,27 +415,55 @@ class UnitClient:
 
 
 class ChildArmLauncher:
-    """An arm whose units are children speaking arms/base.py's protocol. ``argv_for(spec_path)`` is the child's argv;
-    ``spec_for(stage, stand=, run=, unit=, dirs=, write_dirs=)`` its spec, written as JSON into the unit's fake home -
-    never its cwd - before the spawn; stderr goes to <home>/stderr.<stage>.log."""
+    """An arm whose units are children speaking arms/base.py's protocol. ``argv_for(spec_path, stage=, stand=, run=,
+    unit=)`` is the child's argv; ``spec_for(stage, stand=, run=, unit=, dirs=, write_dirs=)`` its spec, written as JSON
+    into the unit's fake home - never its cwd - before the spawn; stderr goes to <home>/stderr.<stage>.log. Its
+    environment: ``declared`` (the same in every unit) and ``declared_for(stage, stand=, run=, unit=, dirs=,
+    write_dirs=)`` - the values that name the unit, a URL with /u/<run>.<unit> in it (Q3) - which may set a name
+    ``declared`` sets only to the same value. Q-A4-6 (1): an arm's environment NAMES in a stage are those of its first
+    unit in that stage, in every unit after it (the write and read stages may differ: the reader's URL); a unit that
+    would differ is refused before its spawn - and launch.spawn records each spawn's names. ``argv_exception`` is launch.spawn's named argv exception (Q9:
+    our arms run from the repository; a competitor never has one)."""
 
-    def __init__(self, name: str, *, argv_for: Callable[[Path], Sequence[str]], spec_for: Callable[..., dict],
+    def __init__(self, name: str, *, argv_for: Callable[..., Sequence[str]], spec_for: Callable[..., dict],
                  store_persistence: str = "disk", path_dirs: Sequence[str] = (), declared: Mapping[str, str] | None = None,
-                 token_names: Sequence[str] = (), reads_point: bool = False) -> None:
+                 token_names: Sequence[str] = (), reads_point: bool = False,
+                 declared_for: Callable[..., Mapping[str, str]] | None = None,
+                 argv_exception: Mapping[int, str] | None = None) -> None:
         if store_persistence not in ("disk", "memory"):
             raise SchedulerError(f"store_persistence {store_persistence!r} is disk or memory (Q25(4))")
         self.name, self.argv_for, self.spec_for = name, argv_for, spec_for
         self.store_persistence, self.path_dirs = store_persistence, tuple(path_dirs)
         self.declared, self.token_names = dict(declared or {}), tuple(token_names)
-        self.reads_point = reads_point
+        self.reads_point, self.declared_for = reads_point, declared_for
+        self.argv_exception = dict(argv_exception) if argv_exception else None
+        self.env_names: dict[str, frozenset] = {}    # Q-A4-6 (1): per stage, the first unit's names
+
+    def environment(self, stage: str, *, stand: str, run: str, unit: str, dirs: Any, write_dirs: Any) -> dict:
+        """The declared environment of one unit's child; SchedulerError when it would clash or change names."""
+        env = dict(self.declared)
+        if self.declared_for is not None:
+            extra = dict(self.declared_for(stage, stand=stand, run=run, unit=unit, dirs=dirs, write_dirs=write_dirs))
+            clash = sorted(k for k in set(extra) & set(env) if extra[k] != env[k])
+            if clash:
+                raise SchedulerError(f"{self.name}: declared_for sets {clash} to another value than declared already sets")
+            env.update(extra)
+        names = frozenset(env)
+        first = self.env_names.setdefault(stage, names)
+        if names != first:
+            raise SchedulerError(f"{self.name}/{run}/{unit}: its {stage} environment names {sorted(names ^ first)} "
+                                 f"differ from its first {stage} unit's (Q-A4-6 (1)); nothing was spawned")
+        return env
 
     def open(self, stage: str, *, sched: "Scheduler", stand: str, run: str, unit: str, write_dirs: Any = None) -> UnitClient:
-        def build(d: Any) -> LaunchSpec:
+        def build(d: Any) -> LaunchSpec:                 # under the scheduler's spawn lock
+            env = self.environment(stage, stand=stand, run=run, unit=unit, dirs=d, write_dirs=write_dirs)
             spec_path = Path(d.home) / f"spec.{stage}.json"
             spec_path.write_text(json.dumps(self.spec_for(stage, stand=stand, run=run, unit=unit, dirs=d,
                                                           write_dirs=write_dirs), sort_keys=True), encoding="utf-8")
-            return LaunchSpec(argv=tuple(self.argv_for(spec_path)), declared=self.declared, path_dirs=self.path_dirs,
-                              token_names=self.token_names, pipes=True,
+            argv = self.argv_for(spec_path, stage=stage, stand=stand, run=run, unit=unit)
+            return LaunchSpec(argv=tuple(argv), declared=env, path_dirs=self.path_dirs, token_names=self.token_names,
+                              argv_exception=self.argv_exception, pipes=True,
                               stderr_path=str(Path(d.home) / f"stderr.{stage}.log"))
         child, _d = sched.spawn_child(build, role=f"arm-{stage}", stand=stand, run=run, arm=self.name,
                                       unit=unit if stage == "write" else f"{unit}.q")
@@ -631,8 +659,11 @@ class BlockPlan:
 @dataclass
 class StandPlan:
     """What run_block needs of a stand: its runs and arms (name -> launcher), the campaign seed, each unit's input
-    tokens and the frozen medians (the ceilings), the write ops and reads per unit, the answer hook, the embed tag
-    that stays resident, and the tree check's commit and dirty flag for the run records (Q2)."""
+    tokens and the frozen medians (the ceilings), the write ops per (arm, run, unit) and the reads per (arm, unit) -
+    an arm's reads are its own (Q-12-3: its points) - the answer hook, the embed tag that stays resident, and the tree
+    check's commit and dirty flag for the run records (Q2); record_extra(arm, run, units), when given, is the plan's
+    own record of that arm-run in the block (the §5.1 truncation share, the ops' shas - the auditor's A5 condition),
+    written into the run record under "plan"."""
     stand: str
     runs: tuple
     launchers: Mapping[str, Any]
@@ -640,11 +671,12 @@ class StandPlan:
     unit_tokens: Mapping[str, int]
     medians: Mapping[tuple, float]
     write_ops: Callable[[str, str, str], Sequence[Mapping]]
-    read_plan: Callable[[str], Sequence[ReadReq]]
+    read_plan: Callable[[str, str], Sequence[ReadReq]]            # (arm, unit) - Q-12-3
     answer: Callable[[str, str, str, ReadReq, dict], dict]
     embed_tag: str | None
     commit: str
     dirty: bool
+    record_extra: Callable[[str, str, Sequence[str]], Mapping] | None = None
 
 
 def read_kwargs(launcher: Any, req: ReadReq) -> dict:
@@ -699,7 +731,7 @@ def _question_unit(sched: "Scheduler", launcher: Any, sp: StandPlan, *, run: str
             if (hello.get("protocol"), hello.get("arm"), hello.get("stage")) != (B.PROTOCOL, launcher.name, "read"):
                 raise B.ArmError(f"hello: not this arm's read stage ({hello.get('arm')}/{hello.get('stage')})")
         out["pid"] = client.pid
-        for req in sp.read_plan(unit):
+        for req in sp.read_plan(launcher.name, unit):
             budget("read")
             t0 = sched.clock.utc().isoformat()
             got, n_read, err = reask(lambda req=req: client.request("read", timeout=budget("read"),
@@ -791,8 +823,10 @@ def _run_block(sched: "Scheduler", sp: StandPlan, bp: BlockPlan) -> dict:
                            for u in bp.units)
                 rel = f"{stand}/_records/{block}/{r}.{a}.json"
                 path = sched.c.runs_root / rel
-                sha = art.run_record(path, ids[(a, r)], {"stand": stand, "block": block, "run": r, "arm": a,
-                                                         "units": units}, commit=sp.commit, dirty=sp.dirty,
+                payload = {"stand": stand, "block": block, "run": r, "arm": a, "units": units}
+                if sp.record_extra is not None:
+                    payload["plan"] = dict(sp.record_extra(a, r, list(bp.units)))
+                sha = art.run_record(path, ids[(a, r)], payload, commit=sp.commit, dirty=sp.dirty,
                                      now=sched.clock.utc)
                 L._append_jsonl(sched.c.runs_root / "_launch" / "records.jsonl",
                                 {"status_id": ids[(a, r)], "path": rel, "sha256": sha})
