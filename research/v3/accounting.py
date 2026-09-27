@@ -50,7 +50,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Iterable, Mapping
+from typing import Any, Iterable, Mapping, Sequence
 
 RECOVERY_S = 30 * 60
 PHASES = ("write", "read", "answer", "judge")
@@ -203,11 +203,13 @@ def _arm_run(calls: Iterable[Mapping[str, Any]], arm: str, run: str) -> list:
     return [c for c in calls if c.get("arm") == arm and split_unit(c.get("unit"))[0] == run]
 
 
-def cloud_counters(calls: list, *, arm: str, run: str, stand: str, cloud_bypass: int, ollama: Iterable = (),
+def cloud_counters(calls: list, *, arm: str, run: str, stand: str, cloud_bypass: int, background_writes: int,
+                   ollama: Iterable = (),
                    key_question: Mapping[tuple[str, str], str] | None = None, dropped: Iterable[str] = (),
                    incident_units: Iterable[str] = (), product_retries: int | None = None) -> dict:
     """The counters artifact.cloud_transport() takes, for one arm-run on a stand. key_question maps (unit, request key)
-    to its question; cloud_bypass is measured by the boundary instruments, never defaulted; product_retries is the
+    to its question; cloud_bypass is measured by the boundary instruments, background_writes by background_writes()
+    from the harness's end_write stamps (R9) - neither is ever defaulted; product_retries is the
     reconciliation's (K87 check 2) unless given."""
     mine = _arm_run(calls, arm, run)
     forwarded = [c for c in mine if not c.get("refused")]
@@ -252,6 +254,7 @@ def cloud_counters(calls: list, *, arm: str, run: str, stand: str, cloud_bypass:
         "model_mismatch": sum(1 for c in mine if c.get("refused") == "model_mismatch"),
         "thinking_calls": sum(1 for c in forwarded if c.get("thinking") and c.get("endpoint") in ("v1", "anthropic")),
         "cloud_bypass": cloud_bypass,
+        "background_writes": background_writes,
         "tool_violation": sum(1 for c in mine if c.get("tool_violation")),
         "models_seen": sorted(models),
         "transport_recovered": sum(1 for _k, _v, e in eps if e == "recovered"),
@@ -277,6 +280,27 @@ def cloud_counters(calls: list, *, arm: str, run: str, stand: str, cloud_bypass:
         "tokens": tokens,
         "incident_units": sorted(set(incident_units)),
     }
+
+
+def background_writes(calls: Iterable[Mapping[str, Any]], *, arm: str, run: str, end_write_at: Mapping[str, str],
+                      read_windows: Mapping[str, Sequence[tuple]]) -> dict:
+    """R9 (the auditor's O-a): the arm-run's write-port calls whose t0 is later than the unit's end_write return (the
+    harness's stamp) and outside every question operation's window [t0, t1] of the unit - the product kept writing
+    after its adapter said the write stage was done. A unit with no end_write stamp (aborted in its write stage) has no
+    after. {count, units}."""
+    ends = {u: _when({"t": s}, "t") for u, s in end_write_at.items()}
+    wins = {u: [(_when({"t": a}, "t"), _when({"t": b}, "t")) for a, b in ws] for u, ws in read_windows.items()}
+    hits: list[str] = []
+    for c in _arm_run(calls, arm, run):
+        if c.get("port_role") != "write":
+            continue
+        unit = split_unit(c.get("unit"))[1]
+        if unit not in ends:
+            continue
+        t0 = _when(c, "t0")
+        if t0 > ends[unit] and not any(a <= t0 <= b for a, b in wins.get(unit, ())):
+            hits.append(unit)
+    return {"count": len(hits), "units": sorted(set(hits))}
 
 
 def proxy_boundary_inputs(calls: Iterable[Mapping[str, Any]], catcher: Iterable[Mapping[str, Any]], *, arm: str,

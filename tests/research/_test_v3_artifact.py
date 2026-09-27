@@ -386,6 +386,11 @@ check("... but 0 paced calls with K61 holding is not P0a",
 check("P0b: cloud_transport missing", has(flags(lambda r: r.pop("cloud_transport")), "b"))
 check("P0b: a P0(b) counter > 0", has(flags(lambda r: r["cloud_transport"].__setitem__("thinking_calls", 1)), "b"))
 check("P0b: two models seen", has(flags(lambda r: r["cloud_transport"].__setitem__("models_seen", ["a", "b"])), "b"))
+check("P0b (R9): a product's background write after end_write", any(
+    x == "P0b: background_writes > 0" for x in flags(lambda r: r["cloud_transport"].__setitem__("background_writes", 1))))
+check("R9: background_writes is a P0(b) zero-tolerance counter the builder requires",
+      "background_writes" in A.CLOUD_ZERO and refused(lambda: A.cloud_transport(
+          {k: v for k, v in CLOUD.items() if k != "background_writes"}), "background_writes"))
 check("P0b: a model event inside the artifact's blocks",
       has(A.p0_flags(clean, A.P0Context(**{**CTX.__dict__, "model_event_ids": frozenset({sids[0]})}), "mem0"), "b"))
 check("P0c: a run whose own failures dropped 2 of 20 units (10 %)",

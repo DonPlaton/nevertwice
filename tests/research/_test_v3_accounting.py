@@ -187,15 +187,15 @@ check("F-ACC2: a success without t1 refuses", "t1" in err(lambda: AC.classify_ke
 print("\n- B-ACC1: one request key, two units (the §4.5 key has no unit; a session body repeats across units) -")
 dup1 = [call("dup", unit="r1.u1", status=503, t0=1), call("dup", unit="r1.u1", status=503, t0=2),
         call("dup", unit="r1.u2", t0=6)]
-c1 = AC.cloud_counters(dup1, arm="mem0", run="r1", stand="S1", cloud_bypass=0)
+c1 = AC.cloud_counters(dup1, arm="mem0", run="r1", stand="S1", cloud_bypass=0, background_writes=0)
 check("u1 lost it for good, u2 wrote the same body 5 min later: u1's transport_lost, nothing recovered",
       c1["transport_lost"] == 1 and c1["transport_lost_units"] == ["u1"] and c1["transport_recovered"] == 0, str(c1))
 dup2 = [call("dup", unit="r1.u1", t0=1), call("dup", unit="r1.u2", status=503, t0=2), call("dup", unit="r1.u2", status=503, t0=3)]
-c2 = AC.cloud_counters(dup2, arm="mem0", run="r1", stand="S1", cloud_bypass=0)
+c2 = AC.cloud_counters(dup2, arm="mem0", run="r1", stand="S1", cloud_bypass=0, background_writes=0)
 check("u1 wrote it, then u2 lost the same body: u2's loss is seen", c2["transport_lost"] == 1
       and c2["transport_lost_units"] == ["u2"], str(c2))
 dup3 = [call("dup", unit="r1.u1", status=503, t0=1), call("dup", unit="r1.u2", t0=121)]
-c3 = AC.cloud_counters(dup3, arm="mem0", run="r1", stand="S1", cloud_bypass=0)
+c3 = AC.cloud_counters(dup3, arm="mem0", run="r1", stand="S1", cloud_bypass=0, background_writes=0)
 check("u1 lost it, u2 wrote it two hours later: u1's loss, and no late_recovered pinned on u1",
       c3["transport_lost_units"] == ["u1"] and c3["late_recovered"] == 0 and c3["late_recovered_units"] == [], str(c3))
 k3 = AC.classify_keys(dup3)
@@ -204,24 +204,24 @@ check("the classes are per (unit, key)", {k: v.get("classes") for k, v in k3.ite
 
 print("\n- B-ACC1b: one request key twice in ONE unit (a turn repeated in a session, a session repeated in a haystack) -")
 e1 = AC.cloud_counters([call("rep", t0=1), call("rep", status=503, t0=2), call("rep", status=503, t0=3)],
-                       arm="mem0", run="r1", stand="S1", cloud_bypass=0)
+                       arm="mem0", run="r1", stand="S1", cloud_bypass=0, background_writes=0)
 check("[success, failure for good] in one unit: the second write is a lost operation (transport_lost 1)",
       e1.get("transport_lost") == 1 and e1.get("transport_lost_units") == ["u1"] and e1.get("duplicate_body_groups") == 0, str(e1))
-e2 = AC.cloud_counters([call("rep", t0=1), call("rep", t0=5)], arm="mem0", run="r1", stand="S1", cloud_bypass=0)
+e2 = AC.cloud_counters([call("rep", t0=1), call("rep", t0=5)], arm="mem0", run="r1", stand="S1", cloud_bypass=0, background_writes=0)
 check("[success, success]: two episodes, both ok - duplicate_body_groups 1, nothing lost or ambiguous",
       e2.get("duplicate_body_groups") == 1 and e2.get("ambiguous_recoveries") == 0 and e2.get("transport_lost") == 0, str(e2))
 e3 = AC.cloud_counters([call("rep", t0=1), call("rep", status=500, t0=5), call("rep", t0=6)], arm="mem0", run="r1",
-                       stand="S1", cloud_bypass=0)
+                       stand="S1", cloud_bypass=0, background_writes=0)
 check("[success, failure, success]: the failure series before the second success is recovered AND ambiguous "
       "(it may have been either write)", e3.get("transport_recovered") == 1 and e3.get("ambiguous_recoveries") == 1
       and e3.get("duplicate_body_groups") == 1 and e3.get("transport_lost") == 0, str(e3))
 e4 = AC.cloud_counters([call("rq", role="reader", stage="questions", t0=40),
                         call("rq", role="reader", stage="questions", status=502, t0=41)],
-                       arm="mem0", run="r1", stand="S1", cloud_bypass=0, key_question={("u1", "rq"): "q3"})
+                       arm="mem0", run="r1", stand="S1", cloud_bypass=0, background_writes=0, key_question={("u1", "rq"): "q3"})
 check("a reader key answered once, then failed for good in the same unit: a failed outcome of its own",
       e4.get("failed_outcomes") == 1, str(e4.get("failed_outcomes")))
 e5 = AC.cloud_counters([call("rr", role="reader", stage="questions", t0=40), call("rr", role="reader", stage="questions", t0=45)],
-                       arm="mem0", run="r1", stand="S1", cloud_bypass=0)
+                       arm="mem0", run="r1", stand="S1", cloud_bypass=0, background_writes=0)
 check("duplicate_body_groups counts write groups only - a reader key answered twice is not one", e5.get("duplicate_body_groups")
       == 0, str(e5.get("duplicate_body_groups")))
 check("the episodes of a group, in t0 order", AC.classify_keys([call("rep", t0=1), call("rep", status=503, t0=2)]).get(
@@ -247,7 +247,7 @@ ollama = [{"arm": "mem0", "unit": "r1.u1", "fallback_local": True}, {"arm": "mem
 allc = calls + read_calls + others + refused_calls + misc
 KQ = {("u1", "r_lost"): "q7", ("u1", "r_drop"): "q9"}
 ct = AC.cloud_counters(allc, arm="mem0", run="r1", stand="S1", ollama=ollama,
-                       key_question=KQ, dropped={"q9"}, cloud_bypass=0,
+                       key_question=KQ, dropped={"q9"}, cloud_bypass=0, background_writes=0,
                        incident_units=["u3", "u3"])
 check("another arm's, another run's and the scheduler port's calls never count; refused calls are not calls",
       ct["calls"] == len(calls) + len(read_calls) + len(misc), str(ct["calls"]))
@@ -258,14 +258,14 @@ check("failed_outcomes: the answer key that never succeeded on a question NOT dr
 check("recovered and late_recovered counted apart", ct["transport_recovered"] == 3 and ct["late_recovered"] == 1,
       f"{ct['transport_recovered']} {ct['late_recovered']}")
 check("MB7: a question map by the bare request key refuses - it would join questions across units",
-      "has no question" in err(lambda: AC.cloud_counters(allc, arm="mem0", run="r1", stand="S1", cloud_bypass=0,
+      "has no question" in err(lambda: AC.cloud_counters(allc, arm="mem0", run="r1", stand="S1", cloud_bypass=0, background_writes=0,
                                                          key_question={"r_lost": "q7", "r_drop": "q9"})))
 check("a never-succeeded read key with no question refuses",
-      "has no question" in err(lambda: AC.cloud_counters(allc, arm="mem0", run="r1", stand="S1", cloud_bypass=0,
+      "has no question" in err(lambda: AC.cloud_counters(allc, arm="mem0", run="r1", stand="S1", cloud_bypass=0, background_writes=0,
                                                          key_question={("u1", "r_lost"): "q7"})))
 check("Q-50-1 a late success is listed per unit - on S1 without the order flag",
       ct["late_recovered_units"] == [{"stand": "S1", "unit": "u1", "order_sensitive": False}], str(ct["late_recovered_units"]))
-ct6 = AC.cloud_counters(allc, arm="mem0", run="r1", stand="S6", ollama=ollama, cloud_bypass=0,
+ct6 = AC.cloud_counters(allc, arm="mem0", run="r1", stand="S6", ollama=ollama, cloud_bypass=0, background_writes=0,
                         key_question=KQ, dropped={"q9"})
 check("Q-50-1 ... on S6 (FactConsolidation: the order is what is measured) with order_sensitive, and still not lost",
       ct6["late_recovered_units"] == [{"stand": "S6", "unit": "u1", "order_sensitive": True}] and ct6["transport_lost"] == 1)
@@ -290,20 +290,40 @@ check("tokens by phase, each with its cache split (write / read / answer never s
 check("incident units as given, once each", ct["incident_units"] == ["u3"])
 ue = AC.cloud_counters([call("ue", status=None, complete=False, upstream_error="ConnectRefused", t0=1), call("ue", t0=2),
                         call("u5", status=503, t0=3), call("u5", t0=4), call("u6", status=429, t0=5), call("u6", t0=6)],
-                       arm="mem0", run="r1", stand="S1", cloud_bypass=0)
+                       arm="mem0", run="r1", stand="S1", cloud_bypass=0, background_writes=0)
 check("F-ACC3: upstream_errors = a 5xx answer or no answer at all (the proxy's upstream_error); a 429 is neither",
       ue["upstream_errors"] == 2, str(ue["upstream_errors"]))
 an = AC.cloud_counters([call("a1", endpoint="anthropic", model="m-1", unit="r1.u7", t0=1),
                         call("a2", endpoint="anthropic", model="m-2", unit="r1.u7", t0=2),
                         call("a3", endpoint="anthropic", model="m-1", unit="r1.u8", t0=3),
-                        call("a4", fp="fp_z", unit="r1.u8", t0=4)], arm="mem0", run="r1", stand="S1", cloud_bypass=0)
+                        call("a4", fp="fp_z", unit="r1.u8", t0=4)], arm="mem0", run="r1", stand="S1", cloud_bypass=0, background_writes=0)
 check("F-ACC4: a unit whose /anthropic calls ran under two models is straddled; one model per class is not",
       an["straddled_units"] == ["u7"], str(an["straddled_units"]))
 sig = inspect.signature(AC.cloud_counters).parameters
 check("cloud_bypass is a measured input with no default (R9: never defaulted to 0)",
       "cloud_bypass" in sig and sig["cloud_bypass"].default is inspect.Parameter.empty)
+check("background_writes is a measured input with no default either (the auditor's R9 ruling)",
+      "background_writes" in sig and sig["background_writes"].default is inspect.Parameter.empty
+      and ct.get("background_writes") == 0)
+
+print("\n- R9: a product's write after its adapter's end_write, outside every question operation of the unit -")
+bw_calls = [call("w1", t0=1), call("w2", t0=2), call("bg1", t0=5), call("rd", stage="questions", t0=10),
+            call("bg2", stage="questions", t0=12), call("ans", role="reader", stage="questions", t0=13),
+            call("o1", unit="r1.u2", t0=6), call("x1", arm="zep", t0=6), call("r2", unit="r2.u1", t0=6)]
+bw = AC.background_writes(bw_calls, arm="mem0", run="r1", end_write_at={"u1": t(3)},
+                          read_windows={"u1": [(t(9.5), t(10.5))]})
+check("a write-port call after end_write and outside every read window is background - before end_write, inside a "
+      "read window, on the reader's port, another arm's or run's, or a unit with no end_write stamp is not",
+      bw == {"count": 2, "units": ["u1"]}, str(bw))
+check("the bound: a call exactly at the end_write stamp is not after it; one exactly at a read window's edge is inside",
+      AC.background_writes([call("e", t0=3), call("f", stage="questions", t0=10.5)], arm="mem0", run="r1",
+                           end_write_at={"u1": t(3)}, read_windows={"u1": [(t(9.5), t(10.5))]})["count"] == 0)
+ct_bw = AC.cloud_counters(bw_calls, arm="mem0", run="r1", stand="S1", cloud_bypass=0, background_writes=bw["count"])
+check("the count reaches the artifact, and artifact's P0b names it",
+      "P0b: background_writes > 0" in A.p0b({"arm_decl": {"llm_transport": "cloud:deepseek"},
+                                            "cloud_transport": A.cloud_transport(ct_bw)}, A.P0Context(), "mem0"))
 check("product_retries is left to the reconciliation unless given", ct["product_retries"] is None
-      and AC.cloud_counters(calls, arm="mem0", run="r1", stand="S1", cloud_bypass=0, product_retries=2)["product_retries"] == 2)
+      and AC.cloud_counters(calls, arm="mem0", run="r1", stand="S1", cloud_bypass=0, background_writes=0, product_retries=2)["product_retries"] == 2)
 
 print("\n- the counters through artifact.cloud_transport, judged by artifact's P0b -")
 try:
@@ -317,12 +337,12 @@ check("artifact's P0b names each zero-tolerance count accounting measured (the n
       all(f"P0b: {k} > 0" in p0b for k in ("failed_outcomes", "fallback_local", "model_mismatch", "thinking_calls",
                                           "tool_violation")), str(p0b))
 clean = [call("c1", t0=1), call("c2", t0=2, unit="r1.u2"), call("c3", role="reader", stage="questions", t0=40)]
-cblk = A.cloud_transport(AC.cloud_counters(clean, arm="mem0", run="r1", stand="S1", cloud_bypass=0))
+cblk = A.cloud_transport(AC.cloud_counters(clean, arm="mem0", run="r1", stand="S1", cloud_bypass=0, background_writes=0))
 check("a clean arm-run's counters raise no P0b", A.p0b({"arm_decl": cloud_decl, "cloud_transport": cblk}, A.P0Context(),
                                                        "mem0") == [])
 check("a measured cloud bypass reaches P0b", "P0b: cloud_bypass > 0" in A.p0b(
     {"arm_decl": cloud_decl, "cloud_transport": A.cloud_transport(
-        AC.cloud_counters(clean, arm="mem0", run="r1", stand="S1", cloud_bypass=1))}, A.P0Context(), "mem0"))
+        AC.cloud_counters(clean, arm="mem0", run="r1", stand="S1", cloud_bypass=1, background_writes=0))}, A.P0Context(), "mem0"))
 
 print("\n- proxy_boundary_inputs and witness_inputs, built by artifact.boundary_block -")
 bcalls = [call("b1", t0=1), call("b2", t0=2, ancestor_canary_hits=2),
@@ -393,7 +413,7 @@ late_log = [call("w1", t0=1), call("w2", t0=2, unit="r1.u2"),
 def arm_row(system: str, stand: str) -> dict:
     lg = [dict(c, arm=system) for c in late_log]
     return {"arm_decl": decl(system), "runs": [{"status_id": f"{stand}/b01/r1/{system}", "units_dropped_own": 0}],
-            "cloud_transport": A.cloud_transport(AC.cloud_counters(lg, arm=system, run="r1", stand=stand, cloud_bypass=0)),
+            "cloud_transport": A.cloud_transport(AC.cloud_counters(lg, arm=system, run="r1", stand=stand, cloud_bypass=0, background_writes=0)),
             "boundary": A.boundary_block(proxy=AC.proxy_boundary_inputs(lg, [], arm=system, run="r1"),
                                          witnesses=AC.witness_inputs({**CHECK_OK, "containers": []})),
             "ollama_transport": A.ollama_transport(PACER, embed_at_cap=0, fallback_local=0, embed_models_seen=[D1],
@@ -504,7 +524,7 @@ lop = [{"op_id": "w", "unit": "u1", "t0": t(199.5), "t1": t(201.5)}]
 l1 = AC.lost_operations(lop, lo1, arm="mem0", run="r1")
 check("B-LO1: r1 lost K for good while r2 wrote the same body - r1's operation is lost by transport, as cloud_counters "
       "says", [x["reason"] for x in l1["lost_ops"]] == ["transport"]
-      and AC.cloud_counters(lo1, arm="mem0", run="r1", stand="S1", cloud_bypass=0)["transport_lost"] == 1,
+      and AC.cloud_counters(lo1, arm="mem0", run="r1", stand="S1", cloud_bypass=0, background_writes=0)["transport_lost"] == 1,
       str(l1["lost_ops"]))
 lo2 = [call("M", unit="r1.u1", t0=300, **J), call("Z", arm="zep", unit="r1.u1", t0=300.5, content_empty=True,
                                                    response_format="json_object", json_ok=False),
@@ -631,7 +651,7 @@ with tempfile.TemporaryDirectory(prefix="v3acct_e2e_") as td:
                                       product_tokens=440)
         arms[arm] = {
             "arm_decl": decl(arm), "runs": [{"status_id": f"S6/b01/r1/{arm}", "units_dropped_own": 0}],
-            "cloud_transport": A.cloud_transport(AC.cloud_counters(lg.calls, arm=arm, run="r1", stand="S6", cloud_bypass=0,
+            "cloud_transport": A.cloud_transport(AC.cloud_counters(lg.calls, arm=arm, run="r1", stand="S6", cloud_bypass=0, background_writes=0,
                                                                    ollama=lg.ollama,
                                                                    product_retries=rc["product_retries"])),
             "boundary": A.boundary_block(proxy=AC.proxy_boundary_inputs(lg.calls, lg.catcher, arm=arm, run="r1"),

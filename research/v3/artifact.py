@@ -55,7 +55,10 @@ BLOCK_VOCAB = {
     "competitor-lacks-capability": re.compile(r"^competitor-lacks-capability:[a-z][\w-]*(\b.*)?$"),
     "owner-decision": re.compile(r"^owner-decision:\d{4}-\d{2}-\d{2}\b.*$"),
 }
-CLOUD_ZERO = ("failed_outcomes", "fallback_local", "model_mismatch", "thinking_calls", "cloud_bypass", "tool_violation")
+#: rev1 P0(b)'s zero-tolerance counts, and background_writes - the auditor's R9 ruling (a rev2 erratum to the P0(b)
+#: list): a product's write-port call after its adapter's end_write, outside every question operation of the unit.
+CLOUD_ZERO = ("failed_outcomes", "fallback_local", "model_mismatch", "thinking_calls", "cloud_bypass", "tool_violation",
+              "background_writes")
 CLOUD_ALSO = ("transport_recovered", "transport_lost", "upstream_errors", "client_abandoned", "product_retries",
               "thinking_injected", "fingerprints_seen", "straddled_units", "empty_content", "json_invalid", "capped",
               "reasoning_tokens", "tokens", "incident_units")
