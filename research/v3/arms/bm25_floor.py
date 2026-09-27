@@ -146,7 +146,7 @@ class Handler:
         if self.m._token_list(item_key(idx)):
             raise Refused(f"the key of item {idx} would add tokens to its document")
         self.items[idx] = item["text"]
-        return {"op_id": item["item_id"], "t0": t0, "t1": time.time()}
+        return {"op_id": item["item_id"], "item_sha256": B.text_sha256(item["text"]), "t0": t0, "t1": time.time()}
 
     def end_write(self) -> dict:
         self._stage("write", "end_write")
@@ -157,6 +157,7 @@ class Handler:
         seal = B.write_seal(self.spec["unit_dir"], self.store, arm=ARM, run=self.spec["run"], unit=self.spec["unit"])
         return {"footprint": {"retrievable": len(self.items), "embedded": 0,
                               "chars": sum(len(v) for v in self.items.values())}, "seal": seal,
+                "items_sha256": B.items_digest({i: B.text_sha256(t) for i, t in self.items.items()}),
                 "t0": t0, "t1": time.time()}
 
     def read(self, qid: str, query: str, k: int) -> dict:

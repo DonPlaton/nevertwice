@@ -469,6 +469,9 @@ try:
                                                 "text": "user: the upload is flaky\nassistant: add a bounded retry"},
                                  date="2023-05-20"), {})
     out = w.get("outcome") or {}
+    check("the write names the bytes it was given: text_sha256 of the session text (Q-45-4)",
+          w.get("text_sha256") == B.text_sha256("user: the upload is flaky\nassistant: add a bounded retry"),
+          str(w.get("text_sha256")))
     check("write: capture_session stored the session (one pattern)", out.get("stored") is True
           and out.get("patterns") == 1 and out.get("session_id") == "u1-0", str(w)[:300])
     ch = FAKE.chats()
@@ -574,14 +577,22 @@ try:
           str(hk)[:200] + err_k.read_bytes().decode("utf-8", "replace")[-300:])
     n_chat = len(FAKE.chats())
     texts = {0: "the cat sat on the mat", 1: "a bounded retry fixed the flaky upload", 2: "paris is in france"}
+    item_answers = {}
     for i, t in texts.items():
-        safely(lambda i=i, t=t: c.request("write", item={"item_id": f"u1:{i}", "index": i, "text": t}), {})
+        item_answers[i] = safely(lambda i=i, t=t: c.request("write", item={"item_id": f"u1:{i}", "index": i, "text": t}),
+                                 {})
+    check("the ranker names each item's bytes (item_sha256), as every retrieval arm does",
+          len(item_answers) == 3 and all(x.get("item_sha256") == B.text_sha256(texts[i]) for i, x in item_answers.items()),
+          str(item_answers)[:200])
     check("a repeated ranker index is refused",
           raises(lambda: c.request("write", item={"item_id": "u1:1b", "index": 1, "text": "x"}), B.ArmError, "index"))
     ek = safely(lambda: c.request("end_write"), {})
     check("end_write writes the three items as typed notes, none refused",
           (ek.get("footprint") or {}).get("retrievable") == 3 and ek.get("not_written") == [], str(ek)[:200])
     check("no LLM call was made for the ranker", len(FAKE.chats()) == n_chat)
+    check("end_write: the unit's items digest over (index, item sha)",
+          ek.get("items_sha256") == B.items_digest({i: B.text_sha256(t) for i, t in texts.items()}),
+          str(ek.get("items_sha256")))
     c.close()
     c, p, _ = start("k2", make_spec("k2", RN.RANKER, "read", UK))
     rk = safely(lambda: c.request("read", qid="q", query="flaky upload retry", k=2), {})
@@ -625,6 +636,8 @@ try:
     n_chat = len(FAKE.chats())
     s7w = safely(lambda: c.request("write", item={"item_id": "e1", "session_id": "e1",
                                                   "transcript_path": str(tp)}), {})
+    check("S7: the write names the transcript's bytes (transcript_sha256 of the JSONL file)",
+          s7w.get("transcript_sha256") == hashlib.sha256(tp.read_bytes()).hexdigest())
     check("S7: the hook path stored the trajectory", (s7w.get("outcome") or {}).get("stored") is True,
           str(s7w)[:300] + err_s.read_bytes().decode("utf-8", "replace")[-300:])
     prompt = ""

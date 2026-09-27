@@ -38,6 +38,7 @@ A refused bind answers every request ok:false with its reason; the record says o
 """
 from __future__ import annotations
 
+import hashlib
 import importlib
 import importlib.util
 import json
@@ -323,6 +324,7 @@ class Handler:
         self.store = Path(spec["unit_dir"]) / "store"
         self.outcomes: list[dict] = []
         self.ranker_items: dict[int, str] = {}
+        self.item_shas: dict[int, str] = {}
         self.not_written: list[int] = []
 
     def _stage(self, want: str, op: str) -> None:
@@ -342,15 +344,19 @@ class Handler:
             if not isinstance(idx, int) or isinstance(idx, bool) or idx in self.ranker_items:
                 raise ValueError(f"a ranker item needs a new int index, got {idx!r}")
             self.ranker_items[idx] = item["text"]
-            return {"op_id": item["item_id"], "t0": t0, "t1": time.time(), "buffered": True}
+            self.item_shas[idx] = B.text_sha256(item["text"])
+            return {"op_id": item["item_id"], "item_sha256": self.item_shas[idx], "t0": t0, "t1": time.time(),
+                    "buffered": True}
         sid = f"{self.spec['unit']}-{item['session_id']}"
         if self.spec["s7"]:
+            given = {"transcript_sha256": hashlib.sha256(Path(item["transcript_path"]).read_bytes()).hexdigest()}
             out = s7_capture(self.m, session_id=sid, transcript_path=item["transcript_path"],
                              cwd=self.spec["unit_dir"], project=self.project)
         else:
+            given = {"text_sha256": B.text_sha256(item["text"])}
             out = self.api.capture_session(item["text"], project=self.project, session_id=sid, date=date)
         self.outcomes.append(out)
-        return {"op_id": item["item_id"], "t0": t0, "t1": time.time(), "outcome": out}
+        return {"op_id": item["item_id"], **given, "t0": t0, "t1": time.time(), "outcome": out}
 
     def end_write(self) -> dict:
         self._stage("write", "end_write")
@@ -362,7 +368,9 @@ class Handler:
             self.not_written = [i for i, s in zip(order, stems) if not s]
         footprint = self._footprint()
         seal = B.write_seal(self.spec["unit_dir"], self.store, arm=self.arm, run=self.spec["run"], unit=self.spec["unit"])
-        return {"footprint": footprint, "not_written": self.not_written, "seal": seal, "t0": t0, "t1": time.time()}
+        digest = {"items_sha256": B.items_digest(self.item_shas)} if self.arm == RANKER else {}
+        return {"footprint": footprint, "not_written": self.not_written, "seal": seal, **digest, "t0": t0,
+                "t1": time.time()}
 
     def _footprint(self) -> dict:
         """Retrievable items: typed notes of this unit's project only (a Session note is not retrievable)."""

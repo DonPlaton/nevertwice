@@ -132,6 +132,21 @@ def main_with(handler_factory: Callable[[], Any]) -> int:
     return serve(handler_factory(), fin, fout)
 
 
+# ── the bytes each arm was given (Q-45-4 and the auditor's retrieval-tier rule) ─────────────────────────────────────
+
+def text_sha256(text: str) -> str:
+    """The sha256 of the exact text an arm was handed (UTF-8): a session's text for a text-API arm, an item's bytes for a
+    retrieval arm. Every arm writes it, and the harness checks that the arms of one unit were given equal bytes."""
+    return hashlib.sha256(text.encode("utf-8", "strict")).hexdigest()
+
+
+def items_digest(item_shas: Mapping[int, str]) -> str:
+    """One digest per unit over the (index, item sha256) pairs in index order - equal across the retrieval arms exactly
+    when they stored the same bytes under the same indices."""
+    pairs = [[int(i), str(s)] for i, s in sorted(item_shas.items())]
+    return hashlib.sha256(json.dumps(pairs, separators=(",", ":")).encode("ascii")).hexdigest()
+
+
 # ── the store between the stages (Q25, with the auditor's Q-45-5 condition) ──────────────────────────────────────────
 
 SEAL_NAME = "store.seal.json"

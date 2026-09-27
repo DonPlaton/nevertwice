@@ -138,6 +138,17 @@ mods = {n.module.split(".")[0] if isinstance(n, ast.ImportFrom) else a.name.spli
 check("base.py imports the standard library only",
       mods <= {"__future__", "hashlib", "io", "json", "os", "queue", "sys", "threading", "typing"}, str(sorted(mods)))
 
+print("\n- the bytes each arm was given (Q-45-4, the retrieval-tier rule) -")
+import hashlib  # noqa: E402
+ru = "".join(map(chr, (0x41F, 0x440, 0x438, 0x432, 0x435, 0x442)))
+check("text_sha256 is the sha256 of the exact UTF-8 bytes", B.text_sha256("a " + ru)
+      == hashlib.sha256(("a " + ru).encode("utf-8")).hexdigest() and B.text_sha256("a") != B.text_sha256("a "))
+d_ab = B.items_digest({2: "b" * 64, 0: "a" * 64})
+check("items_digest does not depend on the order the items were written", d_ab == B.items_digest({0: "a" * 64, 2: "b" * 64}))
+check("... but on every index and every item sha",
+      len({d_ab, B.items_digest({0: "a" * 64, 1: "b" * 64}), B.items_digest({0: "a" * 64, 2: "c" * 64}),
+           B.items_digest({0: "a" * 64})}) == 4)
+
 print("\n- the store between the stages: the seal (Q25, Q-45-5) -")
 with tempfile.TemporaryDirectory(prefix="v3seal_") as sd:
     unit = Path(sd) / "u1"

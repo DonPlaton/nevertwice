@@ -185,8 +185,10 @@ try:
     check("hello: no LLM, no embedder", h.get("llm_label") == "none" and h.get("embedder") is None, str(h)[:200])
     check("the start record declares that the floor may return fewer than k (a lexical path, the auditor's F7)",
           ((h.get("start") or {}).get("returns") or {}).get("fewer_than_k") is True)
-    for i, t in TEXTS.items():
-        safely(lambda i=i, t=t: c.request("write", item={"item_id": f"ua:{i}", "index": i, "text": t}), {})
+    wrote = {i: safely(lambda i=i, t=t: c.request("write", item={"item_id": f"ua:{i}", "index": i, "text": t}), {})
+             for i, t in TEXTS.items()}
+    check("each write names the item's bytes (item_sha256), as every retrieval arm does",
+          all(w.get("item_sha256") == B.text_sha256(TEXTS[i]) for i, w in wrote.items()), str(wrote)[:200])
     check("a repeated index is refused", raises(lambda: c.request("write", item={"item_id": "d", "index": 1, "text": "x"}),
                                                 B.ArmError, "new non-negative int index"))
     check("a negative index is refused",
@@ -194,6 +196,8 @@ try:
     check("a read in the write stage is refused (Q25)",
           raises(lambda: c.request("read", qid="q", query="x", k=1), B.ArmError, "read stage"))
     e = safely(lambda: c.request("end_write"), {})
+    check("end_write: the unit's items digest, the one the ranker computes for the same bytes",
+          e.get("items_sha256") == B.items_digest({i: B.text_sha256(t) for i, t in TEXTS.items()}))
     check("end_write persists the five items", (e.get("footprint") or {}).get("retrievable") == 5
           and (UA / "store" / "items.json").is_file(), str(e)[:200])
     c.close()
