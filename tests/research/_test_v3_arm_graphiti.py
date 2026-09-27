@@ -325,7 +325,27 @@ try:
     msg = hello_error("x2", spec_for("x2", "read", "u1", falkor_port=6390))
     check("a read stage on another server's graph is refused (the sealed store URI)", "not the one" in msg, msg[:200])
     gfile = FALKOR / "127.0.0.1_6380_u1.json"
-    db = json.loads(gfile.read_text(encoding="utf-8"))
+    original = gfile.read_text(encoding="utf-8")
+    # one field of the digest's canon at a time (the auditor's Z8 / Z9): each change alone is refused
+    CANON = [("nodes", "uuid"), ("nodes", "name"), ("nodes", "summary"), ("nodes", "labels"),
+             ("edges", "uuid"), ("edges", "source_node_uuid"), ("edges", "target_node_uuid"), ("edges", "name"),
+             ("edges", "fact"), ("edges", "valid_at"), ("edges", "invalid_at"), ("edges", "expired_at"),
+             ("episodes", "uuid"), ("episodes", "content"), ("episodes", "valid_at")]
+    for n_field, (kind, fld) in enumerate(CANON):
+        db = json.loads(original)
+        row = db[kind][0]
+        if fld in ("valid_at", "invalid_at", "expired_at"):
+            row[fld] = "2024-01-02T03:04:05+00:00" if row.get(fld) != "2024-01-02T03:04:05+00:00" else None
+        elif fld == "labels":
+            row[fld] = list(row[fld]) + ["Edited"]
+        else:
+            row[fld] = str(row[fld]) + "-edited"
+        gfile.write_text(json.dumps(db), encoding="utf-8")
+        msg = hello_error(f"x3_{n_field}", spec_for(f"x3_{n_field}", "read", "u1"))
+        check(f"a graph whose {kind[:-1]} {fld} alone changed between the stages is refused by name",
+              "changed between the stages" in msg, msg[:160])
+    gfile.write_text(original, encoding="utf-8")
+    db = json.loads(original)
     db["edges"][0]["fact"] += " (edited)"
     gfile.write_text(json.dumps(db), encoding="utf-8")
     msg = hello_error("x3", spec_for("x3", "read", "u1"))
