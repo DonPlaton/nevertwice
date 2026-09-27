@@ -138,8 +138,13 @@ def load_run_config(path: str | os.PathLike, *, secrets_dir: str | os.PathLike) 
 
 # ── the S4 smoke's units (Q18 O-a, B-S4-SMAP) ──────────────────────────────────────────────────────────────────
 
-def s1_order(lists_dir: str | os.PathLike | None = None) -> list[str]:
-    """The committed ls1 list (lists/S1.json) - never an order computed here."""
+#: The S1/S2 nested order's ids_sha256, verified by the auditor's independent implementation (ls1-go-2).
+S1_IDS_SHA256 = "73841e1dff06ffe6c2b4d6eb95691b274a5d4ed39ebe3b5c92e47f95248e2da2"
+
+
+def s1_order(lists_dir: str | os.PathLike | None = None, *, expected_sha256: str = S1_IDS_SHA256) -> list[str]:
+    """The committed ls1 list (lists/S1.json) - never an order computed here; its ids must hash to their own
+    ids_sha256 AND to the verified reference (a consistent but foreign list is refused)."""
     p = Path(lists_dir) if lists_dir is not None else HERE / "lists"
     f = p / "S1.json"
     if not f.is_file():
@@ -149,6 +154,8 @@ def s1_order(lists_dir: str | os.PathLike | None = None) -> list[str]:
     canon = json.dumps(ids, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
     if not isinstance(ids, list) or hashlib.sha256(canon).hexdigest() != rec.get("ids_sha256"):
         raise CLIError(f"{f}: its ids do not hash to its ids_sha256 - the list is not the one ls1 wrote")
+    if rec.get("ids_sha256") != expected_sha256:
+        raise CLIError(f"{f}: its ids_sha256 is not the verified reference {expected_sha256[:12]}... - not the S1 order")
     return ids
 
 

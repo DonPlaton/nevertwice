@@ -126,13 +126,17 @@ try:
     lists = TMP / "lists"
     lists.mkdir()
     (lists / "S1.json").write_bytes(json.dumps(SS.list_record("S1", ORDER, seed=SS.SEED, rule=SS.RULE)).encode("utf-8"))
-    check("CLI-s1-order: the order is the committed ls1 list", RV.s1_order(lists) == ORDER)
+    own = SS.list_record("S1", ORDER, seed=SS.SEED, rule=SS.RULE)["ids_sha256"]
+    check("CLI-s1-order: the order is the committed ls1 list", RV.s1_order(lists, expected_sha256=own) == ORDER)
+    check("CLI-s1-order: a consistent list that is not the verified reference is refused - by default the reference is "
+          "S1_IDS_SHA256", "not the verified reference" in err(lambda: RV.s1_order(lists))
+          and RV.S1_IDS_SHA256 == "73841e1dff06ffe6c2b4d6eb95691b274a5d4ed39ebe3b5c92e47f95248e2da2")
     tampered = json.loads((lists / "S1.json").read_text(encoding="utf-8"))
     tampered["ids"] = ORDER[::-1]
     (TMP / "lists2").mkdir()
     (TMP / "lists2" / "S1.json").write_bytes(json.dumps(tampered).encode("utf-8"))
     check("CLI-s1-order: a list whose ids do not hash to its ids_sha256 is refused, and so is a missing one",
-          "not the one ls1 wrote" in err(lambda: RV.s1_order(TMP / "lists2"))
+          "not the one ls1 wrote" in err(lambda: RV.s1_order(TMP / "lists2", expected_sha256=own))
           and "comes from the ls1 run only" in err(lambda: RV.s1_order(TMP / "nolists")))
     try:
         sm = RV.s4_smoke_units(LME, ORDER, stand_id="S4-smoke-3")
