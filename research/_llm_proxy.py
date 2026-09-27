@@ -1421,7 +1421,12 @@ class Proxy:
                     except OSError:
                         ctr.client_abandoned += 1
                         return False, framer, ttfb, True
-                    used = framer.feed(data)                 # ... then teed and framed
+                    try:
+                        used = framer.feed(data)             # ... then teed and framed
+                    except ProtocolError:                    # B-SEND2: a reply we cannot frame is still a call
+                        ctr.upstream_errors += 1
+                        ctr.bytes_down += len(data)
+                        return False, framer, ttfb, False
                     ctr.bytes_down += len(data)
                     if used < len(data):                     # bytes past this response: upstream misbehaved
                         ctr.upstream_errors += 1

@@ -193,6 +193,44 @@ for n, exc in enumerate((ConnectionResetError, BrokenPipeError)):
     pxs.stop()
     ups.close()
 
+class _BrokenReply:
+    """One side of a socketpair as the upstream: a thread reads the forwarded request, answers with a reply the framer
+    cannot parse, and keeps the connection open (the auditor's B-SEND2: the record must still be written)."""
+
+    def __init__(self, reply: bytes) -> None:
+        self.mine, self.theirs = socket.socketpair()
+        self.reply = reply
+        threading.Thread(target=self._serve, daemon=True).start()
+
+    def _serve(self) -> None:
+        try:
+            self.theirs.recv(65536)
+            self.theirs.sendall(self.reply)
+            time.sleep(2.0)
+        except OSError:
+            pass
+        finally:
+            self.theirs.close()
+
+
+for n, (label, reply) in enumerate((
+        ("a chunk without its CRLF", b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n2\r\n{}XX0\r\n\r\n"),
+        ("a header line without a colon", b"HTTP/1.1 200 OK\r\nNoColonHere\r\nContent-Length: 2\r\n\r\n{}"))):
+    pxb, portsb, upb = make(f"run_broken{n}")
+    fake = _BrokenReply(reply)
+    pxb._upstream = lambda fake=fake: fake.mine
+    call(portsb["arms"]["nevertwice"]["write"], "/u/r1.u1/v1/chat/completions",
+         {"model": "deepseek-flash", "messages": [], "thinking": {"type": "disabled"}})
+    wait_until_rb = time.monotonic() + 5
+    while not records(pxb) and time.monotonic() < wait_until_rb:
+        time.sleep(0.05)
+    rb = records(pxb)
+    check(f"B-SEND2: {label} from the upstream is a call record, complete False, counted in upstream_errors",
+          len(rb) == 1 and rb[0].get("complete") is False and bool(rb[0].get("request_key"))
+          and pxb.counters["nevertwice"].upstream_errors == 1, f"{rb} {pxb.counters['nevertwice'].upstream_errors}")
+    pxb.stop()
+    upb.close()
+
 px, ports, up = make("run1")
 W = ports["arms"]["nevertwice"]["write"]
 R = ports["arms"]["nevertwice"]["reader"]
