@@ -254,8 +254,39 @@ if made is not None:
 
     check("F-P2-6: /counters is a snapshot taken under the proxy's lock",
           "with self._lock:" in inspect.getsource(P.Proxy._control).split('path == "/counters"', 1)[1].split("elif", 1)[0])
-    px.stop()
+    print("\n- STOP-DRAIN (CI e8e9088): a tunnel open when stop() is called leaves its line before stop() returns -")
+    ctl(ports, "/window", {"name": "at-stop", "state": "open", "hosts": [HOST], "arms": ["fetch"]})
+    at_stop = _real_connect(("127.0.0.1", fetch_p))
+    at_stop.settimeout(10)
+    at_stop.sendall(f"CONNECT {HOST}:443 HTTP/1.1\r\nHost: {HOST}:443\r\n\r\n".encode())
+    head_s = b""
+    while b"\r\n\r\n" not in head_s:
+        head_s += at_stop.recv(1)
+    wait_until(lambda: px.counters["fetch"].catcher_open == 1)
+    n_before = len(log_lines("w"))
+    left = px.stop()
+    after = log_lines("w")
+    check("STOP-DRAIN: the tunnel open at stop() has its line (host, tunnelled, t_end) when stop() returns, and stop() "
+          "names no connection left open", head_s.startswith(b"HTTP/1.1 200") and left == {}
+          and len(after) == n_before + 1 and after[-1]["host"] == HOST and after[-1]["tunnelled"]
+          and after[-1].get("t_end") and px.counters["fetch"].catcher_open == 0, str((left, n_before, len(after))))
+    at_stop.close()
     hop.close()
+    silent = socket.socket()                              # a hop that accepts and never answers CONNECT
+    silent.bind(("127.0.0.1", 0))
+    silent.listen(4)
+    px5, ports5 = proxy(via_port=silent.getsockname()[1], run="silent")
+    ctl(ports5, "/window", {"name": "a3-hf", "state": "open", "hosts": [HOST], "arms": ["fetch"]})
+    stuck = _real_connect(("127.0.0.1", ports5["arms"]["fetch"]["catcher"]))
+    stuck.sendall(f"CONNECT {HOST}:443 HTTP/1.1\r\nHost: {HOST}:443\r\n\r\n".encode())
+    wait_until(lambda: px5.counters["fetch"].catcher_open == 1)
+    t_stop = time.monotonic()
+    left5 = px5.stop(drain_s=0.3)
+    took = time.monotonic() - t_stop
+    check("STOP-DRAIN: a connection that cannot finish by the deadline is named by arm and count, and stop() returns "
+          "at the deadline", left5 == {"fetch": 1} and 0.25 <= took < 3.0, f"{left5} {took:.2f}s")
+    silent.close()
+    stuck.close()
 
     print("\n- no hop, a refusing hop -")
     px2, ports2 = proxy(via_port=None, run="nohop")

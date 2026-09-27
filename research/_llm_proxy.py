@@ -1025,6 +1025,11 @@ FLAG_KINDS = ("model_mismatch", "tool_violation", "canary", "owner_marker", "thi
 SPECIAL_ROLES = ("j3", "scheduler")
 
 
+#: CI e8e9088: how long stop() waits for the catcher's open connections to write their lines. A relay loop sees the
+#: stop within its 1 s select timeout and logs its tunnel on the way out.
+STOP_DRAIN_S = 5.0
+
+
 class Proxy:
     def __init__(self, config: ProxyConfig, key: _Key | None, *, log: Callable[[str], None] | None = None,
                  ssl_context: ssl.SSLContext | None = None,
@@ -1118,13 +1123,26 @@ class Proxy:
             except OSError:
                 pass
 
-    def stop(self) -> None:
+    def stop(self, *, drain_s: float = STOP_DRAIN_S) -> dict[str, int]:
+        """Stop accepting, then wait up to ``drain_s`` until every open catcher connection has written its line to
+        catcher.jsonl (CI e8e9088: a tunnel open at the stop must leave its record). Returns the arms whose
+        connections are still open at the deadline, by count - {} when every line is written."""
         self._stop.set()
         for s in self._listeners:
             try:
                 s.close()
             except OSError:
                 pass
+        deadline = time.monotonic() + drain_s
+        while True:
+            with self._lock:
+                still = {a: c.catcher_open for a, c in self.counters.items() if c.catcher_open}
+            if not still or time.monotonic() >= deadline:
+                break
+            time.sleep(0.05)
+        if still:
+            self.log(f"stop: {sum(still.values())} catcher connection(s) still open after {drain_s} s")
+        return still
 
     # flags ------------------------------------------------------------------------------------------------------
     def _load_flags(self) -> dict[str, int]:

@@ -119,6 +119,22 @@ CATCHER = ports["arms"]["fetch"]["catcher"]
 px.windows["a3-test"] = {"hosts": frozenset({HF, CDN, GHAPI}), "arms": frozenset({"fetch"})}
 
 
+def settled_log(want_tunnelled=frozenset(), wait_s: float = 10.0) -> list[dict]:
+    """The catcher's log once no catcher connection is open and ``want_tunnelled`` hosts all have a tunnel line - or
+    what is there when ``wait_s`` passes. A tunnel's line is written when it closes, which can be after the child's job
+    has returned (CI e8e9088, Windows 3.12): a row that reads the log at once can miss it."""
+    import time as _t  # noqa: PLC0415
+    end = _t.monotonic() + wait_s
+    while True:
+        f = TMP / "proxy" / "catcher.jsonl"
+        log = [json.loads(x) for x in f.read_bytes().decode().splitlines()] if f.exists() else []
+        with px._lock:
+            still = sum(c.catcher_open for c in px.counters.values())
+        if (still == 0 and set(want_tunnelled) <= {r["host"] for r in log if r["tunnelled"]}) or _t.monotonic() > end:
+            return log
+        _t.sleep(0.05)
+
+
 def job(requests, *, hosts=(HF, CDN), max_redirects=1, cwd_name="w"):
     cwd = TMP / cwd_name
     cwd.mkdir(exist_ok=True)
@@ -198,7 +214,7 @@ check("a request refused before any body byte has bytes_received 0", r_404["byte
       str(r_404))
 check("no request ever reached evil.example through the catcher",
       not any(r.get("host") == "evil.example" and r.get("tunnelled")
-              for r in (json.loads(x) for x in (TMP / "proxy" / "catcher.jsonl").read_bytes().decode().splitlines())))
+              for r in settled_log()))
 
 print("\n- a rate limit stops the job -")
 for label, first_url in (("a 429", f"https://{HF}/limited"), ("a 403 from api.github.com", f"https://{GHAPI}/repos/o/r")):
@@ -226,7 +242,7 @@ for label, env in (("unset", {}), ("another host", {"HTTPS_PROXY": "http://10.0.
     except FC.Refused:
         check(f"HTTPS_PROXY {label} is refused", True)
 check("the loopback catcher is accepted", FC.catcher_port({"HTTPS_PROXY": f"http://127.0.0.1:{CATCHER}"}) == CATCHER)
-log = [json.loads(x) for x in (TMP / "proxy" / "catcher.jsonl").read_bytes().decode().splitlines()]
+log = settled_log({HF, CDN, GHAPI})
 check("every fetch was a catcher tunnel through the hop, recorded", all(r["via"] == f"127.0.0.1:{hop.port}" for r in log)
       and {r["host"] for r in log if r["tunnelled"]} == {HF, CDN, GHAPI}, str({(r["host"], r["tunnelled"]) for r in log}))
 check("nothing dialled a host directly", [d for d in DIALS if d[0] not in ("127.0.0.1", "localhost", "::1")] == [])
