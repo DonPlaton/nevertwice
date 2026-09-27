@@ -125,8 +125,16 @@ try:
     urllib.request.urlopen("http://127.0.0.1:1/nowhere", timeout=3)
 except Exception as e:
     refused = type(e).__name__
+async def nowhere():
+    async with httpx.AsyncClient() as ac:
+        await ac.get("http://127.0.0.1:1/nowhere-async", timeout=3)
+async_refused = None
+try:
+    asyncio.run(nowhere())
+except Exception as e:
+    async_refused = type(e).__name__
 print(json.dumps({"snap": HC.snapshot(), "second": second, "gen_status": gen_status, "refused": refused,
-                  "doors": doors}))
+                  "async_refused": async_refused, "doors": doors}))
 '''
 
 TMP = Path(tempfile.mkdtemp(prefix="v3hc_"))
@@ -190,9 +198,9 @@ try:
           and out.get("gen_status") == 200, f"{counts.get('ollama:generate')} server={OLL.generate_calls}")
     check("Ollama embed and tags counted by route",
           counts.get("ollama:embed", {}).get("attempts") == 1 and counts.get("ollama:tags", {}).get("attempts") == 1)
-    check("an attempt that never connects is an attempt and an exception, not a response",
-          counts.get("other:other") == {"attempts": 1, "responses": 0, "exceptions": 1} and out.get("refused"),
-          str(counts.get("other:other")))
+    check("an attempt that never connects is an attempt and an exception, not a response - through urllib AND the "
+          "async door (H2)", counts.get("other:other") == {"attempts": 2, "responses": 0, "exceptions": 2}
+          and out.get("refused") and out.get("async_refused"), str(counts.get("other:other")))
     check("a second install is refused (it would count every request twice)", "installed already" in
           str(out.get("second")), str(out.get("second")))
 

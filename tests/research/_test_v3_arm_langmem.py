@@ -232,6 +232,7 @@ try:
           mg.get("kwargs") == ["namespace", "store"] and mg.get("namespace") == ["memories", "u1"], str(mg))
     ims = (logged("InMemoryStore") or [{}])[-1]
     emb = (logged("OllamaEmbeddings") or [{}])[-1]
+    check("the product's index is the store's default fields ['$'] (L3)", ims.get("fields") == ["$"], str(ims))
     check("InMemoryStore at 1024 dims, OllamaEmbeddings with the tag at the Ollama URL",
           ims.get("dims") == 1024 and emb.get("model") == TAG and emb.get("base_url") == f"http://127.0.0.1:{OLLAMA.port}",
           f"{ims} {emb}")
@@ -292,6 +293,8 @@ try:
     ITEMS = {3: "Conversation from 2023-05-20:\nthe cat sat on the mat", 0: "a bounded retry fixed the upload"}
     ans = {i: safely(lambda i=i, t=t: c.request("write", item={"item_id": f"u1:{i}", "index": i, "text": t}), {})
            for i, t in ITEMS.items()}
+    check("the store arm's index is the item's bytes only: fields ['text'] (L3)",
+          (logged("InMemoryStore") or [{}])[-1].get("fields") == ["text"], str((logged("InMemoryStore") or [{}])[-1]))
     puts = logged("put")[-2:]
     check("langmem-store: put(('items', unit), '<index>', {'text': <the item's bytes>}) - no header added",
           [(p.get("namespace"), p.get("key"), p.get("value")) for p in puts]
