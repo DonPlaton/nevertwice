@@ -15,7 +15,9 @@ never an adapter's own counts):
   §9.4) - over the units that were not aborted: each unit's retrievable items, and its coverage input by the auditor's
   Q-A5-1 measure (accounting.unit_coverage over the proxy's bodies/<arm>/<run>.<unit>.jsonl, the requests sent up to
   the unit's end_write; the denominator the unit's normalized item characters). An arm with no writer LLM - the
-  retrieval tier and the lexical floor - prints "n/a: no writer LLM" for both (Q-A5-1 O-d).
+  retrieval tier and the lexical floor - prints "n/a: no writer LLM" for both (Q-A5-1 O-d). C-3: which arms those are
+  is the plan's (run_v3_plan.ARMS, the write unit "item"), never the caller's: a no_writer that differs from the
+  plan's - a writer arm named in it - refuses the summary by name.
 A log with a problem refuses the summary by name. No key anywhere in a row names a score, verdict, gold, twin, judge,
 label or accuracy: the smoke has no scorer. write() puts the summary in the runs tree (<runs>/<stand id>/_smoke/),
 never under research/v3/results, and never over an existing file.
@@ -58,6 +60,19 @@ def _accounting():
 
 def _artifact():
     return _load("v3_artifact_for_smoke", HERE / "artifact.py")
+
+
+def _plan():
+    return _load("v3_run_plan_for_smoke", HERE / "run_v3_plan.py")
+
+
+def no_writer_arms(arms: Iterable[str]) -> set[str]:
+    """C-3: of ``arms``, those without a writer LLM - the plan's retrieval tier (write unit "item")."""
+    plan_arms = _plan().ARMS
+    unknown = sorted(a for a in set(arms) if a not in plan_arms)
+    if unknown:
+        raise SmokeError(f"arms {unknown} are not the plan's - whether they write is unknown")
+    return {a for a in arms if plan_arms[a].granularity == "item"}
 
 
 def base_stand(stand: str) -> str:
@@ -124,16 +139,23 @@ def _yield(stand: str, items: Mapping[str, int], cover: Mapping[str, Mapping[str
 
 
 def summarize(result: Mapping[str, Any], log: Any, *, stand: str, key_question: Mapping[tuple[str, str], str],
-              item_texts: Mapping[str, Any], run_dir: str | os.PathLike, no_writer: Iterable[str] = ()) -> dict:
+              item_texts: Mapping[str, Any], run_dir: str | os.PathLike,
+              no_writer: Iterable[str] | None = None) -> dict:
     """{"stand": stand, "arm_runs": [row, ...]} - one row per arm-run, exactly its SMOKE_FIELDS (see the module
     docstring). ``item_texts``: unit -> its items' texts (the coverage denominator); ``run_dir``: the proxy's run
-    directory (its bodies); ``no_writer``: the arms without a writer LLM."""
+    directory (its bodies); ``no_writer``: only a check - the arms the caller expects to have no writer LLM, which
+    must be the plan's (C-3)."""
     if log.problems:
         raise SmokeError(f"the proxy's log has problems {log.problems[:3]} - no smoke summary from it")
     A = _accounting()
-    no_writer = set(no_writer)
+    runs = arm_runs(result)
+    plan_no_writer = no_writer_arms({a for a, _r in runs})
+    if no_writer is not None and set(no_writer) != plan_no_writer:
+        raise SmokeError(f"no_writer {sorted(set(no_writer))} is not the plan's {sorted(plan_no_writer)} - a writer arm "
+                         f"named in it would print its coverage as n/a (C-3)")
+    no_writer = plan_no_writer
     rows = []
-    for (arm, run), ar in sorted(arm_runs(result).items()):
+    for (arm, run), ar in sorted(runs.items()):
         w, q = ar["write"], ar["questions"]
         reads = [r for u in w for r in (q.get(u) or {}).get("reads") or []]
         dropped = [r["qid"] for r in reads if r.get("unrecovered")]

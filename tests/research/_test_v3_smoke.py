@@ -104,7 +104,7 @@ try:
         (json.dumps({"t0": T(5), "strings": ["user: " + TEXT1, "Extract the facts."], "via": "write", "status": 200}) + "\n").encode())
 
     def summary(log=LOG, **kw):
-        args = dict(stand="S4-smoke-1", key_question=KQ, item_texts=ITEMS, run_dir=RUN, no_writer={"bm25-floor"})
+        args = dict(stand="S4-smoke-1", key_question=KQ, item_texts=ITEMS, run_dir=RUN)
         args.update(kw)
         return SM.summarize(RESULT, log, **args)
 
@@ -141,6 +141,18 @@ try:
     check("SM (Q-A5-1 O-d): an arm with no writer LLM prints 'n/a: no writer LLM' for yield and coverage",
           rows["bm25-floor"]["yield"] == SM.NO_WRITER and rows["bm25-floor"]["coverage"] == SM.NO_WRITER,
           str(rows["bm25-floor"]))
+
+    named = refused(lambda: summary(no_writer={"mem0", "bm25-floor"}))
+    same = refused(lambda: summary(no_writer={"bm25-floor"}))
+    check("SM (C-3): which arms have no writer LLM is the plan's - a caller's no_writer naming a writer arm is refused "
+          "by name; the plan's own set is accepted", "not the plan's" in named and "mem0" in named and same == "accepted",
+          f"{named} | {same}")
+    stranger = {**RESULT, "blocks": [{"write": {"my-arm": {("r1", "u1"): wrec("my-arm", "u1", 1, 0.1)}},
+                                      "questions": {}}]}
+    unk = refused(lambda: SM.summarize(stranger, LOG, stand="S4-smoke-1", key_question=KQ, item_texts=ITEMS,
+                                       run_dir=RUN))
+    check("SM (C-3): an arm the plan does not know is refused - whether it writes is unknown", "not the plan's" in unk,
+          unk)
 
     print("\n- the smoke has no scorer -")
     base = dict(rows["mem0"])
