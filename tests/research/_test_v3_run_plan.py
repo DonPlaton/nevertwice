@@ -704,7 +704,38 @@ try:
           "the speaker map's sha - is StandPlan.record_extra", rec5["truncation"] == {"items": 2, "truncated": 1,
                                                                                      "share": 0.5}
           and set(rec5["item_sha256"]) == {"u5"} and rec5["item_sha256"]["u5"] == st.shas[("bm25-floor", "r1", "u5")]
-          and rec5["speaker_map_sha256"] is None, str(rec5)[:300])
+          and rec5["speaker_map_sha256"] == {"u5": None}, str(rec5)[:300])
+    LOC2 = unit("conv-3", [("conv-3:session_1", "2:00 pm on 9 May, 2023",
+                            [("conv-3:D1:1", "hello Joanna", None, "Nate"), ("conv-3:D1:2", "hi Nate", None, "Joanna")])])
+    samples = [{"sample_id": "conv-1", "conversation": {"speaker_a": "Caroline", "speaker_b": "Mel"}},
+               {"sample_id": "conv-3", "conversation": {"speaker_a": "Nate", "speaker_b": "Joanna"}}]
+    smaps = PL.speaker_maps(samples)
+    sp2, st2 = PL.stand_plan("S4", [LOC, LOC2], {"mem0": lns["mem0"]}, standplan=SC.StandPlan, read_req=SC.ReadReq,
+                             runs=("r1",), campaign_seed=7, unit_tokens={"conv-1": 1, "conv-3": 1}, medians={},
+                             answer=ra, embed_tag="e", dated=True, points=lambda a: ("B",), k_at=PT.K_AT, smaps=smaps)
+    w1 = refused(lambda: sp2.write_ops("mem0", "r1", "conv-1"))
+    w3 = sp2.write_ops("mem0", "r1", "conv-3") if w1 == "accepted" else []
+    ops1, ops3 = sp2.write_ops("mem0", "r1", "conv-1"), w3
+    rec_s = sp2.record_extra("mem0", "r1", ["conv-1", "conv-3"])
+    check("B-S4-SMAP: two conversations with different speakers both write - each unit with its own map, each map's "
+          "sha in the run record", w1 == "accepted" and [o["item"]["role"] for o in ops1] == ["user", "assistant"]
+          and [o["item"]["role"] for o in ops3] == ["user", "assistant"] and [o["item"]["speaker"] for o in ops3]
+          == ["Nate", "Joanna"] and rec_s["speaker_map_sha256"] == {"conv-1": PL.map_sha256(smaps["conv-1"]),
+                                                                   "conv-3": PL.map_sha256(smaps["conv-3"])}
+          and smaps["conv-1"] != smaps["conv-3"], f"{w1} {rec_s.get('speaker_map_sha256')}")
+    one_map = {"conv-1": smaps["conv-1"], "conv-3": smaps["conv-1"]}           # one stand-wide map, as before
+    sp3, _st3 = PL.stand_plan("S4", [LOC, LOC2], {"mem0": lns["mem0"]}, standplan=SC.StandPlan, read_req=SC.ReadReq,
+                              runs=("r1",), campaign_seed=7, unit_tokens={"conv-1": 1, "conv-3": 1}, medians={},
+                              answer=ra, embed_tag="e", dated=True, points=lambda a: ("B",), k_at=PT.K_AT,
+                              smaps=one_map)
+    stranger = refused(lambda: sp3.write_ops("mem0", "r1", "conv-3"))
+    stray = refused(lambda: PL.stand_plan("S4", [LOC], {}, standplan=SC.StandPlan, read_req=SC.ReadReq, runs=("r1",),
+                                          campaign_seed=7, unit_tokens={"conv-1": 1}, medians={}, answer=ra,
+                                          embed_tag="e", dated=True, points=lambda a: ("B",), k_at=PT.K_AT,
+                                          smaps=smaps))
+    check("B-S4-SMAP: a speaker outside the unit's own map is refused by name; a map for a unit the stand lacks too",
+          "neither of the sample's two" in stranger and "Nate" in stranger and "units the stand does not have" in stray,
+          f"{stranger} | {stray}")
     check("SP: the StandPlan is the scheduler's, its answer the Answerer, its tree fields open until the tree check",
           isinstance(sp, SC.StandPlan) and sp.answer is ra and sp.runs == ("r1", "r2") and sp.commit == ""
           and sp.dirty is True and set(sp.launchers) == {"bm25-floor", "chroma-store", "mem0", "a-mem"}, str(sp)[:150])

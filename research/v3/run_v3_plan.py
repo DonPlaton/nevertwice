@@ -69,7 +69,9 @@ Part 3 - launching the arms (Q-A4-5, Q-A4-6):
   - {items, truncated, share}; an arm whose product embeds its own text gets "not-applicable".
 * stand_plan: the scheduler's StandPlan - each arm's launcher, the write ops per (arm, run, unit) (recording the
   truncation and each op's sha256 per arm-run), the reads per (arm, unit) (Q-12-3), the Answerer - and the plan's
-  record for the run records (truncation, item shas, the speaker map's sha, the launch records).
+  record for the run records (truncation, item shas, each unit's speaker map sha, the launch records). B-S4-SMAP
+  (Q-A4-1, "the map is built from the pinned sample by unit_id"): one speaker map PER UNIT - LoCoMo's conversations
+  each have their own two speakers - speaker_maps(samples) builds them, a unit without one (LME: roles given) None.
 """
 from __future__ import annotations
 
@@ -314,6 +316,17 @@ def speaker_map(sample: Mapping[str, Any]) -> dict[str, str]:
         raise PlanError(f"sample {sample.get('sample_id') if isinstance(sample, Mapping) else '?'}: no two distinct "
                         f"speakers to map (Q-A4-1)")
     return {a: "user", b: "assistant"}
+
+
+def speaker_maps(samples: Iterable[Mapping[str, Any]]) -> dict[str, dict[str, str]]:
+    """B-S4-SMAP: {sample_id: its speaker map} - one per LoCoMo(-format) unit, never one for a whole stand."""
+    out: dict[str, dict[str, str]] = {}
+    for s in samples:
+        sid = str(s.get("sample_id")) if isinstance(s, Mapping) else None
+        if not sid or sid in out:
+            raise PlanError(f"a sample without an id, or one repeated: {sid!r}")
+        out[sid] = speaker_map(s)
+    return out
 
 
 def map_sha256(m: Mapping[str, str] | None) -> str | None:
@@ -764,11 +777,12 @@ class PlanState:
     """What the plan's callbacks record during a run, for the run records: per (arm, run, unit) the §5.1 cuts and the
     sha256 of every op's bytes (Q-45-4); record_for is StandPlan.record_extra."""
 
-    def __init__(self, *, smap_sha256: str | None = None, bodies_dir: str | os.PathLike | None = None) -> None:
+    def __init__(self, *, smap_sha256: Mapping[str, str | None] | None = None,
+                 bodies_dir: str | os.PathLike | None = None) -> None:
         self._lock = threading.Lock()
         self.cuts: dict[tuple[str, str, str], list] = {}
         self.shas: dict[tuple[str, str, str], dict] = {}
-        self.smap_sha256 = smap_sha256
+        self.smap_sha256 = dict(smap_sha256 or {})            # B-S4-SMAP: unit -> its speaker map's sha256
         self.bodies_dir = Path(bodies_dir) if bodies_dir is not None else None
 
     def truncation(self, arm: str, run: str, units: Iterable[str] | None = None) -> dict | str:
@@ -797,17 +811,19 @@ class PlanState:
         with self._lock:
             shas = {u: dict(self.shas.get((arm, run, u), {})) for u in units}
         return {"truncation": self.truncation(arm, run, set(units)), "item_sha256": shas,
-                "speaker_map_sha256": self.smap_sha256, "bodies_sha256": self.bodies_sha256(arm, run, units)}
+                "speaker_map_sha256": {u: self.smap_sha256.get(u) for u in units},
+                "bodies_sha256": self.bodies_sha256(arm, run, units)}
 
 
 def stand_plan(stand: str, units: Sequence[Any], launchers: Mapping[str, Any], *, standplan: Any, read_req: Any,
                runs: Sequence[str], campaign_seed: int, unit_tokens: Mapping[str, int], medians: Mapping[tuple, float],
                answer: Callable[..., dict], embed_tag: str | None, dated: bool, points: Callable[[str], Sequence[str]],
-               k_at: Mapping[str, int], smap: Mapping[str, str] | None = None,
+               k_at: Mapping[str, int], smaps: Mapping[str, Mapping[str, str]] | None = None,
                truncate: Callable[[str], Any] | None = None,
                bodies_dir: str | os.PathLike | None = None) -> tuple[Any, PlanState]:
     """(the scheduler's StandPlan, the PlanState its callbacks fill). ``standplan``/``read_req``: the scheduler's
-    StandPlan and ReadReq classes; ``points(arm)``: the points the arm reads on this stand (the smoke: B)."""
+    StandPlan and ReadReq classes; ``points(arm)``: the points the arm reads on this stand (the smoke: B);
+    ``smaps``: unit id -> its speaker map (speaker_maps; B-S4-SMAP) - a unit not in it has none."""
     check_ids(runs, [u.unit_id for u in units])
     by_id = {u.unit_id: u for u in units}
     missing = sorted(set(launchers) - set(ARMS))
@@ -815,11 +831,15 @@ def stand_plan(stand: str, units: Sequence[Any], launchers: Mapping[str, Any], *
         raise PlanError(f"{stand}: arms {missing} have no plan (A8: no adapter yet, or not an arm)")
     for u in units:
         _check_unit_dates(u, dated)
-    st = PlanState(smap_sha256=map_sha256(smap), bodies_dir=bodies_dir)
+    smaps = dict(smaps or {})
+    stray = sorted(set(smaps) - set(by_id))
+    if stray:
+        raise PlanError(f"{stand}: speaker maps for units the stand does not have: {stray[:3]}")
+    st = PlanState(smap_sha256={u: map_sha256(smaps.get(u)) for u in by_id}, bodies_dir=bodies_dir)
 
     def write_ops_for(arm: str, run: str, unit: str) -> list[dict]:
         cuts: list = []
-        ops = write_ops(ARMS[arm], by_id[unit], dated=dated, smap=smap, truncate=truncate, cuts=cuts)
+        ops = write_ops(ARMS[arm], by_id[unit], dated=dated, smap=smaps.get(unit), truncate=truncate, cuts=cuts)
         with st._lock:
             st.cuts[(arm, run, unit)] = cuts
             st.shas[(arm, run, unit)] = item_shas(ops)
