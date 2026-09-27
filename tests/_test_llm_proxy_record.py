@@ -225,8 +225,10 @@ for n, (label, reply) in enumerate((
     while not records(pxb) and time.monotonic() < wait_until_rb:
         time.sleep(0.05)
     rb = records(pxb)
-    check(f"B-SEND2: {label} from the upstream is a call record, complete False, counted in upstream_errors",
+    check(f"B-SEND2: {label} from the upstream is a call record, complete False, upstream_error ProtocolError and no "
+          f"status (a reply we could not parse has none), counted in upstream_errors",
           len(rb) == 1 and rb[0].get("complete") is False and bool(rb[0].get("request_key"))
+          and rb[0].get("upstream_error") == "ProtocolError" and rb[0].get("status") is None
           and pxb.counters["nevertwice"].upstream_errors == 1, f"{rb} {pxb.counters['nevertwice'].upstream_errors}")
     pxb.stop()
     upb.close()

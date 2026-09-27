@@ -356,6 +356,7 @@ class ResponseFramer:
         self.remaining = 0
         self.status = 0
         self.close_after = False
+        self.protocol_error = False                # set by the proxy when feed() raised ProtocolError (B-SEND2)
         self.done = False
         self.headers: list[tuple[str, str]] = []
 
@@ -1326,6 +1327,8 @@ class Proxy:
                    content_empty=facts["content_empty"], parse_ok=facts["parse_ok"],
                    tools_called=facts["tools_called"], thinking=thinking, thinking_injected=injected,
                    client_abandoned=abandoned, complete=framer.done)
+        if framer.protocol_error:                    # a reply that could not be parsed has no status (B-SEND2)
+            rec.update(status=None, upstream_error="ProtocolError")
         called_bad = [n for n in facts["tools_called"] if tool_violation(n, set(arm.tools_allowed))]
         if called_bad:
             rec["tool_violation"] = True
@@ -1424,6 +1427,7 @@ class Proxy:
                     try:
                         used = framer.feed(data)             # ... then teed and framed
                     except ProtocolError:                    # B-SEND2: a reply we cannot frame is still a call
+                        framer.protocol_error = True
                         ctr.upstream_errors += 1
                         ctr.bytes_down += len(data)
                         return False, framer, ttfb, False
