@@ -332,21 +332,25 @@ def _in_lost_episode(c: Mapping[str, Any], unit: str, key_classes: Mapping[tuple
     return g.get("last_ok") is None or _when(c, "t0") > g["last_ok"]
 
 
-def lost_operations(ops: list, calls: list, *, key_classes: Mapping[tuple[str, str], Mapping[str, Any]],
+def lost_operations(ops: list, calls: list, *, arm: str, run: str,
                     no_call_ops: Iterable[Mapping[str, Any]] = ()) -> dict:
-    """artifact.p1_block()'s arguments for one arm-run (Q12's join, rev1 P1). An operation {op_id, unit, t0, t1, and
-    error when the product reported one} is lost if the product reported an error - product-error, with the M1
-    evidence: response_seen (the proxy saw a completed response in the operation's window) and tool_call (that
-    response's request offered tools); if a transport_lost key falls in its window - transport; or if the last JSON or
-    tool call in its window was empty, cut, unparsable or failed, with no later success in it - structured-output or
-    tool-calling. A transport loss is a failed attempt, inside the window, of its (unit, key)'s trailing never episode
-    (key_classes: classify_keys()) - an attempt that a later success of the same key closed is not one. The engine's operations that made no call come as they are (breaker, or fallback_refused with its
-    slug). A valid empty extraction is not a loss. transport_lost counts the operations lost by a transport_lost key."""
+    """artifact.p1_block()'s arguments for one arm-run (Q12's join, rev1 P1), from the arm-run's own write-port calls
+    only - another arm's, another run's and the reader's calls are never an operation's (B-LO1, B-LO2); their episodes
+    are classified here, so a caller cannot join runs or arms. An operation {op_id, unit, t0, t1, and error when the
+    product reported one} is lost if the product reported an error - product-error, with the M1 evidence: response_seen
+    (the proxy saw a completed response in the operation's window) and tool_call (that response's request offered
+    tools); if a failed attempt of its (unit, key)'s trailing never episode falls in its window [t0, t1] - transport (an
+    attempt a later success of the same key closed is not one); or if the last JSON or tool call in its window was
+    empty, cut, unparsable or failed, with no later success in it - structured-output or tool-calling. The engine's
+    operations that made no call come as they are (breaker, or fallback_refused with its slug). A valid empty
+    extraction is not a loss. transport_lost counts the operations lost by transport."""
     no_call_ops = list(no_call_ops)
     if not ops and not no_call_ops:
         raise AccountingError("p1 needs the arm's logical write operations - never the proxy's counts alone")
+    mine = [c for c in _arm_run(calls, arm, run) if c.get("port_role") == "write"]
+    key_classes = classify_keys(mine)
     by_unit: dict[str, list] = defaultdict(list)
-    for c in calls:
+    for c in mine:
         if not c.get("refused"):
             by_unit[split_unit(c.get("unit"))[1]].append(c)
     lost = []
@@ -390,7 +394,7 @@ def yield_inputs(stand: str, units: Iterable[Mapping[str, Any]], *, unit_kind: s
         raise AccountingError(f"{stand}'s evaluation unit is {UNIT_OF_STAND.get(stand)!r}, not {unit_kind!r}")
     rows = [{"retrievable": u.get("retrievable_items"), "chars_in": u.get("chars_to_writer"), "chars": u.get("unit_chars")}
             for u in units]
-    items = sum(r["retrievable"] for r in rows if isinstance(r["retrievable"], int))
+    items = sum(r["retrievable"] for r in rows if isinstance(r["retrievable"], int) and not isinstance(r["retrievable"], bool))
     contexts = None if contexts_b is None else list(contexts_b)
     return {"unit": unit_kind, "units": rows,
             "extra": {"items_per_1k_read": 1000.0 * items / tokens_read if tokens_read else None,
@@ -398,8 +402,12 @@ def yield_inputs(stand: str, units: Iterable[Mapping[str, Any]], *, unit_kind: s
 
 
 def ours_retrievable(notes: Iterable[Mapping[str, Any]]) -> int:
-    """K76 for our arm: typed notes count, Session notes never do."""
-    return sum(1 for n in notes if str(n.get("type", "")).lower() != "session")
+    """K76 for our arm: typed notes count, Session notes never do; a note without a type refuses (R9)."""
+    notes = list(notes)
+    untyped = [n for n in notes if not isinstance(n.get("type"), str) or not n["type"]]
+    if untyped:
+        raise AccountingError(f"{len(untyped)} note(s) without a type - K76 counts typed notes only")
+    return sum(1 for n in notes if n["type"].lower() != "session")
 
 
 def cache_inputs(reads: Iterable[Mapping[str, Any]], builds: Mapping[tuple, Mapping[str, Any]]) -> list[dict]:
@@ -419,11 +427,23 @@ def cache_inputs(reads: Iterable[Mapping[str, Any]], builds: Mapping[tuple, Mapp
     return out
 
 
+def _tokens_delta(product: int | None, proxy: int) -> float | None:
+    """The product's tokens against the proxy's, in percent (B-REC1): None only without a product counter; 0 against 0
+    is 0.0; tokens the product counted and the proxy never saw (proxy 0) are 100.0 - a bypass's signature, never
+    dropped as a missing delta."""
+    if product is None:
+        return None
+    if proxy == 0:
+        return 0.0 if product == 0 else 100.0
+    return 100.0 * (product - proxy) / proxy
+
+
 def reconciliation_inputs(calls: Iterable[Mapping[str, Any]], *, arm: str, run: str, branch: str,
                           adapter_calls: int | None = None, product_calls: int | None = None,
                           product_tokens: int | None = None, serverlog_delta: int | None = None) -> dict:
     """The §2.3 reconciliation numbers of one arm-run (K87 checks 1-2): the HTTP calls and tokens the proxy saw on the
-    product's own port (the arm's write port, both stages; the reader's port is the harness's), the adapter's and the
+    product's own port (the arm's write port, both stages; the reader's port is the harness's; tokens of its completed
+    2xx calls only - Q-K87-1), the adapter's and the
     product's counters as given, tokens_delta_pct = the product's tokens against the proxy's in percent, and
     product_retries = HTTP - logical calls. proxy_logical_calls (R-K87-1) counts the episodes of the port's (unit, key)
     groups - a body retried after transport failures is one logical call, a body written twice is two - which branch
@@ -431,9 +451,9 @@ def reconciliation_inputs(calls: Iterable[Mapping[str, Any]], *, arm: str, run: 
     own = [c for c in _arm_run(calls, arm, run) if not c.get("refused") and c.get("port_role") == "write"]
     http = len(own)
     logical = sum(len(v["classes"]) for v in classify_keys(own).values())
-    tokens = sum(int((c.get("usage") or {}).get(k) or 0) for c in own for k in ("prompt", "completion"))
+    tokens = sum(int((c.get("usage") or {}).get(k) or 0) for c in own if succeeded(c) for k in ("prompt", "completion"))
     return {"proxy_calls": http, "proxy_logical_calls": logical, "proxy_tokens": tokens, "adapter_calls": adapter_calls,
             "product_logical_calls": product_calls,
-            "tokens_delta_pct": None if product_tokens is None or not tokens else 100.0 * (product_tokens - tokens) / tokens,
+            "tokens_delta_pct": _tokens_delta(product_tokens, tokens),
             "serverlog_delta": serverlog_delta, "branch": branch,
             "product_retries": None if product_calls is None else http - product_calls}

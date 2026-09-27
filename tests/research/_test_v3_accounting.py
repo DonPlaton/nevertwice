@@ -435,7 +435,6 @@ pc = [call("k1", unit="r1.u1", t0=1, **J),                                      
       call("k7", unit="r1.u1", t0=51, **J),                                         # op7: a valid empty extraction
       call("k8x", unit="r1.u2", status=500, t0=61), call("k8", unit="r1.u1", t0=61.5, **J),   # op8: other unit's loss
       call("k9", unit="r1.u1", status=503, t0=71)]                                   # op9: the product threw, no reply
-kc = AC.classify_keys(pc)
 ops = [{"op_id": "op1", "unit": "u1", "t0": t(0.5), "t1": t(2)},
        {"op_id": "op2", "unit": "u1", "t0": t(5), "t1": t(6), "error": "RuntimeError: letta step failed"},
        {"op_id": "op3", "unit": "u1", "t0": t(10.5), "t1": t(12)}, {"op_id": "op4", "unit": "u1", "t0": t(20.5), "t1": t(22)},
@@ -444,7 +443,7 @@ ops = [{"op_id": "op1", "unit": "u1", "t0": t(0.5), "t1": t(2)},
        {"op_id": "op9", "unit": "u1", "t0": t(70.5), "t1": t(72), "error": "ConnectError"}]
 NOCALL = [{"op_id": "n1", "unit": "u1", "reason": "breaker"},
           {"op_id": "n2", "unit": "u1", "reason": "fallback_refused", "slug": "truncated"}]
-lo = AC.lost_operations(ops, pc, key_classes=kc, no_call_ops=NOCALL)
+lo = AC.lost_operations(ops, pc, arm="mem0", run="r1", no_call_ops=NOCALL)
 by_id = {x["op_id"]: x for x in lo["lost_ops"]}
 check("lost: a product error, a transport_lost key in the window, an empty last JSON call, unparsable tool arguments, "
       "and the engine's no-call operations - each by artifact's LOSS_REASONS",
@@ -468,18 +467,17 @@ except A.P1Exceeds as e:
 check("artifact.p1_block takes them: 7 of 11 is over 10 %, P1Exceeds by the dominant class transport (op3, op9 with no "
       "reply, the breaker)", exc is not None and exc.dominant == "transport", repr(exc))
 many = [{"op_id": f"o{i}", "unit": "u9", "t0": t(80), "t1": t(81)} for i in range(95)]
-band = A.p1_block(**AC.lost_operations(many, [], key_classes={}, no_call_ops=[
+band = A.p1_block(**AC.lost_operations(many, [], arm="mem0", run="r1", no_call_ops=[
     {"op_id": f"b{i}", "unit": "u9", "reason": "breaker"} for i in range(5)]))
 check("... and 5 of 100 is labelled by artifact's band", band["label"] == "lossy-writer (5.0%)" and band["lost"] == 5,
       str(band))
 check("M-P1-proxy-alone: no logical operations refuses - never the proxy's counts alone",
-      "never the proxy" in err(lambda: AC.lost_operations([], pc, key_classes=kc)))
+      "never the proxy" in err(lambda: AC.lost_operations([], pc, arm="mem0", run="r1")))
 for why, kw in (("empty", {"content_empty": True}), ("cut", {"finish_reason": "length"}),
                 ("unparsable", {"json_ok": False}), ("failed", {"status": 500})):
     one = AC.lost_operations([{"op_id": "w", "unit": "u5", "t0": t(90), "t1": t(91)}],
-                             [call("kw", unit="r1.u5", t0=90.5, **{**J, **kw})],
-                             key_classes=AC.classify_keys([call("kw", unit="r1.u5", t0=90.5, **{**J, **kw}),
-                                                           call("kw", unit="r1.u5", t0=95, **J)]))
+                             [call("kw", unit="r1.u5", t0=90.5, **{**J, **kw}), call("kw", unit="r1.u5", t0=95, **J)],
+                             arm="mem0", run="r1")
     check(f"the last JSON call {why}: structured-output, why={why}",
           [(x["reason"], x.get("why")) for x in one["lost_ops"]] == [("structured-output", why)], str(one["lost_ops"]))
 ep = [call("g", unit="r1.u6", t0=100, **J), call("g", unit="r1.u6", status=503, t0=105, **J),
@@ -491,13 +489,42 @@ ep = [call("g", unit="r1.u6", t0=100, **J), call("g", unit="r1.u6", status=503, 
 eo = [{"op_id": "A", "unit": "u6", "t0": t(99.5), "t1": t(100.5)}, {"op_id": "B", "unit": "u6", "t0": t(104.5), "t1": t(107)},
       {"op_id": "C", "unit": "u6", "t0": t(109.5), "t1": t(111.5)}, {"op_id": "D", "unit": "u6", "t0": t(119.5), "t1": t(121)},
       {"op_id": "E", "unit": "u6", "t0": t(130.5), "t1": t(132.5)}, {"op_id": "F", "unit": "u6", "t0": t(139.5), "t1": t(141)}]
-el = AC.lost_operations(eo, ep, key_classes=AC.classify_keys(ep))
+el = AC.lost_operations(eo, ep, arm="mem0", run="r1")
 check("B-ACC1b in P1: the second write of a body that failed for good is lost by transport, the first is not; a "
       "failure that a later success of the same key closed is not a transport loss, the failure after it is",
       [(x["op_id"], x["reason"]) for x in el["lost_ops"]] == [("B", "transport"), ("D", "transport"), ("F", "transport")]
       and el["transport_lost"] == 3, str([(x["op_id"], x["reason"]) for x in el["lost_ops"]]))
 check("a no-call operation with a reason outside the engine's two refuses",
-      "no-call" in err(lambda: AC.lost_operations(ops, pc, key_classes=kc, no_call_ops=[{"op_id": "x", "reason": "slow"}])))
+      "no-call" in err(lambda: AC.lost_operations(ops, pc, arm="mem0", run="r1",
+                                                  no_call_ops=[{"op_id": "x", "reason": "slow"}])))
+print("\n- B-LO: lost_operations reads only the arm-run's own write port, and its classes are its own -")
+lo1 = [call("K", unit="r1.u1", status=503, t0=200, **J), call("K", unit="r1.u1", status=503, t0=201, **J),
+       call("K", unit="r2.u1", t0=202, **J)]
+lop = [{"op_id": "w", "unit": "u1", "t0": t(199.5), "t1": t(201.5)}]
+l1 = AC.lost_operations(lop, lo1, arm="mem0", run="r1")
+check("B-LO1: r1 lost K for good while r2 wrote the same body - r1's operation is lost by transport, as cloud_counters "
+      "says", [x["reason"] for x in l1["lost_ops"]] == ["transport"]
+      and AC.cloud_counters(lo1, arm="mem0", run="r1", stand="S1", cloud_bypass=0)["transport_lost"] == 1,
+      str(l1["lost_ops"]))
+lo2 = [call("M", unit="r1.u1", t0=300, **J), call("Z", arm="zep", unit="r1.u1", t0=300.5, content_empty=True,
+                                                   response_format="json_object", json_ok=False),
+       call("Z2", arm="zep", unit="r1.u1", t0=310.5, **J)]
+l2 = AC.lost_operations([{"op_id": "a", "unit": "u1", "t0": t(299.5), "t1": t(301)},
+                         {"op_id": "b", "unit": "u1", "t0": t(310), "t1": t(311), "error": "ValueError"}],
+                        lo2, arm="mem0", run="r1")
+check("B-LO2: another arm's empty JSON reply in the window is not this arm's loss, and another arm's success is not "
+      "this arm's response_seen", [(x["op_id"], x["reason"], x.get("response_seen")) for x in l2["lost_ops"]]
+      == [("b", "product-error", False)], str(l2["lost_ops"]))
+lo3 = [call("E0", unit="r1.u1", status=503, t0=400, **J), call("E1", unit="r1.u1", status=503, t0=421, **J)]
+l3 = AC.lost_operations([{"op_id": "x0", "unit": "u1", "t0": t(400), "t1": t(401)},
+                         {"op_id": "x1", "unit": "u1", "t0": t(420), "t1": t(421)}], lo3, arm="mem0", run="r1")
+check("L1: a call exactly at the operation's t0, and one exactly at its t1, are in its window",
+      [(x["op_id"], x["reason"]) for x in l3["lost_ops"]] == [("x0", "transport"), ("x1", "transport")],
+      str(l3["lost_ops"]))
+check("a reader call is never a write operation's call",
+      AC.lost_operations([{"op_id": "r", "unit": "u1", "t0": t(500), "t1": t(501)}],
+                         [call("R", unit="r1.u1", role="reader", stage="questions", t0=500.5, content_empty=True,
+                               response_format="json_object", json_ok=False)], arm="mem0", run="r1")["lost_ops"] == [])
 
 print("\n- TB4.10b' yield_inputs (K76) through artifact.yield_block -")
 U = [{"unit": "h1", "retrievable_items": 3, "chars_to_writer": 1500, "unit_chars": 1000, "stored_chars": 10},
@@ -520,6 +547,13 @@ check("the stands' evaluation units are rev1's (haystack, conversation, row, tra
                            "S7": "trajectory"})
 check("M-K76-session-notes: for ours, typed notes count and Session notes never do",
       AC.ours_retrievable([{"type": "fact"}, {"type": "Session"}, {"type": "decision"}, {"type": "session"}]) == 2)
+check("a note without a type refuses - K76 counts typed notes, never an untyped one as typed (R9)",
+      "without a type" in err(lambda: AC.ours_retrievable([{"type": "fact"}, {"title": "x"}])))
+yb = AC.yield_inputs("S1", [{"unit": "h1", "retrievable_items": True, "chars_to_writer": 10, "unit_chars": 10}],
+                     unit_kind="haystack", tokens_read=1000)
+check("a bool is not a retrievable count - items_per_1k_read ignores it, and artifact refuses the unit",
+      yb["extra"]["items_per_1k_read"] == 0.0 and refused(lambda: A.yield_block(**yb, scored=True), "retrievable"),
+      str(yb["extra"]))
 check("a unit with no characters is refused by artifact, not zeroed here",
       refused(lambda: A.yield_block(**AC.yield_inputs("S6", [{"unit": "r", "retrievable_items": 1, "chars_to_writer": 0,
                                                               "unit_chars": 0}], unit_kind="row"), scored=True),
@@ -544,11 +578,24 @@ print("\n- TB4.10b' reconciliation_inputs (K87): the numbers only; the verdict i
 rl = [call("h1", t0=1, status=500), call("h1", t0=1.5), call("h2", t0=2, unit="r1.u2"), call("h3", stage="questions", t0=40),
       call("ans", role="reader", stage="questions", t0=41), call("zz", arm="zep", t0=1),
       dict(call("mm2", t0=3), refused="model_mismatch", status=None, complete=False)]
-ri = AC.reconciliation_inputs(rl, arm="mem0", run="r1", branch="a", adapter_calls=4, product_calls=3, product_tokens=462)
+ri = AC.reconciliation_inputs(rl, arm="mem0", run="r1", branch="a", adapter_calls=4, product_calls=3, product_tokens=363)
 check("HTTP calls and tokens of the product's own port (the write port, both stages); the reader's, another arm's and "
       "refused calls are not the product's", ri["proxy_calls"] == 4 and ri["adapter_calls"] == 4, str(ri))
 check("tokens_delta_pct = the product's tokens against the proxy's; product_retries = HTTP - logical",
-      abs(ri["tokens_delta_pct"] - 5.0) < 1e-12 and ri["proxy_tokens"] == 440 and ri["product_retries"] == 1, str(ri))
+      abs(ri["tokens_delta_pct"] - 10.0) < 1e-12 and ri["proxy_tokens"] == 330 and ri["product_retries"] == 1, str(ri))
+check("B-REC1: the proxy's tokens are its completed 2xx calls' only - a failed attempt's usage is not the product's",
+      ri["proxy_tokens"] == 3 * 110)
+z5 = AC.reconciliation_inputs([dict(call("z", t0=1), usage={})], arm="mem0", run="r1", branch="a", adapter_calls=1,
+                              product_tokens=500)
+z0 = AC.reconciliation_inputs([dict(call("z", t0=1), usage={})], arm="mem0", run="r1", branch="b", product_calls=1,
+                              product_tokens=0)
+check("B-REC1: the product counted 500 tokens the proxy never saw - 100 %, and P0j in branch (a) (a bypass's signature)",
+      z5["tokens_delta_pct"] == 100.0 and A.p0j({"reconciliation": z5}, A.P0Context(reconciliation_branches=frozenset({"a"})),
+                                                "mem0") != [], str(z5))
+check("B-REC1: 0 against 0 is a delta of 0, not a missing counter - not P0j in branch (b)",
+      z0["tokens_delta_pct"] == 0.0 and A.p0j({"reconciliation": z0}, A.P0Context(reconciliation_branches=frozenset({"b"})),
+                                              "mem0") == [], str(A.p0j({"reconciliation": z0}, A.P0Context(
+          reconciliation_branches=frozenset({"b"})), "mem0")))
 check("R-K87-1: the proxy's logical calls are the episodes of the product port's (unit, key) groups - a retried "
       "body is one, a body written twice is two", ri.get("proxy_logical_calls") == 3
       and AC.reconciliation_inputs([call("d", t0=1), call("d", t0=2)], arm="mem0", run="r1",
@@ -556,8 +603,8 @@ check("R-K87-1: the proxy's logical calls are the episodes of the product port's
 check("the row carries rev1 §2.3's reconciliation fields", {"proxy_calls", "adapter_calls", "product_logical_calls",
                                                             "tokens_delta_pct", "serverlog_delta", "branch"} <= set(ri))
 k87 = A.P0Context(reconciliation_branches=frozenset({"a", "b"}))
-ri0 = AC.reconciliation_inputs(rl, arm="mem0", run="r1", branch="a", adapter_calls=4, product_calls=3, product_tokens=440)
-check("artifact's P0j accepts the exact adapter with equal tokens, and flags one call off and a 5 % tokens delta (Q-K87-1)",
+ri0 = AC.reconciliation_inputs(rl, arm="mem0", run="r1", branch="a", adapter_calls=4, product_calls=3, product_tokens=330)
+check("artifact's P0j accepts the exact adapter with equal tokens, and flags one call off and a 10 % tokens delta (Q-K87-1)",
       A.p0j({"reconciliation": ri0}, k87, "mem0") == []
       and A.p0j({"reconciliation": AC.reconciliation_inputs(rl, arm="mem0", run="r1", branch="a", adapter_calls=3)},
                 k87, "mem0") != []
@@ -590,8 +637,7 @@ with tempfile.TemporaryDirectory(prefix="v3acct_e2e_") as td:
             "boundary": A.boundary_block(proxy=AC.proxy_boundary_inputs(lg.calls, lg.catcher, arm=arm, run="r1"),
                                          witnesses=AC.witness_inputs({**CHECK_OK, "containers": []})),
             "ollama_transport": BUILT_OT,
-            "p1": A.p1_block(**AC.lost_operations(wops, lg.calls, key_classes=AC.classify_keys(
-                [c for c in lg.calls if c["arm"] == arm]))),
+            "p1": A.p1_block(**AC.lost_operations(wops, lg.calls, arm=arm, run="r1")),
             "yield": A.yield_block(**AC.yield_inputs("S6", [{"unit": "u0", "retrievable_items": 2, "chars_to_writer": 800,
                                                               "unit_chars": 1000},
                                                              {"unit": "u1", "retrievable_items": 1, "chars_to_writer": 900,
