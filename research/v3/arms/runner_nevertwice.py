@@ -27,6 +27,9 @@ The binding order is the auditor's Q-45-1 O-c with his 09:27 correction, asserte
    store, ``verify_no_live_paths()`` holds, and the backend is the declared one; any miss refuses the arm by name
    (verify() is not called after the move: it would refuse by construction);
 6. the ablation installs its variant (ablation_c1.enable) before any write; the pacer is installed;
+The store between the stages (Q-45-5): end_write seals it (base.write_seal: its path and tree digest, beside it); the
+read stage checks the seal before the engine is imported, and another path or another byte refuses the arm.
+
 7. the start record (written to record_path, and returned by hello): isolate()'s temporary store, the unit store, the
    project modules at the reload, every NEVERTWICE_* value and the declared ones - a name holding KEY, TOKEN, SECRET or
    PASSWORD, in any case, as "<set>" only (the 09:27 correction) - and each check passed.
@@ -232,6 +235,8 @@ def bind(spec: Mapping[str, Any], env: Mapping[str, str]) -> tuple[dict, dict]:
         raise Refused("the write stage needs a fresh store, and the unit store already exists")
     if stage == "read" and not store.is_dir():
         raise Refused("the read stage opens the write stage's store, and there is none")
+    if stage == "read":
+        rec["seal"] = B.check_seal(unit_dir, store)      # Q-45-5: the sealed path and bytes, before the product opens it
     # 2. isolate() ran in __main__, before any project import
     SG = sandbox_guard
     if SG.mode() != "sandbox" or SG.store() is None:
@@ -315,6 +320,7 @@ class Handler:
         self.spec, self.rec = spec, rec
         self.m, self.api, self.pacer = ns["m"], ns["api"], ns["pacer"]
         self.arm, self.stage, self.project = spec["arm"], spec["stage"], spec["stand"]
+        self.store = Path(spec["unit_dir"]) / "store"
         self.outcomes: list[dict] = []
         self.ranker_items: dict[int, str] = {}
         self.not_written: list[int] = []
@@ -354,7 +360,9 @@ class Handler:
             lessons = [{"title": f"item {i}", "description": self.ranker_items[i], "type": "pattern"} for i in order]
             stems = self.api.remember_lessons_aligned(lessons, project=self.project)
             self.not_written = [i for i, s in zip(order, stems) if not s]
-        return {"footprint": self._footprint(), "not_written": self.not_written, "t0": t0, "t1": time.time()}
+        footprint = self._footprint()
+        seal = B.write_seal(self.spec["unit_dir"], self.store, arm=self.arm, run=self.spec["run"], unit=self.spec["unit"])
+        return {"footprint": footprint, "not_written": self.not_written, "seal": seal, "t0": t0, "t1": time.time()}
 
     def _footprint(self) -> dict:
         """Retrievable items: typed notes of this unit's project only (a Session note is not retrievable)."""

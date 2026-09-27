@@ -388,8 +388,8 @@ try:
                   "op": {"ntype": "pattern", "project": "other", "title": "o", "desc": "o", "vec": [1.0]}}
     fm = NS(slug_project=lambda p: p, load_embed_cache=lambda: fake_cache, TYPED_TYPES=("pattern", "mistake", "decision"))
     fapi = NS(format_note=lambda r: "x" * 10)
-    fh = RN.Handler({"arm": "nevertwice", "stage": "write", "stand": "s1", "unit": "u1"},
-                    {"m": fm, "api": fapi, "pacer": None}, {})
+    fh = safely(lambda: RN.Handler({"arm": "nevertwice", "stage": "write", "stand": "s1", "unit": "u1",
+                                    "unit_dir": str(TMP / "fake_unit")}, {"m": fm, "api": fapi, "pacer": None}, {}))
     fp = safely(lambda: fh._footprint(), {})
     check("footprint: a Session note, a principle and another project's note are never retrievable; embedded counts "
           "vectors", fp == {"retrievable": 2, "embedded": 1, "chars": 20}, str(fp))
@@ -491,6 +491,10 @@ try:
     check("the product embedded with the declared tag", embeds and all(x["body"].get("model") == TAG for x in embeds),
           str({x["body"].get("model") for x in embeds}))
     e = safely(lambda: c.request("end_write"), {})
+    seal_w = e.get("seal") or {}
+    check("end_write seals the store: its path and digest beside it (Q-45-5)",
+          RN._same(seal_w.get("store") or ".", U1 / "store") and len(seal_w.get("sha256") or "") == 64
+          and (U1 / B.SEAL_NAME).is_file(), str(seal_w)[:200])
     check("footprint: typed notes only - the Session note is not retrievable",
           (e.get("footprint") or {}).get("retrievable") == 1 and (e.get("footprint") or {}).get("embedded") == 1,
           str(e.get("footprint")))
@@ -511,6 +515,8 @@ try:
     hr = safely(lambda: c.request("hello"), {})
     check("the read stage binds to the existing store", hr.get("ok") is True and hr.get("stage") == "read",
           str(hr)[:200] + err_r.read_bytes().decode("utf-8", "replace")[-300:])
+    check("... after checking the write stage's seal (the same digest)",
+          ((hr.get("start") or {}).get("seal") or {}).get("sha256") == seal_w.get("sha256"))
     r = safely(lambda: c.request("read", qid="q1", query="how was the flaky upload fixed", k=5), {})
     items = r.get("items") or []
     check("read: recall's hit rendered by format_note, in rank order",
@@ -583,6 +589,30 @@ try:
     check("read returns the unit's index and the raw text (\"#<index>\" is rendered by the harness, Q21)",
           ki and ki[0] == {"index": 1, "text": texts[1], "rank": 1}, str(ki)[:200])
     c.close()
+
+    print("\n- the seal between the stages (Q-45-5): a touched store, a moved store -")
+    UT = TMP / "runs" / "s1" / "r1" / RN.RANKER / "u7"
+    UT.mkdir(parents=True)
+    c, p, _ = start("t1", make_spec("t1", RN.RANKER, "write", UT, unit="u7"), cwd=UT)
+    safely(lambda: c.request("write", item={"item_id": "u7:0", "index": 0, "text": "the sealed item"}), {})
+    safely(lambda: c.request("end_write"), {})
+    c.close()
+    UM = TMP / "moved" / "u7"
+    shutil.copytree(UT, UM)
+    msg = refused_hello("t2", make_spec("t2", RN.RANKER, "read", UM, unit="u7"))
+    check("the same store bytes at another path are refused by name", "not the one the write stage sealed" in msg,
+          msg[:200])
+    victim = next(f for f in sorted((UT / "store").rglob("*")) if f.is_file() and f.suffix == ".md")
+    victim.write_bytes(victim.read_bytes() + b" ")
+    msg = refused_hello("t3", make_spec("t3", RN.RANKER, "read", UT, unit="u7"))
+    check("a store touched between the stages is refused by name, before the engine opens it",
+          "changed between the stages" in msg, msg[:200])
+    check("... and the recorded refusal names it", "changed between the stages" in (record("t3").get("error") or ""))
+    after = B.tree_manifest(U1 / "store")[1]
+    was = seal_w.get("manifest") or {}
+    moved_paths = sorted(k for k in set(was) | set(after) if was.get(k) != after.get(k))
+    check("the read stage's recall writes nothing into the store but its latency sample (telemetry.json and its .bak)",
+          all(x in ("telemetry.json", "telemetry.json.bak") for x in moved_paths), str(moved_paths))
 
     print("\n- S7 through the hook's reader, and the ablation -")
     US = TMP / "runs" / "s7" / "r1" / "nevertwice" / "u1"

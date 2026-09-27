@@ -14,7 +14,7 @@ that tokenizes to nothing (the scorer reads the key into the document text: "#" 
 punctuation), which write refuses if it ever did tokenize.
 
 No LLM, no embedder, no store of the product: the write stage keeps the items and end_write persists them to
-<unit>/store/items.json; the read stage (a new process) loads that file. A read returns only the items that share a query term with it (the scorer keeps a score > 0), so it can return fewer
+<unit>/store/items.json and seals the store (Q-45-5); the read stage (a new process) checks the seal, then loads it. A read returns only the items that share a query term with it (the scorer keeps a score > 0), so it can return fewer
 than k where a vector arm returns k: declared in the start record ("returns") and counted per read (items_returned,
 reads_short_of_k) - a property of the lexical path, not a defect (the auditor's F7). sandbox_guard.isolate() runs in
 __main__
@@ -93,6 +93,7 @@ def bind(spec: Mapping[str, Any]) -> tuple[dict, dict]:
         raise Refused("the write stage needs a fresh store, and the unit store already exists")
     if spec["stage"] == "read" and not (store / "items.json").is_file():
         raise Refused("the read stage opens the write stage's items, and there are none")
+    seal = B.check_seal(spec["unit_dir"], store) if spec["stage"] == "read" else None   # Q-45-5
     SG = sandbox_guard
     if SG.mode() != "sandbox" or SG.store() is None:
         raise Refused("sandbox_guard.isolate() did not run before the bind")
@@ -111,7 +112,7 @@ def bind(spec: Mapping[str, Any]) -> tuple[dict, dict]:
            "returns": {"fewer_than_k": True,
                        "rule": "only items sharing a query term (a BM25 score > 0, _engine_recall._bm25_scores): fewer "
                                "than k when fewer items match; a vector arm returns k"},
-           "lexical_morphology": m.LEXICAL_MORPHOLOGY, "env_names": sorted(os.environ),
+           "lexical_morphology": m.LEXICAL_MORPHOLOGY, "seal": seal, "env_names": sorted(os.environ),
            "python": sys.version.split()[0]}
     return {"m": m, "scorer": scorer, "tokens": tokens}, rec
 
@@ -153,8 +154,10 @@ class Handler:
         self.store.mkdir(parents=True)
         data = json.dumps({str(k): v for k, v in sorted(self.items.items())}, ensure_ascii=False, sort_keys=True)
         (self.store / "items.json").write_bytes(data.encode("utf-8"))
+        seal = B.write_seal(self.spec["unit_dir"], self.store, arm=ARM, run=self.spec["run"], unit=self.spec["unit"])
         return {"footprint": {"retrievable": len(self.items), "embedded": 0,
-                              "chars": sum(len(v) for v in self.items.values())}, "t0": t0, "t1": time.time()}
+                              "chars": sum(len(v) for v in self.items.values())}, "seal": seal,
+                "t0": t0, "t1": time.time()}
 
     def read(self, qid: str, query: str, k: int) -> dict:
         self._stage("read", "read")

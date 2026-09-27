@@ -22,12 +22,16 @@ Responses (one per request):             {"id": <the same int>, "ok": true, "op"
 * the child never dies on a bad request: malformed JSON, an unknown op, a handler exception, a non-dict result, or a
   result that would overwrite ok/op/id (F4) is an ok:false line (its text capped at ERROR_MAX), and the child goes on;
   "bye" ends it;
+* the store between the stages (Q25, the auditor's Q-45-5 condition): end_write seals it - the store's absolute path and
+  a digest of its tree (sorted relative paths and bytes) in store.seal.json beside it - and the read stage checks the
+  seal before the product opens the store; another path or another byte is SealError by name;
 * the harness side (ArmClient) numbers every request and accepts only the answer with that number; a timeout, a line
   that is not a JSON object, or a wrong number POISONS the client - every later request raises ArmPoisoned until the
   harness kills the child - so a late answer can never be taken for the next question's (F1).
 """
 from __future__ import annotations
 
+import hashlib
 import io
 import json
 import os
@@ -126,6 +130,73 @@ def main_with(handler_factory: Callable[[], Any]) -> int:
     then serve."""
     fin, fout = claim_stdio()
     return serve(handler_factory(), fin, fout)
+
+
+# ── the store between the stages (Q25, with the auditor's Q-45-5 condition) ──────────────────────────────────────────
+
+SEAL_NAME = "store.seal.json"
+
+
+class SealError(RuntimeError):
+    """The read stage's store is not - path for path and byte for byte - the one the write stage sealed."""
+
+
+def tree_manifest(root) -> tuple[str, dict]:
+    """The store's tree: (sha256 over every file's relative path (POSIX form) and bytes, in sorted path order, each
+    length-prefixed; {relative path: sha256 of its bytes}) - the manifest names what changed, never its content."""
+    base = os.path.abspath(os.fspath(root))
+    rels = []
+    for d, _dirs, files in os.walk(base):
+        rels += [os.path.relpath(os.path.join(d, f), base).replace(os.sep, "/") for f in files]
+    h = hashlib.sha256()
+    manifest = {}
+    for rel in sorted(rels):
+        with open(os.path.join(base, rel), "rb") as fh:
+            data = fh.read()
+        name = rel.encode("utf-8")
+        h.update(len(name).to_bytes(8, "big") + name + len(data).to_bytes(8, "big") + data)
+        manifest[rel] = hashlib.sha256(data).hexdigest()
+    return h.hexdigest(), manifest
+
+
+def tree_digest(root) -> tuple[str, int]:
+    """(the tree's digest, its file count)."""
+    digest, manifest = tree_manifest(root)
+    return digest, len(manifest)
+
+
+def _same_path(a, b) -> bool:
+    return os.path.normcase(os.path.abspath(os.fspath(a))) == os.path.normcase(os.path.abspath(os.fspath(b)))
+
+
+def write_seal(unit_dir, store, **meta) -> dict:
+    """The end of the write stage: the store's absolute path and digest, written beside the store (never inside it)."""
+    digest, manifest = tree_manifest(store)
+    seal = {**meta, "store": os.path.abspath(os.fspath(store)), "sha256": digest, "files": len(manifest),
+            "manifest": manifest}
+    path = os.path.join(os.fspath(unit_dir), SEAL_NAME)
+    with open(path + ".tmp", "wb") as fh:
+        fh.write(_encode(seal))
+    os.replace(path + ".tmp", path)
+    return seal
+
+
+def check_seal(unit_dir, store) -> dict:
+    """The start of the read stage, before the product opens the store: the sealed path, the sealed bytes."""
+    try:
+        with open(os.path.join(os.fspath(unit_dir), SEAL_NAME), "rb") as fh:
+            seal = json.loads(fh.read().decode("utf-8"))
+    except (OSError, ValueError) as e:
+        raise SealError(f"the write stage's seal is missing or unreadable ({type(e).__name__})") from None
+    if not _same_path(seal.get("store", ""), store):
+        raise SealError("the read stage's store path is not the one the write stage sealed")
+    digest, manifest = tree_manifest(store)
+    if digest != seal.get("sha256"):
+        was = seal.get("manifest") or {}
+        changed = sorted(k for k in set(was) | set(manifest) if was.get(k) != manifest.get(k))
+        raise SealError(f"the store changed between the stages: {len(changed)} path(s) differ, first "
+                        f"{changed[:5]}"[:ERROR_MAX])
+    return seal
 
 
 class ArmClient:

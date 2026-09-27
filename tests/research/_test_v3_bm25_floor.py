@@ -243,6 +243,27 @@ try:
     ca.close()
     cb.close()
 
+    print("\n- the seal between the stages (Q-45-5) -")
+    UM = TMP / "moved" / "ud"
+    shutil.copytree(UD, UM)
+    cm, _ = start("m1", "read", UM)
+    msg_m = ""
+    try:
+        cm.request("hello")
+    except B.ArmError as ex:
+        msg_m = str(ex)
+    cm.close()
+    check("the same items at another path are refused by name", "not the one the write stage sealed" in msg_m, msg_m[:200])
+    (UD / "store" / "items.json").write_bytes((UD / "store" / "items.json").read_bytes().replace(b"cat", b"dog"))
+    ct, _ = start("t1", "read", UD)
+    msg_t = ""
+    try:
+        ct.request("hello")
+    except B.ArmError as ex:
+        msg_t = str(ex)
+    ct.close()
+    check("items touched between the stages are refused by name", "changed between the stages" in msg_t, msg_t[:200])
+
     print("\n- refusals by name -")
     UC = TMP / "runs" / "s1" / "r1" / "bm25-floor" / "uc"
     UC.mkdir(parents=True)

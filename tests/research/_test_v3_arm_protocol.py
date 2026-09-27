@@ -11,6 +11,8 @@
 * F4: a handler result that would overwrite ok / op / id is ok:false;
 * an error text is capped at ERROR_MAX; "bye" ends the child even with its stdin still open; a child that dies
   mid-request is ArmDied. Every child is killed in a finally block;
+* the seal (Q25, the auditor's Q-45-5 condition): the store's path and tree digest beside it; a changed byte, an
+  added, renamed or removed file, the same bytes at another path, or a missing seal is SealError by name;
 * a subprocess the product starts inherits neither protocol stream: reading stdin it gets end-of-file (fd 0 is the null
   device), and what it prints lands on stderr (the auditor's advice at the aea444b gate).
 
@@ -134,7 +136,53 @@ mods = {n.module.split(".")[0] if isinstance(n, ast.ImportFrom) else a.name.spli
         for n in ast.walk(tree) if isinstance(n, (ast.Import, ast.ImportFrom))
         for a in (n.names if isinstance(n, ast.Import) else [n])}
 check("base.py imports the standard library only",
-      mods <= {"__future__", "io", "json", "os", "queue", "sys", "threading", "typing"}, str(sorted(mods)))
+      mods <= {"__future__", "hashlib", "io", "json", "os", "queue", "sys", "threading", "typing"}, str(sorted(mods)))
+
+print("\n- the store between the stages: the seal (Q25, Q-45-5) -")
+with tempfile.TemporaryDirectory(prefix="v3seal_") as sd:
+    unit = Path(sd) / "u1"
+    store = unit / "store"
+    (store / "Patterns").mkdir(parents=True)
+    (store / "Patterns" / "a.md").write_bytes(b"alpha")
+    (store / "index.json").write_bytes(b"{}")
+    seal = B.write_seal(unit, store, arm="x", unit="u1")
+    check("write_seal: the store's absolute path, its digest and file count, beside the store (not inside it)",
+          seal["store"] == str(store.resolve()) and seal["files"] == 2 and (unit / B.SEAL_NAME).is_file()
+          and not (store / B.SEAL_NAME).exists() and seal["arm"] == "x", str(seal))
+    check("check_seal: the untouched store passes", safely(lambda: B.check_seal(unit, store), {}).get("sha256")
+          == seal["sha256"])
+
+    def sealed_after(change) -> str:
+        change()
+        try:
+            B.check_seal(unit, store)
+            return "no refusal"
+        except B.SealError as e:
+            return str(e)
+        finally:
+            B.write_seal(unit, store)                      # re-seal for the next case
+    check("a changed byte is refused by name", "changed between the stages" in sealed_after(
+        lambda: (store / "Patterns" / "a.md").write_bytes(b"alphA")))
+    check("an added file is refused", "changed between the stages" in sealed_after(
+        lambda: (store / "new.md").write_bytes(b"")))
+    check("a renamed file with the same bytes is refused (paths are digested)", "changed between the stages" in
+          sealed_after(lambda: (store / "Patterns" / "a.md").rename(store / "Patterns" / "b.md")))
+    check("an empty file removed is refused", "changed between the stages" in sealed_after(
+        lambda: (store / "new.md").unlink()))
+    moved = Path(sd) / "elsewhere" / "u1"
+    shutil.copytree(unit, moved)
+    msg_moved = ""
+    try:
+        B.check_seal(moved, moved / "store")
+    except B.SealError as e:
+        msg_moved = str(e)
+    check("the same bytes at another path are refused (the store path is sealed)",
+          "not the one the write stage sealed" in msg_moved, msg_moved)
+    (unit / B.SEAL_NAME).unlink()
+    check("a missing seal is refused", raises(lambda: B.check_seal(unit, store), B.SealError, "missing"))
+    d1 = B.tree_digest(store)
+    d2 = B.tree_digest(str(store))
+    check("tree_digest is deterministic and takes str or Path", d1 == d2 and len(d1[0]) == 64, str(d1))
 
 children: list = []
 with tempfile.TemporaryDirectory(prefix="v3arm_") as td:
