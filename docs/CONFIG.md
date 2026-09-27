@@ -23,6 +23,7 @@ These are the only vars in [`.env.example`](../.env.example). Most people set ze
 |---|---|---|
 | `NEVERTWICE_CLOUD` | `auto` | Cloud extraction backend: `cerebras` / `groq` / `deepseek` / `gemini` / `none` / `auto` (picks whichever key is present, else local Ollama). |
 | `CEREBRAS_API_KEY` · `GROQ_API_KEY` · `DEEPSEEK_API_KEY` · `GEMINI_API_KEY` | n/a | One key enables fast off-GPU extraction. None → local Ollama. |
+| `NEVERTWICE_CLOUD_FALLBACK` | on | `0` (or `false` / `off` / `no`): a failed cloud extraction, or a cloud backend already marked down this run, is NOT replaced by local Ollama - the session returns empty and is counted (`fallback_refused` / `breaker_skips`). For benchmarks that pin one LLM. Ollama as the primary backend (no key) is unaffected. |
 | `NEVERTWICE_HOME` | `~/.nevertwice` | Where the Markdown + Git store lives. `NEVERTWICE_VAULT` wins over it when both are set. Either may live in `.env`/`.secrets.env`: the env files load before the paths resolve, so a per-machine store location needs no code edit. |
 | `NEVERTWICE_PROJECTS_ROOT` | `~/.claude/projects` | Host-agent transcript dir for the catch-up sweep. |
 | `NEVERTWICE_PROJECT_ROOTS` | n/a | Extra roots whose git repos are tracked as projects (`os.pathsep`-separated). |

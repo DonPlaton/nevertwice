@@ -729,6 +729,7 @@ ALLOWLIST: dict[str, str] = {
     "NEVERTWICE_ADAPTIVE_RECUR": "a boolean flag string",
     "NEVERTWICE_ATTACH_EARLIER_ALWAYS": "a boolean flag string",
     "NEVERTWICE_CLOUD_ONLY": "a boolean flag string",
+    "NEVERTWICE_CLOUD_FALLBACK": "a boolean flag string (0/false/off/no refuse the local Ollama fallback), not a path",
     "NEVERTWICE_CROSS_PROJECT": "a mode-selector string (off/all/universal; 0/1 accepted as off/all)",
     "NEVERTWICE_PRINCIPLE": "a boolean flag string (ask the extractor for the de-identified principle field)",
     "NEVERTWICE_PRINCIPLE_PROMOTE": "a boolean flag string (run the sleep-time principle promoter)",
@@ -898,7 +899,10 @@ def test_walled_covers_or_allowlists_every_env_name_in_the_package() -> None:
                        # session whose extraction keeps failing on its content (both env_int).
                        "NEVERTWICE_EXTRACT_NUM_PREDICT", "NEVERTWICE_EXTRACT_MAX_ATTEMPTS",
                        # b-e (2026-09-25): the dotenv mode a sandbox sets, so it reads no fixed file
-                       "NEVERTWICE_DOTENV"}
+                       "NEVERTWICE_DOTENV",
+                       # PREREG-V3 TB3(a) (2026-09-27): the cloud-fallback switch (_engine_store.py, a
+                       # direct literal read)
+                       "NEVERTWICE_CLOUD_FALLBACK"}
     expected_total = 168 - len(expected_lost) + len(expected_gained)
     check(f"this scanner finds {len(all_names)} names - every difference from the auditor's "
           f"168 named above: {len(expected_gained)} gained, {len(expected_lost)} lost "

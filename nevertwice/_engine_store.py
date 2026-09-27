@@ -706,7 +706,9 @@ def _parse_iso(ts: str | None) -> datetime | None:
 
 _OLLAMA_DOWN = False  # set on a connectivity/timeout error this run (audit F29)
 _CLOUD_DEAD = False   # set when the active cloud backend exhausts this run → skip
-_LLM_STATS = {"cloud": 0, "ollama": 0, "fail": 0}  # backend usage this run
+#: Backend usage this run. fallback_refused / breaker_skips move only under NEVERTWICE_CLOUD_FALLBACK=0 (PREREG-V3
+#: TB3(a)); they start at 0 so a record always carries a measured value.
+_LLM_STATS = {"cloud": 0, "ollama": 0, "fail": 0, "fallback_refused": 0, "breaker_skips": 0}
 #: Why the LAST `_json_api_call` gave up, as a stable slug - None after a success. The caller that
 #: decides whether a failure is the CONTENT's (a runaway answer cut by the output cap, an
 #: unparsable answer: retrying the same text is unlikely to help, so retries are bounded) or the
@@ -872,7 +874,29 @@ def extract_temperature() -> float:
     default keeps the live hook's behaviour. Until stage D only the Ollama body read it and the cloud
     bodies hardcoded 0.2, so a stand that pinned it changed the local backend alone.
     """
-    return float(os.environ.get("NEVERTWICE_EXTRACT_TEMP", "0.2"))
+    raw = os.environ.get("NEVERTWICE_EXTRACT_TEMP", "0.2")
+    try:
+        return float(raw)
+    except ValueError:
+        # A malformed value must not raise out of the extraction call (it used to): logged, and the default used. A
+        # stand reads extract_temperature() back after import and refuses a value other than the one it declared.
+        log(f"NEVERTWICE_EXTRACT_TEMP={raw[:20]!r} is not a number - using 0.2")
+        return 0.2
+
+
+_FALLBACK_OFF = ("0", "false", "off", "no")
+
+
+def cloud_fallback_enabled_value(value: str | None) -> bool:
+    """What NEVERTWICE_CLOUD_FALLBACK means: 0 / false / off / no (any case, trimmed) turn the local fallback off;
+    unset, empty or anything else keep the shipped behaviour."""
+    return (value or "").strip().lower() not in _FALLBACK_OFF
+
+
+def cloud_fallback_enabled() -> bool:
+    """Read per call (PREREG-V3 TB3(a)). Off: a failed cloud call, or a cloud the per-run breaker already marked dead,
+    returns {} and is counted - it is never replaced by local Ollama, because a v3 run pins one LLM per stand."""
+    return cloud_fallback_enabled_value(os.environ.get("NEVERTWICE_CLOUD_FALLBACK"))
 
 
 def call_ollama(prompt: str) -> dict:
@@ -1035,9 +1059,28 @@ def generate_json(prompt: str, project: str | None = None) -> dict:
     """Unified extraction: the configured cloud backend first (fast, off-GPU),
     local Ollama fallback on any cloud failure. A per-run circuit breaker skips a
     cloud backend already known down this run. Projects in LOCAL_ONLY_PROJECTS
-    NEVER touch the cloud. Returns {} if no backend produced output."""
+    NEVER touch the cloud. Returns {} if no backend produced output.
+
+    NEVERTWICE_CLOUD_FALLBACK=0 (PREREG-V3 TB3(a)) refuses only the FALLBACK: a failed cloud call or a dead breaker
+    returns {} and is counted (fail + fallback_refused / breaker_skips); the cloud's own failure slug is kept, so a
+    content failure is still bounded and a transport failure still waits. Ollama as the primary backend (no cloud
+    key, or a local-only project) is unchanged."""
     local_only = is_local_only(project)
     cloud_on = bool(cloud_key()) and ACTIVE_CLOUD != "none"
+    if cloud_on and not local_only and not cloud_fallback_enabled():
+        if _CLOUD_DEAD:
+            _LLM_STATS["fail"] += 1
+            _LLM_STATS["breaker_skips"] += 1
+            _LLM_LAST["failure"] = "cloud_dead"
+            return {}
+        res = call_cloud(prompt)
+        if res:
+            _LLM_STATS["cloud"] += 1
+            return res
+        _LLM_STATS["fail"] += 1
+        _LLM_STATS["fallback_refused"] += 1
+        log(f"Cloud ({ACTIVE_CLOUD}) failed - no local fallback (NEVERTWICE_CLOUD_FALLBACK=0)")
+        return {}
     if cloud_on and not _CLOUD_DEAD and not local_only:
         res = call_cloud(prompt)
         if res:

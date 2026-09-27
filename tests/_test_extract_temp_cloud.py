@@ -93,5 +93,15 @@ for name, (call, read) in BACKENDS.items():
     got = read(sent_body(call, "0"))
     check(f"{name}: temperature 0.0", got == 0.0, repr(got))
 
+print("\n- a malformed value (R10) -")
+logged = []
+with mock.patch.dict(os.environ, {"NEVERTWICE_EXTRACT_TEMP": "zero point two"}), mock.patch.object(m, "log", logged.append):
+    try:
+        bad = m.extract_temperature()
+    except ValueError as e:
+        bad = f"raised {e}"
+check("R10 a malformed NEVERTWICE_EXTRACT_TEMP does not raise out of the extraction call: 0.2, and it is logged",
+      bad == 0.2 and any("NEVERTWICE_EXTRACT_TEMP" in str(x) for x in logged), repr((bad, logged)))
+
 print(f"\nextract temperature on every backend: {PASSED} passed, {FAILED} failed")
 sys.exit(1 if FAILED else 0)
