@@ -145,6 +145,11 @@ check("text_sha256 is the sha256 of the exact UTF-8 bytes", B.text_sha256("a " +
       == hashlib.sha256(("a " + ru).encode("utf-8")).hexdigest() and B.text_sha256("a") != B.text_sha256("a "))
 d_ab = B.items_digest({2: "b" * 64, 0: "a" * 64})
 check("items_digest does not depend on the order the items were written", d_ab == B.items_digest({0: "a" * 64, 2: "b" * 64}))
+GOLD_MAP = {7: B.text_sha256("same text"), 0: B.text_sha256("first"), 3: B.text_sha256("same text"),
+            12: B.text_sha256("last")}                  # two identical texts under 3 and 7, written out of order
+check("items_digest's canonical form is pinned: a golden value for (index, sha) pairs in INDEX order (D3)",
+      B.items_digest(GOLD_MAP) == "168492d3180291c21611e575eb9ef2dea1e2b8d0dbe7af9ef9c301abb0fb1b24" and B.items_digest(dict(reversed(list(GOLD_MAP.items())))) == "168492d3180291c21611e575eb9ef2dea1e2b8d0dbe7af9ef9c301abb0fb1b24",
+      B.items_digest(GOLD_MAP))
 check("... but on every index and every item sha",
       len({d_ab, B.items_digest({0: "a" * 64, 1: "b" * 64}), B.items_digest({0: "a" * 64, 2: "c" * 64}),
            B.items_digest({0: "a" * 64})}) == 4)
