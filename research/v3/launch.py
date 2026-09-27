@@ -179,7 +179,9 @@ class Contract:
                           "h2h_v2_stores", "h2h_v2_stores.pre-v2-fe6ddff-055329",
                           "h2h_v2_stores.pre-v2-fe6ddff-062907", "py314",
                           # the auditor's replay tooling (2026-09-27): interpreters and a CI mirror no child may alter
-                          "py310", "core_bare310", "ci_linux"),
+                          "py310", "core_bare310", "ci_linux",
+                          # Q-A4-5: our arms' and letta's adapter venv (py314 + pip only) - the interpreter they run on
+                          "arms314"),
         )
 
     def deny_roots(self) -> tuple[Path, ...]:
