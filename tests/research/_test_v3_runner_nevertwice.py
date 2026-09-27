@@ -394,6 +394,40 @@ try:
     check("footprint: a Session note, a principle and another project's note are never retrievable; embedded counts "
           "vectors", fp == {"retrievable": 2, "embedded": 1, "chars": 20}, str(fp))
 
+    print("\n- the ranker's read and end_write on fakes (the auditor's N15, N16) -")
+    UF = TMP / "fake_ranker_unit"
+    (UF / "store").mkdir(parents=True)
+    spec_f = {"arm": RN.RANKER, "stage": "read", "stand": "s1", "run": "r1", "unit": "u1", "unit_dir": str(UF), "s7": False}
+
+    def ranker_read(titles):
+        hits = [{"title": ti, "description": "d", "ntype": "pattern"} for ti in titles]
+        fh = RN.Handler(spec_f, {"m": NS(), "api": NS(recall=lambda *a, **k: hits), "pacer": None}, {})
+        return fh.read(qid="q", query="x", k=5)
+    check("N15: the ranker reads back its own items by index", safely(lambda: ranker_read(["item 3", "item 12"]), {})
+          .get("items") == [{"index": 3, "text": "d", "rank": 1}, {"index": 12, "text": "d", "rank": 2}])
+    for bad in ("note about 42", "item 12 extra", "Item 3", "item", "an item 7"):
+        check(f"N15: a hit titled {bad!r} is not one of the unit's items - refused by name",
+              raises(lambda bad=bad: ranker_read(["item 1", bad]), RuntimeError, "not one of the unit's items"))
+    written = {}
+
+    def remember(lessons, *, project):
+        written["lessons"], written["project"] = lessons, project
+        return ["s0", None, "s2"]
+    fmw = NS(slug_project=lambda p: p, load_embed_cache=lambda: {}, TYPED_TYPES=("pattern",), _LLM_STATS={})
+    fw = RN.Handler(dict(spec_f, stage="write"), {"m": fmw, "api": NS(remember_lessons_aligned=remember,
+                                                                        format_note=lambda r: "",
+                                                                        recall_stats=lambda: {}),
+                                                   "pacer": NS(attach=lambda out: None)}, {})
+    for i in (12, 5, 9):                                  # sparse indices: position 1 is index 9, never index 1
+        safely(lambda i=i: fw.write({"item_id": f"u1:{i}", "index": i, "text": f"text {i}"}), {})
+    ew = safely(lambda: fw.end_write(), {})
+    check("N16: an item remember_lessons_aligned did not write (None) is in not_written, by its index",
+          ew.get("not_written") == [9], str(ew)[:200])
+    check("N16: ... and counted in counters", safely(lambda: fw.counters(), {}).get("not_written") == 1)
+    check("the ranker's lessons: \"item <index>\" titles in index order, the raw text, type pattern (Q-45-3)",
+          written.get("lessons") == [{"title": f"item {i}", "description": f"text {i}", "type": "pattern"}
+                                     for i in (5, 9, 12)] and written.get("project") == "s1", str(written)[:200])
+
     print("\n- the write stage of the nevertwice arm (Q-45-1 O-c, F-N2) -")
     U1 = TMP / "runs" / "s1" / "r1" / "nevertwice" / "u1"
     U1.mkdir(parents=True)
