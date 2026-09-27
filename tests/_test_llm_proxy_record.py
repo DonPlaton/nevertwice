@@ -432,6 +432,160 @@ check("R-FSYNC: the proxy appends to a file only through _append_jsonl - calls, 
       "take the fsync path", _appends_outside((ROOT / "research" / "_llm_proxy.py").read_text(encoding="utf-8")) == [],
       str(_appends_outside((ROOT / "research" / "_llm_proxy.py").read_text(encoding="utf-8"))))
 
+print("\n- B-RST: a local refusal is READ by the client - answer, shutdown, bounded drain, then close -")
+T_CC = ST.TOKEN + "c"
+_bup = Upstream()
+_bcfg = P.ProxyConfig(arms=[P.ArmConfig(arm="nevertwice", mode="record", token=T_ARM, pinned_model="deepseek-flash"),
+                            P.ArmConfig(arm="claude-code-memory", mode="record", token=T_CC, pinned_model="deepseek-flash",
+                                        home_canary="a" * 32)],
+                      run_dir=TMP / "brst", upstream_host="127.0.0.1", upstream_port=_bup.port, upstream_tls=False,
+                      control_token="ctl-token")
+_bpx = P.Proxy(_bcfg, P.read_key(KEYFILE), log=lambda m: None)
+_bports = _bpx.start()
+NW, CCP = _bports["arms"]["nevertwice"]["write"], _bports["arms"]["claude-code-memory"]["write"]
+
+
+def refused_exchange(port: int, head: bytes, body: bytes, *, hold: bool = False):
+    """Send a whole request, then read until end-of-file: (bytes read, send error, read error, seconds from the last
+    byte sent to end-of-file, the socket - left open when ``hold``)."""
+    s = socket.create_connection(("127.0.0.1", port))
+    s.settimeout(10)
+    send_err = read_err = None
+    try:
+        s.sendall(head + body)
+    except OSError as e:
+        send_err = repr(e)
+    t_sent = time.monotonic()
+    data = b""
+    try:
+        while True:
+            c = s.recv(65536)
+            if not c:
+                break
+            data += c
+    except OSError as e:
+        read_err = repr(e)
+    took = time.monotonic() - t_sent
+    if not hold:
+        s.close()
+    return data, send_err, read_err, took, s
+
+
+def head_of(token: str, length: int, extra: str = "") -> bytes:
+    return (f"POST /v1/chat/completions HTTP/1.1\r\nHost: x\r\nAuthorization: Bearer {token}\r\n{extra}"
+            f"Content-Length: {length}\r\n\r\n").encode()
+
+
+BIG = b"x" * 1_000_000
+REPEATS = 20                                             # the auditor's probe: without the drain 17-20 of 20 were resets
+CHUNKED = head_of(T_ARM, 0, "Transfer-Encoding: chunked\r\n").replace(b"Content-Length: 0\r\n", b"")
+CASES = (("401 (a wrong token)", NW, head_of("wrong-token", len(BIG)), BIG, b"HTTP/1.1 401", "nevertwice", "refused_auth"),
+         ("403 (no home canary)", CCP, head_of(T_CC, len(BIG)), BIG, b"HTTP/1.1 403", "claude-code-memory",
+          "refused_home_canary"),
+         ("411 (a chunked body)", NW, CHUNKED, b"f4240\r\n" + BIG + b"\r\n0\r\n\r\n", b"HTTP/1.1 411", "nevertwice",
+          "refused_chunked"),
+         ("404 (a path not forwarded)", NW, head_of(T_ARM, len(BIG)).replace(b"/v1/chat/completions", b"/u/r1.u1/admin/x"),
+          BIG, b"HTTP/1.1 404", "nevertwice", "refused_path"))
+for label, port, head, body, want, arm_, counter in CASES:
+    before = dict(vars(_bpx.counters[arm_]))
+    ups_before = sum(c.upstream_errors for c in _bpx.counters.values())
+    got_codes = []
+    for _ in range(REPEATS):
+        data, se, re_, _t, _s = refused_exchange(port, head, body)
+        got_codes.append(data[:12] if data.startswith(want) and se is None and re_ is None else (data[:12], se, re_))
+    after = dict(vars(_bpx.counters[arm_]))
+    ok_reads = sum(1 for g in got_codes if g == want)
+    check(f"B-RST: {label} with a ~1 MB body - the client reads its code {REPEATS}/{REPEATS}",
+          ok_reads == REPEATS, f"{ok_reads}/{REPEATS} {[g for g in got_codes if g != want][:2]}")
+    check(f"B-RST: {label} - one refusal counted per request, no upstream error, no byte sent up",
+          after[counter] - before[counter] == REPEATS and after["requests"] - before["requests"] == REPEATS
+          and sum(c.upstream_errors for c in _bpx.counters.values()) == ups_before and after["bytes_up"] == before["bytes_up"],
+          str({k: (before[k], after[k]) for k in (counter, "requests", "bytes_up")}))
+OVER = b"q" * (P.MAX_BODY + 1)
+d413, se, re_, _t, _s = refused_exchange(NW, head_of(T_ARM, len(OVER)), OVER)
+check("B-RST: a body over MAX_BODY - the client reads its 413", d413.startswith(b"HTTP/1.1 413") and se is None
+      and re_ is None, f"{d413[:40]!r} {se} {re_}")
+
+
+def guard_threads() -> int:
+    return sum(1 for th in threading.enumerate() if "_guard" in th.name)
+
+
+base_threads = guard_threads()
+dh, se, re_, took, held = refused_exchange(NW, head_of("wrong-token", 1000), b"y" * 10, hold=True)
+t_hold = time.monotonic()
+while guard_threads() > base_threads and time.monotonic() - t_hold < 5:
+    time.sleep(0.05)
+thread_gone = time.monotonic() - t_hold
+held.close()
+check("B-RST: a client that holds its connection reads the 401 and end-of-file at once (the proxy's shutdown), and "
+      "the proxy's connection thread ends within 2 s + e", dh.startswith(b"HTTP/1.1 401") and took < 1.0
+      and guard_threads() <= base_threads and thread_gone <= P.DRAIN_S + 0.6, f"took={took:.2f} gone={thread_gone:.2f}")
+_bpx.stop()
+_bup.close()
+
+_a, _b = socket.socketpair()
+
+
+def _flood():
+    try:
+        _a.sendall(b"z" * (3 << 20))
+    except OSError:
+        pass
+
+
+threading.Thread(target=_flood, daemon=True).start()
+_got: list = []
+_th = threading.Thread(target=lambda: _got.append(P._refuse(_b, 401, "Unauthorized",
+                                                           headers=[("Content-Length", str(3 << 20))])), daemon=True)
+_th.start()
+_th.join(8)
+_a.close()
+_b.close()
+check("B-RST: a 3 MiB body - the refusal drops exactly its Content-Length (no cap: nothing is buffered), then closes",
+      _got == [3 << 20], str(_got))
+_e, _f = socket.socketpair()
+
+
+def _flood_close():
+    """A client that sends its whole chunked body, reads the answer to its end, then closes - as a real one does
+    (closing with the answer unread would itself be the RST this fixes)."""
+    try:
+        _e.sendall(b"w" * (2 << 20))
+        while _e.recv(65536):
+            pass
+    except OSError:
+        pass
+    _e.close()
+
+
+threading.Thread(target=_flood_close, daemon=True).start()
+_got3: list = []
+_th3 = threading.Thread(target=lambda: _got3.append(P._refuse(_f, 411, "Length Required",
+                                                             headers=[("Transfer-Encoding", "chunked")])), daemon=True)
+_th3.start()
+_th3.join(8)
+_f.close()
+check("B-RST: a chunked body (no length) is dropped to end-of-file", _got3 == [2 << 20], str(_got3))
+_src = (ROOT / "research" / "_llm_proxy.py").read_text(encoding="utf-8")
+import ast as _ast2  # noqa: E402
+_client_fn = next(n for n in _ast2.walk(_ast2.parse(_src)) if isinstance(n, _ast2.FunctionDef) and n.name == "_client")
+_direct = [n.lineno for n in _ast2.walk(_client_fn) if isinstance(n, _ast2.Call)
+           and getattr(n.func, "id", None) == "_send_local"]
+check("B-RST: every local refusal of _client goes through _refuse - no _send_local past it", _direct == [], str(_direct))
+_c, _d = socket.socketpair()
+_got2: list = []
+_t0 = time.monotonic()
+_th2 = threading.Thread(target=lambda: _got2.append((P._refuse(_d, 401, "Unauthorized",
+                                                               headers=[("Content-Length", "100")]),
+                                                     time.monotonic() - _t0)), daemon=True)
+_th2.start()
+_th2.join(6)
+_c.close()
+_d.close()
+check("B-RST: a client that sends nothing more and never closes - the drain gives up after 2 s",
+      len(_got2) == 1 and _got2[0][0] == 0 and 1.5 <= _got2[0][1] <= P.DRAIN_S + 0.6, str(_got2))
+
 print("\n- R-TOOLS: an arm with write_port false has no write port - its catcher and reader only -")
 _up = Upstream()
 _cfg = P.ProxyConfig(arms=[P.ArmConfig(arm="bm25-floor", mode="record", token=T_ARM, reader_model="deepseek-flash",

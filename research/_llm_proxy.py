@@ -950,6 +950,48 @@ def _send_local(sock: socket.socket, status: int, reason: str, body: bytes = b""
         pass
 
 
+#: B-RST (the auditor's O-a): after a local refusal the proxy reads and DROPS the rest of the client's request - to its
+#: Content-Length, or to end-of-file when there is none - for at most this long, so that its close is a FIN and the
+#: client reads the answer. On Windows a close with unread bytes is an RST: the client saw a transport error it would
+#: retry instead of its 401/403/411/404/413. Nothing is buffered, so no size cap is needed; the time is the guard.
+DRAIN_S = 2.0
+
+
+def _refuse(sock: socket.socket, status: int, reason: str, body: bytes = b"", *, headers=(), buffered: int = 0) -> int:
+    """B-RST: THE local refusal of _client - every one goes through here. The answer (Connection: close),
+    shutdown(SHUT_WR), then the rest of the request read and dropped: Content-Length - buffered bytes, or until
+    end-of-file when there is no usable length (a chunked body has none), DRAIN_S seconds in all; the caller's return
+    then closes the socket. Returns the bytes dropped, which are counted nowhere: the refusal is counted once, by its
+    caller."""
+    _send_local(sock, status, reason, body)
+    try:
+        sock.shutdown(socket.SHUT_WR)
+    except OSError:
+        return 0
+    length = None
+    if "chunked" not in (_hget(headers, "transfer-encoding") or "").lower():
+        try:
+            length = int(_hget(headers, "content-length") or 0)
+        except ValueError:
+            length = None
+    cap = None if length is None else max(0, length - buffered)          # None: to end-of-file
+    deadline = time.monotonic() + DRAIN_S
+    got = 0
+    while cap is None or got < cap:
+        left = deadline - time.monotonic()
+        if left <= 0:
+            break
+        try:
+            sock.settimeout(left)
+            chunk = sock.recv(65536 if cap is None else min(65536, cap - got))
+        except OSError:                                  # a timeout included
+            break
+        if not chunk:
+            break
+        got += len(chunk)
+    return got
+
+
 #: Zero-tolerance kinds (§4.5): each one lands in flags.jsonl, which survives a restart (K35).
 FLAG_KINDS = ("model_mismatch", "tool_violation", "canary", "owner_marker", "thinking_call", "unparsable")
 SPECIAL_ROLES = ("j3", "scheduler")
@@ -1171,32 +1213,36 @@ class Proxy:
                 ctr.requests += 1
                 if any(ch in k or ch in v for k, v in headers for ch in ("\r", "\n", "\0")):
                     ctr.refused_header += 1                  # X4: no smuggled header line reaches the upstream
-                    _send_local(cs, 400, "Bad Request", b"a header carries CR, LF or NUL")
+                    _refuse(cs, 400, "Bad Request", b"a header carries CR, LF or NUL",
+                            headers=headers, buffered=len(buf))
                     return
                 if not self._authorised(arm, headers):
                     ctr.refused_auth += 1
-                    _send_local(cs, 401, "Unauthorized", b"proxy token missing or wrong")
+                    _refuse(cs, 401, "Unauthorized", b"proxy token missing or wrong",
+                            headers=headers, buffered=len(buf))
                     return
                 if arm.home_canary and _hget(headers, HOME_CANARY_HEADER) != arm.home_canary:
                     ctr.refused_home_canary += 1                 # R-CC-WIT: the binary did not read the fake home
                     self._flag(arm.arm, "home_canary_missing", None)
-                    _send_local(cs, 403, "Forbidden", b"fake home not read: the home canary is missing or wrong")
+                    _refuse(cs, 403, "Forbidden", b"fake home not read: the home canary is missing or wrong",
+                            headers=headers, buffered=len(buf))
                     return
                 if "chunked" in (_hget(headers, "transfer-encoding") or "").lower():
                     ctr.refused_chunked += 1
-                    _send_local(cs, 411, "Length Required", b"chunked request bodies are refused")
+                    _refuse(cs, 411, "Length Required", b"chunked request bodies are refused",
+                            headers=headers, buffered=len(buf))
                     return
                 m = _UNIT.match(target)
                 unit, path = (m.group(1), m.group(2)) if m else (None, target)
                 if not self._path_allowed(role, method, path):
                     ctr.refused_path += 1
-                    _send_local(cs, 404, "Not Found", b"path not forwarded")
+                    _refuse(cs, 404, "Not Found", b"path not forwarded", headers=headers, buffered=len(buf))
                     return
                 if (_hget(headers, "expect") or "").lower() == "100-continue":
                     cs.sendall(b"HTTP/1.1 100 Continue\r\n\r\n")
                 length = int(_hget(headers, "content-length") or 0)
                 if length > MAX_BODY:
-                    _send_local(cs, 413, "Payload Too Large")
+                    _refuse(cs, 413, "Payload Too Large", headers=headers, buffered=len(buf))
                     return
                 while len(buf) < length:
                     chunk = cs.recv(65536)
@@ -1208,7 +1254,8 @@ class Proxy:
                 del buf[:length]
                 if buf:                                  # a second request before this one was answered
                     ctr.refused_pipelined += 1
-                    _send_local(cs, 400, "Bad Request", b"pipelined requests are refused")
+                    _refuse(cs, 400, "Bad Request", b"pipelined requests are refused",
+                            headers=headers, buffered=len(buf))
                     return
                 rec = None
                 if arm.mode == "record":
@@ -1217,7 +1264,8 @@ class Proxy:
                     if refusal:
                         rec.update(refused=refusal, t1=_iso(time.time()))
                         self._write_call(rec)
-                        _send_local(cs, 400, "Bad Request", f"refused: {refusal}".encode())
+                        _refuse(cs, 400, "Bad Request", f"refused: {refusal}".encode(),
+                                headers=headers, buffered=len(buf))
                         return
                 body, injected = self._fallback(arm, method, path, headers, body)
                 ctr.thinking_injected += injected
@@ -1231,20 +1279,20 @@ class Proxy:
                         if isinstance(e, ConnectRefused):
                             ctr.connect_refused += 1
                         self.log(f"upstream connect failed: {type(e).__name__}")
-                        _send_local(cs, 502, "Bad Gateway", b"upstream unreachable")
-                        if rec is not None:
+                        if rec is not None:                  # the record first: its t1 is the failure's, not the drain's
                             rec.update(upstream_error=type(e).__name__, t1=_iso(time.time()), thinking_injected=injected)
                             self._write_call(rec)
+                        _refuse(cs, 502, "Bad Gateway", b"upstream unreachable", headers=headers, buffered=len(buf))
                         return
                 try:
                     up.sendall(out + body)
                 except OSError as e:
                     ctr.upstream_errors += 1
                     self.log(f"upstream send failed: {type(e).__name__}")
-                    _send_local(cs, 502, "Bad Gateway", b"upstream send failed")
                     if rec is not None:                  # B-SEND: a key lost here must reach transport_lost
                         rec.update(upstream_error=type(e).__name__, t1=_iso(time.time()), thinking_injected=injected)
                         self._write_call(rec)
+                    _refuse(cs, 502, "Bad Gateway", b"upstream send failed", headers=headers, buffered=len(buf))
                     return
                 ctr.bytes_up += len(out) + len(body)
                 tee = TeeParser() if rec is not None else None
