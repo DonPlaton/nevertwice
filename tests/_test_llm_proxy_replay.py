@@ -57,6 +57,21 @@ KEY = ST.SENTINEL_KEY.encode()
 PASSED = FAILED = 0
 
 
+def wait_until(cond, timeout: float = 10.0, step: float = 0.02) -> bool:
+    """Poll until cond() holds or the timeout passes - an event wait, never a fixed sleep (CI 36292260735)."""
+    import time as _t  # noqa: PLC0415
+    end = _t.monotonic() + timeout
+    while True:
+        try:
+            if cond():
+                return True
+        except Exception:  # noqa: BLE001 - a record not yet written reads as "not yet"
+            pass
+        if _t.monotonic() > end:
+            return False
+        _t.sleep(step)
+
+
 def check(name: str, cond: bool, detail: str = "") -> None:
     global PASSED, FAILED
     if cond:
@@ -114,7 +129,8 @@ def run(arm: str, token: str, tools: tuple):
             got[call["name"]] = CAP.read_response(s, timeout=20)[0]
         finally:
             s.close()
-    time.sleep(0.3)
+    calls_f = TMP / arm / "calls.jsonl"
+    wait_until(lambda: calls_f.exists() and len(calls_f.read_bytes().decode().splitlines()) >= len(CAP.CALLS))
     px.stop()
     up.close()
     recs = [json.loads(x) for x in (TMP / arm / "calls.jsonl").read_bytes().decode().splitlines()]

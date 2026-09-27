@@ -58,6 +58,21 @@ I = _load("idle_probe_t", ROOT / "research" / "_idle_probe.py")
 PASSED = FAILED = 0
 
 
+def wait_until(cond, timeout: float = 10.0, step: float = 0.02) -> bool:
+    """Poll until cond() holds or the timeout passes - an event wait, never a fixed sleep (CI 36292260735)."""
+    import time as _t  # noqa: PLC0415
+    end = _t.monotonic() + timeout
+    while True:
+        try:
+            if cond():
+                return True
+        except Exception:  # noqa: BLE001 - a record not yet written reads as "not yet"
+            pass
+        if _t.monotonic() > end:
+            return False
+        _t.sleep(step)
+
+
 def check(name: str, cond: bool, detail: str = "") -> None:
     global PASSED, FAILED
     if cond:
@@ -376,7 +391,7 @@ pd = I.IdleProbe(gpu=TickFailGpu(), host=FakeHost(FakeClock(), table=lambda t: [
                  ollama=FakeOllama([EMB]), clock=rc, commit="c" * 40)
 try:
     with pd.during(interval=0.05) as d:
-        time.sleep(0.4)
+        wait_until(lambda: d.win["samples"] >= 2 and d.win["sample_errors"] >= 2)   # an event wait, not 0.4 s
         raise KeyError("the timed loop failed")
 except KeyError:
     pass

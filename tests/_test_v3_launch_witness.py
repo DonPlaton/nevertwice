@@ -477,12 +477,28 @@ def docker_bad(argv):
 
 
 import time as _time
+
+
+def wait_until(cond, timeout: float = 10.0, step: float = 0.02) -> bool:
+    """Poll until cond() holds or the timeout passes - an event wait, never a fixed sleep (CI 36292260735)."""
+    import time as _t  # noqa: PLC0415
+    end = _t.monotonic() + timeout
+    while True:
+        try:
+            if cond():
+                return True
+        except Exception:  # noqa: BLE001 - a record not yet written reads as "not yet"
+            pass
+        if _t.monotonic() > end:
+            return False
+        _t.sleep(step)
 cw4 = L.ContainerEgressWitness("letta", gateway_ip=GW, allowed_ports=[47001], run_docker=docker_bad, tick_s=0.05)
 cw4.start()
-_time.sleep(0.8)
+reached = wait_until(lambda: calls["n"] >= 10)          # an event wait: 8 ticks AFTER the malformed one (call 2)
 r4 = cw4.stop()
-check("W4 a malformed /proc line is a failed sample and the thread lives on",
-      r4.failed_samples >= 1 and r4.samples >= 8 and not r4.complete, f"samples {r4.samples} failed {r4.failed_samples}")
+check("W4 a malformed /proc line is a failed sample and the thread lives on (it kept sampling after the bad tick)",
+      reached and r4.failed_samples >= 1 and r4.samples >= 8 and calls["n"] - 2 >= 8 and not r4.complete,
+      f"calls {calls['n']} samples {r4.samples} failed {r4.failed_samples}")
 
 
 class SlowSampler(FakeSampler):

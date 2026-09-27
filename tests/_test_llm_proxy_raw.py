@@ -88,6 +88,21 @@ KEY = ST.SENTINEL_KEY.encode()
 PASSED = FAILED = 0
 
 
+def wait_until(cond, timeout: float = 10.0, step: float = 0.02) -> bool:
+    """Poll until cond() holds or the timeout passes - an event wait, never a fixed sleep (CI 36292260735)."""
+    import time as _t  # noqa: PLC0415
+    end = _t.monotonic() + timeout
+    while True:
+        try:
+            if cond():
+                return True
+        except Exception:  # noqa: BLE001 - a record not yet written reads as "not yet"
+            pass
+        if _t.monotonic() > end:
+            return False
+        _t.sleep(step)
+
+
 def check(name: str, cond: bool, detail: str = "") -> None:
     global PASSED, FAILED
     if cond:
@@ -383,7 +398,7 @@ hop = FakeHop(b"HTTP/1.1 200 Connection established\r\n\r\n")
 px, ports = hop_proxy(hop)
 wp = ports["arms"]["a1"]["write"]
 got = exchange(wp, request(wp, "/v1/chat/completions", BODY), timeout=8)
-time.sleep(0.3)
+wait_until(lambda: hop.heads and hop.after)            # the hop's reader thread records what followed the 200
 check("R4 the proxy sends CONNECT to the code's constant target, with the matching Host",
       hop.heads[:1] == [b"CONNECT api.deepseek.com:443 HTTP/1.1\r\nHost: api.deepseek.com:443\r\n\r\n"], str(hop.heads[:1]))
 first = hop.after[0] if hop.after else b""
@@ -403,7 +418,7 @@ for label, reply in (("a 403 reply", b"HTTP/1.1 403 Forbidden\r\nContent-Length:
     px, ports = hop_proxy(hop)
     wp = ports["arms"]["a1"]["write"]
     got = exchange(wp, request(wp, "/v1/chat/completions", BODY), timeout=8)
-    time.sleep(0.3)
+    wait_until(lambda: hop.after and px.counters["a1"].connect_refused >= 1)
     ctr = px.counters["a1"]
     check(f"R4 {label}: nothing more is sent, the client gets 502, counted as connect_refused, no retry",
           got.startswith(b"HTTP/1.1 502") and ctr.connect_refused == 1 and ctr.upstream_errors == 1

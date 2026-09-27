@@ -56,6 +56,21 @@ L = _load("v3_launch_ct", ROOT / "research" / "v3" / "launch.py")
 PASSED = FAILED = 0
 
 
+def wait_until(cond, timeout: float = 10.0, step: float = 0.02) -> bool:
+    """Poll until cond() holds or the timeout passes - an event wait, never a fixed sleep (CI 36292260735)."""
+    import time as _t  # noqa: PLC0415
+    end = _t.monotonic() + timeout
+    while True:
+        try:
+            if cond():
+                return True
+        except Exception:  # noqa: BLE001 - a record not yet written reads as "not yet"
+            pass
+        if _t.monotonic() > end:
+            return False
+        _t.sleep(step)
+
+
 def check(name: str, cond: bool, detail: str = "") -> None:
     global PASSED, FAILED
     if cond:
@@ -173,7 +188,7 @@ if made is not None:
           st == 200 and body == BODY and srv.handshakes >= 1, f"{st} {body[:30]!r}")
     check("... through the hop: CONNECT host:443 on the declared hop, nothing else",
           hop.connects == [f"CONNECT {HOST}:443 HTTP/1.1".encode()], str(hop.connects))
-    time.sleep(0.3)
+    wait_until(lambda: log_lines("w") and log_lines("w")[-1].get("t_end"))   # the line is written when the tunnel closes
     rec = log_lines("w")[-1]
     check("the catcher log records host, port, window, hop, its answer and byte counts",
           rec["host"] == HOST and rec["port"] == 443 and rec["window"] == "a3-hf" and rec["via"] == f"127.0.0.1:{hop.port}"
@@ -253,7 +268,7 @@ if made is not None:
     px3, ports3 = proxy(via_port=hop3.port, run="refused")
     ctl(ports3, "/window", {"name": "a3-hf", "state": "open", "hosts": [HOST], "arms": ["fetch"]})
     st, _ = via(ports3["arms"]["fetch"]["catcher"], f"{HOST}:443")
-    time.sleep(0.2)
+    wait_until(lambda: px3.counters["fetch"].connect_refused >= 1 and log_lines("refused"))
     check("a hop that refuses: 502, counted as connect_refused, recorded, not retried",
           st == 502 and px3.counters["fetch"].connect_refused == 1 and log_lines("refused")[-1]["hop_status"] == "refused"
           and len(hop3.connects) == 1, f"{st} {vars(px3.counters['fetch'])}")

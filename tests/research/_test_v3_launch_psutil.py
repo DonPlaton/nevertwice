@@ -96,6 +96,20 @@ GC_PID = [None]
 SKIPPED: list[str] = []            # named, printed skips (never a silent pass) - the auditor reads them from the log
 
 
+def wait_until(cond, timeout: float = 10.0, step: float = 0.02) -> bool:
+    """Poll until cond() holds or the timeout passes - an event wait, never a fixed sleep (CI 36292260735)."""
+    end = time.monotonic() + timeout
+    while True:
+        try:
+            if cond():
+                return True
+        except Exception:  # noqa: BLE001
+            pass
+        if time.monotonic() > end:
+            return False
+        time.sleep(step)
+
+
 class Inject(L.PsutilSampler):
     """Real rows, plus one synthetic non-loopback row for the real grandchild's pid."""
 
@@ -120,7 +134,10 @@ try:
                       stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = kid.process.communicate(timeout=60)
         GC_PID[0] = int(out.decode().strip() or 0)
-        time.sleep(2.0)                                   # the child is gone; the grandchild holds its connection
+        time.sleep(2.0)                                   # the check window's length (its coverage is measured over it)
+        if os.name == "nt":                               # ... and the Windows claims wait for their event, not a clock
+            wait_until(lambda: GC_PID[0] in nat.tracked
+                       and (nat.result.rows_seen > 0 if label == "real" else nat.result.hits >= 1))
         rec = W.end_check(f"chk-{label}")
         n = rec["native"]
         if label == "real":
