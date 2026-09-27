@@ -8,7 +8,8 @@ conformance check runs against something it did not write. The real document is 
 Fault knobs, set on the instance by the suite: extra_tool_after (a tool the agent grows after N messages),
 rogue_call (a tool name the agent calls in its next response), page_cap (the server caps every list at this many),
 ignore_after (list endpoints ignore the cursor - a pagination that never ends), overlap (each page starts AT the
-cursor's row - pages that move but repeat), context_extra (the context overview
+cursor's row - pages that move but repeat), limit_counts_rows (the limit counts typed rows, so a page edge can cut a
+stored message and the after-cursor then skips its remaining rows), context_extra (the context overview
 reports more archival passages than the list returns), drop_route (a path left out of /openapi.json).
 """
 from __future__ import annotations
@@ -157,6 +158,7 @@ class FakeLetta:
         self.page_cap: int | None = None
         self.ignore_after = False
         self.overlap = False
+        self.limit_counts_rows = False
         self.context_extra = 0
         self.drop_route: str | None = None
         self.lock = threading.Lock()
@@ -221,6 +223,8 @@ class FakeLetta:
         limit = int(q.get("limit") or 50)
         if self.page_cap:
             limit = min(limit, self.page_cap)
+        if self.limit_counts_rows:                           # a limit over typed rows: a page edge can cut a message
+            return rows[:limit]
         out, ids = [], []                                  # the limit counts stored messages, never splitting one
         for r in rows:
             if r["id"] not in ids:

@@ -389,6 +389,12 @@ try:
           "does not advance" in err, err[:200])
     F7.overlap = False
     F7.page_cap = None
+    safely(lambda: c.request("write", item=msg(1)))     # ten typed rows: a page of 7 ends inside a stored message
+    F7.limit_counts_rows = True
+    err = err_of(lambda: c.request("end_write"))
+    check("A8-L2 a listing that depends on the page size (a page edge cuts a stored message) refuses by name",
+          "depends on the page size" in err, err[:200])
+    F7.limit_counts_rows = False
     e = safely(lambda: c.request("end_write"), {})
     check("with the server whole again the seal is written", bool(e.get("seal")), str(e)[:200])
     c.close()
@@ -396,6 +402,43 @@ try:
     F7.agents[aid7]["passages"][0]["text"] = "tampered between the stages"
     check("a change to the agent's memory between the stages refuses the read stage (the state seal)",
           "no refusal" not in hello_error("s7r", spec_for("s7r", "read", u7, F7, dated=False)))
+    print("\n- the seal's canon, field by field: a change to ONLY that field between the stages refuses -")
+    F9 = new_fake()
+
+    def first(rows, **match):
+        return next(r for r in rows if all(r.get(k) == v for k, v in match.items()))
+
+    CANON_CASES = (
+        ("a core block's id", lambda a: first(a["blocks"], label="human").__setitem__("id", "block-x")),
+        ("a core block's label", lambda a: first(a["blocks"], label="persona").__setitem__("label", "persona2")),
+        ("a core block's value", lambda a: first(a["blocks"], label="human").__setitem__("value", "edited")),
+        ("a passage's id", lambda a: a["passages"][0].__setitem__("id", "passage-x")),
+        ("a passage's text", lambda a: a["passages"][0].__setitem__("text", "edited")),
+        ("a message's id", lambda a: first(a["messages"], message_type="assistant_message").__setitem__("id", "message-x")),
+        ("a message's message_type", lambda a: first(a["messages"], message_type="assistant_message")
+         .__setitem__("message_type", "system_message")),
+        ("a message's content", lambda a: first(a["messages"], message_type="user_message").__setitem__("content", "edited")),
+        ("a message's reasoning", lambda a: first(a["messages"], message_type="reasoning_message")
+         .__setitem__("reasoning", "edited")),
+        ("a message's tool_call", lambda a: first(a["messages"], message_type="tool_call_message")
+         .__setitem__("tool_call", {"name": "archival_memory_insert", "arguments": "{\"x\": 1}", "tool_call_id": "c1"})),
+        ("a message's tool_return", lambda a: first(a["messages"], message_type="tool_return_message")
+         .__setitem__("tool_return", "edited")),
+    )
+    check("the canon cases cover every field the seal names", {c[0].split("'s ")[1] for c in CANON_CASES}
+          == {"id", "label", "value", "text", *AL._MESSAGE_TEXT})
+    for i, (label, change) in enumerate(CANON_CASES):
+        uc = unit(f"cn{i}")
+        cw = start(f"cn{i}w", spec_for(f"cn{i}w", "write", uc, F9))
+        safely(lambda: cw.request("hello"))
+        safely(lambda: cw.request("write", item=msg(0), date="2023-01-01"))
+        safely(lambda: cw.request("end_write"))
+        cw.close()
+        agent = next(a for a in F9.agents.values() if a["name"] == uc.name)
+        change(agent)
+        err = hello_error(f"cn{i}r", spec_for(f"cn{i}r", "read", uc, F9))
+        check(f"the read stage refuses when only {label} changed between the stages",
+              "changed between the stages" in err, err[:200])
     F8 = new_fake()
     u8 = unit("d8")
     for n in ("d8a", "d8b"):

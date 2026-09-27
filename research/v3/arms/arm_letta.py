@@ -25,8 +25,9 @@ rev1 §2.2 and §2.6.6 as the auditor's Q-47-1..8 read them:
   <YYYY-MM-DD>:"; Letta's message API is given no date;
 * the state between the stages (Q-47-5, Q-47-8f): end_write reads the core blocks, every archival passage and every
   recall message, paginated to the end (a page that repeats or a cursor that never advances refuses), checks the
-  counts against the agent's context overview, and writes a state seal over (id, text) of each; the read stage
-  recomputes it before the first search;
+  counts against the agent's context overview, lists the messages a second time at another page size and requires
+  the same (id, message_type) rows (A8-L2: a limit that counts typed rows would cut a message at a page edge), and
+  writes a state seal over (id, text) of each; the read stage recomputes it before the first search;
 * read (Q-47-8h): the core blocks always ("<label>: <value>"), then archival search hits interleaved with recall
   search hits (archival 1, recall 1, archival 2, ...); at Point K the first k hits, at Point B up to k (the harness's
   budget cuts). The pinned OpenAPI has no recall search route unless A8 names one (Q-47-8b): until then the reader is
@@ -69,6 +70,9 @@ ALLOWED_TOOLS = frozenset({"send_message", "conversation_search", "archival_memo
                            "memory_rethink", "memory_finish_edits"})
 POINTS = ("K", "B")
 PAGE = 100
+#: A8-L2 (the auditor): a second, coprime page size for the messages listing - a server whose limit counts typed rows
+#: can cut a stored message at a page edge and lose a row; the two listings must hold the same (id, message_type) rows.
+PAGE_ALT = 7
 _ID = re.compile(r"[A-Za-z0-9_-]{1,64}")
 
 C = R.Call
@@ -196,7 +200,7 @@ def interleave(archival: list, recall: list) -> list:
     return out
 
 
-def paginate(rest: R.Rest, name: str, agent_id: str) -> list:
+def paginate(rest: R.Rest, name: str, agent_id: str, page: int = PAGE) -> list:
     """Every row of a list endpoint, following its after-cursor (the last row's id) until an empty page. A row is
     (id, message_type): Letta serialises one stored message as several typed rows sharing its id. A row seen twice,
     or a cursor that does not move, refuses - the listing would otherwise be cut short or never end."""
@@ -204,16 +208,16 @@ def paginate(rest: R.Rest, name: str, agent_id: str) -> list:
     seen: set = set()
     after = None
     while True:
-        page = rest.call(name, path={"agent_id": agent_id},
-                         query={"limit": PAGE, **({"after": after} if after else {})}) or []
-        if not page:
+        got = rest.call(name, path={"agent_id": agent_id},
+                        query={"limit": page, **({"after": after} if after else {})}) or []
+        if not got:
             return rows
-        keys = [(r["id"], r.get("message_type")) for r in page]
-        if page[-1]["id"] == after or seen.intersection(keys) or len(set(keys)) != len(keys):
+        keys = [(r["id"], r.get("message_type")) for r in got]
+        if got[-1]["id"] == after or seen.intersection(keys) or len(set(keys)) != len(keys):
             raise Refused(f"{name}: the pagination does not advance past {after!r} - the listing would be cut short")
-        rows += page
+        rows += got
         seen.update(keys)
-        after = page[-1]["id"]
+        after = got[-1]["id"]
 
 
 def agent_state(rest: R.Rest, agent_id: str) -> tuple[str, dict]:
@@ -221,6 +225,10 @@ def agent_state(rest: R.Rest, agent_id: str) -> tuple[str, dict]:
     blocks = rest.call("list_blocks", path={"agent_id": agent_id}) or []
     passages = paginate(rest, "list_passages", agent_id)
     messages = paginate(rest, "list_messages", agent_id)
+    again = paginate(rest, "list_messages", agent_id, page=PAGE_ALT)
+    if [(m["id"], m.get("message_type")) for m in messages] != [(m["id"], m.get("message_type")) for m in again]:
+        raise Refused(f"the messages listing depends on the page size ({PAGE} vs {PAGE_ALT}): a page edge cuts a stored "
+                      "message (A8-L2)")
     ctx = rest.call("context", path={"agent_id": agent_id}) or {}
     got = {"blocks": len(blocks), "passages": len(passages), "messages": len({m["id"] for m in messages})}
     if got["passages"] != ctx.get("num_archival_memory") or got["messages"] != ctx.get("num_recall_memory"):
