@@ -309,6 +309,87 @@ except Exception:  # noqa: BLE001
     ok_re = False
 check("a used facts run label is refused", ok_re)
 
+print("\n- j4: keys only (A6 TB4.3b / Q16) - structure, never a value -")
+SENT = "What did the user say about the red bicycle?"
+beam_rows = [{"id": 7, "chat": [[{"id": 0, "role": "user", "content": SENT, "time_anchor": "March-15-2024"},
+                                 {"id": 1, "role": "assistant", "content": SENT}]],
+              "probing_questions": repr({"abstention": [{"question": SENT, "answer": SENT, "source_chat_ids": [0]}]})}]
+fc_rows = [{"context": SENT, "questions": [SENT], "answers": [[SENT]],
+            "metadata": {"source": "factconsolidation_sh_6k", "haystack_sessions": None}}]
+ama_rows = [{"episode_id": 1, "domain": "SOFTWARE", "qa_pairs": [{"question": SENT, "answer": SENT}],
+             "trajectory": [{"step": 1, "action": SENT, "observation": SENT},
+                            {"step": 2, "action": SENT, "observation": SENT, "reasoning": SENT}]}]
+k = D.keys_of(beam_rows, fc_rows, ama_rows)
+blob = json.dumps(k)
+check("j4 keys_of carries no value: no content, date, source name or number from the data",
+      SENT not in blob and "March-15-2024" not in blob and "factconsolidation_sh_6k" not in blob and "SOFTWARE" not in blob,
+      blob[:200])
+check("j4 the record is labels only (scan_labels finds nothing)", D.scan_labels(k) == [], str(D.scan_labels(k)[:3]))
+check("j4 BEAM: message key variants, each with its count (an optional time_anchor shows)",
+      k["S5"]["message_variants"] == [{"keys": ["content", "id", "role"], "n": 1},
+                                      {"keys": ["content", "id", "role", "time_anchor"], "n": 1}], str(k["S5"]["message_variants"]))
+check("j4 BEAM: the row shape reaches chat -> list -> list -> dict keys, leaves by type name",
+      k["S5"]["row"]["keys"]["chat"]["first"]["first"]["keys"]["content"] == {"type": "str"}
+      and k["S5"]["row"]["keys"]["chat"]["n"] == 1)
+check("j4 BEAM: probing questions parsed as a literal (never eval), their key variants",
+      k["S5"]["probing_question_variants"] == [{"keys": ["answer", "question", "source_chat_ids"], "n": 1}]
+      and "abstention" in k["S5"]["probing"]["keys"])
+check("j4 MAB: row and metadata key variants",
+      k["S6"]["row_variants"] == [{"keys": ["answers", "context", "metadata", "questions"], "n": 1}]
+      and k["S6"]["metadata_variants"] == [{"keys": ["haystack_sessions", "source"], "n": 1}])
+check("j4 AMA: trajectory step variants show a key present in some steps only",
+      k["S7"]["step_variants"] == [{"keys": ["action", "observation", "reasoning", "step"], "n": 1},
+                                   {"keys": ["action", "observation", "step"], "n": 1}]
+      and k["S7"]["qa_variants"] == [{"keys": ["answer", "question"], "n": 1}] and k["S7"]["steps"] == 2)
+deep = [1]
+for _ in range(12):
+    deep = [deep]
+check("j4 a depth limit stops runaway nesting", '"depth-limit"' in json.dumps(D.shape(deep)))
+jl = TMP / "ama_sep.jsonl"
+jl.write_bytes((json.dumps({"q": "a\u2028b\x85c", "n": 1}, ensure_ascii=False) + "\n"
+                + json.dumps({"q": "d", "n": 2}) + "\n").encode("utf-8"))
+try:
+    rows_sep = D.read_jsonl(jl)
+except Exception as e:  # noqa: BLE001 - a crashing reader is a named FAIL
+    rows_sep = [repr(e)]
+check("j4 read_jsonl splits on LF only: a record with U+2028 and U+0085 inside a string stays one record",
+      [r.get("n") if isinstance(r, dict) else r for r in rows_sep] == [1, 2], str(rows_sep)[:120])
+
+
+def fake_keys_child(tag: str, payload: dict) -> Path:
+    s = TMP / f"kchild_{tag}.py"
+    s.write_text("import json, sys\np = " + repr(payload) + "\np.setdefault('keys', {})['argv1'] = sys.argv[1]\n"
+                 "print(json.dumps(p))\n", encoding="utf-8")
+    return s
+
+
+def run_keys(tag, payload, cp=None):
+    c, base = contract(tag)
+    return D.run_facts(c, L, run="k1", python=Path(sys.executable), parent_env=os.environ, CP=cp or FakeCP(),
+                       native=L.NativeEgressWitness(sampler=Quiet(), tick_s=60, jobs=None),
+                       fs=L.FsWitness([L.WatchSpec("watched", base / "watched")]), script=fake_keys_child(tag, payload),
+                       mode="keys"), c
+
+
+krec, kc = run_keys("keys_ok", {"keys": {"S7": {"rows": 208}}, "problems": []})
+check("j4 run_facts(mode=keys): exactly the three KEYS_FILES verified, the child run as --child-keys, the record's keys",
+      krec["problems"] == [] and set(krec["files"]) == set(D.KEYS_FILES) and krec["keys"]["S7"] == {"rows": 208}
+      and krec["keys"]["argv1"] == "--child-keys" and "facts" not in krec
+      and json.loads((kc.runs_root / "_facts" / "k1" / "facts.json").read_bytes())["keys"]["S7"] == {"rows": 208},
+      str((krec["problems"], krec.get("keys"))))
+krec2, _ = run_keys("keys_leak", {"keys": {"S7": {"first_question": SENT}}, "problems": []})
+check("j4 a keys child that prints a content string is refused, and nothing is recorded",
+      any(p.startswith("prints_answers refused") for p in krec2["problems"]) and "keys" not in krec2, str(krec2["problems"]))
+krec3, _ = run_keys("keys_unverified", {"keys": {}, "problems": []}, cp=FakeCP(bad="ama_swe"))
+check("j4 a keys file that fails verify() stops the run before the child starts",
+      any(p.startswith("reads_unverified_file refused: ama_swe") for p in krec3["problems"]) and "check" not in krec3)
+try:
+    D.run_facts(kc, L, run="k9", python=Path(sys.executable), parent_env=os.environ, CP=FakeCP(), mode="values")
+    ok_mode = False
+except D.FactsRefused:
+    ok_mode = True
+check("j4 a mode other than facts or keys is refused", ok_mode)
+
 shutil.rmtree(TMP, ignore_errors=True)
 print(f"\nv3 dataset facts: {PASSED} passed, {FAILED} failed")
 sys.exit(1 if FAILED else 0)

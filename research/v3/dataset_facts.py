@@ -62,6 +62,9 @@ LABEL = re.compile(r"[A-Za-z0-9_.:\-]{1,64}")
 #: The pins read, by stand.
 FILES = {"ama": "ama_swe", "beam": "beam_128k", "fc": "mab_conflict_resolution", "locomo": "locomo10",
          "lme_s": "lme_s_cleaned", "lme_m": "lme_m_cleaned", "lme_oracle": "lme_oracle_cleaned", "lme_v2": "longmemeval_s"}
+#: The pins the keys-only mode (j4, A6 TB4.3b / Q16) reads.
+KEYS_FILES = {"beam": "beam_128k", "fc": "mab_conflict_resolution", "ama": "ama_swe"}
+SHAPE_DEPTH = 8
 
 
 class FactsRefused(RuntimeError):
@@ -292,6 +295,65 @@ def scan_labels(obj, path: str = "") -> list[str]:
     return bad
 
 
+# ── keys only (j4): the structure of a record, never a value ────────────────────────────────────────
+
+def shape(obj, depth: int = 0) -> dict:
+    """A value's structure with no value in it: a dict's sorted keys, each with its value's shape; a list's length and
+    its first element's shape; a leaf's type name. (The auditor's j4 form: dict -> sorted keys, list -> the first
+    element's type, plus counts.)"""
+    if depth >= SHAPE_DEPTH:
+        return {"type": "depth-limit"}
+    if isinstance(obj, dict):
+        return {"type": "dict", "n": len(obj), "keys": {str(k): shape(obj[k], depth + 1) for k in sorted(obj, key=str)}}
+    if isinstance(obj, (list, tuple)):
+        return {"type": "list", "n": len(obj), "first": shape(obj[0], depth + 1) if len(obj) else None}
+    return {"type": type(obj).__name__}
+
+
+def variants(items) -> list[dict]:
+    """The distinct key sets among the dicts of ``items``, each with how many dicts carry it (a key present in only some
+    elements is visible here, where the first element's shape alone would hide it)."""
+    c = collections.Counter(tuple(sorted(map(str, d))) for d in items if isinstance(d, dict))
+    return [{"keys": list(k), "n": n} for k, n in sorted(c.items())]
+
+
+def _elements(x) -> list:
+    return list(x) if isinstance(x, (list, tuple)) else ([x] if isinstance(x, dict) else [])
+
+
+def keys_of(beam: list[dict], fc: list[dict], ama: list[dict]) -> dict:
+    """j4's record, pure: the BEAM rows, their chat messages and parsed probing questions; the MAB Conflict_Resolution
+    rows and their metadata; the AMA rows, their trajectory steps and QA pairs - shapes and key-set variants only."""
+    msgs = [m for r in beam for s in _elements(r.get("chat")) for m in _elements(s)]
+    probing = [parse_probing(r["probing_questions"]) for r in beam if isinstance(r.get("probing_questions"), str)]
+    pq_items = [q for pr in probing for qs in pr.values() for q in _elements(qs)]
+    steps = [s for r in ama for s in _elements(r.get("trajectory"))]
+    qa = [q for r in ama for q in _elements(r.get("qa_pairs"))]
+    return {
+        "S5": {"rows": len(beam), "row": shape(beam[0]) if beam else None, "row_variants": variants(beam),
+               "messages": len(msgs), "message_variants": variants(msgs),
+               "probing": shape(probing[0]) if probing else None, "probing_question_variants": variants(pq_items)},
+        "S6": {"rows": len(fc), "row": shape(fc[0]) if fc else None, "row_variants": variants(fc),
+               "metadata_variants": variants([r.get("metadata") for r in fc])},
+        "S7": {"rows": len(ama), "row": shape(ama[0]) if ama else None, "row_variants": variants(ama),
+               "steps": len(steps), "step_variants": variants(steps), "qa_variants": variants(qa)},
+    }
+
+
+def read_jsonl(path) -> list[dict]:
+    """One record per LF-terminated line. Never str.splitlines(): AMA's strings carry U+0085 and U+2028, on which
+    splitlines() cuts a record in two (the auditor's finding, A6 j4); a text file's iteration splits on LF/CR only."""
+    with open(path, encoding="utf-8") as f:
+        return [json.loads(line) for line in f if line.strip()]
+
+
+def child_keys(paths: dict) -> dict:
+    import pyarrow.parquet as pq  # noqa: PLC0415 - only the v3_data venv has it
+    ama_rows = read_jsonl(paths["ama"])
+    return {"keys": keys_of(pq.read_table(paths["beam"]).to_pylist(), pq.read_table(paths["fc"]).to_pylist(), ama_rows),
+            "problems": []}
+
+
 # ── the child (runs on the v3_data venv) ──────────────────────────────────────────────────────────────
 
 def child(paths: dict, smoke_rules: Path) -> dict:
@@ -300,8 +362,7 @@ def child(paths: dict, smoke_rules: Path) -> dict:
     SR = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(SR)
     out, problems = {}, []
-    with open(paths["ama"], encoding="utf-8") as f:
-        ama_rows = [json.loads(line) for line in f if line.strip()]
+    ama_rows = read_jsonl(paths["ama"])
     out["S7"], p = ama_facts(ama_rows)
     problems += p
     if not p:
@@ -331,8 +392,12 @@ def _load(name: str, path: Path):
     return mod
 
 
-def run_facts(c, L, *, run: str, python: Path, parent_env, CP=None, native=None, fs=None, script: Path | None = None) -> dict:
-    """verify() every file first, then the child, its output scanned, then the record."""
+def run_facts(c, L, *, run: str, python: Path, parent_env, CP=None, native=None, fs=None, script: Path | None = None,
+              mode: str = "facts") -> dict:
+    """verify() every file first, then the child, its output scanned, then the record. ``mode`` "keys" is j4: the three
+    KEYS_FILES only, the child's --child-keys, and the record's "keys" (structure, never a value)."""
+    if mode not in ("facts", "keys"):
+        raise FactsRefused(f"mode {mode!r} is facts or keys")
     CP = CP or _load("v3_corpus_pin_facts", HERE / "corpus_pin_v3.py")
     base = c.runs_root / "_facts" / run
     if base.exists():
@@ -342,7 +407,7 @@ def run_facts(c, L, *, run: str, python: Path, parent_env, CP=None, native=None,
                     "swe_identification": "no pinned upstream source names the SWE domain; identified by name among the census",
                     "beam_gold_reading": BEAM_GOLD_READING}
     paths = {}
-    for key, name in FILES.items():
+    for key, name in (FILES if mode == "facts" else KEYS_FILES).items():
         path = CP.location(name, hf_hub=c.polygon_root / "hf_cache" / "hub", pins_root=c.runs_root / "_pins")
         try:
             record["files"][key] = CP.verify(name, path)
@@ -360,7 +425,8 @@ def run_facts(c, L, *, run: str, python: Path, parent_env, CP=None, native=None,
     cid = f"facts-{run}"
     W.begin_check(cid, tags={"window": "facts", "run": run, "arm": "child"})
     try:
-        ch = L.spawn(c, [os.fspath(python), "-I", "-B", os.fspath(script or Path(__file__)), "--child",
+        ch = L.spawn(c, [os.fspath(python), "-I", "-B", os.fspath(script or Path(__file__)),
+                         "--child" if mode == "facts" else "--child-keys",
                          json.dumps(paths), os.fspath(HERE / "smoke_rules.py")],
                      env=env, cwd=unit.cwd, record={"role": "facts", "stand": None, "run": run, "arm": "child", "unit": "f1"},
                      parent_env=parent_env, catcher_url="", witnesses=W, requirement="required",
@@ -383,11 +449,11 @@ def run_facts(c, L, *, run: str, python: Path, parent_env, CP=None, native=None,
     except ValueError:
         record["problems"].append("the child's output is not JSON")
         return _write(base, record)
-    leaks = scan_labels(got.get("facts"))
+    leaks = scan_labels(got.get(mode))
     if leaks:
         record["problems"].append(f"prints_answers refused: {len(leaks)} string(s) that are not labels, e.g. {leaks[:3]}")
         return _write(base, record)
-    record["facts"] = got["facts"]
+    record[mode] = got[mode]
     record["problems"] += got.get("problems") or []
     return _write(base, record)
 
@@ -401,13 +467,19 @@ def main(argv: list[str] | None = None) -> int:
     if argv is None and len(sys.argv) > 1 and sys.argv[1] == "--child":
         print(json.dumps(child(json.loads(sys.argv[2]), Path(sys.argv[3]))))
         return 0
-    ap = argparse.ArgumentParser(description="the dataset facts (A3.j)")
+    if argv is None and len(sys.argv) > 1 and sys.argv[1] == "--child-keys":
+        print(json.dumps(child_keys(json.loads(sys.argv[2]))))
+        return 0
+    ap = argparse.ArgumentParser(description="the dataset facts (A3.j), or with --keys the keys-only record (j4)")
     ap.add_argument("--run", required=True)
+    ap.add_argument("--keys", action="store_true", help="j4: key structure of BEAM, MAB CR and AMA - never a value")
     args = ap.parse_args(argv)
     L = _load("v3_launch", HERE / "launch.py")
     c = L.Contract.default()
-    rec = run_facts(c, L, run=args.run, python=c.polygon_root / "v3_data" / "Scripts" / "python.exe", parent_env=os.environ)
-    print(json.dumps({"problems": rec["problems"], "facts": rec.get("facts")}, indent=1))
+    mode = "keys" if args.keys else "facts"
+    rec = run_facts(c, L, run=args.run, python=c.polygon_root / "v3_data" / "Scripts" / "python.exe", parent_env=os.environ,
+                    mode=mode)
+    print(json.dumps({"problems": rec["problems"], mode: rec.get(mode)}, indent=1))
     return 0 if not rec["problems"] else 1
 
 
