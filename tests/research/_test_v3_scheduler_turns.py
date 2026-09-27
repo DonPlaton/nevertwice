@@ -50,6 +50,12 @@ def _load(name: str, path: Path):
 SC = _load("v3_scheduler_turns", ROOT / "research" / "v3" / "scheduler.py")
 L = _load("v3_launch_for_turns", ROOT / "research" / "v3" / "launch.py")
 SL = _load("v3_status_log_for_turns", ROOT / "research" / "v3" / "status_log.py")
+#: R-LAUNCHER: a spawn needs a way to kill the unit's whole tree. The fake arms here are single processes on the base
+#: interpreter (the B-VENV row) that start nothing (the row after it), so where neither a job object nor psutil is at
+#: hand their root's kill IS their tree's - this suite then runs on that one declared route. The refusal itself has its
+#: rows in the pure scheduler suite, on the real function.
+_REAL_ROUTE = SC.tree_kill_route
+SC.tree_kill_route = lambda witnesses: _REAL_ROUTE(witnesses) or "root-is-the-tree"
 PASSED = FAILED = 0
 
 
@@ -259,6 +265,8 @@ try:
     check("B-VENV: the fake arms run on the base interpreter - no venv launcher between the scheduler and the arm, so a "
           "stream the arm closes is end-of-file at once",
           not (ARM_PY.parent / "pyvenv.cfg").exists() and not (ARM_PY.parent.parent / "pyvenv.cfg").exists(), str(ARM_PY))
+    check("R-LAUNCHER: the fake arm starts no process of its own - its root's kill is its tree's",
+          not any(w in FAKE_ARM for w in ("subprocess", "Popen", "os.system", "os.spawn", "multiprocessing", "os.exec")))
     check("the fake arm imports a byte copy of arms/base.py (its sha256 equals the repository's)",
           hashlib.sha256((FAKE_DIR / "base.py").read_bytes()).hexdigest() == hashlib.sha256(BASE_SRC).hexdigest())
 

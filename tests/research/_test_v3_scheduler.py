@@ -218,6 +218,12 @@ class FakePopen:
         pass
 
 
+#: FakePopen starts nothing, so there is no tree to kill: its rows run with the route check answered "fake-popen";
+#: the check itself has its own rows below (R-LAUNCHER), on the real function.
+REAL_ROUTE = SC.tree_kill_route
+SC.tree_kill_route = lambda witnesses: "fake-popen"
+
+
 def sched(tag: str):
     return SC.Scheduler(contract(tag), None, None, L, None, None, tag="smoke", witnesses=SimpleNamespace(native=StubNative()),
                         parent_env=dict(os.environ), catcher_url="http://127.0.0.1:47001", popen=FakePopen)
@@ -266,6 +272,24 @@ check("a spawn made inside a window is that window's root (its egress is filed a
 check("the environment is the contract's, offline for HF by default", ch11 is not None
       and ch11.process.env.get("HF_HUB_OFFLINE") == "1" and ch11.process.env.get("HTTP_PROXY") == "http://127.0.0.1:47001",
       str(d11))
+SC.tree_kill_route = REAL_ROUTE
+_real_find = SC.importlib.util.find_spec
+try:
+    SC.importlib.util.find_spec = lambda name, *a, **k: None if name == "psutil" else _real_find(name, *a, **k)
+    no_route = SC.tree_kill_route(SimpleNamespace(native=StubNative()))
+    job_route = SC.tree_kill_route(SimpleNamespace(native=SimpleNamespace(jobs=object())))
+    s_nr = sched("noroute")
+    r_nr = err(lambda: s_nr.spawn_child(SPEC, role="arm-write", stand="S9", run="r1", arm="mem0", unit="u1"))
+    made = s_nr.c.runs_root.joinpath("S9").exists()
+    SC.importlib.util.find_spec = lambda name, *a, **k: object() if name == "psutil" else _real_find(name, *a, **k)
+    psutil_route = SC.tree_kill_route(SimpleNamespace(native=StubNative()))
+finally:
+    SC.importlib.util.find_spec = _real_find
+SC.tree_kill_route = lambda witnesses: "fake-popen"
+check("R-LAUNCHER: without the job object and without psutil a spawn is refused before the child exists - no unit "
+      "directory is made", no_route is None and "R-LAUNCHER" in r_nr and not made, f"{no_route} | {r_nr} | {made}")
+check("R-LAUNCHER: the witness's job object is the route when there is one; psutil otherwise",
+      job_route == "job" and psutil_route == "psutil", f"{job_route} {psutil_route}")
 check("a tag outside scored / smoke / debug refuses", "tag" in err(lambda: SC.Scheduler(
     contract("x"), None, None, L, None, None, tag="best", witnesses=None, parent_env={}, catcher_url="")))
 

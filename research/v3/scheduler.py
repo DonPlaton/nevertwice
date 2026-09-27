@@ -27,6 +27,9 @@ the contract's allowlist and hands everything to launch.spawn - one spawn at a t
 fresh-directory set, the Claude Code unit table and the spawns log's chain then see one spawn after another (the
 writer's own file lock, B11, covers a second process); the child itself runs outside the lock.
 
+R-LAUNCHER: a spawn needs a way to kill the unit's whole tree - the witness's job object or psutil - else it is refused
+before the child exists (tree_kill_route).
+
 FIX-SCHED (the auditor's B-RC, B-OPEN, B-CL, B-TE, R-UNL): a unit's UNIT-ABORT names only what happened - rc= is the
 child's own exit code, signal=SIGKILL a kill of ours, and a code that never came is a SchedulerError, never an
 invented -1; a spawn the contract refused is no unit at all; a request never gets a timeout the ceiling has spent. A
@@ -263,6 +266,19 @@ class LaunchSpec:
     stderr_path: str | None = None             # the child's stderr, appended to a file in its fake home - never a PIPE
 
 
+def tree_kill_route(witnesses: Any) -> str | None:
+    """R-LAUNCHER: how a unit's WHOLE process tree dies - the native witness's job object (W1), else psutil (children
+    first, launch.Child.kill_tree); None when neither. A kill would then reach the root alone: an arm started from a
+    venv is the grandchild of the venv's launcher, and it would live on - writing to its store and calling the proxy
+    after its unit was killed (background writes, R9, and a neighbour unit's store polluted)."""
+    native = getattr(witnesses, "native", None)
+    if native is not None and getattr(native, "jobs", None) is not None:
+        return "job"
+    if importlib.util.find_spec("psutil") is not None:
+        return "psutil"
+    return None
+
+
 class Scheduler:
     """One campaign's scheduler (TB4.11a). A4 holds its collaborators and the spawn path; the stages, blocks and stands
     follow in A5-A7."""
@@ -285,6 +301,9 @@ class Scheduler:
         """(the child, its unit directories). Under the one spawn lock: the unit's fresh directories (or ``dirs``, a
         Claude Code unit's own, Q-47-6), the caller's spec written from them, the contract's environment, and
         launch.spawn - which records the spawn, refuses what the contract forbids, and starts the child."""
+        if tree_kill_route(self.witnesses) is None:
+            raise SchedulerError(f"{stand}/{run}/{arm}/{unit}: no way to kill a unit's process tree - neither the "
+                                 f"native witness's job object (W1) nor psutil (R-LAUNCHER); nothing was spawned")
         with self._spawn_lock:
             d = dirs if dirs is not None else self.launch.make_unit_dirs(self.c, stand, run, arm, unit)
             spec = build(d)
