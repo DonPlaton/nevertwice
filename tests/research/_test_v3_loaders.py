@@ -373,10 +373,50 @@ def gold_row(ab_fields: dict, **q_over):
     return {**beam_row(50), "probing_questions": repr(probing)}
 
 
-g10 = LD.beam_gold([gold_row(ALL10)], [f"50:{ab}:0" for ab in ALL10])
+try:
+    g10 = LD.beam_gold([gold_row(ALL10)], [f"50:{ab}:0" for ab in ALL10])
+except Exception as e:  # noqa: BLE001 - a refusing table is a named FAIL of the rows below, not a crash
+    print(f"       (beam_gold over the ten abilities raised {e!r})")
+    g10 = {f"50:{ab}:0": LD.Gold("", "", ()) for ab in ALL10}
 check("Q31: every ability's display answer comes from its declared field, the rubric from 'rubric'",
       all(g10[f"50:{ab}:0"].answer == f"REF-{ab}" and g10[f"50:{ab}:0"].rubric == (f"rub-{ab}",) for ab in ALL10)
       and LD.BEAM_ANSWER_FIELD == ALL10)
+#: j4's recorded key-set variants of BEAM 100K's probing questions (n, keys) - labels only, equal to the auditor's
+#: blind key sets (13/13). Each variant holds exactly one answer field; 40 questions per ability.
+J4_BEAM_VARIANTS = [
+    (40, ["abstention_type", "difficulty", "ideal_response", "plan_reference", "question", "rubric", "why_unanswerable"]),
+    (40, ["answer", "calculation_required", "conversation_references", "difficulty", "question", "rubric", "source_chat_ids",
+          "temporal_type", "time_points"]),
+    (18, ["answer", "conversation_reference", "difficulty", "extraction_challenge", "key_facts_tested", "question",
+          "question_type", "rubric", "source_chat_ids"]),
+    (22, ["answer", "conversation_reference", "difficulty", "key_facts_tested", "question", "question_type", "rubric",
+          "source_chat_ids"]),
+    (40, ["answer", "conversation_references", "difficulty", "ordering_tested", "ordering_type", "question", "rubric",
+          "source_chat_ids", "total_mentions"]),
+    (40, ["answer", "conversation_references", "difficulty", "potential_confusion", "question", "rubric", "source_chat_ids",
+          "tests_retention_of", "update_type"]),
+    (40, ["answer", "conversation_references", "difficulty", "question", "reasoning_steps", "reasoning_type", "rubric",
+          "sessions_required", "source_chat_ids"]),
+    (36, ["bullet_points_covered", "conversation_sessions", "difficulty", "ideal_summary", "key_elements_tested", "question",
+          "rubric", "source_chat_ids", "summarization_type", "synthesis_required"]),
+    (4, ["bullet_points_covered", "difficulty", "ideal_summary", "key_elements_tested", "question", "rubric",
+         "source_chat_ids", "summarization_type", "synthesis_required"]),
+    (40, ["compliance_indicators", "difficulty", "expected_compliance", "instruction_being_tested", "instruction_type",
+          "non_compliance_signs", "question", "rubric", "source_chat_ids"]),
+    (40, ["compliance_indicators", "difficulty", "expected_compliance", "non_compliance_signs", "preference_being_tested",
+          "preference_type", "question", "rubric", "source_chat_ids"]),
+    (40, ["contradiction_type", "conversation_references", "difficulty", "ideal_answer", "question", "rubric",
+          "source_chat_ids", "tests_for", "topic_questioned"]),
+]
+FIELDS = set(LD.BEAM_ANSWER_FIELD.values())
+check("Q31 vs j4: every recorded key set holds question, rubric and exactly one answer field of the table",
+      all("question" in k and "rubric" in k and len(FIELDS & set(k)) == 1 for _, k in J4_BEAM_VARIANTS))
+per_field = {f: sum(n for n, k in J4_BEAM_VARIANTS if f in k) for f in FIELDS}
+want_field = {f: 40 * sum(1 for v in LD.BEAM_ANSWER_FIELD.values() if v == f) for f in FIELDS}
+check("Q31 vs j4: each table field is carried by exactly 40 questions per ability mapped to it (400 in all)",
+      per_field == want_field and sum(per_field.values()) == 400, str((per_field, want_field)))
+check("Q31: detail carries neither the rubric nor the ability's own answer field",
+      all(not ({"rubric", ALL10[ab]} & set(json.loads(g10[f"50:{ab}:0"].detail or "{}"))) for ab in ALL10))
 check("Q31: an ability outside the declared table is refused",
       refused(lambda: LD.beam_gold([gold_row({"time_travel": "answer"})], ["50:time_travel:0"]), "outside the declared"))
 check("Q31: a missing answer field is refused, never an empty answer",
