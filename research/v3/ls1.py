@@ -143,8 +143,12 @@ def run_ls1(c, L, *, run: str, python: Path, parent_env, CP=None, native=None, f
         return _write(base, record)
     lst = SS.list_record(STAND, order, seed=SS.SEED, rule=SS.RULE)
     lists_dir.mkdir(parents=True, exist_ok=True)
-    with open(out_file, "xb") as f:
-        f.write((json.dumps(lst, ensure_ascii=False, indent=1) + "\n").encode("utf-8"))
+    try:
+        with open(out_file, "xb") as f:                  # never over a list that appeared during the run
+            f.write((json.dumps(lst, ensure_ascii=False, indent=1) + "\n").encode("utf-8"))
+    except FileExistsError:
+        record["problems"].append(f"{out_file} appeared during the run - a list is built once, never over another")
+        return _write(base, record)
     record["list"] = {"path": str(out_file), "n": lst["n"], "ids_sha256": lst["ids_sha256"], "seed": lst["seed"],
                       "python": lst["python"]}
     return _write(base, record)

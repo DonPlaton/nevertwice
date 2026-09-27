@@ -138,7 +138,11 @@ try:
     GOOD = fixture("lme_s.json", COUNTS)
     pairs = [[r["question_id"], r["question_type"]] for r in json.loads(GOOD.read_text(encoding="utf-8"))]
     want = SS.nested_order([tuple(p) for p in pairs])
-    rec, c, base, ld = run("ok", GOOD)
+    ok_cb = contract("ok")
+    try:
+        rec, c, base, ld = run("ok", GOOD, c_base=ok_cb)
+    except Exception as e:  # noqa: BLE001 - a crash of the run fails the LS-ok rows by name, not the suite
+        rec, (c, base), ld = {"problems": [f"crash {type(e).__name__}: {e}"]}, ok_cb, ok_cb[1] / "lists"
     s1 = json.loads((ld / "S1.json").read_text(encoding="utf-8")) if (ld / "S1.json").exists() else {}
     canon = json.dumps(want, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
     check("LS-ok: the child's pairs, ordered by subsample.nested_order, written as lists/S1.json - ids only, the seed, "
@@ -148,14 +152,14 @@ try:
           str(rec)[:300])
     facts_py = ROOT / "research" / "v3" / "dataset_facts.py"
     check("LS-ok: the child's argv is [python, -I, -B, ls1.py, --child, <file>, dataset_facts.py] - the two repository "
-          "files its named exceptions", rec["argv"] == [sys.executable, "-I", "-B", str(Path(LS.__file__)), "--child",
-                                                       str(GOOD), str(facts_py)], str(rec.get("argv")))
+          "files its named exceptions", rec.get("argv") == [sys.executable, "-I", "-B", str(Path(LS.__file__)), "--child",
+                                                           str(GOOD), str(facts_py)], str(rec.get("argv")))
     written = [p for p in (ld / "S1.json", c.runs_root / "_lists" / "ls1-a" / "ls1.json") if p.exists()]
     check("LS-ok: no question or session text in anything written - the list and the run's record",
           len(written) == 2 and not any(b"What did the user say" in p.read_bytes() or b"xxxxx" in p.read_bytes()
                                         for p in written), str(written))
-    check("LS-ok: the child's check is clean and the pairs are the file's 500", rec["check"] == {
-        "complete": True, "native_hits": 0, "fs_hits": 0} and rec["n_pairs"] == 500, str(rec.get("check")))
+    check("LS-ok: the child's check is clean and the pairs are the file's 500", rec.get("check") == {
+        "complete": True, "native_hits": 0, "fs_hits": 0} and rec.get("n_pairs") == 500, str(rec.get("check")))
     check("LS-child: the child's work alone - the file's (id, type) pairs, in the file's order",
           LS.child(GOOD, facts_py) == pairs)
 
@@ -203,6 +207,21 @@ try:
           and any("check is not clean" in p_ and "'complete': False" in p_ for p_ in ri["problems"])
           and not (ldd / "S1.json").exists() and not (in_base / "lists" / "S1.json").exists()
           and "list" not in rd and "list" not in ri, f"{rd['problems']} | {ri['problems']}")
+    race_c, race_base = contract("race")
+    race_list = race_base / "lists" / "S1.json"
+    race = TMP / "race_child.py"
+    race.write_text("import json, pathlib\np = pathlib.Path(" + repr(str(race_list)) + ")\n"
+                    "p.parent.mkdir(parents=True, exist_ok=True)\np.write_bytes(b'theirs')\n"
+                    "print(json.dumps(" + repr(pairs) + "))\n", encoding="utf-8")
+    try:
+        rr, _c, _b, _l = run("race", GOOD, script=race, c_base=(race_c, race_base))
+    except Exception as e:  # noqa: BLE001 - a crash is what the row names
+        rr = {"problems": [f"crash {type(e).__name__}: {e}"]}
+    check("LS-race: a list file that appears during the run (after the existence check) is named, the run's record is "
+          "written, and the file is left as it was - never overwritten", any("appeared during the run" in p_
+                                                                           for p_ in rr["problems"])
+          and race_list.read_bytes() == b"theirs" and "list" not in rr
+          and (race_c.runs_root / "_lists" / "ls1-a" / "ls1.json").exists(), str(rr["problems"]))
     beat = TMP / "heartbeat.txt"
     hang = TMP / "hang_child.py"
     hang.write_text("import time\nwhile True:\n    open(" + repr(str(beat)) + ", 'a').write('.')\n    time.sleep(0.1)\n",
