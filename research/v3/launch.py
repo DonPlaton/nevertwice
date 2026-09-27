@@ -177,7 +177,9 @@ class Contract:
             conservation_known=("2026-09-25",),
             polygon_idle=("backups", "core_bare", "bare314", "mem0_eval", "graphiti_eval", "amem_eval", "llama.cpp",
                           "h2h_v2_stores", "h2h_v2_stores.pre-v2-fe6ddff-055329",
-                          "h2h_v2_stores.pre-v2-fe6ddff-062907", "py314"),
+                          "h2h_v2_stores.pre-v2-fe6ddff-062907", "py314",
+                          # the auditor's replay tooling (2026-09-27): interpreters and a CI mirror no child may alter
+                          "py310", "core_bare310", "ci_linux"),
         )
 
     def deny_roots(self) -> tuple[Path, ...]:

@@ -659,6 +659,10 @@ check("no owner, two owners, an unreadable owner or no table: no pid",
       and L.hop_listener_pid(10809, sampler=ListenSampler({("udp", 10809): {7}})) is None)
 check("py314 is in the watched idle set of the machine's contract", "py314" in L.Contract.default().polygon_idle
       and any(s.label == "polygon_py314" for s in L.watched_set(L.Contract.default())))
+check("the auditor's replay tooling (py310, core_bare310, ci_linux) is in the watched idle set too",
+      {"py310", "core_bare310", "ci_linux"} <= set(L.Contract.default().polygon_idle)
+      and {"polygon_py310", "polygon_core_bare310", "polygon_ci_linux"}
+      <= {s.label for s in L.watched_set(L.Contract.default())})
 
 if made:
     try:
