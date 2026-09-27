@@ -180,6 +180,13 @@ with tempfile.TemporaryDirectory(prefix="v3seal_") as sd:
           "not the one the write stage sealed" in msg_moved, msg_moved)
     (unit / B.SEAL_NAME).unlink()
     check("a missing seal is refused", raises(lambda: B.check_seal(unit, store), B.SealError, "missing"))
+    s_ab, s_a = Path(sd) / "ab_c" / "store", Path(sd) / "a_bc" / "store"
+    s_ab.mkdir(parents=True)
+    s_a.mkdir(parents=True)
+    (s_ab / "ab").write_bytes(b"c")
+    (s_a / "a").write_bytes(b"bc")
+    check("the digest keeps the path/bytes boundary: file 'ab' holding 'c' is not file 'a' holding 'bc' (S5)",
+          B.tree_digest(s_ab)[0] != B.tree_digest(s_a)[0])
     d1 = B.tree_digest(store)
     d2 = B.tree_digest(str(store))
     check("tree_digest is deterministic and takes str or Path", d1 == d2 and len(d1[0]) == 64, str(d1))
