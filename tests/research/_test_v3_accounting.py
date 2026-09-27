@@ -687,6 +687,62 @@ with tempfile.TemporaryDirectory(prefix="v3acct_e2e_") as td:
         check("K60 is m5 --anchor's verdict: a cache built at another commit is named there, not here",
               any("not the anchor" in x for x in v3), str(v3[:3]))
 
+print("\n- Q-A5-1: K76's coverage by 32-character windows -")
+import json  # noqa: E402
+END = "2026-09-28T10:00:00+00:00"
+
+
+def body(*strings, t0="2026-09-28T09:00:00+00:00"):
+    return {"t0": t0, "strings": list(strings), "via": "write"}
+
+
+ITEM = ("The quarterly report was filed late because the upload kept failing on the flaky network "
+        "until a bounded retry was added to the client, and then the whole backlog went through at once.")
+N = len(AC.normalize_ws(ITEM))
+cut = AC.normalize_ws(ITEM)
+mid_cut = cut[:40] + " [...] " + cut[-60:]
+cv = AC.unit_coverage([ITEM], [body("Extract the facts:\n" + mid_cut)], end_write_at=END)
+check("Q-A5-1 (a): an item whose middle the product cut (truncate_smart: a head and a tail kept) counts the head AND "
+      "the tail - never the head alone (40 + 60 characters, and at most the space beside each cut, which the body "
+      "carries too)", 100 <= cv["covered"] <= 102 and cv["chars"] == N, str(cv))
+framed = [body("user: " + ITEM.replace(" ", "  ").replace(", ", ",\n\t")),
+          body('{"role":"user","content":"x"}', "Session 3\n" + ITEM)]
+cvf = AC.unit_coverage([ITEM], framed[:1], end_write_at=END)
+check("Q-A5-1 (b): the product's framing - a role label, doubled spaces, new lines and tabs - lowers nothing",
+      cvf["covered"] == N and cvf["coverage"] == 1.0, str(cvf))
+cv0 = AC.unit_coverage([ITEM, "a short one"], [], end_write_at=END)
+check("Q-A5-1 (c): a unit that never reached the writer's LLM covers 0 of all its characters",
+      cv0["covered"] == 0 and cv0["chars"] == N + len("a short one") and cv0["coverage"] == 0.0 and cv0["calls"] == 0,
+      str(cv0))
+cvd = AC.unit_coverage([ITEM], [body(AC.normalize_ws(ITEM)[10:41])], end_write_at=END)
+check("Q-A5-1 (d): a match of 31 characters counts nothing - windows are 32", cvd["covered"] == 0, str(cvd))
+cve = AC.unit_coverage([ITEM], [body(ITEM), body("again: " + ITEM), body(ITEM + " " + ITEM)], end_write_at=END)
+check("Q-A5-1 (e): an item carried by several calls, or twice in one, counts once - at most its own length",
+      cve["covered"] == N and cve["calls"] == 3, str(cve))
+cvs = AC.unit_coverage(["short item", "not there at all", "short but absent here"], [body("xx short item yy")],
+                       end_write_at=END)
+check("Q-A5-1: an item shorter than 32 counts whole as a substring, else not at all - its start alone is nothing",
+      cvs["covered"] == len("short item")
+      and cvs["chars"] == len("short item") + len("not there at all") + len("short but absent here"), str(cvs))
+cvt = AC.unit_coverage([ITEM], [body(ITEM, t0="2026-09-28T10:00:01+00:00")], end_write_at=END)
+check("Q-A5-1: a request sent after the unit's end_write is not its write phase", cvt["covered"] == 0
+      and cvt["calls"] == 0, str(cvt))
+try:
+    AC.unit_coverage([ITEM], [], end_write_at=None)
+    no_end = "accepted"
+except AC.AccountingError as e:
+    no_end = str(e)
+check("Q-A5-1: a unit without an end_write stamp (aborted) has no coverage - refused, never 0", "end_write" in no_end,
+      no_end)
+BD = Path(tempfile.mkdtemp(prefix="nvt3_bodies_"))
+(BD / "bodies" / "mem0").mkdir(parents=True)
+(BD / "bodies" / "mem0" / "r1.u1.jsonl").write_bytes(
+    (json.dumps(body(ITEM)) + "\n" + json.dumps(body("x")) + "\n{bad").encode("utf-8"))
+recs_b, probs_b = AC.load_bodies(BD, arm="mem0", run="r1", unit="u1")
+check("Q-A5-1: load_bodies reads bodies/<arm>/<run>.<unit>.jsonl, one record per LF line - a cut last line is a "
+      "named problem", len(recs_b) == 2 and probs_b and "no LF" in probs_b[0], f"{len(recs_b)} {probs_b}")
+shutil.rmtree(BD, ignore_errors=True)
+
 print("\n- M-DUP: nothing here builds or judges -")
 gone = [n for n in ("cloud_transport", "m5_cloud_problems", "boundary", "boundary_problems", "ollama_transport",
                     "P1_BANDS", "ZERO_TOLERANCE", "p1", "yield_", "caches", "reconciliation") if hasattr(AC, n)]

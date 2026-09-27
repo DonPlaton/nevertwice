@@ -42,6 +42,17 @@ TB4.10b (Q12, Q13, K60, K61, K76, K87; the auditor's M1):
   items and characters; the per-unit cap and the scored-only labels are artifact's;
 * cache_inputs -> artifact.cache_record(): a read with its in-campaign build record; K60/K61 are m5 --anchor's;
 * reconciliation_inputs: the §2.3 reconciliation numbers; the branch's predicate is artifact's P0j (K87).
+
+Q-A5-1 (the auditor's measure of K76's coverage, "characters reaching the writer's LLM"):
+* load_bodies: the recording proxy's bodies/<arm>/<run>.<unit>.jsonl - the parsed strings of every writer-LLM request
+  the unit's arm-run sent in the write stage (never a reader or an embedding call);
+* unit_coverage: whitespace runs become one space and ends are stripped, in the bodies and in the items alike (case and
+  Unicode untouched); of an item of 32 characters or more, a character counts when at least one 32-character window
+  of the item that holds it occurs in a request string sent up to the unit's end_write - so a product that cuts the
+  middle (a head and a tail kept) is counted for both, and a match shorter than 32 never counts; an item shorter than
+  32 counts whole when it is a substring of a request string, else not at all; an item counts at most its own length
+  however many calls carried it. The denominator is the items' normalized characters - role labels and the §5.3
+  header are the harness's scaffolding, never in it. {covered, chars, coverage, calls}.
 """
 from __future__ import annotations
 
@@ -423,6 +434,47 @@ def yield_inputs(stand: str, units: Iterable[Mapping[str, Any]], *, unit_kind: s
     return {"unit": unit_kind, "units": rows,
             "extra": {"items_per_1k_read": 1000.0 * items / tokens_read if tokens_read else None,
                       "empty_context_share": sum(1 for c in contexts if not c.strip()) / len(contexts) if contexts else None}}
+
+
+WINDOW = 32                                              # Q-A5-1: the coverage window, in characters
+BODIES_DIR = "bodies"
+
+
+def normalize_ws(s: str) -> str:
+    """Q-A5-1: every whitespace run -> one space, the ends stripped; case and Unicode as they are."""
+    return " ".join(s.split())
+
+
+def load_bodies(run_dir: Path, *, arm: str, run: str, unit: str) -> tuple[list, list]:
+    """(the unit's writer request records, the problems reading them) - one record per LF-terminated line."""
+    problems: list = []
+    return _jsonl(Path(run_dir) / BODIES_DIR / arm / f"{run}.{unit}.jsonl", problems), problems
+
+
+def unit_coverage(item_texts: Sequence[str], bodies: Iterable[Mapping[str, Any]], *, end_write_at: str) -> dict:
+    """Q-A5-1: K76's coverage input for one unit of one arm-run (see the module docstring). ``end_write_at``: the
+    harness's stamp of the unit's end_write - a request sent after it is not the unit's write phase."""
+    if not isinstance(end_write_at, str) or not end_write_at:
+        raise AccountingError("a unit without an end_write stamp has no write phase to measure (it was aborted)")
+    end = _when({"t": end_write_at}, "t")
+    used = [b for b in bodies if _when(b, "t0") <= end]
+    strs = [normalize_ws(s) for b in used for s in (b.get("strings") or []) if isinstance(s, str)]
+    windows = {s[i:i + WINDOW] for s in strs for i in range(len(s) - WINDOW + 1)}
+    covered = total = 0
+    for text in item_texts:
+        if not isinstance(text, str):
+            raise AccountingError(f"an item text is {type(text).__name__}, not text")
+        n = normalize_ws(text)
+        total += len(n)
+        if len(n) < WINDOW:
+            covered += len(n) if n and any(n in s for s in strs) else 0
+            continue
+        mark = bytearray(len(n))
+        for i in range(len(n) - WINDOW + 1):
+            if n[i:i + WINDOW] in windows:
+                mark[i:i + WINDOW] = b"\x01" * WINDOW
+        covered += mark.count(1)
+    return {"covered": covered, "chars": total, "coverage": covered / total if total else None, "calls": len(used)}
 
 
 def ours_retrievable(notes: Iterable[Mapping[str, Any]]) -> int:
