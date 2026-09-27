@@ -267,8 +267,11 @@ print("\n- and the inventory is pinned, so new pins cannot arrive unnoticed -")
 #: 2026-09-27, PREREG-V3 A3.k data: +1 artifact (research/v3/freeze_a3.json, the A3 freeze fragment) and +66 kinds, all
 #: gained, all in it - its pins.<name>.{sha256, revision, ...}, venvs.*, models.*, d1_tag.*, local_v2.* and facts.sha256.
 #: Diffed with this file's own walk() against bc61ee6: none lost (234 -> 300 kinds over 385 values).
-check("the number of pinned artifacts has not moved", len(artifacts) == 195, str(len(artifacts)))
-check("and the number of pin KINDS has not moved", len(kinds) == 300,
+#: 2026-09-28, PREREG-V3 A6 ls1 (0ed5f1a): +1 artifact (research/v3/lists/S1.json, the S1/S2 nested order) and +1 kind,
+#: gained - its ids_sha256, the reference the auditor verified. Diffed with this file's own walk() against d5667da:
+#: none lost (195 -> 196 artifacts, 300 -> 301 kinds over 386 values).
+check("the number of pinned artifacts has not moved", len(artifacts) == 196, str(len(artifacts)))
+check("and the number of pin KINDS has not moved", len(kinds) == 301,
       f"{len(kinds)} kinds over {len(pins)} values")
 
 print(f"\n{'ALL OK' if not FAILS else f'{FAILS} FAILED'}")
