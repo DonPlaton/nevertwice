@@ -222,9 +222,10 @@ try:
           body.get("llm_config") == {"model": "deepseek-flash", "model_endpoint_type": "openai",
                                      "model_endpoint": f"http://host.docker.internal:{PORT}/u/r1.u1/v1",
                                      "context_window": 32000}, json.dumps(body.get("llm_config")))
-    check("the embedder: ollama type on the arm's Ollama leg as the container sees it, the v3 tag, 1024 dims",
+    check("the embedder (B-A3): ollama type on the arm's Ollama leg as the container sees it WITH the unit prefix - "
+          "its embedding calls are the unit's - the v3 tag, 1024 dims",
           body.get("embedding_config") == {"embedding_endpoint_type": "ollama",
-                                           "embedding_endpoint": f"http://host.docker.internal:{LEG}",
+                                           "embedding_endpoint": f"http://host.docker.internal:{LEG}/u/r1.u1",
                                            "embedding_model": TAG, "embedding_dim": 1024},
           json.dumps(body.get("embedding_config")))
     check("the create body carries exactly the declared top-level fields",

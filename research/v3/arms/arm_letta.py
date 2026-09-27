@@ -19,7 +19,9 @@ rev1 §2.2 and §2.6.6 as the auditor's Q-47-1..8 read them:
   (http://host.docker.internal:<port>/u/<run>.<unit>/v1, an openai endpoint - the unit prefix attributes the calls);
   no temperature, max_tokens or reasoning field of ours (§5.5; thinking: none known, Q-47-8e); the proxy token is the
   server's (its container environment), never this child's;
-* the embedder is Letta's ollama endpoint type on the arm's Ollama leg as the container sees it, the v3 tag, 1024 dims;
+* the embedder is Letta's ollama endpoint type on the arm's Ollama leg as the container sees it, with the same unit
+  prefix (http://host.docker.internal:<leg port>/u/<run>.<unit> - B-A3: its embedding calls are the unit's, Q-A4-6 (2)),
+  the v3 tag, 1024 dims;
 * write: one message per call, role "user" for every speaker (Q-47-8c: an assistant-role message would be the
   agent's own words), content "<speaker>: <text>", on a dated stand after the §5.3 header "Conversation from
   <YYYY-MM-DD>:"; Letta's message API is given no date;
@@ -153,7 +155,8 @@ def llm_endpoint(spec: Mapping[str, Any]) -> str:
 
 
 def embedding_endpoint(spec: Mapping[str, Any]) -> str:
-    return f"http://{spec['container_host']}:{spec['ollama_leg_port']}"
+    """B-A3: the arm's Ollama leg with the unit prefix - the proxy attributes each embedding call to its unit."""
+    return f"http://{spec['container_host']}:{spec['ollama_leg_port']}/u/{spec['run']}.{spec['unit']}"
 
 
 def create_body(spec: Mapping[str, Any]) -> dict:
