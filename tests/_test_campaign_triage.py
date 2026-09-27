@@ -200,7 +200,7 @@ _src = [f for f in _tracked if f not in T.CLOSURE_EXCLUDED_FILES and T.MODEL_CAL
 #: the a-mem suite points at its own loopback leg) and `tests/research/_test_v3_arm_amem.py` (its fake leg ANSWERS
 #: /api/chat). Missed by the changer at 03fce0f and found at the tip before the chain reached it: a new .py file is
 #: in this census's area, whatever directory it lands in.
-CENSUS_27 = {
+CENSUS_29 = {
     "nevertwice/_engine_config.py", "nevertwice/consolidate_memory.py", "research/_ollama_symmetry_probe.py",
     "research/embed_universal/gen_corpus.py", "research/embed_universal/gen_pairs.py", "research/frontier_eval.py",
     "research/gen_code_sessions.py", "research/invariants_lab/measure_coldstart.py",
@@ -211,10 +211,11 @@ CENSUS_27 = {
     "tools/campaign_triage.py",
     "research/v3/arms/_http_count.py", "tests/fixtures/v3_fake_products/litellm/__init__.py",
     "tests/research/_test_v3_arm_amem.py", "tests/research/_test_v3_bm25_floor.py", "tests/research/_test_v3_http_count.py",
-    "tests/research/_test_v3_runner_nevertwice.py"}
-check("twenty-seven tracked sources name a generation endpoint - exactly these, so the rule has a population",
-      set(_src) == CENSUS_27 and len(CENSUS_27) == 27,
-      f"added {sorted(set(_src) - CENSUS_27)}, gone {sorted(CENSUS_27 - set(_src))}")
+    "tests/research/_test_v3_runner_nevertwice.py",
+    "research/v3/sched_ctl.py", "tests/research/_test_v3_sched_ctl.py"}   # TB4.11a A3: the unload call (keep_alive 0)
+check("twenty-nine tracked sources name a generation endpoint - exactly these, so the rule has a population",
+      set(_src) == CENSUS_29 and len(CENSUS_29) == 29,
+      f"added {sorted(set(_src) - CENSUS_29)}, gone {sorted(CENSUS_29 - set(_src))}")
 check("and the generators it could not see before are among them",
       {"research/gen_code_sessions.py", "research/frontier_eval.py",
        "research/token_ab.py"} <= set(_src))
