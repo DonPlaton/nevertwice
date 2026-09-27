@@ -141,7 +141,8 @@ class H:
         if spec["stage"] == "write":                  # a live WRITE child: its marker goes at end_write
             os.makedirs(live_dir(spec["arm"]), exist_ok=True)
             open(os.path.join(live_dir(spec["arm"]), spec["run"] + "." + spec["unit"]), "w").close()
-        return {"protocol": B.PROTOCOL, "arm": spec["arm"], "stage": spec["stage"], "pid": os.getpid()}
+        stage = "both" if knobs.get("hello_both") else spec["stage"]   # a-mem's and langmem's one process (B-HELLO)
+        return {"protocol": B.PROTOCOL, "arm": spec["arm"], "stage": stage, "pid": os.getpid()}
 
     def write(self, item, date=None):
         log_op("write")
@@ -832,6 +833,45 @@ try:
           "is never sent with a zero timeout", e19 is None and z1 is not None and z1.aborted == "ceiling"
           and [op for op, _t in sent] == ["hello", "write"] and all(t_ > 0 for _op, t_ in sent),
           f"{e19!r} {sent} {z1.aborted if z1 else None}")
+
+    print("\n- B-HELLO: a memory-store arm's one process may answer hello 'both'; a disk arm may not -")
+    for sub in ("live", "passed", "seen", "ops", "hb"):
+        shutil.rmtree(SHARED / sub, ignore_errors=True)
+    (SHARED / "live").mkdir()
+    st20 = SL.StatusLog(TMP / "STATUS20", local_tz=dt.timezone.utc)
+    s20 = SC.Scheduler(C, None, st20, L, Clock(), None, tag="smoke", witnesses=SimpleNamespace(native=StubNative()),
+                       parent_env=dict(os.environ), catcher_url="http://127.0.0.1:47001")
+    st20.stand("SHB", "START", model="m", changelog="2026-09-10", order=1)
+    both = {("r1", "h1"): {"hello_both": True}}
+    res20 = {}
+    for blk, arm, store in (("b01", "hm", "memory"), ("b02", "hd", "disk")):
+        o20, sd20 = SC.arm_order([arm], campaign_seed=7, stand="SHB", block=blk)
+        st20.block_start("SHB", blk, units=["h1"], arm_order=o20, seed=sd20)
+        sid20 = st20.start("SHB", blk, "r1", arm, pid=os.getpid(), tag="smoke")
+        r20, e20 = attempt(lambda arm=arm, store=store, sid20=sid20: s20.write_turn(
+            launcher(arm, expect=1, knobs=both, store=store), stand="SHB", runs=["r1"], units=["h1"], ops_for=OPS,
+            ceilings={"h1": 60.0}, status_ids={"r1": sid20}))
+        res20[arm] = ((r20 or {}).get(("r1", "h1")), e20)
+        rec20 = res20[arm][0]
+        if rec20 is not None and rec20.client is not None:
+            rec20.client.close(timeout=10)
+        st20.end(sid20, rc=0, wall_s=1.0, units=1, out=f"runs/{arm}.json")
+        st20.block_end("SHB", blk)
+    fl21 = FakeLauncher("hx", store="cloud")
+    _r, e21 = attempt(lambda: s20.write_turn(fl21, stand="SHB", runs=["r1"], units=["h1"], ops_for=OPS,
+                                              ceilings={"h1": 60.0}, status_ids={"r1": "SHB/b01/r1/hm"}))
+    check("B-HELLO: a store_persistence outside disk and memory is a named SchedulerError before any child is opened "
+          "(Q25(4)) - never a KeyError", isinstance(e21, SC.SchedulerError) and "Q25(4)" in str(e21) and not fl21.opened,
+          repr(e21))
+    hm, e_hm = res20["hm"]
+    hd, e_hd = res20["hd"]
+    ua20 = aborts(TMP / "STATUS20")
+    check("B-HELLO: a memory-store arm whose hello says 'both' writes - not aborted, its footprint whole",
+          e_hm is None and hm is not None and hm.aborted is None and hm.footprint == 2
+          and not any("/hm/h1 " in x for x in ua20), f"{e_hm!r} {hm}")
+    check("B-HELLO: a disk arm whose hello says 'both' is not this arm's write stage - killed by us, UNIT-ABORT crash "
+          "signal=SIGKILL", e_hd is None and hd is not None and hd.aborted == "crash" and "hello" in (hd.error or "")
+          and any(" UNIT-ABORT SHB/b02/r1/hd/h1 reason=crash signal=SIGKILL " in x for x in ua20), f"{e_hd!r} {hd} {ua20}")
 
     print("\n- FIX-SCHED B-OPEN: a block that fails after its START closes what it opened, and kills its children -")
     EV12: list = []

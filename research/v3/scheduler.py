@@ -63,6 +63,8 @@ GATE_POLL_S = 0.5                                        # how often a closed in
 REASK_MAX, REASK_SPACING_S = 2, 300.0                    # §4.5 W3: the stand's re-asks - at most 2, at least 5 min apart
 DIED_WAIT_S = 10.0                                       # B-RC: a child whose stream closed gets this long to exit itself
 KILLED = "SIGKILL"                                       # D2: a unit killed by the scheduler is named by the signal
+#: B-HELLO: the stage a write child's hello may name - a memory-store arm's one process serves both stages and says so
+WRITE_HELLO_STAGES = {"disk": ("write",), "memory": ("write", "both")}
 UNREAD = "unread"                                        # B-CL: what a STAND line says for a value nobody read
 _NOT_READ = (None, "", UNREAD, "unknown")                # a change-log read that gave any of these read nothing
 
@@ -532,6 +534,9 @@ def _write_unit(sched: "Scheduler", launcher: Any, *, stand: str, run: str, unit
     B = _arm_base()
     rec = UnitRecord(arm=launcher.name, run=run, unit=unit)
     who = f"{stand}/{run}/{launcher.name}/{unit}"
+    if launcher.store_persistence not in WRITE_HELLO_STAGES:
+        raise SchedulerError(f"{who}: store_persistence {launcher.store_persistence!r} is disk or memory (Q25(4)); "
+                             f"no child was opened")
     start = sched.clock.monotonic()
     deadline = start + ceiling
     left = lambda: deadline - sched.clock.monotonic()  # noqa: E731
@@ -542,9 +547,10 @@ def _write_unit(sched: "Scheduler", launcher: Any, *, stand: str, run: str, unit
         client = _open(launcher, "write", who, sched=sched, stand=stand, run=run, unit=unit)
         rec.spawn_id, rec.pid, rec.dirs = client.child.spawn_id, client.pid, getattr(client, "dirs", None)
         hello = client.request("hello", timeout=budget("hello"))
-        if (hello.get("protocol"), hello.get("arm"), hello.get("stage")) != (B.PROTOCOL, launcher.name, "write"):
+        stages = WRITE_HELLO_STAGES[launcher.store_persistence]         # checked above: disk or memory
+        if (hello.get("protocol"), hello.get("arm")) != (B.PROTOCOL, launcher.name) or hello.get("stage") not in stages:
             raise B.ArmError(f"hello: {hello.get('protocol')}/{hello.get('arm')}/{hello.get('stage')} is not this arm's "
-                             f"write stage")
+                             f"write stage ({' or '.join(stages)})")
         for op in ops:
             t0 = sched.clock.utc().isoformat()
             try:
