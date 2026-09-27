@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""PREREG-V3 TB4.12 A6: research/v3/run_v3.py - the campaign CLI. This part: the smoke's pieces that need no child,
-no proxy and no model (the run itself is part 2).
+"""PREREG-V3 TB4.12 A6: research/v3/run_v3.py - the campaign CLI. So far: the smoke's pieces that need no child and
+no model (the run itself, run_smoke, is part 2b).
 
 * load(): the modules a smoke may load - score_v3.py and fafr_probe.py never (rev1 §9.4: "--smoke has no scorer");
 * next_smoke_id(): the next "<stand>-smoke-<n>" from the STATUS file's STAND START lines (Q-12-7: order = n);
@@ -14,8 +14,16 @@ no proxy and no model (the run itself is part 2).
 * questions_for(): each question's template (the stand's; S4-cat5 for an abstention question) and its text as the
   benchmark asks it (templates.locomo_question, the category as the loader keeps it - B-CAT);
 * probe(): the gate's send_probe - the scheduler's 1-token call on its own port (run_v3_hooks' probe body), its call
-  record {status, complete, model}.
-* main(): `stand --tag scored` is refused by name until A9; the smoke path is part 2.
+  record {status, complete, model};
+* boundary_canaries() (part 2a): ONE launch.Canaries per stand feeds the homes, the scheduler's env check and the
+  proxy's body scan (the auditor's condition: a planted value the proxy does not scan for would make P0h read 0);
+* preflight() (Q-A6-1 O-a): every arm's interpreter declared before STAND START, each attempt chained in
+  <runs>/_launch/preflight.jsonl and written whole, with the forecast; a refusal is exit 2, STATUS untouched;
+* forecast() (Q-A6-2, Q-A6-3): the guaranteed upper bound (FORECAST_FORMULA, deepseek-flash's price as data) and an
+  estimate that is not a bound (the reader's context at the bytes per cl100k token measured on the smoke's own text);
+  hours are not forecast;
+* WallCapGate, SMOKE_WALL_CAP_H (Q26): past the stand's 6 h wall ceiling no new unit starts;
+* main(): `stand --tag scored` is refused by name until A9; the smoke path is part 2b.
 """
 from __future__ import annotations
 
@@ -206,6 +214,184 @@ def probe(post: Callable[..., tuple[int | None, Any]], port: int, token: str, *,
         return {"status": status, "complete": complete,
                 "model": body.get("model") if isinstance(body, dict) else None}
     return send
+
+
+# ── part 2: the stand's boundary, the preflight (Q-A6-1 O-a) and the stand's wall ceiling ─────────────────────
+
+def boundary_canaries(L: Any, c: Any, environ: dict) -> dict:
+    """ONE launch.Canaries per stand (the auditor's condition for run_smoke): the same object is planted in every
+    unit's home (the scheduler's home_canaries, R-HOME-CANARY), checked in every child's environment (the scheduler's
+    canaries) and scanned for in every request body (the proxy's canaries, run_v3_proxy.build_secrets) - a value
+    planted in a home that the proxy does not look for would pass a request unflagged, and P0h would read 0. The decoy
+    env goes into ``environ`` - the mapping later passed on as parent_env, never os.environ - and the runs-root decoy
+    into <runs>/CLAUDE.md."""
+    can = L.Canaries.generate()
+    L.plant_decoy_env(can, environ=environ)
+    L.plant_runs_root_decoy(c, can)
+    return {"canaries": can, "scheduler": {"canaries": tuple(can.values.values()), "home_canaries": can},
+            "proxy": dict(can.values)}
+
+
+PREFLIGHT_LOG = ("_launch", "preflight.jsonl")
+
+
+def preflight(c: Any, L: Any, arms: Mapping[str, ArmRun], *, stand_id: str, config_sha256: str,
+              decl: Callable[..., dict], now: Callable[[], str], forecast: Mapping[str, Any] | None = None) -> dict:
+    """Q-A6-1 O-a: before STAND START, every arm's interpreter declared (``decl``: run_v3_plan.python_decl). Each
+    attempt - passed or refused - is appended, chained and fsynced, to <runs>/_launch/preflight.jsonl (launch's
+    _append_jsonl, like balance.jsonl), and written whole to <runs>/_launch/preflight/<its line>-<stand id>.json: the
+    candidate stand id, the arms, each arm's declaration or refusal, the time, the config's sha256 and the smoke's
+    forecast (Q-A6-2: in the record before the first spawn). A refusal raises CLIError (stderr, exit 2) - STATUS
+    untouched, the smoke id unspent."""
+    rec: dict = {"stand_candidate": stand_id, "arms": sorted(arms), "config_sha256": config_sha256, "utc": now(),
+                 "decl": {}, "refused": {}, "forecast": dict(forecast) if forecast is not None else None}
+    for name in sorted(arms):
+        try:
+            rec["decl"][name] = decl(arms[name].python, arm=name)
+        except ValueError as e:                                  # run_v3_plan.PlanError is a ValueError
+            rec["refused"][name] = str(e)
+    rec["ok"] = not rec["refused"]
+    log = Path(c.runs_root).joinpath(*PREFLIGHT_LOG)
+    L._append_jsonl(log, rec)
+    pos = len([x for x in log.read_bytes().split(b"\n") if x.strip()])
+    one = log.parent / "preflight" / f"{pos:05d}-{stand_id}.json"
+    one.parent.mkdir(parents=True, exist_ok=True)
+    with open(one, "xb") as f:                                   # one file per attempt, never over another
+        f.write(json.dumps(rec, ensure_ascii=False, indent=1, sort_keys=True).encode("utf-8"))
+    if not rec["ok"]:
+        raise CLIError(f"{stand_id}: the preflight refused {sorted(rec['refused'])} - {rec['refused']} "
+                       f"(recorded in {'/'.join(PREFLIGHT_LOG)} and {one.name}; no STAND START)")
+    return rec
+
+
+# ── the smoke's forecast (Q-A6-2, R-S4-COST): an upper bound, not pilot medians ────────────────────────────────
+
+#: deepseek-flash's list prices - external DATA, read on 2026-09-28 from the URL (USD per 1M tokens; peak hours are
+#: 01:00-04:00 and 06:00-10:00 UTC on weekdays, off-peak rates are half). The bound prices every input token as a
+#: peak cache miss and every output token at the peak rate.
+DEEPSEEK_FLASH_PRICE = {
+    "url": "https://api-docs.deepseek.com/quick_start/pricing", "read": "2026-09-28", "currency": "USD",
+    "per_tokens": 1_000_000, "model": "deepseek-flash", "model_version": "DeepSeek-V4.1-Flash",
+    "input_cache_hit": {"off_peak": 0.003, "peak": 0.006}, "input_cache_miss": {"off_peak": 0.15, "peak": 0.3},
+    "output": {"off_peak": 0.6, "peak": 1.2}}
+
+#: The writer's bound per arm, read from the product's code (never measured). nevertwice under runner_nevertwice
+#: (CLOUD=deepseek, CLOUD_FALLBACK=0, EXTRACT_RETRY=0): one capture_session per session op makes one extraction
+#: generate_json (_engine_cards.py:995), which _json_api_call sends at most 1 + 2 retries times (_engine_store.py:813,
+#: _engine_config.py:386) - 3 requests; each with max_tokens EXTRACT_NUM_PREDICT 4096 (_engine_store.py:993); its input
+#: is the session text cut to MAX_TRANSCRIPT_CHARS 12,000 (one head+tail window, _engine_cards.py:967) plus the
+#: template and the grounding - at most 13,000 ASCII bytes (the template's 5,644 characters, 120 slugs of at most 55,
+#: 30 tags, the project, the language rule; the tags' length is not capped in the engine [U]).
+WRITER_BOUNDS = {"nevertwice": {"requests_per_op": 3, "out_tokens": 4096, "fixed_in_bytes": 13_000,
+                                "transcript_chars": 12_000}}
+#: The reader (reader_judge.READER_PARAMS, points.BUDGET): at most 2 requests per question (the read and one re-ask),
+#: max_tokens 1,024 each; its context at most 7,000 cl100k tokens.
+READER_REQUESTS, READER_OUT, READER_CONTEXT_CL100K = 2, 1024, 7000
+
+FORECAST_FORMULA = (
+    "tokens(text) <= utf8_bytes(text) [A1: DeepSeek's tokenizer is byte-level BPE]; "
+    "writer per session op: requests <= R, in <= R * (F + min(utf8_bytes(session), 4 * C)), out <= R * O "
+    "[WRITER_BOUNDS: R, F, C, O]; "
+    "reader per question: requests <= 2, in <= 2 * (utf8_bytes(prompt without context) + 7000 * B) + 1024, "
+    "out <= 2 * 1024 [B: the longest pinned cl100k token in bytes; A2: the re-ask carries the first reply, "
+    "<= 1024 tokens]; "
+    "per arm: x runs; usd = in * input_cache_miss.peak + out * output.peak, per 1M tokens")
+
+
+def bytes_per_cl100k_token(texts: Iterable[str], count: Callable[[str], int]) -> dict:
+    """Q-A6-3 (2): the measured UTF-8 bytes per pinned-cl100k token over ``texts`` (the smoke units' session text,
+    before the run) - {ratio, bytes, tokens}; the estimate's context size, never the bound's."""
+    b = t = 0
+    for x in texts:
+        b += len(x.encode("utf-8"))
+        t += count(x)
+    if t <= 0:
+        raise CLIError("no cl100k token in the texts - no ratio is guessed")
+    return {"ratio": b / t, "bytes": b, "tokens": t}
+
+
+def _per_arm(writers: Mapping[str, str | None], session_texts: Mapping[str, Sequence[str]],
+             prompts: Mapping[tuple[str, str], str], *, runs: int, context_bytes: float,
+             price: Mapping[str, Any]) -> tuple[dict, float]:
+    n_ops = sum(len(v) for v in session_texts.values())
+    per_arm: dict = {}
+    total = 0.0
+    for arm in sorted(writers):
+        w = WRITER_BOUNDS.get(arm) if writers[arm] is not None else None
+        wr = w["requests_per_op"] * n_ops if w else 0
+        w_in = sum(w["requests_per_op"] * (w["fixed_in_bytes"] + min(len(t.encode("utf-8")), 4 * w["transcript_chars"]))
+                   for v in session_texts.values() for t in v) if w else 0
+        w_out = wr * w["out_tokens"] if w else 0
+        rr = READER_REQUESTS * len(prompts)
+        r_in = sum(READER_REQUESTS * (len(p.encode("utf-8")) + context_bytes) + READER_OUT for p in prompts.values())
+        r_out = rr * READER_OUT
+        tin, tout = runs * (w_in + r_in), runs * (w_out + r_out)
+        usd = (tin * price["input_cache_miss"]["peak"] + tout * price["output"]["peak"]) / price["per_tokens"]
+        per_arm[arm] = {"writer_requests": runs * wr, "writer_in_tokens": runs * w_in, "writer_out_tokens": runs * w_out,
+                        "reader_requests": runs * rr, "reader_in_tokens": round(runs * r_in),
+                        "reader_out_tokens": runs * r_out, "usd": round(usd, 4)}
+        total += usd
+    return per_arm, total
+
+
+def forecast(writers: Mapping[str, str | None], session_texts: Mapping[str, Sequence[str]],
+             prompts: Mapping[tuple[str, str], str], *, runs: int, max_token_bytes: int,
+             measured: Mapping[str, Any] | None = None, price: Mapping[str, Any] = DEEPSEEK_FLASH_PRICE) -> dict:
+    """The smoke's forecast - written into the preflight record before the first spawn. Two numbers (Q-A6-3): the
+    guaranteed upper bound (FORECAST_FORMULA; R-BAL takes it) and, when ``measured`` is given
+    (bytes_per_cl100k_token over the smoke's own session text, with its "source"), an estimate that is NOT a bound: the
+    same formula with the reader's context at the measured bytes per cl100k token instead of the longest token's.
+    ``writers``: arm -> its writer LLM (None: no writer); ``session_texts``: unit -> its sessions' text as the writer
+    gets it; ``prompts``: (unit, qid) -> the reader prompt with an empty context. Hours are not forecast (Q-A6-2): the
+    stand's wall ceiling bounds them. An arm whose writer has no bound, or another model, refuses."""
+    for arm, llm in writers.items():
+        if llm is not None and llm != price["model"]:
+            raise CLIError(f"arm {arm}: its writer is {llm!r}, not {price['model']} - the price does not apply")
+        if llm is not None and arm not in WRITER_BOUNDS:
+            raise CLIError(f"arm {arm}: no upper bound for its writer's calls in WRITER_BOUNDS - no forecast, no smoke")
+    n_ops = sum(len(v) for v in session_texts.values())
+    per_arm, total = _per_arm(writers, session_texts, prompts, runs=runs,
+                              context_bytes=READER_CONTEXT_CL100K * max_token_bytes, price=price)
+    estimate = None
+    if measured is not None:
+        est_arm, est_total = _per_arm(writers, session_texts, prompts, runs=runs,
+                                      context_bytes=READER_CONTEXT_CL100K * measured["ratio"], price=price)
+        estimate = {"note": "estimate, not a bound", "bytes_per_cl100k_token": measured["ratio"],
+                    "measured": {k: measured[k] for k in ("bytes", "tokens", "source") if k in measured},
+                    "per_arm": est_arm, "usd_total": round(est_total, 4)}
+    return {"note": "upper bound, not pilot medians", "formula": FORECAST_FORMULA, "runs": runs,
+            "session_ops_per_run": n_ops, "questions_per_run": len(prompts), "max_token_bytes": max_token_bytes,
+            "writer_bounds": {a: WRITER_BOUNDS[a] for a in sorted(writers) if writers[a] is not None},
+            "price": dict(price), "per_arm": per_arm, "usd_total": round(total, 4), "estimate": estimate,
+            "scheduler": "1 model probe (1 output token) before the stand; the gate's 1-token probes are counted after "
+                         "the run - not bounded in advance",
+            "hours": f"not forecast (Q-A6-2); the stand's wall ceiling is {SMOKE_WALL_CAP_H} h, the worst case "
+                     f"{SMOKE_WALL_CAP_H} h plus one unit ceiling"}
+
+
+#: Q-A6-2 / Q26: the smoke stand's wall ceiling - the declared debug ceiling of the pilot and the smoke, 6 h. A unit
+#: already running ends by its own ceiling (scheduler.DEBUG_CEILING_S, also 6 h), so the worst case is 12 h.
+SMOKE_WALL_CAP_H = 6.0
+
+
+class WallCapGate:
+    """The stand's wall ceiling (D5, the auditor's condition for the smoke): past ``deadline`` (a monotonic time) no
+    new unit starts - admits_new_unit RAISES, so the scheduler's B-OPEN path closes the block and writes STAND END
+    (a refusal that only waited would hang the stand). Units already running end by their own ceilings, so the worst
+    case is the cap plus one unit ceiling. Before the deadline it defers to the incident gate it wraps."""
+
+    def __init__(self, inner: Any, *, deadline: float, monotonic: Callable[[], float], cap_h: float) -> None:
+        self.inner, self.deadline, self.monotonic, self.cap_h = inner, deadline, monotonic, cap_h
+        self.tripped = False
+
+    def admits_new_unit(self) -> bool:
+        if self.monotonic() >= self.deadline:
+            self.tripped = True
+            raise CLIError(f"the stand's wall ceiling of {self.cap_h} h is reached - no new unit starts (D5)")
+        return self.inner.admits_new_unit() if self.inner is not None else True
+
+    def __getattr__(self, name: str) -> Any:                     # the incident gate's other methods, as they are
+        return getattr(self.inner, name)
 
 
 # ── the command line ───────────────────────────────────────────────────────────────────────────────────────────

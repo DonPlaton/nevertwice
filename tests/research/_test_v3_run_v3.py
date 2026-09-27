@@ -10,6 +10,12 @@
 * CLI-unit-tokens, CLI-questions: each unit's input tokens; each question's template (S4-cat5 for an abstention
   question, never the arm's) and its text as the benchmark asks it;
 * CLI-probe: the gate's probe is the hooks' 1-token body on the scheduler's port, its record {status, complete, model};
+* CAN-one-object, CAN-decoys, CAN-proxy-flags (part 2a): one Canaries per stand - every value planted in a home is one
+  the proxy scans for, the decoy env stays in parent_env, and a home's CLAUDE.md sent to a real (in-process) proxy's
+  write port is refused and flagged canary;
+* PF-pass, PF-refuse, PF-no-status: the preflight's chained record and per-attempt file, with the forecast;
+* WC-gate, WC-cap: the stand's wall ceiling (Q26, 6 h);
+* FC-bound, FC-labels, FC-estimate, FC-ratio-refuse, FC-refuse: the forecast's upper bound and its estimate;
 * CLI-scored-refused, CLI-stand-refused: --tag scored waits for A9; a smoke of a stand without a template is refused.
 
     python tests/research/_test_v3_run_v3.py
@@ -199,6 +205,173 @@ try:
           "model} - a 502 is no complete call", r1 == {"status": 200, "complete": True, "model": "deepseek-v4-flash"}
           and r2 == {"status": 502, "complete": False, "model": None} and sent[0][:2] == (43100, H.PROBE_PATH)
           and sent[0][2] == {"model": RP.PINNED_MODEL, **H.PROBE_BODY} and sent[0][3] == "tok-s", str(sent[:1]))
+
+    print("\n- the stand's boundary: one Canaries object (the auditor's condition for run_smoke) -")
+    import os  # noqa: E402
+    import re  # noqa: E402
+    import socket  # noqa: E402
+    L = RV.load("launch.py", smoke=True)
+    PX = _load("v3_llm_proxy_for_run_v3_t", ROOT / "research" / "_llm_proxy.py")
+    BC = L.Contract(polygon_root=TMP / "bc" / "polygon", runs_root=TMP / "bc" / "polygon" / "runs" / "v3", repo_root=ROOT,
+                    owner_home=TMP / "bc" / "owner", secrets_dir=TMP / "bc" / "secrets",
+                    quarantine_root=TMP / "bc" / "quarantine", conservation_root=TMP / "bc" / "conservation")
+    penv: dict = {"PATH": os.environ.get("PATH", "")}
+    wiring = RV.boundary_canaries(L, BC, penv)
+    unit_d = L.make_unit_dirs(BC, "S4-smoke-1", "r1", "bm25-floor", "u1")
+    L.plant_canaries(unit_d, wiring["scheduler"]["home_canaries"])
+    planted = {p.relative_to(unit_d.home).as_posix(): re.findall(r"nvt3c-[a-z_]+-[0-9a-f]{32}", p.read_text("utf-8"))
+               for p in (unit_d.home / ".claude" / "CLAUDE.md", unit_d.home / ".claude" / ".credentials.json",
+                         unit_d.home / ".claude.json")}
+    proxy_set = set(wiring["proxy"].values())
+    check("CAN-one-object: every value planted in a unit's home is one the proxy scans for, and the scheduler's env "
+          "check holds the same set - one Canaries object feeds all three",
+          all(len(v) == 1 and v[0] in proxy_set for v in planted.values())
+          and set(wiring["scheduler"]["canaries"]) == proxy_set and len(proxy_set) == 5, str(planted))
+    runs_decoy = (BC.runs_root / "CLAUDE.md").read_text("utf-8") if (BC.runs_root / "CLAUDE.md").exists() else ""
+    check("CAN-decoys: the decoy env is in the parent_env mapping (never os.environ) and the runs-root decoy holds the "
+          "ancestor canary - both values the proxy knows",
+          penv.get(L.DECOY_ENV_NAME) in proxy_set and L.DECOY_ENV_NAME not in os.environ
+          and wiring["proxy"]["ancestor"] in runs_decoy, str(sorted(penv)))
+    keyf = TMP / "bc" / "deepseek.env"
+    keyf.write_bytes(b"DEEPSEEK_API_KEY=nvt3-test-not-a-key-0000\n")
+    dead = socket.socket()
+    dead.bind(("127.0.0.1", 0))
+    dead_port = dead.getsockname()[1]
+    dead.close()                                              # a closed upstream port: forwarding would fail, not flag
+    arm_tok = L.new_token("bm25-floor") if hasattr(L, "new_token") else "nvt3-tok-bm25"
+    pcfg = PX.ProxyConfig(arms=[PX.ArmConfig(arm="bm25-floor", mode="record", token=arm_tok,
+                                             pinned_model="deepseek-flash")],
+                          run_dir=TMP / "bc" / "proxy", upstream_host="127.0.0.1", upstream_port=dead_port,
+                          upstream_tls=False, control_token="ctl-bc")
+    px = PX.Proxy(pcfg, PX.read_key(keyf), canaries=wiring["proxy"], log=lambda m: None)
+    wport = px.start()["arms"]["bm25-floor"]["write"]
+    home_text = (unit_d.home / ".claude" / "CLAUDE.md").read_text("utf-8")    # what a child reading its home finds
+    body = json.dumps({"model": "deepseek-flash", "thinking": {"type": "disabled"},
+                       "messages": [{"role": "user", "content": "my notes: " + home_text}]}).encode()
+    cs = socket.create_connection(("127.0.0.1", wport))
+    cs.sendall((f"POST /u/r1.u1/v1/chat/completions HTTP/1.1\r\nHost: x\r\nAuthorization: Bearer {arm_tok}\r\n"
+                f"Content-Type: application/json\r\nConnection: close\r\nContent-Length: {len(body)}\r\n\r\n").encode()
+               + body)
+    cs.settimeout(10)
+    got = b""
+    try:
+        while chunk := cs.recv(65536):
+            got += chunk
+    except OSError:
+        pass
+    cs.close()
+    px.stop()
+    ff = TMP / "bc" / "proxy" / "flags.jsonl"
+    flags = [json.loads(x) for x in ff.read_bytes().decode().splitlines()] if ff.exists() else []
+    check("CAN-proxy-flags: the home's CLAUDE.md text sent to the write port is refused and flagged canary - P0h's "
+          "canary_hits > 0 in the proxy's counters", not got.startswith(b"HTTP/1.1 200")
+          and [f["kind"] for f in flags] == ["canary"] and px.counters["bm25-floor"].canary_hits >= 1,
+          f"{got[:40]!r} {flags} {vars(px.counters['bm25-floor']).get('canary_hits')}")
+
+    print("\n- the preflight (Q-A6-1 O-a) and the wall ceiling (Q26) -")
+    PC = L.Contract(polygon_root=TMP / "pf" / "polygon", runs_root=TMP / "pf" / "polygon" / "runs" / "v3",
+                    repo_root=ROOT, owner_home=TMP / "pf" / "owner", secrets_dir=TMP / "pf" / "secrets",
+                    quarantine_root=TMP / "pf" / "quarantine", conservation_root=TMP / "pf" / "conservation")
+    two = {"bm25-floor": RV.ArmRun(python=Path(sys.executable), llm=None, llm_transport=None, embeds_via_ollama=True),
+           "nevertwice": RV.ArmRun(python=Path(sys.executable), llm="deepseek-flash", llm_transport="cloud:deepseek",
+                                   embeds_via_ollama=True)}
+
+    def decl_ok(py, *, arm):
+        return {"python": str(py), "arm": arm, "version": "3.14.0"}
+
+    def decl_refuse(py, *, arm):
+        if arm == "nevertwice":
+            raise ValueError("nevertwice: its python is not the declared interpreter")
+        return decl_ok(py, arm=arm)
+
+    fc = {"note": "upper bound, not pilot medians", "usd": 1.5}
+    ok_rec = RV.preflight(PC, L, two, stand_id="S4-smoke-1", config_sha256="c" * 64, decl=decl_ok,
+                          now=lambda: "2026-09-28T00:00:00Z", forecast=fc)
+    ref = err(lambda: RV.preflight(PC, L, two, stand_id="S4-smoke-1", config_sha256="c" * 64, decl=decl_refuse,
+                                   now=lambda: "2026-09-28T00:01:00Z", forecast=fc))
+    plog = PC.runs_root / "_launch" / "preflight.jsonl"
+    plines = [json.loads(x) for x in plog.read_bytes().decode().splitlines()] if plog.exists() else []
+    pfiles = sorted(p.name for p in (PC.runs_root / "_launch" / "preflight").glob("*.json"))
+    check("PF-pass: every arm declared, the record ok with each declaration and the forecast, chained in "
+          "preflight.jsonl and written whole to its own file", ok_rec["ok"] and set(ok_rec["decl"]) == set(two)
+          and ok_rec["forecast"] == fc and plines[:1] and plines[0]["ok"] is True
+          and pfiles[:1] == ["00001-S4-smoke-1.json"], f"{pfiles} {plines[:1]}")
+    check("PF-refuse: a refused arm stops the stand by name (CLIError, exit 2) - the attempt is still chained and "
+          "written, ok false with the refusal, and the log's chain holds", "refused ['nevertwice']" in ref
+          and len(plines) == 2 and plines[1]["ok"] is False and "nevertwice" in plines[1]["refused"]
+          and pfiles == ["00001-S4-smoke-1.json", "00002-S4-smoke-1.json"] and L.verify_chain(plog), f"{ref} {pfiles}")
+    check("PF-no-status: the preflight writes no STATUS line - a refusal leaves the smoke id unspent",
+          not any("STATUS" in p.name for p in PC.runs_root.rglob("*")) and not (TMP / "pf" / "STATUS").exists())
+
+    class Inner:
+        def __init__(self, admit):
+            self.admit, self.asked, self.started = admit, 0, False
+
+        def admits_new_unit(self):
+            self.asked += 1
+            return self.admit
+
+        def start(self):
+            self.started = True
+
+    clock = [100.0]
+    inner_no, inner_yes = Inner(False), Inner(True)
+    g_no = RV.WallCapGate(inner_no, deadline=200.0, monotonic=lambda: clock[0], cap_h=RV.SMOKE_WALL_CAP_H)
+    g_yes = RV.WallCapGate(inner_yes, deadline=200.0, monotonic=lambda: clock[0], cap_h=RV.SMOKE_WALL_CAP_H)
+    before = (g_no.admits_new_unit(), g_yes.admits_new_unit())
+    g_yes.start()
+    clock[0] = 200.0
+    after = err(lambda: g_yes.admits_new_unit())
+    check("WC-gate: before the deadline the incident gate decides (its refusal and its admission pass through, as do "
+          "its other methods); at the deadline admits_new_unit raises the ceiling by name and the gate is tripped",
+          before == (False, True) and inner_yes.started and "wall ceiling of 6.0 h" in after and g_yes.tripped
+          and not g_no.tripped and inner_yes.asked == 1, f"{before} {after}")
+    print("\n- the forecast (Q-A6-2): an upper bound, not pilot medians -")
+    fc_out = RV.forecast({"bm25-floor": None, "nevertwice": "deepseek-flash"},
+                         {"u1": ["a" * 100, "é" * 20000, "x" * 60000]}, {("u1", "q0"): "p" * 50},
+                         runs=2, max_token_bytes=128)
+    nw, bm = fc_out["per_arm"].get("nevertwice", {}), fc_out["per_arm"].get("bm25-floor", {})
+    check("FC-bound: nevertwice's writer <= 3 requests per session op, each <= 13,000 fixed bytes + the session's UTF-8 "
+          "bytes capped at 4 x 12,000, out 4,096; the reader <= 2 requests per question, in <= 2 x (prompt bytes + "
+          "7,000 x the longest token's bytes) + 1,024, out 2 x 1,024; x 2 runs; priced at the peak cache-miss and "
+          "output rates", nw == {"writer_requests": 18, "writer_in_tokens": 762600, "writer_out_tokens": 73728,
+                                 "reader_requests": 4, "reader_in_tokens": 3586248, "reader_out_tokens": 4096,
+                                 "usd": 1.398}
+          and bm == {"writer_requests": 0, "writer_in_tokens": 0, "writer_out_tokens": 0, "reader_requests": 4,
+                     "reader_in_tokens": 3586248, "reader_out_tokens": 4096, "usd": 1.0808}
+          and fc_out["usd_total"] == 2.4788, json.dumps(fc_out["per_arm"]))
+    check("FC-labels: the record says 'upper bound, not pilot medians', carries the formula, the price as data (URL, "
+          "date, peak and off-peak numbers) and no hours - only the wall ceiling",
+          fc_out["note"] == "upper bound, not pilot medians" and fc_out["formula"] == RV.FORECAST_FORMULA
+          and fc_out["price"]["url"].startswith("https://api-docs.deepseek.com/")
+          and fc_out["price"]["read"] == "2026-09-28" and fc_out["price"]["input_cache_miss"] == {"off_peak": 0.15,
+                                                                                                 "peak": 0.3}
+          and fc_out["price"]["output"] == {"off_peak": 0.6, "peak": 1.2}
+          and fc_out["hours"].startswith("not forecast") and "6.0 h" in fc_out["hours"], fc_out["hours"])
+    meas = RV.bytes_per_cl100k_token(["abcde" * 10, "é" * 5], lambda s: len(s.encode("utf-8")) // 5)
+    fc_est = RV.forecast({"bm25-floor": None, "nevertwice": "deepseek-flash"},
+                         {"u1": ["a" * 100, "é" * 20000, "x" * 60000]}, {("u1", "q0"): "p" * 50},
+                         runs=2, max_token_bytes=128, measured={**meas, "source": "test texts"})
+    est = fc_est.get("estimate") or {}
+    check("FC-estimate (Q-A6-3): beside the bound, an estimate labelled 'estimate, not a bound' - the reader's context "
+          "at the measured bytes per cl100k token (60 bytes / 12 tokens = 5.0, its source recorded); the bound itself "
+          "unchanged", meas == {"ratio": 5.0, "bytes": 60, "tokens": 12} and est.get("note") == "estimate, not a bound"
+          and est.get("bytes_per_cl100k_token") == 5.0 and est.get("measured") == {"bytes": 60, "tokens": 12,
+                                                                                   "source": "test texts"}
+          and est.get("per_arm", {}).get("bm25-floor", {}).get("reader_in_tokens") == 142248
+          and est.get("per_arm", {}).get("nevertwice", {}).get("usd") == 0.3648 and est.get("usd_total") == 0.4124
+          and fc_est["per_arm"] == fc_out["per_arm"] and fc_est["usd_total"] == 2.4788 and fc_out["estimate"] is None,
+          json.dumps(est)[:300])
+    check("FC-ratio-refuse: no cl100k token in the texts - no ratio is guessed",
+          "no ratio is guessed" in err(lambda: RV.bytes_per_cl100k_token(["", ""], lambda s: 0)))
+    check("FC-refuse: a writer without a bound in WRITER_BOUNDS, or a writer on another model, stops the forecast - "
+          "no forecast, no smoke", "no upper bound" in err(lambda: RV.forecast({"mem0": "deepseek-flash"}, {}, {}, runs=1,
+                                                                                max_token_bytes=128))
+          and "the price does not apply" in err(lambda: RV.forecast({"nevertwice": "gpt-4o"}, {}, {}, runs=1,
+                                                                    max_token_bytes=128)))
+    SCH = RV.load("scheduler.py", smoke=True)
+    check("WC-cap: the smoke's wall ceiling is Q26's 6 h; with one unit ceiling (scheduler.DEBUG_CEILING_S) the worst "
+          "case is 12 h", RV.SMOKE_WALL_CAP_H == 6.0 and RV.SMOKE_WALL_CAP_H + SCH.DEBUG_CEILING_S / 3600 == 12.0)
 
     print("\n- the command line -")
     base = ["stand", "--arms", "bm25-floor", "--runs", "r1", "--config", str(cf)]
