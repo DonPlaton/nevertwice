@@ -113,10 +113,12 @@ try:
 
     outs = {"key elsewhere": cfg_err(key_file=str(TMP / "deepseek.env")), "key relative": cfg_err(key_file="deepseek.env"),
             "no git": cfg_err(git=None), "a stray key": cfg_err(stray=1),
-            "arm python relative": cfg_err(arms={"x": {**cfg["arms"]["bm25-floor"], "python": "python.exe"}})}
+            "arm python relative": cfg_err(arms={"x": {**cfg["arms"]["bm25-floor"], "python": "python.exe"}}),
+            "a bool seed (RVe)": cfg_err(campaign_seed=True), "no arm (RVh)": cfg_err(arms={})}
     check("CLI-config: a key file outside the secrets directory or relative, a missing or a stray key, an arm's "
-          "relative python - each refused by name", all(v != "accepted" and not v.startswith("not refused")
-                                                        for v in outs.values()), str(outs))
+          "relative python, a bool campaign seed, no arm at all - each refused by name",
+          all(v != "accepted" and not v.startswith("not refused") for v in outs.values())
+          and "campaign_seed is an int" in outs["a bool seed (RVe)"] and "no arm" in outs["no arm (RVh)"], str(outs))
 
     print("\n- the S4 smoke's units -")
     LME = [lme_rec(i) for i in range(500)]
@@ -145,6 +147,19 @@ try:
           set(sm["smaps"]) == set(want_ids) and all(m == {"user": "user", "assistant": "assistant"}
                                                      for m in sm["smaps"].values())
           and sm["item_texts"].get(want_ids[0]) == ["hello 19", "hi", "more 19"], str(sm["item_texts"].get(want_ids[0])))
+    LDm = RV.load("loaders.py", smoke=True)
+    _real_samples = LDm.s4_smoke_samples
+    wrong = {}
+    for label, pick in (("the head", lambda recs, order: _real_samples(recs, list(order[20:]) + list(order[:20]))),
+                        ("the tail reversed", lambda recs, order: _real_samples(recs, order)[::-1])):
+        LDm.s4_smoke_samples = pick
+        try:
+            wrong[label] = err(lambda: RV.s4_smoke_units(LME, ORDER, stand_id="S4-smoke-3"))
+        finally:
+            LDm.s4_smoke_samples = _real_samples
+    check("CLI-smoke-units (RVg): samples that are not the order's positions 481-500, or are them out of order, are "
+          "refused by name - the smoke is those positions, in that order",
+          all("positions 481-500" in v for v in wrong.values()), str(wrong))
     ut = RV.unit_tokens(sm["units"], lambda s: len(s.split()))
     check("CLI-unit-tokens: each unit's input in tokens - its sessions' text as every text-API arm gets it",
           ut.get(want_ids[0]) == len("user: hello 19\nassistant: hi\nuser: more 19".split()) and set(ut) == set(want_ids),
