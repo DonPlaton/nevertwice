@@ -41,6 +41,23 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "nevertwice"
 DEFAULT_TARGET = Path.home() / ".claude" / "scripts"
 
+
+def _claim_backup(parent: Path, prefix: str, *, now=time.localtime) -> Path:
+    """An empty backup directory under ``parent``, claimed exclusively (B-SV2, the auditor's 2026-09-27 finding): the
+    name carries the time to the second, and a second run within that second used to raise FileExistsError before
+    backing up anything. ``mkdir`` fails when anything holds the name, so the next free suffix -1, -2 ... is taken
+    instead - no check-then-create race, never one directory for two runs. ``now`` is the clock seam."""
+    stamp = time.strftime("%Y%m%d-%H%M%S", now())
+    parent.mkdir(parents=True, exist_ok=True)
+    for n in range(1000):
+        cand = parent / (f"{prefix}{stamp}" if n == 0 else f"{prefix}{stamp}-{n}")
+        try:
+            cand.mkdir()
+        except FileExistsError:
+            continue
+        return cand
+    raise FileExistsError(f"no free backup name: {prefix}{stamp} through -999 are taken")
+
 #: Never copied: machine-local state and secrets live in the install, not in the repo,
 #: and overwriting them is how a sync turns into a data loss.
 NEVER_COPY = {".secrets.env", "twin_calibration.json", ".processed_sessions.json",
@@ -146,9 +163,7 @@ def main(argv: list[str] | None = None) -> int:
         print("\nDRY RUN - nothing was written. Re-run with --apply to back up and copy.")
         return 0
 
-    stamp = time.strftime("%Y%m%d-%H%M%S")
-    backup = target.parent / f"scripts-backup-{stamp}"
-    backup.mkdir(parents=True, exist_ok=False)
+    backup = _claim_backup(target.parent, "scripts-backup-")
     for _action, src, _sd, _td in rows:
         dst = target / src.name
         if dst.exists():

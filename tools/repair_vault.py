@@ -42,6 +42,23 @@ SIGNATURE_SHARE = 0.90
 SIGNATURE_MIN = 8
 
 
+def _claim_backup(parent: Path, prefix: str, *, now=time.localtime) -> Path:
+    """An empty backup directory under ``parent``, claimed exclusively (B-SV2, the auditor's 2026-09-27 finding): the
+    name carries the time to the second, and a second run within that second used to raise FileExistsError before
+    backing up anything. ``mkdir`` fails when anything holds the name, so the next free suffix -1, -2 ... is taken
+    instead - no check-then-create race, never one directory for two runs. ``now`` is the clock seam."""
+    stamp = time.strftime("%Y%m%d-%H%M%S", now())
+    parent.mkdir(parents=True, exist_ok=True)
+    for n in range(1000):
+        cand = parent / (f"{prefix}{stamp}" if n == 0 else f"{prefix}{stamp}-{n}")
+        try:
+            cand.mkdir()
+        except FileExistsError:
+            continue
+        return cand
+    raise FileExistsError(f"no free backup name: {prefix}{stamp} through -999 are taken")
+
+
 def _vault(override: str | None) -> Path:
     return Path(override or os.environ.get("NEVERTWICE_VAULT")
                 or (Path.home() / "Obsidian" / "Claude_Memory"))
@@ -152,9 +169,7 @@ def main(argv: list[str] | None = None) -> int:
         print("\nDRY RUN - nothing was written. Re-run with --apply to back up and repair.")
         return 0
 
-    stamp = time.strftime("%Y%m%d-%H%M%S")
-    backup = vault / f".repair-backup-{stamp}"
-    backup.mkdir(parents=True, exist_ok=False)
+    backup = _claim_backup(vault, ".repair-backup-")
     touched = {live for live, _ in twins} | {p for p, _, _ in foreign}
     for p in touched:
         shutil.copy2(p, backup / p.name)

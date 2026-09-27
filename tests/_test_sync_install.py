@@ -92,5 +92,30 @@ for f in (".secrets.env", "twin_calibration.json", "guards.json",
           ".processed_sessions.json"):
     check(f"{f} is excluded", f'"{f}"' in src)
 
+print("\n- B-SV2: a backup directory claimed in the same second twice is two directories -")
+import importlib.util as _ilu  # noqa: E402
+import time as _time  # noqa: E402
+_s = _ilu.spec_from_file_location("sync_install_under_test", TOOL)
+_T = _ilu.module_from_spec(_s)
+_s.loader.exec_module(_T)
+with tempfile.TemporaryDirectory() as _td:
+    _parent = Path(_td) / "parent"
+    _fixed = _time.strptime("2026-09-27 10:10:10", "%Y-%m-%d %H:%M:%S")
+    _got = []
+    for _ in range(3):
+        try:
+            _got.append(_T._claim_backup(_parent, "scripts-backup-", now=lambda: _fixed).name)
+        except Exception as _e:  # noqa: BLE001 - a crash is a named FAIL below
+            _got.append(repr(_e))
+    check("three backups in one second are three directories, suffixed -1 and -2",
+          _got == ["scripts-backup-20260927-101010", "scripts-backup-20260927-101010-1", "scripts-backup-20260927-101010-2"], str(_got))
+    (_parent / "scripts-backup-20260927-101011").write_text("a file squatting on the name", encoding="utf-8")
+    try:
+        _n = _T._claim_backup(_parent, "scripts-backup-", now=lambda: _time.strptime("2026-09-27 10:10:11",
+                                                                           "%Y-%m-%d %H:%M:%S")).name
+    except Exception as _e:  # noqa: BLE001
+        _n = repr(_e)
+    check("a name held by a plain file is passed over too", _n == "scripts-backup-20260927-101011-1", _n)
+
 print(f"\nsync install: {len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")
 sys.exit(1 if FAILED else 0)
