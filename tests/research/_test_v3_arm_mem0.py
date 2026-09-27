@@ -325,13 +325,15 @@ try:
     U3.mkdir(parents=True)
     chats_before = len(PROXY.paths("/chat/completions"))
     c, err = start("s1", spec_for("s1", "mem0-store", "write", U3))
-    ITEMS = {4: "Conversation from 2023-05-20:\nthe cat sat on the mat", 1: "a bounded retry fixed the upload"}
+    ITEMS = {4: "Conversation from 2023-05-20:\nthe cat sat on the mat", 1: "a bounded retry fixed the upload",
+             6: "  \n\tspaces and newlines at both ends \n\n  "}
     ans = {i: safely(lambda i=i, t=t: c.request("write", item={"item_id": f"u1:{i}", "index": i, "text": t}), {})
            for i, t in ITEMS.items()}
-    adds = logged("add")[-2:]
-    check("mem0-store: add(the item's bytes, infer=False, metadata index) - no header added by the adapter",
-          [(a.get("messages"), a.get("infer"), a.get("metadata")) for a in adds]
-          == [(ITEMS[4], False, {"index": 4}), (ITEMS[1], False, {"index": 1})], str(adds)[:300])
+    adds = logged("add")[-3:]
+    check("mem0-store: add(the item's bytes EXACTLY - whitespace at both ends kept, infer=False, metadata index) - no "
+          "header added by the adapter", [(a.get("messages"), a.get("infer"), a.get("metadata")) for a in adds]
+          == [(ITEMS[4], False, {"index": 4}), (ITEMS[1], False, {"index": 1}), (ITEMS[6], False, {"index": 6})],
+          str(adds)[:300])
     check("mem0-store: item_sha256 per item and items_sha256 per unit",
           all(ans[i].get("item_sha256") == B.text_sha256(t) for i, t in ITEMS.items())
           and safely(lambda: c.request("end_write"), {}).get("items_sha256")
@@ -374,6 +376,11 @@ try:
     (decoy2 / "mem0.py").write_text("__version__ = 'decoy'\nclass Memory: pass\n", encoding="utf-8")
     msg = hello_error("x5b", spec_for("x5b", "mem0", "write", U4, unit="u4"), adir=decoy2)
     check("a mem0.py module inside the arm directory is refused by name too", "arm's directory" in msg, msg[:200])
+    decoy3 = arm_dir("decoy3")
+    (decoy3 / "mem0.py").write_text("__version__ = 'decoy without Memory'\n", encoding="utf-8")
+    msg = hello_error("x5c", spec_for("x5c", "mem0", "write", U4, unit="u4"), adir=decoy3)
+    check("MI1: a decoy mem0.py WITHOUT Memory is refused by name for its place, never by an ImportError",
+          "arm's directory" in msg and "ImportError" not in msg, msg[:200])
     msg = hello_error("x7", spec_for("x7", "mem0", "write", U4, unit="u4"),
                       env=child_env(extra={"NVT3_FAKE_PULL_ALWAYS": "1"}))
     check("a product that pulls anyway while it is built is refused by name (the counter saw the pull)",

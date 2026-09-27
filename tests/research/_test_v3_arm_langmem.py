@@ -290,15 +290,17 @@ try:
     print("\n- the langmem-store arm (retrieval tier) -")
     chats_before = len(PROXY.paths("/chat/completions"))
     c, _ = start("st", spec_for("st", "langmem-store"))
-    ITEMS = {3: "Conversation from 2023-05-20:\nthe cat sat on the mat", 0: "a bounded retry fixed the upload"}
+    ITEMS = {3: "Conversation from 2023-05-20:\nthe cat sat on the mat", 0: "a bounded retry fixed the upload",
+             8: "  \n\tspaces and newlines at both ends \n\n  "}
     ans = {i: safely(lambda i=i, t=t: c.request("write", item={"item_id": f"u1:{i}", "index": i, "text": t}), {})
            for i, t in ITEMS.items()}
     check("the store arm's index is the item's bytes only: fields ['text'] (L3)",
           (logged("InMemoryStore") or [{}])[-1].get("fields") == ["text"], str((logged("InMemoryStore") or [{}])[-1]))
-    puts = logged("put")[-2:]
-    check("langmem-store: put(('items', unit), '<index>', {'text': <the item's bytes>}) - no header added",
-          [(p.get("namespace"), p.get("key"), p.get("value")) for p in puts]
-          == [(["items", "u1"], "3", {"text": ITEMS[3]}), (["items", "u1"], "0", {"text": ITEMS[0]})], str(puts))
+    puts = logged("put")[-3:]
+    check("langmem-store: put(('items', unit), '<index>', {'text': <the item's bytes EXACTLY, whitespace kept>}) - no "
+          "header added", [(p.get("namespace"), p.get("key"), p.get("value")) for p in puts]
+          == [(["items", "u1"], "3", {"text": ITEMS[3]}), (["items", "u1"], "0", {"text": ITEMS[0]}),
+              (["items", "u1"], "8", {"text": ITEMS[8]})], str(puts))
     es = safely(lambda: c.request("end_write"), {})
     check("langmem-store: item_sha256 per item and items_sha256 per unit",
           all(ans[i].get("item_sha256") == B.text_sha256(t) for i, t in ITEMS.items())

@@ -216,11 +216,12 @@ try:
           ef.get("model_name") == TAG and ef.get("url") == f"http://127.0.0.1:{OLLAMA.port}" and ef.get("extra") == [],
           str(ef))
     ITEMS = {5: "Conversation from 2023-05-20:\nthe cat sat on the mat", 2: "a bounded retry fixed the upload",
-             9: "paris is in france"}
+             9: "paris is in france", 11: "  \n\tspaces and newlines at both ends \n\n  "}
     ans = {i: safely(lambda i=i, t=t: c.request("write", item={"item_id": f"u1:{i}", "index": i, "text": t}), {})
            for i, t in ITEMS.items()}
-    adds = logged("add")[-3:]
-    check("write: add(ids=[str(index)], documents=[<the item's bytes>]) - no header added, no metadata",
+    adds = logged("add")[-4:]
+    check("write: add(ids=[str(index)], documents=[<the item's bytes EXACTLY, whitespace at both ends kept (C6)>]) - no "
+          "header added, no metadata",
           [(a.get("ids"), a.get("documents"), a.get("metadatas")) for a in adds]
           == [([str(i)], [t], None) for i, t in ITEMS.items()], str(adds)[:300])
     check("write: item_sha256 per item", all(ans[i].get("item_sha256") == B.text_sha256(t) for i, t in ITEMS.items()))
@@ -230,7 +231,7 @@ try:
           raises(lambda: c.request("read", qid="q", query="x", k=2), B.ArmError, "read stage"))
     e = safely(lambda: c.request("end_write"), {})
     check("end_write: the count, items_sha256 over (index, sha), the store sealed",
-          (e.get("footprint") or {}).get("retrievable") == 3
+          (e.get("footprint") or {}).get("retrievable") == 4
           and e.get("items_sha256") == B.items_digest({i: B.text_sha256(t) for i, t in ITEMS.items()})
           and (U / B.SEAL_NAME).is_file(), str(e)[:200])
     c.close()
