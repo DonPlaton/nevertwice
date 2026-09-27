@@ -11,8 +11,9 @@ refuses, by construction and before a byte is written, every sequence the rules 
 * S3: a stand has at most one open block, a block ENDs only when none of its runs is live, a START needs its block
   open - so every END of block b precedes every START of block b+1; utc strictly increases from line to line, so the
   strict barrier holds in the file too. A clock that does not advance is refused, never nudged;
-* S9/S10 (A6 Q1, Q25): a UNIT-ABORT names a unit of its block, reason=ceiling, inside its live arm-run, and the END lists
-  exactly those units; a START's arm is in its block's seeded arm_order, and a block ENDs only when every arm of that
+* S9/S10 (A6 Q1, D2, Q25): a UNIT-ABORT names a unit of its block, inside its live arm-run, with reason=ceiling (no rc=
+  or signal=: the scheduler killed it) or reason=crash with exactly one of rc=<integer> / signal=<SIGNAME or number>;
+  the END lists exactly those units; a START's arm is in its block's seeded arm_order, and a block ENDs only when every arm of that
   order has STARTed in it;
 * S6: an exogenous RERUN covers arms=all and names an incident this file opened; cause and kind come from fixed lists;
 * S7: no scored START outside CAMPAIGN V3 START .. END (smoke and debug runs of the pilot may precede the campaign);
@@ -43,7 +44,7 @@ HERE = Path(__file__).resolve().parent
 TAGS = ("scored", "smoke", "debug")
 CAUSES = ("exogenous", "endogenous")
 INCIDENT_KINDS = ("5xx", "429", "timeout", "401", "402", "403", "model-event")
-UNIT_ABORT_REASONS = ("ceiling",)          # §5.6: a unit that hits its wall-clock ceiling (A6 Q1)
+UNIT_ABORT_REASONS = ("ceiling", "crash")  # §5.6 a unit at its wall-clock ceiling (A6 Q1); a unit whose child died (D2)
 LOCAL_FMT = "%Y-%m-%d %H:%M:%S"
 _SEG = re.compile(r"[A-Za-z0-9._-]+\Z")
 _RUN = re.compile(r"[A-Za-z0-9_-]+\Z")
@@ -53,16 +54,17 @@ _WALL = re.compile(r"\d+\.\d{3}s\Z")
 _HEX40 = re.compile(r"[0-9a-f]{40}\Z")
 _HEX64 = re.compile(r"[0-9a-f]{64}\Z")
 _TS = re.compile(r"\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\Z")
+_SIGNAL = re.compile(r"(SIG[A-Z0-9]+|\d+)\Z")
 #: The keys of each event, in the order they are written.
 KEYS = {
     "CAMPAIGN-START": ("anchor", "prereg", "freeze"), "CAMPAIGN-END": (),
     "STAND-START": ("order", "model", "changelog"), "STAND-END": ("model", "changelog"),
     "BLOCK-START": ("units", "arm_order", "seed"), "BLOCK-END": (),
     "START": ("pid", "tag"), "END": ("rc", "wall", "units", "out", "aborted"), "ABORT": ("reason",),
-    "UNIT-ABORT": ("reason",), "RERUN": ("arms", "cause", "incident"),
+    "UNIT-ABORT": ("reason", "rc", "signal"), "RERUN": ("arms", "cause", "incident"),
     "INCIDENT-START": ("arms", "kind"), "INCIDENT-END": ("arms", "kind"), "SET-ASIDE": (),
 }
-OPTIONAL = {("END", "aborted")}
+OPTIONAL = {("END", "aborted"), ("UNIT-ABORT", "rc"), ("UNIT-ABORT", "signal")}
 
 
 class StatusRefused(RuntimeError):
@@ -284,6 +286,15 @@ class _State:
                 raise StatusRefused(f"unit {unit} of {arm_run} was already aborted")
             if kv["reason"] not in UNIT_ABORT_REASONS:
                 raise StatusRefused(f"UNIT-ABORT reason={kv['reason']!r} is not one of {UNIT_ABORT_REASONS} (S9)")
+            cause = [x for x in ("rc", "signal") if x in kv]
+            if kv["reason"] == "ceiling" and cause:
+                raise StatusRefused(f"a ceiling UNIT-ABORT carries no {cause[0]}= - the scheduler killed the unit (D2)")
+            if kv["reason"] == "crash" and len(cause) != 1:
+                raise StatusRefused(f"a crash UNIT-ABORT names exactly one of rc= / signal=, got {cause} (D2)")
+            if "rc" in kv and not _INT.match(kv["rc"]):
+                raise StatusRefused(f"rc={kv['rc']!r} is not an integer")
+            if "signal" in kv and not _SIGNAL.match(kv["signal"]):
+                raise StatusRefused(f"signal={kv['signal']!r} is not a signal name (SIG...) or number")
             commits.append(lambda: self.live[arm_run].append(unit))
         elif k in ("END", "ABORT"):
             if ev.ident not in self.live:
@@ -451,8 +462,14 @@ class StatusLog:
         self._emit(Ev("START", ident, {"pid": str(pid), "tag": tag}))
         return ident
 
-    def unit_abort(self, ident: str, unit: str, *, reason: str = "ceiling") -> None:
-        self._emit(Ev("UNIT-ABORT", f"{ident}/{unit}", {"reason": reason}))
+    def unit_abort(self, ident: str, unit: str, *, reason: str = "ceiling", rc: int | None = None,
+                   signal: str | None = None) -> None:
+        kv = {"reason": reason}
+        if rc is not None:
+            kv["rc"] = str(rc)
+        if signal is not None:
+            kv["signal"] = str(signal)
+        self._emit(Ev("UNIT-ABORT", f"{ident}/{unit}", kv))
 
     def end(self, ident: str, *, rc: int, wall_s: float, units: int, out: str) -> None:
         if wall_s < 0:

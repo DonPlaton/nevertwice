@@ -8,6 +8,8 @@
   second block of a stand while one is open (the barrier), BLOCK END with a live run, a scored START outside the
   campaign, an exogenous RERUN on a subset of arms or without a known incident, a space in an id or value, a run id
   with a dot (Q3), an unknown tag, kind or cause, a unit that is not in its block;
+* A6 D2: a crashed unit is UNIT-ABORT reason=crash with exactly one of rc= / signal=; a ceiling abort carries
+  neither; END lists crashes and ceilings alike; a restarted writer replays them;
 * S8: a byte changed outside the writer is refused at the next append; the file is only ever appended;
 * a restarted writer replays the file through the same state machine and continues; self_check() names a problem;
 * where the auditor's m2_v3 is present (.loop, outside the repository by design - R12), its parser and S1-S7 checks
@@ -302,6 +304,35 @@ with tempfile.TemporaryDirectory(prefix="v3status_s8_") as td:
     ua.write_bytes(b"\n".join([ls[0], ls[1].replace(s1, s0)] + ls[2:]))
     check("self_check() names a line whose utc does not follow the previous one (the strict S3 order)",
           any("does not follow" in x for x in SL.self_check(ua)), str(SL.self_check(ua)))
+
+print("\n- A6 D2: a crashed unit is UNIT-ABORT reason=crash with exactly one of rc= / signal= -")
+with tempfile.TemporaryDirectory(prefix="v3status_crash_") as td:
+    cp = Path(td) / "STATUS"
+    log = SL.StatusLog(cp, now=Clock(), local_tz=MSK)
+    log.stand("SC", "START", model="m", changelog="2026-09-10", order=1)
+    log.block_start("SC", "b01", units=["u1", "u2", "u3", "u4"], arm_order=["a1"], seed=1)
+    k = log.start("SC", "b01", "r1", "a1", pid=5, tag="smoke")
+    log.unit_abort(k, "u1", reason="crash", rc=-11)
+    log.unit_abort(k, "u2", reason="crash", signal="SIGKILL")
+    lines_c = cp.read_text(encoding="utf-8").splitlines()
+    check("reason=crash rc=<int> and reason=crash signal=<SIGNAME> are written",
+          any(" UNIT-ABORT SC/b01/r1/a1/u1 reason=crash rc=-11 utc=" in x for x in lines_c)
+          and any(" UNIT-ABORT SC/b01/r1/a1/u2 reason=crash signal=SIGKILL utc=" in x for x in lines_c), str(lines_c[-2:]))
+    check("a crash without rc= or signal= is refused", refused(lambda: log.unit_abort(k, "u3", reason="crash"), "crash"))
+    check("a crash with both rc= and signal= is refused",
+          refused(lambda: log.unit_abort(k, "u3", reason="crash", rc=1, signal="SIGTERM"), "exactly one"))
+    check("rc= that is not an integer is refused", refused(lambda: log.unit_abort(k, "u3", reason="crash", rc="x"), "rc="))
+    check("signal= that is not a signal name or number is refused",
+          refused(lambda: log.unit_abort(k, "u3", reason="crash", signal="kill"), "signal name"))
+    check("a ceiling abort carries neither rc= nor signal= (the scheduler killed it)",
+          refused(lambda: log.unit_abort(k, "u3", reason="ceiling", rc=1), "ceiling"))
+    log.unit_abort(k, "u3", reason="ceiling")
+    log.end(k, rc=1, wall_s=2, units=4, out="runs/c.json")
+    check("END lists every aborted unit, crashes and ceilings alike (Q1)",
+          " aborted=u1,u2,u3 " in cp.read_text(encoding="utf-8").splitlines()[-1])
+    check("a restarted writer replays the crash lines and self_check() is clean", SL.self_check(cp) == []
+          and SL.StatusLog(cp, now=Clock(), local_tz=MSK) is not None, str(SL.self_check(cp)))
+    check("the UNIT-ABORT reasons are ceiling and crash (A6 Q1, D2)", SL.UNIT_ABORT_REASONS == ("ceiling", "crash"))
 
 with tempfile.TemporaryDirectory(prefix="v3status_clk_") as td:
     stuck = dt.datetime(2026, 10, 1, 9, 0, 0, tzinfo=dt.timezone.utc)
