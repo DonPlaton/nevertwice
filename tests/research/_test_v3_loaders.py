@@ -186,6 +186,35 @@ with tempfile.TemporaryDirectory(prefix="v3load_") as td:
     cp = FakeCP(True, f)
     check("a verified pin is read and parsed", LD.read_pinned("locomo", hf_hub=Path(td), pins_root=Path(td), cp=cp) == LOCOMO
           and cp.verified == ["locomo"])
+    jl = Path(td) / "ama.jsonl"
+    jl.write_bytes((json.dumps({"n": 1, "t": "a" + chr(0x2028) + "b"}, ensure_ascii=False) + "\n"
+                    + json.dumps({"n": 2}) + "\n").encode("utf-8"))
+    try:
+        jrows = [r["n"] for r in LD.read_pinned("ama", hf_hub=Path(td), pins_root=Path(td), cp=FakeCP(True, jl), fmt="jsonl")]
+    except Exception as e:  # noqa: BLE001
+        jrows = repr(e)
+    check("B2: read_pinned(fmt=jsonl) verifies, then reads one record per LF line (U+2028 inside a string)",
+          jrows == [1, 2], str(jrows)[:100])
+    import types as _types  # noqa: E402
+    saved_pa = {k: sys.modules.get(k) for k in ("pyarrow", "pyarrow.parquet")}
+    fake_pq = _types.SimpleNamespace(read_table=lambda path: _types.SimpleNamespace(to_pylist=lambda: [{"path": path}]))
+    sys.modules["pyarrow"] = _types.SimpleNamespace(parquet=fake_pq)
+    sys.modules["pyarrow.parquet"] = fake_pq
+    try:
+        pq_rows = LD.read_pinned("beam", hf_hub=Path(td), pins_root=Path(td), cp=FakeCP(True, jl), fmt="parquet")
+        pq_refused = refused(lambda: LD.read_pinned("beam", hf_hub=Path(td), pins_root=Path(td), cp=FakeCP(False, jl),
+                                                    fmt="parquet"), "not the pinned")
+    finally:
+        for k, v in saved_pa.items():
+            if v is None:
+                sys.modules.pop(k, None)
+            else:
+                sys.modules[k] = v
+    check("B2: read_pinned(fmt=parquet) verifies, then reads through pyarrow; unverified is refused before pyarrow",
+          pq_rows == [{"path": str(jl)}] and pq_refused)
+    check("B2: a format other than json, jsonl or parquet is refused",
+          refused(lambda: LD.read_pinned("x", hf_hub=Path(td), pins_root=Path(td), cp=FakeCP(True, jl), fmt="csv"),
+                  "json, jsonl or parquet"))
     check("an unverified pin is refused and not read", refused(
         lambda: LD.read_pinned("locomo", hf_hub=Path(td), pins_root=Path(td), cp=FakeCP(False, f)), "not the pinned"))
 
@@ -275,12 +304,17 @@ check("S5: questions per (ability, position); abstention flagged; no gold on the
       == [("2:abstention:0", "abstention", True), ("2:temporal_reasoning:0", "temporal_reasoning", False)]
       and "two weeks" not in json.dumps([dataclasses.asdict(u) for u in bu]) and "rubric" not in json.dumps(
           [dataclasses.asdict(u) for u in bu]))
-bg = LD.beam_gold(BEAM, ["2:abstention:0", "2:temporal_reasoning:0"])
-check("S5 gold door: answer (ideal_response for abstention), source ids flattened and namespaced, the rubric in detail",
+try:
+    bg = LD.beam_gold(BEAM, ["2:abstention:0", "2:temporal_reasoning:0"])
+except Exception as e:  # noqa: BLE001 - a refusing gold door is a named FAIL of the row below
+    print(f"       (beam_gold raised {e!r})")
+    _none = LD.Gold("", "", ())
+    bg = {"2:abstention:0": _none, "2:temporal_reasoning:0": _none}
+check("S5 gold door: answer by the Q31 table (ideal_response for abstention), int source ids namespaced, the rubric first-class",
       bg["2:abstention:0"].answer == "not said" and bg["2:temporal_reasoning:0"].answer == "two weeks"
       and bg["2:temporal_reasoning:0"].evidence == ("2:10", "2:11", "2:20")
-      and (json.loads(bg["2:temporal_reasoning:0"].detail) if bg["2:temporal_reasoning:0"].detail else {}).get("rubric")
-      == ["r2", "r3"])
+      and bg["2:temporal_reasoning:0"].rubric == ("r2", "r3") and bg["2:abstention:0"].rubric == ("r1",)
+      and bg["2:abstention:0"].evidence == ())
 check("S5: probing_questions that is not a literal is refused, never evaluated",
       refused(lambda: LD.beam_units([{**BEAM[0], "probing_questions": "__import__('os').getcwd()"}], [3], prefix=1),
               "never evaluated"))
@@ -314,6 +348,49 @@ check("S5 smoke: the 500K split's FIRST conversation, cut after the last session
       str((su5.unit_id, len(su5.sessions), seen_limit)))
 check("S5 smoke: all its questions for the pilot; FA/FR only those whose source ids lie inside the kept messages",
       len(su5.questions) == 2 and inside == [], str(inside))
+part = beam_row(7, n_sess=4, with_empty=False)
+part["chat"][1] = big["chat"][1]
+part["probing_questions"] = repr({
+    "information_extraction": [{"question": "all inside", "answer": "a", "rubric": ["r"], "source_chat_ids": [0, 1]}],
+    "knowledge_update": [{"question": "one in, one out", "answer": "b", "rubric": ["r"], "source_chat_ids": [1, 10]}]})
+LD._smoke_rules().s5_cut = s5_cut_small
+try:
+    _, inside2 = LD.s5_smoke([part], count_words)
+finally:
+    LD._smoke_rules().s5_cut = old_cut
+check("S5 smoke FA/FR: a question with one id inside the cut and one outside is excluded; all-inside is kept",
+      inside2 == ["7:information_extraction:0"], str(inside2))
+
+print("\n- Q31: the BEAM gold door by ability -")
+ALL10 = {"abstention": "ideal_response", "contradiction_resolution": "ideal_answer",
+         "instruction_following": "expected_compliance", "preference_following": "expected_compliance",
+         "summarization": "ideal_summary", "event_ordering": "answer", "information_extraction": "answer",
+         "knowledge_update": "answer", "multi_session_reasoning": "answer", "temporal_reasoning": "answer"}
+
+
+def gold_row(ab_fields: dict, **q_over):
+    probing = {ab: [{"question": f"q-{ab}", fld: f"REF-{ab}", "rubric": [f"rub-{ab}"], **q_over}] for ab, fld in ab_fields.items()}
+    return {**beam_row(50), "probing_questions": repr(probing)}
+
+
+g10 = LD.beam_gold([gold_row(ALL10)], [f"50:{ab}:0" for ab in ALL10])
+check("Q31: every ability's display answer comes from its declared field, the rubric from 'rubric'",
+      all(g10[f"50:{ab}:0"].answer == f"REF-{ab}" and g10[f"50:{ab}:0"].rubric == (f"rub-{ab}",) for ab in ALL10)
+      and LD.BEAM_ANSWER_FIELD == ALL10)
+check("Q31: an ability outside the declared table is refused",
+      refused(lambda: LD.beam_gold([gold_row({"time_travel": "answer"})], ["50:time_travel:0"]), "outside the declared"))
+check("Q31: a missing answer field is refused, never an empty answer",
+      refused(lambda: LD.beam_gold([gold_row({"summarization": "answer"})], ["50:summarization:0"]), "is missing"))
+for label, rub in (("missing", None), ("empty", []), ("not strings", [1, 2]), ("blank", ["  "])):
+    check(f"Q31: a rubric that is {label} is refused",
+          refused(lambda rub=rub: LD.beam_gold([gold_row({"event_ordering": "answer"}, rubric=rub)], ["50:event_ordering:0"]),
+                  "rubric"))
+check("Q31.3: a source_chat_ids leaf that is not an int is refused by name",
+      refused(lambda: LD.beam_gold([gold_row({"temporal_reasoning": "answer"}, source_chat_ids=[1, "x"])],
+                                   ["50:temporal_reasoning:0"]), "is not a message id"))
+check("Q31.3: a bool leaf is refused too (bool is not a message id)",
+      refused(lambda: LD.beam_gold([gold_row({"temporal_reasoning": "answer"}, source_chat_ids=[True])],
+                                   ["50:temporal_reasoning:0"]), "is not a message id"))
 
 print("\n- TB4.3b S7 AMA (keys from j4; Q16) -")
 
@@ -348,6 +425,21 @@ bad_order["trajectory"][1]["turn_idx"] = 2
 bad_order["trajectory"][2]["turn_idx"] = 1
 check("S7: a step whose turn_idx is not its position is refused",
       refused(lambda: LD._ama_unit("S7", bad_order), "turn_idx"))
+nokey = {k: v for k, v in ama_row(12).items() if k != "num_turns"}
+check("S7: a record without num_turns is refused by name (the run record keys are required)",
+      refused(lambda: LD._ama_unit("S7", nokey), "lacks"))
+dup = ama_row(7)
+dup["qa_pairs"] = dup["qa_pairs"] * 2
+check("S7: a repeated question_uuid in one trajectory is refused", refused(lambda: LD._ama_unit("S7", dup), "repeats"))
+check("B3: the loader refuses what the renderer refuses - num_turns other than the steps",
+      refused(lambda: LD._ama_unit("S7", {**ama_row(8), "num_turns": 9}), "num_turns"))
+extra = ama_row(9)
+extra["trajectory"][0]["reasoning"] = "think"
+check("B3: ... a step with a key outside {action, observation, turn_idx}", refused(lambda: LD._ama_unit("S7", extra),
+                                                                                   "not exactly"))
+nontext = ama_row(11)
+nontext["trajectory"][0]["action"] = 5
+check("B3: ... a non-text action (never str() of it)", refused(lambda: LD._ama_unit("S7", nontext), "not text"))
 check("S7: a None observation is refused by name, never dropped (the smoke path too)",
       refused(lambda: LD._ama_unit("S7", ama_row(5, none_at=1)), "observation is None"))
 sm7 = LD.s7_smoke([ama_row(10, steps=3), ama_row(11, steps=3), ama_row(12, "WEB", steps=9), ama_row(13, "GAME", steps=3)])
@@ -358,7 +450,7 @@ with tempfile.TemporaryDirectory(prefix="v3ama_") as td:
     jf.write_bytes((json.dumps({**ama_row(20), "task": "x\u2028y\x85z"}, ensure_ascii=False) + "\n"
                     + json.dumps(ama_row(21)) + "\n").encode("utf-8"))
     try:
-        rj = LD.read_jsonl(jf)
+        rj = LD._read_jsonl(jf)
     except Exception as e:  # noqa: BLE001
         rj = [repr(e)]
     check("read_jsonl splits on LF only: U+2028 and U+0085 inside a task keep the record whole",

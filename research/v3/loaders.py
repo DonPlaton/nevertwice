@@ -20,9 +20,11 @@ each file against its pin first (corpus_pin_v3.verify) and reads nothing else.
 * TB4.3b, with the field names j4 recorded (13/13 against the auditor's blind keys):
   - S5 BEAM: a unit per `conversation_id`; `chat` sessions of messages {content, id, index, question_type, role,
     time_anchor}, a session dated by its first message's time_anchor; questions from `probing_questions`, a Python
-    literal read with ast.literal_eval (never eval), one per (ability, position). The gold door returns the answer
-    (`answer`, else `ideal_response`), the source_chat_ids leaves namespaced by conversation (the recorded reading:
-    every leaf is a message id), and every other gold field (rubric, ...) as canonical JSON. S5 smoke (§9.4): the 500K
+    literal read with ast.literal_eval (never eval), one per (ability, position). The gold door (the auditor's Q31):
+    the rubric - the only thing the vendor scorer reads, for every ability - as a first-class field, refused when absent,
+    empty or not a list of strings; the answer for display only, from the declared table BEAM_ANSWER_FIELD (an ability
+    outside it, or its field missing, is refused - never ""); the source_chat_ids leaves, each an int message id
+    (anything else refused), namespaced by conversation, an absent key being empty evidence. S5 smoke (§9.4): the 500K
     split's first conversation cut by smoke_rules.s5_cut; all its questions for the pilot, and for FA/FR only those
     whose source ids all lie inside the kept messages (Q19 O-a).
   - S7 AMA: SOFTWARE records only, by name; a unit per `episode_id`: the task, then per step its action and its
@@ -92,7 +94,8 @@ class Gold:
     qid: str
     answer: str
     evidence: tuple[str, ...]
-    detail: str = ""               # any other gold field (BEAM's rubric, ...) as canonical JSON; the scorer's only
+    detail: str = ""               # any other gold field as canonical JSON (display only)
+    rubric: tuple[str, ...] = ()   # BEAM (Q31): the vendor scorer reads ONLY the rubric, for every ability
 
 
 def _unit_sha(sessions: Sequence[Session], questions: Sequence[Question]) -> str:
@@ -293,6 +296,11 @@ def _smoke_records(records: Iterable[Mapping], order: Sequence[str]) -> list[Map
 
 AMA_SWE = "SOFTWARE"
 BEAM_ABSTAIN = "abstention"
+#: Q31: where each ability keeps its reference answer (display only; the scorer reads the rubric).
+BEAM_ANSWER_FIELD = {"abstention": "ideal_response", "contradiction_resolution": "ideal_answer",
+                     "instruction_following": "expected_compliance", "preference_following": "expected_compliance",
+                     "summarization": "ideal_summary", "event_ordering": "answer", "information_extraction": "answer",
+                     "knowledge_update": "answer", "multi_session_reasoning": "answer", "temporal_reasoning": "answer"}
 
 
 def _probing(rec: Mapping) -> dict:
@@ -306,17 +314,17 @@ def _probing(rec: Mapping) -> dict:
     return obj
 
 
-def _flat(v) -> list:
-    out = []
+def _source_ids(v, where: str) -> list[int]:
+    """source_chat_ids flattened over lists and dicts; every leaf an int message id (Q31.3), anything else refused."""
+    if v is None:
+        return []
     if isinstance(v, dict):
-        for x in v.values():
-            out += _flat(x)
-    elif isinstance(v, (list, tuple)):
-        for x in v:
-            out += _flat(x)
-    elif isinstance(v, (int, str)) and not isinstance(v, bool):
-        out.append(v)
-    return out
+        return [x for y in v.values() for x in _source_ids(y, where)]
+    if isinstance(v, (list, tuple)):
+        return [x for y in v for x in _source_ids(y, where)]
+    if isinstance(v, int) and not isinstance(v, bool):
+        return [v]
+    raise LoadRefused(f"{where}: a source_chat_ids leaf {v!r} is not a message id (int)")
 
 
 def _beam_unit(stand: str, rec: Mapping, *, keep_sessions: int | None = None) -> EvalUnit:
@@ -357,7 +365,8 @@ def beam_units(rows: Iterable[Mapping], order: Sequence, *, prefix: int, stand: 
 
 
 def beam_gold(rows: Iterable[Mapping], qids: Iterable[str]) -> dict[str, Gold]:
-    """The scorer's door: answer (or ideal_response), namespaced source ids, and every other gold field."""
+    """The scorer's door (Q31): the rubric (first-class, required), the answer by BEAM_ANSWER_FIELD (display only),
+    the int source ids namespaced by conversation, and every other gold field as canonical JSON."""
     want, out = set(qids), {}
     for r in rows:
         cid = str(r.get("conversation_id"))
@@ -366,11 +375,19 @@ def beam_gold(rows: Iterable[Mapping], qids: Iterable[str]) -> dict[str, Gold]:
                 qid = f"{cid}:{ability}:{i}"
                 if qid not in want:
                     continue
-                ans = q.get("answer") if q.get("answer") is not None else q.get("ideal_response")
-                rest = {k: v for k, v in q.items() if k not in ("question", "answer", "ideal_response", "source_chat_ids")}
-                out[qid] = Gold(qid, "" if ans is None else str(ans),
-                                tuple(f"{cid}:{x}" for x in _flat(q.get("source_chat_ids"))),
-                                json.dumps(rest, sort_keys=True, ensure_ascii=False, separators=(",", ":"), default=str))
+                field = BEAM_ANSWER_FIELD.get(str(ability))
+                if field is None:
+                    raise LoadRefused(f"{qid}: ability {ability!r} is outside the declared answer table")
+                if q.get(field) is None:
+                    raise LoadRefused(f"{qid}: the answer field {field!r} of {ability} is missing - never \"\"")
+                rubric = q.get("rubric")
+                if not (isinstance(rubric, list) and rubric and all(isinstance(x, str) and x.strip() for x in rubric)):
+                    raise LoadRefused(f"{qid}: the rubric is missing, empty or not a list of strings (Q31)")
+                ans = q[field] if isinstance(q[field], str) else json.dumps(q[field], sort_keys=True, ensure_ascii=False)
+                rest = {k: v for k, v in q.items() if k not in ("question", field, "rubric", "source_chat_ids")}
+                out[qid] = Gold(qid, ans, tuple(f"{cid}:{x}" for x in _source_ids(q.get("source_chat_ids"), qid)),
+                                json.dumps(rest, sort_keys=True, ensure_ascii=False, separators=(",", ":"), default=str),
+                                tuple(rubric))
     if set(out) != want:
         raise LoadRefused(f"no gold for {sorted(want - set(out))[:3]}")
     return out
@@ -396,30 +413,51 @@ def s5_smoke(rows_500k: Sequence[Mapping], count) -> tuple[EvalUnit, list[str]]:
 
 # ── S7 AMA ──────────────────────────────────────────────────────────────────────────────────────────────────────
 
-def read_jsonl(path) -> list[dict]:
-    """One record per LF-terminated line - never str.splitlines() (U+2028/U+0085 inside AMA strings, A6 j4)."""
+def _read_jsonl(path) -> list[dict]:
+    """One record per LF-terminated line - never str.splitlines() (U+2028/U+0085 inside AMA strings, A6 j4). Internal:
+    a pinned file is read through read_pinned(fmt="jsonl"), which verifies it first."""
     with open(path, encoding="utf-8") as f:
         return [json.loads(line) for line in f if line.strip()]
 
 
+AMA_RUN_KEYS = ("episode_id", "task", "trajectory", "num_turns")
+
+
 def ama_run_record(rec: Mapping) -> dict:
     """What an arm (and render_ama_jsonl) receives for a trajectory: no qa_pairs, so no answer on the run path."""
-    return {k: rec[k] for k in ("episode_id", "task", "trajectory", "num_turns")}
+    missing = [k for k in AMA_RUN_KEYS if k not in rec]
+    if missing:
+        raise LoadRefused(f"episode {rec.get('episode_id')}: the record lacks {missing}")
+    return {k: rec[k] for k in AMA_RUN_KEYS}
+
+
+def _render():
+    import importlib.util  # noqa: PLC0415
+    import sys  # noqa: PLC0415
+    mod = sys.modules.get("v3_render_ama_for_loaders")
+    if mod is None:
+        spec = importlib.util.spec_from_file_location("v3_render_ama_for_loaders",
+                                                      Path(__file__).with_name("render_ama_jsonl.py"))
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules["v3_render_ama_for_loaders"] = mod
+        spec.loader.exec_module(mod)
+    return mod
 
 
 def _ama_unit(stand: str, rec: Mapping) -> EvalUnit:
-    ep = str(rec["episode_id"])
-    task = rec.get("task")
-    if not isinstance(task, str) or not task.strip():
-        raise LoadRefused(f"episode {ep}: the task is not text")
-    items = [Item(f"{ep}:task", task, "user", None, 0)]
-    for i, step in enumerate(rec.get("trajectory") or []):
-        if step.get("turn_idx") != i:
-            raise LoadRefused(f"episode {ep} step {i}: turn_idx {step.get('turn_idx')} is not its position")
+    """A trajectory unit - validated by render_ama_jsonl.render itself (B3: the loader refuses exactly what the renderer
+    refuses, so every arm gets the same units)."""
+    ep = str(rec.get("episode_id"))
+    run = ama_run_record(rec)
+    R = _render()
+    try:
+        R.render(run, unit_dir=Path("."), ingest_utc="")
+    except R.RenderRefused as e:
+        raise LoadRefused(str(e)) from None
+    items = [Item(f"{ep}:task", run["task"], "user", None, 0)]
+    for i, step in enumerate(run["trajectory"]):
         for k, role in (("action", "assistant"), ("observation", "tool")):
-            if step.get(k) is None:
-                raise LoadRefused(f"episode {ep} step {i}: {k} is None - refused, never dropped")
-            items.append(Item(f"{ep}:{i}:{k}", str(step[k]), role, None, len(items)))
+            items.append(Item(f"{ep}:{i}:{k}", step[k], role, None, len(items)))
     questions = [Question(str(q.get("question_uuid")), str(q.get("question") or ""), None, str(q.get("type")), False)
                  for q in rec.get("qa_pairs") or []]
     if len({q.qid for q in questions}) != len(questions):
@@ -479,8 +517,11 @@ def _smoke_rules():
 
 # ── files ───────────────────────────────────────────────────────────────────────────────────────────────────────
 
-def read_pinned(name: str, *, hf_hub: Path, pins_root: Path, cp=None):
-    """The parsed JSON of a pinned file - verified against its pin first (size, then sha256); nothing else is read."""
+def read_pinned(name: str, *, hf_hub: Path, pins_root: Path, cp=None, fmt: str = "json"):
+    """A pinned file's records - verified against its pin first (size, then sha256), then read by its format (B2):
+    json (json.loads), jsonl (one record per LF line), parquet (pyarrow, the v3_data venv only). Nothing else is read."""
+    if fmt not in ("json", "jsonl", "parquet"):
+        raise LoadRefused(f"format {fmt!r} is json, jsonl or parquet")
     if cp is None:
         import importlib.util  # noqa: PLC0415
         import sys  # noqa: PLC0415
@@ -496,4 +537,9 @@ def read_pinned(name: str, *, hf_hub: Path, pins_root: Path, cp=None):
         cp.verify(name, path)
     except Exception as e:  # noqa: BLE001 - PinMismatch or its kin: nothing unverified is read
         raise LoadRefused(f"{name}: {e}") from None
+    if fmt == "jsonl":
+        return _read_jsonl(path)
+    if fmt == "parquet":
+        import pyarrow.parquet as pq  # noqa: PLC0415 - the v3_data venv only
+        return pq.read_table(str(path)).to_pylist()
     return json.loads(Path(path).read_bytes().decode("utf-8"))
