@@ -1,0 +1,87 @@
+name: chains
+
+# The per-commit chains (the owner's P1, 2026-09-27): they move from the local battery lock to Actions. Every commit a
+# push to invariants/v3 brings - and, once, the backlog listed in .github/chains-backlog.txt when the push changes that
+# file - runs its OWN battery (`python -m pytest -q` on its own tree) on Windows py3.14, like the local chains did, and
+# on Linux py3.12. Only a push triggers it: workflow_dispatch and repository_dispatch need the workflow file on the
+# default branch, and master is not pushed to. ci.yml is not touched. No secret is read - the suites are hermetic.
+on:
+  push:
+    branches: [invariants/v3]
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+      count: ${{ steps.plan.outputs.count }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.12"
+      - id: plan
+        name: The commits of this push, and the backlog if this push changed it
+        env:
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+        run: python .github/chains_plan.py
+
+  chain:
+    needs: plan
+    if: needs.plan.outputs.count != '0'
+    name: chain ${{ matrix.sha7 }} ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    env:
+      SHA: ${{ matrix.sha }}
+      SHA7: ${{ matrix.sha7 }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ matrix.sha }}
+          fetch-depth: 0
+      - name: HEAD is the commit this job chains
+        shell: bash
+        run: |
+          got=$(git rev-parse HEAD)
+          if [ "$got" != "$SHA" ]; then
+            echo "::error::HEAD is $got, not $SHA - this job would chain another commit"
+            exit 1
+          fi
+          echo "HEAD = $SHA"
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install the commit's own declared environment
+        shell: bash
+        run: |
+          if python -c "import sys, tomllib; d = tomllib.load(open('pyproject.toml', 'rb')); sys.exit(0 if 'research' in d['project'].get('optional-dependencies', {}) else 1)"; then
+            extras="dev,research"
+          else
+            extras="dev"
+            echo "::notice::the pyproject.toml of $SHA7 declares no research extra - installing .[dev] only"
+          fi
+          echo "extras: $extras"
+          python -m pip install -e ".[$extras]"
+      - name: The commit's own battery
+        shell: bash
+        run: |
+          set -o pipefail
+          python -m pytest -q 2>&1 | tee chain.log
+      - name: The chain's log
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: chain-${{ matrix.sha7 }}-${{ matrix.os }}
+          path: chain.log
+          if-no-files-found: error

@@ -1,0 +1,7 @@
+# The one-off backlog of the per-commit chains (.github/chains_plan.py): chained when a push changes this file.
+# First run - the auditor's negative control: two commits green in the local chains and two red there. The workflow is
+# accepted only if Actions shows these two red on the same suites.
+0921d3ba949eee1d6c9ee5eb5896ace313dc02d5  # green locally: 294 passed (.loop/batteries/0921d3b.txt)
+1bd3ab4639f2a285b89aa21405aac9bbf20cc1dd  # green locally: 293 passed (.loop/batteries/1bd3ab4.txt)
+199b8c0815cdc7ef72fd59890ab25f0080413ca4  # red locally: _test_readme_funnel (.loop/batteries/199b8c0.txt)
+81afda7ad4f2540538c74b93e8b6556d0d6d19b7  # red locally: _test_campaign_triage, _test_readme_funnel (.loop/batteries/81afda7.txt)
