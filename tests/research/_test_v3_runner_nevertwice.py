@@ -162,7 +162,26 @@ class Fake:
 
 # ── children ──────────────────────────────────────────────────────────────────────────────────────────────────────
 
+def short_name(p) -> str | None:
+    """B-SEAL83: ``p`` by its 8.3 name (GetShortPathNameW) when the volume makes one and it differs - else None."""
+    if os.name != "nt":
+        return None
+    import ctypes  # noqa: PLC0415
+    buf = ctypes.create_unicode_buffer(32768)
+    n = ctypes.windll.kernel32.GetShortPathNameW(str(p), buf, 32768)
+    s = buf.value if n else ""
+    return s if s and os.path.normcase(s) != os.path.normcase(str(p)) else None
+
+
 TMP = Path(tempfile.mkdtemp(prefix="v3runner_"))
+_SH = short_name(TMP)
+if _SH is None:
+    print("       (no 8.3 name here - B-SEAL83's row runs where the volume makes one: Windows)")
+else:
+    check("B-SEAL83: the binding's path checks compare canonical paths - a directory by its 8.3 name is the same path "
+          "as by its long name, and what is under one is under the other",
+          RN._same(_SH, TMP) and RN._inside(Path(_SH) / "store", TMP) and RN._inside(TMP / "store", _SH)
+          and not RN._same(_SH, TMP / "store"), _SH)
 FAKE = Fake()
 TOKEN = "nvt3-nevertwice-" + "c" * 32
 PLANTED = {"NEVERTWICE_FAKE_API_KEY": "planted-fake-key-value-0101", "NEVERTWICE_DB_PASSWORD": "planted-password-0202"}

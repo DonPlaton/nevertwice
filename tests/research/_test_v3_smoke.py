@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import shutil
 import sys
 import tempfile
@@ -96,6 +97,17 @@ RESULT = {"stand": "S4-smoke-1", "blocks": [{
 LOG = AC.ProxyLog(calls=[call("u1", "k1", prompt=100), call("u2", "k2", status=502, t=6),
                          call("u1", "k3", role="reader", stage="questions", prompt=50, t=20)])
 KQ = {("u1", "k3"): "u1:q1"}
+def short_name(p) -> str | None:
+    """B-SEAL83: ``p`` by its 8.3 name (GetShortPathNameW) when the volume makes one and it differs - else None."""
+    if os.name != "nt":
+        return None
+    import ctypes  # noqa: PLC0415
+    buf = ctypes.create_unicode_buffer(32768)
+    n = ctypes.windll.kernel32.GetShortPathNameW(str(p), buf, 32768)
+    s = buf.value if n else ""
+    return s if s and os.path.normcase(s) != os.path.normcase(str(p)) else None
+
+
 TMP = Path(tempfile.mkdtemp(prefix="nvt3_smoke_"))
 try:
     RUN = TMP / "px-run"
@@ -200,6 +212,14 @@ try:
           "writes nothing under" in under and json.loads(out.read_text(encoding="utf-8")) == s
           and "already exists" in again and not res_dir.exists(), f"{under} | {again}")
     check("SM: the module's own results dir is research/v3/results", SM.RESULTS_DIR == ROOT / "research" / "v3" / "results")
+    sh_tmp = short_name(TMP)
+    if sh_tmp is None:
+        print("       (no 8.3 name here - B-SEAL83's row runs where the volume makes one: Windows)")
+    else:
+        under83 = refused(lambda: SM.write(s, Path(sh_tmp) / "research" / "v3" / "results" / "S4" / "smoke83.json",
+                                           results_dir=res_dir))
+        check("B-SEAL83: a path under the results dir written by its 8.3 name is still under it - refused",
+              "writes nothing under" in under83 and not res_dir.exists(), under83)
 
     print("\n- refusals -")
     plog = refused(lambda: summary(log=AC.ProxyLog(calls=LOG.calls, problems=["calls.jsonl:3: not a JSON record"])))

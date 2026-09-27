@@ -135,12 +135,13 @@ def load_spec(path: str | os.PathLike) -> dict:
 # ── the binding (Q-45-1 O-c) ───────────────────────────────────────────────────────────────────────────────────
 
 def _same(a, b) -> bool:
-    return os.path.normcase(os.path.abspath(os.fspath(a))) == os.path.normcase(os.path.abspath(os.fspath(b)))
+    """B-SEAL83: canonical paths (realpath) - the engine may resolve what the harness wrote by an 8.3 name."""
+    return os.path.normcase(os.path.realpath(os.fspath(a))) == os.path.normcase(os.path.realpath(os.fspath(b)))
 
 
 def _inside(path, root) -> bool:
-    a = os.path.normcase(os.path.abspath(os.fspath(path)))
-    r = os.path.normcase(os.path.abspath(os.fspath(root)))
+    a = os.path.normcase(os.path.realpath(os.fspath(path)))
+    r = os.path.normcase(os.path.realpath(os.fspath(root)))
     return a == r or a.startswith(r.rstrip("\\/") + os.sep)
 
 

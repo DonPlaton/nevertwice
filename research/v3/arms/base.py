@@ -181,13 +181,16 @@ def tree_digest(root) -> tuple[str, int]:
 
 
 def _same_path(a, b) -> bool:
-    return os.path.normcase(os.path.abspath(os.fspath(a))) == os.path.normcase(os.path.abspath(os.fspath(b)))
+    """B-SEAL83: canonical paths (realpath) - a runner's 8.3 name and the long name are one path."""
+    return os.path.normcase(os.path.realpath(os.fspath(a))) == os.path.normcase(os.path.realpath(os.fspath(b)))
 
 
 def write_seal(unit_dir, store, **meta) -> dict:
-    """The end of the write stage: the store's absolute path and digest, written beside the store (never inside it)."""
+    """The end of the write stage: the store's canonical path (realpath - B-SEAL83: abspath kept a runner's 8.3 name,
+    so records of the same store differed by how the caller wrote it) and digest, written beside the store (never
+    inside it)."""
     digest, manifest = tree_manifest(store)
-    seal = {**meta, "store": os.path.abspath(os.fspath(store)), "sha256": digest, "files": len(manifest),
+    seal = {**meta, "store": os.path.realpath(os.fspath(store)), "sha256": digest, "files": len(manifest),
             "manifest": manifest}
     path = os.path.join(os.fspath(unit_dir), SEAL_NAME)
     with open(path + ".tmp", "wb") as fh:

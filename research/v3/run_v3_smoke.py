@@ -204,7 +204,8 @@ def render(summary: Mapping[str, Any]) -> str:
 
 
 def _inside(path: Path, root: Path) -> bool:
-    p, r = os.path.normcase(os.path.abspath(path)), os.path.normcase(os.path.abspath(root))
+    """B-SEAL83: canonical paths (realpath) - by its 8.3 name a path under the results dir is still under it."""
+    p, r = os.path.normcase(os.path.realpath(path)), os.path.normcase(os.path.realpath(root))
     return p == r or p.startswith(r.rstrip("\\/") + os.sep)
 
 

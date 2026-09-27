@@ -154,6 +154,17 @@ check("... but on every index and every item sha",
       len({d_ab, B.items_digest({0: "a" * 64, 1: "b" * 64}), B.items_digest({0: "a" * 64, 2: "c" * 64}),
            B.items_digest({0: "a" * 64})}) == 4)
 
+def short_name(p) -> str | None:
+    """B-SEAL83: ``p`` by its 8.3 name (GetShortPathNameW) when the volume makes one and it differs - else None."""
+    if os.name != "nt":
+        return None
+    import ctypes  # noqa: PLC0415
+    buf = ctypes.create_unicode_buffer(32768)
+    n = ctypes.windll.kernel32.GetShortPathNameW(str(p), buf, 32768)
+    s = buf.value if n else ""
+    return s if s and os.path.normcase(s) != os.path.normcase(str(p)) else None
+
+
 print("\n- the store between the stages: the seal (Q25, Q-45-5) -")
 with tempfile.TemporaryDirectory(prefix="v3seal_") as sd:
     unit = Path(sd) / "u1"
@@ -167,6 +178,17 @@ with tempfile.TemporaryDirectory(prefix="v3seal_") as sd:
           and not (store / B.SEAL_NAME).exists() and seal["arm"] == "x", str(seal))
     check("check_seal: the untouched store passes", safely(lambda: B.check_seal(unit, store), {}).get("sha256")
           == seal["sha256"])
+    short = short_name(store)
+    if short is None:
+        print("       (no 8.3 name here - B-SEAL83's row runs where the volume makes one: Windows)")
+    else:
+        s83 = B.write_seal(unit, short, arm="x", unit="u1")
+        check("B-SEAL83: a store written by its 8.3 name is sealed by its canonical path - the seal is the long path "
+              "(realpath, = Path.resolve()), and the read stage passes by either name",
+              s83["store"] == os.path.realpath(short) == str(store.resolve())
+              and safely(lambda: B.check_seal(unit, store), {}).get("sha256") == s83["sha256"]
+              and safely(lambda: B.check_seal(unit, short), {}).get("sha256") == s83["sha256"], str(s83.get("store")))
+        B.write_seal(unit, store)
 
     def sealed_after(change) -> str:
         change()
