@@ -142,7 +142,8 @@ class H:
             os.makedirs(live_dir(spec["arm"]), exist_ok=True)
             open(os.path.join(live_dir(spec["arm"]), spec["run"] + "." + spec["unit"]), "w").close()
         stage = "both" if knobs.get("hello_both") else spec["stage"]   # a-mem's and langmem's one process (B-HELLO)
-        return {"protocol": B.PROTOCOL, "arm": spec["arm"], "stage": stage, "pid": os.getpid()}
+        arm = knobs.get("hello_arm") or spec["arm"]           # another arm's name, all else right (BHd)
+        return {"protocol": B.PROTOCOL, "arm": arm, "stage": stage, "pid": os.getpid()}
 
     def write(self, item, date=None):
         log_op("write")
@@ -844,12 +845,13 @@ try:
     st20.stand("SHB", "START", model="m", changelog="2026-09-10", order=1)
     both = {("r1", "h1"): {"hello_both": True}}
     res20 = {}
-    for blk, arm, store in (("b01", "hm", "memory"), ("b02", "hd", "disk")):
+    for blk, arm, store in (("b01", "hm", "memory"), ("b02", "hd", "disk"), ("b03", "hw", "disk")):
         o20, sd20 = SC.arm_order([arm], campaign_seed=7, stand="SHB", block=blk)
         st20.block_start("SHB", blk, units=["h1"], arm_order=o20, seed=sd20)
         sid20 = st20.start("SHB", blk, "r1", arm, pid=os.getpid(), tag="smoke")
-        r20, e20 = attempt(lambda arm=arm, store=store, sid20=sid20: s20.write_turn(
-            launcher(arm, expect=1, knobs=both, store=store), stand="SHB", runs=["r1"], units=["h1"], ops_for=OPS,
+        kn20 = {("r1", "h1"): {"hello_arm": "someone-else"}} if arm == "hw" else both
+        r20, e20 = attempt(lambda arm=arm, store=store, sid20=sid20, kn20=kn20: s20.write_turn(
+            launcher(arm, expect=1, knobs=kn20, store=store), stand="SHB", runs=["r1"], units=["h1"], ops_for=OPS,
             ceilings={"h1": 60.0}, status_ids={"r1": sid20}))
         res20[arm] = ((r20 or {}).get(("r1", "h1")), e20)
         rec20 = res20[arm][0]
@@ -863,6 +865,11 @@ try:
     check("B-HELLO: a store_persistence outside disk and memory is a named SchedulerError before any child is opened "
           "(Q25(4)) - never a KeyError", isinstance(e21, SC.SchedulerError) and "Q25(4)" in str(e21) and not fl21.opened,
           repr(e21))
+    hw, e_hw = res20["hw"]
+    check("B-HELLO (BHd): a hello that names ANOTHER arm, protocol and stage right, is not this arm's - killed by us, "
+          "UNIT-ABORT crash signal=SIGKILL, 'hello' in its error", e_hw is None and hw is not None and hw.aborted == "crash"
+          and "hello" in (hw.error or "") and any(" UNIT-ABORT SHB/b03/r1/hw/h1 reason=crash signal=SIGKILL " in x
+                                                   for x in aborts(TMP / "STATUS20")), f"{e_hw!r} {hw}")
     hm, e_hm = res20["hm"]
     hd, e_hd = res20["hd"]
     ua20 = aborts(TMP / "STATUS20")
