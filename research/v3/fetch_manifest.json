@@ -51,6 +51,14 @@
    "package": "supermemory-server",
    "version": "0.0.8",
    "max_redirects": 0
+  },
+  "a7-npm-d": {
+   "hosts": ["registry.npmjs.org"],
+   "purpose": "discovery, metadata only (the auditor's GO after a7-npm g1 met a 404): the package document of the package rev1 names and one registry search; exactly two GETs, no link followed, nothing downloaded beyond the two documents",
+   "package": "supermemory-server",
+   "search_text": "supermemory",
+   "search_size": 20,
+   "max_redirects": 0
   }
  },
  "disk": {"volume": "D:", "floor_gb": 100, "multiple_of_window_total": 3, "stop_single_file_gb": 10}
