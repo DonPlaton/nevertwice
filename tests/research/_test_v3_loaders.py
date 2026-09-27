@@ -137,10 +137,22 @@ check("speakers are kept on the item; a shared image is carried as its caption",
 check("an empty turn is skipped and counted", c.empty_skipped == 1)
 check("questions: ids by sample, category as text, category 5 is abstention",
       [(q.qid, q.category, q.abstention) for q in c.questions] == [("conv-2:q0", "1", False), ("conv-2:q1", "5", True)])
+def cat_or_err(v):
+    """locomo_category, or the error's name - a refusal here is this row's FAIL, never a crash of the suite."""
+    try:
+        return LD.locomo_category(v)
+    except Exception as e:  # noqa: BLE001
+        return f"{type(e).__name__}"
+
+
 check("B-CAT: locomo_category reads 2 and \"2\" (and \" 5 \") as the int, None as None; a word or a bool is refused",
-      (LD.locomo_category(2), LD.locomo_category("2"), LD.locomo_category(" 5 "), LD.locomo_category(None))
-      == (2, 2, 5, None) and all(refused(lambda v=v: LD.locomo_category(v), "category") for v in ("two", True, 2.0, "")),
-      "")
+      (cat_or_err(2), cat_or_err("2"), cat_or_err(" 5 "), cat_or_err(None)) == (2, 2, 5, None)
+      and all(refused(lambda v=v: LD.locomo_category(v), "category") for v in ("two", True, 2.0, "")),
+      str((cat_or_err(2), cat_or_err("2"), cat_or_err(" 5 "), cat_or_err(None))))
+check("B-CAT: only ASCII digits make a category number - an Arabic-Indic digit, a superscript, a full-width digit are "
+      "refused by name, never read as a number", all(refused(lambda v=v: LD.locomo_category(v), "not a category number")
+                                                    for v in ("\u0662", "\u00b2", "\uff12")),
+      str([cat_or_err(v) for v in ("\u0662", "\u00b2", "\uff12")]))
 LOCOMO_S = [{**s, "qa": [{**q, "category": str(q["category"])} for q in s["qa"]]} for s in LOCOMO]
 cs = LD.locomo_units(LOCOMO_S, ["conv-2", "conv-0", "conv-1"], prefix=2)[0]
 gs = LD.locomo_gold(LOCOMO_S, ["conv-2:q0", "conv-2:q1"])

@@ -39,9 +39,10 @@ import ast
 import datetime as dt
 import hashlib
 import json
+import re
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Iterable, Mapping, Sequence
+from typing import Any, Iterable, Mapping, Sequence
 
 SMOKE_FIRST, SMOKE_LAST = 481, 500          # §3.4 / §9.4: the S1 smoke split, 1-based positions of the nested order
 LME_STANDS = ("S1", "S2", "S3")
@@ -230,7 +231,7 @@ def locomo_category(v: Any) -> int | None:
         raise LoadRefused(f"a LoCoMo category {v!r} is a bool, not a category number")
     if isinstance(v, int):
         return v
-    if isinstance(v, str) and v.strip().isdigit():
+    if isinstance(v, str) and re.fullmatch(r"[0-9]+", v.strip()):     # ASCII digits only: "٢" or "²" is no category
         return int(v.strip())
     raise LoadRefused(f"a LoCoMo category {v!r} is not a category number")
 
