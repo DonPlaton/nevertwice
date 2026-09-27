@@ -62,7 +62,7 @@ REC = {"episode_id": 17, "domain": "SOFTWARE", "task": "Fix the failing test in 
        "success": True, "total_tokens": 999, "num_turns": 3,
        "qa_pairs": [{"question": "QA_QUESTION_TEXT", "answer": "QA_ANSWER_TEXT", "question_uuid": "u1", "type": "t"}],
        "trajectory": [{"turn_idx": 0, "action": "ls -la", "observation": OBS},
-                      {"turn_idx": 1, "action": "grep -n 'a b' utils.py", "observation": "no match"},
+                      {"turn_idx": 1, "action": "grep -n 'a\u2028b' utils.py", "observation": "no match"},
                       {"turn_idx": 2, "action": LONG, "observation": "done"}]}
 UNIT = Path(tempfile.gettempdir()) / "nvt3_unit_S7_17"
 T0 = "2026-10-01T09:00:00.000000+00:00"
@@ -105,7 +105,9 @@ with tempfile.TemporaryDirectory(prefix="v3render_") as td:
     check("one TOOL[Bash] line per step, in order", len(tool_lines) == 3 and '"ls -la"' in tool_lines[0]
           and "grep" in tool_lines[1], str(tool_lines[:2]))
     check("a raw U+2028 inside a command stays inside its line and reaches the reader whole",
-          "a b" in tool_lines[1] and len(lines) == 4, repr(tool_lines[1][:60]))
+          "a\u2028b" in tool_lines[1] and len(lines) == 4, repr(tool_lines[1][:60]))
+    check("the file holds the RAW U+2028 bytes (e2 80 a8), not a JSON escape - the reader's raw path is what is tested",
+          b"\xe2\x80\xa8" in raw and b"\\u2028" not in raw)
     check("no observation text reaches the reader (tool_result is dropped)", OBS not in got["body"]
           and "no match" not in got["body"])
     check("every line is capped at MAX_MESSAGE_CHARS plus its prefix",
@@ -150,6 +152,10 @@ check("num_turns other than the number of steps is refused",
 check("a step with a key outside {action, observation, turn_idx} is refused (e.g. a reasoning field would need a ruling)",
       refused(lambda: R.render(with_step(0, reasoning="think"), unit_dir=UNIT, ingest_utc=T0), "not exactly"))
 check("an empty task is refused", refused(lambda: R.render({**REC, "task": "  "}, unit_dir=UNIT, ingest_utc=T0), "task"))
+for k, bad in (("action", 5), ("action", ["ls"]), ("observation", 7), ("observation", {"x": 1})):
+    check(f"a non-text {k} ({type(bad).__name__}) is refused by name, never rendered",
+          refused(lambda k=k, bad=bad: R.render(with_step(1, **{k: bad}), unit_dir=UNIT, ingest_utc=T0),
+                  f"{k} is {type(bad).__name__}, not text"))
 
 check("render_text refuses what render refuses (a None observation)",
       refused(lambda: R.render_text(with_step(0, observation=None)), "observation is None"))

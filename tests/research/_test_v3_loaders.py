@@ -355,7 +355,7 @@ check("S7 smoke: the non-SOFTWARE trajectory closest to the SOFTWARE median (s7_
       and sm7.stand == "S7-smoke", sm7.unit_id)
 with tempfile.TemporaryDirectory(prefix="v3ama_") as td:
     jf = Path(td) / "a.jsonl"
-    jf.write_bytes((json.dumps({**ama_row(20), "task": "x y\x85z"}, ensure_ascii=False) + "\n"
+    jf.write_bytes((json.dumps({**ama_row(20), "task": "x\u2028y\x85z"}, ensure_ascii=False) + "\n"
                     + json.dumps(ama_row(21)) + "\n").encode("utf-8"))
     try:
         rj = LD.read_jsonl(jf)
