@@ -29,6 +29,15 @@ proxy's logs, the INPUTS of the gated research/v3/artifact.py builders - it buil
   ones included (M-BOUNDARY-canary-dropped); a record without the field, or a bool in it (MA12), refuses - never 0;
   the catcher's refused egress by host - the arm's, across the log (F-ACC5: catcher records carry no run); witness_inputs: the launch check record as the egress and fs witnesses artifact.boundary_block takes - an
   incomplete check stays incomplete, so the builder refuses it;
+* TB4.10b' lost_operations (Q12, M1): each lost logical write in artifact's LOSS_REASONS with its evidence (a product
+  error names response_seen and tool_call; the engine's no-call operations are breaker or fallback_refused with its
+  slug); a transport loss is a failed attempt of its
+  (unit, key)'s trailing never episode (B-ACC1b); artifact.p1_block bands them and raises P1Exceeds by the derived dominant class; yield_inputs (K76): the
+  stand's evaluation unit only (M-K76-unit-question), artifact.yield_block caps coverage per unit and labels only
+  scored runs; cache_inputs (K60, K61): artifact.cache_record's arguments, the verdicts m5 --anchor's;
+  reconciliation_inputs (K87): the product port's HTTP calls and tokens, the deltas and product retries - the verdict
+  is artifact's P0j;
+* end to end: logs on disk -> load_proxy -> accounting -> artifact blocks -> build -> m5 v3 check_file and P0 clean;
 * M-DUP: no copy of an artifact builder or of an m5 check lives here.
 
     python tests/research/_test_v3_accounting.py
@@ -415,9 +424,202 @@ else:
         v = M5.check_file(p, {})
         check("m5 v3 check_file PASSes the artifact carrying them", v == [], str(v[:3]))
 
+print("\n- TB4.10b' lost_operations (Q12, M1): the join of logical writes and calls, in artifact's reasons -")
+J = {"response_format": "json_object", "json_ok": True}
+pc = [call("k1", unit="r1.u1", t0=1, **J),                                          # op1: fine
+      call("k2", unit="r1.u1", t0=5.5, tools_offered=["core_memory_append"], **J),   # op2: the product threw after a reply
+      call("k3", unit="r1.u1", status=500, t0=11), call("k3", unit="r1.u1", status=500, t0=11.5),   # op3: lost key
+      call("k4", unit="r1.u1", t0=21, content_empty=True, response_format="json_object", json_ok=False),  # op4
+      call("k5a", unit="r1.u1", t0=31, finish_reason="length", **J), call("k5b", unit="r1.u1", t0=32, **J),  # op5
+      call("k6", unit="r1.u1", t0=41, tools_offered=["core_memory_append"], parse_ok=False),     # op6: tool args
+      call("k7", unit="r1.u1", t0=51, **J),                                         # op7: a valid empty extraction
+      call("k8x", unit="r1.u2", status=500, t0=61), call("k8", unit="r1.u1", t0=61.5, **J),   # op8: other unit's loss
+      call("k9", unit="r1.u1", status=503, t0=71)]                                   # op9: the product threw, no reply
+kc = AC.classify_keys(pc)
+ops = [{"op_id": "op1", "unit": "u1", "t0": t(0.5), "t1": t(2)},
+       {"op_id": "op2", "unit": "u1", "t0": t(5), "t1": t(6), "error": "RuntimeError: letta step failed"},
+       {"op_id": "op3", "unit": "u1", "t0": t(10.5), "t1": t(12)}, {"op_id": "op4", "unit": "u1", "t0": t(20.5), "t1": t(22)},
+       {"op_id": "op5", "unit": "u1", "t0": t(30.5), "t1": t(33)}, {"op_id": "op6", "unit": "u1", "t0": t(40.5), "t1": t(42)},
+       {"op_id": "op7", "unit": "u1", "t0": t(50.5), "t1": t(52)}, {"op_id": "op8", "unit": "u1", "t0": t(60.5), "t1": t(62)},
+       {"op_id": "op9", "unit": "u1", "t0": t(70.5), "t1": t(72), "error": "ConnectError"}]
+NOCALL = [{"op_id": "n1", "unit": "u1", "reason": "breaker"},
+          {"op_id": "n2", "unit": "u1", "reason": "fallback_refused", "slug": "truncated"}]
+lo = AC.lost_operations(ops, pc, key_classes=kc, no_call_ops=NOCALL)
+by_id = {x["op_id"]: x for x in lo["lost_ops"]}
+check("lost: a product error, a transport_lost key in the window, an empty last JSON call, unparsable tool arguments, "
+      "and the engine's no-call operations - each by artifact's LOSS_REASONS",
+      {k: v["reason"] for k, v in by_id.items()} == {"op2": "product-error", "op3": "transport", "op4": "structured-output",
+                                                      "op6": "tool-calling", "op9": "product-error", "n1": "breaker",
+                                                      "n2": "fallback_refused"}, str({k: v["reason"] for k, v in by_id.items()}))
+check("a cut JSON call with a later success in the window is recovered; a valid empty extraction is not lost; another "
+      "unit's lost key in the same minutes is not this operation's", lo["logical_writes"] == 11 and len(lo["lost_ops"]) == 7,
+      str(lo["logical_writes"]))
+check("M1 evidence: a product error names whether the proxy saw a completed response, and whether it was a tool call",
+      by_id["op2"]["response_seen"] is True and by_id["op2"]["tool_call"] is True
+      and by_id["op9"]["response_seen"] is False and by_id["op9"]["tool_call"] is False, str(by_id["op2"]))
+check("transport_lost counts the operations that ended with a transport_lost key (rev1 P1)", lo["transport_lost"] == 1)
+check("every lost operation's block class derives in artifact (no reason outside LOSS_REASONS, no missing evidence)",
+      [A.block_class(x) for x in lo["lost_ops"]] and all(x["reason"] in A.LOSS_REASONS for x in lo["lost_ops"]))
+try:
+    A.p1_block(**lo)
+    exc = None
+except A.P1Exceeds as e:
+    exc = e
+check("artifact.p1_block takes them: 7 of 11 is over 10 %, P1Exceeds by the dominant class transport (op3, op9 with no "
+      "reply, the breaker)", exc is not None and exc.dominant == "transport", repr(exc))
+many = [{"op_id": f"o{i}", "unit": "u9", "t0": t(80), "t1": t(81)} for i in range(95)]
+band = A.p1_block(**AC.lost_operations(many, [], key_classes={}, no_call_ops=[
+    {"op_id": f"b{i}", "unit": "u9", "reason": "breaker"} for i in range(5)]))
+check("... and 5 of 100 is labelled by artifact's band", band["label"] == "lossy-writer (5.0%)" and band["lost"] == 5,
+      str(band))
+check("M-P1-proxy-alone: no logical operations refuses - never the proxy's counts alone",
+      "never the proxy" in err(lambda: AC.lost_operations([], pc, key_classes=kc)))
+for why, kw in (("empty", {"content_empty": True}), ("cut", {"finish_reason": "length"}),
+                ("unparsable", {"json_ok": False}), ("failed", {"status": 500})):
+    one = AC.lost_operations([{"op_id": "w", "unit": "u5", "t0": t(90), "t1": t(91)}],
+                             [call("kw", unit="r1.u5", t0=90.5, **{**J, **kw})],
+                             key_classes=AC.classify_keys([call("kw", unit="r1.u5", t0=90.5, **{**J, **kw}),
+                                                           call("kw", unit="r1.u5", t0=95, **J)]))
+    check(f"the last JSON call {why}: structured-output, why={why}",
+          [(x["reason"], x.get("why")) for x in one["lost_ops"]] == [("structured-output", why)], str(one["lost_ops"]))
+ep = [call("g", unit="r1.u6", t0=100, **J), call("g", unit="r1.u6", status=503, t0=105, **J),
+      call("g", unit="r1.u6", status=503, t0=106, **J),
+      call("h", unit="r1.u6", status=503, t0=110, **J), call("h", unit="r1.u6", t0=111, **J),
+      call("h", unit="r1.u6", status=503, t0=120, **J),
+      call("m", unit="r1.u6", t0=130, **J), call("m", unit="r1.u6", status=503, t0=131, **J),
+      call("m", unit="r1.u6", t0=132, **J), call("m", unit="r1.u6", status=503, t0=140, **J)]
+eo = [{"op_id": "A", "unit": "u6", "t0": t(99.5), "t1": t(100.5)}, {"op_id": "B", "unit": "u6", "t0": t(104.5), "t1": t(107)},
+      {"op_id": "C", "unit": "u6", "t0": t(109.5), "t1": t(111.5)}, {"op_id": "D", "unit": "u6", "t0": t(119.5), "t1": t(121)},
+      {"op_id": "E", "unit": "u6", "t0": t(130.5), "t1": t(132.5)}, {"op_id": "F", "unit": "u6", "t0": t(139.5), "t1": t(141)}]
+el = AC.lost_operations(eo, ep, key_classes=AC.classify_keys(ep))
+check("B-ACC1b in P1: the second write of a body that failed for good is lost by transport, the first is not; a "
+      "failure that a later success of the same key closed is not a transport loss, the failure after it is",
+      [(x["op_id"], x["reason"]) for x in el["lost_ops"]] == [("B", "transport"), ("D", "transport"), ("F", "transport")]
+      and el["transport_lost"] == 3, str([(x["op_id"], x["reason"]) for x in el["lost_ops"]]))
+check("a no-call operation with a reason outside the engine's two refuses",
+      "no-call" in err(lambda: AC.lost_operations(ops, pc, key_classes=kc, no_call_ops=[{"op_id": "x", "reason": "slow"}])))
+
+print("\n- TB4.10b' yield_inputs (K76) through artifact.yield_block -")
+U = [{"unit": "h1", "retrievable_items": 3, "chars_to_writer": 1500, "unit_chars": 1000, "stored_chars": 10},
+     {"unit": "h2", "retrievable_items": 0, "chars_to_writer": 100, "unit_chars": 1000, "stored_chars": 10},
+     {"unit": "h3", "retrievable_items": 0, "chars_to_writer": 300, "unit_chars": 1000, "stored_chars": 10}]
+yi = AC.yield_inputs("S1", U, unit_kind="haystack", tokens_read=2000, contexts_b=["x", " ", ""])
+y = A.yield_block(**yi, scored=True)
+check("retrievable_unit_share over the stand's units; coverage = characters reaching the writer / the unit's, capped at "
+      "1 per unit by artifact (1500 of 1000 is 1)", abs(y["retrievable_unit_share"] - 1 / 3) < 1e-12
+      and abs(y["coverage"] - (1.0 + 0.1 + 0.3) / 3) < 1e-12, str(y))
+check("labels on a scored run, none on an unscored one (artifact's rule)",
+      y["labels"] == ["writer-gated (33.3%)", "window (46.7%)"] and A.yield_block(**yi, scored=False)["labels"] == [],
+      str(y["labels"]))
+check("items per 1K read and the empty-context share at Point B ride along as extra fields",
+      y["items_per_1k_read"] == 1.5 and abs(y["empty_context_share"] - 2 / 3) < 1e-12)
+check("M-K76-unit-question: a unit kind other than the stand's refuses",
+      "evaluation unit" in err(lambda: AC.yield_inputs("S1", U, unit_kind="question")))
+check("the stands' evaluation units are rev1's (haystack, conversation, row, trajectory)",
+      AC.UNIT_OF_STAND == {"S1": "haystack", "S4": "conversation", "S5": "conversation", "S6": "row", "S6L": "row",
+                           "S7": "trajectory"})
+check("M-K76-session-notes: for ours, typed notes count and Session notes never do",
+      AC.ours_retrievable([{"type": "fact"}, {"type": "Session"}, {"type": "decision"}, {"type": "session"}]) == 2)
+check("a unit with no characters is refused by artifact, not zeroed here",
+      refused(lambda: A.yield_block(**AC.yield_inputs("S6", [{"unit": "r", "retrievable_items": 1, "chars_to_writer": 0,
+                                                              "unit_chars": 0}], unit_kind="row"), scored=True),
+              "no characters"))
+
+print("\n- TB4.10b' cache_inputs (K60, K61) through artifact.cache_record; the verdicts are m5 --anchor's -")
+BUILT_OT = A.ollama_transport(PACER, embed_at_cap=0, fallback_local=0, embed_models_seen=[D1], degraded_recalls=0)
+B = {("c/vec.json", "5" * 64): {"commit": ANCHOR, "utc": "2026-10-01T10:00:00+00:00", "ollama_transport": BUILT_OT}}
+ci = AC.cache_inputs([{"path": "c/vec.json", "sha256": "5" * 64, "hits": 9, "misses": 3}], B)
+try:
+    cr = A.cache_record(**ci[0])
+except A.ArtifactRefused as e:
+    cr = {"built": {}, "refused": str(e)}
+check("a read and its build record become artifact.cache_record's arguments",
+      cr["built"].get("commit") == ANCHOR and cr.get("hits") == 9 and cr.get("misses") == 3
+      and cr["built"].get("ollama_transport") == BUILT_OT and cr["built"].get("utc") == "2026-10-01T10:00:00+00:00",
+      str(cr))
+check("a read with no build record refuses by its path (K60 needs one)",
+      "c/other.json" in err(lambda: AC.cache_inputs([{"path": "c/other.json", "sha256": "6" * 64, "hits": 1, "misses": 0}], B)))
+
+print("\n- TB4.10b' reconciliation_inputs (K87): the numbers only; the verdict is artifact's P0j -")
+rl = [call("h1", t0=1), call("h1", t0=1.5), call("h2", t0=2, unit="r1.u2"), call("h3", stage="questions", t0=40),
+      call("ans", role="reader", stage="questions", t0=41), call("zz", arm="zep", t0=1),
+      dict(call("mm2", t0=3), refused="model_mismatch", status=None, complete=False)]
+ri = AC.reconciliation_inputs(rl, arm="mem0", run="r1", branch="a", adapter_calls=4, product_calls=3, product_tokens=462)
+check("HTTP calls and tokens of the product's own port (the write port, both stages); the reader's, another arm's and "
+      "refused calls are not the product's", ri["proxy_calls"] == 4 and ri["adapter_calls"] == 4, str(ri))
+check("tokens_delta_pct = the product's tokens against the proxy's; product_retries = HTTP - logical",
+      abs(ri["tokens_delta_pct"] - 5.0) < 1e-12 and ri["proxy_tokens"] == 440 and ri["product_retries"] == 1, str(ri))
+check("the row carries rev1 §2.3's reconciliation fields", {"proxy_calls", "adapter_calls", "product_logical_calls",
+                                                            "tokens_delta_pct", "serverlog_delta", "branch"} <= set(ri))
+k87 = A.P0Context(reconciliation_branches=frozenset({"a", "b"}))
+ri0 = AC.reconciliation_inputs(rl, arm="mem0", run="r1", branch="a", adapter_calls=4, product_calls=3, product_tokens=440)
+check("artifact's P0j accepts the exact adapter with equal tokens, and flags one call off and a 5 % tokens delta (Q-K87-1)",
+      A.p0j({"reconciliation": ri0}, k87, "mem0") == []
+      and A.p0j({"reconciliation": AC.reconciliation_inputs(rl, arm="mem0", run="r1", branch="a", adapter_calls=3)},
+                k87, "mem0") != []
+      and any("tokens" in x for x in A.p0j({"reconciliation": ri}, k87, "mem0")), str(A.p0j({"reconciliation": ri0}, k87, "mem0")))
+check("no product counter: no delta and no retries, never 0", AC.reconciliation_inputs(
+    rl, arm="mem0", run="r1", branch="c")["tokens_delta_pct"] is None
+      and AC.reconciliation_inputs(rl, arm="mem0", run="r1", branch="c")["product_retries"] is None)
+
+print("\n- end to end: logs -> accounting -> artifact blocks -> build -> m5 v3 and P0, clean -")
+with tempfile.TemporaryDirectory(prefix="v3acct_e2e_") as td:
+    rd = Path(td)
+    import json as _json
+    e2e = []
+    for arm in ("mem0", "zep"):
+        e2e += [call(f"{arm}-w{i}", arm=arm, unit=f"r1.u{i % 2}", t0=i, **J) for i in range(1, 5)]
+        e2e += [call(f"{arm}-q{i}", arm=arm, unit=f"r1.u{i % 2}", role="reader", stage="questions", t0=40 + i) for i in range(2)]
+    (rd / "calls.jsonl").write_bytes("".join(_json.dumps(c) + "\n" for c in e2e).encode())
+    (rd / "catcher.jsonl").write_bytes(b"")
+    lg = AC.load_proxy(rd)
+    arms = {}
+    for arm in ("mem0", "zep"):
+        wops = [{"op_id": f"o{i}", "unit": f"u{i % 2}", "t0": t(i - 0.2), "t1": t(i + 0.2)} for i in range(1, 5)]
+        rc = AC.reconciliation_inputs(lg.calls, arm=arm, run="r1", branch="a", adapter_calls=4, product_calls=4,
+                                      product_tokens=440)
+        arms[arm] = {
+            "arm_decl": decl(arm), "runs": [{"status_id": f"S6/b01/r1/{arm}", "units_dropped_own": 0}],
+            "cloud_transport": A.cloud_transport(AC.cloud_counters(lg.calls, arm=arm, run="r1", stand="S6", cloud_bypass=0,
+                                                                   ollama=lg.ollama,
+                                                                   product_retries=rc["product_retries"])),
+            "boundary": A.boundary_block(proxy=AC.proxy_boundary_inputs(lg.calls, lg.catcher, arm=arm, run="r1"),
+                                         witnesses=AC.witness_inputs({**CHECK_OK, "containers": []})),
+            "ollama_transport": BUILT_OT,
+            "p1": A.p1_block(**AC.lost_operations(wops, lg.calls, key_classes=AC.classify_keys(
+                [c for c in lg.calls if c["arm"] == arm]))),
+            "yield": A.yield_block(**AC.yield_inputs("S6", [{"unit": "u0", "retrievable_items": 2, "chars_to_writer": 800,
+                                                              "unit_chars": 1000},
+                                                             {"unit": "u1", "retrievable_items": 1, "chars_to_writer": 900,
+                                                              "unit_chars": 1000}], unit_kind="row"), scored=True),
+            "reconciliation": rc, "questions": [{"qid": "q0", "invalid": None}], "units_dropped": []}
+    sids2 = ["S6/b01/r1/mem0", "S6/b01/r1/zep"]
+    doc2 = A.build(stand="S6", point="B", tier="product", arms=arms, brackets=None, input_manifest=MANIFEST,
+                   model_version={"response_model": "deepseek-v4-flash", "changelog_newest": "2026-09-10"}, commit=ANCHOR,
+                   dirty=False, status_ids=sids2, run_files={s: {"path": f"runs/{s}.json", "sha256": "3" * 64} for s in sids2})
+    ctx = A.P0Context(anchor=ANCHOR, reconciliation_branches=frozenset({"a"}), stand_units=2)
+    fl = [x for n, r in doc2["arms"].items() for x in A.p0_flags(r, ctx, n)]
+    check("the row-level P0 clauses raise nothing on the clean logs", fl == [] and lg.problems == [], str(fl[:3]))
+    check("p1 from the logs: 0 of 4 lost", doc2["arms"]["mem0"]["p1"]["lost_share"] == 0
+          and doc2["arms"]["mem0"]["p1"]["logical_writes"] == 4)
+    if not M5P.exists():
+        skip("m5 v3 check_file PASSes the artifact built from the logs", "the auditor's m5 lives in .loop (R12)")
+    else:
+        p2 = rd / "S6_B_product.json"
+        p2.write_bytes(A.render(doc2))
+        v2 = M5.check_file(p2, {"anchor": ANCHOR})
+        check("m5 v3 check_file PASSes the artifact built from the logs", v2 == [], str(v2[:3]))
+        bad = A.render({**doc2, "arms": {**doc2["arms"], "mem0": {**doc2["arms"]["mem0"], "caches": [
+            A.cache_record(**AC.cache_inputs([{"path": "c/v.json", "sha256": "5" * 64, "hits": 1, "misses": 0}],
+                                             {("c/v.json", "5" * 64): {**B[("c/vec.json", "5" * 64)], "commit": "b" * 40}})[0])]}}})
+        p2.write_bytes(bad)
+        v3 = M5.check_file(p2, {"anchor": ANCHOR})
+        check("K60 is m5 --anchor's verdict: a cache built at another commit is named there, not here",
+              any("not the anchor" in x for x in v3), str(v3[:3]))
+
 print("\n- M-DUP: nothing here builds or judges -")
 gone = [n for n in ("cloud_transport", "m5_cloud_problems", "boundary", "boundary_problems", "ollama_transport",
-                    "P1_BANDS", "ZERO_TOLERANCE") if hasattr(AC, n)]
+                    "P1_BANDS", "ZERO_TOLERANCE", "p1", "yield_", "caches", "reconciliation") if hasattr(AC, n)]
 check("no copy of an artifact builder, an m5 check or a zero-tolerance list", gone == [], str(gone))
 
 print(f"\nv3 accounting: {PASSED} passed, {FAILED} failed, {SKIPPED} skipped")

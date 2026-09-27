@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PREREG-V3 TB4.10a (A6): the inputs of an artifact's per-arm blocks, computed from the recording proxy's logs (rev1
+"""PREREG-V3 TB4.10 (A6): the inputs of an artifact's per-arm blocks, computed from the recording proxy's logs (rev1
 §2.3, §4.3, §4.5, §6; the auditor's Q3, Q5, Q-50-1).
 
 The auditor's B-DUP ruling (O-a): the blocks' semantics are research/v3/artifact.py's (TB4.2, gated). This module only
@@ -33,6 +33,15 @@ zero-tolerance verdicts are artifact's P0 clauses and m5 v3's. A count this modu
   arm-run's call records, refused ones included, and the catcher's refused egress by host - the ARM's across this log,
   since catcher records carry no run (every run of the arm shares its catcher port); witness_inputs: a launch
   check record (launch.Witnesses.end_check) as the egress and fs witnesses artifact.boundary_block() takes.
+
+TB4.10b (Q12, Q13, K60, K61, K76, K87; the auditor's M1):
+* lost_operations -> artifact.p1_block(): each lost logical write in artifact's LOSS_REASONS with its evidence - a
+  transport loss is a failed attempt of the trailing never episode of its (unit, key) inside the operation's window;
+  the bands, the block classes and P1Exceeds are artifact's; never from the proxy alone;
+* yield_inputs -> artifact.yield_block(): the stand's evaluation unit (never the question) and each unit's retrievable
+  items and characters; the per-unit cap and the scored-only labels are artifact's;
+* cache_inputs -> artifact.cache_record(): a read with its in-campaign build record; K60/K61 are m5 --anchor's;
+* reconciliation_inputs: the §2.3 reconciliation numbers; the branch's predicate is artifact's P0j (K87).
 """
 from __future__ import annotations
 
@@ -152,7 +161,8 @@ def classify_keys(calls: Iterable[Mapping[str, Any]]) -> dict[tuple[str, str], d
     failure; else late_recovered. Failed attempts after the last success are one more episode, never (B-ACC1b: the same
     body written twice in a unit, the second time lost). The §4.5 key is sha256(body || arm), with no unit in it, and
     one session body is written in several units: classified across units, one unit's loss would hide behind another
-    unit's success (B-ACC1). "classes" lists the episodes' classes in order."""
+    unit's success (B-ACC1). "classes" lists the episodes' classes in order; "last_ok" is the t0 of the group's last
+    success (None without one) - a failed attempt after it belongs to the trailing never episode."""
     by_key: dict[tuple[str, str], list] = defaultdict(list)
     for c in calls:
         if c.get("refused"):
@@ -182,7 +192,9 @@ def classify_keys(calls: Iterable[Mapping[str, Any]]) -> dict[tuple[str, str], d
             fails = []
         if fails:
             classes.append("never")
-        out[(unit, key)] = {"phase": phases.pop(), "unit": unit, "attempts": len(cs), "classes": classes}
+        last_ok = max((_when(c, "t0") for c in cs if succeeded(c)), default=None)
+        out[(unit, key)] = {"phase": phases.pop(), "unit": unit, "attempts": len(cs), "classes": classes,
+                            "last_ok": last_ok}
     return out
 
 
@@ -299,3 +311,126 @@ def witness_inputs(check: Mapping[str, Any]) -> list[dict]:
     fs = check.get("fs") or {}
     out.append({"kind": "fs", "complete": whole and fs.get("complete") is not False, "hits": fs.get("fs_hits")})
     return out
+
+
+# -- TB4.10b --
+
+UNIT_OF_STAND = {"S1": "haystack", "S4": "conversation", "S5": "conversation", "S6": "row", "S6L": "row",
+                 "S7": "trajectory"}
+#: Q12: the engine's losses of an operation that made no call at all - the breaker was open, or a fallback was refused
+#: (its slug is the cloud call's own failure; artifact.block_class() derives the class from it).
+NO_CALL_REASONS = ("breaker", "fallback_refused")
+JSON_FORMATS = ("json_object", "json_schema")
+
+
+def _in_lost_episode(c: Mapping[str, Any], unit: str, key_classes: Mapping[tuple[str, str], Mapping[str, Any]]) -> bool:
+    """A failed attempt of its (unit, key)'s trailing never episode: an attempt after the group's last success, or in a
+    group with none (every attempt before the last success belongs to an episode that success closed)."""
+    g = key_classes.get((unit, c.get("request_key")))
+    if not g:
+        return False
+    return g.get("last_ok") is None or _when(c, "t0") > g["last_ok"]
+
+
+def lost_operations(ops: list, calls: list, *, key_classes: Mapping[tuple[str, str], Mapping[str, Any]],
+                    no_call_ops: Iterable[Mapping[str, Any]] = ()) -> dict:
+    """artifact.p1_block()'s arguments for one arm-run (Q12's join, rev1 P1). An operation {op_id, unit, t0, t1, and
+    error when the product reported one} is lost if the product reported an error - product-error, with the M1
+    evidence: response_seen (the proxy saw a completed response in the operation's window) and tool_call (that
+    response's request offered tools); if a transport_lost key falls in its window - transport; or if the last JSON or
+    tool call in its window was empty, cut, unparsable or failed, with no later success in it - structured-output or
+    tool-calling. A transport loss is a failed attempt, inside the window, of its (unit, key)'s trailing never episode
+    (key_classes: classify_keys()) - an attempt that a later success of the same key closed is not one. The engine's operations that made no call come as they are (breaker, or fallback_refused with its
+    slug). A valid empty extraction is not a loss. transport_lost counts the operations lost by a transport_lost key."""
+    no_call_ops = list(no_call_ops)
+    if not ops and not no_call_ops:
+        raise AccountingError("p1 needs the arm's logical write operations - never the proxy's counts alone")
+    by_unit: dict[str, list] = defaultdict(list)
+    for c in calls:
+        if not c.get("refused"):
+            by_unit[split_unit(c.get("unit"))[1]].append(c)
+    lost = []
+    for op in ops:
+        t0, t1 = _when(op, "t0"), _when(op, "t1")
+        window = sorted((c for c in by_unit.get(op["unit"], ()) if t0 <= _when(c, "t0") <= t1),
+                        key=lambda c: _when(c, "t0"))
+        base = {"op_id": op.get("op_id"), "unit": op.get("unit")}
+        if op.get("error"):
+            done = [c for c in window if succeeded(c)]
+            lost.append({**base, "reason": "product-error", "error": op["error"], "response_seen": bool(done),
+                         "tool_call": bool(done and done[-1].get("tools_offered"))})
+            continue
+        never = sorted({c.get("request_key") for c in window if _in_lost_episode(c, op["unit"], key_classes)})
+        if never:
+            lost.append({**base, "reason": "transport", "keys": never})
+            continue
+        structured = [c for c in window if c.get("response_format") in JSON_FORMATS or c.get("tools_offered")]
+        if structured:
+            last = structured[-1]
+            why = ("empty" if last.get("content_empty") else "cut" if last.get("finish_reason") == "length"
+                   else "unparsable" if last.get("json_ok") is False or last.get("parse_ok") is False
+                   else "failed" if not succeeded(last) else None)
+            if why:
+                lost.append({**base, "reason": "tool-calling" if last.get("tools_offered") else "structured-output",
+                             "request_key": last.get("request_key"), "why": why})
+    for op in no_call_ops:
+        if op.get("reason") not in NO_CALL_REASONS:
+            raise AccountingError(f"a no-call operation's reason is one of {NO_CALL_REASONS}, not {op.get('reason')!r}")
+        lost.append(dict(op))
+    return {"lost_ops": lost, "transport_lost": sum(1 for x in lost if x["reason"] == "transport"),
+            "logical_writes": len(ops) + len(no_call_ops)}
+
+
+def yield_inputs(stand: str, units: Iterable[Mapping[str, Any]], *, unit_kind: str, tokens_read: int | None = None,
+                 contexts_b: Iterable[str] | None = None) -> dict:
+    """artifact.yield_block()'s arguments but `scored`, which the caller knows (K76): the stand's evaluation unit (G6 -
+    never the question); each unit {unit, retrievable_items, chars_to_writer, unit_chars} as {retrievable, chars_in,
+    chars}; and the extra fields items_per_1k_read and empty_context_share (Point B contexts)."""
+    if UNIT_OF_STAND.get(stand) != unit_kind:
+        raise AccountingError(f"{stand}'s evaluation unit is {UNIT_OF_STAND.get(stand)!r}, not {unit_kind!r}")
+    rows = [{"retrievable": u.get("retrievable_items"), "chars_in": u.get("chars_to_writer"), "chars": u.get("unit_chars")}
+            for u in units]
+    items = sum(r["retrievable"] for r in rows if isinstance(r["retrievable"], int))
+    contexts = None if contexts_b is None else list(contexts_b)
+    return {"unit": unit_kind, "units": rows,
+            "extra": {"items_per_1k_read": 1000.0 * items / tokens_read if tokens_read else None,
+                      "empty_context_share": sum(1 for c in contexts if not c.strip()) / len(contexts) if contexts else None}}
+
+
+def ours_retrievable(notes: Iterable[Mapping[str, Any]]) -> int:
+    """K76 for our arm: typed notes count, Session notes never do."""
+    return sum(1 for n in notes if str(n.get("type", "")).lower() != "session")
+
+
+def cache_inputs(reads: Iterable[Mapping[str, Any]], builds: Mapping[tuple, Mapping[str, Any]]) -> list[dict]:
+    """artifact.cache_record()'s arguments for each cache an arm-run read (K60, K61): the read's path, sha256, hits and
+    misses with its in-campaign build record {commit, utc, ollama_transport - an artifact.ollama_transport() block},
+    keyed by (path, sha256). The K60/K61 verdicts are m5 --anchor's (check_caches); a read with no build record
+    cannot be placed."""
+    out = []
+    for r in reads:
+        b = builds.get((r.get("path"), r.get("sha256")))
+        if b is None:
+            raise AccountingError(f"the cache {r.get('path')} ({str(r.get('sha256'))[:12]}) has no build record - K60 "
+                                  f"needs one")
+        out.append({"path": r.get("path"), "sha256": r.get("sha256"), "built_commit": b.get("commit"),
+                    "built_utc": b.get("utc"), "built_ollama_transport": b.get("ollama_transport"),
+                    "hits": r.get("hits"), "misses": r.get("misses")})
+    return out
+
+
+def reconciliation_inputs(calls: Iterable[Mapping[str, Any]], *, arm: str, run: str, branch: str,
+                          adapter_calls: int | None = None, product_calls: int | None = None,
+                          product_tokens: int | None = None, serverlog_delta: int | None = None) -> dict:
+    """The §2.3 reconciliation numbers of one arm-run (K87 checks 1-2): the HTTP calls and tokens the proxy saw on the
+    product's own port (the arm's write port, both stages; the reader's port is the harness's), the adapter's and the
+    product's counters as given, tokens_delta_pct = the product's tokens against the proxy's in percent, and
+    product_retries = HTTP - logical calls. No verdict here: the branch's predicate is artifact's P0j."""
+    own = [c for c in _arm_run(calls, arm, run) if not c.get("refused") and c.get("port_role") == "write"]
+    http = len(own)
+    tokens = sum(int((c.get("usage") or {}).get(k) or 0) for c in own for k in ("prompt", "completion"))
+    return {"proxy_calls": http, "proxy_tokens": tokens, "adapter_calls": adapter_calls,
+            "product_logical_calls": product_calls,
+            "tokens_delta_pct": None if product_tokens is None or not tokens else 100.0 * (product_tokens - tokens) / tokens,
+            "serverlog_delta": serverlog_delta, "branch": branch,
+            "product_retries": None if product_calls is None else http - product_calls}
