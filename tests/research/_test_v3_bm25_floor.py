@@ -9,7 +9,9 @@ through base.py's protocol (the auditor's Q-45-2 O-a).
   ranks them: both query terms first, then one, nothing for no shared term; ties by index; k caps the list;
 * IDF is over the unit's items only: the same document scores higher in a unit where its term is rare;
 * Q25 and refusals by name: a read in the write stage, a write in the read stage, a read stage without items, a write
-  stage on an existing store, a proxy token in the environment.
+  stage on an existing store, a proxy token in the environment;
+* B-A2: the environment checked is the one the child was given, taken before isolate() (static: __main__'s order) -
+  a secret-shaped name or a key-shaped value under any name refused by name, in-process and in a real child.
 
     python tests/research/_test_v3_bm25_floor.py
 """
@@ -159,11 +161,35 @@ try:
         msg_i = ""
         try:
             BF.bind({"arm": BF.ARM, "stage": "write", "stand": "s1", "run": "r1", "unit": "u1", "unit_dir": str(UI),
-                     "record_path": str(TMP / "iso.json")})
+                     "record_path": str(TMP / "iso.json")}, {})
         except Exception as e:  # noqa: BLE001
             msg_i = f"{type(e).__name__}: {e}"
         check("bind refuses by name when sandbox_guard.isolate() did not run, before the engine is imported",
               "Refused" in msg_i and "isolate() did not run" in msg_i, msg_i[:200])
+        env_rows = {}
+        for label, env_ in (("token name", {"DEEPSEEK_API_KEY": "x"}), ("secret word", {"MY_Service_Password": "x"}),
+                            ("key value", {"HARMLESS": "sk-" + "a" * 20}), ("proxy token value", {"X": "nvt3-a-" + "b" * 32}),
+                            ("clean", {"PATH": "p", "HF_HUB_DISABLE_TELEMETRY": "1"})):
+            try:
+                BF.check_env(env_)
+                env_rows[label] = "accepted"
+            except BF.Refused as e:
+                env_rows[label] = str(e)
+        check("B-A2: a proxy token's name, a name holding KEY/TOKEN/SECRET/PASSWORD, a value in a key's or a proxy "
+              "token's form - each refused by name; a clean environment passes",
+              all("has no LLM" in env_rows[k] and next(iter(v)) in env_rows[k] for k, v in
+                  (("token name", {"DEEPSEEK_API_KEY": 1}), ("secret word", {"MY_Service_Password": 1}),
+                   ("key value", {"HARMLESS": 1}), ("proxy token value", {"X": 1})))
+              and env_rows["clean"] == "accepted", str(env_rows))
+        import ast as _ast  # noqa: PLC0415
+        _tree = _ast.parse(FLOOR.read_bytes().decode("utf-8"))
+        _main = next(n for n in _tree.body if isinstance(n, _ast.If) and "__main__" in _ast.unparse(n.test))
+        _order = [("snap" if isinstance(s, _ast.Assign) and _ast.unparse(s.value) == "dict(os.environ)" else
+                   "isolate" if "sandbox_guard.isolate()" in _ast.unparse(s) else
+                   "build" if "build(sys.argv[1], ENV_AT_START)" in _ast.unparse(s) else None) for s in _main.body]
+        _order = [x for x in _order if x]
+        check("B-A2: __main__ takes the environment before isolate() and hands that snapshot to build",
+              _order == ["snap", "isolate", "build"], str(_order))
     finally:
         BF.sandbox_guard = real_sg
 
@@ -287,6 +313,9 @@ try:
     check("a write stage on an existing store is refused", "fresh store" in msg, msg[:200])
     msg = hello_error("x3", "write", UC, env=child_env({"DEEPSEEK_API_KEY": "nvt3-bm25-" + "d" * 32}))
     check("a proxy token in the floor's environment is refused (it has no LLM)", "has no LLM" in msg, msg[:200])
+    msg = hello_error("x5", "write", UC, env=child_env({"SOME_SECRET": "v"}))
+    check("B-A2: a secret-shaped name in the environment the child was given is refused by name (a real child)",
+          "has no LLM" in msg and "SOME_SECRET" in msg, msg[:200])
     msg = hello_error("x4", "write", UC, env=child_env({"NEVERTWICE_LEXICAL_MORPHOLOGY": "0"}))
     check("the engine's morphology step switched off is refused (the shipped default is on)", "morphology" in msg,
           msg[:200])

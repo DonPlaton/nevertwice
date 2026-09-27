@@ -21,6 +21,10 @@ __main__
 before any project import (bind refuses unless it ran), so the engine's store constants land on a throwaway store that
 nothing writes. Ties rank by index.
 The spec: arm ("bm25-floor"), stage, stand, run, unit, unit_dir, record_path.
+
+B-A2: the floor has no LLM. __main__ takes the environment the harness gave it BEFORE isolate() (as the runner does),
+and bind refuses by name a proxy token's name, any variable whose name holds KEY, TOKEN, SECRET or PASSWORD, and any
+value in a provider key's (sk-) or a proxy token's (nvt3-) form - isolate() can no longer hide one from the check.
 """
 from __future__ import annotations
 
@@ -43,6 +47,8 @@ ARM = "bm25-floor"
 STAGES = ("write", "read")
 SPEC_KEYS = ("arm", "stage", "stand", "run", "unit", "unit_dir", "record_path")
 TOKEN_NAMES = ("DEEPSEEK_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_AUTH_TOKEN")
+SECRET_WORDS = ("KEY", "TOKEN", "SECRET", "PASSWORD")        # the runner's (the 09:27 correction)
+SECRET_VALUE_PREFIXES = ("sk-", "nvt3-")
 _DIGITS = str.maketrans("0123456789", "!$%&()*+,;")
 
 
@@ -83,11 +89,18 @@ def check_anchor(m) -> list[str]:
     return problems
 
 
-def bind(spec: Mapping[str, Any]) -> tuple[dict, dict]:
-    """isolate(), then the engine namespace; returns (the engine's scorer and tokenizer, the start record)."""
-    held = [n for n in TOKEN_NAMES if n in os.environ]
-    if held:
-        raise Refused(f"the floor has no LLM, yet {held} is set")
+def check_env(env: Mapping[str, str]) -> None:
+    """B-A2: the environment the child was given holds nothing an LLM arm would - see the module docstring."""
+    held = sorted(n for n in env if n.upper() in TOKEN_NAMES or any(w in n.upper() for w in SECRET_WORDS))
+    shaped = sorted(n for n, v in env.items() if isinstance(v, str) and v.startswith(SECRET_VALUE_PREFIXES))
+    if held or shaped:
+        raise Refused(f"the floor has no LLM, yet its environment holds {held + [n for n in shaped if n not in held]}")
+
+
+def bind(spec: Mapping[str, Any], env: Mapping[str, str]) -> tuple[dict, dict]:
+    """The environment it was given (``env``, taken before isolate()), then the engine namespace; returns (the engine's
+    scorer and tokenizer, the start record)."""
+    check_env(env)
     store = Path(spec["unit_dir"]) / "store"
     if spec["stage"] == "write" and store.exists():
         raise Refused("the write stage needs a fresh store, and the unit store already exists")
@@ -191,13 +204,13 @@ class RefusedHandler:
         return refuse
 
 
-def build(spec_path: str) -> Any:
+def build(spec_path: str, env_at_start: Mapping[str, str]) -> Any:
     try:
         spec = load_spec(spec_path)
     except (Refused, OSError, ValueError, KeyError) as e:
         return RefusedHandler(f"{type(e).__name__}: {e}")
     try:
-        ns, rec = bind(spec)
+        ns, rec = bind(spec, env_at_start)
         handler = Handler(spec, ns, rec)
     except Exception as e:  # noqa: BLE001 - every failure to bind is a named refusal, recorded
         reason = f"{type(e).__name__}: {e}"
@@ -213,5 +226,6 @@ if __name__ == "__main__":
     if len(sys.argv) != 2:
         sys.stderr.write("usage: bm25_floor.py <spec.json>\n")
         sys.exit(2)
+    ENV_AT_START = dict(os.environ)           # B-A2: what the harness gave the child, before isolate() changes it
     sandbox_guard.isolate()                   # before any project module is imported
-    sys.exit(B.main_with(lambda: build(sys.argv[1])))
+    sys.exit(B.main_with(lambda: build(sys.argv[1], ENV_AT_START)))
