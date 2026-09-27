@@ -692,8 +692,8 @@ import json  # noqa: E402
 END = "2026-09-28T10:00:00+00:00"
 
 
-def body(*strings, t0="2026-09-28T09:00:00+00:00"):
-    return {"t0": t0, "strings": list(strings), "via": "write"}
+def body(*strings, t0="2026-09-28T09:00:00+00:00", status=200):
+    return {"t0": t0, "strings": list(strings), "via": "write", "status": status}
 
 
 ITEM = ("The quarterly report was filed late because the upload kept failing on the flaky network "
@@ -727,6 +727,9 @@ check("Q-A5-1: an item shorter than 32 counts whole as a substring, else not at 
 cvt = AC.unit_coverage([ITEM], [body(ITEM, t0="2026-09-28T10:00:01+00:00")], end_write_at=END)
 check("Q-A5-1: a request sent after the unit's end_write is not its write phase", cvt["covered"] == 0
       and cvt["calls"] == 0, str(cvt))
+cvf5 = AC.unit_coverage([ITEM], [body(ITEM, status=500), body(ITEM, status=None)], end_write_at=END)
+check("Q-A5-1 (C-1): a request record whose status is not 200 counts nothing - the LLM made no memory from it",
+      cvf5["covered"] == 0 and cvf5["calls"] == 0, str(cvf5))
 try:
     AC.unit_coverage([ITEM], [], end_write_at=None)
     no_end = "accepted"

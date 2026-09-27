@@ -101,7 +101,7 @@ try:
     RUN = TMP / "px-run"
     (RUN / "bodies" / "mem0").mkdir(parents=True)
     (RUN / "bodies" / "mem0" / "r1.u1.jsonl").write_bytes(
-        (json.dumps({"t0": T(5), "strings": ["user: " + TEXT1, "Extract the facts."], "via": "write"}) + "\n").encode())
+        (json.dumps({"t0": T(5), "strings": ["user: " + TEXT1, "Extract the facts."], "via": "write", "status": 200}) + "\n").encode())
 
     def summary(log=LOG, **kw):
         args = dict(stand="S4-smoke-1", key_question=KQ, item_texts=ITEMS, run_dir=RUN, no_writer={"bm25-floor"})

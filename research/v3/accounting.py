@@ -45,7 +45,8 @@ TB4.10b (Q12, Q13, K60, K61, K76, K87; the auditor's M1):
 
 Q-A5-1 (the auditor's measure of K76's coverage, "characters reaching the writer's LLM"):
 * load_bodies: the recording proxy's bodies/<arm>/<run>.<unit>.jsonl - the parsed strings of every writer-LLM request
-  the unit's arm-run sent in the write stage (never a reader or an embedding call);
+  the unit's arm-run sent in the write stage and the LLM answered with a completed 200 (C-1: a failed request made no
+  memory and never counts; never a reader or an embedding call) - only records with status 200 count;
 * unit_coverage: whitespace runs become one space and ends are stripped, in the bodies and in the items alike (case and
   Unicode untouched); of an item of 32 characters or more, a character counts when at least one 32-character window
   of the item that holds it occurs in a request string sent up to the unit's end_write - so a product that cuts the
@@ -457,7 +458,7 @@ def unit_coverage(item_texts: Sequence[str], bodies: Iterable[Mapping[str, Any]]
     if not isinstance(end_write_at, str) or not end_write_at:
         raise AccountingError("a unit without an end_write stamp has no write phase to measure (it was aborted)")
     end = _when({"t": end_write_at}, "t")
-    used = [b for b in bodies if _when(b, "t0") <= end]
+    used = [b for b in bodies if b.get("status") == 200 and _when(b, "t0") <= end]     # C-1: answered requests only
     strs = [normalize_ws(s) for b in used for s in (b.get("strings") or []) if isinstance(s, str)]
     windows = {s[i:i + WINDOW] for s in strs for i in range(len(s) - WINDOW + 1)}
     covered = total = 0

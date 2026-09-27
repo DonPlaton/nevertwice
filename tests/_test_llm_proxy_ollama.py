@@ -253,6 +253,18 @@ call(lp, "/u/r1.cov-2/api/chat", COVER)
 call(lp, "/u/r1.cov-2/api/embed", b'{"model":"m","input":"an embedded text never counted as reaching a writer"}')
 px.stage = {"block": "b1", "stage": "questions"}
 call(lp, "/u/r1.cov-2/api/chat", b'{"model":"m","messages":[{"role":"user","content":"a question stage chat"}]}')
+px.stage = {"block": "b1", "stage": "write"}
+OL.script["/api/chat"] = [(204, b"")]                                    # answered, but no generation: not a 200
+call(lp, "/u/r1.cov-3/api/chat", b'{"model":"m","messages":[{"role":"user","content":"a chat the model failed"}]}')
+OL.script["/api/chat"] = [(500, b'{"error":"model crashed"}')]           # every try of the pacer answers 500
+call(lp, "/u/r1.cov-3/api/chat", b'{"model":"m","messages":[{"role":"user","content":"a chat the model failed"}]}')
+_failed3 = (TMP / "run" / "bodies" / "local" / "r1.cov-3.jsonl").exists()
+OL.script["/api/chat"] = [(200, EMBED_OK)]
+call(lp, "/u/r1.cov-3/api/chat", b'{"model":"m","messages":[{"role":"user","content":"a chat the model failed"}]}')
+_bf3 = TMP / "run" / "bodies" / "local" / "r1.cov-3.jsonl"
+_bl3 = [json.loads(x) for x in _bf3.read_bytes().decode("utf-8").split("\n") if x.strip()] if _bf3.exists() else []
+check("Q-A5-1 (C-1): a leg call Ollama answered 204 or 500 leaves no body; its 200 retry leaves one, with status 200",
+      not _failed3 and len(_bl3) == 1 and _bl3[0]["status"] == 200, f"{_failed3} {_bl3}")
 px.stage = {"block": None, "stage": None}
 _bf = TMP / "run" / "bodies" / "local" / "r1.cov-2.jsonl"
 _bl = [json.loads(x) for x in _bf.read_bytes().decode("utf-8").split("\n") if x.strip()] if _bf.exists() else []

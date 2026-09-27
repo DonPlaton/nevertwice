@@ -94,6 +94,11 @@ class Upstream(ST.FakeUpstream):
     def _serve(self, c, path):
         if path.startswith(b"/v1/chat/completions/reason"):
             body = V1_REASON
+        elif path.startswith(b"/v1/chat/completions/fail500"):
+            err = b'{"error":{"message":"overloaded"}}'
+            self._send(c, b"HTTP/1.1 500 Internal Server Error\r\nContent-Type: application/json\r\nContent-Length: "
+                       + str(len(err)).encode() + b"\r\n\r\n" + err)
+            return True
         elif path.startswith(b"/v1/chat/completions"):
             body = V1_JSON
         elif path.startswith(b"/user/balance"):
@@ -294,6 +299,16 @@ check("Q-A5-1: a writer call in the write stage leaves its parsed strings in bod
       "like its call record, via the write port", len(_bl) == 1 and COVER in _bl[0]["strings"]
       and _bl[0]["request_key"] == rw["request_key"] and _bl[0]["via"] == "write" and _bl[0]["unit"] == "r1.cov-1"
       and _bl[0]["t0"] == rw["t0"], str(_bl)[:300])
+COVER2 = {"model": "deepseek-flash", "messages": [{"role": "user", "content": "a second unit sentence that the "
+                                                                              "LLM first failed to answer"}]}
+call(W, "/u/r1.cov-2/v1/chat/completions/fail500", COVER2)
+_bf2 = px.config.run_dir / "bodies" / "nevertwice" / "r1.cov-2.jsonl"
+_failed_left = _bf2.exists()
+call(W, "/u/r1.cov-2/v1/chat/completions", COVER2)
+_bl2 = [json.loads(x) for x in _bf2.read_bytes().decode("utf-8").split("\n") if x.strip()] if _bf2.exists() else []
+check("Q-A5-1 (C-1): a request the LLM answered 500 leaves no body - it made no memory; its successful retry leaves "
+      "one, with status 200", not _failed_left and len(_bl2) == 1 and _bl2[0]["status"] == 200
+      and _bl2[0]["request_key"] == records(px)[-1]["request_key"], f"{_failed_left} {_bl2}")
 check("Q-A5-1: never a reader call, a refused call or a call in the question stage - and never the token",
       bool(_braw) and all(t_ not in _braw for t_ in (b"reader text only", b"refused text", b"question stage text",
                                                      T_ARM.encode())), _braw.decode("utf-8", "replace")[:300])
