@@ -14,7 +14,10 @@ instrument did not measure is refused, not zeroed):
 * cloud_transport(): every P0(b) counter and every "also written" field of §2.3, required;
 * boundary_block(): the four P0h counters from the proxy and the witnesses; an incomplete or absent witness raises;
 * p1_block(): P1 bands - <= 2 % no label, 2-10 % "lossy-writer (x%)", > 10 % raises P1Exceeds with the dominant class
-  (the arm is then blocked by the repair logic after its documented attempts, never written as a valid row);
+  (the arm is then blocked by the repair logic after its documented attempts, never written as a valid row). A lost
+  operation carries its LOSS REASON (counted, published) and its evidence; its BLOCK CLASS - always one of rev1 P1's
+  three - is derived by block_class() (the auditor's rulings: breaker -> transport; fallback_refused by its cloud slug;
+  product-error by whether the proxy saw a completed response), and the dominant class is taken over those only;
 * yield_block(): K76 - retrievable_unit_share and coverage over evaluation units; labels only on scored runs;
 * run_record(): the per-run file an END line names (out=), stamped inside its START..END (ruling Q2, m2_v3 S4);
 * build(): the aggregate - input_sha256 = sha256 of the canonical input_manifest, run_files {status_id: {path,
@@ -55,7 +58,13 @@ CLOUD_ALSO = ("transport_recovered", "transport_lost", "upstream_errors", "clien
               "thinking_injected", "fingerprints_seen", "straddled_units", "empty_content", "json_invalid", "capped",
               "reasoning_tokens", "tokens", "incident_units")
 BOUNDARY = ("canary_hits", "owner_marker_hits", "egress_hits", "fs_hits")
-P1_CLASSES = ("structured-output", "tool-calling", "transport", "product-error")
+#: rev1 P1's block classes - the only values a P1 block can name (P3's vocabulary).
+BLOCK_CLASSES = ("structured-output", "tool-calling", "transport")
+#: What a lost operation is counted and published as (TB4.10 ruling; M1 ruling).
+LOSS_REASONS = ("structured-output", "tool-calling", "transport", "product-error", "breaker", "fallback_refused")
+#: The engine's _LLM_LAST["failure"] slugs (_engine_store.py), split by what they mean for a refused fallback.
+CONTENT_SLUGS = ("truncated", "empty", "unparsable", "blocked")
+TRANSPORT_SLUGS = ("http", "transport", "error")
 P1_LABEL_BAND, P1_BLOCK_BAND = 0.02, 0.10
 K76_LABEL_BELOW = 0.5
 JUDGE_INVALID_MAX = 0.01
@@ -185,7 +194,7 @@ def ollama_transport(pacer: Mapping, *, embed_at_cap: int, fallback_local: int, 
     if not isinstance(bp, Mapping):
         raise ArtifactRefused("pacer bypass_calls is the pacer's per-library record")
     models = list(embed_models_seen)
-    if not all(isinstance(x, str) and x for x in models):
+    if not all(isinstance(x, str) and x.strip() for x in models):
         raise ArtifactRefused("embed_models_seen names each embed call's model (ruling B2)")
     return {"calls": calls,
             "failed_outcomes": _final_failures(pacer.get("failed_outcomes"), "failed_outcomes")
@@ -260,22 +269,56 @@ def cache_record(*, path: str, sha256: str, built_commit: str, built_utc: str, b
 
 # ── write losses and yield ─────────────────────────────────────────────────────────────────────────────────────
 
+def block_class(op: Mapping) -> str:
+    """The P1 block class of one lost operation, derived from its evidence - never a new block value:
+    a reason that is already a class stays; product-error -> structured-output (tool-calling for a tool call) when the
+    proxy saw a completed response for the operation, else transport; breaker -> transport (the breaker trips only on
+    exhausted transport); fallback_refused -> by the cloud call's own slug: content slugs -> structured-output,
+    transport slugs -> transport. Missing evidence is refused, never defaulted."""
+    reason = op.get("reason")
+    if reason in BLOCK_CLASSES:
+        return reason
+    if reason == "product-error":
+        if not isinstance(op.get("response_seen"), bool):
+            raise ArtifactRefused("a product-error loss names whether the proxy saw a completed response (response_seen)")
+        if op["response_seen"]:
+            return "tool-calling" if op.get("tool_call") is True else "structured-output"
+        return "transport"
+    if reason == "breaker":
+        return "transport"
+    if reason == "fallback_refused":
+        slug = op.get("slug")
+        if slug in CONTENT_SLUGS:
+            return "structured-output"
+        if slug in TRANSPORT_SLUGS:
+            return "transport"
+        raise ArtifactRefused(f"a fallback_refused loss with slug {slug!r}: its block class cannot be derived")
+    raise ArtifactRefused(f"loss reason {reason!r} is outside {LOSS_REASONS}")
+
+
 def dominant_class(classes: Mapping[str, int]) -> str:
-    """The class with the most lost operations; a tie goes to the class listed first in P1."""
+    """The block class with the most lost operations; a tie goes to the class listed first in P1."""
+    bad = [c for c in classes if c not in BLOCK_CLASSES]
+    if bad:
+        raise ArtifactRefused(f"block classes {bad} outside {BLOCK_CLASSES}")
     if not classes or not any(classes.values()):
         raise ArtifactRefused("no lost operation to name a class for")
-    return max(P1_CLASSES, key=lambda c: (classes.get(c, 0), -P1_CLASSES.index(c)))
+    return max(BLOCK_CLASSES, key=lambda c: (classes.get(c, 0), -BLOCK_CLASSES.index(c)))
 
 
-def p1_block(*, lost: int, transport_lost: int, logical_writes: int, classes: Mapping[str, int]) -> dict:
-    """P1 (K75): the shares per arm-run, labelled by band; > 10 % is not a valid row (P1Exceeds)."""
-    for k, v in (("lost", lost), ("transport_lost", transport_lost), ("logical_writes", logical_writes)):
+def p1_block(*, lost_ops: Sequence[Mapping], transport_lost: int, logical_writes: int) -> dict:
+    """P1 (K75): the shares per arm-run, labelled by band; > 10 % is not a valid row (P1Exceeds). Each lost operation
+    is {reason, and its evidence}; reasons are counted as given, block classes derived by block_class()."""
+    lost = len(lost_ops)
+    for k, v in (("transport_lost", transport_lost), ("logical_writes", logical_writes)):
         _count(k, v)
-    bad = [c for c in classes if c not in P1_CLASSES]
-    if bad:
-        raise ArtifactRefused(f"loss classes {bad} outside {P1_CLASSES}")
-    if sum(_count(f"classes.{c}", n) for c, n in classes.items()) != lost:
-        raise ArtifactRefused(f"the classes sum to {sum(classes.values())}, not the {lost} lost operations")
+    reasons: dict[str, int] = {}
+    classes: dict[str, int] = {}
+    for op in lost_ops:
+        c = block_class(op)                              # refuses a reason outside LOSS_REASONS, and missing evidence
+        r = op["reason"]
+        reasons[r] = reasons.get(r, 0) + 1
+        classes[c] = classes.get(c, 0) + 1
     if transport_lost > lost:
         raise ArtifactRefused("transport_lost operations are lost operations: transport_lost <= lost")
     if logical_writes == 0 and lost:
@@ -285,7 +328,7 @@ def p1_block(*, lost: int, transport_lost: int, logical_writes: int, classes: Ma
         raise P1Exceeds(ls, dominant_class(classes))
     label = f"lossy-writer ({100 * ls:.1f}%)" if ls > P1_LABEL_BAND else ""
     return {"lost_share": ls, "transport_lost_share": ts, "label": label, "lost": lost,
-            "transport_lost": transport_lost, "logical_writes": logical_writes, "classes": dict(classes)}
+            "transport_lost": transport_lost, "logical_writes": logical_writes, "reasons": reasons, "classes": classes}
 
 
 def yield_block(*, unit: str, units: Sequence[Mapping], scored: bool, extra: Mapping | None = None) -> dict:

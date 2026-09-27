@@ -133,7 +133,7 @@ def row(system: str, *, sid: list[str], **over) -> dict:
         r["ollama_transport"] = A.ollama_transport(PACER, embed_at_cap=0, fallback_local=0, embed_models_seen=[D1],
                                                    degraded_recalls=0)
     if d["llm"] is not None:
-        r["p1"] = A.p1_block(lost=0, transport_lost=0, logical_writes=20, classes={})
+        r["p1"] = A.p1_block(lost_ops=[], transport_lost=0, logical_writes=20)
         r["yield"] = A.yield_block(unit="conversation", scored=True,
                                    units=[{"retrievable": 3, "chars_in": 900, "chars": 1000}] * 2)
     r.update(over)
@@ -183,6 +183,10 @@ for kw in ("embed_at_cap", "fallback_local", "embed_models_seen", "degraded_reca
     except TypeError:
         ok = True
     check(f"ollama_transport cannot be built without {kw} - an unmeasured TB7 field is never 0 (R9)", ok)
+for badm in ([""], ["  "], [None], [3]):
+    check(f"M3: an embed model name {badm[0]!r} is refused (B2 names each call's model)",
+          refused(lambda badm=badm: A.ollama_transport(PACER, embed_at_cap=0, fallback_local=0, embed_models_seen=badm,
+                                                       degraded_recalls=0), "embed_models_seen"))
 check("a pacer record without its failure dicts is refused",
       refused(lambda: A.ollama_transport({"calls": 1, "bypass_calls": {}}, embed_at_cap=0, fallback_local=0,
                                          embed_models_seen=[D1], degraded_recalls=0), "failure record"))
@@ -219,24 +223,56 @@ check("a cache record at a commit that is not 40 hex is refused", refused(lambda
     hits=1, misses=0), "40-hex"))
 
 print("\n- P1 bands -")
-p = A.p1_block(lost=0, transport_lost=0, logical_writes=100, classes={})
+SO, TC, TR = ({"reason": "structured-output"}, {"reason": "tool-calling"}, {"reason": "transport"})
+p = A.p1_block(lost_ops=[], transport_lost=0, logical_writes=100)
 check("0 lost: share 0, no label", (p["lost_share"], p["label"]) == (0.0, ""))
-check("2 of 100 (<= 2 %): no label", A.p1_block(lost=2, transport_lost=0, logical_writes=100,
-                                                   classes={"structured-output": 2})["label"] == "")
-p5 = A.p1_block(lost=5, transport_lost=2, logical_writes=100, classes={"structured-output": 3, "transport": 2})
+check("2 of 100 (<= 2 %): no label", A.p1_block(lost_ops=[SO, SO], transport_lost=0, logical_writes=100)["label"] == "")
+p5 = A.p1_block(lost_ops=[SO] * 3 + [TR] * 2, transport_lost=2, logical_writes=100)
 check("5 of 100: labelled 'lossy-writer (5.0%)', transport_lost_share 0.02",
       (p5["label"], p5["transport_lost_share"]) == ("lossy-writer (5.0%)", 0.02), str(p5))
 try:
-    A.p1_block(lost=15, transport_lost=0, logical_writes=100, classes={"tool-calling": 9, "structured-output": 6})
+    A.p1_block(lost_ops=[TC] * 9 + [SO] * 6, transport_lost=0, logical_writes=100)
     ex = None
 except A.P1Exceeds as e:
     ex = e
 check("15 of 100 (> 10 %): P1Exceeds names the dominant class, never a valid row",
       ex is not None and ex.dominant == "tool-calling", repr(ex))
-check("classes that do not sum to the lost count are refused",
-      refused(lambda: A.p1_block(lost=3, transport_lost=0, logical_writes=100, classes={"transport": 1}), "sum"))
-check("a class outside P1's list is refused",
-      refused(lambda: A.p1_block(lost=1, transport_lost=0, logical_writes=100, classes={"other": 1}), "outside"))
+check("a loss reason outside P1's list is refused",
+      refused(lambda: A.p1_block(lost_ops=[{"reason": "other"}], transport_lost=0, logical_writes=100), "outside"))
+check("M2: transport_lost greater than the lost operations is refused",
+      refused(lambda: A.p1_block(lost_ops=[TR], transport_lost=2, logical_writes=100), "transport_lost"))
+
+print("\n- P1 loss reasons and derived block classes (TB4.10 and M1 rulings) -")
+PE_RESP = {"reason": "product-error", "response_seen": True}
+PE_TOOL = {"reason": "product-error", "response_seen": True, "tool_call": True}
+PE_NONE = {"reason": "product-error", "response_seen": False}
+check("block_class: a product error on a completed response -> structured-output; on a tool call -> tool-calling; "
+      "with no response -> transport",
+      (A.block_class(PE_RESP), A.block_class(PE_TOOL), A.block_class(PE_NONE))
+      == ("structured-output", "tool-calling", "transport"))
+check("block_class: breaker -> transport; fallback_refused by its slug (content -> structured-output, transport -> "
+      "transport)",
+      A.block_class({"reason": "breaker"}) == "transport"
+      and [A.block_class({"reason": "fallback_refused", "slug": s}) for s in ("truncated", "empty", "unparsable", "blocked")]
+      == ["structured-output"] * 4
+      and [A.block_class({"reason": "fallback_refused", "slug": s}) for s in ("http", "transport", "error")] == ["transport"] * 3)
+check("block_class refuses missing evidence: a product error without response_seen, a fallback with an unknown slug",
+      refused(lambda: A.block_class({"reason": "product-error"}), "response_seen")
+      and refused(lambda: A.block_class({"reason": "fallback_refused", "slug": "cloud_dead"}), "cannot be derived"))
+mix = [PE_RESP] * 5 + [PE_NONE] * 4 + [{"reason": "breaker"}] * 2 + [TC] * 1
+pm = A.p1_block(lost_ops=mix, transport_lost=0, logical_writes=1000)
+check("the p1 block publishes the loss reasons as counted and the block classes as derived",
+      pm.get("reasons") == {"product-error": 9, "breaker": 2, "tool-calling": 1}
+      and pm["classes"] == {"structured-output": 5, "transport": 6, "tool-calling": 1}, str((pm.get("reasons"), pm.get("classes"))))
+try:
+    A.p1_block(lost_ops=[PE_RESP] * 9 + [PE_NONE] * 5 + [TC] * 2, transport_lost=0, logical_writes=100)
+    exm = None
+except Exception as e:  # noqa: BLE001 - any other refusal is a named FAIL of this row, not a crash
+    exm = e
+check("M1: product errors dominate the reasons, and the block class is still one of the three (structured-output)",
+      isinstance(exm, A.P1Exceeds) and exm.dominant == "structured-output" and exm.dominant in A.BLOCK_CLASSES, repr(exm))
+check("dominant_class refuses a class outside the three", refused(lambda: A.dominant_class({"product-error": 3}),
+                                                                  "outside"))
 
 print("\n- K76 yield -")
 y = A.yield_block(unit="conversation", scored=True,
