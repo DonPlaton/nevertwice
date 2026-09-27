@@ -30,6 +30,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
 sys.path.insert(0, str(HERE.parent))
 import _env_guard  # noqa: F401,E402  hermetic: scrub store env before any project import
+import httpx, requests  # noqa: F401,E401,E402  the child needs them; without the research extra, test_self_checks' skip rule applies
 
 HC_PATH = ROOT / "research" / "v3" / "arms" / "_http_count.py"
 PACER = ROOT / "research" / "_ollama_pacer.py"
