@@ -22,7 +22,9 @@ instrument did not measure is refused, not zeroed):
 * run_record(): the per-run file an END line names (out=), stamped inside its START..END (ruling Q2, m2_v3 S4);
 * build(): the aggregate - input_sha256 = sha256 of the canonical input_manifest, run_files {status_id: {path,
   sha256}}, measured_at {commit, dirty, utc} taken at assembly, after the last END (m2_v3 S4);
-* p0_flags() / p0_root_flags(): the P0 a-j clauses readable from an artifact and its context, one function each.
+* p0_flags() / p0_root_flags(): the P0 a-j clauses readable from an artifact and its context, one function each;
+  p0j holds K87 checks 1-2 inside the row's reconciliation branch (the auditor's B-DUP ruling: accounting.py only
+  computes the numbers).
 """
 from __future__ import annotations
 
@@ -460,6 +462,7 @@ class P0Context:
     k61: Mapping[str, bool] = field(default_factory=dict)          # arm -> K61 holds (every read cache-served)
     stand_units: int = 0
     reconciliation_branches: frozenset = frozenset()               # the branches the slot allows
+    single_witness_ok: Mapping[str, bool] = field(default_factory=dict)   # arm -> K87 (c): A/B passed, footprints > 0
     timing: bool = False
     list_sha256: str = ""
     dataset_sha256: str = ""
@@ -558,13 +561,46 @@ def p0i(row: Mapping, ctx: P0Context, arm: str) -> list[str]:
     return []
 
 
+def _num(v) -> bool:
+    return isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
+
+
 def p0j(row: Mapping, ctx: P0Context, arm: str) -> list[str]:
+    """K87 checks 1-2 inside the row's branch of the reconciliation-granularity slot, one predicate per branch:
+    (a) the adapter's HTTP calls equal the proxy's, exactly; (b) the product's logical calls and the tokens within 1 %
+    of the proxy's, the bound inclusive (tokens_delta_pct is the product's delta against the proxy, in percent);
+    in (a) and (b) logical calls never exceed HTTP calls; (c) single-witness only when single_witness_ok holds for this
+    arm (the recording-vs-raw-forward A/B passed for its surface class and every unit's footprint is > 0)."""
     rec = row.get("reconciliation")
     if row.get("blocked") or rec is None:
         return []
-    if rec.get("branch") not in ctx.reconciliation_branches:
-        return [f"P0j: reconciliation branch {rec.get('branch')!r} is outside the slot's {sorted(ctx.reconciliation_branches)}"]
-    return []
+    branch = rec.get("branch")
+    if branch not in ctx.reconciliation_branches:
+        return [f"P0j: reconciliation branch {branch!r} is outside the slot's {sorted(ctx.reconciliation_branches)}"]
+    out = []
+    http, logical = rec.get("proxy_calls"), rec.get("product_logical_calls")
+    if branch in ("a", "b") and not (_int(http) and http >= 0):
+        return [f"P0j: branch {branch} without the proxy's HTTP call count"]
+    if branch == "a":
+        ad = rec.get("adapter_calls")
+        if not _int(ad):
+            out.append("P0j: branch a without the adapter counter")
+        elif ad != http:
+            out.append(f"P0j: the adapter counted {ad} HTTP calls, the proxy {http} - branch a is exact")
+    if branch == "b":
+        td = rec.get("tokens_delta_pct")
+        if not _int(logical) or not _num(td):
+            out.append("P0j: branch b without the product-side counter (logical calls and tokens)")
+        else:
+            if abs(logical - http) > 0.01 * http:
+                out.append(f"P0j: the product counted {logical} calls, the proxy {http} - beyond 1 % (branch b)")
+            if abs(td) > 1.0:
+                out.append(f"P0j: tokens {td:+.2f} % against the proxy - beyond 1 % (branch b)")
+    if branch in ("a", "b") and _int(logical) and logical > http:
+        out.append(f"P0j: {logical} logical calls above {http} HTTP calls")
+    if branch == "c" and ctx.single_witness_ok.get(arm) is not True:
+        out.append("P0j: single-witness without its A/B passed and a footprint > 0 on every unit (single_witness_ok)")
+    return out
 
 
 ROW_CLAUSES = (p0a, p0b, p0c, p0d, p0f, p0g, p0h, p0i, p0j)

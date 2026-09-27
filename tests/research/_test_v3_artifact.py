@@ -8,7 +8,9 @@
   P1Exceeds with its dominant class); yield_block's shares, coverage capped per unit, labels on scored runs only;
 * files: run_record stamps measured_at now and never overwrites; build() hashes the canonical input_manifest, names
   exactly its status_ids in run_files, keeps brackets to Point B product (Q7), refuses a blocked arm with numbers;
-* P0: each clause a-j fires on its own trigger and stays silent on the clean fixture;
+* P0: each clause a-j fires on its own trigger and stays silent on the clean fixture; P0j reads K87 checks 1-2 inside
+  the row's branch (B-DUP): (a) exact against the adapter, (b) calls and tokens within 1 % of the proxy's, the bound
+  inclusive, logical <= HTTP calls in (a) and (b), (c) single-witness only with the context's single_witness_ok;
 * the auditor's tools, where present (.loop - outside the repository by design, R12; a named SKIP in CI): m5 v3 --freeze
   PASSes F-A1 (product B), F-A2 (retrieval) and F-A3 (the all-0 sensitivity row) and FAILs each one-field asymmetry
   by name; m2_v3.check_artifacts accepts F-A1 against a STATUS written by status_log with its run records.
@@ -405,6 +407,45 @@ check("... 1 of 100 is not P0i", not has(flags(lambda r: r.__setitem__(
     "questions", [{**q, "invalid": "cap" if i < 1 else None} for i, q in enumerate(qs)])), "i"))
 check("P0j: a reconciliation branch outside the slot", has(flags(lambda r: r["reconciliation"].__setitem__("branch", "c")),
                                                             "j"))
+# K87 checks 1-2 inside the branch (the auditor's B-DUP ruling: each branch its own predicate, a row per predicate)
+ABC = A.P0Context(**{**CTX.__dict__, "reconciliation_branches": frozenset({"a", "b", "c"})})
+REC_B = {"proxy_calls": 1000, "adapter_calls": None, "product_logical_calls": 990, "tokens_delta_pct": -1.0,
+         "serverlog_delta": 0, "branch": "b"}
+
+
+def rec(over: dict, ctx=ABC, base=None) -> list[str]:
+    return flags(lambda r: r.__setitem__("reconciliation", {**(base or r["reconciliation"]), **over}), ctx=ctx)
+
+
+check("K87 (a): the clean row - adapter exact, logical <= HTTP - is not P0j", not has(rec({}), "j"), str(rec({})))
+check("P0j (a): the adapter counts one call fewer than the proxy (exact, no tolerance)",
+      any("adapter" in x for x in rec({"adapter_calls": 11})), str(rec({"adapter_calls": 11})))
+check("P0j (a): no adapter counter on an adapter branch", any("adapter" in x for x in rec({"adapter_calls": None})))
+check("P0j (a): logical calls above HTTP calls", any("logical" in x for x in rec({"product_logical_calls": 13})))
+check("P0j (a), (b): no HTTP call count from the proxy", any("HTTP call count" in x for x in rec({"proxy_calls": None}))
+      and any("HTTP call count" in x for x in rec({"proxy_calls": None}, base=REC_B)))
+check("K87 (b): calls and tokens at exactly -1 % are inside the tolerance (the boundary is inclusive)",
+      not has(rec({}, base=REC_B), "j"), str(rec({}, base=REC_B)))
+check("K87 (b): ... and tokens at exactly +1 % too", not has(rec({"tokens_delta_pct": 1.0}, base=REC_B), "j"))
+check("P0j (b): calls beyond 1 % of the proxy's (989 of 1000)",
+      any("calls" in x for x in rec({"product_logical_calls": 989}, base=REC_B)))
+check("P0j (b): tokens beyond 1 % (-1.01 %)", any("tokens" in x for x in rec({"tokens_delta_pct": -1.01}, base=REC_B)))
+check("P0j (b): tokens beyond 1 % (+1.01 %)", any("tokens" in x for x in rec({"tokens_delta_pct": 1.01}, base=REC_B)))
+check("P0j (b): logical calls above HTTP calls, even within 1 %",
+      any("logical" in x for x in rec({"product_logical_calls": 1005}, base=REC_B)))
+check("P0j (b): no product-side counter on a product branch",
+      any("product" in x for x in rec({"product_logical_calls": None}, base=REC_B))
+      and any("product" in x for x in rec({"tokens_delta_pct": None}, base=REC_B)))
+REC_C = {"proxy_calls": 12, "adapter_calls": None, "product_logical_calls": None, "tokens_delta_pct": None,
+         "serverlog_delta": 0, "branch": "c"}
+check("K87 (c): single-witness stands when the context says its A/B passed and every footprint is > 0",
+      not has(rec({}, ctx=A.P0Context(**{**ABC.__dict__, "single_witness_ok": {"mem0": True}}), base=REC_C), "j"))
+check("P0j (c): single-witness without single_witness_ok for the arm",
+      any("single-witness" in x for x in rec({}, base=REC_C))
+      and any("single-witness" in x for x in rec({}, ctx=A.P0Context(**{**ABC.__dict__, "single_witness_ok": {"mem0": False}}),
+                                                  base=REC_C)))
+check("P0j (c): another arm's single_witness_ok does not stand for this one",
+      has(rec({}, ctx=A.P0Context(**{**ABC.__dict__, "single_witness_ok": {"zep": True}}), base=REC_C), "j"))
 
 rctx = A.P0Context(**{**CTX.__dict__, "windows": {s: (dt.datetime(2026, 10, 1, 8, 30, tzinfo=dt.timezone.utc),
                                                      dt.datetime(2026, 10, 1, 9, 0, 1, tzinfo=dt.timezone.utc))
