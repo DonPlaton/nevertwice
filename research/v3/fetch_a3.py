@@ -522,6 +522,114 @@ def d2_report(record: dict) -> dict:
                                                 if str(e.get("path", "")).startswith("evaluation/") and e.get("type") == "blob")}}
 
 
+# ── a7-discovery plan d3 (.loop/A7-PLAN-2026-09-27.md, accepted with the auditor's two additions) ─────────────
+
+D3_GH_HOSTS = ["api.github.com"]
+D3_HF_HOSTS = ["huggingface.co"]
+D3_HOSTS = sorted(D3_GH_HOSTS + D3_HF_HOSTS)
+#: The repositories A7 reads: Supermemory's self-hosting documentation (Q-47-8g), cognee's BEAM harness (Q-46b-6), the
+#: Zep LME template (Q-46b-4; the name is ours - a 404 is named, never guessed around).
+D3_REPOS = ("supermemoryai/supermemory", "topoteretes/cognee", "getzep/zep-papers")
+#: The auditor's addition 2: a harness must match the PINNED product version, so its tags and releases are read too.
+D3_TAGGED = ("supermemoryai/supermemory", "topoteretes/cognee")
+D3_TAGS_PAGE, D3_RELEASES_PAGE = 100, 30         # one page each; a full page is flagged (B-D3P)
+#: Q-49-3 O-b: BEAM's event-ordering alignment model.
+D3_HF_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+#: Candidate paths, by what each repository is read for - names the auditor fixes before phase 2 (text, never fetched).
+D3_CANDIDATES = {"supermemoryai/supermemory": re.compile(r"(^|/)readme\.md$|self[-_ ]?host|docker|deploy", re.I),
+                 "topoteretes/cognee": re.compile(r"beam", re.I),
+                 "getzep/zep-papers": re.compile(r"longmemeval|(^|[/_-])lme([/_.-]|$)", re.I)}
+
+
+def d3_phase_a() -> dict:
+    """Each repository and its head; the tagged ones' tags and releases (api.github.com; one redirect, to itself)."""
+    reqs = []
+    for r in D3_REPOS:
+        reqs += [{"id": f"gh:{r}", "url": f"https://api.github.com/repos/{r}", "save": f"gh/{_safe(r)}/repo.json",
+                  "max_bytes": META_MAX},
+                 {"id": f"ghhead:{r}", "url": f"https://api.github.com/repos/{r}/commits/HEAD",
+                  "save": f"gh/{_safe(r)}/head.json", "max_bytes": META_MAX}]
+        if r in D3_TAGGED:
+            reqs += [{"id": f"ghtags:{r}", "url": f"https://api.github.com/repos/{r}/tags?per_page={D3_TAGS_PAGE}",
+                      "save": f"gh/{_safe(r)}/tags.json", "max_bytes": META_MAX},
+                     {"id": f"ghreleases:{r}", "url": f"https://api.github.com/repos/{r}/releases?per_page={D3_RELEASES_PAGE}",
+                      "save": f"gh/{_safe(r)}/releases.json", "max_bytes": META_MAX}]
+    return {"hosts": D3_GH_HOSTS, "max_redirects": 1, "requests": reqs}
+
+
+def d3_phase_b() -> dict:
+    """The model's current revision (huggingface.co)."""
+    return {"hosts": D3_HF_HOSTS, "max_redirects": 0, "requests": [
+        {"id": f"rev:models:{D3_HF_MODEL}", "url": f"https://huggingface.co/api/models/{D3_HF_MODEL}/revision/main",
+         "save": f"meta/models/{_safe(D3_HF_MODEL)}/revision.json", "max_bytes": META_MAX}]}
+
+
+def d3_phase_c():
+    """Each repository's recursive tree at its head, under the name the repository answer gave (api.github.com)."""
+    def build(results):
+        reqs = []
+        for r in D3_REPOS:
+            repo = _read_prev(results, 0, f"gh/{_safe(r)}/repo.json") or {}
+            head = _read_prev(results, 0, f"gh/{_safe(r)}/head.json") or {}
+            name, sha = repo.get("full_name"), head.get("sha")
+            if gh_name_ok(name) and isinstance(sha, str) and _SHA.fullmatch(sha):
+                reqs.append({"id": f"ghtree:{name}", "url": f"https://api.github.com/repos/{name}/git/trees/{sha}?recursive=1",
+                             "save": f"gh/{_safe(r)}/tree.json", "max_bytes": META_MAX})
+        return {"hosts": D3_GH_HOSTS, "max_redirects": 0, "requests": reqs} if reqs else None
+    return build
+
+
+def d3_phase_d():
+    """The model's tree at the revision phase b found (huggingface.co)."""
+    def build(results):
+        rev = (_read_prev(results, 1, f"meta/models/{_safe(D3_HF_MODEL)}/revision.json") or {}).get("sha")
+        if not (isinstance(rev, str) and _SHA.fullmatch(rev)):
+            return None
+        return {"hosts": D3_HF_HOSTS, "max_redirects": 0, "requests": [
+            {"id": f"tree:models:{D3_HF_MODEL}", "url": f"https://huggingface.co/api/models/{D3_HF_MODEL}/tree/{rev}?recursive=true",
+             "save": f"meta/models/{_safe(D3_HF_MODEL)}/tree.json", "max_bytes": META_MAX}]}
+    return build
+
+
+def d3_jobs() -> list:
+    return [d3_phase_a(), d3_phase_b(), d3_phase_c(), d3_phase_d()]
+
+
+def d3_report(record: dict) -> dict:
+    """Names only: each repository's name, licence, head, tree size, tags and releases (for the tagged ones) and the
+    candidate paths for phase 2; the model's revision and its files. Every value is data from the answers. Tags and
+    releases are ONE page each (B-D3P): tags_page_full / releases_page_full say the page was full, so an older pinned
+    tag may be past it - phase 2 then asks for the next page or the tag by name, and never reads 'no such version'."""
+    units = [Path(j["unit"]) for j in record["jobs"]]
+    rd = lambda i, rel: json.loads((units[i] / rel).read_bytes()) if i < len(units) and (units[i] / rel).is_file() else None  # noqa: E731
+    status = {r.get("id"): r.get("status") for j in record["jobs"] for r in j["summary"]}
+    repos = {}
+    for r in D3_REPOS:
+        repo, head, tree = rd(0, f"gh/{_safe(r)}/repo.json") or {}, rd(0, f"gh/{_safe(r)}/head.json") or {}, rd(2, f"gh/{_safe(r)}/tree.json") or {}
+        entry = {"asked": r, "status": status.get(f"gh:{r}"), "full_name": repo.get("full_name"),
+                 "full_name_valid": gh_name_ok(repo.get("full_name")), "licence": (repo.get("license") or {}).get("spdx_id"),
+                 "default_branch": repo.get("default_branch"), "head_sha": head.get("sha"),
+                 "tree_entries": len(tree.get("tree") or []), "tree_truncated": tree.get("truncated"),
+                 "candidates": sorted(e["path"] for e in tree.get("tree") or [] if isinstance(e, dict)
+                                      and e.get("type") == "blob" and D3_CANDIDATES[r].search(str(e.get("path", ""))))}
+        if r in D3_TAGGED:
+            tags = rd(0, f"gh/{_safe(r)}/tags.json") or []
+            rels = rd(0, f"gh/{_safe(r)}/releases.json") or []
+            entry["tags"] = [{"name": x.get("name"), "commit": (x.get("commit") or {}).get("sha")} for x in tags
+                             if isinstance(x, dict)]
+            entry["releases"] = [{"tag_name": x.get("tag_name"), "name": x.get("name"), "published_at": x.get("published_at"),
+                                  "prerelease": x.get("prerelease")} for x in rels if isinstance(x, dict)]
+            entry["tags_page_full"] = len(tags) >= D3_TAGS_PAGE
+            entry["releases_page_full"] = len(rels) >= D3_RELEASES_PAGE
+        repos[r] = entry
+    rev = rd(1, f"meta/models/{_safe(D3_HF_MODEL)}/revision.json") or {}
+    mtree = rd(3, f"meta/models/{_safe(D3_HF_MODEL)}/tree.json") or []
+    return {"repos": repos, "model": {"repo": D3_HF_MODEL, "revision": rev.get("sha"),
+                                      "files": [{"path": e.get("path"), "size": e.get("size"), "oid": e.get("oid"),
+                                                 "lfs_sha256": (e.get("lfs") or {}).get("oid")}
+                                                for e in mtree if isinstance(e, dict) and e.get("type") == "file"]}}
+
+
 # ── the command line ──────────────────────────────────────────────────────
 
 def _load(name: str, path: Path):
@@ -536,8 +644,9 @@ def _load(name: str, path: Path):
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="the A3 fetch windows (children under the contract)")
-    ap.add_argument("--window", required=True, choices=["a3-discovery"])
-    ap.add_argument("--plan", default="d1", choices=["d1", "d2"], help="d1: the full discovery; d2: the P1/P10 follow-up")
+    ap.add_argument("--window", required=True, choices=["a3-discovery", "a7-discovery"])
+    ap.add_argument("--plan", default="d1", choices=["d1", "d2", "d3"],
+                    help="d1: the full discovery; d2: the P1/P10 follow-up; d3: the A7 discovery (window a7-discovery)")
     ap.add_argument("--run", required=True)
     ap.add_argument("--python", required=True, help="the polygon's py314 interpreter")
     args = ap.parse_args(argv)
@@ -551,12 +660,24 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     win = manifest["windows"][args.window]
     floor = manifest["disk"]["floor_gb"] * GB
-    hosts, jobs = (win["hosts"], discovery_jobs(CP.PINS)) if args.plan == "d1" else (D2_HOSTS, d2_jobs())
+    if (args.plan == "d3") != (args.window == "a7-discovery"):
+        print("plan d3 runs in window a7-discovery, and only it", file=sys.stderr)
+        return 2
+    if args.plan == "d3" and sorted(win["hosts"]) != D3_HOSTS:
+        print(f"the manifest's a7-discovery hosts {win['hosts']} are not the plan's {D3_HOSTS}", file=sys.stderr)
+        return 2
+    hosts, jobs = {"d1": (win["hosts"], None), "d2": (D2_HOSTS, None), "d3": (D3_HOSTS, None)}[args.plan]
+    jobs = discovery_jobs(CP.PINS) if args.plan == "d1" else d2_jobs() if args.plan == "d2" else d3_jobs()
     rec = run_child_window(c, L, window=args.window, hosts=hosts, jobs=jobs,
                            python=Path(args.python), via_port=via, run=args.run, parent_env=os.environ,
                            need_bytes=floor, volume=Path("D:/"))
     if args.plan == "d2":
         print(json.dumps(d2_report(rec), indent=1))
+    if args.plan == "d3":
+        report = d3_report(rec)
+        (c.runs_root / "_fetch" / args.window / args.run / "d3_report.json").write_bytes(
+            (json.dumps(report, indent=1, sort_keys=True) + "\n").encode("utf-8"))
+        print(json.dumps(report, indent=1))
     print(json.dumps({"problems": rec["problems"], "check": rec["check"], "jobs": [
         {"index": j["index"], "rc": j["rc"], "requests": len(j["summary"]),
          "ok": sum(1 for r in j["summary"] if r.get("ok"))} for j in rec["jobs"]],

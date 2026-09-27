@@ -59,6 +59,11 @@
    "search_text": "supermemory",
    "search_size": 20,
    "max_redirects": 0
+  },
+  "a7-discovery": {
+   "hosts": ["api.github.com", "huggingface.co"],
+   "purpose": "metadata only (.loop/A7-PLAN-2026-09-27.md phase 1, plan d3): supermemoryai/supermemory, topoteretes/cognee and getzep/zep-papers - repository, head, recursive tree, and for the first two tags and releases; sentence-transformers/all-MiniLM-L6-v2 - revision and tree; no link followed",
+   "max_redirects": 1
   }
  },
  "disk": {"volume": "D:", "floor_gb": 100, "multiple_of_window_total": 3, "stop_single_file_gb": 10}
