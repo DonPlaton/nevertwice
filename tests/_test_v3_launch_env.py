@@ -17,8 +17,9 @@
   Popen takes only allowlisted arguments (never executable, shell, env); every path rule holds for the real path,
   and a link or junction in a unit path is refused; a read exception lifts one variable, or one argv index at one
   exact path; a provider-key value is refused under any name; the owner's home is pinned, not read from USERPROFILE.
-* K1 (the auditor's key ruling): a value held in any *.env of the secrets directory is refused under any name, compared
-  in memory and never printed; spawn() reads the contract's own directory; an unreadable *.env refuses, never skips.
+* K1 (the auditor's key ruling and its FIX): a value held in any regular file under the secrets directory - NAME=VALUE,
+  NAME: VALUE, export and one-token lines - is refused under any name, compared in memory and never printed; spawn()
+  reads the contract's own directory; an unreadable file refuses by its name, in secret_values and in spawn().
 
 No network; a temporary polygon; the one real child is this interpreter, named as the test's binary exception.
 
@@ -372,13 +373,24 @@ SECRET_VALUE = "FAKEPROVIDERVALUE" + "0123456789abcdef"
 (TMP / "secrets" / "provider.env").write_text(f"# a comment\nPROVIDER_LOOKALIKE='{SECRET_VALUE}'\nSHORT=abc\n\n",
                                               encoding="utf-8")
 (TMP / "secrets" / "notes.txt").write_text("NOT_AN_ENV_FILE=" + "y" * 20, encoding="utf-8")
+# the auditor's K1 FIX: every regular file, and the NAME: VALUE, export and one-token forms
+TXT_TOKEN, COLON_VALUE, EXPORT_VALUE = "TXTTOKENVALUE" + "7" * 12, "COLONVALUE" + "8" * 12, "EXPORTVALUE" + "9" * 12
+(TMP / "secrets" / "sub").mkdir(exist_ok=True)
+(TMP / "secrets" / "sub" / "compare_api.txt").write_text(
+    f"Mem0 API key: {COLON_VALUE}\n\n{TXT_TOKEN}\nexport OTHER_KEY=\"{EXPORT_VALUE}\"\nshort\n", encoding="utf-8")
 try:
     SV = L.secret_values(C)
 except Exception as e:  # noqa: BLE001 - a crash is a named FAIL of the rows below
     SV = frozenset()
     print(f"       (secret_values raised {type(e).__name__})")
-check("K1 the secrets directory's *.env values are read into memory (quotes stripped; short values and other files "
-      "ignored)", SV == frozenset({SECRET_VALUE}), f"{len(SV)} value(s)")
+check("K1 every regular file's values are read into memory, subdirectories too (quotes stripped, short values ignored)",
+      {SECRET_VALUE, "y" * 20, TXT_TOKEN, COLON_VALUE, EXPORT_VALUE} <= SV and not any(len(v) < 8 for v in SV)
+      and "abc" not in SV and "short" not in SV, f"{len(SV)} value(s)")
+for label, val in (("a one-token line of a .txt", TXT_TOKEN), ("NAME: VALUE", COLON_VALUE),
+                   ("export NAME=\"VALUE\"", EXPORT_VALUE)):
+    got = violations({"NVT3_PLAIN": "x" + val + "x"}, secret_values=SV)
+    check(f"K1 a value from {label} is refused by name", any("secrets directory" in v and "NVT3_PLAIN" in v
+                                                               for v in got) and not any(val in v for v in got), str(got))
 k1 = violations({"DEEPSEEK_API_KEY": "nvt3-nevertwice-" + SECRET_VALUE}, secret_values=SV)
 check("K1 a proxy token carrying a secrets-directory value is refused by name, and the reason holds no value",
       any("secrets directory" in v and "DEEPSEEK_API_KEY" in v for v in k1) and not any(SECRET_VALUE in v for v in k1),
@@ -390,16 +402,33 @@ check("K1 the built environment passes the check", violations({}, secret_values=
       str(violations({}, secret_values=SV)))
 check("K1 no secrets directory means nothing to compare, not a crash",
       L.secret_values(contract(secrets_dir=TMP / "no_such_secrets")) == frozenset())
-(TMP / "secrets" / "locked.env").mkdir()
-try:
-    L.secret_values(C)
-    check("K1 an unreadable *.env refuses by name instead of comparing less", False)
-except L.ContractViolation as e:
-    check("K1 an unreadable *.env refuses by name instead of comparing less",
-          any("could not be read" in r and "locked.env" in r for r in e.reasons), str(e.reasons))
-except Exception as e:  # noqa: BLE001
-    check("K1 an unreadable *.env refuses by name instead of comparing less", False, type(e).__name__)
-(TMP / "secrets" / "locked.env").rmdir()
+_real_read = Path.read_bytes
+
+
+def _locked(self):
+    if self.name == "compare_api.txt":
+        raise PermissionError(13, "locked for the test")
+    return _real_read(self)
+
+
+with mock.patch.object(Path, "read_bytes", _locked):
+    try:
+        L.secret_values(C)
+        check("K1 an unreadable secrets file refuses by name instead of comparing less", False)
+    except L.ContractViolation as e:
+        check("K1 an unreadable secrets file refuses by name instead of comparing less",
+              any("could not be read" in r and "sub/compare_api.txt" in r for r in e.reasons), str(e.reasons))
+    except Exception as e:  # noqa: BLE001
+        check("K1 an unreadable secrets file refuses by name instead of comparing less", False, type(e).__name__)
+    S0 = fresh("u-secret-locked")
+    try:
+        L.spawn(C, [sys.executable, "-c", "pass"], env=dict(ENV), cwd=S0.cwd, record={"role": "test"},
+                parent_env=HOSTILE, catcher_url=CATCHER, popen=_FakePopen, requirement="optional",
+                unwitnessed_reason=OPTIONAL)
+        check("K1f spawn() refuses by the file's name when a secrets file cannot be read", False)
+    except L.ContractViolation as e:
+        check("K1f spawn() refuses by the file's name when a secrets file cannot be read",
+              any("could not be read" in r and "compare_api.txt" in r for r in e.reasons), str(e.reasons))
 S1 = fresh("u-secret")
 try:
     L.spawn(C, [sys.executable, "-c", "pass"], env=dict(ENV, NVT3_NOTE="x" + SECRET_VALUE), cwd=S1.cwd,
@@ -412,6 +441,7 @@ except L.ContractViolation as e:
           any("secrets directory" in r for r in e.reasons) and SECRET_VALUE.encode() not in log_k1, str(e.reasons))
 (TMP / "secrets" / "provider.env").unlink()
 (TMP / "secrets" / "notes.txt").unlink()
+shutil.rmtree(TMP / "secrets" / "sub")
 # B6: the owner's home
 with mock.patch.dict(os.environ, {"USERPROFILE": str(TMP / "fake_profile")}):
     D = L.Contract.default()

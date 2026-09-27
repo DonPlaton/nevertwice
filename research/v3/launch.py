@@ -399,25 +399,40 @@ def build_env(c: Contract, *, parent_env: Mapping[str, str], unit: UnitDirs, pat
 SECRET_MIN_LEN = 8
 
 
+def _secret_line_values(line: str) -> list[str]:
+    """K1's parser for one line: NAME=VALUE and NAME: VALUE, quotes stripped (an "export " prefix changes nothing - the
+    value is what follows the separator), and a line that is a single token with no whitespace - the formats the
+    secrets directory's files use (the auditor's K1 FIX). Comment lines are read too: an old key noted in a comment is
+    still a key, and a false match refuses loudly."""
+    ln = line.strip()
+    if not ln:
+        return []
+    out = []
+    if not any(ch.isspace() for ch in ln):
+        out.append(ln.strip('"').strip("'"))
+    for sep in ("=", ":"):
+        if sep in ln:
+            out.append(ln.split(sep, 1)[1].strip().strip('"').strip("'"))
+    return [v for v in out if len(v) >= SECRET_MIN_LEN]
+
+
 def secret_values(c: Contract) -> frozenset[str]:
-    """K1 (the auditor's key ruling, 2026-09-27): every value held in a *.env file of the contract's secrets directory,
-    read into memory for the spawn assertion only - never printed, logged or recorded. No directory, nothing to
-    compare (a missing directory globs to nothing); a *.env that cannot be read refuses by file name rather than
-    comparing less."""
+    """K1 (the auditor's key ruling, 2026-09-27): every value held in any regular file under the contract's secrets
+    directory, read into memory for the spawn assertion only - never printed, logged or recorded. No directory,
+    nothing to compare; a file that cannot be read refuses by its name rather than comparing less."""
     root = Path(c.secrets_dir)
     out: set[str] = set()
-    for fp in sorted(root.glob("*.env")):
-        try:
-            text = fp.read_bytes().decode("utf-8", "replace")
-        except OSError:
-            raise ContractViolation([f"a secrets file could not be read for the value check: {fp.name}"]) from None
-        for ln in text.split("\n"):
-            ln = ln.strip()
-            if not ln or ln.startswith("#") or "=" not in ln:
-                continue
-            v = ln.split("=", 1)[1].strip().strip('"').strip("'")
-            if len(v) >= SECRET_MIN_LEN:
-                out.add(v)
+    for d, dirs, files in os.walk(root):
+        dirs.sort()
+        for name in sorted(files):
+            fp = Path(d) / name
+            try:
+                text = fp.read_bytes().decode("utf-8", "replace")
+            except OSError:
+                rel = fp.relative_to(root).as_posix()
+                raise ContractViolation([f"a secrets file could not be read for the value check: {rel}"]) from None
+            for ln in text.split("\n"):
+                out.update(_secret_line_values(ln))
     return frozenset(out)
 
 
