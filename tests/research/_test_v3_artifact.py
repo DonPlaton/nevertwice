@@ -619,7 +619,7 @@ else:
         log = SL.StatusLog(d / "STATUS", now=clock, local_tz=dt.timezone.utc)
         log.campaign_start(anchor=ANCHOR, prereg="b" * 64, freeze="c" * 64)
         log.stand("SX", "START", model="deepseek-v4-flash", changelog="2026-09-10", order=1)
-        log.block_start("SX", "b01", units=["u1"], arm_order=["mem0", "nevertwice"], seed=3)
+        log.block_start("SX", "b01", units=["u1"], arm_order=["mem0", "nevertwice"], seed=1)   # D4: seed 1 gives this order
         files, rfs = {}, {}
         for s in sids:
             _stand, block, run, arm = s.split("/")

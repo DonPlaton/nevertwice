@@ -13,7 +13,9 @@ refuses, by construction and before a byte is written, every sequence the rules 
   strict barrier holds in the file too. A clock that does not advance is refused, never nudged;
 * S9/S10 (A6 Q1, D2, Q25): a UNIT-ABORT names a unit of its block, inside its live arm-run, with reason=ceiling (no rc=
   or signal=: the scheduler killed it) or reason=crash with exactly one of rc=<integer> / signal=<SIGNAME or number>;
-  the END lists exactly those units; a START's arm is in its block's seeded arm_order, and a block ENDs only when every arm of that
+  the END lists exactly those units; a BLOCK START's arm_order is the order its seed gives (A6 D4:
+  seeded_order - the arms sorted by sha256(f"{seed}|{arm}".encode("utf-8")).hexdigest(), ascending; the auditor's
+  m2_v3 S10 recomputes it); a START's arm is in its block's arm_order, and a block ENDs only when every arm of that
   order has STARTed in it;
 * S6: an exogenous RERUN covers arms=all and names an incident this file opened; cause and kind come from fixed lists;
 * S7: no scored START outside CAMPAIGN V3 START .. END (smoke and debug runs of the pilot may precede the campaign);
@@ -65,6 +67,11 @@ KEYS = {
     "INCIDENT-START": ("arms", "kind"), "INCIDENT-END": ("arms", "kind"), "SET-ASIDE": (),
 }
 OPTIONAL = {("END", "aborted"), ("UNIT-ABORT", "rc"), ("UNIT-ABORT", "signal")}
+
+
+def seeded_order(arms: Sequence[str], seed: int) -> list[str]:
+    """A6 D4: a block's arm order - its arms sorted by sha256(f"{seed}|{arm}".encode("utf-8")).hexdigest(), ascending."""
+    return sorted(arms, key=lambda a: hashlib.sha256(f"{seed}|{a}".encode("utf-8")).hexdigest())
 
 
 class StatusRefused(RuntimeError):
@@ -236,6 +243,10 @@ class _State:
             _list("arm_order", order)
             if not (_INT.match(kv["seed"]) and int(kv["seed"]) >= 0):
                 raise StatusRefused(f"seed={kv['seed']!r} is not a non-negative integer")
+            want = seeded_order(order, int(kv["seed"]))
+            if order != want:
+                raise StatusRefused(f"arm_order={kv['arm_order']} is not the seeded order {','.join(want)} of "
+                                    f"seed={kv['seed']} (D4)")
 
             def c_block() -> None:
                 self.blocks[ev.ident] = units

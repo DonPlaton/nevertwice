@@ -8,6 +8,7 @@
   second block of a stand while one is open (the barrier), BLOCK END with a live run, a scored START outside the
   campaign, an exogenous RERUN on a subset of arms or without a known incident, a space in an id or value, a run id
   with a dot (Q3), an unknown tag, kind or cause, a unit that is not in its block;
+* A6 D4: a BLOCK START whose arm_order is not the order sha256(f"{seed}|{arm}") gives is refused (B-D4W);
 * A6 D2: a crashed unit is UNIT-ABORT reason=crash with exactly one of rc= / signal=; a ceiling abort carries
   neither; END lists crashes and ceilings alike; a restarted writer replays them;
 * S8: a byte changed outside the writer is refused at the next append; the file is only ever appended;
@@ -20,6 +21,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import hashlib
 import importlib.util
 import sys
 import tempfile
@@ -94,7 +96,7 @@ def campaign(log) -> None:
     log.start("SX", "b00", "r1", "smokearm", pid=11, tag="smoke")
     log.end("SX/b00/r1/smokearm", rc=0, wall_s=1.25, units=1, out="runs/SX/b00/r1/smokearm.json")
     log.block_end("SX", "b00")
-    log.block_start("SX", "b01", units=["u1", "u2"], arm_order=["mem0", "nevertwice", "letta"], seed=7)
+    log.block_start("SX", "b01", units=["u1", "u2"], arm_order=["mem0", "nevertwice", "letta"], seed=0)
     ids = [log.start("SX", "b01", r, a, pid=100 + i, tag="scored")
            for i, (r, a) in enumerate((r, a) for r in ("r1", "r2") for a in ("mem0", "nevertwice", "letta"))]
     log.unit_abort("SX/b01/r1/mem0", "u2", reason="ceiling")
@@ -106,7 +108,7 @@ def campaign(log) -> None:
     log.block_end("SX", "b01")
     log.incident("inc1", "START", arms=["mem0", "nevertwice", "letta"], kind="5xx")
     log.incident("inc1", "END", arms=["mem0", "nevertwice", "letta"], kind="5xx")
-    log.block_start("SX", "b02", units=["u3"], arm_order=["letta", "mem0", "nevertwice"], seed=8)
+    log.block_start("SX", "b02", units=["u3"], arm_order=["letta", "mem0", "nevertwice"], seed=5)
     for r in ("r1", "r2"):
         for a in ("mem0", "nevertwice", "letta"):
             i = log.start("SX", "b02", r, a, pid=200, tag="scored")
@@ -139,7 +141,7 @@ with tempfile.TemporaryDirectory(prefix="v3status_") as td:
     check("STAND START carries order, model and changelog",
           " STAND SX START order=1 model=deepseek-v4-flash changelog=2026-09-10 utc=" in lines[2], lines[2])
     check("BLOCK START carries the units, the arm order and its seed (Q25: arms one at a time, seeded order)",
-          " BLOCK SX/b01 START units=u1,u2 arm_order=mem0,nevertwice,letta seed=7 utc=" in lines[7], lines[7])
+          " BLOCK SX/b01 START units=u1,u2 arm_order=mem0,nevertwice,letta seed=0 utc=" in lines[7], lines[7])
     check("a smoke START is logged with its tag (S2: every launched run, smoke included)",
           " START SX/b00/r1/smokearm pid=11 tag=smoke utc=" in lines[4], lines[4])
     unit_abort = [x for x in lines if " UNIT-ABORT " in x]
@@ -305,6 +307,21 @@ with tempfile.TemporaryDirectory(prefix="v3status_s8_") as td:
     check("self_check() names a line whose utc does not follow the previous one (the strict S3 order)",
           any("does not follow" in x for x in SL.self_check(ua)), str(SL.self_check(ua)))
 
+print("\n- A6 D4: BLOCK START's arm_order is the order its seed gives (B-D4W) -")
+check("seeded_order sorts the arms by sha256(f'{seed}|{arm}') hexdigest, ascending",
+      SL.seeded_order(["mem0", "nevertwice", "letta"], 7) == ["letta", "mem0", "nevertwice"]
+      and SL.seeded_order(["mem0", "nevertwice", "letta"], 7) == sorted(
+          ["mem0", "nevertwice", "letta"], key=lambda a: hashlib.sha256(f"{7}|{a}".encode("utf-8")).hexdigest()))
+with tempfile.TemporaryDirectory(prefix="v3status_d4_") as td:
+    log = SL.StatusLog(Path(td) / "STATUS", now=Clock(), local_tz=MSK)
+    log.stand("SD", "START", model="m", changelog="2026-09-10", order=1)
+    check("a BLOCK START whose arm_order is not its seed's order is refused (D4)",
+          refused(lambda: log.block_start("SD", "b01", units=["u1"], arm_order=["mem0", "nevertwice", "letta"], seed=7),
+                  "seeded order"))
+    log.block_start("SD", "b01", units=["u1"], arm_order=["letta", "mem0", "nevertwice"], seed=7)
+    check("... and the seeded order is written", "arm_order=letta,mem0,nevertwice seed=7 " in
+          (Path(td) / "STATUS").read_text(encoding="utf-8"))
+
 print("\n- A6 D2: a crashed unit is UNIT-ABORT reason=crash with exactly one of rc= / signal= -")
 with tempfile.TemporaryDirectory(prefix="v3status_crash_") as td:
     cp = Path(td) / "STATUS"
@@ -312,12 +329,24 @@ with tempfile.TemporaryDirectory(prefix="v3status_crash_") as td:
     log.stand("SC", "START", model="m", changelog="2026-09-10", order=1)
     log.block_start("SC", "b01", units=["u1", "u2", "u3", "u4"], arm_order=["a1"], seed=1)
     k = log.start("SC", "b01", "r1", "a1", pid=5, tag="smoke")
-    log.unit_abort(k, "u1", reason="crash", rc=-11)
-    log.unit_abort(k, "u2", reason="crash", signal="SIGKILL")
+
+    def wrote(fn) -> str:
+        """'' when the writer took the line, else its refusal - a refusal here is a named FAIL, never a traceback."""
+        try:
+            fn()
+            return ""
+        except SL.StatusRefused as e:
+            return str(e)
+
+    took = [wrote(lambda: log.unit_abort(k, "u1", reason="crash", rc=-11)),
+            wrote(lambda: log.unit_abort(k, "u2", reason="crash", signal="SIGKILL")),
+            wrote(lambda: log.unit_abort(k, "u4", reason="crash", signal="9"))]
     lines_c = cp.read_text(encoding="utf-8").splitlines()
-    check("reason=crash rc=<int> and reason=crash signal=<SIGNAME> are written",
-          any(" UNIT-ABORT SC/b01/r1/a1/u1 reason=crash rc=-11 utc=" in x for x in lines_c)
-          and any(" UNIT-ABORT SC/b01/r1/a1/u2 reason=crash signal=SIGKILL utc=" in x for x in lines_c), str(lines_c[-2:]))
+    check("reason=crash rc=<int>, signal=<SIGNAME> and signal=<number> are taken and written",
+          took == ["", "", ""]
+          and any(" UNIT-ABORT SC/b01/r1/a1/u1 reason=crash rc=-11 utc=" in x for x in lines_c)
+          and any(" UNIT-ABORT SC/b01/r1/a1/u2 reason=crash signal=SIGKILL utc=" in x for x in lines_c)
+          and any(" UNIT-ABORT SC/b01/r1/a1/u4 reason=crash signal=9 utc=" in x for x in lines_c), f"{took} {lines_c[-3:]}")
     check("a crash without rc= or signal= is refused", refused(lambda: log.unit_abort(k, "u3", reason="crash"), "crash"))
     check("a crash with both rc= and signal= is refused",
           refused(lambda: log.unit_abort(k, "u3", reason="crash", rc=1, signal="SIGTERM"), "exactly one"))
@@ -326,10 +355,10 @@ with tempfile.TemporaryDirectory(prefix="v3status_crash_") as td:
           refused(lambda: log.unit_abort(k, "u3", reason="crash", signal="kill"), "signal name"))
     check("a ceiling abort carries neither rc= nor signal= (the scheduler killed it)",
           refused(lambda: log.unit_abort(k, "u3", reason="ceiling", rc=1), "ceiling"))
-    log.unit_abort(k, "u3", reason="ceiling")
-    log.end(k, rc=1, wall_s=2, units=4, out="runs/c.json")
-    check("END lists every aborted unit, crashes and ceilings alike (Q1)",
-          " aborted=u1,u2,u3 " in cp.read_text(encoding="utf-8").splitlines()[-1])
+    took_c = wrote(lambda: log.unit_abort(k, "u3", reason="ceiling"))
+    took_e = wrote(lambda: log.end(k, rc=1, wall_s=2, units=4, out="runs/c.json"))
+    check("END lists every aborted unit, crashes and ceilings alike (Q1)", took_c == took_e == ""
+          and " aborted=u1,u2,u4,u3 " in cp.read_text(encoding="utf-8").splitlines()[-1], f"{took_c!r} {took_e!r}")
     check("a restarted writer replays the crash lines and self_check() is clean", SL.self_check(cp) == []
           and SL.StatusLog(cp, now=Clock(), local_tz=MSK) is not None, str(SL.self_check(cp)))
     check("the UNIT-ABORT reasons are ceiling and crash (A6 Q1, D2)", SL.UNIT_ABORT_REASONS == ("ceiling", "crash"))
