@@ -228,7 +228,26 @@ def plan(vault: Path) -> dict:
 
 # ── backup and rollback ─────────────────────────────────────────────────
 
-def _backup_with_report(vault: Path) -> tuple[Path, list[str]]:
+def _claim_backup_dir(vault: Path, now) -> Path:
+    """An empty directory beside the store for one backup, created exclusively.
+
+    The name carries the time to the second, and `copytree` refused an existing target, so a second backup of the same
+    store within one second raised FileExistsError and refused the migration (B-SV, the auditor's repro on 81afda7 and
+    the 582b8df battery). The name is now claimed with `mkdir`, which fails when anything holds it, and the next free
+    suffix -1, -2 ... is taken instead - no check-then-create race, and never the same directory for two backups.
+    """
+    stamp = f"{vault.name}.backup-{now():%Y%m%d-%H%M%S}"
+    for n in range(1000):
+        target = vault.parent / (stamp if n == 0 else f"{stamp}-{n}")
+        try:
+            target.mkdir()
+        except FileExistsError:
+            continue
+        return target
+    raise FileExistsError(f"no free backup name beside the store: {stamp} through {stamp}-999 are taken")
+
+
+def _backup_with_report(vault: Path, *, now=datetime.now) -> tuple[Path, list[str]]:
     """Copy the store beside itself; return the copy and the sources that vanished mid-copy.
 
     Every nevertwice store is a git repository, and git runs its own background maintenance
@@ -251,12 +270,14 @@ def _backup_with_report(vault: Path) -> tuple[Path, list[str]]:
     judged by the one question that separates the two cases: is the SOURCE still there? Gone -
     it vanished, and the copy has everything that still exists. Still there - something could not
     be copied, the backup is incomplete, and the error is raised so the migration is refused.
-    `copy_function` is named explicitly so it is looked up at call time.
+    `copy_function` is named explicitly so it is looked up at call time. The target is claimed first
+    (`_claim_backup_dir`), so `dirs_exist_ok=True` only ever lets the copy into the empty directory claimed for it;
+    `now` is the clock, a seam for the test that makes two backups in one second.
     """
     vault = Path(vault)
-    target = vault.parent / f"{vault.name}.backup-{datetime.now():%Y%m%d-%H%M%S}"
+    target = _claim_backup_dir(vault, now)
     try:
-        shutil.copytree(vault, target, dirs_exist_ok=False, copy_function=shutil.copy2)
+        shutil.copytree(vault, target, dirs_exist_ok=True, copy_function=shutil.copy2)
     except shutil.Error as exc:
         failures = exc.args[0] if exc.args and isinstance(exc.args[0], list) else []
         still_there = [f for f in failures if os.path.lexists(f[0])]

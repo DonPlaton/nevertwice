@@ -35,6 +35,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from datetime import datetime
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -763,6 +764,42 @@ def test_the_cleanup_survives_git_tidying_under_it() -> None:
         check(f"git in a test's minimal env sees {key}={want}", got == want, repr(got))
 
 
+def test_two_backups_in_one_second_are_two_complete_directories() -> None:
+    """B-SV (the auditor's ruling, 2026-09-27): the backup's name carried the time to the second and `copytree` refused
+    an existing target, so a second migration in the same second raised FileExistsError - the 582b8df battery, and the
+    auditor's own repro on 81afda7. The name is now claimed exclusively, with -1, -2 ... when the second's name is
+    taken; the clock is a seam, so "the same second" is exact rather than a race the test hopes to win."""
+    print(NL + "- two backups of one store in the same second are two complete directories -")
+    with tempfile.TemporaryDirectory() as tmp:
+        store = Path(tmp) / "vault"
+        (store / "Mistakes").mkdir(parents=True)
+        (store / "Mistakes" / "a.md").write_text("a", encoding="utf-8")
+        (store / "index.json").write_text("{}", encoding="utf-8")
+
+        def files(d: Path) -> list:
+            return sorted(p.relative_to(d).as_posix() for p in d.rglob("*") if p.is_file())
+        fixed = datetime(2026, 9, 27, 9, 54, 18)
+        got = []
+        for _ in range(3):
+            try:
+                got.append(SV._backup_with_report(store, now=lambda: fixed)[0])
+            except Exception as exc:  # noqa: BLE001 - a crash is a named FAIL of the row below
+                got.append(exc)
+        names = [g.name if isinstance(g, Path) else repr(g) for g in got]
+        check("three backups in one second are three directories: the second and third suffixed -1 and -2",
+              names == ["vault.backup-20260927-095418", "vault.backup-20260927-095418-1",
+                        "vault.backup-20260927-095418-2"], str(names))
+        check("... each a complete copy of the store",
+              all(isinstance(g, Path) and files(g) == files(store) for g in got), str(names))
+        (Path(tmp) / "vault.backup-20260927-095419").write_text("a file squatting on the name", encoding="utf-8")
+        try:
+            nxt = SV._backup_with_report(store, now=lambda: datetime(2026, 9, 27, 9, 54, 19))[0]
+        except Exception as exc:  # noqa: BLE001
+            nxt = Path(repr(exc))
+        check("a name held by a plain file is passed over too, and the copy is complete",
+              nxt.name == "vault.backup-20260927-095419-1" and files(nxt) == files(store), nxt.name)
+
+
 def test_zz_every_check_passed() -> None:
     """Bare pytest must reach the same verdict as this suite's exit code.
 
@@ -788,7 +825,8 @@ def main() -> int:
                test_a_rebuild_promises_only_what_it_rebuilds,
                test_a_filename_inside_a_comment_is_not_an_ignore_rule,
                test_a_backup_survives_a_file_that_vanishes_under_it,
-               test_the_cleanup_survives_git_tidying_under_it):
+               test_the_cleanup_survives_git_tidying_under_it,
+               test_two_backups_in_one_second_are_two_complete_directories):
         fn()
     print(f"\nstore version: {PASSED} passed, {FAILED} failed")
     return 1 if FAILED else 0
