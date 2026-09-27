@@ -70,9 +70,29 @@ def live_dir(arm):
     return os.path.join(shared, "live", arm)
 
 
+def seen_stage():
+    try:
+        with open(os.path.join(shared, "stage.txt"), encoding="utf-8") as f:
+            return f.read()
+    except OSError:
+        return None
+
+
+def log_op(op, **kw):
+    os.makedirs(os.path.join(shared, "ops"), exist_ok=True)
+    with open(os.path.join(shared, "ops", str(os.getpid()) + ".jsonl"), "a", encoding="utf-8") as f:
+        f.write(json.dumps({"op": op, "stage": seen_stage(), "arm": spec["arm"], "run": spec["run"], "unit": spec["unit"],
+                            "t": time.time(), **kw}) + "\n")
+
+
 class H:
     def __init__(self):
-        self.first, self.items = True, []
+        self.first, self.items, self.marker = True, [], spec["run"] + "/" + spec["unit"]
+        if spec["stage"] == "read":
+            store = os.path.join(spec["write_dir"], "store")
+            with open(os.path.join(store, "items.json"), encoding="utf-8") as f:
+                data = json.load(f)
+            self.items, self.marker = data["items"], data["marker"]
         if knobs.get("heartbeat"):
             threading.Thread(target=self._hb, daemon=True).start()
 
@@ -85,11 +105,13 @@ class H:
             time.sleep(0.1)
 
     def hello(self):
-        os.makedirs(live_dir(spec["arm"]), exist_ok=True)
-        open(os.path.join(live_dir(spec["arm"]), spec["run"] + "." + spec["unit"]), "w").close()
+        if spec["stage"] == "write":                  # a live WRITE child: its marker goes at end_write
+            os.makedirs(live_dir(spec["arm"]), exist_ok=True)
+            open(os.path.join(live_dir(spec["arm"]), spec["run"] + "." + spec["unit"]), "w").close()
         return {"protocol": B.PROTOCOL, "arm": spec["arm"], "stage": spec["stage"], "pid": os.getpid()}
 
     def write(self, item, date=None):
+        log_op("write")
         if self.first:
             self.first = False
             t = time.time()
@@ -115,10 +137,14 @@ class H:
         while time.time() - t < 8 and len(os.listdir(passed)) < spec["expect"]:
             time.sleep(0.02)                  # no live marker leaves before every peer has counted it
         os.remove(os.path.join(live_dir(spec["arm"]), spec["run"] + "." + spec["unit"]))
+        os.makedirs(os.path.join(os.getcwd(), "store"), exist_ok=True)
+        with open(os.path.join(os.getcwd(), "store", "items.json"), "w", encoding="utf-8") as f:
+            json.dump({"items": self.items, "marker": self.marker}, f)
         return {"footprint": len(self.items), "seal": {"sha256": "0" * 64}}
 
     def read(self, qid, query, k=10):
-        return {"qid": qid, "items": self.items[:k]}
+        log_op("read", cwd=os.getcwd(), marker=self.marker)
+        return {"qid": qid, "items": self.items[:k], "marker": self.marker}
 
     def counters(self):
         return {}
@@ -170,7 +196,8 @@ class Clock:
 def launcher(name: str, *, expect: int, knobs=None, store="disk"):
     def spec_for(stage, *, stand, run, unit, dirs, write_dirs):
         return {"arm": name, "run": run, "unit": unit, "stage": stage, "shared": str(SHARED), "expect": expect,
-                "knobs": (knobs or {}).get((run, unit), {})}
+                "knobs": (knobs or {}).get((run, unit), {}),
+                "write_dir": str(write_dirs.cwd) if write_dirs is not None else None}
     return SC.ChildArmLauncher(name, argv_for=lambda p: [sys.executable, "-B", str(FAKE_DIR / "fake_arm.py"), str(p)],
                                spec_for=spec_for, store_persistence=store, path_dirs=(str(Path(sys.executable).parent),))
 
@@ -252,6 +279,116 @@ try:
     status.block_end("SX", "b03")
     check("the STATUS file stays valid for the writer's own replay", SL.self_check(TMP / "STATUS") == [],
           str(SL.self_check(TMP / "STATUS")))
+
+    print("\n- A6: two blocks of a stand - the barrier, the stages, the own-run store, the order -")
+    EV: list = []
+
+    class FakeProxyCtl:
+        def stage(self, block, stage):
+            live = sum(len(os.listdir(SHARED / "live" / a)) for a in os.listdir(SHARED / "live"))
+            EV.append(("stage", block, stage, live))
+            tmp = SHARED / "stage.tmp"
+            tmp.write_text(stage or "", encoding="utf-8")
+            os.replace(tmp, SHARED / "stage.txt")
+
+    class FakeWitnesses:
+        native = StubNative()
+
+        def begin_check(self, cid):
+            EV.append(("begin_check", cid))
+
+        def end_check(self, cid):
+            EV.append(("end_check", cid))
+            return {"check_id": cid, "complete": True}
+
+    class FakeOllama:
+        def __init__(self):
+            self.resident = {"nvt3-bge-m3-d1:latest", "qwen3:8b"}
+
+        def ps(self):
+            return sorted(self.resident)
+
+        def unload(self, model, *, embedder=False):
+            EV.append(("unload", model))
+            self.resident.discard(model)
+            return "unloaded"
+
+    class Hooks:
+        def barrier_read(self, stand, block):
+            EV.append(("barrier_read", block))
+            return {"changelog": "2026-09-10"}
+
+    for sub in ("live", "passed", "seen", "ops"):
+        shutil.rmtree(SHARED / sub, ignore_errors=True)
+    (SHARED / "live").mkdir()
+    status2 = SL.StatusLog(TMP / "STATUS2", local_tz=dt.timezone.utc)
+    s2 = SC.Scheduler(C, FakeProxyCtl(), status2, L, Clock(), FakeOllama(), tag="smoke", witnesses=FakeWitnesses(),
+                      parent_env=dict(os.environ), catcher_url="http://127.0.0.1:47001", hooks=Hooks())
+    arms6 = {"a1": launcher("a1", expect=4), "a2": launcher("a2", expect=4), "a3": launcher("a3", expect=4, store="memory")}
+    answers = []
+
+    def answer(arm, run, unit, req, got):
+        answers.append((arm, run, unit, req.qid, got.get("marker")))
+        return {"sha256": "1" * 64}
+
+    SP = SC.StandPlan(stand="SY", runs=("r1", "r2"), launchers=arms6, campaign_seed=20260927,     # b01: a3, a1, a2
+                      unit_tokens={u: 1000 for u in ("v1", "v2", "v3", "v4")}, medians={},
+                      write_ops=lambda a, r, u: OPS(r, u), read_plan=lambda u: [SC.ReadReq(qid=f"{u}-q1", query="x")],
+                      answer=answer, embed_tag="nvt3-bge-m3-d1:latest", commit="c" * 40, dirty=False)
+    status2.stand("SY", "START", model="m", changelog="2026-09-10", order=1)
+    res1 = s2.run_block(SP, SC.BlockPlan(block="b01", units=("v1", "v2")))
+    res2 = s2.run_block(SP, SC.BlockPlan(block="b02", units=("v3", "v4"), barrier_read=True))
+    status2.stand("SY", "END", model="m", changelog="2026-09-10")
+    ops = [json.loads(x) for f in (SHARED / "ops").iterdir() for x in f.read_text(encoding="utf-8").splitlines()]
+    check("T13: every write op saw the stage 'write' and every read op 'questions' (the proxy's stamp)",
+          ops and all(o["stage"] == ("write" if o["op"] == "write" else "questions") for o in ops),
+          str([o for o in ops if o["stage"] != ("write" if o["op"] == "write" else "questions")][:3]))
+    st = [(e[1], e[2]) for e in EV if e[0] == "stage"]
+    check("T13: per block the stage sequence is exactly write, questions, reset",
+          st == [("SY/b01", "write"), ("SY/b01", "questions"), (None, None),
+                 ("SY/b02", "write"), ("SY/b02", "questions"), (None, None)], str(st))
+    check("T13: no write child is live at the switch to questions",
+          all(e[3] == 0 for e in EV if e[0] == "stage" and e[2] == "questions"), str([e for e in EV if e[0] == "stage"]))
+    reads = [o for o in ops if o["op"] == "read"]
+    check("T14: every read answers from its OWN run's store (the marker is its own <run>/<unit>)",
+          reads and all(o["marker"] == f"{o['run']}/{o['unit']}" for o in reads)
+          and all(m == f"{r}/{u}" for _a, r, u, _q, m in answers), str([o for o in reads if o["marker"] != f"{o['run']}/{o['unit']}"][:3]))
+    disk_reads = [o for o in reads if o["arm"] in ("a1", "a2")]
+    check("T14: a disk arm reads in a fresh <unit>.q process, never in the write stage's directory",
+          disk_reads and all(Path(o["cwd"]).name == f"{o['unit']}.q" for o in disk_reads), str(disk_reads[:2]))
+    lines2 = (TMP / "STATUS2").read_text(encoding="utf-8").splitlines()
+    bs = [x for x in lines2 if " BLOCK SY/b01 START " in x][0]
+    order_line = bs.split(" arm_order=")[1].split()[0].split(",")
+    check("T16: STATUS passes the writer's own replay; BLOCK START's order is D4's; every START names the scheduler's pid",
+          SL.self_check(TMP / "STATUS2") == [] and order_line == res1["order"]
+          and all(f" pid={os.getpid()} " in x for x in lines2 if x.split()[2] == "START" and x.split()[3].count("/") == 3),
+          str(SL.self_check(TMP / "STATUS2")))
+    first_write = {a: min(o["t"] for o in ops if o["arm"] == a and o["op"] == "write" and o["unit"] in ("v1", "v2"))
+                   for a in arms6}
+    turns = sorted(first_write, key=first_write.get)
+    check("T16: the arms took their write turns in the block's seeded order - which here is NOT the sorted order",
+          turns == res1["order"] and res1["order"] != sorted(arms6), f"turns {turns}, seeded {res1['order']}")
+    wev = [e for e in EV if e[0] in ("begin_check", "end_check", "barrier_read")]
+    check("T17 (Q11): the barrier read of block 2 comes after block 1's check ended and before block 2's began",
+          wev == [("begin_check", "SY.b01"), ("end_check", "SY.b01"), ("barrier_read", "b02"), ("begin_check", "SY.b02"),
+                  ("end_check", "SY.b02")], str(wev))
+    mem_w = {(o["run"], o["unit"]) for o in ops if o["arm"] == "a3" and o["op"] == "write"}
+    q3 = res1["questions"]["a3"]
+    check("T18: the memory-store arm reads from the process that wrote (the same pid), and spawns no read process",
+          all(q3[k]["pid"] == res1["write"]["a3"][k].pid and q3[k]["spawn_id"] is None for k in q3) and len(q3) == 4,
+          str({k: (q3[k]["pid"], res1["write"]["a3"][k].pid) for k in q3}))
+    check("the GPU holds the embedder alone at the block (the other model unloaded, never the embedder)",
+          ("unload", "qwen3:8b") in EV and ("unload", "nvt3-bge-m3-d1:latest") not in EV)
+    recs = [json.loads(x) for x in (C.runs_root / "_launch" / "records.jsonl").read_text(encoding="utf-8").splitlines()]
+    check("every arm-run's raw record is written (out=), chained, and named by its END",
+          len(recs) == 12 and L.verify_chain(C.runs_root / "_launch" / "records.jsonl")
+          and all((C.runs_root / r["path"]).is_file() for r in recs)
+          and all(f" out={r['path']} " in " ".join(lines2) + " " for r in recs), str(recs[:1]))
+    one = json.loads((C.runs_root / recs[0]["path"]).read_text(encoding="utf-8"))
+    check("the record holds each unit's write (ops, footprint, end_write time) and its questions, measured inside "
+          "START..END (Q2)", set(one["units"]) and all(v["write"]["footprint"] == 2 and v["write"]["end_write_utc"]
+                                                        for v in one["units"].values())
+          and one["measured_at"]["commit"] == "c" * 40, str(one)[:300])
 finally:
     shutil.rmtree(TMP, ignore_errors=True)
 

@@ -33,6 +33,7 @@ import hashlib
 import importlib.util
 import json
 import math
+import os
 import subprocess
 import sys
 import threading
@@ -252,6 +253,7 @@ class Scheduler:
         self.parent_env, self.catcher_url, self.canaries = dict(parent_env), catcher_url, tuple(canaries)
         self.popen, self.concurrency, self.hooks = popen, concurrency, hooks
         self._spawn_lock = threading.Lock()
+        self.pid = os.getpid()                        # D3: every START names the scheduler's pid
 
     def spawn_child(self, build: Callable[[Any], LaunchSpec], *, role: str, stand: str, run: str, arm: str,
                     unit: str, dirs: Any = None, window: Any = None) -> tuple[Any, Any]:
@@ -288,6 +290,23 @@ class Scheduler:
         """One arm's write stage in a block (A5): {(run, unit): UnitRecord}."""
         return _write_turn(self, launcher, stand=stand, runs=runs, units=units, ops_for=ops_for, ceilings=ceilings,
                            status_ids=status_ids)
+
+    def run_block(self, sp: "StandPlan", bp: "BlockPlan") -> dict:
+        """One block (A6): see _run_block."""
+        return _run_block(self, sp, bp)
+
+    def _gpu_only(self, tag: str | None) -> None:
+        """§5.6: one resident Ollama model per stage - every other resident model unloaded (never woken: only what
+        /api/ps names), then /api/ps must name nothing but the tag."""
+        if self.ollama_ctl is None:
+            return
+        keep = None if tag is None else _full_name(tag)
+        for m in self.ollama_ctl.ps():
+            if _full_name(m) != keep:
+                self.ollama_ctl.unload(m)
+        stray = [m for m in self.ollama_ctl.ps() if _full_name(m) != keep]
+        if stray:
+            raise SchedulerError(f"models still resident beside {tag}: {stray} (§5.6)")
 
 
 # ── A5: the write turn ─────────────────────────────────────────────────────────────────────────────────────────
@@ -337,12 +356,13 @@ class ChildArmLauncher:
 
     def __init__(self, name: str, *, argv_for: Callable[[Path], Sequence[str]], spec_for: Callable[..., dict],
                  store_persistence: str = "disk", path_dirs: Sequence[str] = (), declared: Mapping[str, str] | None = None,
-                 token_names: Sequence[str] = ()) -> None:
+                 token_names: Sequence[str] = (), reads_point: bool = False) -> None:
         if store_persistence not in ("disk", "memory"):
             raise SchedulerError(f"store_persistence {store_persistence!r} is disk or memory (Q25(4))")
         self.name, self.argv_for, self.spec_for = name, argv_for, spec_for
         self.store_persistence, self.path_dirs = store_persistence, tuple(path_dirs)
         self.declared, self.token_names = dict(declared or {}), tuple(token_names)
+        self.reads_point = reads_point
 
     def open(self, stage: str, *, sched: "Scheduler", stand: str, run: str, unit: str, write_dirs: Any = None) -> UnitClient:
         def build(d: Any) -> LaunchSpec:
@@ -374,6 +394,7 @@ class UnitRecord:
     active_s: float = 0.0
     aborted: str | None = None             # None | "ceiling" | "crash" (D2)
     error: str | None = None
+    end_write_utc: str | None = None       # R9: when end_write returned - a write-port call after it is background
     client: Any = None                     # a memory-store arm's live client, kept for its read stage (Q25(4))
     dirs: Any = None
 
@@ -417,6 +438,7 @@ def _write_unit(sched: "Scheduler", launcher: Any, *, stand: str, run: str, unit
             raise B.ArmTimeout("end_write: the ceiling passed")
         end = client.request("end_write", timeout=left())
         rec.footprint, rec.seal = end.get("footprint"), end.get("seal")
+        rec.end_write_utc = sched.clock.utc().isoformat()
         if launcher.store_persistence == "memory":
             rec.client = client                                       # Q25(4): the store lives in this process
         else:
@@ -451,3 +473,180 @@ def _write_turn(sched: "Scheduler", launcher: Any, *, stand: str, runs: Sequence
                                     ceiling=ceilings[u], status_id=status_ids[r]) for r, u in pairs}
         return {k: f.result() for k, f in futs.items()}
 
+
+
+# ── A6: the question turn and the block ────────────────────────────────────────────────────────────────────────
+
+@dataclass(frozen=True)
+class ReadReq:
+    """One read of a unit's store: its question, the reader point, and k."""
+    qid: str
+    query: str
+    point: str = "B"
+    k: int = 10
+
+
+@dataclass(frozen=True)
+class BlockPlan:
+    """A block's units; barrier_read - the change-log read at the barrier before the block's check (Q11, D7), for every
+    block after a stand's first (whose read is the STAND START one)."""
+    block: str
+    units: tuple
+    barrier_read: bool = False
+
+
+@dataclass
+class StandPlan:
+    """What run_block needs of a stand: its runs and arms (name -> launcher), the campaign seed, each unit's input
+    tokens and the frozen medians (the ceilings), the write ops and reads per unit, the answer hook, the embed tag
+    that stays resident, and the tree check's commit and dirty flag for the run records (Q2)."""
+    stand: str
+    runs: tuple
+    launchers: Mapping[str, Any]
+    campaign_seed: int
+    unit_tokens: Mapping[str, int]
+    medians: Mapping[tuple, float]
+    write_ops: Callable[[str, str, str], Sequence[Mapping]]
+    read_plan: Callable[[str], Sequence[ReadReq]]
+    answer: Callable[[str, str, str, ReadReq, dict], dict]
+    embed_tag: str | None
+    commit: str
+    dirty: bool
+
+
+def read_kwargs(launcher: Any, req: ReadReq) -> dict:
+    """The read request's fields: qid, query and k, and the point only for an arm whose read takes one (F4)."""
+    kw = {"qid": req.qid, "query": req.query, "k": req.k}
+    if getattr(launcher, "reads_point", False):
+        kw["point"] = req.point
+    return kw
+
+
+def _question_unit(sched: "Scheduler", launcher: Any, sp: StandPlan, *, run: str, unit: str, wrec: UnitRecord,
+                   ceiling: float, status_id: str) -> dict:
+    """One unit's question stage: a fresh <unit>.q process on the SAME (arm, run, unit)'s store - or the memory-store
+    arm's own live process - every read under what is left of the unit's one budget (D1), each answer through the
+    answer hook; a ceiling or a crash is UNIT-ABORT as in the write stage."""
+    B = _arm_base()
+    out: dict = {"reads": [], "counters": None, "rc": None, "aborted": None, "pid": None, "spawn_id": None}
+    start = sched.clock.monotonic()
+    deadline = start + max(0.0, ceiling - wrec.active_s)
+    left = lambda: deadline - sched.clock.monotonic()  # noqa: E731
+    client = wrec.client
+    try:
+        if client is None:
+            client = launcher.open("read", sched=sched, stand=sp.stand, run=run, unit=unit, write_dirs=wrec.dirs)
+            out["spawn_id"] = client.child.spawn_id
+            if left() <= 0:
+                raise B.ArmTimeout("hello: the ceiling passed")
+            hello = client.request("hello", timeout=left())
+            if (hello.get("protocol"), hello.get("arm"), hello.get("stage")) != (B.PROTOCOL, launcher.name, "read"):
+                raise B.ArmError(f"hello: not this arm's read stage ({hello.get('arm')}/{hello.get('stage')})")
+        out["pid"] = client.pid
+        for req in sp.read_plan(unit):
+            if left() <= 0:
+                raise B.ArmTimeout("read: the ceiling passed")
+            t0 = sched.clock.utc().isoformat()
+            got = client.request("read", timeout=left(), **read_kwargs(launcher, req))
+            t1 = sched.clock.utc().isoformat()
+            out["reads"].append({"qid": req.qid, "point": req.point, "t0": t0, "t1": t1,
+                                 "answer": sp.answer(launcher.name, run, unit, req, got)})
+        if left() <= 0:
+            raise B.ArmTimeout("counters: the ceiling passed")
+        out["counters"] = client.request("counters", timeout=left())
+        out["rc"] = client.close(timeout=max(1.0, left()))
+    except B.ArmTimeout as e:
+        out["aborted"], out["error"] = "ceiling", str(e)
+        if client is not None:
+            client.kill_tree()
+            out["rc"] = client.exit_code()
+        sched.status.unit_abort(status_id, unit, reason="ceiling")
+    except B.ArmError as e:
+        out["aborted"], out["error"] = "crash", str(e)
+        if client is not None:
+            client.kill_tree()
+            out["rc"] = client.exit_code()
+        sched.status.unit_abort(status_id, unit, reason="crash", rc=out["rc"] if out["rc"] is not None else -1)
+    finally:
+        out["active_s"] = sched.clock.monotonic() - start
+    return out
+
+
+def _question_turn(sched: "Scheduler", launcher: Any, sp: StandPlan, *, wrecs: Mapping, ceilings: Mapping[str, float],
+                   status_ids: Mapping[str, str]) -> dict:
+    """One arm's question stage in a block, over the units its write stage did not abort, all at once."""
+    from concurrent.futures import ThreadPoolExecutor  # noqa: PLC0415
+    todo = [(r, u) for (r, u), w in wrecs.items() if w.aborted is None]
+    if not todo:
+        return {}
+    with ThreadPoolExecutor(max_workers=sched.concurrency or len(todo)) as pool:
+        futs = {(r, u): pool.submit(_question_unit, sched, launcher, sp, run=r, unit=u, wrec=wrecs[(r, u)],
+                                    ceiling=ceilings[u], status_id=status_ids[r]) for r, u in todo}
+        return {k: f.result() for k, f in futs.items()}
+
+
+def _run_block(sched: "Scheduler", sp: StandPlan, bp: BlockPlan) -> dict:
+    """One block (§5.6, Q4, Q11, Q25): the barrier read before the block's check; the embedder alone on the GPU; the
+    check; BLOCK START with the seeded order; every arm-run's START; the write stage, arm after arm; the barrier (every
+    write child gone, the embedder alone again); the question stage, arm after arm in the same order; each arm-run's
+    raw record (out=, measured inside START..END, Q2) and END; the stage reset; BLOCK END; the check's end."""
+    L = sched.launch
+    stand, block = sp.stand, bp.block
+    events = {}
+    if bp.barrier_read and sched.hooks is not None:
+        events["barrier_read"] = sched.hooks.barrier_read(stand, block)
+    sched._gpu_only(sp.embed_tag)
+    check_id = f"{stand}.{block}"
+    sched.witnesses.begin_check(check_id)
+    order, seed = arm_order(list(sp.launchers), campaign_seed=sp.campaign_seed, stand=stand, block=block)
+    sched.status.block_start(stand, block, units=list(bp.units), arm_order=order, seed=seed)
+    ids = {(a, r): sched.status.start(stand, block, r, a, pid=sched.pid, tag=sched.tag) for a in order for r in sp.runs}
+    ceilings = {a: {u: ceiling_for(sched.tag, arm=a, stand=stand, unit_tokens=sp.unit_tokens[u], medians=sp.medians)
+                    for u in bp.units} for a in order}
+    sched.proxy_ctl.stage(f"{stand}/{block}", "write")
+    wrecs = {a: sched.write_turn(sp.launchers[a], stand=stand, runs=list(sp.runs), units=list(bp.units),
+                                 ops_for=lambda r, u, a=a: sp.write_ops(a, r, u), ceilings=ceilings[a],
+                                 status_ids={r: ids[(a, r)] for r in sp.runs}) for a in order}
+    sched._gpu_only(sp.embed_tag)                        # the barrier: every write child exited or was killed
+    sched.proxy_ctl.stage(f"{stand}/{block}", "questions")
+    qrecs = {a: _question_turn(sched, sp.launchers[a], sp, wrecs=wrecs[a], ceilings=ceilings[a],
+                               status_ids={r: ids[(a, r)] for r in sp.runs}) for a in order}
+    art = _artifact()
+    for a in order:
+        for r in sp.runs:
+            units = {u: {"write": _unit_payload(wrecs[a][(r, u)]), "questions": qrecs[a].get((r, u))} for u in bp.units}
+            rcs = [x for u in bp.units for x in (wrecs[a][(r, u)].rc, (qrecs[a].get((r, u)) or {}).get("rc"))
+                   if wrecs[a][(r, u)].aborted is None and not (qrecs[a].get((r, u)) or {}).get("aborted")]
+            rc = next((x for x in rcs if x not in (0, None)), 0)
+            wall = sum(wrecs[a][(r, u)].active_s + (qrecs[a].get((r, u)) or {}).get("active_s", 0.0) for u in bp.units)
+            rel = f"{stand}/_records/{block}/{r}.{a}.json"
+            path = sched.c.runs_root / rel
+            sha = art.run_record(path, ids[(a, r)], {"stand": stand, "block": block, "run": r, "arm": a, "units": units},
+                                 commit=sp.commit, dirty=sp.dirty, now=sched.clock.utc)
+            L._append_jsonl(sched.c.runs_root / "_launch" / "records.jsonl",
+                            {"status_id": ids[(a, r)], "path": rel, "sha256": sha})
+            sched.status.end(ids[(a, r)], rc=rc, wall_s=wall, units=len(bp.units), out=rel)
+    sched.proxy_ctl.stage(None, None)                    # a stray call is now loud in accounting, never a stage's
+    sched.status.block_end(stand, block)
+    events["check"] = sched.witnesses.end_check(check_id)
+    return {"order": order, "seed": seed, "write": wrecs, "questions": qrecs, **events}
+
+
+def _unit_payload(w: UnitRecord) -> dict:
+    return {"spawn_id": w.spawn_id, "pid": w.pid, "ops": w.ops, "footprint": w.footprint, "seal": w.seal, "rc": w.rc,
+            "active_s": w.active_s, "aborted": w.aborted, "end_write_utc": w.end_write_utc}
+
+
+def _artifact():
+    mod = sys.modules.get("v3_artifact_for_scheduler")
+    if mod is None:
+        spec = importlib.util.spec_from_file_location("v3_artifact_for_scheduler", HERE / "artifact.py")
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules["v3_artifact_for_scheduler"] = mod
+        spec.loader.exec_module(mod)
+    return mod
+
+
+def _full_name(model: str) -> str:
+    """Ollama's name with its tag (sched_ctl.full_name's rule): a tagless name is the ":latest" one."""
+    return model if ":" in model.rsplit("/", 1)[-1] else f"{model}:latest"
