@@ -117,8 +117,10 @@ def templated_items(family: str, sources: Sequence[Mapping[str, Any]], *, seed: 
     rng = random.Random(f"{seed}:{family}")
     by_class: dict[str, list] = {k.name: [] for k in CLASSES}
     for i, s in enumerate(sources):
-        j = rng.randrange(len(sources) - 1)
-        d = sources[j if j < i else j + 1]["gold"]            # another source's gold, never its own
+        others = [k for k in range(len(sources)) if k != i and _norm(sources[k]["gold"]) != _norm(s["gold"])]
+        if not others:
+            raise ProbeError(f"source {s['id']}: every other source's gold is its own - no distractor")
+        d = sources[others[rng.randrange(len(others))]]["gold"]   # another source's gold, never one equal to its own
         for k in CLASSES:
             ans = k.build(s["question"], s["gold"], d)
             if ans is not None:
@@ -160,10 +162,19 @@ def _norm(s: str) -> str:
 
 def rule(items: Sequence[Mapping[str, Any]], accepted: Mapping[int, bool], *, frozen_sha: str) -> dict:
     """§8.5 over ONE judged prompt: pooled templated FA and FR; > 30 % FA -> no verdicts. accepted[i] is the judge's
-    verdict on items[i] (True = judged correct). Free-form items never enter; unfrozen items refuse."""
+    verdict on items[i] (True = judged correct), a bool for EVERY templated item (B-FA1: a missing or invalid verdict
+    is never read as a reject - the judge's invalid verdicts are re-asked and resolved before the rule). Free-form
+    items never enter; unfrozen items refuse."""
     if freeze(items) != frozen_sha:
         raise ProbeError("the items are not the frozen set (their sha256 differs)")
     templ = [(i, it) for i, it in enumerate(items) if not it.get("free_form")]
+    missing = [i for i, _ in templ if i not in accepted]
+    if missing:
+        raise ProbeError(f"verdicts missing for {len(missing)} of {len(templ)} templated items")
+    bad = [i for i, _ in templ if not isinstance(accepted[i], bool)]
+    if bad:
+        raise ProbeError(f"the verdict of {len(bad)} templated item(s) is not a bool (first: item {bad[0]}: "
+                         f"{accepted[bad[0]]!r})")
     pool = [(i, it) for i, it in templ if not it.get("excluded")]
     wrong = [i for i, it in pool if it["label"] is False]
     right = [i for i, it in pool if it["label"] is True]

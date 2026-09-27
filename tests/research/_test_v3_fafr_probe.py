@@ -127,8 +127,9 @@ check("F-2': excluded items leave the FA pool and are counted", rl["policy_exclu
 by_cls = collections.defaultdict(list)
 for i, it in enumerate(items):
     by_cls[it["class"]].append(i)
-acc_s = {i: True for i in by_cls["gold-plain"] + by_cls["gold-verbose"] + by_cls["distractor-plain"]
-         + by_cls["near-miss-entity"][:20]}
+acc_s = {i: False for i in range(len(items))}
+acc_s.update({i: True for i in by_cls["gold-plain"] + by_cls["gold-verbose"] + by_cls["distractor-plain"]
+              + by_cls["near-miss-entity"][:20]})
 rs = FP.rule(items, acc_s, frozen_sha=sha)
 check("the sensitivity never decides: FA 30 % by F-2' gives verdicts though the literal-policy FA is 45 %",
       abs(rs["fa"] - 0.30) < 1e-12 and abs(rs["sensitivity"]["fa_literal_policy"] - 0.45) < 1e-12
@@ -139,9 +140,17 @@ check("the literal-policy FA is computed as a sensitivity and is not in the rule
 check("pooled templated FA and FR; exactly 30 % FA still gives verdicts", abs(r["fa"] - sum(1 for k in range(len(wrong))
                                                                                          if k < 0.3 * len(wrong)) / len(wrong)) < 1e-12
       and r["fr"] == 0.0 and r["verdicts_allowed"] is (r["fa"] <= 0.30), str(r))
-gap = {i: v for i, v in acc.items() if i not in right[:10]}
-check("a missing verdict on a right item is not a rejection (FR counts only an explicit reject)",
-      FP.rule(items, gap, frozen_sha=sha)["fr"] == 0.0)
+half = {i: v for k, (i, v) in enumerate(sorted(acc.items())) if k % 2 == 0}
+check("B-FA1: a verdict map missing half the templated items refuses, naming how many are missing",
+      f"{len(acc) - len(half)} of {len(acc)}" in err(lambda: FP.rule(items, half, frozen_sha=sha)),
+      err(lambda: FP.rule(items, half, frozen_sha=sha)))
+check("B-FA1: no verdicts at all refuse - never FA 0 and FR 0", "missing" in err(lambda: FP.rule(items, {}, frozen_sha=sha)))
+check("B-FA1: a None verdict refuses - a judge-invalid is resolved (re-asked) before the rule",
+      "not a bool" in err(lambda: FP.rule(items, {**acc, right[0]: None}, frozen_sha=sha)))
+check("B-FA1: a string verdict refuses", "not a bool" in err(lambda: FP.rule(items, {**acc, wrong[0]: "yes"},
+                                                                               frozen_sha=sha)))
+check("B-FA1: an explicit reject of a right item is FR", abs(FP.rule(items, {**acc, right[0]: False}, frozen_sha=sha)["fr"]
+                                                            - 1 / len(right)) < 1e-12)
 acc2 = dict(acc)
 acc2.update({i: True for i in wrong})
 check("above 30 % FA the prompt gives no verdicts", not FP.rule(items, acc2, frozen_sha=sha)["verdicts_allowed"])
@@ -154,6 +163,14 @@ check("M-FAFR-freeform-in-rule: free-form items never enter the rule", r2["fa"] 
 check("M-FAFR-unfrozen: items that are not the frozen set refuse",
       "not the frozen set" in err(lambda: FP.rule(changed, acc, frozen_sha=sha)))
 check("the probe's constants are rev1's (200 per prompt, 30 % FA)", FP.N_PER_PROMPT == 200 and FP.FA_MAX == 0.30)
+DUP = [{"id": "a", "question": "Where?", "gold": "Paris"}, {"id": "b", "question": "Where too?", "gold": "paris."},
+       {"id": "c", "question": "Which city?", "gold": "Lyon"}]
+dup_items = [it for it in FP.templated_items("lme", DUP * 1, seed=3, n=6)]
+check("a distractor is never the item's own gold under normalisation (another source may share it)",
+      all(FP._norm(it["answer"]) != FP._norm(it["gold"]) for it in dup_items if it["class"] == "distractor-plain"),
+      str([(it["gold"], it["answer"]) for it in dup_items if it["class"] == "distractor-plain"]))
+check("sources whose golds are all one answer give no distractor - refused",
+      "distractor" in err(lambda: FP.templated_items("lme", [dict(s, gold="Paris") for s in DUP], seed=3, n=3)))
 
 print(f"\nv3 fafr probe: {PASSED} passed, {FAILED} failed")
 sys.exit(1 if FAILED else 0)
