@@ -713,16 +713,24 @@ try:
     sp2, st2 = PL.stand_plan("S4", [LOC, LOC2], {"mem0": lns["mem0"]}, standplan=SC.StandPlan, read_req=SC.ReadReq,
                              runs=("r1",), campaign_seed=7, unit_tokens={"conv-1": 1, "conv-3": 1}, medians={},
                              answer=ra, embed_tag="e", dated=True, points=lambda a: ("B",), k_at=PT.K_AT, smaps=smaps)
+    def ops_or_empty(u):
+        """write_ops, or [] with the refusal printed - a refusal here FAILs the row by name, never a crash."""
+        try:
+            return sp2.write_ops("mem0", "r1", u)
+        except Exception as e:  # noqa: BLE001
+            print(f"  (write_ops {u} raised {type(e).__name__}: {e})")
+            return []
+
     w1 = refused(lambda: sp2.write_ops("mem0", "r1", "conv-1"))
-    w3 = sp2.write_ops("mem0", "r1", "conv-3") if w1 == "accepted" else []
-    ops1, ops3 = sp2.write_ops("mem0", "r1", "conv-1"), w3
+    w3 = refused(lambda: sp2.write_ops("mem0", "r1", "conv-3"))
+    ops1, ops3 = ops_or_empty("conv-1"), ops_or_empty("conv-3")
     rec_s = sp2.record_extra("mem0", "r1", ["conv-1", "conv-3"])
     check("B-S4-SMAP: two conversations with different speakers both write - each unit with its own map, each map's "
-          "sha in the run record", w1 == "accepted" and [o["item"]["role"] for o in ops1] == ["user", "assistant"]
+          "sha in the run record", w1 == w3 == "accepted" and [o["item"]["role"] for o in ops1] == ["user", "assistant"]
           and [o["item"]["role"] for o in ops3] == ["user", "assistant"] and [o["item"]["speaker"] for o in ops3]
           == ["Nate", "Joanna"] and rec_s["speaker_map_sha256"] == {"conv-1": PL.map_sha256(smaps["conv-1"]),
                                                                    "conv-3": PL.map_sha256(smaps["conv-3"])}
-          and smaps["conv-1"] != smaps["conv-3"], f"{w1} {rec_s.get('speaker_map_sha256')}")
+          and smaps["conv-1"] != smaps["conv-3"], f"{w1} {w3} {rec_s.get('speaker_map_sha256')}")
     one_map = {"conv-1": smaps["conv-1"], "conv-3": smaps["conv-1"]}           # one stand-wide map, as before
     sp3, _st3 = PL.stand_plan("S4", [LOC, LOC2], {"mem0": lns["mem0"]}, standplan=SC.StandPlan, read_req=SC.ReadReq,
                               runs=("r1",), campaign_seed=7, unit_tokens={"conv-1": 1, "conv-3": 1}, medians={},

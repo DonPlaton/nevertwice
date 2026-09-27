@@ -144,7 +144,8 @@ try:
     check("LS-ok: the child's pairs, ordered by subsample.nested_order, written as lists/S1.json - ids only, the seed, "
           "the rule, the sha256 of the canonical ids", rec["problems"] == [] and s1.get("ids") == want
           and s1.get("stand") == "S1" and s1.get("seed") == SS.SEED and s1.get("rule") == SS.RULE and s1.get("n") == 500
-          and s1.get("ids_sha256") == hashlib.sha256(canon).hexdigest() == rec["list"]["ids_sha256"], str(rec)[:300])
+          and s1.get("ids_sha256") == hashlib.sha256(canon).hexdigest() == (rec.get("list") or {}).get("ids_sha256"),
+          str(rec)[:300])
     facts_py = ROOT / "research" / "v3" / "dataset_facts.py"
     check("LS-ok: the child's argv is [python, -I, -B, ls1.py, --child, <file>, dataset_facts.py] - the two repository "
           "files its named exceptions", rec["argv"] == [sys.executable, "-I", "-B", str(Path(LS.__file__)), "--child",
@@ -181,6 +182,27 @@ try:
     check("LS-leak: a child that prints a text string is refused - no list",
           any(p.startswith("prints_answers refused") for p in rl["problems"]) and not (ldl / "S1.json").exists(),
           str(rl["problems"]))
+    dirty = TMP / "dirty_child.py"
+    dc_c, dc_base = contract("dirty")
+    dirty.write_text("import json\nopen(" + repr(str(dc_base / "watched" / "touched.txt")) + ", 'w').write('x')\n"
+                     "print(json.dumps(" + repr(pairs) + "))\n", encoding="utf-8")
+    rd, _c, _b, ldd = run("dirty", GOOD, script=dirty, c_base=(dc_c, dc_base))
+
+    class NoneFs:
+        """A file-system witness whose first snapshot is missing: the check cannot be complete."""
+        def snapshot(self):
+            return None
+
+    in_c, in_base = contract("incomplete")
+    ri = LS.run_ls1(in_c, L, run="ls1-i", python=Path(sys.executable), parent_env=os.environ, CP=FakeCP(GOOD),
+                    native=L.NativeEgressWitness(sampler=Quiet(), tick_s=60, jobs=None), fs=NoneFs(),
+                    lists_dir=in_base / "lists")
+    check("LS-check (LSd, LSi): a check that is not clean - the child touched a watched file, or the witness could not "
+          "complete - is named, and no list is written", any("check is not clean" in p_ and "'fs_hits': 1" in p_
+                                                             for p_ in rd["problems"])
+          and any("check is not clean" in p_ and "'complete': False" in p_ for p_ in ri["problems"])
+          and not (ldd / "S1.json").exists() and not (in_base / "lists" / "S1.json").exists()
+          and "list" not in rd and "list" not in ri, f"{rd['problems']} | {ri['problems']}")
     beat = TMP / "heartbeat.txt"
     hang = TMP / "hang_child.py"
     hang.write_text("import time\nwhile True:\n    open(" + repr(str(beat)) + ", 'a').write('.')\n    time.sleep(0.1)\n",
