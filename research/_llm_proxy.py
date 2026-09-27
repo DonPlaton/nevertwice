@@ -71,6 +71,10 @@ UPSTREAM_PORT = 443
 HEADER_ALLOWLIST = ("content-type", "content-length", "accept", "user-agent", "anthropic-version", "anthropic-beta")
 #: R-CC-WIT: the Claude Code arm's home canary header (checked on the arm port, never forwarded: not on the allowlist).
 HOME_CANARY_HEADER = "x-nvt3-home-canary"
+#: F-CAN (the auditor): the arm whose port REQUIRES a home canary - without one the positive control would be off
+#: silently, so an ArmConfig of this name (a forwarding port) and a config that lacks its canary are refused.
+HOME_CANARY_ARM = "claude-code-memory"
+_HOME_CANARY_VALUE = re.compile(r"[0-9a-f]{32}")
 THINKING_OFF_FIELD = b'"thinking":{"type":"disabled"},'
 #: The real secrets directory: a key read from under it may only ever go to UPSTREAM_HOST over TLS.
 SECRETS_ROOT = Path(r"D:\Coding\_secrets")
@@ -152,6 +156,14 @@ class ArmConfig:
     #: request that carries it reaches DeepSeek without it.
     home_canary: str = ""
 
+    def __post_init__(self) -> None:
+        if self.home_canary != "" and not (isinstance(self.home_canary, str)
+                                           and _HOME_CANARY_VALUE.fullmatch(self.home_canary)):
+            raise ValueError(f"arm {self.arm}: a home canary is 32 lowercase hex characters (R-CC-WIT)")
+        if self.arm == HOME_CANARY_ARM and self.mode != "catch" and not self.home_canary:
+            raise ValueError(f"arm {self.arm}: no home canary - R-CC-WIT's positive control would be off (F-CAN); "
+                             "the proxy does not start")
+
 
 @dataclass
 class ProxyConfig:
@@ -209,11 +221,17 @@ class ProxyConfig:
                 if not (_under(q, POLYGON_RUNS) and _under(os.path.realpath(q), os.path.realpath(POLYGON_RUNS))):
                     raise ValueError("with the real key, run_dir and scan_roots must lie in the polygon runs tree (X7)")
         tokens = secrets.get("tokens") or {}
+        canaries = secrets.get("home_canaries") or {}
+        if not isinstance(canaries, dict):
+            raise ValueError("home_canaries on stdin is an object of arm name -> home canary (R-CC-WIT)")
+        stray = sorted(set(canaries) - {a["arm"] for a in raw["arms"]})
+        if stray:
+            raise ValueError(f"a home canary for arms the config does not have: {stray} (F-CAN: a mis-wired orchestrator)")
         arms = [ArmConfig(arm=a["arm"], mode=a.get("mode", "raw"), thinking_route=a.get("thinking_route", "documented"),
                           token=tokens.get(a["arm"], ""), pinned_model=a.get("pinned_model", ""),
                           reader_model=a.get("reader_model", ""), tools_allowed=tuple(a.get("tools_allowed") or ()),
                           ollama_leg=bool(a.get("ollama_leg", False)), cloud_arm=bool(a.get("cloud_arm", True)),
-                          home_canary=(secrets.get("home_canaries") or {}).get(a["arm"], ""))
+                          home_canary=canaries.get(a["arm"], ""))
                 for a in raw["arms"]]
         oll = raw.get("ollama") or {}
         if oll.get("upstream") is not None and not test_upstream_ok:

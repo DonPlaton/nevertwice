@@ -378,6 +378,8 @@ PX = importlib.util.module_from_spec(_pspec)
 sys.modules["v3_llm_proxy_for_claude"] = PX
 _pspec.loader.exec_module(PX)
 check("launch and the proxy name the same home canary header", L.HOME_CANARY_HEADER == PX.HOME_CANARY_HEADER)
+check("F-CAN the arm the proxy requires a canary for is launch's Claude Code arm",
+      getattr(PX, "HOME_CANARY_ARM", None) == L.CC_ARM)
 u_c = L.make_unit_dirs(CC, "cc", "r", "claude-code-memory", "canary1")
 can = L.new_home_canary()
 cfg_c, settings_c = L.make_claude_config(u_c, home_canary=can)

@@ -208,6 +208,59 @@ check("an arm without a home canary is unaffected", got.startswith(b"HTTP/1.1 20
 px.stop()
 up.close()
 
+
+def raises(fn, exc) -> bool:
+    try:
+        fn()
+    except exc:
+        return True
+    except Exception:  # noqa: BLE001
+        return False
+    return False
+
+
+def load_error(arms: list, home_canaries) -> str:
+    """The ValueError a config with these arms and stdin canaries raises at load, or '' when it loads."""
+    f = TMP / "fcan_config.json"
+    f.write_bytes(json.dumps({"arms": [{"arm": a} for a in arms], "run_dir": str(TMP / "run_fcan")}).encode())
+    sec = {"tokens": {a: ST.TOKEN + a for a in arms}}
+    if home_canaries is not None:
+        sec["home_canaries"] = home_canaries
+    try:
+        P.ProxyConfig.load(f, sec, test_upstream_ok=True)
+    except ValueError as e:
+        return str(e) or "ValueError"
+    except Exception as e:  # noqa: BLE001 - another exception is not the named refusal
+        return f"not a ValueError: {type(e).__name__}: {e}"
+    return ""
+
+
+print("\n- F-CAN: the positive control cannot be switched off by a missing canary -")
+check("the Claude Code arm is named the same in the proxy and in launch",
+      getattr(P, "HOME_CANARY_ARM", None) == "claude-code-memory")
+err = load_error(["claude-code-memory", "mem0"], None)
+check("F-CAN a claude-code-memory arm with no home canary on stdin: the proxy does not start, refused by name",
+      "home canary" in err and "claude-code-memory" in err, err)
+err = load_error(["claude-code-memory"], {"mem0": CAN})
+check("F-CAN ... nor when the canaries name only other arms", "home canary" in err, err)
+for bad in ("", "AB" * 16, "ab" * 15, "ab" * 17, "ab" * 16 + "\n", "zz" * 16, 12345):
+    err = load_error(["claude-code-memory"], {"claude-code-memory": bad})
+    check(f"F-CAN a home canary that is not 32 lowercase hex is refused: {bad!r}", "home canary" in err, err)
+for bad in ("ab", None, 0, "ab" * 17):
+    err = load_error(["mem0"], {"mem0": bad})
+    check(f"F-CAN a malformed canary on any arm is refused, not only on Claude Code's: {bad!r}", "home canary" in err, err)
+err = load_error(["claude-code-memory"], {"claude-code-memory": CAN, "claude-code-memroy": CAN})
+check("F-CAN a canary for an arm the config does not have is refused (a mis-wired orchestrator)",
+      "home canary" in err and "claude-code-memroy" in err, err)
+err = load_error(["claude-code-memory"], ["claude-code-memory", CAN])
+check("F-CAN home_canaries must be an object of arm -> canary", "home_canaries" in err and "object" in err, err)
+check("F-CAN a well-formed canary for the Claude Code arm loads", load_error(["claude-code-memory", "mem0"],
+                                                                            {"claude-code-memory": CAN}) == "")
+check("F-CAN an ArmConfig built directly for claude-code-memory without a canary is refused too",
+      raises(lambda: P.ArmConfig(arm="claude-code-memory", token=ST.TOKEN), ValueError))
+check("F-CAN a catcher-only port of that name needs none (it never forwards an arm request)",
+      not raises(lambda: P.ArmConfig(arm="claude-code-memory", mode="catch"), Exception))
+
 print("\n- refusals, the catcher, 100-continue, an unreachable upstream -")
 px, ports, up = serve()
 wp, cp = ports["arms"]["a1"]["write"], ports["arms"]["a1"]["catcher"]
