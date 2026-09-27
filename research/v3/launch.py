@@ -831,6 +831,7 @@ def spawn(c: Contract, argv: Sequence[str], *, env: Mapping[str, str], cwd: str 
                     "unwitnessed_reason": None if native is not None else unwitnessed_reason},
         "claude_code": claude_rec,
         "cwd_reuse": ({"rule": "Q-47-6", "session": _CC_UNITS[_norm(cwd)]["uses"] + 1} if reuse else None),
+        "home_canaries": record.get("home_canaries"),      # R-HOME-CANARY: file names and sha256, never a value
     }
     _append_jsonl(spawns_log(c), entry)
     if reasons:

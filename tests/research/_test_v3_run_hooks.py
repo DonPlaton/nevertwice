@@ -175,7 +175,8 @@ try:
         h = HK.Hooks(repo=repo, git=GIT, proxy=PROXY, anchor=anchor, projected_cost=projected, changelog=changelog,
                      balance_fallback=fallback)
         s = SC.Scheduler(C, None, st, L, Clock(), None, tag=tag, witnesses=Witnesses(), parent_env=dict(os.environ),
-                         catcher_url="http://127.0.0.1:47001", popen=spy, hooks=h)
+                         catcher_url="http://127.0.0.1:47001", popen=spy, hooks=h,
+                         home_canaries=L.Canaries.generate() if tag == "scored" else None)
         sp = SC.StandPlan(stand="SH", runs=("r1",), launchers={}, campaign_seed=1, unit_tokens={}, medians={},
                           write_ops=lambda *a: [], read_plan=lambda a, u: [], answer=lambda *a: {}, embed_tag=None,
                           commit="0" * 40, dirty=True)

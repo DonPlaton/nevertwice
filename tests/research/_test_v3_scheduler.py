@@ -319,6 +319,15 @@ check("R-LAUNCHER: the witness's job object is the route when there is one; psut
       job_route == "job" and psutil_route == "psutil", f"{job_route} {psutil_route}")
 check("a tag outside scored / smoke / debug refuses", "tag" in err(lambda: SC.Scheduler(
     contract("x"), None, None, L, None, None, tag="best", witnesses=None, parent_env={}, catcher_url="")))
+no_can = err(lambda: SC.Scheduler(contract("hc1"), None, None, L, None, None, tag="scored", witnesses=None,
+                                  parent_env={}, catcher_url=""))
+with_can = err(lambda: SC.Scheduler(contract("hc2"), None, None, L, None, None, tag="scored", witnesses=None,
+                                    parent_env={}, catcher_url="", home_canaries=L.Canaries.generate()))
+smoke_ok = err(lambda: SC.Scheduler(contract("hc3"), None, None, L, None, None, tag="smoke", witnesses=None,
+                                    parent_env={}, catcher_url=""))
+check("R-HOME-CANARY: a scored scheduler without home canaries refuses at construction, by name; with them it is "
+      "made; a smoke one is left to the CLI", "R-HOME-CANARY" in no_can and with_can == smoke_ok == "no error",
+      f"{no_can} | {with_can} | {smoke_ok}")
 
 N_THREADS, PER_THREAD = 8, 2
 

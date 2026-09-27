@@ -136,6 +136,10 @@ class H:
             time.sleep(0.1)
 
     def hello(self):
+        os.makedirs(os.path.join(shared, "canary"), exist_ok=True)            # R-HOME-CANARY: seen at the child's start
+        with open(os.path.join(shared, "canary", "-".join([spec["arm"], spec["run"], spec["unit"], spec["stage"]])),
+                  "w") as f:
+            f.write("yes" if os.path.isfile(os.path.join(os.environ.get("HOME", ""), ".claude", "CLAUDE.md")) else "no")
         if knobs.get("bad_hello"):                    # another arm's hello: a protocol break the scheduler kills
             return {"protocol": B.PROTOCOL, "arm": "not-" + spec["arm"], "stage": spec["stage"], "pid": os.getpid()}
         if spec["stage"] == "write":                  # a live WRITE child: its marker goes at end_write
@@ -373,12 +377,14 @@ try:
             EV.append(("barrier_read", block))
             return {"changelog": "2026-09-10"}
 
-    for sub in ("live", "passed", "seen", "ops"):
+    for sub in ("live", "passed", "seen", "ops", "canary"):
         shutil.rmtree(SHARED / sub, ignore_errors=True)
     (SHARED / "live").mkdir()
     status2 = SL.StatusLog(TMP / "STATUS2", local_tz=dt.timezone.utc)
+    CAN = L.Canaries.generate()
     s2 = SC.Scheduler(C, FakeProxyCtl(), status2, L, Clock(), FakeOllama(), tag="smoke", witnesses=FakeWitnesses(),
-                      parent_env=dict(os.environ), catcher_url="http://127.0.0.1:47001", hooks=Hooks())
+                      parent_env=dict(os.environ), catcher_url="http://127.0.0.1:47001", hooks=Hooks(),
+                      canaries=tuple(CAN.values.values()), home_canaries=CAN)
     arms6 = {"a1": launcher("a1", expect=4), "a2": launcher("a2", expect=4), "a3": launcher("a3", expect=4, store="memory")}
     answers = []
 
@@ -417,6 +423,17 @@ try:
           "with its own questions", answers and all(q_.endswith(f"-{a_}") for a_, _r, _u, q_, _m in answers)
           and {(a_, u_) for a_, _r, u_, _q, _m in answers} == {(a_, u_) for a_ in arms6 for u_ in ("v1", "v2", "v3", "v4")},
           str(sorted({(a_, q_) for a_, _r, _u, q_, _m in answers})[:6]))
+    seen_c = {p.name: p.read_text() for p in (SHARED / "canary").iterdir()} if (SHARED / "canary").exists() else {}
+    sy = [json.loads(x) for x in L.spawns_log(C).read_text(encoding="utf-8").splitlines() if '"stand": "SY"' in x]
+    want_sha = {k: hashlib.sha256(CAN.values[k].encode()).hexdigest() for k in SC.HOME_CANARY_FILES}
+    log_bytes = L.spawns_log(C).read_bytes()
+    check("R-HOME-CANARY: every child the stand spawned found the canaries in its fake home at its start - every arm, "
+          "both stages", len(seen_c) == len(sy) > 0 and set(seen_c.values()) == {"yes"},
+          f"{len(seen_c)} {len(sy)} {sorted(set(seen_c.values()))}")
+    check("R-HOME-CANARY: each spawn record names the planted files and each value's sha256 - and no value is in the log",
+          sy and all(e.get("home_canaries") == {"files": sorted(SC.HOME_CANARY_FILES.values()), "sha256": want_sha}
+                     for e in sy) and not any(v.encode() in log_bytes for v in CAN.values.values()),
+          str(sy[0].get("home_canaries") if sy else None))
     disk_reads = [o for o in reads if o["arm"] in ("a1", "a2")]
     check("T14: a disk arm reads in a fresh <unit>.q process, never in the write stage's directory",
           disk_reads and all(Path(o["cwd"]).name == f"{o['unit']}.q" for o in disk_reads), str(disk_reads[:2]))
@@ -542,7 +559,8 @@ try:
                 return {"check_id": cid, "complete": True}
 
         s = SC.Scheduler(C, FakeProxyCtl(), st, L, Clock(), gpu, tag=tag, witnesses=W(), parent_env=dict(os.environ),
-                         catcher_url="http://127.0.0.1:47001", hooks=StandHooks(ev, tree_ok, gate))
+                         catcher_url="http://127.0.0.1:47001", hooks=StandHooks(ev, tree_ok, gate),
+                         home_canaries=L.Canaries.generate() if tag == "scored" else None)
         sp = SC.StandPlan(stand=stand, runs=("r1",), launchers={"a1": launcher("a1", expect=1)}, campaign_seed=20260927,
                           unit_tokens={u: 1000 for u in ("w1", "w2")}, medians={("a1", stand): 0.001},
                           write_ops=lambda a, r, u: OPS(r, u), read_plan=lambda a, u: [SC.ReadReq(qid=f"{u}-q", query="x")],
@@ -623,7 +641,8 @@ try:
         vc = VirtualClock()
         st = SL.StatusLog(TMP / sfile, now=vc.utc, local_tz=dt.timezone.utc)
         s = SC.Scheduler(C, FakeProxyCtl(), st, L, vc, None, tag=tag, witnesses=FakeWitnesses(),
-                         parent_env=dict(os.environ), catcher_url="http://127.0.0.1:47001")
+                         parent_env=dict(os.environ), catcher_url="http://127.0.0.1:47001",
+                         home_canaries=L.Canaries.generate() if tag == "scored" else None)
         if tag == "scored":
             st.campaign_start(anchor="c" * 40, prereg="d" * 64, freeze="e" * 64)
         sp = SC.StandPlan(stand=stand, runs=("r1",), launchers={"a1": launcher("a1", expect=1, knobs=knobs)},
@@ -916,7 +935,8 @@ try:
         if tag == "scored":
             st.campaign_start(anchor="c" * 40, prereg="d" * 64, freeze="e" * 64)
         s = SC.Scheduler(C, PC12(), st, L, Clock(), None, tag=tag, witnesses=W12(), parent_env=dict(os.environ),
-                         catcher_url="http://127.0.0.1:47001")
+                         catcher_url="http://127.0.0.1:47001",
+                         home_canaries=L.Canaries.generate() if tag == "scored" else None)
         names = sorted(launchers)
         seed = next(x for x in range(1, 5000)
                     if SC.arm_order(names, campaign_seed=x, stand=stand, block="b01")[0] == names)   # the rows' order

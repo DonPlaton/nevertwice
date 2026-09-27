@@ -65,6 +65,9 @@ DIED_WAIT_S = 10.0                                       # B-RC: a child whose s
 KILLED = "SIGKILL"                                       # D2: a unit killed by the scheduler is named by the signal
 #: B-HELLO: the stage a write child's hello may name - a memory-store arm's one process serves both stages and says so
 WRITE_HELLO_STAGES = {"disk": ("write",), "memory": ("write", "both")}
+#: R-HOME-CANARY: the decoys launch.plant_canaries writes into a unit's fake home, by the canary each holds.
+HOME_CANARY_FILES = {"decoy_claude_md": ".claude/CLAUDE.md", "decoy_credentials": ".claude/.credentials.json",
+                     "decoy_claude_json": ".claude.json"}
 UNREAD = "unread"                                        # B-CL: what a STAND line says for a value nobody read
 _NOT_READ = (None, "", UNREAD, "unknown")                # a change-log read that gave any of these read nothing
 
@@ -291,13 +294,17 @@ class Scheduler:
     def __init__(self, contract: Any, proxy_ctl: Any, status: Any, launch: Any, clock: Any, ollama_ctl: Any, *,
                  tag: str, witnesses: Any, parent_env: Mapping[str, str], catcher_url: str,
                  canaries: Sequence[str] = (), popen: Callable[..., Any] = subprocess.Popen,
-                 concurrency: int | None = None, hooks: Any = None) -> None:
+                 concurrency: int | None = None, hooks: Any = None, home_canaries: Any = None) -> None:
         if tag not in TAGS:
             raise SchedulerError(f"tag {tag!r} is not one of {TAGS}")
+        if tag == "scored" and home_canaries is None:
+            raise SchedulerError("a scored scheduler plants the home canaries in every unit's home (R-HOME-CANARY: "
+                                 "without them the P0h boundary is not measured) - none were given")
         self.c, self.proxy_ctl, self.status, self.launch = contract, proxy_ctl, status, launch
         self.clock, self.ollama_ctl, self.tag, self.witnesses = clock, ollama_ctl, tag, witnesses
         self.parent_env, self.catcher_url, self.canaries = dict(parent_env), catcher_url, tuple(canaries)
         self.popen, self.concurrency, self.hooks = popen, concurrency, hooks
+        self.home_canaries = home_canaries           # R-HOME-CANARY: a launch.Canaries, planted in every unit's home
         self._spawn_lock = threading.Lock()
         self.pid = os.getpid()                        # D3: every START names the scheduler's pid
 
@@ -311,6 +318,7 @@ class Scheduler:
                                  f"native witness's job object (W1) nor psutil (R-LAUNCHER); nothing was spawned")
         with self._spawn_lock:
             d = dirs if dirs is not None else self.launch.make_unit_dirs(self.c, stand, run, arm, unit)
+            planted = self._plant(d)                      # R-HOME-CANARY: before the child exists
             spec = build(d)
             env = self.launch.build_env(self.c, parent_env=self.parent_env, unit=d, path_dirs=spec.path_dirs,
                                         declared=dict(spec.declared), catcher_url=self.catcher_url,
@@ -322,7 +330,8 @@ class Scheduler:
             try:
                 child = self.launch.spawn(
                     self.c, list(spec.argv), env=env, cwd=d.cwd,
-                    record={"role": role, "stand": stand, "run": run, "arm": arm, "unit": unit},
+                    record={"role": role, "stand": stand, "run": run, "arm": arm, "unit": unit,
+                            "home_canaries": planted},
                     parent_env=self.parent_env, catcher_url=self.catcher_url, token_names=spec.token_names,
                     claude_names=spec.claude_names, env_exception=spec.env_exception,
                     argv_exception=spec.argv_exception, canaries=self.canaries, popen=self.popen,
@@ -332,6 +341,16 @@ class Scheduler:
                 if err is not None:
                     err.close()                  # the child holds its own handle
         return child, d
+
+    def _plant(self, d: Any) -> dict | None:
+        """R-HOME-CANARY: the home canaries in the unit's fake home - every arm alike; the record gets their file names
+        and the sha256 of each value, never a value. None when the scheduler was given none."""
+        if self.home_canaries is None:
+            return None
+        self.launch.plant_canaries(d, self.home_canaries)
+        vals = self.home_canaries.values
+        return {"files": sorted(HOME_CANARY_FILES.values()),
+                "sha256": {k: hashlib.sha256(vals[k].encode("utf-8")).hexdigest() for k in sorted(HOME_CANARY_FILES)}}
 
     def write_turn(self, launcher: Any, *, stand: str, runs: Sequence[str], units: Sequence[str],
                    ops_for: Callable[[str, str], Sequence[Mapping]], ceilings: Mapping[str, float],
