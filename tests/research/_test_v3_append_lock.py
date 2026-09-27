@@ -30,6 +30,8 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
+sys.path.insert(0, str(HERE.parent))
+import _env_guard  # noqa: F401,E402  hermetic: scrub store env before any project import
 LAUNCH = ROOT / "research" / "v3" / "launch.py"
 _spec = importlib.util.spec_from_file_location("v3_launch_lock", LAUNCH)
 L = importlib.util.module_from_spec(_spec)

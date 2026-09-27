@@ -25,6 +25,8 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
+sys.path.insert(0, str(HERE))
+import _env_guard  # noqa: F401,E402  hermetic: scrub store env before any project import
 _spec = importlib.util.spec_from_file_location("v3_subsample", ROOT / "research" / "v3" / "subsample.py")
 S = importlib.util.module_from_spec(_spec)
 sys.modules["v3_subsample"] = S

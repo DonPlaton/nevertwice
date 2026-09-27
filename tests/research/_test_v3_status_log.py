@@ -25,6 +25,8 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
+sys.path.insert(0, str(HERE.parent))
+import _env_guard  # noqa: F401,E402  hermetic: scrub store env before any project import
 
 
 def _load(name: str, path: Path):
