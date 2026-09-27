@@ -120,9 +120,22 @@ class Inject(L.PsutilSampler):
         return rows, errors
 
 
+# W7 (CI 36355698197, a slow runner: 155 ms a sample at a 0.2 s tick gave 10 of 15 samples, "check incomplete"): the
+# rows that need a complete check measure it against their OWN window - their tick is 3x this machine's measured
+# sample cost (at least 0.2 s) and their window 10 ticks (at least the old length). The product's criterion (>= 0.9
+# of the ticks) is unchanged.
+_probe = L.NativeEgressWitness(sampler=L.PsutilSampler(), tick_s=0.3)
+_probe.start()
+time.sleep(1.0)
+SAMPLE_COST_S = _probe.stop().sample_cost_ms / 1000
+ROW_TICK = max(0.2, 3 * SAMPLE_COST_S)
+ROW_WINDOW, W7_HOLD = max(2.0, 10 * ROW_TICK), max(2.5, 10 * ROW_TICK)
+print(f"       rows needing a complete check: tick {ROW_TICK:.2f} s, window {ROW_WINDOW:.2f} s, hold {W7_HOLD:.2f} s "
+      f"(3 x the measured sample cost {1000 * SAMPLE_COST_S:.1f} ms)")
+
 try:
     for label, sampler in (("real", L.PsutilSampler()), ("injected", Inject())):
-        nat = L.NativeEgressWitness(sampler=sampler, tick_s=0.2)
+        nat = L.NativeEgressWitness(sampler=sampler, tick_s=ROW_TICK)
         nat.allow_listener(os.getpid(), "the test's own server")      # W7: the loopback server lives in this process
         W = L.Witnesses(C, native=nat, fs=None)
         unit = L.make_unit_dirs(C, "s", "r", "a", f"u-{label}")
@@ -134,7 +147,7 @@ try:
                       stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = kid.process.communicate(timeout=60)
         GC_PID[0] = int(out.decode().strip() or 0)
-        time.sleep(2.0)                                   # the check window's length (its coverage is measured over it)
+        time.sleep(ROW_WINDOW)                            # the check window's length (its coverage is measured over it)
         if os.name == "nt":                               # ... and the Windows claims wait for their event, not a clock
             wait_until(lambda: GC_PID[0] in nat.tracked
                        and (nat.result.rows_seen > 0 if label == "real" else nat.result.hits >= 1))
@@ -196,12 +209,13 @@ try:
     # then a listener inside the tree.
     outside = subprocess.Popen([sys.executable, "-c", "import socket, sys, time; s = socket.socket(); "
                                 "s.bind(('127.0.0.1', 0)); s.listen(4); print(s.getsockname()[1], flush=True); "
-                                "c = [s.accept() for _ in range(2)]; time.sleep(6)"],
+                                f"c = [s.accept() for _ in range(2)]; time.sleep({W7_HOLD + 3:.2f})"],
                                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL)
     OUT_PORT = int(outside.stdout.readline().decode().strip())
-    HOLD = f"import socket, time; s = socket.create_connection(('127.0.0.1', {OUT_PORT})); time.sleep(2.5); s.close()"
+    HOLD = (f"import socket, time; s = socket.create_connection(('127.0.0.1', {OUT_PORT})); time.sleep({W7_HOLD:.2f}); "
+            "s.close()")
     for label, allow in (("w7-outside", False), ("w7-allowed", True)):
-        nat = L.NativeEgressWitness(sampler=L.PsutilSampler(), tick_s=0.2)
+        nat = L.NativeEgressWitness(sampler=L.PsutilSampler(), tick_s=ROW_TICK)
         if allow:
             nat.allow_listener(outside.pid, "stand-in for the v3 proxy")
         W = L.Witnesses(C, native=nat, fs=None)
@@ -223,8 +237,8 @@ try:
     outside.kill()
     SELF = ("import socket, threading, time; s = socket.socket(); s.bind(('127.0.0.1', 0)); s.listen(1); "
             "threading.Thread(target=s.accept, daemon=True).start(); "
-            "c = socket.create_connection(s.getsockname()); time.sleep(2.5); c.close()")
-    nat = L.NativeEgressWitness(sampler=L.PsutilSampler(), tick_s=0.2)
+            f"c = socket.create_connection(s.getsockname()); time.sleep({W7_HOLD:.2f}); c.close()")
+    nat = L.NativeEgressWitness(sampler=L.PsutilSampler(), tick_s=ROW_TICK)
     W = L.Witnesses(C, native=nat, fs=None)
     unit = L.make_unit_dirs(C, "s", "r", "a", "u-w7-self")
     env = L.build_env(C, parent_env=os.environ, unit=unit, path_dirs=[Path(sys.executable).parent], declared={},
