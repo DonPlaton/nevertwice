@@ -147,11 +147,11 @@ def bind(spec: Mapping[str, Any], env: Mapping[str, str]) -> tuple[Any, dict]:
     if not _tag_present(tags, spec["embed_tag"]):
         raise Refused(f"the embed tag {spec['embed_tag']!r} is not in Ollama; mem0's embedder would pull it")
     import mem0  # noqa: PLC0415 - the venv's product (Q-46-1: never this file)
-    from mem0 import Memory  # noqa: PLC0415
     rec["product"] = {"name": "mem0ai", "version": getattr(mem0, "__version__", None),
                       "file": str(Path(mem0.__file__).resolve())}
     if HERE in Path(mem0.__file__).resolve().parents:
         raise Refused("import mem0 found a module in the arm's directory, not the venv's package")
+    from mem0 import Memory  # noqa: PLC0415
     store.mkdir(parents=True, exist_ok=True)
     cfg = mem0_config(spec)
     rec["config"] = cfg
