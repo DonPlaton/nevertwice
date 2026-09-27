@@ -10,7 +10,8 @@
   exactly its status_ids in run_files, keeps brackets to Point B product (Q7), refuses a blocked arm with numbers;
 * P0: each clause a-j fires on its own trigger and stays silent on the clean fixture; P0j reads K87 checks 1-2 inside
   the row's branch (B-DUP): (a) exact against the adapter, and a tokens delta, when there is one, exactly 0
-  (Q-K87-1), (b) calls and tokens within 1 % of the proxy's, the bound
+  (Q-K87-1), (b) logical calls and tokens within 1 % of the proxy's (logical against logical: the proxy's HTTP
+  calls hold transport retries, R-K87-1), the bound
   inclusive, logical <= HTTP calls in (a) and (b), (c) single-witness only with the context's single_witness_ok;
 * the auditor's tools, where present (.loop - outside the repository by design, R12; a named SKIP in CI): m5 v3 --freeze
   PASSes F-A1 (product B), F-A2 (retrieval) and F-A3 (the all-0 sensitivity row) and FAILs each one-field asymmetry
@@ -410,8 +411,8 @@ check("P0j: a reconciliation branch outside the slot", has(flags(lambda r: r["re
                                                             "j"))
 # K87 checks 1-2 inside the branch (the auditor's B-DUP ruling: each branch its own predicate, a row per predicate)
 ABC = A.P0Context(**{**CTX.__dict__, "reconciliation_branches": frozenset({"a", "b", "c"})})
-REC_B = {"proxy_calls": 1000, "adapter_calls": None, "product_logical_calls": 990, "tokens_delta_pct": -1.0,
-         "serverlog_delta": 0, "branch": "b"}
+REC_B = {"proxy_calls": 1000, "proxy_logical_calls": 1000, "adapter_calls": None, "product_logical_calls": 990,
+         "tokens_delta_pct": -1.0, "serverlog_delta": 0, "branch": "b"}
 
 
 def rec(over: dict, ctx=ABC, base=None) -> list[str]:
@@ -440,6 +441,14 @@ check("Q-K87-1 ... a bool or NaN delta on an adapter branch is P0j, never read a
 check("K87 (b): calls and tokens at exactly -1 % are inside the tolerance (the boundary is inclusive)",
       not has(rec({}, base=REC_B), "j"), str(rec({}, base=REC_B)))
 check("K87 (b): ... and tokens at exactly +1 % too", not has(rec({"tokens_delta_pct": 1.0}, base=REC_B), "j"))
+check("R-K87-1 (b): 3 % transport retries with equal logical calls are not P0j (the product's calls are logical)",
+      not has(rec({"proxy_calls": 1030, "proxy_logical_calls": 1000, "product_logical_calls": 1000}, base=REC_B), "j"),
+      str(rec({"proxy_calls": 1030, "proxy_logical_calls": 1000, "product_logical_calls": 1000}, base=REC_B)))
+check("R-K87-1 (b): logical calls 2 % apart are P0j, whatever the HTTP count",
+      any("logical calls" in x and "beyond 1 %" in x for x in rec({"proxy_calls": 1030, "proxy_logical_calls": 1000,
+                                                                    "product_logical_calls": 980}, base=REC_B)))
+check("R-K87-1 (b): no logical call count from the proxy on a product branch",
+      any("proxy's logical call count" in x for x in rec({"proxy_logical_calls": None}, base=REC_B)))
 check("P0j (b): calls beyond 1 % of the proxy's (989 of 1000)",
       any("calls" in x for x in rec({"product_logical_calls": 989}, base=REC_B)))
 check("P0j (b): tokens beyond 1 % (-1.01 %)", any("tokens" in x for x in rec({"tokens_delta_pct": -1.01}, base=REC_B)))

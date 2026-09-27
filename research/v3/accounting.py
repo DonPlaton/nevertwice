@@ -425,11 +425,14 @@ def reconciliation_inputs(calls: Iterable[Mapping[str, Any]], *, arm: str, run: 
     """The §2.3 reconciliation numbers of one arm-run (K87 checks 1-2): the HTTP calls and tokens the proxy saw on the
     product's own port (the arm's write port, both stages; the reader's port is the harness's), the adapter's and the
     product's counters as given, tokens_delta_pct = the product's tokens against the proxy's in percent, and
-    product_retries = HTTP - logical calls. No verdict here: the branch's predicate is artifact's P0j."""
+    product_retries = HTTP - logical calls. proxy_logical_calls (R-K87-1) counts the episodes of the port's (unit, key)
+    groups - a body retried after transport failures is one logical call, a body written twice is two - which branch
+    (b) compares with the product's logical calls. No verdict here: the branch's predicate is artifact's P0j."""
     own = [c for c in _arm_run(calls, arm, run) if not c.get("refused") and c.get("port_role") == "write"]
     http = len(own)
+    logical = sum(len(v["classes"]) for v in classify_keys(own).values())
     tokens = sum(int((c.get("usage") or {}).get(k) or 0) for c in own for k in ("prompt", "completion"))
-    return {"proxy_calls": http, "proxy_tokens": tokens, "adapter_calls": adapter_calls,
+    return {"proxy_calls": http, "proxy_logical_calls": logical, "proxy_tokens": tokens, "adapter_calls": adapter_calls,
             "product_logical_calls": product_calls,
             "tokens_delta_pct": None if product_tokens is None or not tokens else 100.0 * (product_tokens - tokens) / tokens,
             "serverlog_delta": serverlog_delta, "branch": branch,

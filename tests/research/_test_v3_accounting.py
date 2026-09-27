@@ -541,7 +541,7 @@ check("a read with no build record refuses by its path (K60 needs one)",
       "c/other.json" in err(lambda: AC.cache_inputs([{"path": "c/other.json", "sha256": "6" * 64, "hits": 1, "misses": 0}], B)))
 
 print("\n- TB4.10b' reconciliation_inputs (K87): the numbers only; the verdict is artifact's P0j -")
-rl = [call("h1", t0=1), call("h1", t0=1.5), call("h2", t0=2, unit="r1.u2"), call("h3", stage="questions", t0=40),
+rl = [call("h1", t0=1, status=500), call("h1", t0=1.5), call("h2", t0=2, unit="r1.u2"), call("h3", stage="questions", t0=40),
       call("ans", role="reader", stage="questions", t0=41), call("zz", arm="zep", t0=1),
       dict(call("mm2", t0=3), refused="model_mismatch", status=None, complete=False)]
 ri = AC.reconciliation_inputs(rl, arm="mem0", run="r1", branch="a", adapter_calls=4, product_calls=3, product_tokens=462)
@@ -549,6 +549,10 @@ check("HTTP calls and tokens of the product's own port (the write port, both sta
       "refused calls are not the product's", ri["proxy_calls"] == 4 and ri["adapter_calls"] == 4, str(ri))
 check("tokens_delta_pct = the product's tokens against the proxy's; product_retries = HTTP - logical",
       abs(ri["tokens_delta_pct"] - 5.0) < 1e-12 and ri["proxy_tokens"] == 440 and ri["product_retries"] == 1, str(ri))
+check("R-K87-1: the proxy's logical calls are the episodes of the product port's (unit, key) groups - a retried "
+      "body is one, a body written twice is two", ri.get("proxy_logical_calls") == 3
+      and AC.reconciliation_inputs([call("d", t0=1), call("d", t0=2)], arm="mem0", run="r1",
+                                   branch="b").get("proxy_logical_calls") == 2, str(ri.get("proxy_logical_calls")))
 check("the row carries rev1 §2.3's reconciliation fields", {"proxy_calls", "adapter_calls", "product_logical_calls",
                                                             "tokens_delta_pct", "serverlog_delta", "branch"} <= set(ri))
 k87 = A.P0Context(reconciliation_branches=frozenset({"a", "b"}))

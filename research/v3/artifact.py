@@ -568,8 +568,9 @@ def _num(v) -> bool:
 def p0j(row: Mapping, ctx: P0Context, arm: str) -> list[str]:
     """K87 checks 1-2 inside the row's branch of the reconciliation-granularity slot, one predicate per branch:
     (a) the adapter's HTTP calls equal the proxy's, exactly, and a tokens delta, when the row has one, is exactly 0
-    (Q-K87-1); (b) the product's logical calls and the tokens within 1 %
-    of the proxy's, the bound inclusive (tokens_delta_pct is the product's delta against the proxy, in percent);
+    (Q-K87-1); (b) the product's logical calls within 1 % of the proxy's logical calls - the episodes of its (unit,
+    key) groups, since its HTTP calls hold transport retries (R-K87-1) - and the tokens within 1 %, the bound inclusive
+    (tokens_delta_pct is the product's delta against the proxy, in percent);
     in (a) and (b) logical calls never exceed HTTP calls; (c) single-witness only when single_witness_ok holds for this
     arm (the recording-vs-raw-forward A/B passed for its surface class and every unit's footprint is > 0)."""
     rec = row.get("reconciliation")
@@ -592,12 +593,14 @@ def p0j(row: Mapping, ctx: P0Context, arm: str) -> list[str]:
         if td is not None and not (_num(td) and td == 0.0):
             out.append(f"P0j: tokens {td!r} % against the proxy - branch a is exact (Q-K87-1)")
     if branch == "b":
-        td = rec.get("tokens_delta_pct")
+        td, plog = rec.get("tokens_delta_pct"), rec.get("proxy_logical_calls")
+        if not (_int(plog) and plog >= 0):
+            out.append("P0j: branch b without the proxy's logical call count (R-K87-1)")
         if not _int(logical) or not _num(td):
             out.append("P0j: branch b without the product-side counter (logical calls and tokens)")
         else:
-            if abs(logical - http) > 0.01 * http:
-                out.append(f"P0j: the product counted {logical} calls, the proxy {http} - beyond 1 % (branch b)")
+            if _int(plog) and plog >= 0 and abs(logical - plog) > 0.01 * plog:
+                out.append(f"P0j: the product counted {logical} logical calls, the proxy {plog} - beyond 1 % (branch b)")
             if abs(td) > 1.0:
                 out.append(f"P0j: tokens {td:+.2f} % against the proxy - beyond 1 % (branch b)")
     if branch in ("a", "b") and _int(logical) and logical > http:
