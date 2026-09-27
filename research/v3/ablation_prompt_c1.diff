@@ -1,0 +1,19 @@
+--- EXTRACTION_PROMPT (shipped)
++++ EXTRACTION_PROMPT (ablation c1)
+@@ -56,15 +56,7 @@
+ 
+ LANGUAGE: {language_rule} Tags and entities stay lowercase ASCII kebab-case.
+ 
+-All tags lowercase. Empty categories = []. If the session is trivial (reading/discussion),
+-return everything empty and fill only session_summary.
+-
+-FIELD project_relevant - CRITICAL for memory hygiene:
+-  - true  - the session is genuinely about project {project_hint} (its code/research/tasks).
+-  - false - offtopic: an unrelated question, personal troubleshooting (games, OS, hardware
+-            off-topic), a different project, a model switch, an empty dialog. THEN return
+-            patterns/mistakes/decisions = [] and context_update = "", fill ONLY session_summary.
+-  Never pollute a project's knowledge with offtopic material - empty beats wrong.
++All tags lowercase. Empty categories = [].
+ 
+ FIELD supersedes (on every item) - keeps the memory current:
+   If an item REPLACES or REFUTES a note already listed above (status changed, decision
