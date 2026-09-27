@@ -539,13 +539,28 @@ try:
         return None
 
     ls_ = {a: via_sched(a) for a in ("nevertwice-ablation", "a-mem", "mem0", "bm25-floor")}
+    def decl(a, name):
+        """A LaunchSpec's declared value, or None - a scheduler that drops declared_for FAILs this row by name."""
+        return str(((ls_.get(a) and ls_[a].declared) or {}).get(name))
+
     check("PLL: through the scheduler's ChildArmLauncher - the unit's own URL and window, the token, our exception, the "
-          "competitor's copy", ls_["nevertwice-ablation"] is not None
-          and ls_["nevertwice-ablation"].declared["NEVERTWICE_MAX_TRANSCRIPT"] == "5000"
-          and "/u/r9.u1/" in ls_["nevertwice-ablation"].declared["DEEPSEEK_URL"]
-          and ls_["a-mem"].declared["OPENAI_BASE_URL"].endswith("/u/r9.u1/v1")
+          "competitor's copy", all(ls_.get(a) is not None for a in ls_)
+          and decl("nevertwice-ablation", "NEVERTWICE_MAX_TRANSCRIPT") == "5000"
+          and "/u/r9.u1/" in decl("nevertwice-ablation", "DEEPSEEK_URL")
+          and decl("a-mem", "OPENAI_BASE_URL").endswith("/u/r9.u1/v1")
           and ls_["mem0"].argv_exception is None and "_code" in ls_["mem0"].argv[2]
           and ls_["bm25-floor"].argv_exception == {2: ls_["bm25-floor"].argv[2]}, str(ls_))
+    fewer, more = pll("mem0"), pll("mem0")
+    fewer.spec_keys = tuple(k for k in fewer.spec_keys if k != "dated")     # the plan gives a key the adapter lacks
+    more.spec_keys = (*more.spec_keys, "extra_key")                          # the adapter wants a key the plan lacks
+    r_few = refused(lambda: fewer.spec_for("write", stand="S4", run="r1", unit="u1", dirs=dirs("mem0", "r1", "u1"),
+                                           write_dirs=None))
+    r_more = refused(lambda: more.spec_for("write", stand="S4", run="r1", unit="u1", dirs=dirs("mem0", "r1", "u1"),
+                                           write_dirs=None))
+    check("PLL (PP16): a spec whose keys differ from the adapter's SPEC_KEYS either way - a key the adapter lacks, or "
+          "one it wants that the plan does not give - is refused by name before any spawn",
+          "differ from arm_mem0.py's SPEC_KEYS" in r_few and "'dated'" in r_few
+          and "differ from arm_mem0.py's SPEC_KEYS" in r_more and "'extra_key'" in r_more, f"{r_few} | {r_more}")
 
     print("\n- AN (§4.3a, §5.2, §8.1, Q8): the Answerer -")
     TPL = _load("v3_templates_for_plan_t", ROOT / "research" / "v3" / "templates.py")
@@ -617,7 +632,8 @@ try:
                                                       == "u1:q2" for c in calls), str(row2)[:200])
     outs = {}
     for label, reply in (("none", (None, {"error": "ConnectionRefusedError"})), ("502", (502, {"error": "x"})),
-                         ("no-choices", (200, {"choices": []}))):
+                         ("no-choices", (200, {"choices": []})),
+                         ("500 with choices", (500, {"choices": [{"message": {"content": "SHORT ANSWER: x"}}]}))):
         script["replies"] = [reply]
         calls.clear()
         try:
@@ -627,8 +643,9 @@ try:
             outs[label] = ("reaskable", ans.key_question.get(("u1", PXM.request_key(calls[0][2], "bm25-floor"))))
         except Exception as e:  # noqa: BLE001 - not the scheduler's re-ask: the row's FAIL
             outs[label] = f"{type(e).__name__}: {e}"
-    check("AN: no reply, a 502, a reply without choices - each the scheduler's ReaskableError (W3 re-asks it), its "
-          "request keyed all the same", all(v == ("reaskable", "u1:q1") for v in outs.values()), str(outs))
+    check("AN: no reply, a 502, a reply without choices, a 500 that carries choices (PP11: never taken for an answer) "
+          "- each the scheduler's ReaskableError (W3 re-asks it), its request keyed all the same",
+          len(outs) == 4 and all(v == ("reaskable", "u1:q1") for v in outs.values()), str(outs))
     script["replies"] = []
     ra = PL.Answerer("S4", questions=QS, reader=reader, post=fake_post, count=wcount, cut=wcut,
                      answers_root=TMP / "ans2", reaskable=SC.ReaskableError)
