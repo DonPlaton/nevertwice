@@ -72,7 +72,12 @@ out = z(f"# branch.oid {ANCHOR}", "# branch.head invariants/v3",
         "2 R. N... 100644 100644 100644 " + "c" * 40 + " " + "c" * 40 + " R100 new name.py", "old name.py",
         "u UU N... 100644 100644 100644 100644 " + "d" * 40 + " " + "d" * 40 + " " + "d" * 40 + " conflict.py",
         "? research/scratch.txt", "! .loop/m5_check.py")
-st = TC.parse(out)
+try:
+    st, parse_err = TC.parse(out), None
+except TC.TreeError as e:                   # a rename whose original path is not read as its own is refused here
+    st, parse_err = TC.TreeState(), e
+check("the listing with a rename parses - its original path is read as part of the rename entry",
+      parse_err is None, repr(parse_err))
 check("the head and the branch", st.head == ANCHOR and st.branch == "invariants/v3")
 check("tracked changes: an ordinary change, a rename with both paths (a path may hold a space), an unmerged path",
       st.tracked == [(".M", "nevertwice/api.py"), ("R.", "new name.py"), ("UU", "conflict.py")] and st.renamed_from == ["old name.py"],

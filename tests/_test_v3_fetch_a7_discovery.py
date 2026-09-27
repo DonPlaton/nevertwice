@@ -168,6 +168,48 @@ try:
           "'no such version'", full["repos"][SM]["tags_page_full"] is True and full["repos"][SM]["releases_page_full"] is True
           and full["repos"][CG]["tags_page_full"] is False, json.dumps({k: full["repos"][SM].get(k) for k in (
               "tags_page_full", "releases_page_full")}))
+    print("\n- main(): plan d3 only in window a7-discovery, on the plan's hosts - refused before any spawn -")
+    import contextlib  # noqa: E402,PLC0415
+    import io  # noqa: E402,PLC0415
+    from types import SimpleNamespace  # noqa: E402,PLC0415
+
+    class _WouldSpawn(Exception):
+        pass
+
+    def run_main(argv, manifest):
+        """main() with the contract, the corpus pins and the window stubbed - a main that gets past its checks raises
+        _WouldSpawn instead of starting anything; (rc or 'spawned', stderr)."""
+        mp = TMP / "manifest_main.json"
+        mp.write_text(json.dumps(manifest), encoding="utf-8")
+        saved = (F._load, F.MANIFEST, F.run_child_window)
+        stub_l = SimpleNamespace(Contract=SimpleNamespace(default=lambda: SimpleNamespace(runs_root=TMP)),
+                                 network_via_port=lambda c: 47999)
+        F._load = lambda name, path: stub_l if name == "v3_launch" else SimpleNamespace(PINS={})
+        F.MANIFEST = mp
+
+        def no_spawn(*a_, **k_):
+            raise _WouldSpawn("main reached the window")
+        F.run_child_window = no_spawn
+        err = io.StringIO()
+        try:
+            with contextlib.redirect_stderr(err):
+                rc = F.main(argv)
+        except _WouldSpawn:
+            rc = "spawned"
+        finally:
+            F._load, F.MANIFEST, F.run_child_window = saved
+        return rc, err.getvalue()
+
+    tail = ["--run", "t", "--python", sys.executable]
+    r1 = run_main(["--window", "a3-discovery", "--plan", "d3", *tail], MANI)
+    r2 = run_main(["--window", "a7-discovery", "--plan", "d1", *tail], MANI)
+    check("DD: plan d3 in window a3-discovery, and window a7-discovery with plan d1, are refused (rc 2, named)",
+          all(rc == 2 and "plan d3 runs in window a7-discovery" in msg for rc, msg in (r1, r2)), f"{r1} {r2}")
+    other = json.loads(json.dumps(MANI))
+    other["windows"]["a7-discovery"]["hosts"] = sorted(F.D3_HOSTS + ["registry.npmjs.org"])
+    r3 = run_main(["--window", "a7-discovery", "--plan", "d3", *tail], other)
+    check("DE: a manifest whose a7-discovery hosts are not the plan's is refused (rc 2, named)",
+          r3[0] == 2 and "are not the plan's" in r3[1], str(r3))
     check("the tags and releases requests exist only for the tagged repositories",
           sorted(r["id"] for r in F.d3_phase_a()["requests"] if r["id"].startswith(("ghtags", "ghreleases")))
           == sorted([f"ghtags:{SM}", f"ghreleases:{SM}", f"ghtags:{CG}", f"ghreleases:{CG}"]))

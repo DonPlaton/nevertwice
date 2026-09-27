@@ -176,6 +176,16 @@ try:
     res, c, heads = window("no-search")
     check("a search the registry does not answer is a named problem (not the finding)",
           any("the search" in p for p in res.get("problems") or []) and res.get("window_problems"), str(res))
+    check("NC: discover() names a third request even beside the two declared GETs",
+          any("not exactly the two" in p for p in D.discover({"run": "x", "jobs": [
+              {"unit": str(TMP), "summary": [{"id": "npm:package-document", "status": 404},
+                                            {"id": "npm:search", "ok": False, "error": "x"},
+                                            {"id": "npm:tarball", "ok": True}]}]})["problems"]))
+    j500 = "job 0 request npm:package-document: status 500"
+    j404 = "job 0 request npm:package-document: status 404"
+    check("NB: window_problems keeps a package-document 500 (a fault) and drops only its 404 (the finding)",
+          D.window_problems({"problems": [j500, j404, "job 0: the fetch child exited with 3"]}) == [j500],
+          str(D.window_problems({"problems": [j500, j404, "job 0: the fetch child exited with 3"]})))
     check("discover() names any request beyond the two declared GETs",
           any("not exactly the two" in p for p in D.discover({"run": "x", "jobs": [
               {"unit": str(TMP), "summary": [{"id": "npm:package-document", "status": 404},
