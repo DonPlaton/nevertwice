@@ -370,14 +370,16 @@ check("B5 a word ending in sk- is not a key (desk-...)", not any("provider key" 
 # compared in memory, never printed; the check names the variable, never the value.
 SECRET_VALUE = "FAKEPROVIDERVALUE" + "0123456789abcdef"
 (TMP / "secrets").mkdir(exist_ok=True)
-(TMP / "secrets" / "provider.env").write_text(f"# a comment\nPROVIDER_LOOKALIKE='{SECRET_VALUE}'\nSHORT=abc\n\n",
-                                              encoding="utf-8")
+OLD_ENV_KEY, OLD_TXT_KEY = "OLDENVKEY" + "4" * 14, "OLDTXTKEY" + "5" * 14
+(TMP / "secrets" / "provider.env").write_text(f"# a comment\n# old key: {OLD_ENV_KEY}\nPROVIDER_LOOKALIKE='{SECRET_VALUE}'\n"
+                                              "SHORT=abc\n\n", encoding="utf-8")
 (TMP / "secrets" / "notes.txt").write_text("NOT_AN_ENV_FILE=" + "y" * 20, encoding="utf-8")
 # the auditor's K1 FIX: every regular file, and the NAME: VALUE, export and one-token forms
 TXT_TOKEN, COLON_VALUE, EXPORT_VALUE = "TXTTOKENVALUE" + "7" * 12, "COLONVALUE" + "8" * 12, "EXPORTVALUE" + "9" * 12
 (TMP / "secrets" / "sub").mkdir(exist_ok=True)
 (TMP / "secrets" / "sub" / "compare_api.txt").write_text(
-    f"Mem0 API key: {COLON_VALUE}\n\n{TXT_TOKEN}\nexport OTHER_KEY=\"{EXPORT_VALUE}\"\nshort\n", encoding="utf-8")
+    f"Mem0 API key: {COLON_VALUE}\n\n{TXT_TOKEN}\nexport OTHER_KEY=\"{EXPORT_VALUE}\"\n# old key: {OLD_TXT_KEY}\nshort\n",
+    encoding="utf-8")
 try:
     SV = L.secret_values(C)
 except Exception as e:  # noqa: BLE001 - a crash is a named FAIL of the rows below
@@ -387,7 +389,8 @@ check("K1 every regular file's values are read into memory, subdirectories too (
       {SECRET_VALUE, "y" * 20, TXT_TOKEN, COLON_VALUE, EXPORT_VALUE} <= SV and not any(len(v) < 8 for v in SV)
       and "abc" not in SV and "short" not in SV, f"{len(SV)} value(s)")
 for label, val in (("a one-token line of a .txt", TXT_TOKEN), ("NAME: VALUE", COLON_VALUE),
-                   ("export NAME=\"VALUE\"", EXPORT_VALUE)):
+                   ("export NAME=\"VALUE\"", EXPORT_VALUE), ("a comment line of a .env (# old key: ...)", OLD_ENV_KEY),
+                   ("a comment line of a .txt (# old key: ...)", OLD_TXT_KEY)):
     got = violations({"NVT3_PLAIN": "x" + val + "x"}, secret_values=SV)
     check(f"K1 a value from {label} is refused by name", any("secrets directory" in v and "NVT3_PLAIN" in v
                                                                for v in got) and not any(val in v for v in got), str(got))
