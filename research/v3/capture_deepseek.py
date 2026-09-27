@@ -292,7 +292,8 @@ def upstream_via(pdir: Path, via_port: int | None) -> dict | None:
     f = pdir / "upstream_tls.jsonl"
     if via_port is None or not f.is_file():
         return None
-    last = json.loads(f.read_bytes().decode("utf-8").splitlines()[-1])
+    # LF only: str.splitlines() also cuts at U+2028/U+0085 inside a JSON string (the AMA finding, A6 j4).
+    last = json.loads([ln for ln in f.read_bytes().decode("utf-8").split("\n") if ln.strip()][-1])
     return {"host": "127.0.0.1", "port": via_port, **{k: last.get(k) for k in ("issuer_o", "issuer_cn", "not_after",
                                                                                 "tls_version")}}
 

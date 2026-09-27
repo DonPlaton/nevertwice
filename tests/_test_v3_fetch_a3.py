@@ -190,6 +190,15 @@ except Exception as e:  # noqa: BLE001 - a crash fails the check by its name
     torn_rows = f"crash: {type(e).__name__}"
 check("F-P2-6: a torn log line is named, the rest still read - never a crash",
       torn_rows == [{"a": 1}, {"a": 3}] and bad_lines == ["torn.jsonl line 2 does not parse"], str((torn_rows, bad_lines)))
+sep = TMP / "sep.jsonl"
+sep.write_bytes(('{"host": "a\u2028b\x85c"}\n' + '{"host": "d"}\n').encode("utf-8"))
+sep_bad: list = []
+try:
+    sep_rows = F._jsonl(sep, sep_bad)
+except Exception as e:  # noqa: BLE001
+    sep_rows = f"crash: {type(e).__name__}"
+check("the catcher log is read on LF only: U+2028 and U+0085 inside a string keep the record whole",
+      sep_rows == [{"host": "a\u2028b\x85c"}, {"host": "d"}] and sep_bad == [], str((sep_rows, sep_bad))[:160])
 spawns = F._jsonl(L.spawns_log(C))
 fetch_sp = [s for s in spawns if s.get("role") == "fetch"]
 proxy_sp = [s for s in spawns if s.get("role") == "proxy"]

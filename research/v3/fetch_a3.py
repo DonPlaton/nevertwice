@@ -86,7 +86,10 @@ def _jsonl(path: Path, bad: list | None = None) -> list[dict]:
     out = []
     if not path.is_file():
         return out
-    for n, line in enumerate(path.read_bytes().decode("utf-8", "replace").splitlines(), 1):
+    lines = path.read_bytes().decode("utf-8", "replace").split("\n")   # LF only: never splitlines() (U+2028, A6 j4)
+    if lines and lines[-1] == "":
+        lines.pop()
+    for n, line in enumerate(lines, 1):
         try:
             out.append(json.loads(line))
         except ValueError:

@@ -446,6 +446,14 @@ check("C1 the probe's record becomes proxy_upstream_via {host, port, issuer, not
                                       "tls_version": "TLSv1.3"}
       and CAP.upstream_via(pd, None) is None and CAP.upstream_via(BASE9 / "nowhere", 10809) is None)
 check("C1 the whole run's manifest names proxy_upstream_via (null without a hop)", m["proxy_upstream_via"] is None)
+(pd / "upstream_tls.jsonl").write_bytes(('{"issuer_o": "A\u2028B\x85C", "issuer_cn": "x", "not_after": "n", '
+                                         '"tls_version": "TLSv1.3"}\n').encode("utf-8"))
+try:
+    uv = CAP.upstream_via(pd, 10809)
+except Exception as e:  # noqa: BLE001 - a crash is a named FAIL
+    uv = repr(e)
+check("C1 upstream_via reads its JSONL on LF only: U+2028 and U+0085 inside a string keep the record whole",
+      isinstance(uv, dict) and uv["issuer_o"] == "A\u2028B\x85C", str(uv)[:120])
 
 print("\n- C2: every result check is pinned -")
 CLEAN = dict(spawn_error=None, rc=0, scan={"key_hits": 0}, counters={"requests": 7, "catcher_hosts": []},
