@@ -278,6 +278,20 @@ try:
     w.poll()
     check("R-GATE-P: a call without a readable time is named and halts harness-error",
           any("no readable time" in p for p in w.d.problems) and w.d.halted == "harness-error", str(w.d.problems))
+    w = World("noarm")
+    w.write({"status": 500, "t1": iso(T0)}, {"arm": "", "status": 500, "t1": iso(T0 + 1)})
+    w.poll()
+    check("GTc: a call without an arm (or with an empty one) is named and halts harness-error - the gate cannot see it",
+          sum("without an arm" in p_ for p_ in w.d.problems) == 2 and w.d.halted == "harness-error", str(w.d.problems))
+    w = World("blind-then-402")
+    w.write(raw=b"not json\n")
+    w.poll()
+    blind = w.d.halted
+    w.write(rec("a2", T0 + 1, status=402))
+    w.poll()
+    check("GTe: a 402 after the gate went blind still opens INCIDENT START kind=402 and halts 402 - waiting for the "
+          "owner is never lost behind harness-error", blind == "harness-error" and w.d.halted == "402"
+          and [kv(x, "kind") for x in w.lines(" START ")] == ["402"], f"{blind} {w.d.halted} {w.lines(' START ')}")
     w = World("halt-notime")
     w.write({"arm": "a2", "status": 402, "t1": "yesterday"})
     w.poll()
@@ -297,12 +311,17 @@ try:
     w.d.start()
     time.sleep(0.5)
     in_loop = (w.d.halted, w.d.admits_new_unit())           # before stop(): the LOOP's own handling
-    w.d.stop()
+    try:
+        w.d.stop()
+        stop_raised = None
+    except Exception as e:  # noqa: BLE001 - a raise past stop() is this row's FAIL, by name
+        stop_raised = repr(e)
     check("GT-crash: a poll that crashes in the loop (the probe's transport) is named and halts harness-error at once - "
           "no new unit while the stand runs", in_loop == ("harness-error", False)
           and any("poll failed" in p for p in w.d.problems), f"{in_loop} {w.d.problems}")
     check("GT-crash: ... and stop()'s last poll crashing too is named, never raised past it",
-          w.d.halted == "harness-error" and any("last poll failed" in p for p in w.d.problems), str(w.d.problems))
+          stop_raised is None and w.d.halted == "harness-error" and any("last poll failed" in p for p in w.d.problems),
+          f"{stop_raised} {w.d.problems}")
     w = World("stop")
     w.write(rec("a1", T0, status=500))
     w.d.stop()
