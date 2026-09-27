@@ -117,5 +117,25 @@ with tempfile.TemporaryDirectory() as _td:
         _n = repr(_e)
     check("a name held by a plain file is passed over too", _n == "scripts-backup-20260927-101011-1", _n)
 
+print("\n- T4: the tool's own backup step, twice in one second, makes two backups -")
+from unittest import mock as _mock  # noqa: E402
+with tempfile.TemporaryDirectory() as _td:
+    _target = Path(_td) / "install" / "scripts"
+    shutil.copytree(ROOT / "nevertwice", _target, ignore=shutil.ignore_patterns("__pycache__"))
+    _victim = sorted(_target.glob("*.py"))[0]
+    _rcs = []
+    with _mock.patch.object(_T.time, "strftime", lambda fmt, *a: "20260927-121212"), \
+            _mock.patch.object(_T, "_verify", lambda target: (True, "stubbed: the backup step is under test")):
+        for _ in range(2):
+            _victim.write_text(_victim.read_text(encoding="utf-8") + "\n# drift\n", encoding="utf-8")
+            try:
+                _rcs.append(_T.main(["--target", str(_target), "--apply"]))
+            except Exception as _e:  # noqa: BLE001 - a crash is a named FAIL below
+                _rcs.append(repr(_e))
+    _backs = sorted(p.name for p in _target.parent.iterdir() if p.name.startswith("scripts-backup-"))
+    check("both runs succeed and each has its own backup directory",
+          _rcs == [0, 0] and _backs == ["scripts-backup-20260927-121212", "scripts-backup-20260927-121212-1"],
+          f"{_rcs} {_backs}")
+
 print(f"\nsync install: {len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")
 sys.exit(1 if FAILED else 0)

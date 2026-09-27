@@ -120,5 +120,26 @@ with tempfile.TemporaryDirectory() as _td:
         _n = repr(_e)
     check("a name held by a plain file is passed over too", _n == ".repair-backup-20260927-101011-1", _n)
 
+print("\n- T4: the tool's own backup step, twice in one second, makes two backups -")
+from unittest import mock as _mock  # noqa: E402
+with tempfile.TemporaryDirectory() as _td:
+    _v = Path(_td)
+    _pat = _v / "Patterns"
+    (_pat / "Superseded").mkdir(parents=True)
+    _stem = "2026-09-02-proj-pattern-a-lesson.md"
+    _rcs = []
+    with _mock.patch.object(_T.time, "strftime", lambda fmt, *a: "20260927-111111"):
+        for _ in range(2):
+            note(_pat / _stem, ["qa"])
+            note(_pat / "Superseded" / _stem, ["qa"])          # a twin again for the second run
+            try:
+                _rcs.append(_T.main(["--vault", str(_v), "--apply"]))
+            except Exception as _e:  # noqa: BLE001 - a crash is a named FAIL below
+                _rcs.append(repr(_e))
+    _backs = sorted(p.name for p in _v.iterdir() if p.name.startswith(".repair-backup-"))
+    check("both runs succeed and each has its own backup directory",
+          _rcs == [0, 0] and _backs == [".repair-backup-20260927-111111", ".repair-backup-20260927-111111-1"],
+          f"{_rcs} {_backs}")
+
 print(f"\nrepair vault: {len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")
 sys.exit(1 if FAILED else 0)

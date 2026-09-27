@@ -800,6 +800,33 @@ def test_two_backups_in_one_second_are_two_complete_directories() -> None:
               nxt.name == "vault.backup-20260927-095419-1" and files(nxt) == files(store), nxt.name)
 
 
+def test_the_three_backup_claimers_name_alike() -> None:
+    """The auditor's advice at the 1221424 gate: the same technique lives in three places (store_version and two tools,
+    which may not import the product), so one clock must give the three the same names."""
+    print(NL + "- the three backup claimers name alike on one clock -")
+    import importlib.util as ilu  # noqa: PLC0415
+    import time as _time  # noqa: PLC0415
+    tools = {}
+    for name in ("repair_vault", "sync_install"):
+        spec = ilu.spec_from_file_location(f"{name}_claimer", ROOT / "tools" / f"{name}.py")
+        mod = ilu.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        tools[name] = mod
+    fixed_dt = datetime(2026, 9, 27, 13, 13, 13)
+    fixed_st = _time.strptime("2026-09-27 13:13:13", "%Y-%m-%d %H:%M:%S")
+    with tempfile.TemporaryDirectory() as tmp:
+        store = Path(tmp) / "sv" / "vault"
+        store.mkdir(parents=True)
+        got = {"store_version": [SV._claim_backup_dir(store, lambda: fixed_dt).name.removeprefix("vault.backup-")
+                                 for _ in range(3)]}
+        for name, mod in tools.items():
+            got[name] = [mod._claim_backup(Path(tmp) / name, "p-", now=lambda: fixed_st).name.removeprefix("p-")
+                         for _ in range(3)]
+    want = ["20260927-131313", "20260927-131313-1", "20260927-131313-2"]
+    check("store_version, repair_vault and sync_install claim the same names on one clock",
+          all(v == want for v in got.values()), str(got))
+
+
 def test_zz_every_check_passed() -> None:
     """Bare pytest must reach the same verdict as this suite's exit code.
 
@@ -826,7 +853,8 @@ def main() -> int:
                test_a_filename_inside_a_comment_is_not_an_ignore_rule,
                test_a_backup_survives_a_file_that_vanishes_under_it,
                test_the_cleanup_survives_git_tidying_under_it,
-               test_two_backups_in_one_second_are_two_complete_directories):
+               test_two_backups_in_one_second_are_two_complete_directories,
+               test_the_three_backup_claimers_name_alike):
         fn()
     print(f"\nstore version: {PASSED} passed, {FAILED} failed")
     return 1 if FAILED else 0
