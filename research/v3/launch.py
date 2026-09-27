@@ -554,17 +554,70 @@ def _last_line(path: Path) -> bytes:
     return lines[-1] if lines and lines[-1] else b""
 
 
+if os.name == "nt":
+    import msvcrt
+
+    def _os_lock(fd: int) -> None:
+        os.lseek(fd, 0, os.SEEK_SET)
+        msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+
+    def _os_unlock(fd: int) -> None:
+        os.lseek(fd, 0, os.SEEK_SET)
+        msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
+else:
+    import fcntl
+
+    def _os_lock(fd: int) -> None:
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+    def _os_unlock(fd: int) -> None:
+        fcntl.flock(fd, fcntl.LOCK_UN)
+
+
+@contextlib.contextmanager
+def file_lock(path: Path, *, timeout_s: float = 60.0, poll_s: float = 0.005):
+    """An exclusive lock on <path>.lock for the with-block, across processes AND threads (A6 ruling B11).
+
+    Each acquisition opens its own descriptor: a Windows byte-range lock and a POSIX flock both conflict between two
+    descriptors even inside one process, so one mechanism covers the scheduler's threads and a second process alike.
+    Waiting past timeout_s raises TimeoutError - a writer never appends without the lock."""
+    lock = path.with_name(path.name + ".lock")
+    lock.parent.mkdir(parents=True, exist_ok=True)
+    fd = os.open(str(lock), os.O_RDWR | os.O_CREAT, 0o644)
+    try:
+        deadline = time.monotonic() + timeout_s
+        while True:
+            try:
+                _os_lock(fd)
+                break
+            except OSError:
+                if time.monotonic() > deadline:
+                    raise TimeoutError(f"{lock} held for more than {timeout_s} s") from None
+                time.sleep(poll_s)
+        try:
+            yield
+        finally:
+            _os_unlock(fd)
+    finally:
+        os.close(fd)
+
+
 def _append_jsonl(path: Path, record: Mapping) -> None:
     """One record, chained to the previous line by its sha256 ("prev"), so an edit anywhere breaks the chain (R1:
-    these logs sit in the runs tree, which children can write)."""
+    these logs sit in the runs tree, which children can write).
+
+    Reading the last line and appending are one step under file_lock (A6 ruling B11): two writers that both read the
+    same last line would chain two records to it and break the log, and a Windows "ab" append is not atomic between
+    writers either."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    prev = _last_line(path)
-    rec = dict(record, prev=hashlib.sha256(prev).hexdigest() if prev else "0" * 64)
-    line = (json.dumps(rec, ensure_ascii=False, sort_keys=True) + "\n").encode("utf-8")
-    with open(path, "ab") as f:
-        f.write(line)
-        f.flush()
-        os.fsync(f.fileno())
+    with file_lock(path):
+        prev = _last_line(path)
+        rec = dict(record, prev=hashlib.sha256(prev).hexdigest() if prev else "0" * 64)
+        line = (json.dumps(rec, ensure_ascii=False, sort_keys=True) + "\n").encode("utf-8")
+        with open(path, "ab") as f:
+            f.write(line)
+            f.flush()
+            os.fsync(f.fileno())
 
 
 def verify_chain(path: Path) -> bool:

@@ -821,13 +821,23 @@ def render(obj: dict) -> bytes:
     return (json.dumps(obj, indent=1, sort_keys=True, ensure_ascii=False) + "\n").encode("utf-8")
 
 
+def _launch():
+    """research/v3/launch.py, loaded on first use (never at import: K01), once per process."""
+    mod = sys.modules.get("v3_launch")
+    if mod is None:
+        import importlib.util  # noqa: PLC0415
+        spec = importlib.util.spec_from_file_location("v3_launch", HERE / "v3" / "launch.py")
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules["v3_launch"] = mod
+        spec.loader.exec_module(mod)
+    return mod
+
+
 def append_chained(path: Path, record: dict) -> None:
-    """One line chained to the previous one by its sha256 ("prev"); the first line's prev is zeros."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    lines = path.read_bytes().rstrip(b"\n").split(b"\n") if path.exists() and path.read_bytes().strip() else []
-    prev = hashlib.sha256(lines[-1]).hexdigest() if lines else "0" * 64
-    with open(path, "ab") as f:
-        f.write((json.dumps({**record, "prev": prev}, sort_keys=True, ensure_ascii=False) + "\n").encode("utf-8"))
+    """One line chained to the previous one by its sha256 ("prev"); the first line's prev is zeros. Written by THE
+    chained-log writer, launch._append_jsonl, under launch.file_lock (A6 ruling B12: a lock, not an intention - a
+    second writer would otherwise read the same last line and break the chain, or lose a line)."""
+    _launch()._append_jsonl(Path(path), record)
 
 
 def chain_ok(path: Path) -> bool:
@@ -861,12 +871,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--run", required=True)
     ap.add_argument("--owner-window", default=None, help="the owner's idle-window answer id, verbatim")
     args = ap.parse_args(argv)
-    import importlib.util  # noqa: PLC0415
-    spec = importlib.util.spec_from_file_location("v3_launch", HERE / "v3" / "launch.py")
-    L = importlib.util.module_from_spec(spec)
-    sys.modules["v3_launch"] = L
-    spec.loader.exec_module(L)
-    root = L.Contract.default().runs_root
+    root = _launch().Contract.default().runs_root
     probe = IdleProbe(allowlist=Allowlist(root=_self_root()))
     if args.check:
         w = probe.window("check")
