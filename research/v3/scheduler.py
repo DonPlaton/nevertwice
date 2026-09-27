@@ -26,6 +26,14 @@ ones a Claude Code unit reuses, Q-47-6), lets the caller write the unit's spec f
 the contract's allowlist and hands everything to launch.spawn - one spawn at a time in this process. The process-global
 fresh-directory set, the Claude Code unit table and the spawns log's chain then see one spawn after another (the
 writer's own file lock, B11, covers a second process); the child itself runs outside the lock.
+
+FIX-SCHED (the auditor's B-RC, B-OPEN, B-CL, B-TE, R-UNL): a unit's UNIT-ABORT names only what happened - rc= is the
+child's own exit code, signal=SIGKILL a kill of ours, and a code that never came is a SchedulerError, never an
+invented -1; a spawn the contract refused is no unit at all; a request never gets a timeout the ceiling has spent. A
+block or a stand that fails after its first line closes every line it opened (ABORT reason=harness-error, BLOCK END,
+STAND END), resets the proxy stage, ends its check and kills its live children, and the error goes on - a cleanup step
+that fails is named beside it. A scored stand never writes an unread change log as a value; a dirty tree or an unread
+change log at STAND END stops its judges. The stand's D1 embedder is unloaded through /api/embed.
 """
 from __future__ import annotations
 
@@ -50,10 +58,16 @@ BUDGET_H = {"S6-SH": 24, "S6-MH": 24, "S5": 48, "S7": 24, "S4": 24, "S1": 72}   
 ARM_ORDER_DOMAIN = "nvt3-arm-order"
 GATE_POLL_S = 0.5                                        # how often a closed incident gate is asked again
 REASK_MAX, REASK_SPACING_S = 2, 300.0                    # §4.5 W3: the stand's re-asks - at most 2, at least 5 min apart
+DIED_WAIT_S = 10.0                                       # B-RC: a child whose stream closed gets this long to exit itself
+KILLED = "SIGKILL"                                       # D2: a unit killed by the scheduler is named by the signal
+UNREAD = "unread"                                        # B-CL: what a STAND line says for a value nobody read
+_NOT_READ = (None, "", UNREAD, "unknown")                # a change-log read that gave any of these read nothing
 
 
 class SchedulerError(RuntimeError):
-    """A plan or a value the preregistration does not allow; nothing was scheduled."""
+    """A plan or a value the preregistration does not allow, or a step the scheduler could not take; the lines it had
+    opened are closed (B-OPEN). ``partial``: what a stand had measured when it stopped after STAND END (B-CL, B-TE)."""
+    partial: dict | None = None
 
 
 class ReaskableError(RuntimeError):
@@ -320,15 +334,17 @@ class Scheduler:
         while not gate.admits_new_unit():
             sleep(GATE_POLL_S)
 
-    def _gpu_only(self, tag: str | None) -> None:
+    def _gpu_only(self, tag: str | None, *, embedders: Sequence[str] = ()) -> None:
         """§5.6: one resident Ollama model per stage - every other resident model unloaded (never woken: only what
-        /api/ps names), then /api/ps must name nothing but the tag."""
+        /api/ps names), an embedding-only one (the stand's D1 tag) through /api/embed (R-UNL: the generate endpoint is
+        no unload for it), then /api/ps must name nothing but the tag."""
         if self.ollama_ctl is None:
             return
         keep = None if tag is None else _full_name(tag)
+        emb = {_full_name(m) for m in embedders if m}
         for m in self.ollama_ctl.ps():
             if _full_name(m) != keep:
-                self.ollama_ctl.unload(m)
+                self.ollama_ctl.unload(m, embedder=_full_name(m) in emb)
         stray = [m for m in self.ollama_ctl.ps() if _full_name(m) != keep]
         if stray:
             raise SchedulerError(f"models still resident beside {tag}: {stray} (§5.6)")
@@ -415,7 +431,8 @@ class UnitRecord:
     ops: list = field(default_factory=list)
     footprint: Any = None
     seal: Any = None
-    rc: int | None = None
+    rc: int | None = None                  # the child's own exit code - never one our kill produced (B-RC)
+    signal: str | None = None              # KILLED when the scheduler killed the unit's child (D2)
     active_s: float = 0.0
     aborted: str | None = None             # None | "ceiling" | "crash" (D2)
     error: str | None = None
@@ -424,33 +441,92 @@ class UnitRecord:
     dirs: Any = None
 
 
+def _budget(B: Any, clock: Any, deadline: Callable[[], float]) -> Callable[[str], float]:
+    """The unit's seconds left for its next request - or ArmTimeout, the ceiling, when none are: a request never gets a
+    zero or negative timeout (a negative one is the queue's ValueError, which is no ceiling, B-BUDGET)."""
+    def left_for(what: str) -> float:
+        t = deadline() - clock.monotonic()
+        if t <= 0:
+            raise B.ArmTimeout(f"{what}: the ceiling passed")
+        return t
+    return left_for
+
+
+def _open(launcher: Any, stage: str, who: str, **kw) -> Any:
+    """The unit's child - or a SchedulerError: a spawn the launch contract refused, or the OS could not start, is no
+    unit (nothing ran, so there is nothing to abort, B-RC)."""
+    try:
+        return launcher.open(stage, **kw)
+    except Exception as e:  # noqa: BLE001 - every refusal is named, whatever raised it
+        raise SchedulerError(f"{who}: the {stage} child was not started - {type(e).__name__}: {e}") from e
+
+
+def _kill(client: Any, who: str) -> str:
+    """Kill the unit's tree and reap its root: KILLED - or a SchedulerError when the root outlives the kill (no code
+    and no signal can then be named, D2)."""
+    client.kill_tree()
+    if client.exit_code() is None:
+        raise SchedulerError(f"{who}: the child outlived its kill - no exit code, so no UNIT-ABORT can name it (D2)")
+    return KILLED
+
+
+def _unit_failed(sched: "Scheduler", B: Any, client: Any, e: BaseException, *, status_id: str, unit: str,
+                 who: str) -> tuple[str, int | None, str | None]:
+    """(reason, rc, signal) of a unit stage that ended in ``e``, its UNIT-ABORT written (D2, B-RC). The ceiling - ours
+    (ArmTimeout), or a child that did not exit after bye within it (TimeoutExpired) - kills the tree: reason=ceiling.
+    A child whose stream closed (ArmDied) gets DIED_WAIT_S to exit by itself: its own code is rc=, and one still running
+    is killed, signal=SIGKILL. Any other ArmError (a protocol break, a hello that is not this stage's, ok:false outside
+    a write) is ours to kill: signal=SIGKILL. An exit code is never made up."""
+    if isinstance(e, (B.ArmTimeout, subprocess.TimeoutExpired)):
+        signal = _kill(client, who) if client is not None else None
+        sched.status.unit_abort(status_id, unit, reason="ceiling")
+        return "ceiling", None, signal
+    if isinstance(e, B.ArmDied):
+        rc = client.exit_code(timeout=DIED_WAIT_S)
+        if rc is not None:
+            client.kill_tree()                           # what it left behind; the child itself has exited
+            sched.status.unit_abort(status_id, unit, reason="crash", rc=rc)
+            return "crash", rc, None
+    signal = _kill(client, who)
+    sched.status.unit_abort(status_id, unit, reason="crash", signal=signal)
+    return "crash", None, signal
+
+
+def _kill_live(recs: Any) -> None:
+    """Kill the live children a set of unit records still holds (a memory-store arm's writers, Q25(4))."""
+    for r in recs:
+        c = getattr(r, "client", None)
+        if c is not None and c.child.process.poll() is None:
+            c.kill_tree()
+            c.exit_code()
+
+
 def _write_unit(sched: "Scheduler", launcher: Any, *, stand: str, run: str, unit: str, ops: Sequence[Mapping],
                 ceiling: float, status_id: str) -> UnitRecord:
     """One unit's write stage under its ceiling (D1: the unit's own active time). A ceiling kills the child's tree and
-    writes UNIT-ABORT reason=ceiling; a child that dies or breaks the protocol is UNIT-ABORT reason=crash with its exit
-    code (D2); a product's ok:false on one write is that operation's error, and the unit goes on."""
+    writes UNIT-ABORT reason=ceiling; a child that dies or breaks the protocol is UNIT-ABORT reason=crash with its own
+    exit code or the signal of our kill (D2, _unit_failed); a product's ok:false on one write is that operation's
+    error, and the unit goes on. Anything else kills the child and goes on up (B-OPEN)."""
     B = _arm_base()
     rec = UnitRecord(arm=launcher.name, run=run, unit=unit)
+    who = f"{stand}/{run}/{launcher.name}/{unit}"
     start = sched.clock.monotonic()
     deadline = start + ceiling
     left = lambda: deadline - sched.clock.monotonic()  # noqa: E731
+    budget = _budget(B, sched.clock, lambda: deadline)
     client = None
     try:
         sched._await_gate()
-        client = launcher.open("write", sched=sched, stand=stand, run=run, unit=unit)
+        client = _open(launcher, "write", who, sched=sched, stand=stand, run=run, unit=unit)
         rec.spawn_id, rec.pid, rec.dirs = client.child.spawn_id, client.pid, getattr(client, "dirs", None)
-        if left() <= 0:
-            raise B.ArmTimeout("hello: the ceiling passed before the child answered")
-        hello = client.request("hello", timeout=left())
+        hello = client.request("hello", timeout=budget("hello"))
         if (hello.get("protocol"), hello.get("arm"), hello.get("stage")) != (B.PROTOCOL, launcher.name, "write"):
             raise B.ArmError(f"hello: {hello.get('protocol')}/{hello.get('arm')}/{hello.get('stage')} is not this arm's "
                              f"write stage")
         for op in ops:
-            if left() <= 0:
-                raise B.ArmTimeout("write: the ceiling passed")
             t0 = sched.clock.utc().isoformat()
             try:
-                out = client.request("write", timeout=left(), **op)
+                out = client.request("write", timeout=budget("write"), **op)
                 rec.ops.append({"op_id": out.get("op_id"), "t0": t0, "t1": sched.clock.utc().isoformat(), "ok": True,
                                 "error": None})
             except (B.ArmTimeout, B.ArmDied, B.ArmPoisoned):
@@ -460,27 +536,21 @@ def _write_unit(sched: "Scheduler", launcher: Any, *, stand: str, run: str, unit
                     raise
                 rec.ops.append({"op_id": (op.get("item") or {}).get("item_id"), "t0": t0,
                                 "t1": sched.clock.utc().isoformat(), "ok": False, "error": str(e)})
-        if left() <= 0:
-            raise B.ArmTimeout("end_write: the ceiling passed")
-        end = client.request("end_write", timeout=left())
+        end = client.request("end_write", timeout=budget("end_write"))
         rec.footprint, rec.seal = end.get("footprint"), end.get("seal")
         rec.end_write_utc = sched.clock.utc().isoformat()
         if launcher.store_persistence == "memory":
             rec.client = client                                       # Q25(4): the store lives in this process
         else:
             rec.rc = client.close(timeout=max(1.0, left()))
-    except B.ArmTimeout as e:
-        rec.aborted, rec.error = "ceiling", str(e)
-        if client is not None:
+    except (B.ArmError, subprocess.TimeoutExpired) as e:
+        rec.error = str(e)
+        rec.aborted, rec.rc, rec.signal = _unit_failed(sched, B, client, e, status_id=status_id, unit=unit, who=who)
+    except BaseException:
+        if client is not None:                                        # B-OPEN: no child outlives its failed unit
             client.kill_tree()
-            rec.rc = client.exit_code()
-        sched.status.unit_abort(status_id, unit, reason="ceiling")
-    except B.ArmError as e:
-        rec.aborted, rec.error = "crash", str(e)
-        if client is not None:
-            client.kill_tree()
-            rec.rc = client.exit_code()
-        sched.status.unit_abort(status_id, unit, reason="crash", rc=rec.rc if rec.rc is not None else -1)
+            client.exit_code()
+        raise
     finally:
         rec.active_s = sched.clock.monotonic() - start
     return rec
@@ -494,10 +564,19 @@ def _write_turn(sched: "Scheduler", launcher: Any, *, stand: str, runs: Sequence
     from concurrent.futures import ThreadPoolExecutor  # noqa: PLC0415
     pairs = [(r, u) for r in runs for u in units]
     width = sched.concurrency or len(pairs)
+    done, failed = {}, None
     with ThreadPoolExecutor(max_workers=width) as pool:
         futs = {(r, u): pool.submit(_write_unit, sched, launcher, stand=stand, run=r, unit=u, ops=ops_for(r, u),
                                     ceiling=ceilings[u], status_id=status_ids[r]) for r, u in pairs}
-        return {k: f.result() for k, f in futs.items()}
+        for k, f in futs.items():
+            try:
+                done[k] = f.result()
+            except BaseException as e:  # noqa: BLE001 - raised below, once every unit of the turn has ended
+                failed = failed or e
+    if failed is not None:
+        _kill_live(done.values())                   # B-OPEN: a memory-store writer never outlives its failed turn
+        raise failed
+    return done
 
 
 
@@ -554,11 +633,14 @@ def _question_unit(sched: "Scheduler", launcher: Any, sp: StandPlan, *, run: str
     arm's own live process - every read under what is left of the unit's one budget (D1), each answer through the
     answer hook; a ceiling or a crash is UNIT-ABORT as in the write stage."""
     B = _arm_base()
-    out: dict = {"reads": [], "counters": None, "rc": None, "aborted": None, "pid": None, "spawn_id": None}
+    out: dict = {"reads": [], "counters": None, "rc": None, "signal": None, "aborted": None, "pid": None,
+                 "spawn_id": None}
+    who = f"{sp.stand}/{run}/{launcher.name}/{unit}"
     start = sched.clock.monotonic()
     deadline = start + max(0.0, ceiling - wrec.active_s)
     paused = [0.0]                                       # W3's re-ask pauses: never the unit's active time (D1)
     left = lambda: deadline + paused[0] - sched.clock.monotonic()  # noqa: E731
+    budget = _budget(B, sched.clock, lambda: deadline + paused[0])
     sleep = getattr(sched.clock, "sleep", None) or __import__("time").sleep
 
     def reask(attempt: Callable[[], Any], retry_on: tuple) -> tuple[Any, int, str | None]:
@@ -582,20 +664,18 @@ def _question_unit(sched: "Scheduler", launcher: Any, sp: StandPlan, *, run: str
     try:
         sched._await_gate()
         if client is None:
-            client = launcher.open("read", sched=sched, stand=sp.stand, run=run, unit=unit, write_dirs=wrec.dirs)
+            client = _open(launcher, "read", who, sched=sched, stand=sp.stand, run=run, unit=unit,
+                           write_dirs=wrec.dirs)
             out["spawn_id"] = client.child.spawn_id
-            if left() <= 0:
-                raise B.ArmTimeout("hello: the ceiling passed")
-            hello = client.request("hello", timeout=left())
+            hello = client.request("hello", timeout=budget("hello"))
             if (hello.get("protocol"), hello.get("arm"), hello.get("stage")) != (B.PROTOCOL, launcher.name, "read"):
                 raise B.ArmError(f"hello: not this arm's read stage ({hello.get('arm')}/{hello.get('stage')})")
         out["pid"] = client.pid
         for req in sp.read_plan(unit):
-            if left() <= 0:
-                raise B.ArmTimeout("read: the ceiling passed")
+            budget("read")
             t0 = sched.clock.utc().isoformat()
-            got, n_read, err = reask(lambda req=req: client.request("read", timeout=left(), **read_kwargs(launcher, req)),
-                                     (B.ArmError,))
+            got, n_read, err = reask(lambda req=req: client.request("read", timeout=budget("read"),
+                                                                    **read_kwargs(launcher, req)), (B.ArmError,))
             t1 = sched.clock.utc().isoformat()
             row = {"qid": req.qid, "point": req.point, "t0": t0, "t1": t1, "reasks": n_read}
             if got is None:
@@ -606,22 +686,17 @@ def _question_unit(sched: "Scheduler", launcher: Any, sp: StandPlan, *, run: str
                 row["reasks"] = n_read + n_ans
                 row.update(answer=ans) if ans is not None else row.update(unrecovered=True, error=err)
             out["reads"].append(row)
-        if left() <= 0:
-            raise B.ArmTimeout("counters: the ceiling passed")
-        out["counters"] = client.request("counters", timeout=left())
+        out["counters"] = client.request("counters", timeout=budget("counters"))
         out["rc"] = client.close(timeout=max(1.0, left()))
-    except B.ArmTimeout as e:
-        out["aborted"], out["error"] = "ceiling", str(e)
-        if client is not None:
+    except (B.ArmError, subprocess.TimeoutExpired) as e:
+        out["error"] = str(e)
+        out["aborted"], out["rc"], out["signal"] = _unit_failed(sched, B, client, e, status_id=status_id, unit=unit,
+                                                                who=who)
+    except BaseException:
+        if client is not None:                                        # B-OPEN: no child outlives its failed unit
             client.kill_tree()
-            out["rc"] = client.exit_code()
-        sched.status.unit_abort(status_id, unit, reason="ceiling")
-    except B.ArmError as e:
-        out["aborted"], out["error"] = "crash", str(e)
-        if client is not None:
-            client.kill_tree()
-            out["rc"] = client.exit_code()
-        sched.status.unit_abort(status_id, unit, reason="crash", rc=out["rc"] if out["rc"] is not None else -1)
+            client.exit_code()
+        raise
     finally:
         out["active_s"] = sched.clock.monotonic() - start
     return out
@@ -647,49 +722,121 @@ def _run_block(sched: "Scheduler", sp: StandPlan, bp: BlockPlan) -> dict:
     raw record (out=, measured inside START..END, Q2) and END; the stage reset; BLOCK END; the check's end."""
     L = sched.launch
     stand, block = sp.stand, bp.block
+    order, seed = arm_order(list(sp.launchers), campaign_seed=sp.campaign_seed, stand=stand, block=block)
+    ceilings = {a: {u: ceiling_for(sched.tag, arm=a, stand=stand, unit_tokens=sp.unit_tokens[u], medians=sp.medians)
+                    for u in bp.units} for a in order}            # B-OPEN: a unit without a ceiling opens nothing
+    emb = _embedders(sp)
     events = {}
     if bp.barrier_read and sched.hooks is not None:
         events["barrier_read"] = sched.hooks.barrier_read(stand, block)
-    sched._gpu_only(sp.embed_tag)
+    sched._gpu_only(sp.embed_tag, embedders=emb)
     check_id = f"{stand}.{block}"
     sched.witnesses.begin_check(check_id)
-    order, seed = arm_order(list(sp.launchers), campaign_seed=sp.campaign_seed, stand=stand, block=block)
-    sched.status.block_start(stand, block, units=list(bp.units), arm_order=order, seed=seed)
-    ids = {(a, r): sched.status.start(stand, block, r, a, pid=sched.pid, tag=sched.tag) for a in order for r in sp.runs}
-    ceilings = {a: {u: ceiling_for(sched.tag, arm=a, stand=stand, unit_tokens=sp.unit_tokens[u], medians=sp.medians)
-                    for u in bp.units} for a in order}
-    sched.proxy_ctl.stage(f"{stand}/{block}", "write")
-    wrecs = {a: sched.write_turn(sp.launchers[a], stand=stand, runs=list(sp.runs), units=list(bp.units),
-                                 ops_for=lambda r, u, a=a: sp.write_ops(a, r, u), ceilings=ceilings[a],
-                                 status_ids={r: ids[(a, r)] for r in sp.runs}) for a in order}
-    sched._gpu_only(sp.embed_tag)                        # the barrier: every write child exited or was killed
-    sched.proxy_ctl.stage(f"{stand}/{block}", "questions")
-    qrecs = {a: _question_turn(sched, sp.launchers[a], sp, wrecs=wrecs[a], ceilings=ceilings[a],
-                               status_ids={r: ids[(a, r)] for r in sp.runs}) for a in order}
-    art = _artifact()
-    for a in order:
-        for r in sp.runs:
-            units = {u: {"write": _unit_payload(wrecs[a][(r, u)]), "questions": qrecs[a].get((r, u))} for u in bp.units}
-            rcs = [x for u in bp.units for x in (wrecs[a][(r, u)].rc, (qrecs[a].get((r, u)) or {}).get("rc"))
-                   if wrecs[a][(r, u)].aborted is None and not (qrecs[a].get((r, u)) or {}).get("aborted")]
-            rc = next((x for x in rcs if x not in (0, None)), 0)
-            wall = sum(wrecs[a][(r, u)].active_s + (qrecs[a].get((r, u)) or {}).get("active_s", 0.0) for u in bp.units)
-            rel = f"{stand}/_records/{block}/{r}.{a}.json"
-            path = sched.c.runs_root / rel
-            sha = art.run_record(path, ids[(a, r)], {"stand": stand, "block": block, "run": r, "arm": a, "units": units},
-                                 commit=sp.commit, dirty=sp.dirty, now=sched.clock.utc)
-            L._append_jsonl(sched.c.runs_root / "_launch" / "records.jsonl",
-                            {"status_id": ids[(a, r)], "path": rel, "sha256": sha})
-            sched.status.end(ids[(a, r)], rc=rc, wall_s=wall, units=len(bp.units), out=rel)
-    sched.proxy_ctl.stage(None, None)                    # a stray call is now loud in accounting, never a stage's
-    sched.status.block_end(stand, block)
+    ids: dict = {}
+    ended: set = set()
+    wrecs: dict = {}
+    opened = False
+    try:
+        sched.status.block_start(stand, block, units=list(bp.units), arm_order=order, seed=seed)
+        opened = True
+        for a in order:
+            for r in sp.runs:
+                ids[(a, r)] = sched.status.start(stand, block, r, a, pid=sched.pid, tag=sched.tag)
+        sched.proxy_ctl.stage(f"{stand}/{block}", "write")
+        for a in order:
+            wrecs[a] = sched.write_turn(sp.launchers[a], stand=stand, runs=list(sp.runs), units=list(bp.units),
+                                        ops_for=lambda r, u, a=a: sp.write_ops(a, r, u), ceilings=ceilings[a],
+                                        status_ids={r: ids[(a, r)] for r in sp.runs})
+        sched._gpu_only(sp.embed_tag, embedders=emb)     # the barrier: every write child exited or was killed
+        sched.proxy_ctl.stage(f"{stand}/{block}", "questions")
+        qrecs = {}
+        for a in order:
+            qrecs[a] = _question_turn(sched, sp.launchers[a], sp, wrecs=wrecs[a], ceilings=ceilings[a],
+                                      status_ids={r: ids[(a, r)] for r in sp.runs})
+        rcs = {(a, r): _end_rc(sp, bp, a, r, wrecs, qrecs) for a in order for r in sp.runs}   # every code, then ENDs
+        art = _artifact()
+        for a in order:
+            for r in sp.runs:
+                units = {u: {"write": _unit_payload(wrecs[a][(r, u)]), "questions": qrecs[a].get((r, u))}
+                         for u in bp.units}
+                wall = sum(wrecs[a][(r, u)].active_s + (qrecs[a].get((r, u)) or {}).get("active_s", 0.0)
+                           for u in bp.units)
+                rel = f"{stand}/_records/{block}/{r}.{a}.json"
+                path = sched.c.runs_root / rel
+                sha = art.run_record(path, ids[(a, r)], {"stand": stand, "block": block, "run": r, "arm": a,
+                                                         "units": units}, commit=sp.commit, dirty=sp.dirty,
+                                     now=sched.clock.utc)
+                L._append_jsonl(sched.c.runs_root / "_launch" / "records.jsonl",
+                                {"status_id": ids[(a, r)], "path": rel, "sha256": sha})
+                sched.status.end(ids[(a, r)], rc=rcs[(a, r)], wall_s=wall, units=len(bp.units), out=rel)
+                ended.add((a, r))
+        sched.proxy_ctl.stage(None, None)                # a stray call is now loud in accounting, never a stage's
+        sched.status.block_end(stand, block)
+    except BaseException as e:
+        _close_block(sched, e, stand=stand, block=block, ids=ids, ended=ended, wrecs=wrecs, opened=opened,
+                     check_id=check_id)
+        raise
     events["check"] = sched.witnesses.end_check(check_id)
     return {"order": order, "seed": seed, "write": wrecs, "questions": qrecs, **events}
 
 
+def _embedders(sp: StandPlan) -> tuple:
+    """The stand's embedding-only models (its D1 tag): unloaded through /api/embed (R-UNL)."""
+    return (sp.embed_tag,) if sp.embed_tag else ()
+
+
+def _end_rc(sp: StandPlan, bp: BlockPlan, a: str, r: str, wrecs: Mapping, qrecs: Mapping) -> int:
+    """The arm-run's END rc: the first non-zero exit code of its units that were not aborted, else 0. Every such unit
+    has its codes - a disk arm's write child and read child, a memory-store arm's one process (closed after its
+    questions); a missing one is a SchedulerError, never a silent 0 (B-RC)."""
+    memory = getattr(sp.launchers[a], "store_persistence", "disk") == "memory"
+    rcs = []
+    for u in bp.units:
+        w, q = wrecs[a][(r, u)], qrecs[a].get((r, u)) or {}
+        if w.aborted or q.get("aborted"):
+            continue
+        need = [("questions", q.get("rc"))] if memory else [("write", w.rc), ("questions", q.get("rc"))]
+        missing = [s for s, x in need if x is None]
+        if missing:
+            raise SchedulerError(f"{sp.stand}/{bp.block}/{r}/{a}/{u}: no exit code for its {' and '.join(missing)} "
+                                 f"stage - an END rc is never guessed (B-RC)")
+        rcs += [x for _s, x in need]
+    return next((x for x in rcs if x != 0), 0)
+
+
+def _close_block(sched: "Scheduler", e: BaseException, *, stand: str, block: str, ids: Mapping, ended: set,
+                 wrecs: Mapping, opened: bool, check_id: str) -> None:
+    """B-OPEN: a block that failed after its check began closes what it opened - its live children killed, every START
+    without an END closed by ABORT reason=harness-error, the proxy stage reset, BLOCK END, the check ended - and the
+    error goes on. A step that fails is named beside the error (a SchedulerError from it), never swallowed."""
+    problems: list[str] = []
+
+    def step(what: str, fn: Callable[[], Any]) -> None:
+        try:
+            fn()
+        except Exception as x:  # noqa: BLE001 - collected and named below
+            problems.append(f"{what}: {type(x).__name__}: {x}")
+
+    for recs in wrecs.values():
+        step("killing the live writers", lambda recs=recs: _kill_live(recs.values()))
+    for k, ident in ids.items():
+        if k not in ended:
+            step(f"ABORT {ident}", lambda ident=ident: sched.status.abort(ident, reason="harness-error"))
+    if sched.proxy_ctl is not None:
+        step("the proxy stage reset", lambda: sched.proxy_ctl.stage(None, None))
+    if opened:
+        step("BLOCK END", lambda: sched.status.block_end(stand, block))
+    step("the check's end", lambda: sched.witnesses.end_check(check_id))
+    if problems:
+        msg = f"{stand}/{block}: {type(e).__name__}: {e} - and closing the block failed: {'; '.join(problems)}"
+        if isinstance(e, Exception):
+            raise SchedulerError(msg) from e
+        print(msg, file=sys.stderr)
+
+
 def _unit_payload(w: UnitRecord) -> dict:
     return {"spawn_id": w.spawn_id, "pid": w.pid, "ops": w.ops, "footprint": w.footprint, "seal": w.seal, "rc": w.rc,
-            "active_s": w.active_s, "aborted": w.aborted, "end_write_utc": w.end_write_utc}
+            "signal": w.signal, "active_s": w.active_s, "aborted": w.aborted, "end_write_utc": w.end_write_utc}
 
 
 def _artifact():
@@ -728,9 +875,12 @@ def _run_stand(sched: "Scheduler", sp: StandPlan, blocks: Sequence[BlockPlan], *
                order: int) -> dict:
     """One stand (§5.6, D8, D10, D11): the plan's ids checked before any line; the preflight (balance); the tree check
     - a scored stand on a dirty tree is refused before STAND START, a smoke or debug one records it; the change-log read
+    - a scored stand whose read gave no change log is refused there too, a smoke or debug one writes "unread" (B-CL) -
     and the model probe; STAND START; the blocks, every one after the first behind its barrier read; the end read, the
-    probe and the tree check again; STAND END; then - scored stands only - the judges, one model resident at a time
-    (§5.6), after STAND END and before the next stand (D11)."""
+    probe and the tree check again; STAND END (written also when anything between the two failed, B-OPEN); then -
+    scored stands only, and only when the end read gave a change log and the end tree is clean (B-CL, B-TE: else a
+    SchedulerError carrying the result) - the judges, one model resident at a time (§5.6), after STAND END and before
+    the next stand (D11)."""
     H = sched.hooks
     bad = [r for r in sp.runs if not _RUN_ID.fullmatch(r)]
     if bad:
@@ -745,24 +895,60 @@ def _run_stand(sched: "Scheduler", sp: StandPlan, blocks: Sequence[BlockPlan], *
         raise SchedulerError(f"{sp.stand}: the tree is not clean at STAND START - {out['tree_start'].get('problems')} "
                              f"(P0e); nothing was started")
     out["start_read"] = H.barrier_read(sp.stand, "start")
+    cl_start = _changelog(out["start_read"])
+    if cl_start is None and sched.tag == "scored":
+        raise SchedulerError(f"{sp.stand}: the change-log read at STAND START gave no change log "
+                             f"({(out['start_read'] or {}).get('changelog')!r}) - a scored stand never writes an unread "
+                             f"one as a value (B-CL); nothing was started")
     model = H.model_probe()
-    sched.status.stand(sp.stand, "START", model=model, changelog=(out["start_read"] or {}).get("changelog", "unknown"),
-                       order=order)
-    for i, bp in enumerate(blocks):
-        run_bp = bp if i == 0 else BlockPlan(block=bp.block, units=tuple(bp.units), barrier_read=True)
-        out["blocks"].append(_run_block(sched, sp, run_bp))
-    out["end_read"] = H.barrier_read(sp.stand, "end")
-    model_end = H.model_probe()
-    out["tree_end"] = _tree(sched, sp.stand, "tree-end")
-    sched.status.stand(sp.stand, "END", model=model_end, changelog=(out["end_read"] or {}).get("changelog", "unknown"))
+    sched.status.stand(sp.stand, "START", model=model, changelog=cl_start or UNREAD, order=order)
+    try:
+        for i, bp in enumerate(blocks):
+            run_bp = bp if i == 0 else BlockPlan(block=bp.block, units=tuple(bp.units), barrier_read=True)
+            out["blocks"].append(_run_block(sched, sp, run_bp))
+        out["end_read"] = H.barrier_read(sp.stand, "end")
+        model_end = H.model_probe()
+        out["tree_end"] = _tree(sched, sp.stand, "tree-end")
+    except BaseException as e:
+        _close_stand(sched, e, sp.stand)
+        raise
+    cl_end = _changelog(out["end_read"])
+    sched.status.stand(sp.stand, "END", model=model_end, changelog=cl_end or UNREAD)
+    if not out["tree_end"].get("clean"):
+        out["dirty_end"] = list(out["tree_end"].get("problems") or ["the tree check did not say clean"])
     if sched.tag == "scored":
+        stop = (["the change-log read at STAND END gave no change log (B-CL)"] if cl_end is None else []) \
+            + ([f"the tree is not clean at STAND END - {out['dirty_end']} (P0e, B-TE)"] if "dirty_end" in out else [])
+        if stop:
+            err = SchedulerError(f"{sp.stand}: {'; '.join(stop)}; STAND END is written and no judge ran")
+            err.partial = out
+            raise err
+        emb = _embedders(sp)
         for j in judges:
-            sched._gpu_only(None)                        # nothing resident before a judge loads its model
+            sched._gpu_only(None, embedders=emb)         # nothing resident before a judge loads its model
             j.run()
             if sched.ollama_ctl is not None:
-                sched.ollama_ctl.unload(j.model)
+                sched.ollama_ctl.unload(j.model, embedder=_full_name(j.model) in {_full_name(m) for m in emb})
                 left = sched.ollama_ctl.ps()
                 if left:
                     raise SchedulerError(f"after judge {j.name} the GPU still holds {left} (§5.6)")
             out["judged"].append(j.name)
     return out
+
+
+def _changelog(read: Any) -> str | None:
+    """The change log a barrier read gave, or None when it gave nothing a STAND line may carry as a value (B-CL)."""
+    v = (read or {}).get("changelog")
+    return None if v in _NOT_READ else v
+
+
+def _close_stand(sched: "Scheduler", e: BaseException, stand: str) -> None:
+    """B-OPEN at the stand: a stand that failed after STAND START writes STAND END - its model and change log unread,
+    nothing probed on the way out - and the error goes on; a STAND END that cannot be written is named beside it."""
+    try:
+        sched.status.stand(stand, "END", model=UNREAD, changelog=UNREAD)
+    except Exception as x:  # noqa: BLE001 - named below
+        msg = f"{stand}: {type(e).__name__}: {e} - and STAND END could not be written: {type(x).__name__}: {x}"
+        if isinstance(e, Exception):
+            raise SchedulerError(msg) from e
+        print(msg, file=sys.stderr)

@@ -242,16 +242,27 @@ except L.ContractViolation as e:
 check("a refused spawn raises the contract's refusal, and the lock is released - the next spawn goes through",
       refusal != "spawned" and s1.spawn_child(SPEC, role="arm-write", stand="S1", run="r1", arm="mem0", unit="u3")[0] is not None,
       refusal)
+
+
+def spawned(**kw):
+    """(child, dirs), or the launch refusal as text - a refusal is a named FAIL of its row, never a traceback."""
+    try:
+        return s1.spawn_child(SPEC, role=kw.pop("role", "arm-write"), stand="S1", run="r1", arm="mem0", **kw)
+    except L.ContractViolation as e:
+        return None, f"refused: {e}"
+
+
 own = L.make_unit_dirs(s1.c, "S1", "r1", "mem0", "u10")
-ch10, d10 = s1.spawn_child(SPEC, role="arm-write", stand="S1", run="r1", arm="mem0", unit="u10", dirs=own)
+ch10, d10 = spawned(unit="u10", dirs=own)
 check("given directories are used as they are - never made a second time (Q-47-6's reuse passes its unit's own)",
-      d10 is own and Path(ch10.process.cwd) == own.cwd)
+      ch10 is not None and d10 is own and Path(ch10.process.cwd) == own.cwd, str(d10))
 w = L.Window(name="win", hosts=("registry.npmjs.org",))
-ch11, _d11 = s1.spawn_child(SPEC, role="fetch", stand="S1", run="r1", arm="mem0", unit="u11", window=w)
+ch11, d11 = spawned(unit="u11", window=w, role="fetch")
 check("a spawn made inside a window is that window's root (its egress is filed as window hosts, W3)",
-      ch11.process.pid in w.roots)
-check("the environment is the contract's, offline for HF by default", ch11.process.env.get("HF_HUB_OFFLINE") == "1"
-      and ch11.process.env.get("HTTP_PROXY") == "http://127.0.0.1:47001")
+      ch11 is not None and ch11.process.pid in w.roots, str(d11))
+check("the environment is the contract's, offline for HF by default", ch11 is not None
+      and ch11.process.env.get("HF_HUB_OFFLINE") == "1" and ch11.process.env.get("HTTP_PROXY") == "http://127.0.0.1:47001",
+      str(d11))
 check("a tag outside scored / smoke / debug refuses", "tag" in err(lambda: SC.Scheduler(
     contract("x"), None, None, L, None, None, tag="best", witnesses=None, parent_env={}, catcher_url="")))
 

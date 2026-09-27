@@ -9,7 +9,12 @@ auditor's Q25, D1, D2):
   heartbeat stops within a second of the line; the arm-run's END then lists it (M-SCHED-ceiling-noabort);
 * T21 crash: a unit whose child dies mid-write is UNIT-ABORT reason=crash with its exit code (D2);
 * the unit record: spawn id, pid, each write's op id and times, footprint, exit code, active seconds; a memory-store
-  arm keeps its live client for the read stage (Q25(4)).
+  arm keeps its live client for the read stage (Q25(4));
+* FIX-SCHED (the auditor's B-RC, B-OPEN, B-CL, B-TE): a unit's exit code is only ever the child's own - a kill of ours
+  is signal=SIGKILL, a code that never came is a SchedulerError, a refused spawn is no unit at all; a block or a stand
+  that fails after its START closes every line it opened (ABORT reason=harness-error, BLOCK END, STAND END), resets
+  the proxy stage, ends its check and kills its live children; a scored stand never writes an unread change log as a
+  value, and a dirty tree at STAND END stops its judges.
 
     python tests/research/_test_v3_scheduler_turns.py
 """
@@ -21,6 +26,7 @@ import importlib.util
 import json
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 import time
@@ -57,6 +63,14 @@ def check(name: str, cond: bool, detail: str = "") -> None:
         print(f"  FAIL {name}" + (f" - {detail}" if detail else ""))
 
 
+def attempt(fn):
+    """(result, None) or (None, the exception) - a row's failure is a named FAIL, never a traceback."""
+    try:
+        return fn(), None
+    except Exception as e:  # noqa: BLE001
+        return None, e
+
+
 FAKE_ARM = r'''
 import json, os, sys, threading, time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -64,6 +78,17 @@ import base as B
 spec = json.load(open(sys.argv[1], encoding="utf-8"))
 shared = spec["shared"]
 knobs = spec.get("knobs") or {}
+STREAMS = {}
+_claim = B.claim_stdio
+
+
+def _claim_and_keep():
+    fin, fout = _claim()
+    STREAMS["out"] = fout
+    return fin, fout
+
+
+B.claim_stdio = _claim_and_keep              # main_with looks the name up in base's globals
 
 
 def live_dir(arm):
@@ -105,6 +130,8 @@ class H:
             time.sleep(0.1)
 
     def hello(self):
+        if knobs.get("bad_hello"):                    # another arm's hello: a protocol break the scheduler kills
+            return {"protocol": B.PROTOCOL, "arm": "not-" + spec["arm"], "stage": spec["stage"], "pid": os.getpid()}
         if spec["stage"] == "write":                  # a live WRITE child: its marker goes at end_write
             os.makedirs(live_dir(spec["arm"]), exist_ok=True)
             open(os.path.join(live_dir(spec["arm"]), spec["run"] + "." + spec["unit"]), "w").close()
@@ -129,6 +156,9 @@ class H:
             time.sleep(knobs["sleep_write_s"])
         if knobs.get("die_on_write"):
             os._exit(7)
+        if knobs.get("close_stdout"):                 # the protocol stream ends, the process lives on
+            STREAMS["out"].close()
+            time.sleep(30)
         self.items.append(item)
         return {"op_id": item.get("item_id")}
 
@@ -343,9 +373,13 @@ try:
                       write_ops=lambda a, r, u: OPS(r, u), read_plan=lambda u: [SC.ReadReq(qid=f"{u}-q1", query="x")],
                       answer=answer, embed_tag="nvt3-bge-m3-d1:latest", commit="c" * 40, dirty=False)
     status2.stand("SY", "START", model="m", changelog="2026-09-10", order=1)
-    res1 = s2.run_block(SP, SC.BlockPlan(block="b01", units=("v1", "v2")))
-    res2 = s2.run_block(SP, SC.BlockPlan(block="b02", units=("v3", "v4"), barrier_read=True))
-    status2.stand("SY", "END", model="m", changelog="2026-09-10")
+    res1, e_b1 = attempt(lambda: s2.run_block(SP, SC.BlockPlan(block="b01", units=("v1", "v2"))))
+    res2, e_b2 = attempt(lambda: s2.run_block(SP, SC.BlockPlan(block="b02", units=("v3", "v4"), barrier_read=True)))
+    attempt(lambda: status2.stand("SY", "END", model="m", changelog="2026-09-10"))
+    check("both blocks of the stand ran to their END (a disk arm, and a memory-store arm whose write stage keeps its "
+          "process)", e_b1 is None and e_b2 is None, f"{e_b1!r} {e_b2!r}")
+    res1 = res1 or {"order": [], "write": {}, "questions": {}}
+    res2 = res2 or {"order": [], "write": {}, "questions": {}}
     ops = [json.loads(x) for f in (SHARED / "ops").iterdir() for x in f.read_text(encoding="utf-8").splitlines()]
     check("T13: every write op saw the stage 'write' and every read op 'questions' (the proxy's stamp)",
           ops and all(o["stage"] == ("write" if o["op"] == "write" else "questions") for o in ops),
@@ -370,7 +404,8 @@ try:
           SL.self_check(TMP / "STATUS2") == [] and order_line == res1["order"]
           and all(f" pid={os.getpid()} " in x for x in lines2 if x.split()[2] == "START" and x.split()[3].count("/") == 3),
           str(SL.self_check(TMP / "STATUS2")))
-    first_write = {a: min(o["t"] for o in ops if o["arm"] == a and o["op"] == "write" and o["unit"] in ("v1", "v2"))
+    first_write = {a: min((o["t"] for o in ops if o["arm"] == a and o["op"] == "write" and o["unit"] in ("v1", "v2")),
+                          default=0.0)
                    for a in arms6}
     turns = sorted(first_write, key=first_write.get)
     check("T16: the arms took their write turns in the block's seeded order - which here is NOT the sorted order",
@@ -380,22 +415,23 @@ try:
           wev == [("begin_check", "SY.b01"), ("end_check", "SY.b01"), ("barrier_read", "b02"), ("begin_check", "SY.b02"),
                   ("end_check", "SY.b02")], str(wev))
     mem_w = {(o["run"], o["unit"]) for o in ops if o["arm"] == "a3" and o["op"] == "write"}
-    q3 = res1["questions"]["a3"]
+    q3 = res1["questions"].get("a3", {})
     check("T18: the memory-store arm reads from the process that wrote (the same pid), and spawns no read process",
           all(q3[k]["pid"] == res1["write"]["a3"][k].pid and q3[k]["spawn_id"] is None for k in q3) and len(q3) == 4,
           str({k: (q3[k]["pid"], res1["write"]["a3"][k].pid) for k in q3}))
     check("the GPU holds the embedder alone at the block (the other model unloaded, never the embedder)",
           ("unload", "qwen3:8b") in EV and ("unload", "nvt3-bge-m3-d1:latest") not in EV)
-    recs = [json.loads(x) for x in (C.runs_root / "_launch" / "records.jsonl").read_text(encoding="utf-8").splitlines()]
+    rj = C.runs_root / "_launch" / "records.jsonl"
+    recs = [json.loads(x) for x in rj.read_text(encoding="utf-8").splitlines()] if rj.exists() else []
     check("every arm-run's raw record is written (out=), chained, and named by its END",
           len(recs) == 12 and L.verify_chain(C.runs_root / "_launch" / "records.jsonl")
           and all((C.runs_root / r["path"]).is_file() for r in recs)
           and all(f" out={r['path']} " in " ".join(lines2) + " " for r in recs), str(recs[:1]))
-    one = json.loads((C.runs_root / recs[0]["path"]).read_text(encoding="utf-8"))
+    one = json.loads((C.runs_root / recs[0]["path"]).read_text(encoding="utf-8")) if recs else {"units": {}}
     check("the record holds each unit's write (ops, footprint, end_write time) and its questions, measured inside "
           "START..END (Q2)", set(one["units"]) and all(v["write"]["footprint"] == 2 and v["write"]["end_write_utc"]
                                                         for v in one["units"].values())
-          and one["measured_at"]["commit"] == "c" * 40, str(one)[:300])
+          and one.get("measured_at", {}).get("commit") == "c" * 40, str(one)[:300])
 
     print("\n- A7: run_stand - the tree check, STAND lines, the gate, the judges one model at a time -")
 
@@ -403,13 +439,13 @@ try:
         """Residency with a load log: a judge's run loads its model; loading beside another model is a violation."""
 
         def __init__(self):
-            self.resident, self.violations, self.log = {"qwen3:8b"}, [], []
+            self.resident, self.violations, self.log = {"qwen3:8b", "nvt3-bge-m3-d1:latest"}, [], []
 
         def ps(self):
             return sorted(self.resident)
 
         def unload(self, model, *, embedder=False):
-            self.log.append(("unload", model))
+            self.log.append(("unload", model, embedder))
             self.resident.discard(model)
             return "unloaded"
 
@@ -445,7 +481,8 @@ try:
 
         def barrier_read(self, stand, block):
             self.ev.append(("barrier_read", block))
-            return {"changelog": "2026-09-10"}
+            cl = getattr(self, "changelogs", {}).get(block, "2026-09-10")
+            return {} if cl is None else {"changelog": cl}
 
         def model_probe(self):
             self.ev.append(("model_probe",))
@@ -453,7 +490,9 @@ try:
 
         def tree_check(self):
             self.ev.append(("tree_check",))
-            return {"clean": self.tree_ok, "problems": [] if self.tree_ok else ["HEAD is not the anchor"]}
+            trees = getattr(self, "trees", None)
+            ok = trees.pop(0) if trees else self.tree_ok
+            return {"clean": ok, "problems": [] if ok else ["HEAD is not the anchor"]}
 
         def preflight(self, stand):
             self.ev.append(("preflight", stand))
@@ -510,12 +549,12 @@ try:
           and res.get("judged") == ["J1", "J2"], f"{err_} {ev[-6:]}")
     check("T15 (M-SCHED-gpu-two-models): no model was ever loaded beside another, and the GPU is empty after the judges",
           gpu.violations == [] and gpu.ps() == [], f"{gpu.violations} {gpu.log}")
+    d1 = [x for x in gpu.log if x[0] == "unload" and x[1] == "nvt3-bge-m3-d1:latest"]
+    check("R-UNL: the resident D1 embedder is unloaded before the judges through /api/embed (embedder=True), never "
+          "the generate endpoint", d1 == [("unload", "nvt3-bge-m3-d1:latest", True)], str(gpu.log))
     s, sp, judges, ev, gpu, st = stand_world("scored", tree_ok=False, stand="ST", sfile="STATUS5")
-    try:
-        s.run_stand(sp, [SC.BlockPlan(block="b01", units=("w1",))], judges=judges, order=3)
-        refusal = "ran"
-    except SC.SchedulerError as e:
-        refusal = str(e)
+    _r, e5 = attempt(lambda: s.run_stand(sp, [SC.BlockPlan(block="b01", units=("w1",))], judges=judges, order=3))
+    refusal = str(e5) if isinstance(e5, SC.SchedulerError) else f"not refused: {e5!r}"
     check("T23: a scored stand on a dirty tree is refused - no STAND START written",
           "tree" in refusal and not (TMP / "STATUS5").exists() or "tree" in refusal and "STAND ST START" not in
           (TMP / "STATUS5").read_text(encoding="utf-8"), refusal)
@@ -566,7 +605,9 @@ try:
                           read_plan=lambda u: [SC.ReadReq(qid=f"{u}-q1", query="x"), SC.ReadReq(qid=f"{u}-q2", query="y")],
                           answer=answer, embed_tag=None, commit="c" * 40, dirty=False)
         st.stand(stand, "START", model="m", changelog="2026-09-10", order=1)
-        res = s.run_block(sp, SC.BlockPlan(block="b01", units=("x1",)))
+        res, err = attempt(lambda: s.run_block(sp, SC.BlockPlan(block="b01", units=("x1",))))
+        if err is not None:
+            return {"reads": [{"error": repr(err)}, {}], "aborted": f"raised {err!r}"}, vc
         return res["questions"]["a1"][("r1", "x1")], vc
 
     q, vc = w3_world("SW1", "STATUS8", {("r1", "x1"): {"fail_reads": 1}}, lambda *a_: {"sha256": "3" * 64})
@@ -575,6 +616,7 @@ try:
           and vc.sleeps == [300.0], f"{q['reads']} {vc.sleeps}")
     q, vc = w3_world("SW2", "STATUS9", {("r1", "x1"): {"fail_reads": 3}}, lambda *a_: {"sha256": "3" * 64},
                      tag="scored")                        # a scored unit: its ceiling is the 600 s floor
+    q["reads"] = list(q["reads"]) + [{}] * max(0, 2 - len(q["reads"]))   # an aborted unit read fewer
     check("M-SCHED-reask-spacing: three failures - two re-asks, 5 min apart - then unrecovered; the unit goes on with "
           "its next question", q["reads"][0].get("unrecovered") is True and q["reads"][0].get("reasks") == 2
           and vc.sleeps == [300.0, 300.0] and q["reads"][1].get("answer") and q["aborted"] is None,
@@ -593,6 +635,310 @@ try:
     check("an answer the reader could not give is re-asked the same way (two re-asks, then answered)",
           q["reads"][0].get("reasks") == 2 and q["reads"][0]["answer"] == {"sha256": "4" * 64} and vc.sleeps == [300.0, 300.0],
           f"{q['reads']} {vc.sleeps}")
+
+    print("\n- FIX-SCHED B-RC: a unit's exit code is the child's own; a kill of ours is SIGKILL; a refusal is no unit -")
+    B_ = SC._arm_base()
+    SC.DIED_WAIT_S = 1.0                     # the grace a child whose stream closed gets to exit on its own
+
+    def aborts(path):
+        return [x for x in path.read_text(encoding="utf-8").splitlines() if " UNIT-ABORT " in x]
+
+    def refused_launcher(name):
+        """A launcher whose child the launch contract refuses (the binary does not exist): no process is ever made."""
+        return SC.ChildArmLauncher(name, argv_for=lambda p: [str(FAKE_DIR / "no_such_arm.exe"), str(p)],
+                                   spec_for=lambda *a_, **k_: {}, path_dirs=(str(Path(sys.executable).parent),))
+
+    class FakeClient:
+        """A UnitClient's shape with a scripted child: died with no code, a close that times out, a close with no code."""
+
+        def __init__(self, name, stage, script):
+            self.name, self.stage, self.script, self.killed = name, stage, script, 0
+            self.child = SimpleNamespace(spawn_id=f"fake-{stage}", process=SimpleNamespace(pid=4242, poll=lambda: 0))
+            self.pid, self.dirs, self.arm = 4242, None, SimpleNamespace(poisoned=None)
+
+        def request(self, op, *, timeout, **f):
+            if timeout is not None and timeout < 0:          # ArmClient's queue.get refuses it the same way
+                raise ValueError("'timeout' must be a non-negative number")
+            if op == "hello":
+                return {"protocol": B_.PROTOCOL, "arm": self.name, "stage": self.stage}
+            if op == "write" and self.script.get("advance"):
+                vclock, secs = self.script["advance"]
+                vclock.offset += secs                         # the op answered, but spent the unit's ceiling
+            if op == "write" and self.script.get("died"):
+                self.arm.poisoned = "died"
+                raise B_.ArmDied("write: the child's stdout closed (exit None)")
+            return {"write": {"op_id": (f.get("item") or {}).get("item_id")}, "end_write": {"footprint": 1, "seal": None},
+                    "read": {"items": []}, "counters": {}}[op]
+
+        def close(self, *, timeout):
+            if self.script.get("close_timeout"):
+                raise subprocess.TimeoutExpired("fake-arm", timeout)
+            return self.script.get("close_rc", 0)
+
+        def kill_tree(self):
+            self.killed += 1
+
+        def exit_code(self, timeout=10.0):
+            return self.script.get("exit_rc", 1 if self.killed else None)
+
+    class FakeLauncher:
+        reads_point = False
+
+        def __init__(self, name, *, store="disk", scripts=None):
+            self.name, self.store_persistence, self.scripts, self.opened = name, store, scripts or {}, []
+
+        def open(self, stage, *, sched, stand, run, unit, write_dirs=None):
+            c = FakeClient(self.name, stage, self.scripts.get((stage, run, unit), {}))
+            self.opened.append(c)
+            return c
+
+    for sub in ("live", "passed", "seen", "ops", "hb"):
+        shutil.rmtree(SHARED / sub, ignore_errors=True)
+    (SHARED / "live").mkdir()
+    st11 = SL.StatusLog(TMP / "STATUS11", local_tz=dt.timezone.utc)
+    s11 = SC.Scheduler(C, None, st11, L, Clock(), None, tag="smoke", witnesses=SimpleNamespace(native=StubNative()),
+                       parent_env=dict(os.environ), catcher_url="http://127.0.0.1:47001")
+    st11.stand("SR", "START", model="m", changelog="2026-09-10", order=1)
+    o11, sd11 = SC.arm_order(["a1"], campaign_seed=7, stand="SR", block="b01")
+    st11.block_start("SR", "b01", units=["k1", "k2", "k3", "k4", "k5", "k6"], arm_order=o11, seed=sd11)
+    sid11 = st11.start("SR", "b01", "r1", "a1", pid=os.getpid(), tag="smoke")
+    kn = {("r1", "k1"): {"close_stdout": True, "heartbeat": True}, ("r1", "k2"): {"bad_hello": True}}
+    r11s, e11 = attempt(lambda: s11.write_turn(launcher("a1", expect=1, knobs=kn), stand="SR", runs=["r1"],
+                                                units=["k1", "k2"], ops_for=OPS, ceilings={"k1": 60.0, "k2": 60.0},
+                                                status_ids={"r1": sid11}))
+    r11s = r11s or {}
+    ua11 = aborts(TMP / "STATUS11")
+    k1 = r11s.get(("r1", "k1"))
+    check("B-RC: a child whose stream closed and which did not exit is killed by us - UNIT-ABORT crash signal=SIGKILL, "
+          "and no exit code of ours in the line or the record",
+          any(" UNIT-ABORT SR/b01/r1/a1/k1 reason=crash signal=SIGKILL utc=" in x for x in ua11)
+          and k1 is not None and k1.rc is None and getattr(k1, "signal", None) == "SIGKILL", f"{e11!r} {ua11} {k1}")
+    hb11 = SHARED / "hb" / "a1.r1.k1"
+    b11 = hb11.read_text() if hb11.exists() else ""
+    time.sleep(1.2)
+    check("... and its tree is dead (the heartbeat stopped)", hb11.exists() and hb11.read_text() == b11, b11)
+    k2 = r11s.get(("r1", "k2"))
+    check("B-RC: a child that broke the protocol at hello is killed by us - UNIT-ABORT crash signal=SIGKILL, no rc",
+          any(" UNIT-ABORT SR/b01/r1/a1/k2 reason=crash signal=SIGKILL utc=" in x for x in ua11)
+          and k2 is not None and k2.rc is None and getattr(k2, "signal", None) == "SIGKILL", f"{ua11} {k2}")
+    u4 = rs[("r1", "u4")]
+    check("B-RC: a unit killed at its ceiling keeps no exit code in its record - the code is our kill's, not the "
+          "product's (signal SIGKILL)", u4.rc is None and getattr(u4, "signal", None) == "SIGKILL", str(u4))
+    u5 = rs[("r1", "u5")]
+    check("B-RC: a child that died on its own keeps its own code and no signal (T21's rc=7)",
+          u5.rc == 7 and getattr(u5, "signal", "absent") is None, str(u5))
+    _r, e = attempt(lambda: s11.write_turn(refused_launcher("a1"), stand="SR", runs=["r1"], units=["k3"], ops_for=OPS,
+                                            ceilings={"k3": 60.0}, status_ids={"r1": sid11}))
+    check("B-RC: a spawn the launch contract refused is a SchedulerError naming its unit - no UNIT-ABORT: it never ran",
+          isinstance(e, SC.SchedulerError) and "k3" in str(e)
+          and not any("/k3 " in x for x in aborts(TMP / "STATUS11")), repr(e))
+    fl = FakeLauncher("a1", scripts={("write", "r1", "k4"): {"died": True, "exit_rc": None}})
+    _r, e = attempt(lambda: s11.write_turn(fl, stand="SR", runs=["r1"], units=["k4"], ops_for=OPS, ceilings={"k4": 60.0},
+                                            status_ids={"r1": sid11}))
+    check("B-RC: a child that died and never gave its exit code is a SchedulerError - a crash line is never written "
+          "without rc= or signal= (rc=-1 was invented)", isinstance(e, SC.SchedulerError) and "k4" in str(e)
+          and not any("/k4 " in x for x in aborts(TMP / "STATUS11")) and fl.opened and fl.opened[0].killed >= 1,
+          f"{e!r} {aborts(TMP / 'STATUS11')}")
+    fl = FakeLauncher("a1", scripts={("write", "r1", "k5"): {"close_timeout": True}})
+    r5, e = attempt(lambda: s11.write_turn(fl, stand="SR", runs=["r1"], units=["k5"], ops_for=OPS, ceilings={"k5": 60.0},
+                                            status_ids={"r1": sid11}))
+    check("B-RC: a child that does not exit after bye within its ceiling is UNIT-ABORT reason=ceiling - its "
+          "TimeoutExpired is the unit's, never a harness error", e is None
+          and any(" UNIT-ABORT SR/b01/r1/a1/k5 reason=ceiling utc=" in x for x in aborts(TMP / "STATUS11"))
+          and r5[("r1", "k5")].aborted == "ceiling" and fl.opened[0].killed >= 1, f"{e!r} {aborts(TMP / 'STATUS11')}")
+    bad_ops = lambda r, u: [{"id": 5, "item": {"item_id": f"{u}-i0", "text": "x"}}]  # noqa: E731 - a reserved field
+    _r, e6 = attempt(lambda: s11.write_turn(launcher("a1", expect=1, knobs={("r1", "k6"): {"heartbeat": True}}),
+                                             stand="SR", runs=["r1"], units=["k6"], ops_for=bad_ops,
+                                             ceilings={"k6": 60.0}, status_ids={"r1": sid11}))
+    hb6 = SHARED / "hb" / "a1.r1.k6"
+    b6 = hb6.read_text() if hb6.exists() else ""
+    time.sleep(1.2)
+    check("B-OPEN: a write child whose request broke on our side (the client's ValueError) is killed, and the error "
+          "goes on - no UNIT-ABORT for what was not the unit's", isinstance(e6, ValueError) and hb6.exists()
+          and hb6.read_text() == b6 and not any("/k6 " in x for x in aborts(TMP / "STATUS11")), f"{e6!r} {b6}")
+    st11.end(sid11, rc=0, wall_s=1.0, units=6, out="runs/sr.json")
+    st11.block_end("SR", "b01")
+    st11.stand("SR", "END", model="m", changelog="2026-09-10")
+    check("the B-RC file passes the writer's own replay", SL.self_check(TMP / "STATUS11") == [],
+          str(SL.self_check(TMP / "STATUS11")))
+    vc17 = VirtualClock()
+    st17 = SL.StatusLog(TMP / "STATUS17", now=vc17.utc, local_tz=dt.timezone.utc)
+    s17 = SC.Scheduler(C, None, st17, L, vc17, None, tag="smoke", witnesses=SimpleNamespace(native=StubNative()),
+                       parent_env=dict(os.environ), catcher_url="http://127.0.0.1:47001")
+    st17.stand("SV", "START", model="m", changelog="2026-09-10", order=1)
+    o17, sd17 = SC.arm_order(["a1"], campaign_seed=7, stand="SV", block="b01")
+    st17.block_start("SV", "b01", units=["v1"], arm_order=o17, seed=sd17)
+    sid17 = st17.start("SV", "b01", "r1", "a1", pid=os.getpid(), tag="smoke")
+    fl17 = FakeLauncher("a1", scripts={("write", "r1", "v1"): {"advance": (vc17, 61.0)}})
+    r17, e17 = attempt(lambda: s17.write_turn(fl17, stand="SV", runs=["r1"], units=["v1"], ops_for=OPS,
+                                               ceilings={"v1": 60.0}, status_ids={"r1": sid17}))
+    v1 = (r17 or {}).get(("r1", "v1"))
+    check("B-BUDGET: a unit whose ceiling passed between two requests is UNIT-ABORT reason=ceiling - the next request "
+          "never gets a spent (negative) timeout", e17 is None and v1 is not None and v1.aborted == "ceiling"
+          and any(" UNIT-ABORT SV/b01/r1/a1/v1 reason=ceiling " in x for x in aborts(TMP / "STATUS17")),
+          f"{e17!r} {aborts(TMP / 'STATUS17')}")
+
+    print("\n- FIX-SCHED B-OPEN: a block that fails after its START closes what it opened, and kills its children -")
+    EV12: list = []
+
+    class PC12:
+        def stage(self, block, stage):
+            EV12.append(("stage", block, stage))
+
+    class W12:
+        native = StubNative()
+
+        def begin_check(self, cid):
+            EV12.append(("begin", cid))
+
+        def end_check(self, cid):
+            EV12.append(("end", cid))
+            return {"check_id": cid, "complete": True}
+
+    def block_world(sfile, launchers, *, tag="smoke", answer=None, medians=None, status_cls=None, stand="SO",
+                    units=("y1",)):
+        EV12.clear()
+        for sub in ("live", "passed", "seen", "ops", "hb"):
+            shutil.rmtree(SHARED / sub, ignore_errors=True)
+        (SHARED / "live").mkdir()
+        st = (status_cls or SL.StatusLog)(TMP / sfile, local_tz=dt.timezone.utc)
+        if tag == "scored":
+            st.campaign_start(anchor="c" * 40, prereg="d" * 64, freeze="e" * 64)
+        s = SC.Scheduler(C, PC12(), st, L, Clock(), None, tag=tag, witnesses=W12(), parent_env=dict(os.environ),
+                         catcher_url="http://127.0.0.1:47001")
+        names = sorted(launchers)
+        seed = next(x for x in range(1, 5000)
+                    if SC.arm_order(names, campaign_seed=x, stand=stand, block="b01")[0] == names)   # the rows' order
+        sp = SC.StandPlan(stand=stand, runs=("r1",), launchers=launchers, campaign_seed=seed,
+                          unit_tokens={u: 1000 for u in units}, medians=medians if medians is not None else {},
+                          write_ops=lambda a, r, u: OPS(r, u), read_plan=lambda u: [SC.ReadReq(qid=f"{u}-q", query="x")],
+                          answer=answer or (lambda *a_: {"sha256": "5" * 64}), embed_tag=None, commit="c" * 40,
+                          dirty=False)
+        st.stand(stand, "START", model="m", changelog="2026-09-10", order=1)
+        _r, err = attempt(lambda: s.run_block(sp, SC.BlockPlan(block="b01", units=tuple(units))))
+        lines = (TMP / sfile).read_text(encoding="utf-8").splitlines()
+        return err, lines, st
+
+    def closed(lines, arms, stand="SO"):
+        """Every START of the block is closed by ABORT reason=harness-error, and the block by BLOCK END."""
+        return (all(any(f" ABORT {stand}/b01/r1/{a} reason=harness-error utc=" in x for x in lines) for a in arms)
+                and any(f" BLOCK {stand}/b01 END" in x for x in lines))
+
+    e12, l12, st12 = block_world("STATUS12", {"m1": launcher("m1", expect=1, knobs={("r1", "y1"): {"heartbeat": True}},
+                                                             store="memory"), "zb": refused_launcher("zb")})
+    check("B-OPEN: a failure after START reaches the caller as what it was (the refused spawn's SchedulerError)",
+          isinstance(e12, SC.SchedulerError), repr(e12))
+    check("B-OPEN: every START of the block is closed by ABORT reason=harness-error, then BLOCK END",
+          closed(l12, ("m1", "zb")), "\n".join(l12[-6:]))
+    check("B-OPEN: the proxy stage is reset and the block's check ended",
+          EV12[-2:] == [("stage", None, None), ("end", "SO.b01")], str(EV12))
+    _r, e_end = attempt(lambda: st12.stand("SO", "END", model="m", changelog="2026-09-10"))
+    check("... and the file passes the writer's own replay", e_end is None and SL.self_check(TMP / "STATUS12") == [],
+          f"{e_end!r} {SL.self_check(TMP / 'STATUS12')}")
+    hb12 = SHARED / "hb" / "m1.r1.y1"
+    b12 = hb12.read_text() if hb12.exists() else ""
+    time.sleep(1.2)
+    check("B-OPEN: the memory-store arm's live writer (the arm before the failure) is killed - no child outlives its "
+          "block", hb12.exists() and hb12.read_text() == b12, b12)
+
+    def refuse_unit(name, bad_unit, **kw):
+        """A launcher whose child for one unit is refused (its binary does not exist); its other units run."""
+        good = launcher(name, **kw)
+        return SC.ChildArmLauncher(
+            name, argv_for=lambda p: ([str(FAKE_DIR / "no_such_arm.exe")] if f"{bad_unit}.home" in str(p)
+                                      else [sys.executable, "-B", str(FAKE_DIR / "fake_arm.py")]) + [str(p)],
+            spec_for=good.spec_for, store_persistence=good.store_persistence, path_dirs=good.path_dirs)
+
+    e18, l18, _st = block_world("STATUS18", {"m2": refuse_unit("m2", "y2", expect=1, store="memory",
+                                                                knobs={("r1", "y1"): {"heartbeat": True}})},
+                                units=("y1", "y2"), stand="SL")
+    hb18 = SHARED / "hb" / "m2.r1.y1"
+    b18 = hb18.read_text() if hb18.exists() else ""
+    time.sleep(1.2)
+    check("B-OPEN: a write turn that fails in one unit kills the live writers of its other units (a memory store) "
+          "before the error goes on", isinstance(e18, SC.SchedulerError) and hb18.exists() and hb18.read_text() == b18
+          and closed(l18, ("m2",), stand="SL"), f"{e18!r} {b18}")
+
+    e13, l13, _st = block_world("STATUS13", {"a1": launcher("a1", expect=1)}, tag="scored", stand="SQ")
+    check("B-OPEN: the ceilings come before BLOCK START - a scored arm without a frozen median is refused with no "
+          "block line, no check and no stage", isinstance(e13, SC.SchedulerError) and "median" in str(e13)
+          and not any(" BLOCK SQ/b01 " in x for x in l13) and not EV12, f"{e13!r} {l13[-3:]} {EV12}")
+
+    def exploding(*_a):
+        raise ValueError("the reader hook broke")
+
+    e14, l14, st14 = block_world("STATUS14", {"a1": launcher("a1", expect=1, knobs={("r1", "y1"): {"heartbeat": True}})},
+                                 answer=exploding, stand="SP")
+    check("B-OPEN: a failure in the question stage keeps its own type (ValueError) and closes the block the same way",
+          isinstance(e14, ValueError) and closed(l14, ("a1",), stand="SP")
+          and EV12[-2:] == [("stage", None, None), ("end", "SP.b01")], f"{e14!r} {l14[-4:]} {EV12}")
+    hb14 = SHARED / "hb" / "a1.r1.y1"
+    b14 = hb14.read_text() if hb14.exists() else ""
+    time.sleep(1.2)
+    check("... and the read child whose answer broke is killed (the heartbeat stopped)",
+          hb14.exists() and hb14.read_text() == b14, b14)
+
+    e15, l15, _st = block_world("STATUS15", {"a1": FakeLauncher("a1", scripts={("write", "r1", "y1"): {"close_rc": None}})},
+                                stand="SN")
+    check("B-RC (END): a disk unit with no exit code is a SchedulerError naming it - never a silent rc=0; no END line, "
+          "the START closed by ABORT", isinstance(e15, SC.SchedulerError) and "y1" in str(e15)
+          and not any(" END SN/b01/r1/a1 " in x for x in l15) and closed(l15, ("a1",), stand="SN"),
+          f"{e15!r} {l15[-4:]}")
+    e15m, l15m, _st = block_world("STATUS15M", {"a1": FakeLauncher("a1", store="memory")}, stand="SM")
+    check("... while a memory-store unit's write stage has no code of its own - its END is written",
+          e15m is None and any(" END SM/b01/r1/a1 rc=0 " in x for x in l15m), f"{e15m!r} {l15m[-3:]}")
+
+    class BlockEndFails(SL.StatusLog):
+        def block_end(self, stand, block):
+            raise RuntimeError("the disk is full")
+
+    e16, _l16, _st = block_world("STATUS16", {"a1": launcher("a1", expect=1)}, answer=exploding, stand="SK",
+                                 status_cls=BlockEndFails)
+    check("B-OPEN: a cleanup step that fails is named beside the original error, never swallowed",
+          isinstance(e16, SC.SchedulerError) and "the disk is full" in str(e16) and "the reader hook broke" in str(e16)
+          and isinstance(e16.__cause__, ValueError), repr(e16))
+
+    print("\n- FIX-SCHED B-CL, B-TE and B-OPEN at the stand -")
+
+    def stand_run(tag, stand, sfile, *, changelogs=None, trees=None, launchers=None):
+        s, sp, judges, ev, gpu, st = stand_world(tag, stand=stand, sfile=sfile)
+        s.hooks.changelogs, s.hooks.trees = changelogs or {}, list(trees or [])
+        if launchers:
+            sp.launchers = launchers
+        if tag == "scored":
+            st.campaign_start(anchor="c" * 40, prereg="d" * 64, freeze="e" * 64)
+        res, err = attempt(lambda: s.run_stand(sp, [SC.BlockPlan(block="b01", units=("w1",))], judges=judges, order=7))
+        text = (TMP / sfile).read_text(encoding="utf-8") if (TMP / sfile).exists() else ""
+        return res, err, text, [e for e in ev if e[0] == "judge"]
+
+    for cl, sfile, stand in ((None, "STATUS20", "SC1"), ("unread", "STATUS21", "SC2"), ("unknown", "STATUS22", "SC3")):
+        _res, err, text, _j = stand_run("scored", stand, sfile, changelogs={"start": cl})
+        check(f"B-CL: a scored stand whose start read gave {cl!r} as its change log is refused before STAND START",
+              isinstance(err, SC.SchedulerError) and "change" in str(err) and f"STAND {stand} START" not in text,
+              f"{err!r} {text[-200:]}")
+    res, err, text, _j = stand_run("smoke", "SC4", "STATUS23", changelogs={"start": None, "end": None})
+    check("B-CL: a smoke stand records an unread change log as 'unread', at START and at END - never 'unknown'",
+          err is None and " STAND SC4 START " in text and "changelog=unread" in text.split(" STAND SC4 START ")[1].split("\n")[0]
+          and "changelog=unread" in text.split(" STAND SC4 END ")[1].split("\n")[0], f"{err!r} {text[-300:]}")
+    res, err, text, j = stand_run("scored", "SC5", "STATUS24", changelogs={"end": None})
+    check("B-CL: a scored stand whose end read gave no change log writes STAND END (changelog=unread), runs no judge, "
+          "and raises", isinstance(err, SC.SchedulerError) and "change" in str(err) and j == []
+          and "changelog=unread" in text.split(" STAND SC5 END ")[-1].split("\n")[0] and " STAND SC5 END " in text,
+          f"{err!r} {j} {text[-200:]}")
+    res, err, text, j = stand_run("scored", "ST2", "STATUS25", trees=[True, False])
+    check("B-TE: a scored stand whose tree is dirty at STAND END writes STAND END, runs no judge, and raises naming the "
+          "tree; the result so far rides on the error", isinstance(err, SC.SchedulerError) and "tree" in str(err)
+          and j == [] and " STAND ST2 END " in text
+          and (getattr(err, "partial", None) or {}).get("dirty_end") == ["HEAD is not the anchor"], f"{err!r} {j}")
+    res, err, text, j = stand_run("smoke", "ST3", "STATUS26", trees=[True, False])
+    check("B-TE: a smoke stand records a dirty end tree in its result and goes on",
+          err is None and (res or {}).get("dirty_end") == ["HEAD is not the anchor"], f"{err!r} {res}")
+    res, err, text, j = stand_run("scored", "SB1", "STATUS27", launchers={"a1": refused_launcher("a1")})
+    check("B-OPEN (stand): a block's failure writes STAND END (model and change log unread), runs no judge, and "
+          "reaches the caller", isinstance(err, SC.SchedulerError) and j == []
+          and " STAND SB1 END model=unread changelog=unread " in text, f"{err!r} {j} {text[-300:]}")
+    check("... and the stand's file passes the writer's own replay", SL.self_check(TMP / "STATUS27") == [],
+          str(SL.self_check(TMP / "STATUS27")))
 finally:
     shutil.rmtree(TMP, ignore_errors=True)
 
