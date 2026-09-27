@@ -472,9 +472,13 @@ try:
     gave.argv_exception = lambda: {2: str(PL.ARMS_DIR / "arm_mem0.py")}
     lost = pll("bm25-floor")
     lost.argv_exception = lambda: None
+    gave0 = pll("mem0")
+    gave0.argv_exception = lambda: {}                                   # an empty one is still one (the auditor's note)
     r_gave, r_lost = refused(lambda: gave.launcher(SC.ChildArmLauncher)), refused(lambda: lost.launcher(SC.ChildArmLauncher))
-    check("PLL (4, O1 (c)): a competitor given an argv exception is refused by name before any spawn - and so is our "
-          "arm without its own", "competitor given one" in r_gave and "without its own" in r_lost, f"{r_gave} | {r_lost}")
+    r_gave0 = refused(lambda: gave0.launcher(SC.ChildArmLauncher))
+    check("PLL (4, O1 (c)): a competitor given an argv exception - even an empty one - is refused by name before any "
+          "spawn, and so is our arm without its own; each message says which", "competitor given one" in r_gave
+          and "competitor given one" in r_gave0 and "without its own" in r_lost, f"{r_gave} | {r_gave0} | {r_lost}")
     lns = {a: PLS[a].launcher(SC.ChildArmLauncher) for a in ALL}
     check("PLL (5): every arm's path_dirs is its python's directory alone", all(lns[a].path_dirs == (str(PY.parent),)
                                                                                  for a in ALL),
@@ -686,6 +690,16 @@ try:
           [(r_.point, r_.k) for r_ in rp_["a-mem"]] == [("B", 200), ("K", 10)]
           and [(r_.point, r_.k) for r_ in rp_["bm25-floor"]] == [("B", 200)], str(rp_))
     rec5 = sp.record_extra("bm25-floor", "r1", ["u5"]) if sp.record_extra else {"truncation": None, "item_sha256": {}}
+    bdir = TMP / "px-run"
+    (bdir / "bodies" / "mem0").mkdir(parents=True)
+    (bdir / "bodies" / "mem0" / "r1.u1.jsonl").write_bytes(b'{"strings": ["x"]}\n')
+    st_b = PL.PlanState(bodies_dir=bdir)
+    bsha = st_b.bodies_sha256("mem0", "r1", ["u1", "u5"])
+    check("Q-A5-1: the run record's plan part names each unit's bodies file by its sha256 - None where the writer sent "
+          "nothing, and no field at all without the proxy's run directory",
+          bsha == {"u1": hashlib.sha256(b'{"strings": ["x"]}\n').hexdigest(), "u5": None}
+          and st_b.record_for("mem0", "r1", ["u1"])["bodies_sha256"] == {"u1": bsha["u1"]}
+          and PL.PlanState().bodies_sha256("mem0", "r1", ["u1"]) is None, str(bsha))
     check("TR (A5 condition): the run record's plan part - the truncation over the BLOCK's units, each op's sha256, "
           "the speaker map's sha - is StandPlan.record_extra", rec5["truncation"] == {"items": 2, "truncated": 1,
                                                                                      "share": 0.5}

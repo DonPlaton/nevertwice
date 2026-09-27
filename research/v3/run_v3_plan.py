@@ -656,7 +656,7 @@ class PlanLauncher:
         exc = self.argv_exception()
         if (exc is not None) != self.spec.ours:
             raise PlanError(f"{self.arm}: an argv exception is for our arms alone (Q9, Q-A4-6 (4)) - "
-                            f"{'a competitor given one' if exc else 'our arm without its own'}")
+                            f"{'our arm without its own' if self.spec.ours else 'a competitor given one'}")
         n = self.token_name()
         return child_arm_launcher(self.arm, argv_for=self.argv_for, spec_for=self.spec_for,
                                   store_persistence=self.spec.store_persistence, path_dirs=(str(self.python.parent),),
@@ -764,11 +764,12 @@ class PlanState:
     """What the plan's callbacks record during a run, for the run records: per (arm, run, unit) the §5.1 cuts and the
     sha256 of every op's bytes (Q-45-4); record_for is StandPlan.record_extra."""
 
-    def __init__(self, *, smap_sha256: str | None = None) -> None:
+    def __init__(self, *, smap_sha256: str | None = None, bodies_dir: str | os.PathLike | None = None) -> None:
         self._lock = threading.Lock()
         self.cuts: dict[tuple[str, str, str], list] = {}
         self.shas: dict[tuple[str, str, str], dict] = {}
         self.smap_sha256 = smap_sha256
+        self.bodies_dir = Path(bodies_dir) if bodies_dir is not None else None
 
     def truncation(self, arm: str, run: str, units: Iterable[str] | None = None) -> dict | str:
         """{items, truncated, share} over the arm-run's units (all of them, or ``units``)."""
@@ -779,20 +780,32 @@ class PlanState:
                  for x in v]
         return {"items": len(c), "truncated": sum(c), "share": (sum(c) / len(c)) if c else 0.0}
 
+    def bodies_sha256(self, arm: str, run: str, units: Sequence[str]) -> dict | None:
+        """Q-A5-1: each unit's bodies file (the proxy's bodies/<arm>/<run>.<unit>.jsonl) by its sha256, None where the
+        unit's writer sent nothing; None when the plan was given no proxy run directory."""
+        if self.bodies_dir is None:
+            return None
+        out = {}
+        for u in units:
+            f = self.bodies_dir / "bodies" / arm / f"{run}.{u}.jsonl"
+            out[u] = _sha256_file(f) if f.is_file() else None
+        return out
+
     def record_for(self, arm: str, run: str, units: Sequence[str]) -> dict:
         """The plan's record of one arm-run in a block: the truncation over the block's units, each op's sha256, the
-        speaker map's sha (Q-A4-1)."""
+        speaker map's sha (Q-A4-1), the bodies files' sha256 (Q-A5-1) - the write stage is over when it is called."""
         with self._lock:
             shas = {u: dict(self.shas.get((arm, run, u), {})) for u in units}
         return {"truncation": self.truncation(arm, run, set(units)), "item_sha256": shas,
-                "speaker_map_sha256": self.smap_sha256}
+                "speaker_map_sha256": self.smap_sha256, "bodies_sha256": self.bodies_sha256(arm, run, units)}
 
 
 def stand_plan(stand: str, units: Sequence[Any], launchers: Mapping[str, Any], *, standplan: Any, read_req: Any,
                runs: Sequence[str], campaign_seed: int, unit_tokens: Mapping[str, int], medians: Mapping[tuple, float],
                answer: Callable[..., dict], embed_tag: str | None, dated: bool, points: Callable[[str], Sequence[str]],
                k_at: Mapping[str, int], smap: Mapping[str, str] | None = None,
-               truncate: Callable[[str], Any] | None = None) -> tuple[Any, PlanState]:
+               truncate: Callable[[str], Any] | None = None,
+               bodies_dir: str | os.PathLike | None = None) -> tuple[Any, PlanState]:
     """(the scheduler's StandPlan, the PlanState its callbacks fill). ``standplan``/``read_req``: the scheduler's
     StandPlan and ReadReq classes; ``points(arm)``: the points the arm reads on this stand (the smoke: B)."""
     check_ids(runs, [u.unit_id for u in units])
@@ -802,7 +815,7 @@ def stand_plan(stand: str, units: Sequence[Any], launchers: Mapping[str, Any], *
         raise PlanError(f"{stand}: arms {missing} have no plan (A8: no adapter yet, or not an arm)")
     for u in units:
         _check_unit_dates(u, dated)
-    st = PlanState(smap_sha256=map_sha256(smap))
+    st = PlanState(smap_sha256=map_sha256(smap), bodies_dir=bodies_dir)
 
     def write_ops_for(arm: str, run: str, unit: str) -> list[dict]:
         cuts: list = []
