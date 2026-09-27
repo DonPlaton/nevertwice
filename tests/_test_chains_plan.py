@@ -139,6 +139,13 @@ try:
     rs = refused(lambda: CP.plan(R, g_bad, g_stray))
     check("CP-backlog: a line that is not a full SHA, and a commit that is not an ancestor of the head, are refused",
           "not a full 40-hex SHA" in rb and "not an ancestor" in rs, f"{rb} | {rs}")
+    r7 = refused(lambda: CP.backlog_shas(a[:7] + "\n"))
+    rup = refused(lambda: CP.backlog_shas(a.upper() + "\n"))
+    rbe = refused(lambda: CP.plan(R, a.upper(), m))
+    raf = refused(lambda: CP.plan(R, a, m[:7]))
+    check("CP-backlog: a 7-character or an UPPER-case SHA - in the backlog, as BEFORE or as AFTER - is refused by name",
+          "not a full 40-hex SHA" in r7 and "not a full 40-hex SHA" in rup and "not a commit" in rbe
+          and "not a commit" in raf, f"{r7} | {rup} | {rbe} | {raf}")
 
     print("\n- the cap, the matrix, main() -")
     saved = CP.MAX_SHAS
@@ -148,6 +155,13 @@ try:
     finally:
         CP.MAX_SHAS = saved
     check("CP-cap: more commits than the cap is refused by name", "exceed the cap" in rc, rc)
+    CP.MAX_SHAS = 3
+    try:
+        at_cap = safe_plan(R, a, m)
+    finally:
+        CP.MAX_SHAS = saved
+    check("CP-cap: exactly the cap's number of commits passes", isinstance(at_cap, list) and len(at_cap) == 3,
+          str(at_cap))
     mx = CP.matrix([b, c])
     check("CP-matrix: every commit x {windows-latest 3.14, ubuntu-latest 3.12}",
           mx["include"] == [{"sha": b, "sha7": b[:7], "os": "windows-latest", "python": "3.14"},
@@ -200,6 +214,11 @@ try:
     check("CW: the checkout is the chained commit with its history, and HEAD is checked against it",
           "ref: ${{ matrix.sha }}" in chain and "fetch-depth: 0" in chain
           and re.search(r'got=\$\(git rev-parse HEAD\)\n\s+if \[ "\$got" != "\$SHA" \]; then', chain) is not None)
+    check("CW: the battery line is exactly 'python -m pytest -q 2>&1 | tee chain.log' to its end - no '|| true', "
+          "'; true' or anything after it", re.search(r"^ +python -m pytest -q 2>&1 \| tee chain\.log$", chain, re.M)
+          is not None and "|| true" not in W and "; true" not in W, chain.split("The commit's own battery")[1][:200])
+    check("CW: no step or job may continue on error - a red battery is a red chain",
+          "continue-on-error" not in W)
     check("CW: the commit's own battery with pipefail, its log kept as chain-<sha7>-<os>",
           "set -o pipefail" in chain and "python -m pytest -q 2>&1 | tee chain.log" in chain
           and "name: chain-${{ matrix.sha7 }}-${{ matrix.os }}" in chain and "if: always()" in chain)
