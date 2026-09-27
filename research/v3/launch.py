@@ -1499,24 +1499,31 @@ def _digest(rows: list[bytes]) -> str:
 
 class FsWitness:
     """§2.6.9 [RULING] G1: names, sizes and mtimes before and after a check; no content read. Only per-directory
-    digests leave memory, rolled up per label; names never do."""
+    digests leave memory, rolled up per label; names never do. R-WIT-DIAG: a stat_known label's rows (kind, size,
+    mtime) are kept in memory for the last snapshot (last_rows), so a check can say which row changed and how - by
+    position and kind, never by name, size or time; a stat that fails is recorded as "absent", never retried."""
 
     def __init__(self, specs: Sequence[WatchSpec], *, fs: OsFs | None = None):
         self.specs = tuple(specs)
         self.fs = fs or OsFs()
+        self.last_rows: dict[str, list] = {}
 
     def snapshot(self) -> dict[str, dict[str, str]]:
+        self.last_rows = {}
         return {s.label: self._label(s) for s in self.specs}
 
     def _label(self, s: WatchSpec) -> dict[str, str]:
         if s.mode == "stat_known":
-            rows = []
+            rows, raw = [], []
             for name, p in (("", s.root), *((n, s.root / n) for n in s.known)):
                 try:
                     st = self.fs.stat(os.fspath(p))
                     rows.append(_row(name, "e", st.st_size, st.st_mtime_ns))
+                    raw.append(("e", st.st_size, st.st_mtime_ns))
                 except OSError:
                     rows.append(_row(name, "absent", 0, 0))
+                    raw.append(("absent", 0, 0))
+            self.last_rows[s.label] = raw
             return {"": _digest(rows)}
         out: dict[str, str] = {}
         try:
@@ -1566,6 +1573,27 @@ class FsWitness:
         return {label: {"dirs": len(d), "digest": hashlib.sha256("\n".join(sorted(
             hashlib.sha256(k.encode("utf-8", "surrogatepass")).hexdigest() + v for k, v in d.items())).encode()
         ).hexdigest()} for label, d in snap.items()}
+
+    @staticmethod
+    def row_changes(before_rows: Mapping[str, Sequence], after_rows: Mapping[str, Sequence]) -> dict[str, list]:
+        """R-WIT-DIAG: per stat_known label, each row (0 the root, k the k-th known name) whose kind, size or mtime
+        differs between begin and end - {row, begin kind, end kind, the fields that changed}; no value leaves memory."""
+        out: dict[str, list] = {}
+        for label in sorted(set(before_rows) | set(after_rows)):
+            b, a = list(before_rows.get(label, [])), list(after_rows.get(label, []))
+            changes = []
+            for i in range(max(len(b), len(a))):
+                rb = b[i] if i < len(b) else None
+                ra = a[i] if i < len(a) else None
+                if rb == ra:
+                    continue
+                fields = [f for j, f in enumerate(("kind", "size", "mtime"))
+                          if (rb[j] if rb else None) != (ra[j] if ra else None)]
+                changes.append({"row": i, "begin": rb[0] if rb else None, "end": ra[0] if ra else None,
+                                "changed": fields})
+            if changes:
+                out[label] = changes
+        return out
 
     @staticmethod
     def diff(before: Mapping[str, Mapping[str, str]], after: Mapping[str, Mapping[str, str]]) -> dict:
@@ -1667,6 +1695,7 @@ class Witnesses:
         self.c, self.native, self.containers, self.fs = c, native, tuple(containers), fs
         self.canaries = canaries
         self._before: dict | None = None
+        self._before_rows: dict = {}
         self._check: str | None = None
 
     def begin_check(self, check_id: str, *, tags: dict | None = None) -> None:
@@ -1676,6 +1705,7 @@ class Witnesses:
         self._tags = dict(tags or {})
         self._begin_utc = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         self._before = self.fs.snapshot() if self.fs else None
+        self._before_rows = dict(getattr(self.fs, "last_rows", None) or {})
         for w in (self.native, *self.containers):
             if w is not None:
                 w.start()
@@ -1694,7 +1724,10 @@ class Witnesses:
                 complete = False
                 record["fs"] = {"fs_hits": None, "complete": False}
             else:
-                record["fs"] = {**FsWitness.diff(self._before, after), "labels": FsWitness.persistable(after)}
+                record["fs"] = {**FsWitness.diff(self._before, after), "labels": FsWitness.persistable(after),
+                                "begin_labels": FsWitness.persistable(self._before),          # R-WIT-DIAG
+                                "row_changes": FsWitness.row_changes(self._before_rows,
+                                                                     getattr(self.fs, "last_rows", None) or {})}
         else:
             complete = False
             record["fs"] = {"fs_hits": None, "complete": False}

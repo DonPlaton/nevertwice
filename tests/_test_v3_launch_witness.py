@@ -342,6 +342,52 @@ q_calls = [(k, p) for k, p in lfs.calls if L._inside(p, QUAR)]
 check("the quarantine: stat of its root and known names only, never a scandir",
       q_calls and all(k == "stat" for k, _ in q_calls)
       and {L._norm(p) for _, p in q_calls} <= {L._norm(QUAR), L._norm(QUAR / "known_top")}, str(q_calls[:4]))
+
+
+class FlakyFs(L.OsFs):
+    """A stat that fails once for one path (a transient OSError), then works - the witness never retries it."""
+
+    def __init__(self, path):
+        self.path, self.failed, self.calls = L._norm(path), False, []
+
+    def stat(self, path):
+        self.calls.append(L._norm(path))
+        if L._norm(path) == self.path and not self.failed:
+            self.failed = True
+            raise OSError("transient")
+        return super().stat(path)
+
+
+def one_absent_row(rc: dict) -> bool:
+    """Row 1 (the first known name) absent at begin and there at end; its kind and mtime changed (a directory's size
+    is 0 on Windows and not on Linux, so size may or may not be among the fields)."""
+    ch = rc.get("quarantine") or [{}]
+    return (set(rc) == {"quarantine"} and len(ch) == 1 and ch[0].get("row") == 1 and ch[0].get("begin") == "absent"
+            and ch[0].get("end") == "e" and {"kind", "mtime"} <= set(ch[0].get("changed", ()))
+            <= {"kind", "size", "mtime"})
+
+
+ffs = FlakyFs(QUAR / "known_top")
+FW = L.FsWitness(specs, fs=ffs)
+fb = FW.snapshot()
+fb_rows = dict(FW.last_rows)
+fa = FW.snapshot()
+rc_absent = L.FsWitness.row_changes(fb_rows, FW.last_rows)
+check("R-WIT-DIAG: a stat that failed at begin shows as row 1 (the first known name): absent at begin, there at end - "
+      "the label changed, and the stat was not retried", L.FsWitness.diff(fb, fa)["changed_labels"] == ["quarantine"]
+      and one_absent_row(rc_absent) and ffs.calls.count(L._norm(QUAR / "known_top")) == 2,
+      f"{rc_absent} {ffs.calls.count(L._norm(QUAR / 'known_top'))}")
+mb = FW.snapshot()
+mb_rows = dict(FW.last_rows)
+os.utime(QUAR / "known_top", ns=(2_000_000_000, 2_000_000_000))
+FW.snapshot()
+rc_mtime = L.FsWitness.row_changes(mb_rows, FW.last_rows)
+check("R-WIT-DIAG: a changed mtime shows as row 1, there at begin and end, only its mtime changed",
+      rc_mtime == {"quarantine": [{"row": 1, "begin": "e", "end": "e", "changed": ["mtime"]}]}, str(rc_mtime))
+check("R-WIT-DIAG: an unchanged label has no row change", L.FsWitness.row_changes(FW.last_rows, FW.last_rows) == {})
+check("R-WIT-DIAG: what a row change says carries no name, size or time",
+      "known_top" not in json.dumps(rc_absent) + json.dumps(rc_mtime)
+      and "2000000000" not in json.dumps(rc_mtime), json.dumps(rc_mtime))
 persisted = json.dumps(L.FsWitness.persistable(W.snapshot())).encode("utf-8")
 for name in ("SENTINEL_NAME_ZXQ", "SENTINEL_DIR_QXZ", "src"):
     check(f"no entry name in the persisted digests: {name} (UTF-8, UTF-16-LE, JSON-escaped)",
@@ -397,6 +443,18 @@ check("a check whose egress sample failed is incomplete, not zero", recf["comple
 W0 = L.Witnesses(C, native=L.NativeEgressWitness(sampler=FakeSampler(), tick_s=60, jobs=None), fs=None)
 W0.begin_check("chk-3")
 check("a check with no filesystem witness is incomplete", W0.end_check("chk-3")["complete"] is False)
+Wd = L.Witnesses(C, native=L.NativeEgressWitness(sampler=FakeSampler(), tick_s=60, jobs=None),
+                 fs=L.FsWitness(specs, fs=FlakyFs(QUAR / "known_top")))
+Wd.begin_check("chk-diag")
+recd = Wd.end_check("chk-diag")
+rawd = (C.runs_root / "_witness" / "chk-diag.json").read_bytes()
+fsd = recd.get("fs", {})
+check("R-WIT-DIAG: the check record tells 'could not be read at begin' from 'written' - row 1 absent at begin and "
+      "there at end, the quarantine's begin and end digests differ while the repo's agree, and no name is written",
+      one_absent_row(fsd.get("row_changes") or {}) and fsd.get("changed_labels") == ["quarantine"]
+      and (fsd.get("begin_labels") or {}).get("quarantine") != (fsd.get("labels") or {}).get("quarantine")
+      and (fsd.get("begin_labels") or {}).get("repo") == (fsd.get("labels") or {}).get("repo")
+      and b"known_top" not in rawd, json.dumps({k: fsd.get(k) for k in ("row_changes", "changed_labels")}))
 
 print("\n- spawn and the witness requirement -")
 C2 = L.Contract(polygon_root=TMP / "polygon", runs_root=TMP / "polygon" / "runs" / "v3", repo_root=REPO,
