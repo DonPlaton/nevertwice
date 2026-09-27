@@ -17,9 +17,23 @@ each file against its pin first (corpus_pin_v3.verify) and reads nothing else.
 * Empty items (no text) are a corpus property: skipped and counted per unit (empty_skipped), never an error (P0 c).
 * Every unit carries its characters (K76's coverage denominator, ruling Q14 O-a) and the sha256 of its canonical
   content (no gold) - the input every arm is fed.
+* TB4.3b, with the field names j4 recorded (13/13 against the auditor's blind keys):
+  - S5 BEAM: a unit per `conversation_id`; `chat` sessions of messages {content, id, index, question_type, role,
+    time_anchor}, a session dated by its first message's time_anchor; questions from `probing_questions`, a Python
+    literal read with ast.literal_eval (never eval), one per (ability, position). The gold door returns the answer
+    (`answer`, else `ideal_response`), the source_chat_ids leaves namespaced by conversation (the recorded reading:
+    every leaf is a message id), and every other gold field (rubric, ...) as canonical JSON. S5 smoke (§9.4): the 500K
+    split's first conversation cut by smoke_rules.s5_cut; all its questions for the pilot, and for FA/FR only those
+    whose source ids all lie inside the kept messages (Q19 O-a).
+  - S7 AMA: SOFTWARE records only, by name; a unit per `episode_id`: the task, then per step its action and its
+    observation as items (the unit's characters, Q14); questions from `qa_pairs` (question_uuid, question, type), the
+    answers only through the gold door; the run record handed to an arm (and to render_ama_jsonl) is stripped of
+    qa_pairs. S7 smoke: the non-SOFTWARE trajectory closest to the SOFTWARE median (smoke_rules.s7_pick).
+  - A JSONL is read one LF-terminated line at a time, never with str.splitlines() (U+2028/U+0085 inside AMA strings).
 """
 from __future__ import annotations
 
+import ast
 import datetime as dt
 import hashlib
 import json
@@ -78,6 +92,7 @@ class Gold:
     qid: str
     answer: str
     evidence: tuple[str, ...]
+    detail: str = ""               # any other gold field (BEAM's rubric, ...) as canonical JSON; the scorer's only
 
 
 def _unit_sha(sessions: Sequence[Session], questions: Sequence[Question]) -> str:
@@ -272,6 +287,194 @@ def _smoke_records(records: Iterable[Mapping], order: Sequence[str]) -> list[Map
     if len(by_id) != len(want):
         raise LoadRefused("a smoke question is not in the file")
     return [by_id[q] for q in want]
+
+
+# ── S5 BEAM ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+AMA_SWE = "SOFTWARE"
+BEAM_ABSTAIN = "abstention"
+
+
+def _probing(rec: Mapping) -> dict:
+    try:
+        obj = ast.literal_eval(rec["probing_questions"])
+    except (ValueError, SyntaxError, KeyError, TypeError) as e:
+        raise LoadRefused(f"conversation {rec.get('conversation_id')}: probing_questions is not a literal "
+                          f"({type(e).__name__}) - never evaluated") from None
+    if not isinstance(obj, dict):
+        raise LoadRefused(f"conversation {rec.get('conversation_id')}: probing_questions is not a mapping of abilities")
+    return obj
+
+
+def _flat(v) -> list:
+    out = []
+    if isinstance(v, dict):
+        for x in v.values():
+            out += _flat(x)
+    elif isinstance(v, (list, tuple)):
+        for x in v:
+            out += _flat(x)
+    elif isinstance(v, (int, str)) and not isinstance(v, bool):
+        out.append(v)
+    return out
+
+
+def _beam_unit(stand: str, rec: Mapping, *, keep_sessions: int | None = None) -> EvalUnit:
+    cid = str(rec["conversation_id"])
+    chat = rec.get("chat")
+    if not isinstance(chat, list):
+        raise LoadRefused(f"conversation {cid}: chat is not a list of sessions")
+    sessions, empty = [], 0
+    for j, sess in enumerate(chat[:keep_sessions] if keep_sessions is not None else chat):
+        items = []
+        for n, msg in enumerate(sess or []):
+            text = msg.get("content")
+            if not isinstance(text, str) or not text.strip():
+                empty += 1
+                continue
+            items.append(Item(f"{cid}:{msg.get('id')}", text, msg.get("role"), None, n))
+        first = (sess or [{}])[0] if sess else {}
+        date = str(first.get("time_anchor")).strip() if first.get("time_anchor") not in (None, "") else None
+        sessions.append(Session(f"{cid}:s{j}", date, tuple(items)))
+    questions = []
+    for ability, qs in _probing(rec).items():
+        for i, q in enumerate(qs or []):
+            questions.append(Question(f"{cid}:{ability}:{i}", str(q.get("question") or ""), None, str(ability),
+                                      str(ability) == BEAM_ABSTAIN))
+    return _unit(stand, cid, "conversation", sessions, questions, empty)
+
+
+def beam_units(rows: Iterable[Mapping], order: Sequence, *, prefix: int, stand: str = "S5") -> list[EvalUnit]:
+    """The first `prefix` conversations of the committed order (S5 = conversation_id)."""
+    order = [str(x) for x in order]
+    if len(order) < prefix or len(set(order)) != len(order) or prefix < 1:
+        raise LoadRefused("the order is shorter than the prefix, repeats an id, or the prefix is empty")
+    by_id = {str(r.get("conversation_id")): r for r in rows}
+    missing = [u for u in order[:prefix] if u not in by_id]
+    if missing:
+        raise LoadRefused(f"ordered conversations not in the file: {missing[:3]}")
+    return [_beam_unit(stand, by_id[u]) for u in order[:prefix]]
+
+
+def beam_gold(rows: Iterable[Mapping], qids: Iterable[str]) -> dict[str, Gold]:
+    """The scorer's door: answer (or ideal_response), namespaced source ids, and every other gold field."""
+    want, out = set(qids), {}
+    for r in rows:
+        cid = str(r.get("conversation_id"))
+        for ability, qs in _probing(r).items():
+            for i, q in enumerate(qs or []):
+                qid = f"{cid}:{ability}:{i}"
+                if qid not in want:
+                    continue
+                ans = q.get("answer") if q.get("answer") is not None else q.get("ideal_response")
+                rest = {k: v for k, v in q.items() if k not in ("question", "answer", "ideal_response", "source_chat_ids")}
+                out[qid] = Gold(qid, "" if ans is None else str(ans),
+                                tuple(f"{cid}:{x}" for x in _flat(q.get("source_chat_ids"))),
+                                json.dumps(rest, sort_keys=True, ensure_ascii=False, separators=(",", ":"), default=str))
+    if set(out) != want:
+        raise LoadRefused(f"no gold for {sorted(want - set(out))[:3]}")
+    return out
+
+
+def s5_smoke(rows_500k: Sequence[Mapping], count) -> tuple[EvalUnit, list[str]]:
+    """§9.4 S5 smoke: the 500K split's first conversation in dataset order, cut by smoke_rules.s5_cut over its
+    sessions' text; returns the unit (all its questions, for the pilot) and the question ids FA/FR may use - those
+    whose source ids all lie inside the kept messages (Q19 O-a)."""
+    sr = _smoke_rules()
+    if not rows_500k:
+        raise LoadRefused("the 500K split holds no conversation")
+    first = rows_500k[0]
+    texts = ["\n".join(str(m.get("content") or "") for m in (s or [])) for s in first.get("chat") or []]
+    kept = sr.s5_cut(texts, count)
+    unit = _beam_unit("S5-smoke", first, keep_sessions=kept)
+    cid = str(first["conversation_id"])
+    kept_ids = {f"{cid}:{m.get('id')}" for s in (first.get("chat") or [])[:kept] for m in (s or [])}
+    gold = beam_gold([first], [q.qid for q in unit.questions])
+    inside = [q.qid for q in unit.questions if gold[q.qid].evidence and set(gold[q.qid].evidence) <= kept_ids]
+    return unit, inside
+
+
+# ── S7 AMA ──────────────────────────────────────────────────────────────────────────────────────────────────────
+
+def read_jsonl(path) -> list[dict]:
+    """One record per LF-terminated line - never str.splitlines() (U+2028/U+0085 inside AMA strings, A6 j4)."""
+    with open(path, encoding="utf-8") as f:
+        return [json.loads(line) for line in f if line.strip()]
+
+
+def ama_run_record(rec: Mapping) -> dict:
+    """What an arm (and render_ama_jsonl) receives for a trajectory: no qa_pairs, so no answer on the run path."""
+    return {k: rec[k] for k in ("episode_id", "task", "trajectory", "num_turns")}
+
+
+def _ama_unit(stand: str, rec: Mapping) -> EvalUnit:
+    ep = str(rec["episode_id"])
+    task = rec.get("task")
+    if not isinstance(task, str) or not task.strip():
+        raise LoadRefused(f"episode {ep}: the task is not text")
+    items = [Item(f"{ep}:task", task, "user", None, 0)]
+    for i, step in enumerate(rec.get("trajectory") or []):
+        if step.get("turn_idx") != i:
+            raise LoadRefused(f"episode {ep} step {i}: turn_idx {step.get('turn_idx')} is not its position")
+        for k, role in (("action", "assistant"), ("observation", "tool")):
+            if step.get(k) is None:
+                raise LoadRefused(f"episode {ep} step {i}: {k} is None - refused, never dropped")
+            items.append(Item(f"{ep}:{i}:{k}", str(step[k]), role, None, len(items)))
+    questions = [Question(str(q.get("question_uuid")), str(q.get("question") or ""), None, str(q.get("type")), False)
+                 for q in rec.get("qa_pairs") or []]
+    if len({q.qid for q in questions}) != len(questions):
+        raise LoadRefused(f"episode {ep}: a question_uuid repeats")
+    return _unit(stand, ep, "trajectory", [Session(ep, None, tuple(items))], questions, 0)
+
+
+def ama_units(rows: Iterable[Mapping], order: Sequence, *, prefix: int, stand: str = "S7") -> list[EvalUnit]:
+    """The first `prefix` SOFTWARE trajectories of the committed order (S7 = episode_id); a non-SOFTWARE id is refused."""
+    order = [str(x) for x in order]
+    if len(order) < prefix or len(set(order)) != len(order) or prefix < 1:
+        raise LoadRefused("the order is shorter than the prefix, repeats an id, or the prefix is empty")
+    rows = list(rows)
+    by_id = {str(r.get("episode_id")): r for r in rows if r.get("domain") == AMA_SWE}
+    others = {str(r.get("episode_id")) for r in rows if r.get("domain") != AMA_SWE}
+    bad = [u for u in order[:prefix] if u in others]
+    if bad:
+        raise LoadRefused(f"ordered episodes outside the {AMA_SWE} domain: {bad[:3]}")
+    missing = [u for u in order[:prefix] if u not in by_id]
+    if missing:
+        raise LoadRefused(f"ordered episodes not in the file: {missing[:3]}")
+    return [_ama_unit(stand, by_id[u]) for u in order[:prefix]]
+
+
+def ama_gold(rows: Iterable[Mapping], qids: Iterable[str]) -> dict[str, Gold]:
+    want, out = set(qids), {}
+    for r in rows:
+        for q in r.get("qa_pairs") or []:
+            qid = str(q.get("question_uuid"))
+            if qid in want:
+                out[qid] = Gold(qid, str(q.get("answer")), ())
+    if set(out) != want:
+        raise LoadRefused(f"no gold for {sorted(want - set(out))[:3]}")
+    return out
+
+
+def s7_smoke(rows: Sequence[Mapping]) -> EvalUnit:
+    """§9.4 S7 smoke: the non-SOFTWARE trajectory closest to the SOFTWARE median (smoke_rules.s7_pick)."""
+    sr = _smoke_rules()
+    swe = [r for r in rows if r.get("domain") == AMA_SWE]
+    others = [r for r in rows if r.get("domain") != AMA_SWE]
+    i = sr.s7_pick([r["trajectory"] for r in others], [r["trajectory"] for r in swe])
+    return _ama_unit("S7-smoke", others[i])
+
+
+def _smoke_rules():
+    import importlib.util  # noqa: PLC0415
+    import sys  # noqa: PLC0415
+    mod = sys.modules.get("v3_smoke_rules_for_loaders")
+    if mod is None:
+        spec = importlib.util.spec_from_file_location("v3_smoke_rules_for_loaders", Path(__file__).with_name("smoke_rules.py"))
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules["v3_smoke_rules_for_loaders"] = mod
+        spec.loader.exec_module(mod)
+    return mod
 
 
 # ── files ───────────────────────────────────────────────────────────────────────────────────────────────────────

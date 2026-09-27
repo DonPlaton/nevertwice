@@ -240,6 +240,130 @@ except ValueError:
     ok_refuse = True
 check("Truncator(cap <= specials) raises", ok_refuse)
 
+print("\n- TB4.3b S5 BEAM (keys from j4) -")
+
+
+def beam_row(cid, n_sess=3, with_empty=True):
+    chat = []
+    for j in range(n_sess):
+        sess = [{"id": 10 * j + k, "index": k, "role": "user" if k % 2 == 0 else "assistant",
+                 "content": f"c{cid} s{j} m{k}", "question_type": "x", "time_anchor": f"March-{j + 1}-2024" if k == 0 else ""}
+                for k in range(3)]
+        if with_empty and j == 0:
+            sess.append({"id": 99, "index": 3, "role": "user", "content": "   ", "question_type": "x", "time_anchor": ""})
+        chat.append(sess)
+    probing = {"abstention": [{"question": f"Q-abs-{cid}", "ideal_response": "not said", "rubric": ["r1"],
+                               "difficulty": "easy", "abstention_type": "a", "plan_reference": "p", "why_unanswerable": "w"}],
+               "temporal_reasoning": [{"question": f"Q-tr-{cid}", "answer": "two weeks", "rubric": ["r2", "r3"],
+                                       "source_chat_ids": [10, [11, 20]], "difficulty": "hard"}]}
+    return {"conversation_id": cid, "chat": chat, "probing_questions": repr(probing), "conversation_plan": "x",
+            "conversation_seed": 1, "narratives": "n", "user_profile": {}, "user_questions": []}
+
+
+BEAM = [beam_row(i) for i in (3, 1, 2)]
+bu = LD.beam_units(BEAM, [3, 2, 1], prefix=2)
+b0 = next(u for u in bu if u.unit_id == "2")
+check("S5: the first `prefix` conversations of the committed order (not sorted), by conversation_id",
+      [u.unit_id for u in bu] == ["3", "2"] and b0.kind == "conversation")
+check("S5: sessions in chat order, dated by their first message's time_anchor",
+      [s.session_id for s in b0.sessions] == ["2:s0", "2:s1", "2:s2"] and [s.date for s in b0.sessions]
+      == ["March-1-2024", "March-2-2024", "March-3-2024"])
+check("S5: message items namespaced by conversation; an empty message skipped and counted",
+      b0.sessions[0].items[0].item_id == "2:0" and b0.empty_skipped == 1 and sum(len(s.items) for s in b0.sessions) == 9)
+check("S5: questions per (ability, position); abstention flagged; no gold on the run path",
+      [(q.qid, q.category, q.abstention) for q in b0.questions]
+      == [("2:abstention:0", "abstention", True), ("2:temporal_reasoning:0", "temporal_reasoning", False)]
+      and "two weeks" not in json.dumps([dataclasses.asdict(u) for u in bu]) and "rubric" not in json.dumps(
+          [dataclasses.asdict(u) for u in bu]))
+bg = LD.beam_gold(BEAM, ["2:abstention:0", "2:temporal_reasoning:0"])
+check("S5 gold door: answer (ideal_response for abstention), source ids flattened and namespaced, the rubric in detail",
+      bg["2:abstention:0"].answer == "not said" and bg["2:temporal_reasoning:0"].answer == "two weeks"
+      and bg["2:temporal_reasoning:0"].evidence == ("2:10", "2:11", "2:20")
+      and (json.loads(bg["2:temporal_reasoning:0"].detail) if bg["2:temporal_reasoning:0"].detail else {}).get("rubric")
+      == ["r2", "r3"])
+check("S5: probing_questions that is not a literal is refused, never evaluated",
+      refused(lambda: LD.beam_units([{**BEAM[0], "probing_questions": "__import__('os').getcwd()"}], [3], prefix=1),
+              "never evaluated"))
+check("S5: an ordered conversation missing from the file is refused",
+      refused(lambda: LD.beam_units(BEAM, [9], prefix=1), "not in the file"))
+
+
+def count_words(text):
+    return len(text.split())
+
+
+big = beam_row(7, n_sess=4, with_empty=False)
+big["chat"][1] = [{"id": 10 + k, "index": k, "role": "user", "content": " ".join(["w"] * 60), "question_type": "x",
+                   "time_anchor": "March-2-2024" if k == 0 else ""} for k in range(3)]
+old_cut = LD._smoke_rules().s5_cut
+seen_limit = {}
+
+
+def s5_cut_small(texts, count, limit=128_000):
+    seen_limit["limit"] = limit
+    return old_cut(texts, count, limit=100)
+
+
+LD._smoke_rules().s5_cut = s5_cut_small
+try:
+    su5, inside = LD.s5_smoke([big, beam_row(8)], count_words)
+finally:
+    LD._smoke_rules().s5_cut = old_cut
+check("S5 smoke: the 500K split's FIRST conversation, cut after the last session inside the limit (s5_cut)",
+      su5.unit_id == "7" and len(su5.sessions) == 1 and su5.stand == "S5-smoke" and seen_limit.get("limit") == 128_000,
+      str((su5.unit_id, len(su5.sessions), seen_limit)))
+check("S5 smoke: all its questions for the pilot; FA/FR only those whose source ids lie inside the kept messages",
+      len(su5.questions) == 2 and inside == [], str(inside))
+
+print("\n- TB4.3b S7 AMA (keys from j4; Q16) -")
+
+
+def ama_row(ep, domain="SOFTWARE", steps=2, none_at=None):
+    traj = [{"turn_idx": i, "action": f"cmd{ep}-{i}", "observation": f"out{ep}-{i}"} for i in range(steps)]
+    if none_at is not None:
+        traj[none_at]["observation"] = None
+    return {"episode_id": ep, "domain": domain, "task": f"task {ep}", "task_type": "t", "success": True,
+            "total_tokens": 10, "num_turns": steps, "trajectory": traj,
+            "qa_pairs": [{"question": f"q{ep}", "answer": f"ANSWER{ep}", "question_uuid": f"u{ep}", "type": "recall"}]}
+
+
+AMA = [ama_row(1), ama_row(2, "TEXT2SQL", none_at=0), ama_row(3), ama_row(4, "WEB", steps=5)]
+au = LD.ama_units(AMA, [3, 1], prefix=2)
+a0 = au[0]
+check("S7: the first `prefix` SOFTWARE trajectories of the order, by episode_id",
+      [u.unit_id for u in au] == ["3", "1"] and a0.kind == "trajectory")
+check("S7: items are the task, then each step's action and observation (the unit's characters, Q14)",
+      [i.item_id for i in a0.sessions[0].items] == ["3:task", "3:0:action", "3:0:observation", "3:1:action", "3:1:observation"]
+      and a0.chars == sum(len(i.text) for i in a0.sessions[0].items))
+check("S7: questions from qa_pairs (question_uuid, question, type); answers never on the run path",
+      [(q.qid, q.text, q.category) for q in a0.questions] == [("u3", "q3", "recall")]
+      and "ANSWER3" not in json.dumps([dataclasses.asdict(u) for u in au]))
+check("S7: the run record handed to an arm carries no qa_pairs", "qa_pairs" not in LD.ama_run_record(AMA[0])
+      and set(LD.ama_run_record(AMA[0])) == {"episode_id", "task", "trajectory", "num_turns"})
+check("S7 gold door: the answer by question_uuid", LD.ama_gold(AMA, ["u3"])["u3"].answer == "ANSWER3")
+check("S7: an ordered episode outside SOFTWARE is refused by name",
+      refused(lambda: LD.ama_units(AMA, [2], prefix=1), "outside the SOFTWARE domain"))
+bad_order = ama_row(6, steps=3)
+bad_order["trajectory"][1]["turn_idx"] = 2
+bad_order["trajectory"][2]["turn_idx"] = 1
+check("S7: a step whose turn_idx is not its position is refused",
+      refused(lambda: LD._ama_unit("S7", bad_order), "turn_idx"))
+check("S7: a None observation is refused by name, never dropped (the smoke path too)",
+      refused(lambda: LD._ama_unit("S7", ama_row(5, none_at=1)), "observation is None"))
+sm7 = LD.s7_smoke([ama_row(10, steps=3), ama_row(11, steps=3), ama_row(12, "WEB", steps=9), ama_row(13, "GAME", steps=3)])
+check("S7 smoke: the non-SOFTWARE trajectory closest to the SOFTWARE median (s7_pick)", sm7.unit_id == "13"
+      and sm7.stand == "S7-smoke", sm7.unit_id)
+with tempfile.TemporaryDirectory(prefix="v3ama_") as td:
+    jf = Path(td) / "a.jsonl"
+    jf.write_bytes((json.dumps({**ama_row(20), "task": "x y\x85z"}, ensure_ascii=False) + "\n"
+                    + json.dumps(ama_row(21)) + "\n").encode("utf-8"))
+    try:
+        rj = LD.read_jsonl(jf)
+    except Exception as e:  # noqa: BLE001
+        rj = [repr(e)]
+    check("read_jsonl splits on LF only: U+2028 and U+0085 inside a task keep the record whole",
+          [r.get("episode_id") if isinstance(r, dict) else r for r in rj] == [20, 21], str(rj)[:100])
+
 print("\n- the pinned-tokenizer glue, on fake libraries (the real ones come with their install window) -")
 import hashlib  # noqa: E402
 import os  # noqa: E402
