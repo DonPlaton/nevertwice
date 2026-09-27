@@ -1,0 +1,1210 @@
+{
+ "d1_tag": {
+  "base": {
+   "digest": "7907646426070047a77226ac3e684fbbe8410524f7b4a74d02837e43f2146bab",
+   "name": "bge-m3:latest"
+  },
+  "modelfile_sha256": "af4f170080797f95bca7191daf1fb743ca1993073ae577e560a9d2d0ea0b4c11",
+  "run": "d1",
+  "tag": {
+   "digest": "561ce53b3730a15c5b08676cc985d4a0805d95353c6576e5ef982bc5cc3c5a65",
+   "name": "nvt3-bge-m3-d1:latest"
+  },
+  "version": "0.34.4"
+ },
+ "facts": {
+  "record": "_facts/j3/facts.json",
+  "run": "j3",
+  "sha256": "b2d373f0d40d8c4ed885fb799416cf5c682ab35acdb7c636d09af786c3c14af8",
+  "use": "the source of rev2's dataset-facts slot, written only at A10"
+ },
+ "failed_runs": [
+  {
+   "files": {
+    "_fetch/a3-hf/h1/place_record.json": "1eda1b711dc84ef114c426e114aa7537415b030e26ccc7b4876d472149207532",
+    "_fetch/a3-hf/h1/record.json": "a0348e6b2350a574b8c37ff527080ba7b1237d61754814ebc85a54594850e432"
+   },
+   "problems": {
+    "_fetch/a3-hf/h1/place_record.json": 2,
+    "_fetch/a3-hf/h1/record.json": 2
+   },
+   "reason": "the lme_s download stalled at about 97% - stopped, never applied; ruled O1: re-run as h2",
+   "run": "h1",
+   "window": "a3-hf"
+  },
+  {
+   "files": {
+    "_facts/j1/facts.json": "d771d9fc3ff4ff85d53bb1bc3f7a1efb6b4b6b5efa06501d39cc86d18bc6fe9b"
+   },
+   "problems": {
+    "_facts/j1/facts.json": 2
+   },
+   "reason": "the local-v2 files (gitignored research/data) are absent from a clean worktree - fixed by O2",
+   "run": "j1",
+   "window": "facts"
+  },
+  {
+   "files": {
+    "_facts/j2/facts.json": "cc0db2e79185878cbad9d984bc47520d374196109be6e40582b8bba0977b8e36"
+   },
+   "problems": {
+    "_facts/j2/facts.json": 1
+   },
+   "reason": "BEAM's source_chat_ids are nested deeper than one level (TypeError in the child) - fixed by P-J11",
+   "run": "j2",
+   "window": "facts"
+  }
+ ],
+ "issuers": {
+  "api.github.com": [
+   [
+    "Sectigo Limited",
+    "Sectigo Public Server Authentication CA DV E36"
+   ]
+  ],
+  "api.nuget.org": [
+   [
+    "Microsoft Corporation",
+    "Microsoft TLS G2 ECC CA OCSP 02"
+   ]
+  ],
+  "cdn-lfs-us-1.hf.co": [
+   [
+    "Amazon",
+    "Amazon RSA 2048 M01"
+   ]
+  ],
+  "github.com": [
+   [
+    "Sectigo Limited",
+    "Sectigo Public Server Authentication CA DV E36"
+   ]
+  ],
+  "huggingface.co": [
+   [
+    "Amazon",
+    "Amazon RSA 2048 M01"
+   ]
+  ],
+  "openaipublic.blob.core.windows.net": [
+   [
+    "Microsoft Corporation",
+    "Microsoft TLS G2 RSA CA OCSP 16"
+   ]
+  ],
+  "pypi.org": [
+   [
+    "GlobalSign nv-sa",
+    "GlobalSign Atlas R3 DV TLS CA 2025 Q4"
+   ]
+  ],
+  "raw.githubusercontent.com": [
+   [
+    "Let's Encrypt",
+    "YR1"
+   ]
+  ],
+  "us.aws.cdn.hf.co": [
+   [
+    "Amazon",
+    "Amazon RSA 2048 M04"
+   ]
+  ]
+ },
+ "issuers_unrecorded": {
+  "files.pythonhosted.org": "reached by pip only, so no fetch child records its issuer; pip's trust is its vendored certifi (--use-deprecated=legacy-certs, F-P2-4)"
+ },
+ "local_v2": {
+  "placed": {
+   "locomo10": {
+    "bytes": 2805274,
+    "dest": "local-v2/79fa87e90f04081343b8c8debecb80a9a6842b76a7aa537dc9fdf651ea698ff4/locomo10.json",
+    "sha256": "79fa87e90f04081343b8c8debecb80a9a6842b76a7aa537dc9fdf651ea698ff4",
+    "source": "research/data/locomo10.json",
+    "status": "placed"
+   },
+   "longmemeval_s": {
+    "bytes": 278025796,
+    "dest": "local-v2/08d8dad4be43ee2049a22ff5674eb86725d0ce5ff434cde2627e5e8e7e117894/longmemeval_s.json",
+    "sha256": "08d8dad4be43ee2049a22ff5674eb86725d0ce5ff434cde2627e5e8e7e117894",
+    "source": "research/data/longmemeval_s.json",
+    "status": "placed"
+   }
+  },
+  "run": "l1"
+ },
+ "models": {
+  "ollama_version": "0.34.4",
+  "pins": {
+   "bge-m3": {
+    "digest": "7907646426070047a77226ac3e684fbbe8410524f7b4a74d02837e43f2146bab",
+    "digest12": "790764642607",
+    "found": "bge-m3:latest",
+    "pin": null,
+    "role": "D1 base"
+   },
+   "gemma3n:e4b": {
+    "digest": "15cb39fd9394fd2549f6df9081cfc84dd134ecf2c9c5be911e5629920489ac32",
+    "digest12": "15cb39fd9394",
+    "found": "gemma3n:e4b",
+    "pin": "15cb39fd9394",
+    "role": "J2-2"
+   },
+   "glm-4.7-flash:q4_K_M": {
+    "digest": "d1a8a26252f18b34301218d22abd2620a65b85ba4b78987842eb157e01321222",
+    "digest12": "d1a8a26252f1",
+    "found": "glm-4.7-flash:q4_K_M",
+    "pin": "d1a8a26252f1",
+    "role": "J2-1"
+   },
+   "hermes3-8b": {
+    "digest": "74b1e4a6493c67364778855ae90b2ca111326f436203f57196f68fc6fdd82fa1",
+    "digest12": "74b1e4a6493c",
+    "found": "hermes3-8b:latest",
+    "pin": null,
+    "role": "J2-3"
+   },
+   "llama3": {
+    "digest": "365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1",
+    "digest12": "365c0bd3c000",
+    "found": "llama3:latest",
+    "pin": null,
+    "role": "J2-4"
+   },
+   "qwen3-coder:30b": {
+    "digest": "06c1097efce0431c2045fe7b2e5108366e43bee1b4603a7aded8f21689e90bca",
+    "digest12": "06c1097efce0",
+    "found": "qwen3-coder:30b",
+    "pin": "06c1097efce0",
+    "role": "S6L"
+   },
+   "qwen3.6:27b": {
+    "digest": "a50eda8ed977ab48a12431878896b27ffd5cef552c17af3317d9623b939a7f1e",
+    "digest12": "a50eda8ed977",
+    "found": "qwen3.6:27b",
+    "pin": "a50eda8ed977",
+    "role": "J1"
+   }
+  },
+  "run": "o1"
+ },
+ "pins": {
+  "ama_evaluate": {
+   "alias_of": null,
+   "bytes": 10350,
+   "filled_from": "a3-github g1 pin_fill 0949dd56da65",
+   "licence": "MIT",
+   "licence_found": "MIT",
+   "path": "src/evaluate.py",
+   "repo": "AMA-Bench/AMA-Bench",
+   "revision": "ddfd319e0be33424288c13806f1eafc63e625b59",
+   "role": "scoring",
+   "sha256": "32c5b33e63fc79c9e9e6973484d515d1ea14c65c4f1ab27197a074ba0d111cd9",
+   "source": "github",
+   "stands": [
+    "S7"
+   ],
+   "window": "a3-github"
+  },
+  "ama_evaluation_metrics": {
+   "alias_of": null,
+   "bytes": 9129,
+   "filled_from": "a3-github g1 pin_fill 0949dd56da65",
+   "licence": "MIT",
+   "licence_found": "MIT",
+   "path": "utils/evaluation_metrics.py",
+   "repo": "AMA-Bench/AMA-Bench",
+   "revision": "ddfd319e0be33424288c13806f1eafc63e625b59",
+   "role": "scoring",
+   "sha256": "0586637d76b0547f09189078f500b5d0b27ca90ce5b722f4278d8d26f5d783b6",
+   "source": "github",
+   "stands": [
+    "S7"
+   ],
+   "window": "a3-github"
+  },
+  "ama_judge_config": {
+   "alias_of": null,
+   "bytes": 314,
+   "filled_from": "a3-github g1 pin_fill 0949dd56da65",
+   "licence": "MIT",
+   "licence_found": "MIT",
+   "path": "configs/llm_judge.yaml",
+   "repo": "AMA-Bench/AMA-Bench",
+   "revision": "ddfd319e0be33424288c13806f1eafc63e625b59",
+   "role": "scoring",
+   "sha256": "d4a1d483220128c1de9bdcf147f480169c7e4c6263514415ded48c8dc9e9d153",
+   "source": "github",
+   "stands": [
+    "S7"
+   ],
+   "window": "a3-github"
+  },
+  "ama_judge_config_api": {
+   "alias_of": null,
+   "bytes": 287,
+   "filled_from": "a3-github g1 pin_fill 0949dd56da65",
+   "licence": "MIT",
+   "licence_found": "MIT",
+   "path": "configs/llm_judge_api.yaml",
+   "repo": "AMA-Bench/AMA-Bench",
+   "revision": "ddfd319e0be33424288c13806f1eafc63e625b59",
+   "role": "scoring",
+   "sha256": "2b2d7157701bdb837afd506285499e8618f673929f2f95ea3cc0dca7c606677f",
+   "source": "github",
+   "stands": [
+    "S7"
+   ],
+   "window": "a3-github"
+  },
+  "ama_judge_config_gpt5_mini": {
+   "alias_of": null,
+   "bytes": 291,
+   "filled_from": "a3-github g1 pin_fill 0949dd56da65",
+   "licence": "MIT",
+   "licence_found": "MIT",
+   "path": "configs/llm_judge_gpt5_mini.yaml",
+   "repo": "AMA-Bench/AMA-Bench",
+   "revision": "ddfd319e0be33424288c13806f1eafc63e625b59",
+   "role": "scoring",
+   "sha256": "5e75845da7b3d1a89f2b1ef255131f6905b999fe5faba9edaf5573368892ade4",
+   "source": "github",
+   "stands": [
+    "S7"
+   ],
+   "window": "a3-github"
+  },
+  "ama_licence": {
+   "alias_of": null,
+   "bytes": 1071,
+   "filled_from": "a3-github g1 pin_fill 0949dd56da65",
+   "licence": "MIT",
+   "licence_found": "MIT",
+   "path": "LICENSE",
+   "repo": "AMA-Bench/AMA-Bench",
+   "revision": "ddfd319e0be33424288c13806f1eafc63e625b59",
+   "role": "licence-evidence",
+   "sha256": "3c8bff7214b9a3f79e2b1e76413104fff6df8b315d6598b2e8d16a9cadd2e244",
+   "source": "github",
+   "stands": [
+    "S7"
+   ],
+   "window": "a3-github"
+  },
+  "ama_non_swe": {
+   "alias_of": null,
+   "bytes": 50451919,
+   "filled_from": "a3-hf h2 pin_fill c23ea9cd3549",
+   "licence": "MIT",
+   "licence_found": "mit",
+   "path": "test/open_end_qa_set.jsonl",
+   "repo": "AMA-bench/AMA-bench",
+   "revision": "a5777378066f53229a94557a7b192435cd027909",
+   "role": "smoke",
+   "sha256": "45c36052e1520d87ad9de4114f71c9df42d4aac9cf158c0c353e800b653d65ff",
+   "source": "hf-dataset",
+   "stands": [
+    "S7-smoke"
+   ],
+   "window": "a3-hf"
+  },
+  "ama_swe": {
+   "alias_of": null,
+   "bytes": 50451919,
+   "filled_from": "a3-hf h2 pin_fill c23ea9cd3549",
+   "licence": "MIT",
+   "licence_found": "mit",
+   "path": "test/open_end_qa_set.jsonl",
+   "repo": "AMA-bench/AMA-bench",
+   "revision": "a5777378066f53229a94557a7b192435cd027909",
+   "role": "evaluation",
+   "sha256": "45c36052e1520d87ad9de4114f71c9df42d4aac9cf158c0c353e800b653d65ff",
+   "source": "hf-dataset",
+   "stands": [
+    "S7"
+   ],
+   "window": "a3-hf"
+  },
+  "amem_licence": {
+   "alias_of": null,
+   "bytes": 1068,
+   "filled_from": "a3-github g1 pin_fill 0949dd56da65",
+   "licence": "MIT",
+   "licence_found": "MIT",
+   "path": "LICENSE",
+   "repo": "agiresearch/A-mem",
+   "revision": "ceffb860f0712bbae97b184d440df62bc910ca8d",
+   "role": "licence-evidence",
+   "sha256": "c8a51c83455b8afc3a11b085ce57c7b9b34c6725d6b2329ce3dd9a273f0add6d",
+   "source": "github",
+   "stands": [
+    "arm:a-mem"
+   ],
+   "window": "a3-github"
+  },
+  "amem_source": {
+   "alias_of": null,
+   "bytes": 1409,
+   "filled_from": "a3-git r1 pin_fill ba0f9248f430",
+   "licence": "MIT",
+   "licence_found": "MIT",
+   "path": null,
+   "repo": "agiresearch/A-mem",
+   "revision": "ceffb860f0712bbae97b184d440df62bc910ca8d",
+   "role": "arm-source",
+   "sha256": "ca8e0a6373f9e9c27a0952657fe403816d4b20125156b9d485976a1174f37eb9",
+   "source": "git",
+   "stands": [
+    "arm:a-mem"
+   ],
+   "window": "a3-git"
+  },
+  "beam_128k": {
+   "alias_of": null,
+   "bytes": 5429768,
+   "filled_from": "a3-hf h2 pin_fill c23ea9cd3549",
+   "licence": "CC-BY-SA-4.0 (data); MIT (code)",
+   "licence_found": "cc-by-sa-4.0",
+   "path": "data/100K-00000-of-00001.parquet",
+   "repo": "Mohammadta/BEAM",
+   "revision": "3205395e897e7318c7b094ef4e6047b9b82dbb03",
+   "role": "evaluation",
+   "sha256": "c0519be25907005ba873c927c50877471d550873039d96c041554d0075a78ace",
+   "source": "hf-dataset",
+   "stands": [
+    "S5"
+   ],
+   "window": "a3-hf"
+  },
+  "beam_500k": {
+   "alias_of": null,
+   "bytes": 33956263,
+   "filled_from": "a3-hf h2 pin_fill c23ea9cd3549",
+   "licence": "CC-BY-SA-4.0 (data); MIT (code)",
+   "licence_found": "cc-by-sa-4.0",
+   "path": "data/500K-00000-of-00001.parquet",
+   "repo": "Mohammadta/BEAM",
+   "revision": "3205395e897e7318c7b094ef4e6047b9b82dbb03",
+   "role": "smoke",
+   "sha256": "af05921c979355038e1761b7cde3d2dd713200dd3071b278de0200f6c7f30122",
+   "source": "hf-dataset",
+   "stands": [
+    "S5-smoke"
+   ],
+   "window": "a3-hf"
+  },
+  "beam_compute_metrics": {
+   "alias_of": null,
+   "bytes": 19830,
+   "filled_from": "a3-github g1 pin_fill 0949dd56da65",
+   "licence": "CC-BY-SA-4.0 (data); MIT (code)",
+   "licence_found": "MIT",
+   "path": "src/evaluation/compute_metrics.py",
+   "repo": "mohammadtavakoli78/BEAM",
+   "revision": "b2da22eac88bb0874c64665f13457eb99835774a",
+   "role": "scoring",
+   "sha256": "e72bf25d36d521d166862063ec94f8e7875328193142d1edddb9b4677d47780d",
+   "source": "github",
+   "stands": [
+    "S5"
+   ],
+   "window": "a3-github"
+  },
+  "beam_prompts": {
+   "alias_of": null,
+   "bytes": 633361,
+   "filled_from": "a3-github g1 pin_fill 0949dd56da65",
+   "licence": "CC-BY-SA-4.0 (data); MIT (code)",
+   "licence_found": "MIT",
+   "path": "src/prompts.py",
+   "repo": "mohammadtavakoli78/BEAM",
+   "revision": "b2da22eac88bb0874c64665f13457eb99835774a",
+   "role": "scoring",
+   "sha256": "81fe51ab2bcd7e8ad218b3a9a969a340c38d31f90ac2d93fa78a3bb890ba157b",
+   "source": "github",
+   "stands": [
+    "S5"
+   ],
+   "window": "a3-github"
+  },
+  "beam_run_evaluation": {
+   "alias_of": null,
+   "bytes": 10458,
+   "filled_from": "a3-github g1 pin_fill 0949dd56da65",
+   "licence": "CC-BY-SA-4.0 (data); MIT (code)",
+   "licence_found": "MIT",
+   "path": "src/evaluation/run_evaluation.py",
+   "repo": "mohammadtavakoli78/BEAM",
+   "revision": "b2da22eac88bb0874c64665f13457eb99835774a",
+   "role": "scoring",
+   "sha256": "518894ab65860043a24259457ddf3b1ab8ae18427b6e01e5aa90cd29c4256a3b",
+   "source": "github",
+   "stands": [
+    "S5"
+   ],
+   "window": "a3-github"
+  },
+  "bge_m3_sentencepiece": {
+   "alias_of": null,
+   "bytes": 5069051,
+   "filled_from": "a3-hf h2 pin_fill c23ea9cd3549",
+   "licence": "MIT",
+   "licence_found": "mit",
+   "path": "sentencepiece.bpe.model",
+   "repo": "BAAI/bge-m3",
+   "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+   "role": "tokenizer",
+   "sha256": "cfc8146abe2a0488e9e2a0c56de7952f7c11ab059eca145a0a727afce0db2865",
+   "source": "hf-model",
+   "stands": [
+    "all"
+   ],
+   "window": "a3-hf"
+  },
+  "bge_m3_special_tokens": {
+   "alias_of": null,
+   "bytes": 964,
+   "filled_from": "a3-hf h2 pin_fill c23ea9cd3549",
+   "licence": "MIT",
+   "licence_found": "mit",
+   "path": "special_tokens_map.json",
+   "repo": "BAAI/bge-m3",
+   "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+   "role": "tokenizer",
+   "sha256": "8c785abebea9ae3257b61681b4e6fd8365ceafde980c21970d001e834cf10835",
+   "source": "hf-model",
+   "stands": [
+    "all"
+   ],
+   "window": "a3-hf"
+  },
+  "bge_m3_tokenizer_config": {
+   "alias_of": null,
+   "bytes": 444,
+   "filled_from": "a3-hf h2 pin_fill c23ea9cd3549",
+   "licence": "MIT",
+   "licence_found": "mit",
+   "path": "tokenizer_config.json",
+   "repo": "BAAI/bge-m3",
+   "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+   "role": "tokenizer",
+   "sha256": "a62b2b6784f990259fddef5f16388693a8043be4f69179e6a5257eeb3f9abac4",
+   "source": "hf-model",
+   "stands": [
+    "all"
+   ],
+   "window": "a3-hf"
+  },
+  "bge_m3_tokenizer_json": {
+   "alias_of": null,
+   "bytes": 17098108,
+   "filled_from": "a3-hf h2 pin_fill c23ea9cd3549",
+   "licence": "MIT",
+   "licence_found": "mit",
+   "path": "tokenizer.json",
+   "repo": "BAAI/bge-m3",
+   "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+   "role": "tokenizer",
+   "sha256": "21106b6d7dab2952c1d496fb21d5dc9db75c28ed361a05f5020bbba27810dd08",
+   "source": "hf-model",
+   "stands": [
+    "all"
+   ],
+   "window": "a3-hf"
+  },
+  "lme_answer_prompt": {
+   "alias_of": null,
+   "bytes": 21608,
+   "filled_from": "a3-github g1 pin_fill 0949dd56da65",
+   "licence": "MIT",
+   "licence_found": "MIT",
+   "path": "src/generation/run_generation.py",
+   "repo": "xiaowu0162/LongMemEval",
+   "revision": "9e0b455f4ef0e2ab8f2e582289761153549043fc",
+   "role": "prompt",
+   "sha256": "4f1eb3c69d7ad40f04065b9c0bc86f6582441018fc6ff751d162d66c95baf672",
+   "source": "github",
+   "stands": [
+    "S1",
+    "S2",
+    "S3"
+   ],
+   "window": "a3-github"
+  },
+  "lme_evaluate_qa": {
+   "alias_of": null,
+   "bytes": 7436,
+   "filled_from": "a3-github g1 pin_fill 0949dd56da65",
+   "licence": "MIT",
+   "licence_found": "MIT",
+   "path": "src/evaluation/evaluate_qa.py",
+   "repo": "xiaowu0162/LongMemEval",
+   "revision": "9e0b455f4ef0e2ab8f2e582289761153549043fc",
+   "role": "scoring",
+   "sha256": "ecce9c4c79dc89d99534ac17b383a5cbb5b9f0c69ee98adaf0684742e3d95251",
+   "source": "github",
+   "stands": [
+    "S1",
+    "S2",
+    "S3"
+   ],
+   "window": "a3-github"
+  },
+  "lme_m_cleaned": {
+   "alias_of": null,
+   "bytes": 2737100077,
+   "filled_from": "a3-hf h2 pin_fill c23ea9cd3549",
+   "licence": "MIT",
+   "licence_found": "mit",
+   "path": "longmemeval_m_cleaned.json",
+   "repo": "xiaowu0162/longmemeval-cleaned",
+   "revision": "98d7416c24c778c2fee6e6f3006e7a073259d48f",
+   "role": "evaluation",
+   "sha256": "9d79e5524794a2e6900a3aa9cb7d9152c5a3e8319c9a87c25494ba1eacee495f",
+   "source": "hf-dataset",
+   "stands": [
+    "S2"
+   ],
+   "window": "a3-hf"
+  },
+  "lme_oracle_cleaned": {
+   "alias_of": "v2:longmemeval_oracle",
+   "bytes": 15388478,
+   "filled_from": null,
+   "licence": "MIT",
+   "licence_found": null,
+   "path": "longmemeval_oracle.json",
+   "repo": "xiaowu0162/longmemeval-cleaned",
+   "revision": "98d7416c24c778c2fee6e6f3006e7a073259d48f",
+   "role": "bracket",
+   "sha256": "821a2034d219ab45846873dd14c14f12cfe7776e73527a483f9dac095d38620c",
+   "source": "hf-dataset",
+   "stands": [
+    "S3"
+   ],
+   "window": "a3-hf"
+  },
+  "lme_s_cleaned": {
+   "alias_of": null,
+   "bytes": 277383467,
+   "filled_from": "a3-hf h2 pin_fill c23ea9cd3549",
+   "licence": "MIT",
+   "licence_found": "mit",
+   "path": "longmemeval_s_cleaned.json",
+   "repo": "xiaowu0162/longmemeval-cleaned",
+   "revision": "98d7416c24c778c2fee6e6f3006e7a073259d48f",
+   "role": "evaluation",
+   "sha256": "d6f21ea9d60a0d56f34a05b609c79c88a451d2ae03597821ea3d5a9678c3a442",
+   "source": "hf-dataset",
+   "stands": [
+    "S1"
+   ],
+   "window": "a3-hf"
+  },
+  "locomo10": {
+   "alias_of": null,
+   "bytes": 2805274,
+   "filled_from": null,
+   "licence": "CC-BY-NC-4.0",
+   "licence_found": null,
+   "path": "research/data/locomo10.json",
+   "repo": "snap-research/locomo",
+   "revision": "v2-pin",
+   "role": "evaluation",
+   "sha256": "79fa87e90f04081343b8c8debecb80a9a6842b76a7aa537dc9fdf651ea698ff4",
+   "source": "local-v2",
+   "stands": [
+    "S4"
+   ],
+   "window": null
+  },
+  "locomo_answer_prompt": {
+   "alias_of": null,
+   "bytes": 15800,
+   "filled_from": "a3-github g1 pin_fill 0949dd56da65",
+   "licence": "CC-BY-NC-4.0",
+   "licence_found": "CC-BY-NC-4.0",
+   "path": "task_eval/gpt_utils.py",
+   "repo": "snap-research/locomo",
+   "revision": "3eb6f2c585f5e1699204e3c3bdf7adc5c28cb376",
+   "role": "prompt",
+   "sha256": "5fc977375878199735acd28fba5ae6f4d657fa0e000c0d2918a90c07b6035793",
+   "source": "github",
+   "stands": [
+    "S4"
+   ],
+   "window": "a3-github"
+  },
+  "locomo_evaluate_qa": {
+   "alias_of": null,
+   "bytes": 4381,
+   "filled_from": "a3-github g1 pin_fill 0949dd56da65",
+   "licence": "CC-BY-NC-4.0",
+   "licence_found": "CC-BY-NC-4.0",
+   "path": "task_eval/evaluate_qa.py",
+   "repo": "snap-research/locomo",
+   "revision": "3eb6f2c585f5e1699204e3c3bdf7adc5c28cb376",
+   "role": "scoring",
+   "sha256": "dde7c1c6b5501486f96ce31398d6e49de76abbfa656e980b137e54fc69e9f6ee",
+   "source": "github",
+   "stands": [
+    "S4"
+   ],
+   "window": "a3-github"
+  },
+  "locomo_evaluation": {
+   "alias_of": null,
+   "bytes": 9441,
+   "filled_from": "a3-github g1 pin_fill 0949dd56da65",
+   "licence": "CC-BY-NC-4.0",
+   "licence_found": "CC-BY-NC-4.0",
+   "path": "task_eval/evaluation.py",
+   "repo": "snap-research/locomo",
+   "revision": "3eb6f2c585f5e1699204e3c3bdf7adc5c28cb376",
+   "role": "scoring",
+   "sha256": "8e3be5d57ff2ff9ec5cd05939592f468c5f3f1fd95d13e431932bdf6bf0fd6fd",
+   "source": "github",
+   "stands": [
+    "S4"
+   ],
+   "window": "a3-github"
+  },
+  "locomo_j_prompt": {
+   "alias_of": null,
+   "bytes": 4872,
+   "filled_from": "a3-github g1 pin_fill 0949dd56da65",
+   "licence": "Apache-2.0",
+   "licence_found": "Apache-2.0",
+   "path": "evaluation/metrics/llm_judge.py",
+   "repo": "mem0ai/mem0",
+   "revision": "b3ede5b7c0ac0e847b03786a603c107ac943b3ee",
+   "role": "scoring",
+   "sha256": "ac2e242f6ea0b817ba1b229ff9e5271f6846b7b8a9aefa8a5a5a81ea58df3b3c",
+   "source": "github",
+   "stands": [
+    "S4"
+   ],
+   "window": "a3-github"
+  },
+  "locomo_j_prompts": {
+   "alias_of": null,
+   "bytes": 7266,
+   "filled_from": "a3-github g1 pin_fill 0949dd56da65",
+   "licence": "Apache-2.0",
+   "licence_found": "Apache-2.0",
+   "path": "evaluation/prompts.py",
+   "repo": "mem0ai/mem0",
+   "revision": "b3ede5b7c0ac0e847b03786a603c107ac943b3ee",
+   "role": "scoring",
+   "sha256": "407bea1c1453dc6832c234bb1ed936d401d796fabcc0b28337a47ba63517d3ba",
+   "source": "github",
+   "stands": [
+    "S4"
+   ],
+   "window": "a3-github"
+  },
+  "locomo_licence_txt": {
+   "alias_of": null,
+   "bytes": 19347,
+   "filled_from": "a3-github g1 pin_fill 0949dd56da65",
+   "licence": "CC-BY-NC-4.0",
+   "licence_found": "CC-BY-NC-4.0",
+   "path": "LICENSE.txt",
+   "repo": "snap-research/locomo",
+   "revision": "3eb6f2c585f5e1699204e3c3bdf7adc5c28cb376",
+   "role": "licence-evidence",
+   "sha256": "41003d4a74749c0220e33dd415042164b5a1093ed401f36277234f772d22d3d0",
+   "source": "github",
+   "stands": [
+    "S4"
+   ],
+   "window": "a3-github"
+  },
+  "longmemeval_s": {
+   "alias_of": null,
+   "bytes": 278025796,
+   "filled_from": null,
+   "licence": "MIT",
+   "licence_found": null,
+   "path": "research/data/longmemeval_s.json",
+   "repo": "xiaowu0162/longmemeval",
+   "revision": "v2-pin",
+   "role": "evaluation",
+   "sha256": "08d8dad4be43ee2049a22ff5674eb86725d0ce5ff434cde2627e5e8e7e117894",
+   "source": "local-v2",
+   "stands": [
+    "S9"
+   ],
+   "window": null
+  },
+  "mab_accurate_retrieval": {
+   "alias_of": null,
+   "bytes": 20024386,
+   "filled_from": "a3-hf h2 pin_fill c23ea9cd3549",
+   "licence": "MIT",
+   "licence_found": "mit",
+   "path": "data/Accurate_Retrieval-00000-of-00001.parquet",
+   "repo": "ai-hyz/MemoryAgentBench",
+   "revision": "7ea066982b140a19337e17e60d45d4076e042faf",
+   "role": "smoke",
+   "sha256": "56c3cd80fb6731a3e53cd1a6be3148f54df60ff2d290ee50e28f8acebf9655c1",
+   "source": "hf-dataset",
+   "stands": [
+    "S6-smoke"
+   ],
+   "window": "a3-hf"
+  },
+  "mab_conflict_resolution": {
+   "alias_of": null,
+   "bytes": 1491588,
+   "filled_from": "a3-hf h2 pin_fill c23ea9cd3549",
+   "licence": "MIT",
+   "licence_found": "mit",
+   "path": "data/Conflict_Resolution-00000-of-00001.parquet",
+   "repo": "ai-hyz/MemoryAgentBench",
+   "revision": "7ea066982b140a19337e17e60d45d4076e042faf",
+   "role": "evaluation",
+   "sha256": "24d5c3f09ce0ce15625cb9f8a98f44f0d864ca6c94d7b4ad04eb697ca3a5ff45",
+   "source": "hf-dataset",
+   "stands": [
+    "S6",
+    "S6L"
+   ],
+   "window": "a3-hf"
+  },
+  "mab_eval_data_utils": {
+   "alias_of": null,
+   "bytes": 13034,
+   "filled_from": "a3-github g1 pin_fill 0949dd56da65",
+   "licence": "MIT",
+   "licence_found": "MIT",
+   "path": "utils/eval_data_utils.py",
+   "repo": "HUST-AI-HYZ/MemoryAgentBench",
+   "revision": "538026089d1a8a8eff05121d0db89b388f360eba",
+   "role": "scoring",
+   "sha256": "f5d564996d63a07454999e94ab01087d4d07939f69936045c700fd57d338cb68",
+   "source": "github",
+   "stands": [
+    "S6",
+    "S6L"
+   ],
+   "window": "a3-github"
+  },
+  "mab_eval_other_utils": {
+   "alias_of": null,
+   "bytes": 23895,
+   "filled_from": "a3-github g1 pin_fill 0949dd56da65",
+   "licence": "MIT",
+   "licence_found": "MIT",
+   "path": "utils/eval_other_utils.py",
+   "repo": "HUST-AI-HYZ/MemoryAgentBench",
+   "revision": "538026089d1a8a8eff05121d0db89b388f360eba",
+   "role": "scoring",
+   "sha256": "d77976be409298970614d477a9d8003850caddb0510e56a7e821a037d98493a2",
+   "source": "github",
+   "stands": [
+    "S6",
+    "S6L"
+   ],
+   "window": "a3-github"
+  },
+  "mab_fc_mh_262k": {
+   "alias_of": null,
+   "bytes": 306,
+   "filled_from": "a3-github g1 pin_fill 0949dd56da65",
+   "licence": "MIT",
+   "licence_found": "MIT",
+   "path": "configs/data_conf/Conflict_Resolution/Factconsolidation_mh_262k.yaml",
+   "repo": "HUST-AI-HYZ/MemoryAgentBench",
+   "revision": "538026089d1a8a8eff05121d0db89b388f360eba",
+   "role": "scoring",
+   "sha256": "c90ba80205a4fb0e7aecbc35e8e11638adb606a6514f5cd4b45b46eab6a877a8",
+   "source": "github",
+   "stands": [
+    "S6",
+    "S6L"
+   ],
+   "window": "a3-github"
+  },
+  "mab_fc_mh_32k": {
+   "alias_of": null,
+   "bytes": 304,
+   "filled_from": "a3-github g1 pin_fill 0949dd56da65",
+   "licence": "MIT",
+   "licence_found": "MIT",
+   "path": "configs/data_conf/Conflict_Resolution/Factconsolidation_mh_32k.yaml",
+   "repo": "HUST-AI-HYZ/MemoryAgentBench",
+   "revision": "538026089d1a8a8eff05121d0db89b388f360eba",
+   "role": "scoring",
+   "sha256": "3687a04532e89859b10ec864162eeea8edf48ef0b7d513a93dd39884da5e4b4e",
+   "source": "github",
+   "stands": [
+    "S6",
+    "S6L"
+   ],
+   "window": "a3-github"
+  },
+  "mab_fc_mh_64k": {
+   "alias_of": null,
+   "bytes": 304,
+   "filled_from": "a3-github g1 pin_fill 0949dd56da65",
+   "licence": "MIT",
+   "licence_found": "MIT",
+   "path": "configs/data_conf/Conflict_Resolution/Factconsolidation_mh_64k.yaml",
+   "repo": "HUST-AI-HYZ/MemoryAgentBench",
+   "revision": "538026089d1a8a8eff05121d0db89b388f360eba",
+   "role": "scoring",
+   "sha256": "893ba410975471b8f8663f936f380f1c5aba0e025777aa0067ae0917a38b02c4",
+   "source": "github",
+   "stands": [
+    "S6",
+    "S6L"
+   ],
+   "window": "a3-github"
+  },
+  "mab_fc_mh_6k": {
+   "alias_of": null,
+   "bytes": 302,
+   "filled_from": "a3-github g1 pin_fill 0949dd56da65",
+   "licence": "MIT",
+   "licence_found": "MIT",
+   "path": "configs/data_conf/Conflict_Resolution/Factconsolidation_mh_6k.yaml",
+   "repo": "HUST-AI-HYZ/MemoryAgentBench",
+   "revision": "538026089d1a8a8eff05121d0db89b388f360eba",
+   "role": "scoring",
+   "sha256": "63312c1dd54a06490f3747e97632d39284ec8eeba2128ee5c599dae72defa6fc",
+   "source": "github",
+   "stands": [
+    "S6",
+    "S6L"
+   ],
+   "window": "a3-github"
+  },
+  "mab_fc_sh_262k": {
+   "alias_of": null,
+   "bytes": 306,
+   "filled_from": "a3-github g1 pin_fill 0949dd56da65",
+   "licence": "MIT",
+   "licence_found": "MIT",
+   "path": "configs/data_conf/Conflict_Resolution/Factconsolidation_sh_262k.yaml",
+   "repo": "HUST-AI-HYZ/MemoryAgentBench",
+   "revision": "538026089d1a8a8eff05121d0db89b388f360eba",
+   "role": "scoring",
+   "sha256": "c11528e6b316bdd3d8608ea7e5c6e5ca3944cc7655d0d43a589473eb5ba0f14d",
+   "source": "github",
+   "stands": [
+    "S6",
+    "S6L"
+   ],
+   "window": "a3-github"
+  },
+  "mab_fc_sh_32k": {
+   "alias_of": null,
+   "bytes": 304,
+   "filled_from": "a3-github g1 pin_fill 0949dd56da65",
+   "licence": "MIT",
+   "licence_found": "MIT",
+   "path": "configs/data_conf/Conflict_Resolution/Factconsolidation_sh_32k.yaml",
+   "repo": "HUST-AI-HYZ/MemoryAgentBench",
+   "revision": "538026089d1a8a8eff05121d0db89b388f360eba",
+   "role": "scoring",
+   "sha256": "e58f475b2a0ee7382b88f2299ea70302048231a832e92de6938a24f9e2779c5b",
+   "source": "github",
+   "stands": [
+    "S6",
+    "S6L"
+   ],
+   "window": "a3-github"
+  },
+  "mab_fc_sh_64k": {
+   "alias_of": null,
+   "bytes": 304,
+   "filled_from": "a3-github g1 pin_fill 0949dd56da65",
+   "licence": "MIT",
+   "licence_found": "MIT",
+   "path": "configs/data_conf/Conflict_Resolution/Factconsolidation_sh_64k.yaml",
+   "repo": "HUST-AI-HYZ/MemoryAgentBench",
+   "revision": "538026089d1a8a8eff05121d0db89b388f360eba",
+   "role": "scoring",
+   "sha256": "003eddd0b9454354ae2bd0afbb90168b34c7a9fbf08151bd9bf42d5cb2c40896",
+   "source": "github",
+   "stands": [
+    "S6",
+    "S6L"
+   ],
+   "window": "a3-github"
+  },
+  "mab_fc_sh_6k": {
+   "alias_of": null,
+   "bytes": 303,
+   "filled_from": "a3-github g1 pin_fill 0949dd56da65",
+   "licence": "MIT",
+   "licence_found": "MIT",
+   "path": "configs/data_conf/Conflict_Resolution/Factconsolidation_sh_6k.yaml",
+   "repo": "HUST-AI-HYZ/MemoryAgentBench",
+   "revision": "538026089d1a8a8eff05121d0db89b388f360eba",
+   "role": "scoring",
+   "sha256": "814bf2eca1d07018262a860819db8fc7ddcb7d1a866839caec53ef2993c625e6",
+   "source": "github",
+   "stands": [
+    "S6",
+    "S6L"
+   ],
+   "window": "a3-github"
+  },
+  "mab_templates": {
+   "alias_of": null,
+   "bytes": 11961,
+   "filled_from": "a3-github g1 pin_fill 0949dd56da65",
+   "licence": "MIT",
+   "licence_found": "MIT",
+   "path": "utils/templates.py",
+   "repo": "HUST-AI-HYZ/MemoryAgentBench",
+   "revision": "538026089d1a8a8eff05121d0db89b388f360eba",
+   "role": "prompt",
+   "sha256": "148c40d48d19f155ae845482c4417ba59cfa7ae4e194019509e023bd3a8755dd",
+   "source": "github",
+   "stands": [
+    "S6",
+    "S6L"
+   ],
+   "window": "a3-github"
+  },
+  "mem0_licence": {
+   "alias_of": null,
+   "bytes": 11349,
+   "filled_from": "a3-github g1 pin_fill 0949dd56da65",
+   "licence": "Apache-2.0",
+   "licence_found": "Apache-2.0",
+   "path": "LICENSE",
+   "repo": "mem0ai/mem0",
+   "revision": "b3ede5b7c0ac0e847b03786a603c107ac943b3ee",
+   "role": "licence-evidence",
+   "sha256": "0bbcbe931c353293a2fafce08326181dfeea0e568c566afd4ce8337a70f5e219",
+   "source": "github",
+   "stands": [
+    "S4"
+   ],
+   "window": "a3-github"
+  },
+  "tiktoken_cl100k_base": {
+   "alias_of": null,
+   "bytes": 1681126,
+   "filled_from": "a3-tiktoken t1 pin_fill ab54c52a1117",
+   "licence": "MIT",
+   "licence_found": "MIT",
+   "path": "https://openaipublic.blob.core.windows.net/encodings/cl100k_base.tiktoken",
+   "repo": null,
+   "revision": "223921b76ee99bde995b7ff738513eef100fb51d18c93597a113bcffe865b2a7",
+   "role": "tokenizer",
+   "sha256": "223921b76ee99bde995b7ff738513eef100fb51d18c93597a113bcffe865b2a7",
+   "source": "url",
+   "stands": [
+    "all"
+   ],
+   "window": "a3-tiktoken"
+  }
+ },
+ "pins_from_excluded_requests": {
+  "a3-discovery d1": 0
+ },
+ "prereg_rev1": "56daaedecfb66f9ac428d1588ece697dfe108b2f9effe88d6e8d8b7576b96498",
+ "venvs": {
+  "py314": {
+   "nupkg_sha256": "c33a8d6183da776b0988e9d44646ab7abe16c4e02cfbacb20a0e52c61342c71f",
+   "python_exe_sha256": "7ca24f26d6e3f463419ee4f537ddd3acd312c38fe45e678cce08572f26a8bd1a",
+   "tools_tree_sha256": "f603e87291d85b2d1a21b157357808e27255c0ab2e7023dc8e2fb78002dd6a60",
+   "version": "3.14.4"
+  },
+  "v3_data": {
+   "installed_files": 761,
+   "installed_set_sha256": "2e76d82f78dc4a03bd3b2156e6b41ee4d95f1ac3a593eb3851e1f95ddd3dce28",
+   "pip": {
+    "certifi_sha256": "4f3975ff30abbf35443b486064ae8bcb41dff707ffdf576c76d292fb458aa0a9",
+    "trust": "certifi (legacy-certs)",
+    "version": "26.0.1"
+   },
+   "tag": "cp314-cp314-win_amd64",
+   "wheels": {
+    "pyarrow": {
+     "filename": "pyarrow-25.0.1-cp314-cp314-win_amd64.whl",
+     "sha256": "f729cfdbd36fd99d543b67a914d2de044c84ebe45be8b34902b299b608c15c8f",
+     "version": "25.0.1"
+    }
+   }
+  }
+ },
+ "windows": [
+  {
+   "files": {
+    "_tools/py-base-314/py-base-314.json": "7b1f8db8ad9d927de1356222a2f8b54bebbf7855662ab28809d66a53b3abb1e1"
+   },
+   "kind": "tool",
+   "problems": {
+    "_tools/py-base-314/py-base-314.json": 0
+   },
+   "run": "b1",
+   "window": "py-base-314"
+  },
+  {
+   "excluded": [
+    {
+     "job": 2,
+     "requests": [
+      "gh:AMA-Bench/AMA-Hub",
+      "ghhead:AMA-Bench/AMA-Hub"
+     ]
+    }
+   ],
+   "feeds_pins": {
+    "0": "HF revisions and card licences",
+    "1": "HF trees",
+    "2": "GitHub repo licences through gh:<repo> (never AMA-Hub)",
+    "3": "GitHub trees"
+   },
+   "files": {
+    "_fetch/a3-discovery/d1/record.json": "db131b4983a91629ef3f8906e5b1f6659a7c3f17b4713a2b84e4b9afdff18210"
+   },
+   "kind": "discovery",
+   "note": "3 problems, all in job 2 (the AMA-Hub 301 on its gh: and ghhead: requests, and the job's exit), ruled P1: AMA-Hub re-read as d2 on api.github.com only; d1's other 44 job-2 requests and jobs 0, 1, 3 feed the pins (fetch_pins_a3 pins d1 and d2 by sha256)",
+   "problems": {
+    "_fetch/a3-discovery/d1/record.json": 3
+   },
+   "problems_verbatim": [
+    "job 2: the fetch child exited with 3",
+    "job 2 request gh:AMA-Bench/AMA-Hub: Refused: more redirects than the job allows",
+    "job 2 request ghhead:AMA-Bench/AMA-Hub: Refused: more redirects than the job allows"
+   ],
+   "run": "d1",
+   "window": "a3-discovery"
+  },
+  {
+   "files": {
+    "_fetch/a3-discovery/d2/record.json": "f793c59a6ec980a94255a8abe0530a3c72d3c782d213df30375adabbd8a360d4"
+   },
+   "kind": "discovery",
+   "problems": {
+    "_fetch/a3-discovery/d2/record.json": 0
+   },
+   "run": "d2",
+   "window": "a3-discovery"
+  },
+  {
+   "files": {
+    "_fetch/a3-pyarrow/i1/record.json": "56c2d09a823cdd6dfb97192b5c1a5171031caf4f5578b63a61d50453e190efb6",
+    "_install/a3-pyarrow/i1/install_record.json": "fe9069008b16e200264d7f130700563bbdeb6baf8528011e05a37bbe52b273b7"
+   },
+   "kind": "install",
+   "problems": {
+    "_fetch/a3-pyarrow/i1/record.json": 0,
+    "_install/a3-pyarrow/i1/install_record.json": 0
+   },
+   "run": "i1",
+   "window": "a3-pyarrow"
+  },
+  {
+   "files": {
+    "_fetch/a3-hf/h2/pin_fill.json": "c23ea9cd354963e63305ccc280a553ac1870a4fdf9942575540dec9ba587a3eb",
+    "_fetch/a3-hf/h2/place_record.json": "49cba9b3bfabd5923f3709d7cc2096ab8794ac6e27ad1632ce6a0bd5862449c8",
+    "_fetch/a3-hf/h2/record.json": "6e81496dead1c8e88f00870658c7da7af8bdd1f72de1991e08653e807575e2b3"
+   },
+   "kind": "fetch",
+   "problems": {
+    "_fetch/a3-hf/h2/pin_fill.json": 0,
+    "_fetch/a3-hf/h2/place_record.json": 0,
+    "_fetch/a3-hf/h2/record.json": 0
+   },
+   "run": "h2",
+   "window": "a3-hf"
+  },
+  {
+   "files": {
+    "_fetch/a3-github/g1/pin_fill.json": "0949dd56da65c36adae21dfa1613b6d8af3d559bade22c9348ac7460f536c4b0",
+    "_fetch/a3-github/g1/place_record.json": "b639cc1e1b6aaf9c311a82686c629700d9d6bac5b2885233ca6ae449d580bd9b",
+    "_fetch/a3-github/g1/record.json": "55217f18d7090a22207991eefe396ce4bc136ada1e8ab2ed4175874fba33014a"
+   },
+   "kind": "fetch",
+   "problems": {
+    "_fetch/a3-github/g1/pin_fill.json": 0,
+    "_fetch/a3-github/g1/place_record.json": 0,
+    "_fetch/a3-github/g1/record.json": 0
+   },
+   "run": "g1",
+   "window": "a3-github"
+  },
+  {
+   "files": {
+    "_fetch/a3-tiktoken/t1/pin_fill.json": "ab54c52a11176332a72d10851d83a5cad9133cc0b646f395ee8520c7b5459a97",
+    "_fetch/a3-tiktoken/t1/place_record.json": "f146829800201a912e16e4f1715dfe3e03bcb333ea0c55504dc85b47904fca0f",
+    "_fetch/a3-tiktoken/t1/record.json": "c832ad298b1fac3a5d05e0eb73dad9bba0a486b343efdb49277efe809a1e5732"
+   },
+   "kind": "fetch",
+   "problems": {
+    "_fetch/a3-tiktoken/t1/pin_fill.json": 0,
+    "_fetch/a3-tiktoken/t1/place_record.json": 0,
+    "_fetch/a3-tiktoken/t1/record.json": 0
+   },
+   "run": "t1",
+   "window": "a3-tiktoken"
+  },
+  {
+   "files": {
+    "_fetch/a3-git/r1/pin_fill.json": "ba0f9248f430b15878c975ed3295059e11e7747a1f43902a6da2e8dafc4e8ab6",
+    "_fetch/a3-git/r1/place_record.json": "267473f0fb64feee64cf92931cba10b47e347016d8ee7a95d5d8d8d0d1a00d2d",
+    "_fetch/a3-git/r1/record.json": "fd92d9809cb7939cfe0047b5b44a30caca1556d0861a5950a3e39def602d99df"
+   },
+   "kind": "fetch",
+   "problems": {
+    "_fetch/a3-git/r1/pin_fill.json": 0,
+    "_fetch/a3-git/r1/place_record.json": 0,
+    "_fetch/a3-git/r1/record.json": 0
+   },
+   "run": "r1",
+   "window": "a3-git"
+  },
+  {
+   "files": {
+    "_facts/j3/facts.json": "b2d373f0d40d8c4ed885fb799416cf5c682ab35acdb7c636d09af786c3c14af8"
+   },
+   "kind": "facts",
+   "problems": {
+    "_facts/j3/facts.json": 0
+   },
+   "run": "j3",
+   "window": "facts"
+  },
+  {
+   "files": {
+    "_inventory/ollama/o1/record.json": "ee7c167f663f6544e476340dd1eb430cd67fb12a3b52584d7430f0d8f4161ae7"
+   },
+   "kind": "inventory",
+   "problems": {
+    "_inventory/ollama/o1/record.json": 0
+   },
+   "run": "o1",
+   "window": "ollama"
+  },
+  {
+   "files": {
+    "_fetch/local-v2/l1/place_record.json": "4ee8dd1863933bcb9fdb709490945ca7a477b9027fc6d16c0b9fccb535696514"
+   },
+   "kind": "local-v2",
+   "problems": {
+    "_fetch/local-v2/l1/place_record.json": 0
+   },
+   "run": "l1",
+   "window": "local-v2"
+  },
+  {
+   "files": {
+    "_d1tag/d1/record.json": "684c97b73b11ed29f7fa49f93e26ade0f20105f38b5c32042c77af3fb4cbfe5c"
+   },
+   "kind": "d1-tag",
+   "problems": {
+    "_d1tag/d1/record.json": 0
+   },
+   "run": "d1",
+   "window": "d1-tag"
+  }
+ ]
+}

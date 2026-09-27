@@ -270,21 +270,21 @@ if OUT.exists():
     raw = OUT.read_bytes()
     fz_c = json.loads(raw)
     check("the committed fragment's windows and failed runs are the declared lists",
-          [{k: v for k, v in w.items() if k != "problems"} for w in fz_c["windows"]]
+          [{k: v for k, v in w.items() if k != "problems"} for w in fz_c.get("windows", [])]
           == [{k: e[k] for k in ("window", "run", "kind", "files", "note", "problems_verbatim", "excluded", "feeds_pins")
                if k in e} for e in F.CLEARED]
-          and [{k: v for k, v in w.items() if k != "problems"} for w in fz_c["failed_runs"]]
+          and [{k: v for k, v in w.items() if k != "problems"} for w in fz_c.get("failed_runs", [])]
           == [{k: e[k] for k in ("window", "run", "files", "reason")} for e in F.FAILED])
     check("... and every cleared entry with problems carries its ruling note and its excluded requests",
-          all(w.get("note") and w.get("excluded") for w in fz_c["windows"] if sum(w["problems"].values())))
+          all(w.get("note") and w.get("excluded") for w in fz_c.get("windows", []) if sum(w["problems"].values())))
     check("C1: ... and no pin traces to an excluded request (counted from the real FILLED table)",
           fz_c.get("pins_from_excluded_requests") and all(v == 0 for v in fz_c["pins_from_excluded_requests"].values()))
-    check("... its pins are the table's, as filled", fz_c["pins"] == F.pins_section(CP.PINS))
-    check("... every issuer organisation is public", all(o in F.PUBLIC_ISSUER_ORGS for v in fz_c["issuers"].values() for o, _ in v))
+    check("... its pins are the table's, as filled", fz_c.get("pins") == F.pins_section(CP.PINS))
+    check("... every issuer organisation is public", all(o in F.PUBLIC_ISSUER_ORGS for v in fz_c.get("issuers", {}).values() for o, _ in v))
     check("... api.nuget.org (py-base b1's peer) is among the issuers, and files.pythonhosted.org is declared unrecorded",
-          "api.nuget.org" in fz_c["issuers"] and set(fz_c["issuers_unrecorded"]) == {"files.pythonhosted.org"})
+          "api.nuget.org" in fz_c.get("issuers", {}) and set(fz_c.get("issuers_unrecorded", {})) == {"files.pythonhosted.org"})
     check("... its prereg_rev1 is the committed revision file's",
-          fz_c["prereg_rev1"] == hashlib.sha256((ROOT / "research" / "v3" / "PREREG-V3-rev1.md").read_bytes()).hexdigest())
+          fz_c.get("prereg_rev1") == hashlib.sha256((ROOT / "research" / "v3" / "PREREG-V3-rev1.md").read_bytes()).hexdigest())
     check("... it is the renderer's bytes (sorted JSON, LF)", raw == F.render(fz_c))
 else:
     check("the fragment is not committed yet (A3.k's data commit writes it from the cleared records)", not OUT.exists())

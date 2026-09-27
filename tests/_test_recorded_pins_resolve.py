@@ -209,11 +209,20 @@ if _unpublished_shas:
 print("\n- every sha256 recorded beside a path matches that file, where the file is here -")
 checked = absent = 0
 wrong = []
-for rel, dotted, key, value, _is_foreign in pins:
+#: A digest whose holder (or an ancestor) names a `repo`, `url`, `remote` or `upstream` pins a file of ANOTHER repository -
+#: research/v3/freeze_a3.json's v3 pins name `LICENSE` inside AMA-Bench's, A-mem's and mem0's trees, and resolving that
+#: against this repository's own LICENSE compared two different files (the auditor, 8a5d7e9). The same structural rule
+#: the commit check uses above: never resolved here, counted, and the artifacts carrying such pins are an inventory.
+upstream, upstream_files = 0, set()
+for rel, dotted, key, value, is_foreign in pins:
     if key.lower() not in ("sha256", "digest", "hash") or not isinstance(value, str):
         continue
     target = HOLDER_PATH.get((rel, dotted))
     if not isinstance(target, str) or not target:
+        continue
+    if is_foreign:
+        upstream += 1
+        upstream_files.add(rel)
         continue
     f = ROOT / target
     if not f.exists():
@@ -227,6 +236,9 @@ check(f"{checked} digests verified against the file they name", not wrong, " | "
 #: An absent file is the normal case for a hash-pinned third-party corpus: the pin exists SO THAT
 #: a stranger can fetch and compare. Counted rather than passed over in silence.
 print(f"       ({absent} named a file that is not in this clone - third-party corpora, by design)")
+print(f"       ({upstream} named a file inside another repository - never resolved here)")
+check("the digests of other repositories' files sit only in the v3 pin table's freeze (research/v3/freeze_a3.json)",
+      upstream_files <= {"research/v3/freeze_a3.json"}, str(sorted(upstream_files)))
 
 print("\n- and the inventory is pinned, so new pins cannot arrive unnoticed -")
 #: Measured 2026-09-22 at `b956966`. A change here is a decision: either a new artifact arrived
@@ -252,8 +264,11 @@ print("\n- and the inventory is pinned, so new pins cannot arrive unnoticed -")
 #: records `inputs[].sha256`, the four supersession artifacts it is computed from.
 #: 2026-09-26, PREREG-V3 A3.d: +1 artifact, no kind - research/v3/fetch_manifest.json, the declared A3 fetch
 #: windows (hosts and pins by name; no pin-named key, so the kinds do not move).
-check("the number of pinned artifacts has not moved", len(artifacts) == 194, str(len(artifacts)))
-check("and the number of pin KINDS has not moved", len(kinds) == 234,
+#: 2026-09-27, PREREG-V3 A3.k data: +1 artifact (research/v3/freeze_a3.json, the A3 freeze fragment) and +66 kinds, all
+#: gained, all in it - its pins.<name>.{sha256, revision, ...}, venvs.*, models.*, d1_tag.*, local_v2.* and facts.sha256.
+#: Diffed with this file's own walk() against bc61ee6: none lost (234 -> 300 kinds over 385 values).
+check("the number of pinned artifacts has not moved", len(artifacts) == 195, str(len(artifacts)))
+check("and the number of pin KINDS has not moved", len(kinds) == 300,
       f"{len(kinds)} kinds over {len(pins)} values")
 
 print(f"\n{'ALL OK' if not FAILS else f'{FAILS} FAILED'}")
