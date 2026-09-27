@@ -17,6 +17,8 @@
   Popen takes only allowlisted arguments (never executable, shell, env); every path rule holds for the real path,
   and a link or junction in a unit path is refused; a read exception lifts one variable, or one argv index at one
   exact path; a provider-key value is refused under any name; the owner's home is pinned, not read from USERPROFILE.
+* K1 (the auditor's key ruling): a value held in any *.env of the secrets directory is refused under any name, compared
+  in memory and never printed; spawn() reads the contract's own directory; an unreadable *.env refuses, never skips.
 
 No network; a temporary polygon; the one real child is this interpreter, named as the test's binary exception.
 
@@ -363,6 +365,53 @@ check("B5 an sk- key inside a non-secret variable is refused",
       any("provider key" in v for v in violations({"MEM0_LLM_CONFIG": '{"api_key": "sk-' + "a1B2c3D4" * 5 + '"}'})))
 check("B5 ... and in an argument", any("provider key" in v for v in L.assert_argv(C, [sys.executable, "--k", "sk-" + "x" * 30])))
 check("B5 a word ending in sk- is not a key (desk-...)", not any("provider key" in v for v in violations({"NVT3_D": "desk-" + "a" * 30})))
+# K1 (the auditor's key ruling, 2026-09-27): no value held in the secrets directory reaches a child under any name -
+# compared in memory, never printed; the check names the variable, never the value.
+SECRET_VALUE = "FAKEPROVIDERVALUE" + "0123456789abcdef"
+(TMP / "secrets").mkdir(exist_ok=True)
+(TMP / "secrets" / "provider.env").write_text(f"# a comment\nPROVIDER_LOOKALIKE='{SECRET_VALUE}'\nSHORT=abc\n\n",
+                                              encoding="utf-8")
+(TMP / "secrets" / "notes.txt").write_text("NOT_AN_ENV_FILE=" + "y" * 20, encoding="utf-8")
+try:
+    SV = L.secret_values(C)
+except Exception as e:  # noqa: BLE001 - a crash is a named FAIL of the rows below
+    SV = frozenset()
+    print(f"       (secret_values raised {type(e).__name__})")
+check("K1 the secrets directory's *.env values are read into memory (quotes stripped; short values and other files "
+      "ignored)", SV == frozenset({SECRET_VALUE}), f"{len(SV)} value(s)")
+k1 = violations({"DEEPSEEK_API_KEY": "nvt3-nevertwice-" + SECRET_VALUE}, secret_values=SV)
+check("K1 a proxy token carrying a secrets-directory value is refused by name, and the reason holds no value",
+      any("secrets directory" in v and "DEEPSEEK_API_KEY" in v for v in k1) and not any(SECRET_VALUE in v for v in k1),
+      str(k1))
+check("K1 ... under a name that is not secret-shaped too",
+      any("secrets directory" in v and "NVT3_NOTE" in v for v in violations({"NVT3_NOTE": "x" + SECRET_VALUE},
+                                                                          secret_values=SV)))
+check("K1 the built environment passes the check", violations({}, secret_values=SV) == [],
+      str(violations({}, secret_values=SV)))
+check("K1 no secrets directory means nothing to compare, not a crash",
+      L.secret_values(contract(secrets_dir=TMP / "no_such_secrets")) == frozenset())
+(TMP / "secrets" / "locked.env").mkdir()
+try:
+    L.secret_values(C)
+    check("K1 an unreadable *.env refuses by name instead of comparing less", False)
+except L.ContractViolation as e:
+    check("K1 an unreadable *.env refuses by name instead of comparing less",
+          any("could not be read" in r and "locked.env" in r for r in e.reasons), str(e.reasons))
+except Exception as e:  # noqa: BLE001
+    check("K1 an unreadable *.env refuses by name instead of comparing less", False, type(e).__name__)
+(TMP / "secrets" / "locked.env").rmdir()
+S1 = fresh("u-secret")
+try:
+    L.spawn(C, [sys.executable, "-c", "pass"], env=dict(ENV, NVT3_NOTE="x" + SECRET_VALUE), cwd=S1.cwd,
+            record={"role": "test"}, parent_env=HOSTILE, catcher_url=CATCHER, popen=_FakePopen,
+            requirement="optional", unwitnessed_reason=OPTIONAL)
+    check("K1 spawn() compares against the contract's secrets directory itself", False)
+except L.ContractViolation as e:
+    log_k1 = L.spawns_log(C).read_bytes()
+    check("K1 spawn() compares against the contract's secrets directory itself, and its record holds no value",
+          any("secrets directory" in r for r in e.reasons) and SECRET_VALUE.encode() not in log_k1, str(e.reasons))
+(TMP / "secrets" / "provider.env").unlink()
+(TMP / "secrets" / "notes.txt").unlink()
 # B6: the owner's home
 with mock.patch.dict(os.environ, {"USERPROFILE": str(TMP / "fake_profile")}):
     D = L.Contract.default()

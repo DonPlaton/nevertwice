@@ -58,7 +58,7 @@ import time
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable, Mapping, Sequence
+from typing import Callable, Collection, Mapping, Sequence
 
 REPO = Path(__file__).resolve().parents[2]
 #: §2.6.4 names the owner's home literally; it is pinned here, not read from an environment a harness could fake.
@@ -395,6 +395,32 @@ def build_env(c: Contract, *, parent_env: Mapping[str, str], unit: UnitDirs, pat
     return env
 
 
+#: K1: a value shorter than this is not compared (a port, a flag); no key in the secrets directory is that short.
+SECRET_MIN_LEN = 8
+
+
+def secret_values(c: Contract) -> frozenset[str]:
+    """K1 (the auditor's key ruling, 2026-09-27): every value held in a *.env file of the contract's secrets directory,
+    read into memory for the spawn assertion only - never printed, logged or recorded. No directory, nothing to
+    compare (a missing directory globs to nothing); a *.env that cannot be read refuses by file name rather than
+    comparing less."""
+    root = Path(c.secrets_dir)
+    out: set[str] = set()
+    for fp in sorted(root.glob("*.env")):
+        try:
+            text = fp.read_bytes().decode("utf-8", "replace")
+        except OSError:
+            raise ContractViolation([f"a secrets file could not be read for the value check: {fp.name}"]) from None
+        for ln in text.split("\n"):
+            ln = ln.strip()
+            if not ln or ln.startswith("#") or "=" not in ln:
+                continue
+            v = ln.split("=", 1)[1].strip().strip('"').strip("'")
+            if len(v) >= SECRET_MIN_LEN:
+                out.add(v)
+    return frozenset(out)
+
+
 def _loopback_url(url: str) -> bool:
     return re.fullmatch(r"http://127\.0\.0\.1:\d{1,5}/?", url or "") is not None
 
@@ -402,10 +428,12 @@ def _loopback_url(url: str) -> bool:
 def assert_env(c: Contract, env: Mapping[str, str], *, parent_env: Mapping[str, str], catcher_url: str,
                token_names: Sequence[str] = (), claude_names: Sequence[str] = (),
                env_exception: Mapping[str, Sequence[Path]] | None = None,
-               read_exception: Sequence[Path] = (), canaries: Sequence[str] = ()) -> list[str]:
+               read_exception: Sequence[Path] = (), canaries: Sequence[str] = (),
+               secret_values: Collection[str] = ()) -> list[str]:
     """§2.6.2's assertion before every spawn. Returns the violations; each names variables, never values.
     ``env_exception`` lifts a denied root for ONE variable only, e.g. {"PYTHONPATH": [repo]} (B4, §2.6.4);
-    ``read_exception`` is the import-path case of it: those roots are lifted for PYTHONPATH and nothing else."""
+    ``read_exception`` is the import-path case of it: those roots are lifted for PYTHONPATH and nothing else;
+    ``secret_values`` (K1) are the secrets directory's values: one found inside any value refuses that variable."""
     out = []
     seen: dict[str, str] = {}
     for k in env:
@@ -445,6 +473,8 @@ def assert_env(c: Contract, env: Mapping[str, str], *, parent_env: Mapping[str, 
             out.append(f"{k} names a denied path")
         if any(cv and cv in v for cv in canaries):
             out.append(f"{k} carries a canary")
+        if any(sv in v for sv in secret_values):
+            out.append(f"{k} carries a value held in the secrets directory")
         if _PROVIDER_KEY.search(v):
             out.append(f"{k} holds a value shaped like a provider key")
     if c.require_systemroot and _lookup(env, "SystemRoot", True) is None:
@@ -696,8 +726,14 @@ def spawn(c: Contract, argv: Sequence[str], *, env: Mapping[str, str], cwd: str 
         binary = None
         reasons += list(e.reasons)                 # added to, never replacing, the reasons already found
     reasons += check_cwd(c, cwd)
+    try:
+        held = secret_values(c)
+    except ContractViolation as e:
+        held = frozenset()
+        reasons += list(e.reasons)
     reasons += assert_env(c, env, parent_env=parent_env, catcher_url=catcher_url, token_names=token_names,
-                          claude_names=claude_names, env_exception=env_exception, canaries=canaries)
+                          claude_names=claude_names, env_exception=env_exception, canaries=canaries,
+                          secret_values=held)
     reasons += assert_argv(c, argv, argv_exception=argv_exception)
     # §2.6.6 / §2.6.9 (the auditor's L2): a Claude Code spawn - by arm, by role, or by the binary's own name, so no
     # caller label switches this off - runs only fully locked down.
