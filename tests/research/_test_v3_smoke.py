@@ -167,6 +167,22 @@ try:
           and all(v != "accepted" and not v.startswith("not refused") for v in bad.values()), str(bad))
     check("... and 'coverage', 'failures' and the token phases are no score", SM.score_keys(base) == [],
           str(SM.score_keys(base)))
+    WORDS = ("score", "verdict", "gold", "twin", "judge", "label", "accuracy", "correct", "exact_match", "em", "f1")
+    per_word = {w: refused(lambda w=w: SM.check_row({**base, "tokens": {**base["tokens"], f"{w}_x": 1}}))
+                for w in WORDS}
+    check("SM (MS5): EVERY score word - score, verdict, gold, twin, judge, label, accuracy, correct, exact_match, EM, "
+          "F1 - in a key at depth 2 refuses the row for naming a score",
+          all("names a score" in v for v in per_word.values()),
+          str({w: v[:40] for w, v in per_word.items() if "names a score" not in v}))
+    ART = SM._artifact()
+    _real_yield = ART.yield_block
+    ART.yield_block = lambda **kw: {**_real_yield(**kw), "labels": ["writer-gated (33.3%)"]}
+    try:
+        labelled = refused(lambda: summary())
+    finally:
+        ART.yield_block = _real_yield
+    check("SM (MS6): a yield block that carries a label refuses the summary by name - labels come from scored runs only",
+          "carries labels" in labelled, labelled)
 
     print("\n- the printed lines and the file -")
     text = SM.render(s)
