@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import re
 import os
 import shutil
 import subprocess
@@ -80,6 +81,9 @@ if getattr(sys, "_base_executable", sys.executable) != sys.executable:
     _TEST_EXC[sys._base_executable] = "the test interpreter's base"
 CAN = "a" * 32
 CC = "claude-code-memory"
+C_ENV = L.Contract(polygon_root=TMP / "cenv" / "polygon", runs_root=TMP / "cenv" / "polygon" / "runs" / "v3",
+                   repo_root=ROOT, owner_home=TMP / "cenv" / "owner", secrets_dir=TMP / "cenv" / "secrets",
+                   quarantine_root=TMP / "cenv" / "quarantine", conservation_root=TMP / "cenv" / "conservation")
 CLOUD = {"llm": "deepseek-flash", "llm_transport": "cloud:deepseek"}
 NO_LLM = {"llm": None, "llm_transport": None}
 ARMS = {"mem0": {**CLOUD, "embeds_via_ollama": True, "reader": True}, CC: {**CLOUD, "embeds_via_ollama": False},
@@ -156,9 +160,17 @@ try:
           and "home canary" in refused(lambda: RP.build_secrets(list(ARMS), home_canaries={CC: "short"})),
           refused(lambda: RP.build_secrets(list(ARMS))))
     toks = list(sec["tokens"].values()) + [sec["control_token"]]
+    check("B-TOKEN: every arm and role token is a proxy token a child's environment may hold - nvt3-<arm>-<32 hex> "
+          "(launch.new_token), never a bare hex", all(re.fullmatch(r"nvt3-[a-z0-9-]+-[0-9a-f]{32}", t_) and
+                                                          t_.startswith(L.TOKEN_PREFIX) for t_ in sec["tokens"].values()),
+          str(sorted(t_[:12] for t_ in sec["tokens"].values())))
+    env_ok = L.assert_env(C_ENV, {"SystemRoot": "C:\\Windows", "DEEPSEEK_API_KEY": sec["tokens"]["mem0"]}, parent_env={},
+                          catcher_url="http://127.0.0.1:47001/")
+    check("B-TOKEN: ... and launch.assert_env accepts it as DEEPSEEK_API_KEY",
+          not any("token" in r_ for r_ in env_ok), str(env_ok))
     check("the tokens are fresh 128-bit values, one per arm and role, and distinct",
           set(sec["tokens"]) == set(ARMS) | {"scheduler"} and len(set(toks)) == len(toks)
-          and all(len(t) == 32 for t in toks), str(sorted(sec["tokens"])))
+          and all(len(t.rsplit("-", 1)[-1]) == 32 for t in toks), str(sorted(sec["tokens"])))
 
     print("\n- stop(): a proxy that does not exit after /shutdown is killed, and that is said (RP6) -")
 

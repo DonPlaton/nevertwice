@@ -11,7 +11,8 @@ own stop (the auditor's Q-12-1 for the smoke, R-FSYNC).
   (Q-12-1 O-b: the smoke's single catcher, declared in its artifact); the scheduler's port (D8's model probe and the
   balance) always, J3 (pinned deepseek-v4-pro) only when asked; the hop and a test upstream only as given. Nothing
   secret is in it.
-* build_secrets: a fresh 128-bit token per arm and role and one for the control port (secrets.token_hex), the canaries,
+* build_secrets: a fresh proxy token per arm and role - launch.new_token, nvt3-<arm>-<32 hex>, the only form
+  launch.assert_env lets into a child's environment (B-TOKEN) - and a 128-bit one for the control port, the canaries,
   the Claude Code arm's home canary (R-CC-WIT: without one the proxy would not start, so it is refused here, before any
   spawn) and the identity when the owner markers are wired (Q-12-2). They go on the proxy's stdin only - never into
   a file, argv or the environment.
@@ -145,7 +146,8 @@ def build_secrets(arm_names: Sequence[str], *, roles: Sequence[str] = ("schedule
     bad_roles = sorted(set(roles) - set(SPECIAL_ROLES))
     if bad_roles:
         raise ProxyPlanError(f"roles {bad_roles} are not the proxy's single-port roles {SPECIAL_ROLES}")
-    out: dict = {"tokens": {n: _secrets.token_hex(16) for n in [*arm_names, *roles]},
+    new_token = _launch().new_token                   # B-TOKEN: the form a child's environment may hold
+    out: dict = {"tokens": {n: new_token(n) for n in [*arm_names, *roles]},
                  "control_token": _secrets.token_hex(16)}
     if canaries:
         out["canaries"] = dict(canaries)
