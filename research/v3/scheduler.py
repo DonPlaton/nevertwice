@@ -49,14 +49,24 @@ DEBUG_CEILING_S = 6 * 3600.0                             # Q26: the declared deb
 BUDGET_H = {"S6-SH": 24, "S6-MH": 24, "S5": 48, "S7": 24, "S4": 24, "S1": 72}   # §5.6, judge stages excluded
 ARM_ORDER_DOMAIN = "nvt3-arm-order"
 GATE_POLL_S = 0.5                                        # how often a closed incident gate is asked again
+REASK_MAX, REASK_SPACING_S = 2, 300.0                    # §4.5 W3: the stand's re-asks - at most 2, at least 5 min apart
 
 
 class SchedulerError(RuntimeError):
     """A plan or a value the preregistration does not allow; nothing was scheduled."""
 
 
+class ReaskableError(RuntimeError):
+    """The answer hook's transport failure (the reader's call did not come back): the stand may re-ask it (W3)."""
+
+
 class SystemClock:
-    """The scheduler's clock: UTC for records, monotonic for ceilings."""
+    """The scheduler's clock: UTC for records, monotonic for ceilings, sleep for the re-ask pauses."""
+
+    @staticmethod
+    def sleep(s: float) -> None:
+        import time as _time  # noqa: PLC0415
+        _time.sleep(s)
 
     @staticmethod
     def utc():
@@ -547,7 +557,27 @@ def _question_unit(sched: "Scheduler", launcher: Any, sp: StandPlan, *, run: str
     out: dict = {"reads": [], "counters": None, "rc": None, "aborted": None, "pid": None, "spawn_id": None}
     start = sched.clock.monotonic()
     deadline = start + max(0.0, ceiling - wrec.active_s)
-    left = lambda: deadline - sched.clock.monotonic()  # noqa: E731
+    paused = [0.0]                                       # W3's re-ask pauses: never the unit's active time (D1)
+    left = lambda: deadline + paused[0] - sched.clock.monotonic()  # noqa: E731
+    sleep = getattr(sched.clock, "sleep", None) or __import__("time").sleep
+
+    def reask(attempt: Callable[[], Any], retry_on: tuple) -> tuple[Any, int, str | None]:
+        """(the result, or None if still unrecovered; the re-asks made; the last error) - W3's order after the client's
+        own retries: at most REASK_MAX re-asks, REASK_SPACING_S apart."""
+        n, last = 0, None
+        while True:
+            try:
+                return attempt(), n, None
+            except retry_on as e:
+                if isinstance(e, B.ArmError) and (client.arm.poisoned or isinstance(e, (B.ArmTimeout, B.ArmDied))):
+                    raise
+                last = str(e)
+                if n >= REASK_MAX:
+                    return None, n, last
+                n += 1
+                sleep(REASK_SPACING_S)
+                paused[0] += REASK_SPACING_S
+
     client = wrec.client
     try:
         sched._await_gate()
@@ -564,10 +594,18 @@ def _question_unit(sched: "Scheduler", launcher: Any, sp: StandPlan, *, run: str
             if left() <= 0:
                 raise B.ArmTimeout("read: the ceiling passed")
             t0 = sched.clock.utc().isoformat()
-            got = client.request("read", timeout=left(), **read_kwargs(launcher, req))
+            got, n_read, err = reask(lambda req=req: client.request("read", timeout=left(), **read_kwargs(launcher, req)),
+                                     (B.ArmError,))
             t1 = sched.clock.utc().isoformat()
-            out["reads"].append({"qid": req.qid, "point": req.point, "t0": t0, "t1": t1,
-                                 "answer": sp.answer(launcher.name, run, unit, req, got)})
+            row = {"qid": req.qid, "point": req.point, "t0": t0, "t1": t1, "reasks": n_read}
+            if got is None:
+                row.update(unrecovered=True, error=err)       # W3 step 3: P2 decides the drop, for every arm
+            else:
+                ans, n_ans, err = reask(lambda req=req, got=got: sp.answer(launcher.name, run, unit, req, got),
+                                        (ReaskableError,))
+                row["reasks"] = n_read + n_ans
+                row.update(answer=ans) if ans is not None else row.update(unrecovered=True, error=err)
+            out["reads"].append(row)
         if left() <= 0:
             raise B.ArmTimeout("counters: the ceiling passed")
         out["counters"] = client.request("counters", timeout=left())

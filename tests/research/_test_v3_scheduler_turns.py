@@ -144,6 +144,13 @@ class H:
 
     def read(self, qid, query, k=10):
         log_op("read", cwd=os.getcwd(), marker=self.marker)
+        fails = os.path.join(shared, "fails", spec["arm"] + "." + spec["run"] + "." + spec["unit"])
+        if knobs.get("fail_reads"):
+            n = len(os.listdir(fails)) if os.path.isdir(fails) else 0
+            if n < knobs["fail_reads"]:
+                os.makedirs(fails, exist_ok=True)
+                open(os.path.join(fails, str(n)), "w").close()
+                raise RuntimeError("upstream 503 after the client's own retries")
         return {"qid": qid, "items": self.items[:k], "marker": self.marker}
 
     def counters(self):
@@ -524,6 +531,68 @@ try:
     sg = [x for x in spawns if x.get("stand") == "SG"]
     check("T20: no unit spawns while the gate refuses - it asked until it admitted, then the unit ran",
           gate.asked >= 4 and len(sg) >= 1, f"asked {gate.asked}, spawns {len(sg)}")
+
+    print("\n- A8 (W3): a failed read or answer is re-asked at most twice, at least 5 min apart; then unrecovered -")
+
+    class VirtualClock:
+        """Real UTC and monotonic time, plus the re-ask pauses - slept virtually, recorded."""
+
+        def __init__(self):
+            self.offset, self.sleeps = 0.0, []
+
+        def utc(self):
+            return dt.datetime.now(dt.timezone.utc) + dt.timedelta(seconds=self.offset)
+
+        def monotonic(self):
+            return time.monotonic() + self.offset
+
+        def sleep(self, s):
+            self.sleeps.append(s)
+            self.offset += s
+
+    def w3_world(stand, sfile, knobs, answer, tag="smoke"):
+        for sub in ("live", "passed", "seen", "ops", "fails"):
+            shutil.rmtree(SHARED / sub, ignore_errors=True)
+        (SHARED / "live").mkdir()
+        vc = VirtualClock()
+        st = SL.StatusLog(TMP / sfile, now=vc.utc, local_tz=dt.timezone.utc)
+        s = SC.Scheduler(C, FakeProxyCtl(), st, L, vc, None, tag=tag, witnesses=FakeWitnesses(),
+                         parent_env=dict(os.environ), catcher_url="http://127.0.0.1:47001")
+        if tag == "scored":
+            st.campaign_start(anchor="c" * 40, prereg="d" * 64, freeze="e" * 64)
+        sp = SC.StandPlan(stand=stand, runs=("r1",), launchers={"a1": launcher("a1", expect=1, knobs=knobs)},
+                          campaign_seed=20260927, unit_tokens={"x1": 1000}, medians={("a1", stand): 0.0001},
+                          write_ops=lambda a, r, u: OPS(r, u),
+                          read_plan=lambda u: [SC.ReadReq(qid=f"{u}-q1", query="x"), SC.ReadReq(qid=f"{u}-q2", query="y")],
+                          answer=answer, embed_tag=None, commit="c" * 40, dirty=False)
+        st.stand(stand, "START", model="m", changelog="2026-09-10", order=1)
+        res = s.run_block(sp, SC.BlockPlan(block="b01", units=("x1",)))
+        return res["questions"]["a1"][("r1", "x1")], vc
+
+    q, vc = w3_world("SW1", "STATUS8", {("r1", "x1"): {"fail_reads": 1}}, lambda *a_: {"sha256": "3" * 64})
+    check("T22: a read that failed once is re-asked after 5 min and recovers - the question is answered",
+          [r.get("reasks") for r in q["reads"]] == [1, 0] and not any(r.get("unrecovered") for r in q["reads"])
+          and vc.sleeps == [300.0], f"{q['reads']} {vc.sleeps}")
+    q, vc = w3_world("SW2", "STATUS9", {("r1", "x1"): {"fail_reads": 3}}, lambda *a_: {"sha256": "3" * 64},
+                     tag="scored")                        # a scored unit: its ceiling is the 600 s floor
+    check("M-SCHED-reask-spacing: three failures - two re-asks, 5 min apart - then unrecovered; the unit goes on with "
+          "its next question", q["reads"][0].get("unrecovered") is True and q["reads"][0].get("reasks") == 2
+          and vc.sleeps == [300.0, 300.0] and q["reads"][1].get("answer") and q["aborted"] is None,
+          f"{q['reads']} {vc.sleeps} {q.get('aborted')}")
+    check("the re-ask pauses are not the unit's active time - 2 x 5 virtual min under the 600 s ceiling abort nothing (D1)",
+          q["aborted"] is None and "UNIT-ABORT" not in (TMP / "STATUS9").read_text(encoding="utf-8"))
+    calls = {"n": 0}
+
+    def flaky_answer(arm, run, unit, req, got):
+        calls["n"] += 1
+        if calls["n"] <= 2:
+            raise SC.ReaskableError("reader: upstream 502")
+        return {"sha256": "4" * 64}
+
+    q, vc = w3_world("SW3", "STATUS10", {}, flaky_answer)
+    check("an answer the reader could not give is re-asked the same way (two re-asks, then answered)",
+          q["reads"][0].get("reasks") == 2 and q["reads"][0]["answer"] == {"sha256": "4" * 64} and vc.sleeps == [300.0, 300.0],
+          f"{q['reads']} {vc.sleeps}")
 finally:
     shutil.rmtree(TMP, ignore_errors=True)
 
