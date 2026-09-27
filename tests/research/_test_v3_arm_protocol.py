@@ -10,7 +10,9 @@
   a request that is not UTF-8 and an answer holding a lone surrogate are ok:false by name, and the child lives on;
 * F4: a handler result that would overwrite ok / op / id is ok:false;
 * an error text is capped at ERROR_MAX; "bye" ends the child even with its stdin still open; a child that dies
-  mid-request is ArmDied. Every child is killed in a finally block.
+  mid-request is ArmDied. Every child is killed in a finally block;
+* a subprocess the product starts inherits neither protocol stream: reading stdin it gets end-of-file (fd 0 is the null
+  device), and what it prints lands on stderr (the auditor's advice at the aea444b gate).
 
     python tests/research/_test_v3_arm_protocol.py
 """
@@ -67,8 +69,9 @@ def safely(fn, default=None):
 
 
 CHILD = r'''
-import os, sys, time
+import os, subprocess, sys, time
 sys.path.insert(0, sys.argv[1])
+SUB = "import sys; line = sys.stdin.buffer.readline(); print('SUBPROCESS READ', len(line), 'BYTES')"
 import base
 MODE = sys.argv[2]
 class H:
@@ -79,6 +82,12 @@ class H:
     def hello(self):
         return {"protocol": base.PROTOCOL, "system": "fake"}
     def write(self, item, date=None):
+        if item.get("text") == "spawn":
+            try:
+                rc = subprocess.run([sys.executable, "-I", "-c", SUB], timeout=8).returncode
+            except subprocess.TimeoutExpired:
+                rc = "timeout"
+            return {"sub_rc": rc}
         print("STRAY PRINT FROM THE PRODUCT")
         os.write(1, b"RAW FD1 WRITE\n")
         return {"op_id": item["item_id"], "echo": item.get("text"), "date": date}
@@ -204,6 +213,20 @@ with tempfile.TemporaryDirectory(prefix="v3arm_") as td:
         err = errf.read_bytes().decode("utf-8", "replace")
         check("the product's stray output went to stderr, not into the protocol stream",
               "STRAY PRINT FROM THE PRODUCT" in err and "RAW FD1 WRITE" in err, err[-200:])
+
+        print("\n- a subprocess the product starts inherits neither protocol stream -")
+        p6, err6 = spawn()
+        c6 = B.ArmClient(p6, default_timeout=30)
+        t6 = time.monotonic()
+        s6 = safely(lambda: c6.request("write", item={"item_id": "s", "text": "spawn"}), {})
+        took6 = time.monotonic() - t6
+        check("a subprocess reading stdin gets end-of-file at once (fd 0 is the null device), never a request line",
+              s6.get("sub_rc") == 0 and took6 < 6, f"{s6!r} after {took6:.1f} s")
+        h6 = safely(lambda: c6.request("hello"), {})
+        c6.close()
+        e6 = err6.read_bytes().decode("utf-8", "replace")
+        check("... its stdout lands on stderr, and the next answer is clean",
+              "SUBPROCESS READ 0 BYTES" in e6 and h6.get("ok") is True and h6.get("id") == 2, f"{h6!r} {e6[-120:]!r}")
 
         print("\n- F2: a product that prints while the handler is built -")
         p2, err2 = spawn("noisy-build")

@@ -12,9 +12,10 @@ Requests (one JSON object per LF line):  {"id": <int>, "op": "hello" | "write" |
 Responses (one per request):             {"id": <the same int>, "ok": true, "op": ..., ...}
                                          or {"id": ..., "ok": false, "error": "<Type>: <message>"}
 
-* the protocol takes the child's stdio FIRST (claim_stdio), before the product is imported or the handler is built: a
-  duplicate of the original stdout carries the stream, fd 1 and sys.stdout then point at stderr, so a product that
-  prints - at import or later - cannot corrupt it (the auditor's F2);
+* the protocol takes the child's stdio FIRST (claim_stdio), before the product is imported or the handler is built:
+  private duplicates of the original stdin and stdout carry the stream, then fd 0 reads the null device and fd 1 and
+  sys.stdout point at stderr, so a product that prints - at import or later - cannot corrupt it (the auditor's F2), and
+  a subprocess it starts can neither eat a request line nor write into an answer (his advice at the aea444b gate);
 * stdin is read as bytes and each line decoded as strict UTF-8, whatever the locale; a response is encoded as strict
   UTF-8 - an undecodable request or an unencodable answer (a lone surrogate) is an ok:false line, never a dead child or
   mojibake handed to the product (F3);
@@ -68,12 +69,18 @@ def _error(rid, e: BaseException) -> bytes:
 
 
 def claim_stdio():
-    """Take the protocol's streams before anything else runs; returns (binary stdin, binary protocol out)."""
+    """Take the protocol's streams before anything else runs; returns (binary protocol in, binary protocol out).
+    Both are private duplicates (not inheritable); fd 0 then reads the null device and fd 1 writes to stderr, so neither
+    the product nor a subprocess it starts (which inherits fds 0-2) can eat a request line or write into the stream."""
     sys.stdout.flush()
+    fin = os.fdopen(os.dup(0), "rb")
     out = os.fdopen(os.dup(1), "wb", buffering=0)
+    null = os.open(os.devnull, os.O_RDONLY)
+    os.dup2(null, 0)                           # a subprocess that reads stdin gets end-of-file, never a request
+    os.close(null)
     os.dup2(2, 1)                              # a product's stray print, even at import, lands on stderr
     sys.stdout = sys.stderr
-    return sys.stdin.buffer, out
+    return fin, out
 
 
 def serve(handler: Any, fin, fout) -> int:
