@@ -505,6 +505,18 @@ OVER = b"q" * (P.MAX_BODY + 1)
 d413, se, re_, _t, _s = refused_exchange(NW, head_of(T_ARM, len(OVER)), OVER)
 check("B-RST: a body over MAX_BODY - the client reads its 413", d413.startswith(b"HTTP/1.1 413") and se is None
       and re_ is None, f"{d413[:40]!r} {se} {re_}")
+_b1 = json.dumps({"model": "deepseek-flash", "messages": [{"role": "user", "content": "q"}]}).encode()
+_pipe = head_of(T_ARM, len(_b1)) + _b1 + head_of(T_ARM, len(BIG)) + BIG     # a second request sent before the answer
+_before_p = _bpx.counters["nevertwice"].refused_pipelined
+_got_p = []
+for _ in range(REPEATS):
+    data, se, re_, _t, _s = refused_exchange(NW, _pipe, b"")
+    _got_p.append(data[:12] if data.startswith(b"HTTP/1.1 400") and se is None and re_ is None else (data[:12], se, re_))
+_ok_p = sum(1 for g in _got_p if g == b"HTTP/1.1 400")
+check(f"B-RST (BRk): a pipelined second request of ~1 MB after a whole first one - the client reads its 400 "
+      f"{REPEATS}/{REPEATS}: the drain reads to end-of-file, not to the first request's length",
+      _ok_p == REPEATS and _bpx.counters["nevertwice"].refused_pipelined - _before_p == REPEATS,
+      f"{_ok_p}/{REPEATS} {[g for g in _got_p if g != b'HTTP/1.1 400'][:2]}")
 
 
 def guard_threads() -> set:
@@ -581,6 +593,16 @@ _client_fn = next(n for n in _ast2.walk(_ast2.parse(_src)) if isinstance(n, _ast
 _direct = [n.lineno for n in _ast2.walk(_client_fn) if isinstance(n, _ast2.Call)
            and getattr(n.func, "id", None) == "_send_local"]
 check("B-RST: every local refusal of _client goes through _refuse - no _send_local past it", _direct == [], str(_direct))
+_consumed = [n.lineno for n in _ast2.walk(_client_fn) if isinstance(n, _ast2.Delete) and len(n.targets) == 1
+             and isinstance(n.targets[0], _ast2.Subscript) and getattr(n.targets[0].value, "id", None) == "buf"
+             and isinstance(n.targets[0].slice, _ast2.Slice) and getattr(n.targets[0].slice.upper, "id", None) == "length"]
+_refs = sorted((n.lineno, any(k.arg == "headers" for k in n.keywords)) for n in _ast2.walk(_client_fn)
+               if isinstance(n, _ast2.Call) and getattr(n.func, "id", None) == "_refuse")
+_cut = _consumed[0] if len(_consumed) == 1 else None
+check("B-RST (BRl, BRm): in _client every _refuse before the body is consumed (del buf[:length]) passes the headers, "
+      "and none after it does - a refusal after the body drains to end-of-file, whatever came in after the check",
+      _cut is not None and any(ln < _cut for ln, _h in _refs) and any(ln > _cut for ln, _h in _refs)
+      and all(h_ == (ln < _cut) for ln, h_ in _refs), f"consumed at {_consumed}; refusals (line, headers=) {_refs}")
 _c, _d = socket.socketpair()
 _got2: list = []
 _t0 = time.monotonic()
