@@ -62,15 +62,26 @@ GOLDEN = [
     ["no way", "no", {"exact_match": False, "f1": 0, "substring_exact_match": True}],
 ]
 
+def run(fn, *args):
+    """The scorer's value, or the exception it raised - a crash is a named FAIL of its row, never a traceback (SC3)."""
+    try:
+        return fn(*args)
+    except Exception as e:  # noqa: BLE001
+        return f"raised {type(e).__name__}: {e}"
+
+
 print("- MAB, against the pinned functions' golden table -")
 for pred, gts, want in GOLDEN:
-    got = SV.mab_default_post_process(pred, gts)
+    got = run(SV.mab_default_post_process, pred, gts)
     check(f"default_post_process({pred[:24]!r}, {str(gts)[:24]}) = the pinned result", got == want, f"{got} vs {want}")
 check("the special answers: yes against no scores 0; noanswer against itself 1",
       SV.mab_f1("yes", "no") == (0, 0, 0) and SV.mab_f1("noanswer", "noanswer")[0] == 1.0)
 check("parse_output takes the text after 'Answer:', else the first line", SV.mab_parse_output("x\nAnswer: Rome\n") == "Rome"
       and SV.mab_parse_output("first line\nsecond") == "first line")
-check("the max over a nested list of ground truths", SV.mab_max_over(SV.mab_em, "Obama", [["x", "Obama"], ["y"]]) is True)
+check("the max over a nested list of ground truths", run(SV.mab_max_over, SV.mab_em, "Obama", [["x", "Obama"], ["y"]]) is True)
+check("SC3: a nested list is flattened, never compared as a list", run(SV.mab_default_post_process, "Rome",
+                                                                        [["Paris"], ["Rome", "Roma"]])
+      == {"exact_match": True, "f1": 1.0, "substring_exact_match": True})
 
 print("\n- AMA -")
 s = SV.ama_summary([1.0, 0.0, 1.0, 0.5])
