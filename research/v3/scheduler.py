@@ -270,13 +270,16 @@ def tree_kill_route(witnesses: Any) -> str | None:
     """R-LAUNCHER: how a unit's WHOLE process tree dies - the native witness's job object (W1), else psutil (children
     first, launch.Child.kill_tree); None when neither. A kill would then reach the root alone: an arm started from a
     venv is the grandchild of the venv's launcher, and it would live on - writing to its store and calling the proxy
-    after its unit was killed (background writes, R9, and a neighbour unit's store polluted)."""
+    after its unit was killed (background writes, R9, and a neighbour unit's store polluted). R-FINDSPEC: psutil counts
+    only when `import psutil` succeeds - a file that is there but does not import is the root-only kill again."""
     native = getattr(witnesses, "native", None)
     if native is not None and getattr(native, "jobs", None) is not None:
         return "job"
-    if importlib.util.find_spec("psutil") is not None:
-        return "psutil"
-    return None
+    try:
+        importlib.import_module("psutil")
+    except Exception:  # noqa: BLE001 - any failure to import is no route
+        return None
+    return "psutil"
 
 
 class Scheduler:

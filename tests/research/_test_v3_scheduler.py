@@ -167,6 +167,7 @@ check("the §5.6 budgets", SC.BUDGET_H == {"S6-SH": 24, "S6-MH": 24, "S5": 48, "
 
 print("\n- A4 spawn_child: the one spawn path, one spawn at a time (M-SCHED-spawn-unlocked) -")
 import contextlib  # noqa: E402
+import importlib  # noqa: E402
 import os  # noqa: E402
 import tempfile  # noqa: E402
 import threading  # noqa: E402
@@ -273,19 +274,45 @@ check("the environment is the contract's, offline for HF by default", ch11 is no
       and ch11.process.env.get("HF_HUB_OFFLINE") == "1" and ch11.process.env.get("HTTP_PROXY") == "http://127.0.0.1:47001",
       str(d11))
 SC.tree_kill_route = REAL_ROUTE
-_real_find = SC.importlib.util.find_spec
+
+
+def route(w):
+    """The real route, or what it raised - a crash is the row's FAIL, by name."""
+    try:
+        return REAL_ROUTE(w)
+    except Exception as e:  # noqa: BLE001
+        return f"raised {type(e).__name__}: {e}"
+
+
+_saved_ps = {k: v for k, v in sys.modules.items() if k == "psutil" or k.startswith("psutil.")}
+_saved_path = list(sys.path)
 try:
-    SC.importlib.util.find_spec = lambda name, *a, **k: None if name == "psutil" else _real_find(name, *a, **k)
-    no_route = SC.tree_kill_route(SimpleNamespace(native=StubNative()))
-    job_route = SC.tree_kill_route(SimpleNamespace(native=SimpleNamespace(jobs=object())))
+    for k in _saved_ps:
+        del sys.modules[k]
+    sys.modules["psutil"] = None                       # `import psutil` raises ImportError
+    no_route = route(SimpleNamespace(native=StubNative()))
+    job_route = route(SimpleNamespace(native=SimpleNamespace(jobs=object())))
     s_nr = sched("noroute")
     r_nr = err(lambda: s_nr.spawn_child(SPEC, role="arm-write", stand="S9", run="r1", arm="mem0", unit="u1"))
     made = s_nr.c.runs_root.joinpath("S9").exists()
-    SC.importlib.util.find_spec = lambda name, *a, **k: object() if name == "psutil" else _real_find(name, *a, **k)
-    psutil_route = SC.tree_kill_route(SimpleNamespace(native=StubNative()))
+    sys.modules["psutil"] = SimpleNamespace(__name__="psutil")          # an importable psutil
+    psutil_route = route(SimpleNamespace(native=StubNative()))
+    del sys.modules["psutil"]                          # R-FINDSPEC: a psutil.py that is THERE but does not import
+    shadow = TMPS / "shadow_psutil"
+    shadow.mkdir()
+    (shadow / "psutil.py").write_text("raise ImportError('a broken psutil')\n", encoding="utf-8")
+    sys.path.insert(0, str(shadow))
+    importlib.invalidate_caches()
+    found = importlib.util.find_spec("psutil") is not None
+    broken_route = route(SimpleNamespace(native=StubNative()))
 finally:
-    SC.importlib.util.find_spec = _real_find
+    sys.path[:] = _saved_path
+    sys.modules.pop("psutil", None)
+    sys.modules.update(_saved_ps)
+    importlib.invalidate_caches()
 SC.tree_kill_route = lambda witnesses: "fake-popen"
+check("R-FINDSPEC: a psutil that find_spec finds but that does not import is no route - None, so the spawn is refused",
+      found is True and broken_route is None, f"found={found} route={broken_route}")
 check("R-LAUNCHER: without the job object and without psutil a spawn is refused before the child exists - no unit "
       "directory is made", no_route is None and "R-LAUNCHER" in r_nr and not made, f"{no_route} | {r_nr} | {made}")
 check("R-LAUNCHER: the witness's job object is the route when there is one; psutil otherwise",
