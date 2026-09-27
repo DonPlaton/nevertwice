@@ -10,8 +10,11 @@ model probe, the balance preflight and the barrier read (rev1 §1.3, §4.5, D8, 
   the call is recorded as arm=scheduler, outside every unit's attribution (R4); the answer's model, which STATUS
   carries, must be one word.
 * preflight (§4.5): GET /user/balance on the scheduler's port, each answer appended to <runs>/_launch/balance.jsonl
-  (chained). A 402 halts; a balance below 2x the stand's projected cost halts (incidents.balance_ok), and so does a
-  scored stand with no projection. An unavailable endpoint is recorded and the 402 rule alone applies (§4.5).
+  (chained), a balance that was not read named as such. A 402 halts; a balance below 2x the stand's projected cost
+  halts (incidents.balance_ok), and so does a scored stand with no projection. R-BAL (§4.5: "if the PILOT finds the
+  balance endpoint unavailable, the 402 halt alone applies"): a scored stand whose balance was not read halts unless
+  FREEZE-V3 declares that fallback (balance_fallback - the pilot's finding); a smoke or debug stand records it and goes
+  on. The currency is FREEZE-V3's, the projection's.
 * barrier_read: the change-log reader's answer, or {"changelog": None} when there is none - a smoke stand then writes
   "unread" and a scored stand is refused by the scheduler (B-CL). The reader itself is A7.
 """
@@ -85,11 +88,12 @@ class Hooks:
     ``changelog``: the change-log reader (A7), called as changelog(stand, block) -> dict, or None."""
 
     def __init__(self, *, repo: str | os.PathLike, git: str | os.PathLike, proxy: Any, anchor: str | None = None,
-                 projected_cost: float | None = None, currency: str = "USD",
+                 projected_cost: float | None = None, currency: str = "USD", balance_fallback: bool = False,
                  changelog: Callable[[str, str], Mapping[str, Any]] | None = None, gate: Any = None,
                  clock: Callable[[], Any] | None = None) -> None:
         self.repo, self.git, self.proxy = Path(repo), Path(git), proxy
         self.anchor, self.projected_cost, self.currency = anchor, projected_cost, currency
+        self.balance_fallback = balance_fallback              # R-BAL: FREEZE-V3's record of the pilot's finding
         self.changelog, self.gate, self.clock = changelog, gate, clock
         self.sched = self.sp = None
 
@@ -139,6 +143,7 @@ class Hooks:
 
     # ── the model probe (D8, Q24) ──────────────────────────────────────────────────────────────────────────────
     def model_probe(self) -> str:
+        self._need_bound()
         port, token = self.proxy.ports.get("scheduler"), self.proxy.tokens.get("scheduler")
         if not isinstance(port, int) or not token:
             raise HookError("the proxy has no scheduler port or token (D8's probe runs there)")
@@ -179,6 +184,9 @@ class Hooks:
             raise HookError(f"{stand}: the balance endpoint answered 402 - the stand waits for the owner (§4.5)")
         if self.projected_cost is None and self.sched.tag == "scored":
             raise HookError(f"{stand}: a scored stand needs its projected cost for the balance rule (§4.5)")
+        if balance is None and self.sched.tag == "scored" and not self.balance_fallback:
+            raise HookError(f"{stand}: the balance was not read ({read}) and FREEZE-V3 declares no fallback - only the "
+                            f"pilot's finding lets the 402 rule stand alone (§4.5, R-BAL); the stand does not start")
         if ok is False:
             raise HookError(f"{stand}: balance {balance} {self.currency} is below 2x the projected {self.projected_cost} "
                             f"- the stand waits for the owner (§4.5)")

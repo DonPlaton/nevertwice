@@ -170,9 +170,10 @@ try:
         argvs.append([str(a) for a in args])
         return subprocess.Popen(args, **kw)
 
-    def world(tag="smoke", *, sfile="STATUS", repo=REPO, anchor=None, projected=None, changelog=None):
+    def world(tag="smoke", *, sfile="STATUS", repo=REPO, anchor=None, projected=None, changelog=None, fallback=False):
         st = SL.StatusLog(TMP / sfile, local_tz=dt.timezone.utc)
-        h = HK.Hooks(repo=repo, git=GIT, proxy=PROXY, anchor=anchor, projected_cost=projected, changelog=changelog)
+        h = HK.Hooks(repo=repo, git=GIT, proxy=PROXY, anchor=anchor, projected_cost=projected, changelog=changelog,
+                     balance_fallback=fallback)
         s = SC.Scheduler(C, None, st, L, Clock(), None, tag=tag, witnesses=Witnesses(), parent_env=dict(os.environ),
                          catcher_url="http://127.0.0.1:47001", popen=spy, hooks=h)
         sp = SC.StandPlan(stand="SH", runs=("r1",), launchers={}, campaign_seed=1, unit_tokens={}, medians={},
@@ -184,8 +185,11 @@ try:
     print("- the tree check (Q10, D10) -")
     h0 = HK.Hooks(repo=REPO, git=GIT, proxy=PROXY)
     _r, e = attempt(h0.tree_check)
-    check("the hooks refuse to run unbound (the scheduler and the stand plan come first)",
-          isinstance(e, HK.HookError) and "bind" in str(e), repr(e))
+    _r, e_mp = attempt(h0.model_probe)
+    check("the hooks refuse to run unbound (the scheduler and the stand plan come first) - the tree check and the "
+          "model probe alike", isinstance(e, HK.HookError) and "bind" in str(e) and isinstance(e_mp, HK.HookError)
+          and "bind" in str(e_mp),
+          f"{e!r} {e_mp!r}")
     h, s, sp, st = world()
     v, e = attempt(h.tree_check)
     check("HK-tree-argv: git's one fixed argv - git -C <repo> + tree_check.ARGV_TAIL",
@@ -262,10 +266,27 @@ try:
           "the 402 rule alone", e4 is None and rec4["status"] == 404 and rec4["balance"] is None
           and rec4["balance_ok"] is None and rec4["balance_read"] == "unread: status 404"
           and rec["balance_read"] == "ok", f"{e4!r} {rec4}")
+    fake.routes = {"/user/balance": (200, {"is_available": True, "balance_infos": [{"currency": "CNY",
+                                                                                     "total_balance": "999"}]})}
+    rec_cny, e_cny = attempt(lambda: h.preflight("SH"))
+    check("HKk: a balance in another currency than the projection's is not a balance - unread, and it says why",
+          e_cny is None and rec_cny["balance"] is None and rec_cny["balance_read"] == "unread: status 200 without a USD balance",
+          f"{e_cny!r} {rec_cny}")
+    hs, ss, sps, sts = world("scored", sfile="STATUS6b", anchor=HEAD, projected=1.0)
+    _r, e_nofb = attempt(lambda: hs.preflight("SH"))
+    fake.routes = {}
+    _r, e_nofb404 = attempt(lambda: hs.preflight("SH"))
+    hf, sf_, spf, stf = world("scored", sfile="STATUS6c", anchor=HEAD, projected=1.0, fallback=True)
+    rec_fb, e_fb = attempt(lambda: hf.preflight("SH"))
+    check("R-BAL: a scored stand whose balance was not read (another currency, no endpoint) halts without FREEZE's "
+          "fallback", isinstance(e_nofb, HK.HookError) and "R-BAL" in str(e_nofb) and isinstance(e_nofb404, HK.HookError),
+          f"{e_nofb!r} | {e_nofb404!r}")
+    check("R-BAL: with the fallback FREEZE declares (the pilot's finding) it is recorded and the 402 rule alone applies",
+          e_fb is None and rec_fb["balance"] is None and rec_fb["balance_read"] == "unread: status 404", f"{e_fb!r} {rec_fb}")
     bj = C.runs_root / "_launch" / "balance.jsonl"
     lines = [json.loads(x) for x in bj.read_text(encoding="utf-8").splitlines()] if bj.exists() else []
-    check("HK-preflight-record: every answer is in balance.jsonl, chained (5 asks, the refused ones too)",
-          len(lines) == 5 and L.verify_chain(bj), f"{len(lines)} {L.verify_chain(bj) if bj.exists() else 'none'}")
+    check("HK-preflight-record: every answer is in balance.jsonl, chained (9 asks, the refused ones too)",
+          len(lines) == 9 and L.verify_chain(bj), f"{len(lines)} {L.verify_chain(bj) if bj.exists() else 'none'}")
 
     print("\n- the barrier read, and the scored stand refused on a dirty tree -")
     h, s, sp, st = world(sfile="STATUS8")
