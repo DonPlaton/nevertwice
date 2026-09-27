@@ -169,6 +169,45 @@ for branch, arm, token, body, want, label in (
     px.stop()
     up.close()
 
+print("\n- R-CC-WIT: the Claude Code arm's home canary, a positive control on every request -")
+CAN = "ab" * 16
+px, ports, up = serve(arms=[P.ArmConfig(arm="cc", token=ST.TOKEN, home_canary=CAN),
+                            P.ArmConfig(arm="plain", token=ST.TOKEN + "p")])
+wp_cc, wp_plain = ports["arms"]["cc"]["write"], ports["arms"]["plain"]["write"]
+n0 = len(up.requests)
+got = exchange(wp_cc, request(wp_cc, "/v1/chat/completions", BODY))
+check("a Claude Code request without the home canary is refused locally, never forwarded ('fake home not read')",
+      got.startswith(b"HTTP/1.1 403") and b"fake home not read" in got and len(up.requests) == n0
+      and px.counters["cc"].refused_home_canary == 1, got[:80].decode("latin-1"))
+got = exchange(wp_cc, request(wp_cc, "/v1/chat/completions", BODY, extra="x-nvt3-home-canary: " + "cd" * 16 + "\r\n"))
+check("... and one with another canary value too",
+      got.startswith(b"HTTP/1.1 403") and len(up.requests) == n0 and px.counters["cc"].refused_home_canary == 2)
+got = exchange(wp_cc, request(wp_cc, "/v1/chat/completions", BODY, extra=f"X-Nvt3-Home-Canary: {CAN}\r\n"))
+check("the canary present (any header case): forwarded, and the header itself never reaches the upstream",
+      got.startswith(b"HTTP/1.1 200") and len(up.requests) == n0 + 1 and CAN.encode() not in up.requests[-1]
+      and b"home-canary" not in up.requests[-1].lower(), got[:80].decode("latin-1"))
+flags_file = TMP / "run" / "flags.jsonl"
+flags = [json.loads(x) for x in flags_file.read_bytes().decode().splitlines() if x] if flags_file.exists() else []
+check("each missing canary is a flag 'home_canary_missing' on the arm, without the value",
+      sum(1 for f in flags if f.get("kind") == "home_canary_missing" and f.get("arm") == "cc") == 2
+      and CAN not in json.dumps(flags), str([f.get("kind") for f in flags]))
+cfg_file = TMP / "cc_config.json"
+cfg_file.write_bytes(json.dumps({"arms": [{"arm": "cc"}, {"arm": "plain"}], "run_dir": str(TMP / "run_cc")}).encode())
+loaded = safely_load = None
+try:
+    loaded = P.ProxyConfig.load(cfg_file, {"tokens": {"cc": ST.TOKEN, "plain": ST.TOKEN + "p"},
+                                           "home_canaries": {"cc": CAN}}, test_upstream_ok=True)
+except Exception as e:  # noqa: BLE001 - a crash is a named FAIL of the row below
+    print(f"       (load raised {type(e).__name__}: {e})")
+check("the home canary reaches the proxy with the tokens, on stdin (the secrets), per arm - never in the config file",
+      loaded is not None and {a.arm: a.home_canary for a in loaded.arms} == {"cc": CAN, "plain": ""}
+      and CAN.encode() not in cfg_file.read_bytes())
+got = exchange(wp_plain, request(wp_plain, "/v1/chat/completions", BODY, token=ST.TOKEN + "p"))
+check("an arm without a home canary is unaffected", got.startswith(b"HTTP/1.1 200")
+      and px.counters["plain"].refused_home_canary == 0)
+px.stop()
+up.close()
+
 print("\n- refusals, the catcher, 100-continue, an unreachable upstream -")
 px, ports, up = serve()
 wp, cp = ports["arms"]["a1"]["write"], ports["arms"]["a1"]["catcher"]

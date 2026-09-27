@@ -69,6 +69,8 @@ UPSTREAM_HOST = "api.deepseek.com"
 UPSTREAM_PORT = 443
 #: Forwarded from the client when present (case-insensitive). Everything else is dropped; the key is injected.
 HEADER_ALLOWLIST = ("content-type", "content-length", "accept", "user-agent", "anthropic-version", "anthropic-beta")
+#: R-CC-WIT: the Claude Code arm's home canary header (checked on the arm port, never forwarded: not on the allowlist).
+HOME_CANARY_HEADER = "x-nvt3-home-canary"
 THINKING_OFF_FIELD = b'"thinking":{"type":"disabled"},'
 #: The real secrets directory: a key read from under it may only ever go to UPSTREAM_HOST over TLS.
 SECRETS_ROOT = Path(r"D:\Coding\_secrets")
@@ -143,6 +145,12 @@ class ArmConfig:
     tools_allowed: tuple = ()               # §2.6.6
     ollama_leg: bool = False                # A2.7: the arm gets an Ollama port (out-of-process arms, S8, embed ceiling)
     cloud_arm: bool = True                  # its generation is DeepSeek's: an Ollama generation call is fallback_local
+    #: R-CC-WIT (the auditor's positive control, Claude Code): set, every request on this arm's port must carry the
+    #: header HOME_CANARY_HEADER with exactly this value - it comes from the settings.json of the unit's fake
+    #: CLAUDE_CONFIG_DIR, so its absence means the binary did not read the fake home. Missing or wrong: refused locally
+    #: (403, "fake home not read"), counted and flagged, never forwarded. The header is not on the allowlist, so a
+    #: request that carries it reaches DeepSeek without it.
+    home_canary: str = ""
 
 
 @dataclass
@@ -204,7 +212,8 @@ class ProxyConfig:
         arms = [ArmConfig(arm=a["arm"], mode=a.get("mode", "raw"), thinking_route=a.get("thinking_route", "documented"),
                           token=tokens.get(a["arm"], ""), pinned_model=a.get("pinned_model", ""),
                           reader_model=a.get("reader_model", ""), tools_allowed=tuple(a.get("tools_allowed") or ()),
-                          ollama_leg=bool(a.get("ollama_leg", False)), cloud_arm=bool(a.get("cloud_arm", True)))
+                          ollama_leg=bool(a.get("ollama_leg", False)), cloud_arm=bool(a.get("cloud_arm", True)),
+                          home_canary=(secrets.get("home_canaries") or {}).get(a["arm"], ""))
                 for a in raw["arms"]]
         oll = raw.get("ollama") or {}
         if oll.get("upstream") is not None and not test_upstream_ok:
@@ -246,6 +255,7 @@ class Counters:
     requests: int = 0
     connect_refused: int = 0                # R4: the hop answered CONNECT with anything but 200
     refused_auth: int = 0
+    refused_home_canary: int = 0
     refused_path: int = 0
     refused_chunked: int = 0
     refused_pipelined: int = 0
@@ -1140,6 +1150,11 @@ class Proxy:
                 if not self._authorised(arm, headers):
                     ctr.refused_auth += 1
                     _send_local(cs, 401, "Unauthorized", b"proxy token missing or wrong")
+                    return
+                if arm.home_canary and _hget(headers, HOME_CANARY_HEADER) != arm.home_canary:
+                    ctr.refused_home_canary += 1                 # R-CC-WIT: the binary did not read the fake home
+                    self._flag(arm.arm, "home_canary_missing", None)
+                    _send_local(cs, 403, "Forbidden", b"fake home not read: the home canary is missing or wrong")
                     return
                 if "chunked" in (_hget(headers, "transfer-encoding") or "").lower():
                     ctr.refused_chunked += 1
