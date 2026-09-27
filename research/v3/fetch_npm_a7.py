@@ -4,6 +4,8 @@ registry, DOWNLOAD ONLY: no npm, no install, no script run. Every fetch is a con
 the declared hop (research/v3/fetch_a3.run_child_window: the trap and the witnesses); this module plans the two jobs
 and, after the window closes, verifies and places.
 
+* the window - its one host, the package and the version - is fetch_manifest.json's "a7-npm" entry, the single source
+  the freeze and the auditor read too; a manifest that does not declare it as one host with no redirect refuses;
 * job 1 fetches the version's registry document (https://registry.npmjs.org/supermemory-server/0.0.8);
 * job 2 is built from it only when it names exactly this package and version, its dist.tarball is the canonical URL
   (https://registry.npmjs.org/supermemory-server/-/supermemory-server-0.0.8.tgz - a URL the document supplies is
@@ -12,7 +14,8 @@ and, after the window closes, verifies and places.
 * after the window: the window must be clean, on exactly its host, the host's certificate issuer recorded and in the
   public set (fetch_pins_a3.precheck's rule); the tarball's sha512 must equal the registry's integrity and its sha1
   the registry's shasum; its sha256 and size are recorded; the tarball and the registry document go to
-  <runs>/_pins/npm/, with npm_pin.json naming every digest and the window record's sha256. The install scripts the
+  <runs>/_pins/npm/, each copy re-checked (the tarball's digests, the document's sha256) and both removed if either
+  differs, with npm_pin.json naming every digest and the window record's sha256. The install scripts the
   document declares are recorded as data for A8 - nothing here runs them.
 
     python research/v3/fetch_npm_a7.py --run g1 --python D:\\Coding\\_nevertwice_polygon\\py314\\python.exe
@@ -30,9 +33,36 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+MANIFEST = HERE / "fetch_manifest.json"
 WINDOW = "a7-npm"
-HOST = "registry.npmjs.org"
-PACKAGE, VERSION = "supermemory-server", "0.0.8"
+WINDOW_KEYS = {"hosts", "purpose", "package", "version", "max_redirects"}
+
+
+class ManifestError(ValueError):
+    """The manifest does not declare this window as a one-host, no-redirect, download-only window."""
+
+
+def window_decl(manifest: dict) -> dict:
+    """The window as fetch_manifest.json declares it - the one source of its host, package and version (the
+    auditor's gate on 6e92453): exactly one host, no redirect, a package and a version, nothing else."""
+    w = (manifest.get("windows") or {}).get(WINDOW)
+    if not isinstance(w, dict):
+        raise ManifestError(f"the manifest declares no window {WINDOW}")
+    if set(w) != WINDOW_KEYS:
+        raise ManifestError(f"the {WINDOW} window has the keys {sorted(w)}, not {sorted(WINDOW_KEYS)}")
+    if not (isinstance(w["hosts"], list) and len(w["hosts"]) == 1 and isinstance(w["hosts"][0], str)):
+        raise ManifestError(f"the {WINDOW} window has exactly one host, not {w['hosts']!r}")
+    if w["max_redirects"] != 0:
+        raise ManifestError(f"the {WINDOW} window follows no redirect")
+    if not all(isinstance(w[k], str) and w[k] for k in ("package", "version")):
+        raise ManifestError(f"the {WINDOW} window names its package and version")
+    return w
+
+
+_DECL = window_decl(json.loads(MANIFEST.read_text(encoding="utf-8")))
+HOST = _DECL["hosts"][0]
+PACKAGE, VERSION = _DECL["package"], _DECL["version"]
+MAX_REDIRECTS = _DECL["max_redirects"]
 DOC_URL = f"https://{HOST}/{PACKAGE}/{VERSION}"
 TARBALL_URL = f"https://{HOST}/{PACKAGE}/-/{PACKAGE}-{VERSION}.tgz"
 DOC_SAVE = f"npm/{PACKAGE}-{VERSION}.json"
@@ -58,7 +88,7 @@ def _load(name: str, path: Path):
 
 
 def doc_job() -> dict:
-    return {"hosts": [HOST], "max_redirects": 0, "timeout_s": JOB_TIMEOUT_S,
+    return {"hosts": [HOST], "max_redirects": MAX_REDIRECTS, "timeout_s": JOB_TIMEOUT_S,
             "requests": [{"id": "npm:document", "method": "GET", "url": DOC_URL, "save": DOC_SAVE,
                           "max_bytes": DOC_MAX, "expect": None}]}
 
@@ -109,7 +139,7 @@ def tarball_job(results: list, reasons: list):
     except (Stop, OSError) as e:
         reasons.append(str(e))
         return None
-    return {"hosts": [HOST], "max_redirects": 0, "timeout_s": JOB_TIMEOUT_S,
+    return {"hosts": [HOST], "max_redirects": MAX_REDIRECTS, "timeout_s": JOB_TIMEOUT_S,
             "requests": [{"id": "npm:tarball", "method": "GET", "url": TARBALL_URL, "save": TARBALL_SAVE,
                           "max_bytes": TARBALL_MAX, "expect": None}]}
 
@@ -154,14 +184,21 @@ def place(record: dict, record_path: Path, pins_root: Path, *, precheck_problems
     for target in (tgz, docf):
         if target.exists():
             return None, [f"N9 already_placed: {target}"]
-    shutil.copyfile(src, tgz)
-    shutil.copyfile(unit_d / DOC_SAVE, docf)
-    if digests(tgz) != got:
-        tgz.unlink()
-        return None, ["N10 placed_copy_differs"]
+    doc_sha256 = hashlib.sha256(doc_raw).hexdigest()
+    try:
+        shutil.copyfile(src, tgz)
+        shutil.copyfile(unit_d / DOC_SAVE, docf)
+        bad = [n for n, ok in ((tgz.name, digests(tgz) == got),
+                               (docf.name, hashlib.sha256(docf.read_bytes()).hexdigest() == doc_sha256)) if not ok]
+    except OSError as e:
+        bad = [f"{type(e).__name__}: {e}"]
+    if bad:
+        for target in (tgz, docf):                      # never half a placement: the next run would meet N9
+            target.unlink(missing_ok=True)
+        return None, [f"N10 placed_copy_differs: {bad}"]
     pin = {"package": PACKAGE, "version": VERSION, "registry": HOST, "tarball_url": TARBALL_URL,
            "integrity": got["integrity"], "shasum": got["shasum"], "sha256": got["sha256"], "size": got["size"],
-           "document_sha256": hashlib.sha256(doc_raw).hexdigest(), "install_scripts": facts["install_scripts"],
+           "document_sha256": doc_sha256, "install_scripts": facts["install_scripts"],
            "dependencies": facts["dependencies"], "engines": facts["engines"],
            "declared_file_count": facts["declared_file_count"],
            "declared_unpacked_size": facts["declared_unpacked_size"],
@@ -175,6 +212,21 @@ def place(record: dict, record_path: Path, pins_root: Path, *, precheck_problems
     return pin, []
 
 
+def window_problems(rec: dict, P, orgs) -> list[str]:
+    """P1-P3 over a window record (fetch_pins_a3.precheck's rule): clean, on exactly the manifest's host, every host's
+    certificate issuer recorded and its organisation in the public set."""
+    pre = [f"P1 window_not_clean: {p}" for p in rec.get("problems") or []]
+    if sorted(rec.get("hosts") or []) != [HOST]:
+        pre.append(f"P2 hosts_not_manifest: {rec.get('hosts')} is not [{HOST!r}]")
+    for host, pairs in P.host_issuers(rec).items():
+        for org, cn in pairs:
+            if org is None:
+                pre.append(f"P3 issuer_unrecorded: {host} (O None, CN {cn!r})")
+            elif org not in orgs:
+                pre.append(f"P3 issuer_not_public: {host} presented O {org!r}, CN {cn!r}")
+    return pre
+
+
 def run_npm_window(c, L, F, P, *, run: str, python: Path, via_port: int, parent_env, native=None, fs=None,
                    child_env_extra: dict | None = None, volume: Path | None = None,
                    issuer_orgs=None) -> dict:
@@ -184,16 +236,7 @@ def run_npm_window(c, L, F, P, *, run: str, python: Path, via_port: int, parent_
                              python=python, via_port=via_port, run=run, parent_env=parent_env, native=native, fs=fs,
                              child_env_extra=child_env_extra, need_bytes=NEED_BYTES, volume=volume)
     record_path = c.runs_root / "_fetch" / WINDOW / run / "record.json"
-    orgs = issuer_orgs if issuer_orgs is not None else P.PUBLIC_ISSUER_ORGS
-    pre = [f"P1 window_not_clean: {p}" for p in rec.get("problems") or []]
-    if sorted(rec.get("hosts") or []) != [HOST]:
-        pre.append(f"P2 hosts_not_manifest: {rec.get('hosts')}")
-    for host, pairs in P.host_issuers(rec).items():
-        for org, cn in pairs:
-            if org is None:
-                pre.append(f"P3 issuer_unrecorded: {host} (O None, CN {cn!r})")
-            elif org not in orgs:
-                pre.append(f"P3 issuer_not_public: {host} presented O {org!r}, CN {cn!r}")
+    pre = window_problems(rec, P, issuer_orgs if issuer_orgs is not None else P.PUBLIC_ISSUER_ORGS)
     pin, problems = place(rec, record_path, c.runs_root / "_pins", precheck_problems=pre + reasons)
     return {"window": WINDOW, "run": run, "problems": problems, "pin": pin,
             "window_problems": list(rec.get("problems") or [])}

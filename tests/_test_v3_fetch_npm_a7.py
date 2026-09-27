@@ -216,6 +216,25 @@ try:
           any(p.startswith("P3 issuer_not_public: registry.npmjs.org") and "Google Trust Services" in p
               for p in r.get("problems") or []) and r.get("pin") is None, str(r.get("problems")))
 
+    print("\n- in process: the manifest is the window's one source -")
+    MANI = json.loads((ROOT / "research" / "v3" / "fetch_manifest.json").read_text(encoding="utf-8"))
+    w = MANI["windows"]["a7-npm"]
+    check("the module's host, package, version and redirect rule are the manifest's a7-npm entry",
+          [N.HOST] == w["hosts"] == [HOST] and (N.PACKAGE, N.VERSION) == (w["package"], w["version"])
+          == ("supermemory-server", "0.0.8") and N.MAX_REDIRECTS == w["max_redirects"] == 0)
+    check("the URLs are built from it", N.DOC_URL == f"https://{HOST}{DOC_PATH}" and N.TARBALL_URL == f"https://{HOST}{TGZ_PATH}")
+    for label, bad in (("no a7-npm window", {"windows": {}}),
+                       ("two hosts", {"windows": {"a7-npm": dict(w, hosts=[HOST, "evil.example"])}}),
+                       ("a redirect allowed", {"windows": {"a7-npm": dict(w, max_redirects=1)}}),
+                       ("an extra key (pins, arms, ...)", {"windows": {"a7-npm": dict(w, arms=["fetch"])}}),
+                       ("no version", {"windows": {"a7-npm": {k: v for k, v in w.items() if k != "version"}}})):
+        try:
+            N.window_decl(bad)
+            got = "accepted"
+        except N.ManifestError as e:
+            got = str(e)
+        check(f"window_decl refuses a manifest with {label}", got != "accepted", got)
+
     print("\n- in process: read_document and digests -")
     ok = N.read_document(json.dumps(document()).encode())
     check("a good document yields its integrity, shasum and the canonical URL",
@@ -255,15 +274,44 @@ try:
           pin8 is None and any(p.startswith("N8") for p in probs8) and not (TMP / "pins8").exists(), str(probs8))
     fake_rec["jobs"][1]["summary"] = [good]
     real_copy = N.shutil.copyfile
-    N.shutil.copyfile = lambda s, d: Path(d).write_bytes(Path(s).read_bytes() + b"x")
+    N.shutil.copyfile = lambda s, d: Path(d).write_bytes(Path(s).read_bytes() + (b"x" if str(d).endswith(".tgz")
+                                                                                   else b""))
     try:
         pin10, probs10 = N.place(fake_rec, rp, TMP / "pins10", precheck_problems=[])
     finally:
         N.shutil.copyfile = real_copy
-    check("N10 a placed copy that differs from the verified file is removed, not pinned",
-          pin10 is None and probs10 == ["N10 placed_copy_differs"]
-          and not (TMP / "pins10" / "npm" / "supermemory-server-0.0.8.tgz").exists()
-          and not (TMP / "pins10" / "npm" / "npm_pin.json").exists(), str(probs10))
+    npm10 = TMP / "pins10" / "npm"
+    check("N10 a placed tarball copy that differs is removed with the document's copy, not pinned",
+          pin10 is None and len(probs10) == 1 and probs10[0].startswith("N10 placed_copy_differs")
+          and not (npm10 / "supermemory-server-0.0.8.tgz").exists() and not (npm10 / "supermemory-server-0.0.8.json").exists()
+          and not (npm10 / "npm_pin.json").exists(), str(probs10))
+
+    def corrupt_json_copy(s, d):
+        data = Path(s).read_bytes()
+        Path(d).write_bytes(data + b" " if str(d).endswith(".json") else data)
+
+    N.shutil.copyfile = corrupt_json_copy
+    try:
+        pin11, probs11 = N.place(fake_rec, rp, TMP / "pins11", precheck_problems=[])
+    finally:
+        N.shutil.copyfile = real_copy
+    npm11 = TMP / "pins11" / "npm"
+    check("N10 a placed DOCUMENT copy that differs removes both copies (no half placement for the next run's N9)",
+          pin11 is None and len(probs11) == 1 and "supermemory-server-0.0.8.json" in probs11[0]
+          and not (npm11 / "supermemory-server-0.0.8.tgz").exists() and not (npm11 / "supermemory-server-0.0.8.json").exists()
+          and not (npm11 / "npm_pin.json").exists(), str(probs11))
+    pin12, probs12 = N.place(fake_rec, rp, TMP / "pins12", precheck_problems=[])
+    check("after the failed placements a clean one goes through (nothing half-placed was left behind)",
+          pin12 is not None and probs12 == [] and pin12["document_sha256"] == hashlib.sha256(
+              (fake_unit / N.DOC_SAVE).read_bytes()).hexdigest(), str(probs12))
+    extra_host = {"run": "x", "hosts": [HOST, "evil.example"], "problems": [], "jobs": fake_rec["jobs"]}
+    pre = N.window_problems(extra_host, P, P.PUBLIC_ISSUER_ORGS)
+    pin13, probs13 = N.place(extra_host, rp, TMP / "pins13", precheck_problems=pre)
+    check("P2 a window record on more hosts than the manifest's one refuses by name, nothing placed",
+          any(p.startswith("P2 hosts_not_manifest") and "evil.example" in p for p in pre) and pin13 is None
+          and not (TMP / "pins13").exists(), str(pre))
+    check("P2 the manifest's one host alone passes", N.window_problems(dict(extra_host, hosts=[HOST]), P,
+                                                                      P.PUBLIC_ISSUER_ORGS) == [])
     pin_ok, probs_ok = N.place(fake_rec, rp, TMP / "pins_ok", precheck_problems=["P1 window_not_clean: x"])
     check("a precheck problem alone keeps the pin from being written", pin_ok is None and probs_ok[0].startswith("P1")
           and not (TMP / "pins_ok").exists(), str(probs_ok))

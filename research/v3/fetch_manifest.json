@@ -44,6 +44,13 @@
    "arms": ["fetch-git"],
    "child": "git clone --bare, under the contract, through the catcher; one fetch-child GET of info/refs only to record github.com's issuer (Q-A3F-2)",
    "max_redirects": 0
+  },
+  "a7-npm": {
+   "hosts": ["registry.npmjs.org"],
+   "purpose": "download only (the auditor's Q-47-8g): the supermemory-server@0.0.8 registry document and its tarball; nothing installed, no script run; A8 compares the installed package with this tarball",
+   "package": "supermemory-server",
+   "version": "0.0.8",
+   "max_redirects": 0
   }
  },
  "disk": {"volume": "D:", "floor_gb": 100, "multiple_of_window_total": 3, "stop_single_file_gb": 10}
