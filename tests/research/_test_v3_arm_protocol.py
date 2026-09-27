@@ -213,6 +213,9 @@ with tempfile.TemporaryDirectory(prefix="v3seal_") as sd:
           safely(lambda: B.check_state_seal(su, "falkordb://127.0.0.1:6380/u1", "d" * 64), {}).get("kind") == "state")
     check("check_state_seal: another store URI is refused",
           raises(lambda: B.check_state_seal(su, "falkordb://127.0.0.1:6390/u1", "d" * 64), B.SealError, "not the one"))
+    check("check_state_seal: a URI that differs only in the graph name's case is refused (FalkorDB names are case "
+          "sensitive, SS2)", raises(lambda: B.check_state_seal(su, "falkordb://127.0.0.1:6380/U1", "d" * 64), B.SealError,
+                                    "not the one"))
     check("check_state_seal: another state digest is refused",
           raises(lambda: B.check_state_seal(su, "falkordb://127.0.0.1:6380/u1", "e" * 64), B.SealError,
                  "changed between the stages"))
