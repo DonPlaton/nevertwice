@@ -201,6 +201,11 @@ C = L.Contract(polygon_root=POLY, runs_root=POLY / "runs" / "v3", repo_root=ROOT
                secrets_dir=TMP / "secrets", quarantine_root=TMP / "quarantine", conservation_root=TMP / "conservation",
                system_dirs=SYSTEM, binary_exceptions=EXC)
 FAKE_DIR = POLY / "_fake"
+#: B-VENV: the fake arms run on the BASE interpreter. A venv's python.exe on Windows is a launcher whose child - the
+#: real interpreter - holds the pipes too, so a stream the arm closes is no end-of-file until that child exits (the
+#: auditor's gate of a5999f2: under a venv the B-RC row was red 3/3, under the base green 3/3). The contract already
+#: names the base interpreter (EXC below).
+ARM_PY = Path(getattr(sys, "_base_executable", None) or sys.executable)
 FAKE_DIR.mkdir(parents=True)
 BASE_SRC = (ROOT / "research" / "v3" / "arms" / "base.py").read_bytes()
 (FAKE_DIR / "base.py").write_bytes(BASE_SRC)                    # the Q9 mirror: a byte copy, its sha asserted
@@ -235,8 +240,8 @@ def launcher(name: str, *, expect: int, knobs=None, store="disk"):
         return {"arm": name, "run": run, "unit": unit, "stage": stage, "shared": str(SHARED), "expect": expect,
                 "knobs": (knobs or {}).get((run, unit), {}),
                 "write_dir": str(write_dirs.cwd) if write_dirs is not None else None}
-    return SC.ChildArmLauncher(name, argv_for=lambda p: [sys.executable, "-B", str(FAKE_DIR / "fake_arm.py"), str(p)],
-                               spec_for=spec_for, store_persistence=store, path_dirs=(str(Path(sys.executable).parent),))
+    return SC.ChildArmLauncher(name, argv_for=lambda p: [str(ARM_PY), "-B", str(FAKE_DIR / "fake_arm.py"), str(p)],
+                               spec_for=spec_for, store_persistence=store, path_dirs=(str(ARM_PY.parent),))
 
 
 status = SL.StatusLog(TMP / "STATUS", local_tz=dt.timezone.utc)
@@ -251,6 +256,9 @@ OPS = lambda r, u: [{"item": {"item_id": f"{u}-i{k}", "text": "x"}, "date": None
 
 try:
     print("- the Q9 mirror -")
+    check("B-VENV: the fake arms run on the base interpreter - no venv launcher between the scheduler and the arm, so a "
+          "stream the arm closes is end-of-file at once",
+          not (ARM_PY.parent / "pyvenv.cfg").exists() and not (ARM_PY.parent.parent / "pyvenv.cfg").exists(), str(ARM_PY))
     check("the fake arm imports a byte copy of arms/base.py (its sha256 equals the repository's)",
           hashlib.sha256((FAKE_DIR / "base.py").read_bytes()).hexdigest() == hashlib.sha256(BASE_SRC).hexdigest())
 
@@ -885,7 +893,7 @@ try:
         good = launcher(name, **kw)
         return SC.ChildArmLauncher(
             name, argv_for=lambda p: ([str(FAKE_DIR / "no_such_arm.exe")] if f"{bad_unit}.home" in str(p)
-                                      else [sys.executable, "-B", str(FAKE_DIR / "fake_arm.py")]) + [str(p)],
+                                      else [str(ARM_PY), "-B", str(FAKE_DIR / "fake_arm.py")]) + [str(p)],
             spec_for=good.spec_for, store_persistence=good.store_persistence, path_dirs=good.path_dirs)
 
     e18, l18, _st = block_world("STATUS18", {"m2": refuse_unit("m2", "y2", expect=1, store="memory",
