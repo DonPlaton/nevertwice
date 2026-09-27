@@ -386,6 +386,16 @@ for label, pass_cache in (("standalone", False), ("with the consolidator's cache
           died is not None and len(gone) == 2, f"died={died!r} retired={gone}")
     check(f"{label}: and none of them is still in the cache file", ghosts == [], str(ghosts))
 
+
+def plant_killed(stem, new_stem):
+    """The state a killed consolidator leaves (B-K8GHOST): the note retired with the run's own cache in hand - popped in
+    memory only, nothing journalled - and the process gone before its one write, so its memo is gone too. The
+    snapshot on disk still holds the vector. (Rewriting the snapshot over a journalled delete is NOT this state: that
+    journal replays onto identical bytes whenever the rewrite lands in the base's mtime tick - Linux's coarse clock.)"""
+    m.supersede_note(m.VAULT / "Decisions" / f"{stem}.md", new_stem, cache=m.load_embed_cache())
+    m._forget_memo()                                   # the killed process's memory
+
+
 print("\n- a ghost a killed run left behind is cleared by the next run -")
 #: A killed process runs no `except` and no `finally`, so the write above cannot cover it. What
 #: covers it is the next run: a vector whose note sits in Superseded/ and is not live anywhere is
@@ -394,10 +404,7 @@ print("\n- a ghost a killed run left behind is cleared by the next run -")
 d = fresh()
 made = seeded_pairs(N_PAIRS)
 ghost_old, ghost_new = made[0]
-m.supersede_note(m.VAULT / "Decisions" / f"{ghost_old}.md", ghost_new)
-planted = cache_file()
-planted[ghost_old] = {"title": ghost_old, "desc": "d", "vec": [0.1, 0.2]}   # what a kill leaves
-m.EMBED_CACHE.write_text(_json.dumps(planted), encoding="utf-8")
+plant_killed(ghost_old, ghost_new)
 check("the ghost is planted: its note is retired and its vector is in the file",
       ghost_old in retired_stems() and ghost_old in cache_file())
 res = cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(True))
@@ -418,6 +425,27 @@ res = cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(False))
 check("a note live in its folder keeps its vector even with a copy in Superseded/",
       twin_old in cache_file() and not res.get("healed"), f"healed={res.get('healed')}")
 
+print("\n- B-K8GHOST: a journal replays onto identical bytes, whatever the clock's grain -")
+#: The engine is right to replay here: the journal was written against these very bytes. On Linux a rewrite in the
+#: base's mtime tick is indistinguishable from the base; forcing the mtime makes that case deterministic everywhere.
+d = fresh()
+made = seeded_pairs(1)
+j_old, j_new = made[0]
+m.supersede_note(m.VAULT / "Decisions" / f"{j_old}.md", j_new)          # journals the delete (no cache in hand)
+jp = m.EMBED_CACHE.with_name(m.EMBED_CACHE.name + ".journal")
+base = _json.loads(jp.read_bytes().split(b"\n")[0])["base"]
+same = cache_file()
+m.EMBED_CACHE.write_text(_json.dumps(same), encoding="utf-8")            # the same bytes again
+import os as _os  # noqa: E402
+_st = m.EMBED_CACHE.stat()
+_os.utime(m.EMBED_CACHE, ns=(_st.st_atime_ns, base["mtime_ns"]))       # the rewrite lands in the base's tick
+m._forget_memo()
+check("the rewritten snapshot's identity equals the journal's base (same bytes, same tick)",
+      m._snapshot_base() == base, f"{m._snapshot_base()} vs {base}")
+loaded = m.load_embed_cache()
+check("... so the journal replays: the retired note's vector is not in what the cache loads, though the snapshot "
+      "bytes still hold it", j_old not in loaded and j_old in cache_file() and jp.exists(), str(sorted(loaded)))
+
 print("\n- a ghost is cleared on every path, not only when there is something to judge -")
 #: The first placement of the heal sat after the three early exits, and this suite tested it with
 #: pairs in the queue and a backend up - past all three exits, exactly where healing reached
@@ -429,11 +457,8 @@ def plant_ghost_only(keep_a_pair):
     """A retired note whose vector a killed run left in the FILE; optionally one live pair."""
     made = seeded_pairs(2 if keep_a_pair else 1)
     g_old, g_new = made[0]
-    m.supersede_note(m.VAULT / "Decisions" / f"{g_old}.md", g_new)
     #: with one pair only, retiring its earlier note empties the queue - nothing is left to judge
-    planted = cache_file()
-    planted[g_old] = {"title": g_old, "desc": "d", "vec": [0.1, 0.2]}
-    m.EMBED_CACHE.write_text(_json.dumps(planted), encoding="utf-8")
+    plant_killed(g_old, g_new)
     return g_old
 
 
