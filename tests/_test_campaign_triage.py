@@ -190,7 +190,17 @@ _src = [f for f in _tracked if f not in T.CLOSURE_EXCLUDED_FILES and T.MODEL_CAL
 #: /api/generate and requires the refusal before any byte is sent - it never reaches a real endpoint).
 #: The auditor (A3.h'): the SET is pinned, not the count - a quote removed and a real caller added would keep a count
 #: at 21; any change here goes red and prints the difference, and each new quote is named at this line.
-CENSUS_21 = {
+#: PREREG-V3 TB4.5-TB4.6 (2026-09-27): + six quotes = 27, none reaches a real endpoint -
+#: `research/v3/arms/_http_count.py` (its K87 class table maps the paths /api/generate and /api/chat to the class
+#: ollama:generate; it wraps the client libraries' send and counts, it never builds a request),
+#: `tests/research/_test_v3_http_count.py` (its loopback fake SERVES /api/generate, and a class-table row quotes it),
+#: `tests/research/_test_v3_runner_nevertwice.py` and `tests/research/_test_v3_bm25_floor.py` (the child's declared
+#: env names OLLAMA_URL - a fake port, or the closed port 0 - so the sandbox contract has its value to check),
+#: `tests/fixtures/v3_fake_products/litellm/__init__.py` (the FAKE litellm posts to OLLAMA_API_BASE/api/chat, which
+#: the a-mem suite points at its own loopback leg) and `tests/research/_test_v3_arm_amem.py` (its fake leg ANSWERS
+#: /api/chat). Missed by the changer at 03fce0f and found at the tip before the chain reached it: a new .py file is
+#: in this census's area, whatever directory it lands in.
+CENSUS_27 = {
     "nevertwice/_engine_config.py", "nevertwice/consolidate_memory.py", "research/_ollama_symmetry_probe.py",
     "research/embed_universal/gen_corpus.py", "research/embed_universal/gen_pairs.py", "research/frontier_eval.py",
     "research/gen_code_sessions.py", "research/invariants_lab/measure_coldstart.py",
@@ -198,10 +208,13 @@ CENSUS_21 = {
     "research/k8_judge_eval.py", "research/token_ab.py", "tests/_test_audit_fixes.py", "tests/_test_campaign_triage.py",
     "tests/_test_llm_proxy_ollama.py", "tests/_test_v3_ollama_inventory.py", "tests/research/_test_frontier.py",
     "tests/research/_test_guard_bench.py", "tests/research/_test_k8_judge_eval.py", "tests/research/_test_ollama_pacer.py",
-    "tools/campaign_triage.py"}
-check("twenty-one tracked sources name a generation endpoint - exactly these, so the rule has a population",
-      set(_src) == CENSUS_21 and len(CENSUS_21) == 21,
-      f"added {sorted(set(_src) - CENSUS_21)}, gone {sorted(CENSUS_21 - set(_src))}")
+    "tools/campaign_triage.py",
+    "research/v3/arms/_http_count.py", "tests/fixtures/v3_fake_products/litellm/__init__.py",
+    "tests/research/_test_v3_arm_amem.py", "tests/research/_test_v3_bm25_floor.py", "tests/research/_test_v3_http_count.py",
+    "tests/research/_test_v3_runner_nevertwice.py"}
+check("twenty-seven tracked sources name a generation endpoint - exactly these, so the rule has a population",
+      set(_src) == CENSUS_27 and len(CENSUS_27) == 27,
+      f"added {sorted(set(_src) - CENSUS_27)}, gone {sorted(CENSUS_27 - set(_src))}")
 check("and the generators it could not see before are among them",
       {"research/gen_code_sessions.py", "research/frontier_eval.py",
        "research/token_ab.py"} <= set(_src))
