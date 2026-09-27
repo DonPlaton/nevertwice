@@ -371,7 +371,9 @@ check("the audit hook saw no listing, open or glob under the quarantine during a
 
 print("\n- canaries, the ancestor check, checks -")
 cn = L.Canaries.generate()
-check("four distinct canaries", len(set(cn.values.values())) == 4)
+check("five distinct canaries, one per decoy (decoy_claude_json added by R-CC-WIT)",
+      len(set(cn.values.values())) == 5 and set(cn.values) == {"decoy_env", "decoy_claude_md", "decoy_credentials",
+                                                                "decoy_claude_json", "ancestor"}, str(sorted(cn.values)))
 before = L.check_ancestors_for_claude(C)
 (TMP / "CLAUDE.md").write_bytes(b"decoy")
 after = L.check_ancestors_for_claude(C)

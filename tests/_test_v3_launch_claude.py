@@ -19,6 +19,9 @@
   fake home holding exactly our settings.json (no CLAUDE.md, no .credentials.json there: D4/D5), the binary is the
   polygon-pinned one (its version recorded), a node + cli.js launch of the package is recognised whatever its
   label (D6), and A8 has recorded the tools that exact pinned file offers, by its sha256 (D7).
+* R-CC-WIT: the unit's settings.json carries the home canary header as its only env entry (the proxy checks it on
+  every request), a settings file without it or with another shape is refused; the fake home holds a decoy
+  .claude.json beside the .claude decoys.
 * Q-47-6: the sessions of one claude-code-memory unit run in that unit's directory one after another (Claude Code binds
   its memory to the project's working directory); another unit, another arm, a directory that is not empty, or a
   session while the previous one still runs is refused; each reuse is a line of the spawn journal.
@@ -80,7 +83,8 @@ want = [str(BIN), "-p", "--output-format", "json", "--permission-mode", "default
         f"Read({root}/**)", f"Write({root}/**)", f"Edit({root}/**)", f"MultiEdit({root}/**)", "--disallowedTools",
         *sorted(t for t in OFFERED if t not in ("Read", "Write", "Edit", "MultiEdit"))]
 check("the argv is exactly §2.6.6's", argv == want, str(argv))
-st = L.claude_code_settings(MEM)
+HC_CAN = "0f" * 16
+st = L.claude_code_settings(MEM, HC_CAN)
 check("the settings disable all hooks and keep the default mode", st.get("disableAllHooks") is True
       and st.get("permissions", {}).get("defaultMode") == "default")
 check("the built argv and settings pass the check", L.check_claude_code(argv, st, memdir=MEM) == [],
@@ -117,6 +121,16 @@ C = L.Contract(polygon_root=TMP / "polygon", runs_root=TMP / "polygon" / "runs" 
                conservation_root=TMP / "conservation", binary_exceptions=_TEST_EXC,
                system_dirs=(Path(sys.executable).parent,))
 check("assert_argv refuses a bypass word on any spawn", any("bypass" in v for v in L.assert_argv(C, [sys.executable, "--x", "acceptEdits"])))
+def _raises(fn, exc) -> bool:
+    try:
+        fn()
+    except exc:
+        return True
+    except Exception:  # noqa: BLE001
+        return False
+    return False
+
+
 called = []
 
 
@@ -197,7 +211,7 @@ L.check_ancestors_for_claude = lambda c: {"checked": 3, "found": ancestors["foun
 
 def cc_spawn(unit: str, *, mutate=None, record=None, binary=None):
     u = L.make_unit_dirs(CC, "cc", "r", "claude-code-memory", unit)
-    cfg, settings = L.make_claude_config(u)
+    cfg, settings = L.make_claude_config(u, home_canary=L.new_home_canary())
     av = L.claude_code_argv(binary or CC.claude_code_binary, settings_path=settings, empty_mcp_path=u.home / "empty-mcp.json",
                             memdir=u.memdir, offered_tools=OFFERED)
     env = L.build_env(CC, parent_env=os.environ, unit=u, path_dirs=[], catcher_url="http://127.0.0.1:47004",
@@ -278,7 +292,7 @@ L._OFFERED.update(saved)
 CC2 = L.Contract(**{**CC.__dict__, "claude_code_binary": CLI})
 L.record_offered_tools(L._sha256_file(CLI), OFFERED)
 u_n = L.make_unit_dirs(CC2, "cc", "r", "claude-code-memory", "u-node")
-cfg_n, settings_n = L.make_claude_config(u_n)
+cfg_n, settings_n = L.make_claude_config(u_n, home_canary=L.new_home_canary())
 av_n = [str(NODE), str(CLI)] + L.claude_code_argv(CLI, settings_path=settings_n, empty_mcp_path=u_n.home / "empty-mcp.json",
                                                    memdir=u_n.memdir, offered_tools=OFFERED)[1:]
 env_n = L.build_env(CC2, parent_env=os.environ, unit=u_n, path_dirs=[], catcher_url="http://127.0.0.1:47004",
@@ -303,7 +317,7 @@ def cc_session(unit_dirs, record, *, mutate=None):
     if cfg_dir.exists():
         shutil.rmtree(cfg_dir)
         (unit_dirs.home / "empty-mcp.json").unlink()
-    cfg, settings = L.make_claude_config(unit_dirs)
+    cfg, settings = L.make_claude_config(unit_dirs, home_canary=L.new_home_canary())
     av = L.claude_code_argv(CC.claude_code_binary, settings_path=settings, empty_mcp_path=unit_dirs.home / "empty-mcp.json",
                             memdir=unit_dirs.memdir, offered_tools=OFFERED)
     env = L.build_env(CC, parent_env=os.environ, unit=unit_dirs, path_dirs=[], catcher_url="http://127.0.0.1:47004",
@@ -357,6 +371,43 @@ try:
 except L.ContractViolation as e:
     check("Q-47-6 another arm's unit directory is never reusable, even by its own unit",
           any("not created fresh" in r for r in e.reasons), str(e.reasons))
+
+print("\n- R-CC-WIT: the home canary in the unit's settings, and the fake home's decoys -")
+_pspec = importlib.util.spec_from_file_location("v3_llm_proxy_for_claude", ROOT / "research" / "_llm_proxy.py")
+PX = importlib.util.module_from_spec(_pspec)
+sys.modules["v3_llm_proxy_for_claude"] = PX
+_pspec.loader.exec_module(PX)
+check("launch and the proxy name the same home canary header", L.HOME_CANARY_HEADER == PX.HOME_CANARY_HEADER)
+u_c = L.make_unit_dirs(CC, "cc", "r", "claude-code-memory", "canary1")
+can = L.new_home_canary()
+cfg_c, settings_c = L.make_claude_config(u_c, home_canary=can)
+written = json.loads(settings_c.read_bytes())
+check("the unit's settings.json: hooks off, default mode, and the canary header as the ONLY env entry",
+      written == {"disableAllHooks": True, "permissions": {"defaultMode": "default"},
+                  "env": {"ANTHROPIC_CUSTOM_HEADERS": f"x-nvt3-home-canary: {can}"}} and len(can) == 32, str(written))
+check("check_claude_code reads the canary back from the settings", L.settings_home_canary(written) == can)
+av_c = L.claude_code_argv(CC.claude_code_binary, settings_path=settings_c, empty_mcp_path=u_c.home / "empty-mcp.json",
+                          memdir=u_c.memdir, offered_tools=OFFERED)
+check("the locked-down settings with a canary pass", L.check_claude_code(av_c, written, memdir=u_c.memdir,
+                                                                        offered_tools=OFFERED) == [])
+for label, bad in (("no env at all", {k: v for k, v in written.items() if k != "env"}),
+                   ("a canary of the wrong shape", {**written, "env": {"ANTHROPIC_CUSTOM_HEADERS": "x-nvt3-home-canary: 12"}}),
+                   ("another header name", {**written, "env": {"ANTHROPIC_CUSTOM_HEADERS": f"x-other: {can}"}})):
+    got = L.check_claude_code(av_c, bad, memdir=u_c.memdir, offered_tools=OFFERED)
+    check(f"R-CC-WIT settings with {label} are refused by name", any("home canary" in r for r in got), str(got))
+got = L.check_claude_code(av_c, {**written, "env": {**written["env"], "HTTPS_PROXY": "http://10.0.0.1:8080"}},
+                          memdir=u_c.memdir, offered_tools=OFFERED)
+check("R-CC-WIT the canary does not open env: a second env entry is refused (L1)",
+      any("not exactly the unit settings" in r for r in got), str(got))
+check("claude_code_settings refuses a canary that is not 32 lowercase hex",
+      all(_raises(lambda c=c: L.claude_code_settings(u_c.memdir, c), ValueError) for c in ("", "ABC", "0f" * 15, None)))
+canaries = L.Canaries.generate()
+L.plant_canaries(u_c, canaries)
+cj = u_c.home / ".claude.json"
+check("the fake home holds a decoy .claude.json carrying its own canary (and the .claude decoys)",
+      cj.is_file() and canaries.values["decoy_claude_json"] in cj.read_text(encoding="utf-8")
+      and (u_c.home / ".claude" / "CLAUDE.md").is_file() and (u_c.home / ".claude" / ".credentials.json").is_file(),
+      str(sorted(p.name for p in u_c.home.iterdir())))
 L.check_ancestors_for_claude = real_ancestors
 
 shutil.rmtree(TMP, ignore_errors=True)

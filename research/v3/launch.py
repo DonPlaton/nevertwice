@@ -1606,7 +1606,7 @@ class Canaries:
     @classmethod
     def generate(cls) -> "Canaries":
         return cls({k: f"nvt3c-{k}-{secrets.token_hex(16)}" for k in
-                    ("decoy_env", "decoy_claude_md", "decoy_credentials", "ancestor")})
+                    ("decoy_env", "decoy_claude_md", "decoy_credentials", "decoy_claude_json", "ancestor")})
 
     def hashes(self) -> dict[str, str]:
         return {k: hashlib.sha256(v.encode()).hexdigest() for k, v in self.values.items()}
@@ -1628,12 +1628,15 @@ def plant_decoy_env(canaries: Canaries, environ: dict | None = None) -> str:
 
 
 def plant_canaries(unit: UnitDirs, canaries: Canaries) -> None:
-    """A decoy CLAUDE.md and credentials file in the unit's fake home: read only if a child ignores its config."""
+    """Decoys in the unit's fake home - a CLAUDE.md and a credentials file under .claude, and a .claude.json beside it
+    (R-CC-WIT) - read only if a child ignores its config; the proxy's canary scan finds any of them in a request."""
     d = unit.home / ".claude"
     d.mkdir(parents=True, exist_ok=True)
     (d / "CLAUDE.md").write_bytes(f"Project note {canaries.values['decoy_claude_md']}\n".encode())
     (d / ".credentials.json").write_bytes(json.dumps(
         {"claudeAiOauth": {"accessToken": canaries.values["decoy_credentials"]}}).encode())
+    (unit.home / ".claude.json").write_bytes(json.dumps(
+        {"userID": canaries.values["decoy_claude_json"], "hasCompletedOnboarding": True}).encode())
 
 
 def plant_runs_root_decoy(c: Contract, canaries: Canaries) -> None:
@@ -1808,13 +1811,18 @@ def record_offered_tools(binary_sha256: str, tools: Sequence[str]) -> None:
     _OFFERED["sha256"], _OFFERED["tools"] = binary_sha256, tuple(tools)
 
 
-def make_claude_config(unit: "UnitDirs") -> tuple[Path, Path]:
-    """A fresh CLAUDE_CONFIG_DIR inside the unit's fake home holding only our settings.json, and the empty MCP
-    config beside it. Returns (config dir, settings path)."""
+def new_home_canary() -> str:
+    """R-CC-WIT: a per-unit home canary (32 hex) - it goes into the unit's settings.json and, on stdin, to the proxy."""
+    return secrets.token_hex(16)
+
+
+def make_claude_config(unit: "UnitDirs", *, home_canary: str) -> tuple[Path, Path]:
+    """A fresh CLAUDE_CONFIG_DIR inside the unit's fake home holding only our settings.json - with the unit's home
+    canary (R-CC-WIT) - and the empty MCP config beside it. Returns (config dir, settings path)."""
     cfg = unit.home / "claude_config"
     cfg.mkdir(parents=True, exist_ok=False)
     settings = cfg / "settings.json"
-    settings.write_bytes(json.dumps(claude_code_settings(unit.memdir), sort_keys=True).encode("utf-8"))
+    settings.write_bytes(json.dumps(claude_code_settings(unit.memdir, home_canary), sort_keys=True).encode("utf-8"))
     (unit.home / "empty-mcp.json").write_bytes(b'{"mcpServers": {}}')
     return cfg, settings
 
@@ -1832,9 +1840,27 @@ def _bypass_in(text: str) -> bool:
     return any(tok in low for tok in BYPASS_TOKENS)
 
 
-def claude_code_settings(memdir: Path) -> dict:
-    """The unit's settings.json: hooks off, the default permission mode, nothing else (L1: exactly this)."""
-    return {"disableAllHooks": True, "permissions": {"defaultMode": "default"}}
+#: R-CC-WIT (the auditor's positive control): the header the unit's settings.json makes Claude Code send on every
+#: request through ANTHROPIC_CUSTOM_HEADERS; research/_llm_proxy.py checks it on the arm port and never forwards it.
+HOME_CANARY_HEADER = "x-nvt3-home-canary"
+_HOME_CANARY = re.compile(re.escape(HOME_CANARY_HEADER) + r": ([0-9a-f]{32})")
+
+
+def claude_code_settings(memdir: Path, home_canary: str) -> dict:
+    """The unit's settings.json: hooks off, the default permission mode, and the home canary header as the only env
+    entry (R-CC-WIT) - nothing else (L1: exactly this). The canary changes no prompt: it is a request header."""
+    if not re.fullmatch(r"[0-9a-f]{32}", home_canary or ""):
+        raise ValueError("a home canary is 32 lowercase hex characters")
+    return {"disableAllHooks": True, "permissions": {"defaultMode": "default"},
+            "env": {"ANTHROPIC_CUSTOM_HEADERS": f"{HOME_CANARY_HEADER}: {home_canary}"}}
+
+
+def settings_home_canary(settings: Mapping) -> str | None:
+    """The home canary a settings mapping carries, or None when it carries none of the right shape."""
+    env = settings.get("env") if isinstance(settings, Mapping) else None
+    hdr = env.get("ANTHROPIC_CUSTOM_HEADERS") if isinstance(env, Mapping) else None
+    m = _HOME_CANARY.fullmatch(hdr) if isinstance(hdr, str) else None
+    return m.group(1) if m else None
 
 
 def claude_code_argv(binary: str | os.PathLike, *, settings_path: Path, empty_mcp_path: Path, memdir: Path,
@@ -1900,7 +1926,10 @@ def check_claude_code(argv: Sequence[str], settings: Mapping, *, memdir: Path,
         canonical = list(launcher) + canonical[1:]
     if list(argv) != canonical:
         out.append("argv is not exactly the §2.6.6 argv")
-    if dict(settings) != claude_code_settings(memdir):
+    canary = settings_home_canary(settings)
+    if canary is None:
+        out.append("the settings carry no home canary header (R-CC-WIT)")
+    if canary is None or dict(settings) != claude_code_settings(memdir, canary):
         out.append("settings are not exactly the unit settings")
     if any(_bypass_in(a) for a in argv):
         out.append("argv names a bypass permission mode")
