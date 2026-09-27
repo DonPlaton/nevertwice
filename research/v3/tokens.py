@@ -8,6 +8,12 @@ sequence and an overflow is a 400, a failed outcome (P0a, no shrink-retry) - so 
 a character offset, so that the kept text is an exact prefix of the original. One Truncator serves every arm, before
 any arm sees the text; each cut records the original and kept token counts and whether it truncated.
 
+§5.2: the reader's context budget is counted in cl100k tokens, and points.fill cuts the last item that does not fit
+to the room left: cl100k_pair gives (count, cut) from one encoding - the cut is prefix_cut over the tokens' character
+spans (tiktoken's decode_with_offsets), the longest exact prefix of the text with at most n tokens, shrunk by whole
+tokens when a prefix tokenizes longer at its edge, never grown; a text the encoding does not round-trip is refused -
+no exact prefix could be cut.
+
 The real tokenizers load lazily from their pinned files (`tokenizers`, `tiktoken`; the v3_data venv), so this module
 imports nothing heavy and the core suite drives it with a fake tokenizer.
 """
@@ -93,9 +99,54 @@ def bge_m3_spans(tokenizer_json: Path, *, expected_sha256: str) -> Spans:
     return spans
 
 
+def prefix_cut(spans: Spans) -> Callable[[str, int], str]:
+    """§5.2's cut for points.fill: the longest prefix of a text with at most n tokens by ``spans`` (each token's
+    character span), cut at a token's end - an exact prefix of the text; a prefix that tokenizes longer at its edge is
+    shrunk by whole tokens, never grown."""
+    def cut(text: str, n: int) -> str:
+        if n <= 0:
+            return ""
+        sp = list(spans(text))
+        if len(sp) <= n:
+            return text
+        keep = n
+        kept = text[:sp[keep - 1][1]]
+        while len(spans(kept)) > n:
+            keep -= 1
+            if keep == 0:
+                return ""
+            kept = text[:sp[keep - 1][1]]
+        return kept
+    return cut
+
+
+def cl100k_pair(bpe_file: Path, *, expected_sha256: str) -> tuple[Callable[[str], int], Callable[[str, int], str]]:
+    """§5.2: (count, cut) from tiktoken's own cl100k_base over the pinned file (see the module docstring)."""
+    enc = _cl100k_encoding(bpe_file, expected_sha256=expected_sha256)
+
+    def count(text: str) -> int:
+        return len(enc.encode(text, disallowed_special=()))
+
+    def spans(text: str) -> list[tuple[int, int]]:
+        ids = enc.encode(text, disallowed_special=())
+        decoded, offsets = enc.decode_with_offsets(ids)
+        if decoded != text:
+            raise ValueError("cl100k does not round-trip this text - no exact prefix of it can be cut")
+        ends = list(offsets[1:]) + [len(text)]
+        return list(zip(offsets, ends))
+
+    return count, prefix_cut(spans)
+
+
 def cl100k_counter(bpe_file: Path, *, expected_sha256: str) -> Callable[[str], int]:
     """tiktoken's own cl100k_base, built from the pinned .tiktoken file with no network: the file is offered to
     tiktoken as its cache entry (the key is sha1 of the URL) and tiktoken checks the hash itself."""
+    enc = _cl100k_encoding(bpe_file, expected_sha256=expected_sha256)
+    return lambda text: len(enc.encode(text, disallowed_special=()))
+
+
+def _cl100k_encoding(bpe_file: Path, *, expected_sha256: str):
+    """The cl100k_base encoding from the pinned file (see cl100k_counter); refuses a file off its pin."""
     if sha256_file(bpe_file) != expected_sha256:
         raise ValueError(f"{bpe_file} is not the pinned cl100k_base.tiktoken")
     import tiktoken  # noqa: PLC0415 - the v3_data venv only
@@ -112,4 +163,4 @@ def cl100k_counter(bpe_file: Path, *, expected_sha256: str) -> Callable[[str], i
         else:
             os.environ["TIKTOKEN_CACHE_DIR"] = old
         shutil.rmtree(cache, ignore_errors=True)
-    return lambda text: len(enc.encode(text, disallowed_special=()))
+    return enc

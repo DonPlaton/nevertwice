@@ -269,6 +269,18 @@ except ValueError:
     ok_refuse = True
 check("Truncator(cap <= specials) raises", ok_refuse)
 
+print("\n- N1: the §5.2 cut for points.fill -")
+cutw = TK.prefix_cut(ws_spans)
+TXT = "alpha beta  gamma delta epsilon"
+got_c = {n: cutw(TXT, n) for n in range(0, 7)}
+check("prefix_cut: the longest exact prefix with at most n tokens, cut at a token's end; the whole text when it fits",
+      got_c == {0: "", 1: "alpha", 2: "alpha beta", 3: "alpha beta  gamma", 4: "alpha beta  gamma delta",
+                5: TXT, 6: TXT} and all(TXT.startswith(v) and len(ws_spans(v)) <= n for n, v in got_c.items()),
+      str(got_c))
+cutg = TK.prefix_cut(greedy_spans)
+check("prefix_cut: a prefix that tokenizes longer at its edge is shrunk by whole tokens, never grown",
+      cutg("x y z ab q r", 4) == "x y z" and len(greedy_spans(cutg("x y z ab q r", 4))) <= 4, cutg("x y z ab q r", 4))
+
 print("\n- TB4.3b S5 BEAM (keys from j4) -")
 
 
@@ -568,6 +580,41 @@ with tempfile.TemporaryDirectory(prefix="v3tok_") as td:
         except ValueError:
             off_pin2 = True
         check("cl100k_counter refuses a .tiktoken file that is not the pinned one", off_pin2)
+        import re as _re  # noqa: PLC0415
+
+        def enc_chunks(text, disallowed_special=()):
+            return _re.findall(r"\S+\s*|\s+", text)          # ids that decode back to the text exactly
+
+        def dec_offsets(ids):
+            offs, pos = [], 0
+            for i in ids:
+                offs.append(pos)
+                pos += len(i)
+            return "".join(ids), offs
+
+        sys.modules["tiktoken"] = types.SimpleNamespace(get_encoding=lambda name: types.SimpleNamespace(
+            encode=enc_chunks, decode_with_offsets=dec_offsets))
+        cnt2, cut2 = TK.cl100k_pair(bpe, expected_sha256=hashlib.sha256(b"ranks").hexdigest())
+        T2 = "one two  three four"
+        check("N1: cl100k_pair counts and cuts with ONE encoding - a cut is an exact prefix of at most n tokens",
+              cnt2(T2) == 4 and cut2(T2, 2) == "one two  " and T2.startswith(cut2(T2, 3)) and cnt2(cut2(T2, 3)) <= 3
+              and cut2(T2, 9) == T2, f"{cnt2(T2)} {cut2(T2, 2)!r} {cut2(T2, 3)!r}")
+        sys.modules["tiktoken"] = types.SimpleNamespace(get_encoding=lambda name: types.SimpleNamespace(
+            encode=enc_chunks, decode_with_offsets=lambda ids: ("".join(ids).upper(), [0] * len(ids))))
+        _, cut3 = TK.cl100k_pair(bpe, expected_sha256=hashlib.sha256(b"ranks").hexdigest())
+        try:
+            cut3("abc def", 1)
+            no_rt = "accepted"
+        except ValueError as e:
+            no_rt = str(e)
+        check("N1: a text the encoding does not round-trip is refused - no exact prefix could be cut",
+              "round-trip" in no_rt, no_rt)
+        try:
+            TK.cl100k_pair(bpe, expected_sha256="0" * 64)
+            off_pin3 = False
+        except ValueError:
+            off_pin3 = True
+        check("N1: cl100k_pair refuses a .tiktoken file that is not the pinned one", off_pin3)
     finally:
         for k, v in saved.items():
             if v is None:
