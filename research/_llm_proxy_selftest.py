@@ -59,7 +59,13 @@ class FakeUpstream:
         threading.Thread(target=self._loop, daemon=True).start()
 
     def close(self):
+        """B-DEADPORT: shutdown before close - on Linux a close alone does not wake the thread blocked in accept(), and
+        the socket goes on accepting (a "closed" upstream that answers); shutdown ends the listen on every platform."""
         self._stop = True
+        try:
+            self.sock.shutdown(socket.SHUT_RDWR)
+        except OSError:
+            pass                                    # never listened, or already down (Windows: not connected)
         self.sock.close()
 
     def _loop(self):

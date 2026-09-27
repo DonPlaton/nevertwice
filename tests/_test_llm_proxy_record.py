@@ -648,9 +648,20 @@ check("B-RST (BRe): a refusal after the body was read (no headers given) drains 
       "client sent past it, at once - never a length of 0 that leaves them unread for the close's RST",
       not _alive5 and len(_got5) == 1 and _got5[0][0] == 500 and _got5[0][1] < 1.0, f"alive={_alive5} {_got5}")
 
-_dead = Upstream()
-_dead_port = _dead.port
-_dead.close()                                              # an upstream that refuses: the proxy answers 502
+_probe_up = Upstream()
+_probe_port = _probe_up.port
+_probe_up.close()
+try:
+    _cc = socket.create_connection(("127.0.0.1", _probe_port), timeout=5)
+    _cc.close()
+    _dead_state = "connected"
+except OSError as e:
+    _dead_state = type(e).__name__
+check("B-DEADPORT: after FakeUpstream.close() a connect to its port does not connect - on Linux a close alone leaves "
+      "the thread in accept() listening, and a 'closed' upstream answers", _dead_state != "connected", _dead_state)
+_dead = socket.socket()                                    # BRh's dead upstream: a port held, never listening -
+_dead.bind(("127.0.0.1", 0))                               # a connect to it is refused on every platform
+_dead_port = _dead.getsockname()[1]
 _hcfg = P.ProxyConfig(arms=[P.ArmConfig(arm="nevertwice", mode="record", token=T_ARM, pinned_model="deepseek-flash")],
                       run_dir=TMP / "brh", upstream_host="127.0.0.1", upstream_port=_dead_port, upstream_tls=False,
                       control_token="ctl-token")
@@ -672,6 +683,7 @@ while any(th.is_alive() for th in _mine502) and time.monotonic() - _t_close < 5:
     time.sleep(0.05)
 _ended502 = time.monotonic() - _t_close
 _hpx.stop()
+_dead.close()
 
 
 def _secs(iso_: str) -> float:
