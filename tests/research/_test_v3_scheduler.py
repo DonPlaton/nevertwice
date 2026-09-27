@@ -14,13 +14,17 @@ Q25, Q26, D1, D4, D5).
   big-endian; the order is status_log.seeded_order - the STATUS writer and m2_v3 S10 recompute the same;
 * wall_hours (R-Q25-T): arms take their stages one at a time (Q25(2)), so a stand's wall time is the sum over its
   arms of write + questions - A9 publishes it beside the per-arm projections; campaign_wall_hours sums the stands;
-* STAGES are the proxy's stage names accounting reads (M-SCHED-stage-name).
+* STAGES are the proxy's stage names accounting reads (M-SCHED-stage-name);
+* A4 spawn_child: the one spawn path - fresh unit directories, the spec, the environment, launch.spawn - one spawn
+  at a time; T10 races 8 threads x 2 spawns with the writer's lock neutralised and the last-line read widened (16
+  lines, the chain whole), T10b shows the same race breaks without the scheduler's lock (M-SCHED-spawn-unlocked).
 
     python tests/research/_test_v3_scheduler.py
 """
 from __future__ import annotations
 
 import hashlib
+import json
 import importlib.util
 import math
 import sys
@@ -160,6 +164,148 @@ print("\n- T7 STAGES -")
 check("M-SCHED-stage-name: the stage names are the ones accounting attributes (write, questions)",
       SC.STAGES == tuple(AC.STAGE_PHASE))
 check("the §5.6 budgets", SC.BUDGET_H == {"S6-SH": 24, "S6-MH": 24, "S5": 48, "S7": 24, "S4": 24, "S1": 72})
+
+print("\n- A4 spawn_child: the one spawn path, one spawn at a time (M-SCHED-spawn-unlocked) -")
+import contextlib  # noqa: E402
+import os  # noqa: E402
+import tempfile  # noqa: E402
+import threading  # noqa: E402
+import time  # noqa: E402
+from types import SimpleNamespace  # noqa: E402
+
+L = _load("v3_launch_for_scheduler", ROOT / "research" / "v3" / "launch.py")
+TMPS = Path(tempfile.mkdtemp(prefix="nvt3_sched_"))
+SYSTEM = (Path(os.environ.get("SystemRoot", r"C:\Windows")) / "System32",) if os.name == "nt" else (Path("/usr/bin"),)
+EXC = {sys.executable: "the test interpreter"}
+if getattr(sys, "_base_executable", sys.executable) != sys.executable:
+    EXC[sys._base_executable] = "the test interpreter's base"
+(TMPS / "owner_home").mkdir()
+
+
+def contract(tag: str):
+    poly = TMPS / tag / "polygon"
+    return L.Contract(polygon_root=poly, runs_root=poly / "runs" / "v3", repo_root=ROOT, owner_home=TMPS / "owner_home",
+                      secrets_dir=TMPS / "secrets", quarantine_root=TMPS / "quarantine",
+                      conservation_root=TMPS / "conservation", system_dirs=SYSTEM, binary_exceptions=EXC)
+
+
+class StubNative:
+    """The native egress witness in place (A2.2 is its own suite): a required spawn needs one; it registers anything."""
+    jobs = None
+
+    def register(self, pid, handle=None, label=None) -> bool:
+        return True
+
+
+class FakePopen:
+    """Starts nothing: a pid, and a process that has already exited 0."""
+    _next = [40000]
+    _lock = threading.Lock()
+
+    def __init__(self, args, env=None, cwd=None, **kw) -> None:
+        with FakePopen._lock:
+            FakePopen._next[0] += 1
+            self.pid = FakePopen._next[0]
+        self.args, self.cwd, self.env = args, cwd, env
+
+    def poll(self) -> int:
+        return 0
+
+    def wait(self, timeout=None) -> int:
+        return 0
+
+    def kill(self) -> None:
+        pass
+
+
+def sched(tag: str):
+    return SC.Scheduler(contract(tag), None, None, L, None, None, tag="smoke", witnesses=SimpleNamespace(native=StubNative()),
+                        parent_env=dict(os.environ), catcher_url="http://127.0.0.1:47001", popen=FakePopen)
+
+
+SPEC = lambda d: SC.LaunchSpec(argv=(sys.executable, "-c", "pass"), path_dirs=(str(Path(sys.executable).parent),))  # noqa: E731
+s1 = sched("one")
+child, dirs = s1.spawn_child(SPEC, role="arm-write", stand="S1", run="r1", arm="mem0", unit="u1")
+recs = [json.loads(x) for x in L.spawns_log(s1.c).read_bytes().decode().splitlines()]
+check("spawn_child: a fresh unit directory under <runs>/<stand>/<run>/<arm>/<unit>, one spawn record naming it",
+      dirs.cwd == s1.c.runs_root / "S1" / "r1" / "mem0" / "u1" and len(recs) == 1
+      and {k: recs[0][k] for k in ("role", "stand", "run", "arm", "unit")} == {"role": "arm-write", "stand": "S1",
+                                                                             "run": "r1", "arm": "mem0", "unit": "u1"}
+      and recs[0]["refused"] is False and child.process.pid > 40000, str(recs))
+check("the build callback gets the unit's directories (the spec is written from them)", SPEC(dirs).argv[0] == sys.executable)
+bad = SC.LaunchSpec(argv=(str(TMPS / "not-a-binary.exe"),))
+try:
+    s1.spawn_child(lambda d: bad, role="arm-write", stand="S1", run="r1", arm="mem0", unit="u2")
+    refusal = "spawned"
+except L.ContractViolation as e:
+    refusal = str(e)
+check("a refused spawn raises the contract's refusal, and the lock is released - the next spawn goes through",
+      refusal != "spawned" and s1.spawn_child(SPEC, role="arm-write", stand="S1", run="r1", arm="mem0", unit="u3")[0] is not None,
+      refusal)
+own = L.make_unit_dirs(s1.c, "S1", "r1", "mem0", "u10")
+ch10, d10 = s1.spawn_child(SPEC, role="arm-write", stand="S1", run="r1", arm="mem0", unit="u10", dirs=own)
+check("given directories are used as they are - never made a second time (Q-47-6's reuse passes its unit's own)",
+      d10 is own and Path(ch10.process.cwd) == own.cwd)
+w = L.Window(name="win", hosts=("registry.npmjs.org",))
+ch11, _d11 = s1.spawn_child(SPEC, role="fetch", stand="S1", run="r1", arm="mem0", unit="u11", window=w)
+check("a spawn made inside a window is that window's root (its egress is filed as window hosts, W3)",
+      ch11.process.pid in w.roots)
+check("the environment is the contract's, offline for HF by default", ch11.process.env.get("HF_HUB_OFFLINE") == "1"
+      and ch11.process.env.get("HTTP_PROXY") == "http://127.0.0.1:47001")
+check("a tag outside scored / smoke / debug refuses", "tag" in err(lambda: SC.Scheduler(
+    contract("x"), None, None, L, None, None, tag="best", witnesses=None, parent_env={}, catcher_url="")))
+
+N_THREADS, PER_THREAD = 8, 2
+
+
+def race(tag: str, *, unlock_scheduler: bool) -> tuple[int, bool, int]:
+    """8 threads behind a barrier, 2 spawns each, with the writer's own lock (B11) neutralised and the log's last-line
+    read widened (each read waits for every thread to read, or 300 ms) - only the scheduler's lock serialises."""
+    s = sched(tag)
+    if unlock_scheduler:
+        s._spawn_lock = contextlib.nullcontext()
+    saved_lock, saved_last = L.file_lock, L._last_line
+    gate = {"n": 0}
+    cond = threading.Condition()
+
+    def slow_last(path):
+        line = saved_last(path)
+        with cond:
+            gate["n"] += 1
+            cond.notify_all()
+            cond.wait_for(lambda: gate["n"] >= N_THREADS, timeout=0.3)
+        return line
+
+    L.file_lock, L._last_line = (lambda path, **kw: contextlib.nullcontext()), slow_last
+    barrier = threading.Barrier(N_THREADS)
+
+    def worker(k: int) -> None:
+        barrier.wait()
+        for j in range(PER_THREAD):
+            s.spawn_child(SPEC, role="arm-write", stand="S5", run="r1", arm="mem0", unit=f"t{k}-{j}")
+
+    try:
+        ts = [threading.Thread(target=worker, args=(k,)) for k in range(N_THREADS)]
+        for th in ts:
+            th.start()
+        for th in ts:
+            th.join(60)
+    finally:
+        L.file_lock, L._last_line = saved_lock, saved_last
+    log = L.spawns_log(s.c)
+    lines = log.read_bytes().decode().splitlines() if log.exists() else []
+    units = {json.loads(x)["unit"] for x in lines}
+    return len(lines), L.verify_chain(log), len(units)
+
+
+n, chained, distinct = race("race", unlock_scheduler=False)
+check("T10: 16 spawns from 8 threads at once - 16 lines, the chain whole, every unit recorded once",
+      (n, chained, distinct) == (16, True, 16), f"{n} lines, chain {chained}, {distinct} units")
+n2, chained2, distinct2 = race("race-unlocked", unlock_scheduler=True)
+check("T10b (the row sees what it guards): without the scheduler's lock the same race breaks the chain or loses lines",
+      not chained2 or n2 != 16 or distinct2 != 16, f"{n2} lines, chain {chained2}, {distinct2} units")
+import shutil  # noqa: E402
+shutil.rmtree(TMPS, ignore_errors=True)
 
 print(f"\nv3 scheduler: {PASSED} passed, {FAILED} failed")
 sys.exit(1 if FAILED else 0)

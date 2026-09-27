@@ -20,16 +20,24 @@
   the order is status_log.seeded_order(arms, seed): the arms sorted by sha256(f"{seed}|{arm}").hexdigest(), which the
   STATUS writer checks on BLOCK START and m2_v3 S10 recomputes;
 * STAGES: the proxy's stage names, the keys accounting attributes a write-port call's phase by.
+
+A4 - the Scheduler's skeleton and its one spawn path: spawn_child() makes the unit's fresh directories (or takes the
+ones a Claude Code unit reuses, Q-47-6), lets the caller write the unit's spec from them, builds the environment from
+the contract's allowlist and hands everything to launch.spawn - one spawn at a time in this process. The process-global
+fresh-directory set, the Claude Code unit table and the spawns log's chain then see one spawn after another (the
+writer's own file lock, B11, covers a second process); the child itself runs outside the lock.
 """
 from __future__ import annotations
 
 import hashlib
 import importlib.util
 import math
+import subprocess
 import sys
-from dataclasses import dataclass
+import threading
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable, Mapping, Sequence
+from typing import Any, Callable, Mapping, Sequence
 
 HERE = Path(__file__).resolve().parent
 STAGES = ("write", "questions")
@@ -192,3 +200,58 @@ def arm_order(arms: Sequence[str], *, campaign_seed: int, stand: str, block: str
         raise SchedulerError(f"a block's arms are a non-empty list of distinct names, got {arms}")
     seed = block_seed(campaign_seed, stand, block)
     return _status_log().seeded_order(arms, seed), seed
+
+
+# ── A4: the skeleton and the spawn path ────────────────────────────────────────────────────────────────────────
+
+@dataclass(frozen=True)
+class LaunchSpec:
+    """What one child needs beyond its unit directories: its argv and the declared additions to the contract's
+    environment, with the named exceptions launch.spawn checks (§2.6)."""
+    argv: tuple
+    declared: Mapping[str, str] = field(default_factory=dict)
+    path_dirs: tuple = ()
+    token_names: tuple = ()
+    claude_names: tuple = ()
+    env_exception: Mapping | None = None
+    argv_exception: Mapping | None = None
+    hf_offline: bool = True
+    requirement: str = "required"
+    unwitnessed_reason: str | None = None
+
+
+class Scheduler:
+    """One campaign's scheduler (TB4.11a). A4 holds its collaborators and the spawn path; the stages, blocks and stands
+    follow in A5-A7."""
+
+    def __init__(self, contract: Any, proxy_ctl: Any, status: Any, launch: Any, clock: Any, ollama_ctl: Any, *,
+                 tag: str, witnesses: Any, parent_env: Mapping[str, str], catcher_url: str,
+                 canaries: Sequence[str] = (), popen: Callable[..., Any] = subprocess.Popen,
+                 concurrency: int | None = None, hooks: Any = None) -> None:
+        if tag not in TAGS:
+            raise SchedulerError(f"tag {tag!r} is not one of {TAGS}")
+        self.c, self.proxy_ctl, self.status, self.launch = contract, proxy_ctl, status, launch
+        self.clock, self.ollama_ctl, self.tag, self.witnesses = clock, ollama_ctl, tag, witnesses
+        self.parent_env, self.catcher_url, self.canaries = dict(parent_env), catcher_url, tuple(canaries)
+        self.popen, self.concurrency, self.hooks = popen, concurrency, hooks
+        self._spawn_lock = threading.Lock()
+
+    def spawn_child(self, build: Callable[[Any], LaunchSpec], *, role: str, stand: str, run: str, arm: str,
+                    unit: str, dirs: Any = None, window: Any = None) -> tuple[Any, Any]:
+        """(the child, its unit directories). Under the one spawn lock: the unit's fresh directories (or ``dirs``, a
+        Claude Code unit's own, Q-47-6), the caller's spec written from them, the contract's environment, and
+        launch.spawn - which records the spawn, refuses what the contract forbids, and starts the child."""
+        with self._spawn_lock:
+            d = dirs if dirs is not None else self.launch.make_unit_dirs(self.c, stand, run, arm, unit)
+            spec = build(d)
+            env = self.launch.build_env(self.c, parent_env=self.parent_env, unit=d, path_dirs=spec.path_dirs,
+                                        declared=dict(spec.declared), catcher_url=self.catcher_url,
+                                        hf_offline=spec.hf_offline)
+            child = self.launch.spawn(
+                self.c, list(spec.argv), env=env, cwd=d.cwd,
+                record={"role": role, "stand": stand, "run": run, "arm": arm, "unit": unit},
+                parent_env=self.parent_env, catcher_url=self.catcher_url, token_names=spec.token_names,
+                claude_names=spec.claude_names, env_exception=spec.env_exception, argv_exception=spec.argv_exception,
+                canaries=self.canaries, popen=self.popen, witnesses=self.witnesses, requirement=spec.requirement,
+                unwitnessed_reason=spec.unwitnessed_reason, window=window)
+        return child, d
