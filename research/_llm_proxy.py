@@ -155,6 +155,9 @@ class ArmConfig:
     #: (403, "fake home not read"), counted and flagged, never forwarded. The header is not on the allowlist, so a
     #: request that carries it reaches DeepSeek without it.
     home_canary: str = ""
+    #: R-TOOLS: an arm with no LLM of the provider's (arm_decl.llm null, or a local one) gets no write port at all -
+    #: its catcher, reader and Ollama ports only; nothing it runs can reach the upstream through this proxy.
+    write_port: bool = True
 
     def __post_init__(self) -> None:
         if self.home_canary != "" and not (isinstance(self.home_canary, str)
@@ -231,6 +234,7 @@ class ProxyConfig:
                           token=tokens.get(a["arm"], ""), pinned_model=a.get("pinned_model", ""),
                           reader_model=a.get("reader_model", ""), tools_allowed=tuple(a.get("tools_allowed") or ()),
                           ollama_leg=bool(a.get("ollama_leg", False)), cloud_arm=bool(a.get("cloud_arm", True)),
+                          write_port=bool(a.get("write_port", True)),
                           home_canary=canaries.get(a["arm"], ""))
                 for a in raw["arms"]]
         oll = raw.get("ollama") or {}
@@ -994,10 +998,13 @@ class Proxy:
                 self._serve(p, lambda s, a=arm: self._client(s, a, a.arm))
                 special[arm.arm] = p.getsockname()[1]
                 continue
-            w, c = _listen(), _listen()
-            self._serve(w, lambda s, a=arm: self._client(s, a, "write"))
+            c = _listen()
             self._serve(c, lambda s, a=arm: self._catcher(s, a))
-            arm_ports[arm.arm] = {"write": w.getsockname()[1], "catcher": c.getsockname()[1]}
+            arm_ports[arm.arm] = {"catcher": c.getsockname()[1]}
+            if arm.write_port:                           # R-TOOLS: none for an arm without the provider's LLM
+                w = _listen()
+                self._serve(w, lambda s, a=arm: self._client(s, a, "write"))
+                arm_ports[arm.arm]["write"] = w.getsockname()[1]
             if arm.reader_model:
                 r = _listen()
                 self._serve(r, lambda s, a=arm: self._client(s, a, "reader"))

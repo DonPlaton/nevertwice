@@ -80,11 +80,23 @@ if getattr(sys, "_base_executable", sys.executable) != sys.executable:
     _TEST_EXC[sys._base_executable] = "the test interpreter's base"
 CAN = "a" * 32
 CC = "claude-code-memory"
-ARMS = {"mem0": {"reader": True}, CC: {}}
+CLOUD = {"llm": "deepseek-flash", "llm_transport": "cloud:deepseek"}
+NO_LLM = {"llm": None, "llm_transport": None}
+ARMS = {"mem0": {**CLOUD, "embeds_via_ollama": True, "reader": True}, CC: {**CLOUD, "embeds_via_ollama": False},
+        "bm25-floor": {**NO_LLM, "embeds_via_ollama": False, "reader": True}}
 up = None
 h = None
 try:
     print("- the config and the secrets -")
+    ROSTER = ("nevertwice", "nevertwice-rawtext", "nevertwice-ablation", "nevertwice-ranker", "mem0", "mem0-store",
+              "zep-graphiti", "langmem", "langmem-store", "a-mem", "cognee", "letta", "supermemory-local",
+              "claude-code-memory", "chroma-store", "bm25-floor")
+    check("R-TOOLS: every arm of the roster is in launch.TOOLS_ALLOWED_BASELINE - the one source of its tools",
+          [a for a in ROSTER if a not in L.TOOLS_ALLOWED_BASELINE] == [],
+          str([a for a in ROSTER if a not in L.TOOLS_ALLOWED_BASELINE]))
+    check("... and the seven variants and retrieval-tier arms have no tools at all",
+          all(L.TOOLS_ALLOWED_BASELINE.get(a) == frozenset() for a in ROSTER[1:4] + ("mem0-store", "langmem-store",
+                                                                                   "chroma-store", "bm25-floor")))
     cfg = RP.build_config(ARMS, run_dir=TMP / "cfgcheck", test_upstream={"host": "127.0.0.1", "port": 9, "tls": False})
     sec = RP.build_secrets(list(ARMS), home_canaries={CC: CAN})
     (TMP / "cfgcheck").mkdir()
@@ -96,7 +108,7 @@ try:
     except (ValueError, KeyError) as e:
         loaded, err = {}, e
     check("PX-config-loads: the real ProxyConfig.load accepts the built config and secrets",
-          err is None and set(loaded) == {"mem0", CC, RP.HARNESS_CATCHER, "scheduler"}, repr(err))
+          err is None and set(loaded) == {"mem0", CC, "bm25-floor", RP.HARNESS_CATCHER, "scheduler"}, repr(err))
     check("PX-pins: every arm port and reader port is pinned to deepseek-flash, the scheduler's port too",
           all(loaded[a].pinned_model == "deepseek-flash" for a in ("mem0", CC, "scheduler"))
           and loaded["mem0"].reader_model == "deepseek-flash" and loaded[CC].reader_model == ""
@@ -110,10 +122,31 @@ try:
           str({a: loaded[a].tools_allowed for a in ("mem0", CC)} if not err else err))
     r_unknown = refused(lambda: RP.build_config({"mystery-arm": {}}, run_dir=TMP / "x"))
     r_role = refused(lambda: RP.build_config({"judge": {}}, run_dir=TMP / "x"))
-    r_opt = refused(lambda: RP.build_config({"mem0": {"tools": ["Bash"]}}, run_dir=TMP / "x"))
+    r_opt = refused(lambda: RP.build_config({"mem0": {**CLOUD, "embeds_via_ollama": False, "tools": ["Bash"]}},
+                                            run_dir=TMP / "x"))
     check("PX-tools: an arm the baseline does not know, a role's name as an arm, an unknown option - each refused",
           "TOOLS_ALLOWED_BASELINE" in r_unknown and "role" in r_role and "unknown options" in r_opt,
           f"{r_unknown} | {r_role} | {r_opt}")
+    by = {a["arm"]: a for a in cfg["arms"]}
+    local = RP.build_config({"a-mem": {"llm": "qwen3:8b", "llm_transport": "ollama", "embeds_via_ollama": True}},
+                            run_dir=TMP / "x")["arms"][0]
+    check("R-TOOLS: ports by arm_decl - the provider's LLM: a pinned write port; no LLM: none (and no pin); an Ollama "
+          "embedder: its leg; a local LLM: no write port, its leg, not a cloud arm",
+          (by["mem0"]["write_port"], by["mem0"]["ollama_leg"], by["mem0"]["pinned_model"]) == (True, True, "deepseek-flash")
+          and (by["bm25-floor"]["write_port"], by["bm25-floor"]["ollama_leg"], by["bm25-floor"]["pinned_model"])
+          == (False, False, "") and (by[CC]["write_port"], by[CC]["ollama_leg"]) == (True, False)
+          and (local["write_port"], local["ollama_leg"], local["cloud_arm"]) == (False, True, False)
+          and not err and loaded["bm25-floor"].write_port is False, str({k: by[k] for k in ("mem0", "bm25-floor")}))
+    r_miss = refused(lambda: RP.build_config({"mem0": {"reader": True}}, run_dir=TMP / "x"))
+    r_half = refused(lambda: RP.build_config({"mem0": {"llm": None, "llm_transport": "cloud:deepseek",
+                                                       "embeds_via_ollama": False}}, run_dir=TMP / "x"))
+    r_pin = refused(lambda: RP.build_config({"mem0": {"llm": "deepseek-v4-pro", "llm_transport": "cloud:deepseek",
+                                                      "embeds_via_ollama": False}}, run_dir=TMP / "x"))
+    r_prov = refused(lambda: RP.build_config({"mem0": {"llm": "gpt-x", "llm_transport": "cloud:openai",
+                                                       "embeds_via_ollama": False}}, run_dir=TMP / "x"))
+    check("R-TOOLS: an arm without its arm_decl's llm fields, a half-set llm, an llm other than the pinned one, another "
+          "provider - each refused", "never guessed" in r_miss and "both set or both null" in r_half
+          and "pinned" in r_pin and "is not cloud:deepseek" in r_prov, f"{r_miss} | {r_half} | {r_pin} | {r_prov}")
     catch = [a for a in cfg["arms"] if a["arm"] == RP.HARNESS_CATCHER]
     check("PX-catcher: the harness catcher is one catch-mode pseudo-arm (Q-12-1 O-b)",
           catch == [{"arm": RP.HARNESS_CATCHER, "mode": "catch"}] and not err
@@ -124,7 +157,7 @@ try:
           refused(lambda: RP.build_secrets(list(ARMS))))
     toks = list(sec["tokens"].values()) + [sec["control_token"]]
     check("the tokens are fresh 128-bit values, one per arm and role, and distinct",
-          set(sec["tokens"]) == {"mem0", CC, "scheduler"} and len(set(toks)) == len(toks)
+          set(sec["tokens"]) == set(ARMS) | {"scheduler"} and len(set(toks)) == len(toks)
           and all(len(t) == 32 for t in toks), str(sorted(sec["tokens"])))
 
     print("\n- stop(): a proxy that does not exit after /shutdown is killed, and that is said (RP6) -")
@@ -174,7 +207,8 @@ try:
     unit = L.make_unit_dirs(C, "_proxy", "px1", "proxy", "p1")
     h = RP.start(C, python=sys.executable, key_file=kf, config=cfg, secrets=sec, unit=unit, parent_env=os.environ)
     check("the proxy is READY: write and reader ports for the reading arm, a catcher port per arm, the scheduler's port",
-          {"write", "reader", "catcher"} <= set(h.ports["arms"]["mem0"]) and "reader" not in h.ports["arms"][CC]
+          {"write", "reader", "catcher", "ollama"} <= set(h.ports["arms"]["mem0"]) and "reader" not in h.ports["arms"][CC]
+          and set(h.ports["arms"]["bm25-floor"]) == {"catcher", "reader"}
           and set(h.ports["arms"][RP.HARNESS_CATCHER]) == {"catcher"} and isinstance(h.ports.get("scheduler"), int),
           str(h.ports))
     u = RP.url(h, "mem0", "r1", "u1", role="reader", suffix="/v1")
@@ -186,6 +220,8 @@ try:
     r_dot = refused(lambda: RP.url(h, "mem0", "r.1", "u1"))
     r_role2 = refused(lambda: RP.url(h, "mem0", "r1", "u1", role="catcher"))
     r_missing = refused(lambda: RP.url(h, CC, "r1", "u1", role="reader"))
+    r_nowrite = refused(lambda: RP.url(h, "bm25-floor", "r1", "u1"))
+    check("R-TOOLS: an arm without the provider's LLM has no write URL to give", "no write port" in r_nowrite, r_nowrite)
     check("PX-url: a run id with a dot, the catcher as a unit port, a port the arm does not have - each refused",
           "Q3" in r_dot and "catcher_url" in r_role2 and "no reader port" in r_missing, f"{r_dot} | {r_role2} | {r_missing}")
     status, body = RP.post(h.ports["arms"]["mem0"]["reader"], "/u/r1.u1/v1/chat/completions",

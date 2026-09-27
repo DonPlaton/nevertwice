@@ -432,6 +432,26 @@ check("R-FSYNC: the proxy appends to a file only through _append_jsonl - calls, 
       "take the fsync path", _appends_outside((ROOT / "research" / "_llm_proxy.py").read_text(encoding="utf-8")) == [],
       str(_appends_outside((ROOT / "research" / "_llm_proxy.py").read_text(encoding="utf-8"))))
 
+print("\n- R-TOOLS: an arm with write_port false has no write port - its catcher and reader only -")
+_up = Upstream()
+_cfg = P.ProxyConfig(arms=[P.ArmConfig(arm="bm25-floor", mode="record", token=T_ARM, reader_model="deepseek-flash",
+                                       write_port=False),
+                           P.ArmConfig(arm="nevertwice", mode="record", token=T_ARM, pinned_model="deepseek-flash")],
+                     run_dir=TMP / "wp", upstream_host="127.0.0.1", upstream_port=_up.port, upstream_tls=False,
+                     control_token="ctl-token")
+_px = P.Proxy(_cfg, P.read_key(KEYFILE), log=lambda m: None)
+_ports = _px.start()
+_px.stop()
+_up.close()
+check("R-TOOLS: write_port false - catcher and reader ports, no write port; another arm keeps its write port",
+      set(_ports["arms"]["bm25-floor"]) == {"catcher", "reader"}
+      and {"write", "catcher"} <= set(_ports["arms"]["nevertwice"]), str(_ports))
+(TMP / "wp_cfg.json").write_text(json.dumps({"arms": [{"arm": "bm25-floor", "write_port": False}, {"arm": "x1"}],
+                                             "run_dir": str(TMP / "wp2")}), encoding="utf-8")
+_loaded = P.ProxyConfig.load(TMP / "wp_cfg.json", {}, test_upstream_ok=True)
+check("R-TOOLS: the config file carries write_port (false read as false, absent means true)",
+      [a.write_port for a in _loaded.arms] == [False, True], str([a.write_port for a in _loaded.arms]))
+
 shutil.rmtree(TMP, ignore_errors=True)
 print(f"\nproxy recording: {PASSED} passed, {FAILED} failed")
 sys.exit(1 if FAILED else 0)

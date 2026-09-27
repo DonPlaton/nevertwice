@@ -1780,6 +1780,9 @@ TOOLS_ALLOWED_BASELINE: dict[str, frozenset[str]] = {
     "claude-code-memory": frozenset({"Read", "Write", "Edit", "MultiEdit", "memory"}),
     "reader": frozenset(),
     "judge": frozenset(),
+    #: R-TOOLS (the auditor's O-a): the variants and the retrieval tier - no tools; this list stays the one source
+    "nevertwice-rawtext": frozenset(), "nevertwice-ablation": frozenset(), "nevertwice-ranker": frozenset(),
+    "mem0-store": frozenset(), "langmem-store": frozenset(), "chroma-store": frozenset(), "bm25-floor": frozenset(),
 }
 #: §2.6.6: forbidden regardless of any list, case-insensitively, as substrings; plus the mcp__ prefix.
 FORBIDDEN_TOOL_SUBSTRINGS = ("bash", "shell", "powershell", "cmd", "terminal", "exec", "run_code", "code_interpreter",

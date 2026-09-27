@@ -3,11 +3,14 @@
 the stdin secrets it starts with, its start under the launch contract, the URLs a unit's children are given, and its
 own stop (the auditor's Q-12-1 for the smoke, R-FSYNC).
 
-* build_config: one record-mode arm per product arm, pinned to deepseek-flash, and pinned the same on its reader port
-  when the arm reads (§4.3a); its tools are launch.TOOLS_ALLOWED_BASELINE[arm] - a name the baseline does not know, or
-  a role's name, is refused. The harness catcher is one catch-mode pseudo-arm (Q-12-1 O-b: the smoke's single
-  catcher, declared in its artifact); the scheduler's port (D8's model probe and the balance) always, J3 (pinned
-  deepseek-v4-pro) only when asked; the hop and a test upstream only as given. Nothing secret is in it.
+* build_config: one record-mode arm per product arm, its ports decided by its arm_decl (R-TOOLS, the auditor's O-a):
+  llm_transport cloud:deepseek - a write port pinned to deepseek-flash (§4.3a; any other llm is refused: one pinned
+  LLM); llm null - no write port; llm_transport ollama - no write port, an Ollama leg, not a cloud arm; embeds_via_ollama
+  - an Ollama leg. A reading arm's reader port is pinned the same. Its tools are launch.TOOLS_ALLOWED_BASELINE[arm] -
+  a name the baseline does not know, or a role's name, is refused. The harness catcher is one catch-mode pseudo-arm
+  (Q-12-1 O-b: the smoke's single catcher, declared in its artifact); the scheduler's port (D8's model probe and the
+  balance) always, J3 (pinned deepseek-v4-pro) only when asked; the hop and a test upstream only as given. Nothing
+  secret is in it.
 * build_secrets: a fresh 128-bit token per arm and role and one for the control port (secrets.token_hex), the canaries,
   the Claude Code arm's home canary (R-CC-WIT: without one the proxy would not start, so it is refused here, before any
   spawn) and the identity when the owner markers are wired (Q-12-2). They go on the proxy's stdin only - never into
@@ -49,7 +52,9 @@ _RUN_ID = re.compile(r"[A-Za-z0-9_-]+")
 _UNIT_PART = re.compile(r"[A-Za-z0-9._-]+")
 _PREFIX_MAX = 128                              # _llm_proxy._UNIT: /u/<prefix of 1..128 characters>
 _HOME_CANARY = re.compile(r"[0-9a-f]{32}")
-ARM_OPTIONS = frozenset({"reader", "ollama_leg", "cloud_arm", "thinking_route"})
+ARM_DECL_KEYS = frozenset({"llm", "llm_transport", "embeds_via_ollama"})      # from the arm's arm_decl, required
+ARM_OPTIONS = ARM_DECL_KEYS | {"reader", "thinking_route"}
+PROVIDER_TRANSPORT = "cloud:deepseek"             # C4: the campaign's one provider
 
 
 class ProxyPlanError(ValueError):
@@ -77,9 +82,9 @@ def _ctl():
 def build_config(arms: Mapping[str, Mapping[str, Any]], *, run_dir: str | os.PathLike, thinking_branch: str = "unset",
                  via_port: int | None = None, catcher: str = HARNESS_CATCHER, j3: bool = False,
                  test_upstream: Mapping[str, Any] | None = None) -> dict:
-    """The proxy's config file (see the module docstring). ``arms``: name -> options - reader (bool: the arm reads,
-    so it gets a reader port), ollama_leg (bool), cloud_arm (bool, default True), thinking_route (documented or
-    fallback)."""
+    """The proxy's config file (see the module docstring). ``arms``: name -> its arm_decl's llm, llm_transport and
+    embeds_via_ollama (required), and options - reader (bool: the arm reads, so it gets a reader port),
+    thinking_route (documented or fallback)."""
     baseline = _launch().TOOLS_ALLOWED_BASELINE
     if not arms:
         raise ProxyPlanError("a proxy with no arm")
@@ -93,12 +98,24 @@ def build_config(arms: Mapping[str, Mapping[str, Any]], *, run_dir: str | os.Pat
         extra = sorted(set(opts) - ARM_OPTIONS)
         if extra:
             raise ProxyPlanError(f"arm {name}: unknown options {extra}")
+        missing = sorted(ARM_DECL_KEYS - set(opts))
+        if missing:
+            raise ProxyPlanError(f"arm {name}: its arm_decl's {missing} decide its ports - never guessed (R-TOOLS)")
         route = opts.get("thinking_route", "documented")
         if route not in ("documented", "fallback"):
             raise ProxyPlanError(f"arm {name}: thinking_route {route!r} is documented or fallback")
-        a = {"arm": name, "mode": "record", "thinking_route": route, "pinned_model": PINNED_MODEL,
-             "tools_allowed": sorted(baseline[name]), "ollama_leg": bool(opts.get("ollama_leg", False)),
-             "cloud_arm": bool(opts.get("cloud_arm", True))}
+        llm, transport = opts["llm"], opts["llm_transport"]
+        if (llm is None) != (transport is None):
+            raise ProxyPlanError(f"arm {name}: llm and llm_transport are both set or both null (arm_decl)")
+        if transport not in (None, "ollama", PROVIDER_TRANSPORT):
+            raise ProxyPlanError(f"arm {name}: llm_transport {transport!r} is not {PROVIDER_TRANSPORT}, ollama or null")
+        if transport == PROVIDER_TRANSPORT and llm != PINNED_MODEL:
+            raise ProxyPlanError(f"arm {name}: llm {llm!r} is not the stand's one pinned {PINNED_MODEL} (§4.3a)")
+        local = transport == "ollama"
+        port = transport == PROVIDER_TRANSPORT
+        a = {"arm": name, "mode": "record", "thinking_route": route, "pinned_model": PINNED_MODEL if port else "",
+             "tools_allowed": sorted(baseline[name]), "write_port": port,
+             "ollama_leg": bool(opts["embeds_via_ollama"]) or local, "cloud_arm": not local}
         if opts.get("reader"):
             a["reader_model"] = PINNED_MODEL
         out_arms.append(a)
