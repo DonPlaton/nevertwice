@@ -128,7 +128,7 @@ try:
           "TOOLS_ALLOWED_BASELINE" in r_unknown and "role" in r_role and "unknown options" in r_opt,
           f"{r_unknown} | {r_role} | {r_opt}")
     by = {a["arm"]: a for a in cfg["arms"]}
-    local = RP.build_config({"a-mem": {"llm": "qwen3:8b", "llm_transport": "ollama", "embeds_via_ollama": True}},
+    local = RP.build_config({"a-mem": {"llm": "qwen3:8b", "llm_transport": "ollama", "embeds_via_ollama": False}},
                             run_dir=TMP / "x")["arms"][0]
     check("R-TOOLS: ports by arm_decl - the provider's LLM: a pinned write port; no LLM: none (and no pin); an Ollama "
           "embedder: its leg; a local LLM: no write port, its leg, not a cloud arm",
@@ -229,7 +229,7 @@ try:
                            h.tokens["mem0"])
     status2, _b = RP.post(h.ports["arms"]["mem0"]["reader"], "/u/r1.u1/v1/chat/completions",
                           {"model": "deepseek-flash"}, h.tokens[CC])
-    check("another arm's token is refused on this arm's port (401)", status2 == 401, str(status2))
+    check("another arm's token is refused on this arm's port (401)", status2 == 401, f"{status2} {_b}")
     res = RP.stop(h)
     h = None
     check("PX-shutdown: stop() asks the proxy to stop itself - exit 0, not killed", res == {"rc": 0, "killed": False,
