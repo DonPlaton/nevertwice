@@ -183,6 +183,8 @@ try:
           sc.get("k1") == 1.5 and sc.get("b") == 0.75 and (h.get("start") or {}).get("lexical_morphology") is True,
           str(sc))
     check("hello: no LLM, no embedder", h.get("llm_label") == "none" and h.get("embedder") is None, str(h)[:200])
+    check("the start record declares that the floor may return fewer than k (a lexical path, the auditor's F7)",
+          ((h.get("start") or {}).get("returns") or {}).get("fewer_than_k") is True)
     for i, t in TEXTS.items():
         safely(lambda i=i, t=t: c.request("write", item={"item_id": f"ua:{i}", "index": i, "text": t}), {})
     check("a repeated index is refused", raises(lambda: c.request("write", item={"item_id": "d", "index": 1, "text": "x"}),
@@ -212,6 +214,16 @@ try:
           [x["index"] for x in ranked(cd, "zebra")] == [2, 10])
     cd.close()
     check("k caps the list", [x["index"] for x in ranked(c, "retry upload", k=1)] == [1])
+    r3 = safely(lambda: c.request("read", qid="q", query="zebra upload", k=3), {})
+    r10 = safely(lambda: c.request("read", qid="q", query="zebra upload", k=10), {})
+    check("F7: a read returns exactly min(k, the items sharing a query term): 3 of 4 at k=3, all 4 at k=10",
+          len(r3.get("items") or []) == 3 and r3.get("items_returned") == 3
+          and len(r10.get("items") or []) == 4 and r10.get("items_returned") == 4, f"{r3.get('items_returned')} "
+          f"{r10.get('items_returned')}")
+    cr = safely(lambda: c.request("counters"), {})
+    check("F7: the counters count every read, the items returned and the reads short of k",
+          cr.get("reads") == 5 and cr.get("items_returned") == 2 + 2 + 1 + 3 + 4 and cr.get("reads_short_of_k") == 3,
+          str(cr))
     check("a query with no token of three letters or more returns nothing", ranked(c, "a an to") == [])
     check("a write in the read stage is refused (Q25)",
           raises(lambda: c.request("write", item={"item_id": "x", "index": 9, "text": "t"}), B.ArmError, "write stage"))

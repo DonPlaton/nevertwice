@@ -14,7 +14,10 @@ that tokenizes to nothing (the scorer reads the key into the document text: "#" 
 punctuation), which write refuses if it ever did tokenize.
 
 No LLM, no embedder, no store of the product: the write stage keeps the items and end_write persists them to
-<unit>/store/items.json; the read stage (a new process) loads that file. sandbox_guard.isolate() runs in __main__
+<unit>/store/items.json; the read stage (a new process) loads that file. A read returns only the items that share a query term with it (the scorer keeps a score > 0), so it can return fewer
+than k where a vector arm returns k: declared in the start record ("returns") and counted per read (items_returned,
+reads_short_of_k) - a property of the lexical path, not a defect (the auditor's F7). sandbox_guard.isolate() runs in
+__main__
 before any project import (bind refuses unless it ran), so the engine's store constants land on a throwaway store that
 nothing writes. Ties rank by index.
 The spec: arm ("bm25-floor"), stage, stand, run, unit, unit_dir, record_path.
@@ -105,6 +108,9 @@ def bind(spec: Mapping[str, Any]) -> tuple[dict, dict]:
                       "code": str(Path(scorer.__code__.co_filename).resolve().relative_to(REPO)).replace(os.sep, "/"),
                       "tokenizer": tokens.__name__, "is_engine_object": scorer.__globals__ is vars(m),
                       "k1": params["k1"].default, "b": params["b"].default},
+           "returns": {"fewer_than_k": True,
+                       "rule": "only items sharing a query term (a BM25 score > 0, _engine_recall._bm25_scores): fewer "
+                               "than k when fewer items match; a vector arm returns k"},
            "lexical_morphology": m.LEXICAL_MORPHOLOGY, "env_names": sorted(os.environ),
            "python": sys.version.split()[0]}
     return {"m": m, "scorer": scorer, "tokens": tokens}, rec
@@ -117,6 +123,7 @@ class Handler:
         self.stage = spec["stage"]
         self.store = Path(spec["unit_dir"]) / "store"
         self.items: dict[int, str] = {}
+        self.reads = {"reads": 0, "items_returned": 0, "reads_short_of_k": 0}
         if self.stage == "read":
             raw = json.loads((self.store / "items.json").read_bytes().decode("utf-8"))
             self.items = {int(k): v for k, v in raw.items()}
@@ -158,10 +165,13 @@ class Handler:
         ranked = sorted(scores.items(), key=lambda kv: (-kv[1], keys[kv[0]]))[:max(1, int(k))]
         items = [{"index": keys[key], "text": self.items[keys[key]], "rank": r, "score": s}
                  for r, (key, s) in enumerate(ranked, 1)]
-        return {"qid": qid, "items": items, "t0": t0, "t1": time.time()}
+        self.reads["reads"] += 1
+        self.reads["items_returned"] += len(items)
+        self.reads["reads_short_of_k"] += len(items) < int(k)
+        return {"qid": qid, "items": items, "items_returned": len(items), "k": int(k), "t0": t0, "t1": time.time()}
 
     def counters(self) -> dict:
-        return {"items": len(self.items)}
+        return {"items": len(self.items), **self.reads}
 
 
 class RefusedHandler:
