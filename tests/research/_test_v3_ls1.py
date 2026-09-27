@@ -181,6 +181,23 @@ try:
     check("LS-leak: a child that prints a text string is refused - no list",
           any(p.startswith("prints_answers refused") for p in rl["problems"]) and not (ldl / "S1.json").exists(),
           str(rl["problems"]))
+    beat = TMP / "heartbeat.txt"
+    hang = TMP / "hang_child.py"
+    hang.write_text("import time\nwhile True:\n    open(" + repr(str(beat)) + ", 'a').write('.')\n    time.sleep(0.1)\n",
+                    encoding="utf-8")
+    import time as _time  # noqa: E402
+    ch_c, ch_base = contract("hang")
+    rh = LS.run_ls1(ch_c, L, run="ls1-h", python=Path(sys.executable), parent_env=os.environ, CP=FakeCP(GOOD),
+                    native=L.NativeEgressWitness(sampler=Quiet(), tick_s=60, jobs=None),
+                    fs=L.FsWitness([L.WatchSpec("watched", ch_base / "watched")]), script=hang,
+                    lists_dir=ch_base / "lists", timeout_s=2.0)
+    _time.sleep(0.5)
+    size1 = beat.stat().st_size if beat.exists() else -1
+    _time.sleep(1.0)
+    size2 = beat.stat().st_size if beat.exists() else -1
+    check("LS-timeout: a child that does not finish in time is killed with its tree and named - its heartbeat stops, "
+          "no list", any("did not finish within 2.0 s" in p for p in rh["problems"]) and size1 > 0 and size1 == size2
+          and not (ch_base / "lists" / "S1.json").exists(), f"{rh['problems']} beat {size1}->{size2}")
 finally:
     shutil.rmtree(TMP, ignore_errors=True)
 

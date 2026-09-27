@@ -58,8 +58,9 @@ def child(path: Path, facts_path: Path) -> list:
 
 
 def run_ls1(c, L, *, run: str, python: Path, parent_env, CP=None, native=None, fs=None, script: Path | None = None,
-            lists_dir: Path | None = None) -> dict:
-    """The harness (see the module docstring); returns the run's record, problems named in it."""
+            lists_dir: Path | None = None, timeout_s: float = 3600.0) -> dict:
+    """The harness (see the module docstring); returns the run's record, problems named in it. A child that does not
+    finish within ``timeout_s`` is killed with its whole tree and named - never left running."""
     CP = CP or _load("v3_corpus_pin_ls1", HERE / "corpus_pin_v3.py")
     SS = _load("v3_subsample_ls1", HERE / "subsample.py")
     facts = _load("v3_dataset_facts_for_ls1", HERE / "dataset_facts.py")
@@ -90,16 +91,28 @@ def run_ls1(c, L, *, run: str, python: Path, parent_env, CP=None, native=None, f
                     fs=fs if fs is not None else L.FsWitness(L.watched_set(c)))
     cid = f"ls1-{run}"
     W.begin_check(cid, tags={"window": "ls1", "run": run, "arm": "child"})
+    timed_out = False
     try:
         ch = L.spawn(c, argv, env=env, cwd=unit.cwd,
                      record={"role": "ls1", "stand": STAND, "run": run, "arm": "child", "unit": "l1"},
                      parent_env=parent_env, catcher_url="", witnesses=W, requirement="required",
                      argv_exception={3: script, 6: facts_path}, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                      stderr=subprocess.PIPE)
-        out, err = ch.process.communicate(timeout=3600)
-        rc = ch.process.returncode
+        try:
+            out, err = ch.process.communicate(timeout=timeout_s)
+            rc = ch.process.returncode
+        except subprocess.TimeoutExpired:
+            timed_out = True
+            ch.kill_tree()                               # never a child left running after its run
+            try:
+                ch.process.communicate(timeout=30)
+            except (subprocess.TimeoutExpired, OSError):
+                pass
     finally:
         chk = W.end_check(cid)
+    if timed_out:
+        record["problems"].append(f"the child did not finish within {timeout_s} s - killed with its tree")
+        return _write(base, record)
     native_rec = chk.get("native") or {}
     record["check"] = {"complete": chk.get("complete"), "native_hits": native_rec.get("hits"),
                        "fs_hits": (chk.get("fs") or {}).get("fs_hits")}
