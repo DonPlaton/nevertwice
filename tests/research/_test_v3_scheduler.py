@@ -225,23 +225,6 @@ def sched(tag: str):
 
 SPEC = lambda d: SC.LaunchSpec(argv=(sys.executable, "-c", "pass"), path_dirs=(str(Path(sys.executable).parent),))  # noqa: E731
 s1 = sched("one")
-child, dirs = s1.spawn_child(SPEC, role="arm-write", stand="S1", run="r1", arm="mem0", unit="u1")
-recs = [json.loads(x) for x in L.spawns_log(s1.c).read_bytes().decode().splitlines()]
-check("spawn_child: a fresh unit directory under <runs>/<stand>/<run>/<arm>/<unit>, one spawn record naming it",
-      dirs.cwd == s1.c.runs_root / "S1" / "r1" / "mem0" / "u1" and len(recs) == 1
-      and {k: recs[0][k] for k in ("role", "stand", "run", "arm", "unit")} == {"role": "arm-write", "stand": "S1",
-                                                                             "run": "r1", "arm": "mem0", "unit": "u1"}
-      and recs[0]["refused"] is False and child.process.pid > 40000, str(recs))
-check("the build callback gets the unit's directories (the spec is written from them)", SPEC(dirs).argv[0] == sys.executable)
-bad = SC.LaunchSpec(argv=(str(TMPS / "not-a-binary.exe"),))
-try:
-    s1.spawn_child(lambda d: bad, role="arm-write", stand="S1", run="r1", arm="mem0", unit="u2")
-    refusal = "spawned"
-except L.ContractViolation as e:
-    refusal = str(e)
-check("a refused spawn raises the contract's refusal, and the lock is released - the next spawn goes through",
-      refusal != "spawned" and s1.spawn_child(SPEC, role="arm-write", stand="S1", run="r1", arm="mem0", unit="u3")[0] is not None,
-      refusal)
 
 
 def spawned(**kw):
@@ -250,6 +233,26 @@ def spawned(**kw):
         return s1.spawn_child(SPEC, role=kw.pop("role", "arm-write"), stand="S1", run="r1", arm="mem0", **kw)
     except L.ContractViolation as e:
         return None, f"refused: {e}"
+
+
+child, dirs = spawned(unit="u1")
+recs = [json.loads(x) for x in L.spawns_log(s1.c).read_bytes().decode().splitlines()] \
+    if L.spawns_log(s1.c).exists() else []
+check("spawn_child: a fresh unit directory under <runs>/<stand>/<run>/<arm>/<unit>, one spawn record naming it",
+      child is not None and dirs.cwd == s1.c.runs_root / "S1" / "r1" / "mem0" / "u1" and len(recs) == 1
+      and {k: recs[0][k] for k in ("role", "stand", "run", "arm", "unit")} == {"role": "arm-write", "stand": "S1",
+                                                                             "run": "r1", "arm": "mem0", "unit": "u1"}
+      and recs[0]["refused"] is False and child.process.pid > 40000, f"{dirs} {recs}")
+check("the build callback gets the unit's directories (the spec is written from them)", SPEC(dirs).argv[0] == sys.executable)
+bad = SC.LaunchSpec(argv=(str(TMPS / "not-a-binary.exe"),))
+try:
+    s1.spawn_child(lambda d: bad, role="arm-write", stand="S1", run="r1", arm="mem0", unit="u2")
+    refusal = "spawned"
+except L.ContractViolation as e:
+    refusal = str(e)
+ch3, d3 = spawned(unit="u3")
+check("a refused spawn raises the contract's refusal, and the lock is released - the next spawn goes through",
+      refusal != "spawned" and ch3 is not None, f"{refusal} | {d3}")
 
 
 own = L.make_unit_dirs(s1.c, "S1", "r1", "mem0", "u10")

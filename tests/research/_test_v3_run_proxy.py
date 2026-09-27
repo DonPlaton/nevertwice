@@ -25,9 +25,11 @@ import importlib.util
 import json
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from types import SimpleNamespace
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
@@ -124,6 +126,32 @@ try:
     check("the tokens are fresh 128-bit values, one per arm and role, and distinct",
           set(sec["tokens"]) == {"mem0", CC, "scheduler"} and len(set(toks)) == len(toks)
           and all(len(t) == 32 for t in toks), str(sorted(sec["tokens"])))
+
+    print("\n- stop(): a proxy that does not exit after /shutdown is killed, and that is said (RP6) -")
+
+    class _Proc:
+        """wait() times out until the tree is killed; then it gives ``after`` (None: it never exits)."""
+
+        def __init__(self, after):
+            self.after, self.killed = after, False
+
+        def wait(self, timeout=None):
+            if not self.killed or self.after is None:
+                raise subprocess.TimeoutExpired("proxy", timeout)
+            return self.after
+
+    def fake_handle(after):
+        proc = _Proc(after)
+        child = SimpleNamespace(process=proc, kill_tree=lambda: setattr(proc, "killed", True))
+        return RP.ProxyHandle(child=child, ports={}, control=SimpleNamespace(shutdown=lambda: {"ok": True}),
+                              tokens={}, run_dir=TMP)
+
+    r_killed = RP.stop(fake_handle(1), timeout=0.01)
+    r_stuck = RP.stop(fake_handle(None), timeout=0.01)
+    check("RP6: a proxy still running after /shutdown is killed - killed=True with the exit code the kill gave",
+          r_killed == {"rc": 1, "killed": True, "shutdown_error": None}, str(r_killed))
+    check("RP6: one that does not exit even after the kill - rc None, killed=True (never a made-up code)",
+          r_stuck == {"rc": None, "killed": True, "shutdown_error": None}, str(r_stuck))
 
     print("\n- the real proxy, started through the launch contract -")
     C = L.Contract(polygon_root=TMP / "polygon", runs_root=TMP / "polygon" / "runs" / "v3", repo_root=ROOT,

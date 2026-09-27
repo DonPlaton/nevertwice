@@ -652,11 +652,12 @@ try:
         """A UnitClient's shape with a scripted child: died with no code, a close that times out, a close with no code."""
 
         def __init__(self, name, stage, script):
-            self.name, self.stage, self.script, self.killed = name, stage, script, 0
+            self.name, self.stage, self.script, self.killed, self.requests = name, stage, script, 0, []
             self.child = SimpleNamespace(spawn_id=f"fake-{stage}", process=SimpleNamespace(pid=4242, poll=lambda: 0))
             self.pid, self.dirs, self.arm = 4242, None, SimpleNamespace(poisoned=None)
 
         def request(self, op, *, timeout, **f):
+            self.requests.append((op, timeout))
             if timeout is not None and timeout < 0:          # ArmClient's queue.get refuses it the same way
                 raise ValueError("'timeout' must be a non-negative number")
             if op == "hello":
@@ -777,6 +778,44 @@ try:
           "never gets a spent (negative) timeout", e17 is None and v1 is not None and v1.aborted == "ceiling"
           and any(" UNIT-ABORT SV/b01/r1/a1/v1 reason=ceiling " in x for x in aborts(TMP / "STATUS17")),
           f"{e17!r} {aborts(TMP / 'STATUS17')}")
+
+    class FrozenClock:
+        """Time that moves only when told: a unit's remainder can be EXACTLY zero."""
+
+        def __init__(self):
+            self.offset = 0.0
+
+        def monotonic(self):
+            return 1000.0 + self.offset
+
+        def utc(self):
+            return dt.datetime(2026, 9, 27, tzinfo=dt.timezone.utc) + dt.timedelta(seconds=self.offset)
+
+        def sleep(self, s):
+            self.offset += s
+
+    fc = FrozenClock()
+    stamps = [0]
+
+    def st19_now():                               # STATUS's own clock: 1 ms further on every line
+        stamps[0] += 1
+        return dt.datetime(2026, 9, 27, tzinfo=dt.timezone.utc) + dt.timedelta(milliseconds=stamps[0])
+    st19 = SL.StatusLog(TMP / "STATUS19", now=st19_now, local_tz=dt.timezone.utc)
+    s19 = SC.Scheduler(C, None, st19, L, fc, None, tag="smoke", witnesses=SimpleNamespace(native=StubNative()),
+                       parent_env=dict(os.environ), catcher_url="http://127.0.0.1:47001")
+    st19.stand("SZ0", "START", model="m", changelog="2026-09-10", order=1)
+    o19, sd19 = SC.arm_order(["a1"], campaign_seed=7, stand="SZ0", block="b01")
+    st19.block_start("SZ0", "b01", units=["z1"], arm_order=o19, seed=sd19)
+    sid19 = st19.start("SZ0", "b01", "r1", "a1", pid=os.getpid(), tag="smoke")
+    fl19 = FakeLauncher("a1", scripts={("write", "r1", "z1"): {"advance": (fc, 60.0)}})
+    r19, e19 = attempt(lambda: s19.write_turn(fl19, stand="SZ0", runs=["r1"], units=["z1"], ops_for=OPS,
+                                               ceilings={"z1": 60.0}, status_ids={"r1": sid19}))
+    z1 = (r19 or {}).get(("r1", "z1"))
+    sent = fl19.opened[0].requests if fl19.opened else []
+    check("B-BUDGET (F4): a remainder of EXACTLY zero is the ceiling - UNIT-ABORT reason=ceiling, and the next request "
+          "is never sent with a zero timeout", e19 is None and z1 is not None and z1.aborted == "ceiling"
+          and [op for op, _t in sent] == ["hello", "write"] and all(t_ > 0 for _op, t_ in sent),
+          f"{e19!r} {sent} {z1.aborted if z1 else None}")
 
     print("\n- FIX-SCHED B-OPEN: a block that fails after its START closes what it opened, and kills its children -")
     EV12: list = []
