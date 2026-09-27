@@ -6,7 +6,9 @@ plan (rev1 §4.5, P2; Q24).
   429, a refused or an abandoned call is not one;
 * the gate: 5 failures across 2 arms within 60 s open it (M-INC-threshold); 5 from one arm do not; failures older
   than 60 s fall out; while open no new unit starts (M-INC-new-unit-during); a canary every 60 s; ONE success does not
-  close it, two consecutive do (M-INC-close-one-success), a failure resets the count;
+  close it, two consecutive do (M-INC-close-one-success), a failure resets the count; the failures seen while it
+  was open are dropped at INCIDENT END (I11); Q25-INC: 5 failures of ONE arm make the scheduler's probe due (no
+  incident open, none sent in 60 s), and a failed probe is the second arm;
 * halts 401/402/403 (M-HALT-402-continues); the balance rule 2x;
 * the repair plan: never after scoring (M-REPAIR-after-scoring); exogenous units re-run for EVERY arm
   (M-REPAIR-exo-subset) in fresh stores; endogenous for one arm, in fresh stores (M-REPAIR-endo-store-reuse); no
@@ -96,6 +98,56 @@ g.canary(195, True)
 check("two consecutive successes close it (INCIDENT END), and units may start again",
       not g.is_open and g.admits_new_unit() and g.events[-1] == ("INCIDENT END", 195), str(g.events))
 check("a canary with no incident refuses", "only while an incident" in err(lambda: g.canary(300, True)))
+gi = IN.IncidentGate()
+for i, arm in enumerate(["a", "b", "a", "b", "a"]):
+    gi.observe(arm, i, {"status": 503})
+for i in range(4):
+    gi.observe("a", 50 + i, {"status": 503})                  # units in flight keep failing while it is open
+gi.canary(60, True)
+gi.canary(61, True)
+gi.observe("b", 62, {"status": 503})
+check("I11: failures gathered while the incident was open are dropped at INCIDENT END - one new failure does not reopen "
+      "it", not gi.is_open and gi.events == [("INCIDENT START", 4), ("INCIDENT END", 61)], str(gi.events))
+
+print("\n- Q25-INC: arms take their stages one at a time (Q25(2)), so the scheduler's probe is the second arm -")
+gp = IN.IncidentGate()
+for i in range(5):
+    gp.observe("mem0", 100 + i, {"status": 503})
+check("(1) 5 failures of ONE arm within 60 s: a probe is due, and no incident is open",
+      gp.probe_due(104) and not gp.is_open)
+gp.probe(104, {"status": 503})
+check("(2) the probe failed: INCIDENT START", gp.is_open and gp.events == [("INCIDENT START", 104)], str(gp.events))
+go = IN.IncidentGate()
+for i, arm in enumerate(["a", "b", "a", "b", "a"]):
+    go.observe(arm, i, {"status": 503})
+for i in range(5):
+    go.observe("a", 70 + i, {"status": 503})                  # the window now holds 5 failures of one arm
+check("... and no probe while an incident is open, whatever the window holds", go.is_open and not go.probe_due(74))
+gq = IN.IncidentGate()
+for i in range(5):
+    gq.observe("mem0", 200 + i, {"status": 503})
+gq.probe(204, {"status": 200, "complete": True})
+check("(3) the probe succeeded: not open, and no second probe within 60 s", not gq.is_open and not gq.probe_due(230))
+for i in range(5):
+    gq.observe("mem0", 260 + i, {"status": 503})
+check("... and due again 60 s after the last one", not gq.probe_due(263) and gq.probe_due(264))
+gr = IN.IncidentGate()
+for i, arm in enumerate(["a", "a", "a", "b"]):
+    gr.observe(arm, 300 + i, {"status": 503})
+check("(4) failures of two arms: no probe - the gate opens on its own at the fifth", not gr.probe_due(303))
+gr.observe("a", 304, {"status": 503})
+check("... and it does", gr.is_open and not gr.probe_due(305))
+g4 = IN.IncidentGate()
+for i in range(4):
+    g4.observe("mem0", 400 + i, {"status": 503})
+check("4 failures of one arm: no probe yet", not g4.probe_due(403))
+g4.probe(403, {"status": 503})
+check("4 of one arm and a failed probe open it (5 across 2 arms)", g4.is_open)
+gz = IN.IncidentGate()
+for i in range(5):
+    gz.observe("mem0", i, {"status": 503})
+check("failures older than 60 s do not make a probe due", gz.probe_due(4) and not gz.probe_due(100)
+      and not IN.IncidentGate().probe_due(0))
 check("the thresholds are rev1's", (IN.WINDOW_S, IN.MIN_FAILURES, IN.MIN_ARMS, IN.CANARY_EVERY_S, IN.CLOSE_AFTER)
       == (60, 5, 2, 60, 2))
 

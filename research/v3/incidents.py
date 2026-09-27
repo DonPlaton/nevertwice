@@ -5,7 +5,11 @@ repair blocks; the auditor's Q24).
 * an upstream failure (Q24): a cloud-endpoint call with status >= 500, a 429, an upstream error (no status, not
   refused), or an incomplete response the client did not abandon - on any port role;
 * the gate: >= 5 upstream failures across >= 2 arms within 60 s open an incident (STATUS INCIDENT START); while it is
-  open no new unit starts; a canary is due every 60 s, and two CONSECUTIVE successes close it (INCIDENT END);
+  open no new unit starts; a canary is due every 60 s, and two CONSECUTIVE successes close it (INCIDENT END), which
+  drops the failures seen while it was open. Arms take a stage one at a time (Q25(2)), so two arms rarely fail inside
+  one turn (the auditor's Q25-INC): when >= 5 failures of ONE arm are in the window, no incident is open and no probe
+  went out in the last 60 s, a probe is due - the scheduler's 1-token call on its own port (D8, the Q24 canary's
+  shape), whose outcome probe() feeds in as the arm "scheduler": a failed probe is the second arm;
 * halts: 401, 402 and 403 from upstream halt the campaign; a 402 waits for the owner;
 * the balance: a stand starts only with a balance >= 2x its projected cost;
 * the repair plan - from counters and STATUS only, and refused once any scoring of the stand has happened:
@@ -25,6 +29,7 @@ MIN_FAILURES = 5
 MIN_ARMS = 2
 CANARY_EVERY_S = 60
 CLOSE_AFTER = 2
+PROBE_ARM = "scheduler"                  # the probe's calls are the scheduler port's (R4, D8)
 HALT_STATUSES = {401: "401", 402: "402", 403: "403"}
 EXO_SHARE_MAX = 0.10
 
@@ -62,15 +67,19 @@ class IncidentGate:
     failures: deque = field(default_factory=deque)
     open_since: float | None = None
     last_canary: float | None = None
+    last_probe: float | None = None
     successes: int = 0
     events: list = field(default_factory=list)
+
+    def _prune(self, now: float) -> None:
+        while self.failures and self.failures[0][0] < now - WINDOW_S:
+            self.failures.popleft()
 
     def observe(self, arm: str, t: float, call: Mapping[str, Any]) -> None:
         if not is_upstream_failure(call):
             return
         self.failures.append((t, arm))
-        while self.failures and self.failures[0][0] < t - WINDOW_S:
-            self.failures.popleft()
+        self._prune(t)
         if (self.open_since is None and len(self.failures) >= MIN_FAILURES
                 and len({a for _, a in self.failures}) >= MIN_ARMS):
             self.open_since, self.successes, self.last_canary = t, 0, None
@@ -82,6 +91,18 @@ class IncidentGate:
 
     def admits_new_unit(self) -> bool:
         return not self.is_open
+
+    def probe_due(self, now: float) -> bool:
+        """Q25-INC: >= MIN_FAILURES failures in the window, no incident open, no probe in the last 60 s. They are one
+        arm's by construction: failures of two arms would have opened the incident in observe()."""
+        self._prune(now)
+        return (not self.is_open and len(self.failures) >= MIN_FAILURES
+                and (self.last_probe is None or now - self.last_probe >= CANARY_EVERY_S))
+
+    def probe(self, now: float, call: Mapping[str, Any]) -> None:
+        """The scheduler's probe went out at ``now`` with this outcome; a failure counts as the scheduler arm's."""
+        self.last_probe = now
+        self.observe(PROBE_ARM, now, call)
 
     def canary_due(self, now: float) -> bool:
         return self.is_open and (self.last_canary is None or now - self.last_canary >= CANARY_EVERY_S)
