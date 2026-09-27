@@ -9,7 +9,11 @@ proxy's logs, the INPUTS of the gated research/v3/artifact.py builders - it buil
 * the taxonomy: ok, recovered within 30 min - to the success's t1 (MA15) - late_recovered after it (the
   M-TAX-recovered-31min row), never; per (unit, request key) - the §4.5 key is sha256(body || arm) with no unit in it,
   and one session body is written in several units (B-ACC1: the same body lost in one unit and written in another is
-  that unit's loss); a forwarded record with no request key, t0 or t1, or a line that is not UTF-8, refuses by name;
+  that unit's loss); within a (unit, key) each success closes an episode, and failures after the last success are an
+  episode of their own - never (B-ACC1b: a body written twice in a unit, lost the second time); recovery counts from
+  the episode's FIRST failure (MB3), in t0 order whatever the log's order (MB2); duplicate_body_groups and
+  ambiguous_recoveries are published; key_question is keyed by (unit, key) - a map by the bare key refuses (MB7); a
+  forwarded record with no request key, t0 or t1, or a line that is not UTF-8, refuses by name;
 * cloud_counters: transport_lost is a write-phase key that never succeeded, failed_outcomes a read/answer key that never
   succeeded on a question not dropped (M-TAX-dropped-in-failed); a never-succeeded key with no question refuses; the
   counts (refused model_mismatch, tool violations, thinking only on /v1 and /anthropic, models_seen, fingerprints per
@@ -150,13 +154,20 @@ calls = [call("ok1", t0=1),
          call("aband", t0=7, client_abandoned=True), call("aband", t0=8)]          # abandoned, then ok
 keys = AC.classify_keys(calls)
 check("classes: ok, recovered, late_recovered, recovered at exactly 30 min, never, and an abandoned attempt recovered",
-      [keys[("u1", k)]["class"] for k in ("ok1", "rec", "late", "edge", "lostw", "aband")]
-      == ["ok", "recovered", "late_recovered", "recovered", "never", "recovered"], str({k: v["class"] for k, v in keys.items()}))
+      [keys.get(("u1", k), {}).get("classes") for k in ("ok1", "rec", "late", "edge", "lostw", "aband")]
+      == [["ok"], ["recovered"], ["late_recovered"], ["recovered"], ["never"], ["recovered"]],
+      str({k: v.get("classes") for k, v in keys.items()}))
 check("a key whose calls span two phases refuses",
       "spans the phases" in err(lambda: AC.classify_keys([call("x"), call("x", role="reader")])))
 check("MA15: recovery is measured to the success's t1 - a failure at 0:00 answered 29:59..30:05 is late_recovered",
-      AC.classify_keys([call("m15", status=500, t0=0), call("m15", t0=29 + 59 / 60, t1=30 + 5 / 60)])[("u1", "m15")]["class"]
-      == "late_recovered")
+      AC.classify_keys([call("m15", status=500, t0=0), call("m15", t0=29 + 59 / 60, t1=30 + 5 / 60)]).get(
+          ("u1", "m15"), {}).get("classes") == ["late_recovered"])
+check("MB3: recovery counts from the episode's FIRST failure - failures at 0:00 and 0:20, success ending 0:40, is late",
+      AC.classify_keys([call("m3", status=500, t0=0), call("m3", status=500, t0=20), call("m3", t0=39, t1=40)]).get(
+          ("u1", "m3"), {}).get("classes") == ["late_recovered"])
+check("MB2: attempts are taken in t0 order whatever the log's order - a success logged before its earlier failure",
+      AC.classify_keys([call("m2", t0=10), call("m2", status=500, t0=5)]).get(("u1", "m2"), {}).get("classes")
+      == ["recovered"])
 check("F-ACC2: a forwarded record without a request key refuses",
       "request_key" in err(lambda: AC.classify_keys([call(None)])))
 check("F-ACC2: a record without t0 refuses - never read as 0",
@@ -179,8 +190,33 @@ c3 = AC.cloud_counters(dup3, arm="mem0", run="r1", stand="S1", cloud_bypass=0)
 check("u1 lost it, u2 wrote it two hours later: u1's loss, and no late_recovered pinned on u1",
       c3["transport_lost_units"] == ["u1"] and c3["late_recovered"] == 0 and c3["late_recovered_units"] == [], str(c3))
 k3 = AC.classify_keys(dup3)
-check("the classes are per (unit, key)", {k: v["class"] for k, v in k3.items()} == {("u1", "dup"): "never",
-                                                                                     ("u2", "dup"): "ok"}, str(k3))
+check("the classes are per (unit, key)", {k: v.get("classes") for k, v in k3.items()} == {("u1", "dup"): ["never"],
+                                                                                         ("u2", "dup"): ["ok"]}, str(k3))
+
+print("\n- B-ACC1b: one request key twice in ONE unit (a turn repeated in a session, a session repeated in a haystack) -")
+e1 = AC.cloud_counters([call("rep", t0=1), call("rep", status=503, t0=2), call("rep", status=503, t0=3)],
+                       arm="mem0", run="r1", stand="S1", cloud_bypass=0)
+check("[success, failure for good] in one unit: the second write is a lost operation (transport_lost 1)",
+      e1.get("transport_lost") == 1 and e1.get("transport_lost_units") == ["u1"] and e1.get("duplicate_body_groups") == 0, str(e1))
+e2 = AC.cloud_counters([call("rep", t0=1), call("rep", t0=5)], arm="mem0", run="r1", stand="S1", cloud_bypass=0)
+check("[success, success]: two episodes, both ok - duplicate_body_groups 1, nothing lost or ambiguous",
+      e2.get("duplicate_body_groups") == 1 and e2.get("ambiguous_recoveries") == 0 and e2.get("transport_lost") == 0, str(e2))
+e3 = AC.cloud_counters([call("rep", t0=1), call("rep", status=500, t0=5), call("rep", t0=6)], arm="mem0", run="r1",
+                       stand="S1", cloud_bypass=0)
+check("[success, failure, success]: the failure series before the second success is recovered AND ambiguous "
+      "(it may have been either write)", e3.get("transport_recovered") == 1 and e3.get("ambiguous_recoveries") == 1
+      and e3.get("duplicate_body_groups") == 1 and e3.get("transport_lost") == 0, str(e3))
+e4 = AC.cloud_counters([call("rq", role="reader", stage="questions", t0=40),
+                        call("rq", role="reader", stage="questions", status=502, t0=41)],
+                       arm="mem0", run="r1", stand="S1", cloud_bypass=0, key_question={("u1", "rq"): "q3"})
+check("a reader key answered once, then failed for good in the same unit: a failed outcome of its own",
+      e4.get("failed_outcomes") == 1, str(e4.get("failed_outcomes")))
+e5 = AC.cloud_counters([call("rr", role="reader", stage="questions", t0=40), call("rr", role="reader", stage="questions", t0=45)],
+                       arm="mem0", run="r1", stand="S1", cloud_bypass=0)
+check("duplicate_body_groups counts write groups only - a reader key answered twice is not one", e5.get("duplicate_body_groups")
+      == 0, str(e5.get("duplicate_body_groups")))
+check("the episodes of a group, in t0 order", AC.classify_keys([call("rep", t0=1), call("rep", status=503, t0=2)]).get(
+    ("u1", "rep"), {}).get("classes") == ["ok", "never"])
 
 print("\n- cloud_counters -")
 read_calls = [call("r_ok", role="reader", stage="questions", t0=40),
@@ -212,6 +248,9 @@ check("failed_outcomes: the answer key that never succeeded on a question NOT dr
       ct["failed_outcomes"] == 1, str(ct["failed_outcomes"]))
 check("recovered and late_recovered counted apart", ct["transport_recovered"] == 3 and ct["late_recovered"] == 1,
       f"{ct['transport_recovered']} {ct['late_recovered']}")
+check("MB7: a question map by the bare request key refuses - it would join questions across units",
+      "has no question" in err(lambda: AC.cloud_counters(allc, arm="mem0", run="r1", stand="S1", cloud_bypass=0,
+                                                         key_question={"r_lost": "q7", "r_drop": "q9"})))
 check("a never-succeeded read key with no question refuses",
       "has no question" in err(lambda: AC.cloud_counters(allc, arm="mem0", run="r1", stand="S1", cloud_bypass=0,
                                                          key_question={("u1", "r_lost"): "q7"})))

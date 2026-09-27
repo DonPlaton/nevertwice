@@ -13,15 +13,19 @@ zero-tolerance verdicts are artifact's P0 clauses and m5 v3's. A count this modu
 * attribute: a call's (arm, run, unit, phase) - the /u/<run>.<unit> prefix split at its FIRST dot (Q3; a server arm's
   second part is its block), the phase from the port role and the scheduler's stage: the reader port is "answer", the
   J3 port "judge", an arm's write port is "write" in the write stage and "read" in the question stage;
-* cloud_counters (§4.5): per (unit, request key), sorted by t0 - the §4.5 key is sha256(body || arm) with no unit in it,
-  and one session body is written in several units (B-ACC1), so a key is classified within its unit. A key that failed
-  (non-2xx, no status, client_abandoned) and then succeeded within 30 minutes of the first failure, to the success's
-  t1, is transport_recovered; a write-phase key that never succeeded is transport_lost; a
-  read/answer/judge key that never succeeded on a question that was not dropped is a failed outcome; a key that
-  succeeded only later than 30 minutes is late_recovered (published, never recovered, never in P1 - Q-50-1), listed
-  per unit with the flag order_sensitive on S6/S6L; the zero-tolerance counts and the descriptive ones -
-  upstream_errors is a call answered 5xx or not answered at all (the proxy's upstream_error: connect or send failed;
-  the proxy's own counter of that name counts only the latter); models_seen; fingerprints per endpoint class, a unit
+* cloud_counters (§4.5): per (unit, request key), in t0 order - the §4.5 key is sha256(body || arm) with no unit in it,
+  and one session body is written in several units (B-ACC1), so a key is classified within its unit - and per EPISODE
+  within it (B-ACC1b: one body written twice in a unit): each success closes an episode; an episode whose success
+  came after failed attempts (non-2xx, no status, client_abandoned) and ended (t1) within 30 minutes of the episode's
+  first failure is transport_recovered, later than that late_recovered (published, never recovered, never in P1 -
+  Q-50-1, listed per unit with the flag order_sensitive on S6/S6L); failed attempts after the last success are an
+  episode of their own that never succeeded - on a write-phase key a transport_lost operation, on a read/answer/judge
+  key a failed outcome unless its question (key_question, by (unit, key)) was dropped. duplicate_body_groups (write
+  groups with two or more successes) and ambiguous_recoveries (recovered episodes inside them - either write may be the
+  one that failed) are published, for the P1 sensitivity row. The zero-tolerance counts and the descriptive ones -
+  upstream_errors is a call answered 5xx or recorded with no answer (upstream_error: connect or send failed); the
+  proxy's own counter of that name is another quantity (connect, send, read and framing failures, partial responses
+  included, never a 5xx); models_seen; fingerprints per endpoint class, a unit
   straddled when its calls of one class ran under two (§4.3 d; /anthropic by its response model); tokens by phase
   (§6). Only the arm's own calls count: the J3 and scheduler ports are arms of their own in the proxy's records (R4).
   A forwarded record with no request key, t0, or (on a success) t1 refuses by name - never read as 0;
@@ -143,10 +147,12 @@ def succeeded(call: Mapping[str, Any]) -> bool:
 
 
 def classify_keys(calls: Iterable[Mapping[str, Any]]) -> dict[tuple[str, str], dict]:
-    """Per (unit, request key) of the forwarded calls: its phase and its class - ok, recovered, late_recovered or
-    never (a key with no failed attempt and a success is ok). The §4.5 key is sha256(body || arm), with no unit in it,
-    and one session body is written in several units: classified across units, one unit's loss would hide behind
-    another unit's success (B-ACC1)."""
+    """Per (unit, request key) of the forwarded calls, in t0 order: its phase and its episodes. Each success closes an
+    episode - ok with no failed attempt before it; recovered if it ended (t1) within 30 minutes of the episode's first
+    failure; else late_recovered. Failed attempts after the last success are one more episode, never (B-ACC1b: the same
+    body written twice in a unit, the second time lost). The §4.5 key is sha256(body || arm), with no unit in it, and
+    one session body is written in several units: classified across units, one unit's loss would hide behind another
+    unit's success (B-ACC1). "classes" lists the episodes' classes in order."""
     by_key: dict[tuple[str, str], list] = defaultdict(list)
     for c in calls:
         if c.get("refused"):
@@ -158,20 +164,25 @@ def classify_keys(calls: Iterable[Mapping[str, Any]]) -> dict[tuple[str, str], d
     out = {}
     for (unit, key), cs in by_key.items():
         cs = sorted(cs, key=lambda c: _when(c, "t0"))
-        fail = next((c for c in cs if not succeeded(c)), None)
-        ok = next((c for c in cs if succeeded(c)), None)
         phases = {attribute(c)[3] for c in cs}
         if len(phases) != 1:
             raise AccountingError(f"the request key {key[:12]} spans the phases {sorted(phases)}")
-        if ok is None:
-            cls = "never"
-        elif fail is None or _when(fail, "t0") > _when(ok, "t0"):
-            cls = "ok"
-        elif _when(ok, "t1") - _when(fail, "t0") <= RECOVERY_S:
-            cls = "recovered"
-        else:
-            cls = "late_recovered"
-        out[(unit, key)] = {"phase": phases.pop(), "class": cls, "unit": unit, "attempts": len(cs)}
+        classes, fails = [], []
+        for c in cs:
+            if not succeeded(c):
+                fails.append(c)
+                continue
+            if not fails:
+                cls = "ok"
+            elif _when(c, "t1") - _when(fails[0], "t0") <= RECOVERY_S:
+                cls = "recovered"
+            else:
+                cls = "late_recovered"
+            classes.append(cls)
+            fails = []
+        if fails:
+            classes.append("never")
+        out[(unit, key)] = {"phase": phases.pop(), "unit": unit, "attempts": len(cs), "classes": classes}
     return out
 
 
@@ -191,10 +202,12 @@ def cloud_counters(calls: list, *, arm: str, run: str, stand: str, cloud_bypass:
     keys = classify_keys(mine)
     dropped = set(dropped)
     kq = dict(key_question or {})
-    lost = sorted(k for k, v in keys.items() if v["phase"] == "write" and v["class"] == "never")
+    eps = [(k, v, e) for k, v in sorted(keys.items()) for e in v["classes"]]
+    lost = [k for k, v, e in eps if v["phase"] == "write" and e == "never"]
+    dup = [v for v in keys.values() if v["phase"] == "write" and sum(e != "never" for e in v["classes"]) >= 2]
     failed = []
-    for k, v in keys.items():
-        if v["phase"] != "write" and v["class"] == "never":
+    for k, v, e in eps:
+        if v["phase"] != "write" and e == "never":
             q = kq.get(k)
             if q is None:
                 raise AccountingError(f"a {v['phase']}-phase key {k[1][:12]} of {k[0]} that never succeeded has no question")
@@ -229,12 +242,14 @@ def cloud_counters(calls: list, *, arm: str, run: str, stand: str, cloud_bypass:
         "cloud_bypass": cloud_bypass,
         "tool_violation": sum(1 for c in mine if c.get("tool_violation")),
         "models_seen": sorted(models),
-        "transport_recovered": sum(1 for v in keys.values() if v["class"] == "recovered"),
-        "late_recovered": sum(1 for v in keys.values() if v["class"] == "late_recovered"),
+        "transport_recovered": sum(1 for _k, _v, e in eps if e == "recovered"),
+        "late_recovered": sum(1 for _k, _v, e in eps if e == "late_recovered"),
         "late_recovered_units": [{"stand": stand, "unit": u, "order_sensitive": stand in ORDER_SENSITIVE_STANDS}
-                                 for u in sorted({v["unit"] for v in keys.values() if v["class"] == "late_recovered"})],
+                                 for u in sorted({v["unit"] for _k, v, e in eps if e == "late_recovered"})],
         "transport_lost": len(lost),
         "transport_lost_units": sorted({keys[k]["unit"] for k in lost}),
+        "duplicate_body_groups": len(dup),
+        "ambiguous_recoveries": sum(1 for v in dup for e in v["classes"] if e in ("recovered", "late_recovered")),
         "upstream_errors": sum(1 for c in forwarded if (isinstance(c.get("status"), int) and c["status"] >= 500)
                                or c.get("upstream_error")),
         "client_abandoned": sum(1 for c in forwarded if c.get("client_abandoned")),
