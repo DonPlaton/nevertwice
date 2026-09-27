@@ -198,6 +198,13 @@ def ask(qa):
         check("cat 2: the pinned file's own DATE suffix is appended; cat 1 and cat 5 are asked as is",
               TP.locomo_question("When?", 2, pins_root=TMP) == "When? Use DATE of CONVERSATION to answer with an approximate date."
               and TP.locomo_question("When?", 1, pins_root=TMP) == "When?" and TP.locomo_question("When?", 5, pins_root=TMP) == "When?")
+        check("B-CAT: the category as the loader keeps it (\"2\") gets the DATE suffix exactly as 2 does; \"5\" and None "
+              "are asked as is; a word or a bool is refused by name",
+              TP.locomo_question("When?", "2", pins_root=TMP) == TP.locomo_question("When?", 2, pins_root=TMP)
+              != "When?" and TP.locomo_question("When?", "5", pins_root=TMP) == "When?"
+              and TP.locomo_question("When?", None, pins_root=TMP) == "When?"
+              and "not a category number" in err(lambda: TP.locomo_question("When?", "two", pins_root=TMP))
+              and "bool" in err(lambda: TP.locomo_question("When?", True, pins_root=TMP)))
         tf = TMP / "runs" / "freeze_templates.json"
         fr = safe(lambda: TP.freeze_fragment(pins_root=TMP, texts_path=tf),
                   {"templates": {"S4": {}, "S4-cat5": {}}, "pending": {}, "texts_file": {}})

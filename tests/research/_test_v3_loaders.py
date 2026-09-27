@@ -137,6 +137,17 @@ check("speakers are kept on the item; a shared image is carried as its caption",
 check("an empty turn is skipped and counted", c.empty_skipped == 1)
 check("questions: ids by sample, category as text, category 5 is abstention",
       [(q.qid, q.category, q.abstention) for q in c.questions] == [("conv-2:q0", "1", False), ("conv-2:q1", "5", True)])
+check("B-CAT: locomo_category reads 2 and \"2\" (and \" 5 \") as the int, None as None; a word or a bool is refused",
+      (LD.locomo_category(2), LD.locomo_category("2"), LD.locomo_category(" 5 "), LD.locomo_category(None))
+      == (2, 2, 5, None) and all(refused(lambda v=v: LD.locomo_category(v), "category") for v in ("two", True, 2.0, "")),
+      "")
+LOCOMO_S = [{**s, "qa": [{**q, "category": str(q["category"])} for q in s["qa"]]} for s in LOCOMO]
+cs = LD.locomo_units(LOCOMO_S, ["conv-2", "conv-0", "conv-1"], prefix=2)[0]
+gs = LD.locomo_gold(LOCOMO_S, ["conv-2:q0", "conv-2:q1"])
+check("B-CAT: a file that writes its categories as text gives the same abstention flags and the same gold",
+      [(q.category, q.abstention) for q in cs.questions] == [("1", False), ("5", True)]
+      and gs["conv-2:q1"].answer == "not mentioned" and gs["conv-2:q0"].answer == "Paris",
+      str([(q.category, q.abstention) for q in cs.questions]))
 lg = LD.locomo_gold(LOCOMO, ["conv-2:q0", "conv-2:q1"])
 check("the gold door: evidence namespaced by sample; category 5 answers with adversarial_answer",
       lg["conv-2:q0"].evidence == ("conv-2:D2:1",) and lg["conv-2:q1"].answer == "not mentioned")

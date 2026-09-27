@@ -241,10 +241,27 @@ def stand_template(stand: str, *, pins_root: Path) -> Template:
     return tpl
 
 
-def locomo_question(question: str, category: int, *, pins_root: Path) -> str:
+def _locomo_category(category) -> int | None:
+    """B-CAT: the loader's own reading of a category (loaders.locomo_category) - "2" and 2 alike."""
+    import importlib.util  # noqa: PLC0415
+    import sys  # noqa: PLC0415
+    name = "v3_loaders_for_templates"
+    if name not in sys.modules:
+        spec = importlib.util.spec_from_file_location(name, HERE / "loaders.py")
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules[name] = mod
+        spec.loader.exec_module(mod)
+    try:
+        return sys.modules[name].locomo_category(category)
+    except ValueError as e:
+        raise TemplateError(f"S4: {e}") from None
+
+
+def locomo_question(question: str, category: int | str | None, *, pins_root: Path) -> str:
     """A LoCoMo question as the benchmark asks it: cat 2 gets the pinned file's own DATE suffix; cat 5 is asked as is
-    (Q-48-2: never as the pinned multiple choice, which names the gold answer)."""
-    if category == 2:
+    (Q-48-2: never as the pinned multiple choice, which names the gold answer). The category as the loader keeps it
+    ("2") or as the file has it (2) - B-CAT; one that is no category number is refused by name."""
+    if _locomo_category(category) == 2:
         path, pin_sha = _pinned(LOCOMO_CAT2.pin, pins_root)
         raw = Path(path).read_bytes()
         if hashlib.sha256(raw).hexdigest() != pin_sha:

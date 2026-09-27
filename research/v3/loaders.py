@@ -216,8 +216,23 @@ def _locomo_unit(stand: str, sample: Mapping) -> EvalUnit:
     for i, q in enumerate(sample.get("qa") or []):
         cat = q.get("category")
         questions.append(Question(f"{sid}:q{i}", q.get("question") or "", None, None if cat is None else str(cat),
-                                  cat == LOCOMO_ABSTAIN_CATEGORY))
+                                  locomo_category(cat) == LOCOMO_ABSTAIN_CATEGORY))
     return _unit(stand, sid, "conversation", sessions, questions, empty)
+
+
+def locomo_category(v: Any) -> int | None:
+    """B-CAT: a LoCoMo category as the int the benchmark numbers it by - an int, or a string of digits (this loader
+    keeps it as text in its questions); None stays None; anything else - a bool, a word - is refused by name. Every
+    comparison of a category goes through here: a string compared with an int is never equal, and silently so."""
+    if v is None:
+        return None
+    if isinstance(v, bool):
+        raise LoadRefused(f"a LoCoMo category {v!r} is a bool, not a category number")
+    if isinstance(v, int):
+        return v
+    if isinstance(v, str) and v.strip().isdigit():
+        return int(v.strip())
+    raise LoadRefused(f"a LoCoMo category {v!r} is not a category number")
 
 
 def locomo_units(samples: Iterable[Mapping], order: Sequence[str], *, prefix: int, stand: str = "S4") -> list[EvalUnit]:
@@ -239,7 +254,8 @@ def locomo_gold(samples: Iterable[Mapping], qids: Iterable[str]) -> dict[str, Go
         for i, q in enumerate(s.get("qa") or []):
             qid = f"{sid}:q{i}"
             if qid in want:
-                ans = q.get("adversarial_answer") if q.get("category") == LOCOMO_ABSTAIN_CATEGORY else q.get("answer")
+                ans = (q.get("adversarial_answer") if locomo_category(q.get("category")) == LOCOMO_ABSTAIN_CATEGORY
+                       else q.get("answer"))
                 ev = q.get("evidence") or []
                 ev = [ev] if isinstance(ev, str) else ev
                 out[qid] = Gold(qid, "" if ans is None else str(ans), tuple(f"{sid}:{e}" for e in ev))
