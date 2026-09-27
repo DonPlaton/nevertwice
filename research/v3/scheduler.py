@@ -48,6 +48,7 @@ CEILING_FLOOR_S, CEILING_FACTOR = 600.0, 3.0              # §5.6: at least 10 m
 DEBUG_CEILING_S = 6 * 3600.0                             # Q26: the declared debug ceiling for the pilot and smoke
 BUDGET_H = {"S6-SH": 24, "S6-MH": 24, "S5": 48, "S7": 24, "S4": 24, "S1": 72}   # §5.6, judge stages excluded
 ARM_ORDER_DOMAIN = "nvt3-arm-order"
+GATE_POLL_S = 0.5                                        # how often a closed incident gate is asked again
 
 
 class SchedulerError(RuntimeError):
@@ -295,6 +296,20 @@ class Scheduler:
         """One block (A6): see _run_block."""
         return _run_block(self, sp, bp)
 
+    def run_stand(self, sp: "StandPlan", blocks: Sequence["BlockPlan"], *, judges: Sequence[Any] = (),
+                  order: int) -> dict:
+        """One stand (A7): see _run_stand."""
+        return _run_stand(self, sp, blocks, judges=judges, order=order)
+
+    def _await_gate(self) -> None:
+        """No new unit starts while the incident gate refuses (§4.5, TB4.11b); asked again every GATE_POLL_S."""
+        gate = getattr(self.hooks, "gate", None) if self.hooks is not None else None
+        if gate is None:
+            return
+        sleep = getattr(self.clock, "sleep", None) or __import__("time").sleep
+        while not gate.admits_new_unit():
+            sleep(GATE_POLL_S)
+
     def _gpu_only(self, tag: str | None) -> None:
         """§5.6: one resident Ollama model per stage - every other resident model unloaded (never woken: only what
         /api/ps names), then /api/ps must name nothing but the tag."""
@@ -411,6 +426,7 @@ def _write_unit(sched: "Scheduler", launcher: Any, *, stand: str, run: str, unit
     left = lambda: deadline - sched.clock.monotonic()  # noqa: E731
     client = None
     try:
+        sched._await_gate()
         client = launcher.open("write", sched=sched, stand=stand, run=run, unit=unit)
         rec.spawn_id, rec.pid, rec.dirs = client.child.spawn_id, client.pid, getattr(client, "dirs", None)
         if left() <= 0:
@@ -534,6 +550,7 @@ def _question_unit(sched: "Scheduler", launcher: Any, sp: StandPlan, *, run: str
     left = lambda: deadline - sched.clock.monotonic()  # noqa: E731
     client = wrec.client
     try:
+        sched._await_gate()
         if client is None:
             client = launcher.open("read", sched=sched, stand=sp.stand, run=run, unit=unit, write_dirs=wrec.dirs)
             out["spawn_id"] = client.child.spawn_id
@@ -650,3 +667,64 @@ def _artifact():
 def _full_name(model: str) -> str:
     """Ollama's name with its tag (sched_ctl.full_name's rule): a tagless name is the ":latest" one."""
     return model if ":" in model.rsplit("/", 1)[-1] else f"{model}:latest"
+
+
+# ── A7: the stand ──────────────────────────────────────────────────────────────────────────────────────────────
+
+import re as _re  # noqa: E402
+
+_RUN_ID = _re.compile(r"[A-Za-z0-9_-]+")
+
+
+def _tree(sched: "Scheduler", stand: str, name: str) -> dict:
+    """The tree check (Q10, D10) inside a witness check of its own - never inside a window (Q11)."""
+    cid = f"{stand}.{name}"
+    sched.witnesses.begin_check(cid)
+    try:
+        return dict(sched.hooks.tree_check())
+    finally:
+        sched.witnesses.end_check(cid)
+
+
+def _run_stand(sched: "Scheduler", sp: StandPlan, blocks: Sequence[BlockPlan], *, judges: Sequence[Any],
+               order: int) -> dict:
+    """One stand (§5.6, D8, D10, D11): the plan's ids checked before any line; the preflight (balance); the tree check
+    - a scored stand on a dirty tree is refused before STAND START, a smoke or debug one records it; the change-log read
+    and the model probe; STAND START; the blocks, every one after the first behind its barrier read; the end read, the
+    probe and the tree check again; STAND END; then - scored stands only - the judges, one model resident at a time
+    (§5.6), after STAND END and before the next stand (D11)."""
+    H = sched.hooks
+    bad = [r for r in sp.runs if not _RUN_ID.fullmatch(r)]
+    if bad:
+        raise SchedulerError(f"run ids {bad} are not [A-Za-z0-9_-] (Q3: the proxy splits <run>.<unit> at the first dot)")
+    if not blocks:
+        raise SchedulerError(f"{sp.stand}: a stand with no block")
+    out: dict = {"stand": sp.stand, "blocks": [], "judged": []}
+    if hasattr(H, "preflight"):
+        out["preflight"] = H.preflight(sp.stand)
+    out["tree_start"] = _tree(sched, sp.stand, "tree-start")
+    if not out["tree_start"].get("clean") and sched.tag == "scored":
+        raise SchedulerError(f"{sp.stand}: the tree is not clean at STAND START - {out['tree_start'].get('problems')} "
+                             f"(P0e); nothing was started")
+    out["start_read"] = H.barrier_read(sp.stand, "start")
+    model = H.model_probe()
+    sched.status.stand(sp.stand, "START", model=model, changelog=(out["start_read"] or {}).get("changelog", "unknown"),
+                       order=order)
+    for i, bp in enumerate(blocks):
+        run_bp = bp if i == 0 else BlockPlan(block=bp.block, units=tuple(bp.units), barrier_read=True)
+        out["blocks"].append(_run_block(sched, sp, run_bp))
+    out["end_read"] = H.barrier_read(sp.stand, "end")
+    model_end = H.model_probe()
+    out["tree_end"] = _tree(sched, sp.stand, "tree-end")
+    sched.status.stand(sp.stand, "END", model=model_end, changelog=(out["end_read"] or {}).get("changelog", "unknown"))
+    if sched.tag == "scored":
+        for j in judges:
+            sched._gpu_only(None)                        # nothing resident before a judge loads its model
+            j.run()
+            if sched.ollama_ctl is not None:
+                sched.ollama_ctl.unload(j.model)
+                left = sched.ollama_ctl.ps()
+                if left:
+                    raise SchedulerError(f"after judge {j.name} the GPU still holds {left} (§5.6)")
+            out["judged"].append(j.name)
+    return out

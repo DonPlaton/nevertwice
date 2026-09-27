@@ -389,6 +389,141 @@ try:
           "START..END (Q2)", set(one["units"]) and all(v["write"]["footprint"] == 2 and v["write"]["end_write_utc"]
                                                         for v in one["units"].values())
           and one["measured_at"]["commit"] == "c" * 40, str(one)[:300])
+
+    print("\n- A7: run_stand - the tree check, STAND lines, the gate, the judges one model at a time -")
+
+    class GpuOllama:
+        """Residency with a load log: a judge's run loads its model; loading beside another model is a violation."""
+
+        def __init__(self):
+            self.resident, self.violations, self.log = {"qwen3:8b"}, [], []
+
+        def ps(self):
+            return sorted(self.resident)
+
+        def unload(self, model, *, embedder=False):
+            self.log.append(("unload", model))
+            self.resident.discard(model)
+            return "unloaded"
+
+        def load(self, model):
+            if self.resident - {model}:
+                self.violations.append((model, sorted(self.resident)))
+            self.log.append(("load", model))
+            self.resident.add(model)
+
+    class Judge:
+        def __init__(self, name, model, gpu, ev, status_path, stand):
+            self.name, self.model, self.gpu, self.ev = name, model, gpu, ev
+            self.status_path, self.stand = status_path, stand
+
+        def run(self):
+            self.gpu.load(self.model)
+            ended = f" STAND {self.stand} END " in self.status_path.read_text(encoding="utf-8")
+            self.ev.append(("judge", self.name, ended))
+
+    class GateScript:
+        """Refuses the first `closed` asks, then admits (the IncidentGate shape the scheduler reads)."""
+
+        def __init__(self, closed):
+            self.closed, self.asked = closed, 0
+
+        def admits_new_unit(self):
+            self.asked += 1
+            return self.asked > self.closed
+
+    class StandHooks:
+        def __init__(self, ev, tree_ok=True, gate=None):
+            self.ev, self.tree_ok, self.gate = ev, tree_ok, gate
+
+        def barrier_read(self, stand, block):
+            self.ev.append(("barrier_read", block))
+            return {"changelog": "2026-09-10"}
+
+        def model_probe(self):
+            self.ev.append(("model_probe",))
+            return "deepseek-v4-flash"
+
+        def tree_check(self):
+            self.ev.append(("tree_check",))
+            return {"clean": self.tree_ok, "problems": [] if self.tree_ok else ["HEAD is not the anchor"]}
+
+        def preflight(self, stand):
+            self.ev.append(("preflight", stand))
+            return {"balance_ok": True}
+
+    def stand_world(tag, *, tree_ok=True, gate=None, stand="SZ", sfile="STATUS3"):
+        ev = []
+        for sub in ("live", "passed", "seen", "ops"):
+            shutil.rmtree(SHARED / sub, ignore_errors=True)
+        (SHARED / "live").mkdir()
+        gpu = GpuOllama()
+        st = SL.StatusLog(TMP / sfile, local_tz=dt.timezone.utc)
+
+        class W(FakeWitnesses):
+            def begin_check(self, cid):
+                ev.append(("begin_check", cid))
+
+            def end_check(self, cid):
+                ev.append(("end_check", cid))
+                return {"check_id": cid, "complete": True}
+
+        s = SC.Scheduler(C, FakeProxyCtl(), st, L, Clock(), gpu, tag=tag, witnesses=W(), parent_env=dict(os.environ),
+                         catcher_url="http://127.0.0.1:47001", hooks=StandHooks(ev, tree_ok, gate))
+        sp = SC.StandPlan(stand=stand, runs=("r1",), launchers={"a1": launcher("a1", expect=1)}, campaign_seed=20260927,
+                          unit_tokens={u: 1000 for u in ("w1", "w2")}, medians={("a1", stand): 0.001},
+                          write_ops=lambda a, r, u: OPS(r, u), read_plan=lambda u: [SC.ReadReq(qid=f"{u}-q", query="x")],
+                          answer=lambda *a_: {"sha256": "2" * 64}, embed_tag="nvt3-bge-m3-d1:latest", commit="c" * 40,
+                          dirty=False)
+        judges = [Judge("J1", "gpt-oss:20b", gpu, ev, TMP / sfile, stand), Judge("J2", "qwen3:32b", gpu, ev, TMP / sfile, stand)]
+        return s, sp, judges, ev, gpu, st
+
+    s, sp, judges, ev, gpu, st = stand_world("smoke", stand="SZ", sfile="STATUS3")
+    res = s.run_stand(sp, [SC.BlockPlan(block="b01", units=("w1",)), SC.BlockPlan(block="b02", units=("w2",))],
+                      judges=judges, order=1)
+    lines3 = (TMP / "STATUS3").read_text(encoding="utf-8").splitlines()
+    kinds = [" ".join(x.split()[2:4]) if x.split()[2] in ("STAND", "BLOCK") else x.split()[2] for x in lines3]
+    check("T23: the tree check (inside its own check) and the barrier read come before STAND START; STAND END after the "
+          "last block, after the end tree check", [e for e in ev if e[0] in ("begin_check", "tree_check", "barrier_read",
+                                                                             "end_check")][:4]
+          == [("begin_check", "SZ.tree-start"), ("tree_check",), ("end_check", "SZ.tree-start"), ("barrier_read", "start")]
+          and lines3[0].split()[2:5] == ["STAND", "SZ", "START"] and lines3[-1].split()[2:5] == ["STAND", "SZ", "END"],
+          f"{ev[:6]} {lines3[0][:60]}")
+    check("T19: a smoke stand never judges", not [e for e in ev if e[0] == "judge"] and res.get("judged") == [])
+    s, sp, judges, ev, gpu, st = stand_world("smoke", stand="SJ", sfile="STATUS4")
+    s.tag = "scored"
+    st.campaign_start(anchor="c" * 40, prereg="d" * 64, freeze="e" * 64)
+    try:
+        res = s.run_stand(sp, [SC.BlockPlan(block="b01", units=("w1",))], judges=judges, order=2)
+        err_ = None
+    except Exception as e:  # noqa: BLE001
+        res, err_ = {}, repr(e)
+    j = [e for e in ev if e[0] == "judge"]
+    check("T19: a scored stand's judges run after STAND END, J1 then J2", j == [("judge", "J1", True), ("judge", "J2", True)]
+          and res.get("judged") == ["J1", "J2"], f"{err_} {ev[-6:]}")
+    check("T15 (M-SCHED-gpu-two-models): no model was ever loaded beside another, and the GPU is empty after the judges",
+          gpu.violations == [] and gpu.ps() == [], f"{gpu.violations} {gpu.log}")
+    s, sp, judges, ev, gpu, st = stand_world("scored", tree_ok=False, stand="ST", sfile="STATUS5")
+    try:
+        s.run_stand(sp, [SC.BlockPlan(block="b01", units=("w1",))], judges=judges, order=3)
+        refusal = "ran"
+    except SC.SchedulerError as e:
+        refusal = str(e)
+    check("T23: a scored stand on a dirty tree is refused - no STAND START written",
+          "tree" in refusal and not (TMP / "STATUS5").exists() or "tree" in refusal and "STAND ST START" not in
+          (TMP / "STATUS5").read_text(encoding="utf-8"), refusal)
+    s, sp, judges, ev, gpu, st = stand_world("smoke", tree_ok=False, stand="SU", sfile="STATUS6")
+    r_ = s.run_stand(sp, [SC.BlockPlan(block="b01", units=("w1",))], judges=judges, order=4)
+    check("... a smoke stand on a dirty tree runs, the tree check recorded", r_["tree_start"]["clean"] is False
+          and "STAND SU START" in (TMP / "STATUS6").read_text(encoding="utf-8"))
+    gate = GateScript(closed=3)
+    s, sp, judges, ev, gpu, st = stand_world("smoke", gate=gate, stand="SG", sfile="STATUS7")
+    t_gate = time.monotonic()
+    s.run_stand(sp, [SC.BlockPlan(block="b01", units=("w1",))], judges=judges, order=5)
+    spawns = [json.loads(x) for x in L.spawns_log(C).read_text(encoding="utf-8").splitlines()]
+    sg = [x for x in spawns if x.get("stand") == "SG"]
+    check("T20: no unit spawns while the gate refuses - it asked until it admitted, then the unit ran",
+          gate.asked >= 4 and len(sg) >= 1, f"asked {gate.asked}, spawns {len(sg)}")
 finally:
     shutil.rmtree(TMP, ignore_errors=True)
 
