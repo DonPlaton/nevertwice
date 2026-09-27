@@ -53,10 +53,13 @@ Q-A5-1 (the auditor's measure of K76's coverage, "characters reaching the writer
   middle (a head and a tail kept) is counted for both, and a match shorter than 32 never counts; an item shorter than
   32 counts whole when it is a substring of a request string, else not at all; an item counts at most its own length
   however many calls carried it. The denominator is the items' normalized characters - role labels and the §5.3
-  header are the harness's scaffolding, never in it. {covered, chars, coverage, calls}.
+  header are the harness's scaffolding, never in it. {covered, chars, coverage, calls}. C-2: its memory is bounded
+  by the unit, not by the bodies (a product that repeats earlier episodes in every request sends tens of MB per
+  unit): the windows kept are the items', and each distinct request string is scanned once, one at a time.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -459,20 +462,42 @@ def unit_coverage(item_texts: Sequence[str], bodies: Iterable[Mapping[str, Any]]
         raise AccountingError("a unit without an end_write stamp has no write phase to measure (it was aborted)")
     end = _when({"t": end_write_at}, "t")
     used = [b for b in bodies if b.get("status") == 200 and _when(b, "t0") <= end]     # C-1: answered requests only
-    strs = [normalize_ws(s) for b in used for s in (b.get("strings") or []) if isinstance(s, str)]
-    windows = {s[i:i + WINDOW] for s in strs for i in range(len(s) - WINDOW + 1)}
-    covered = total = 0
+    items = []
     for text in item_texts:
         if not isinstance(text, str):
             raise AccountingError(f"an item text is {type(text).__name__}, not text")
-        n = normalize_ws(text)
+        items.append(normalize_ws(text))
+    want = {n[i:i + WINDOW] for n in items if len(n) >= WINDOW for i in range(len(n) - WINDOW + 1)}   # C-2: the unit's
+    short = {n for n in items if 0 < len(n) < WINDOW}
+    found: set = set()
+    short_found: set = set()
+    seen: set = set()                                    # C-2: each distinct request string is scanned once
+    for b in used:
+        for s in b.get("strings") or []:
+            if not isinstance(s, str):
+                continue
+            h = hashlib.blake2b(s.encode("utf-8", "surrogatepass"), digest_size=16).digest()
+            if h in seen:
+                continue
+            seen.add(h)
+            n = normalize_ws(s)
+            if want:
+                for i in range(len(n) - WINDOW + 1):
+                    w = n[i:i + WINDOW]
+                    if w in want:
+                        found.add(w)
+            for sh in short - short_found:
+                if sh in n:
+                    short_found.add(sh)
+    covered = total = 0
+    for n in items:
         total += len(n)
         if len(n) < WINDOW:
-            covered += len(n) if n and any(n in s for s in strs) else 0
+            covered += len(n) if n in short_found else 0
             continue
         mark = bytearray(len(n))
         for i in range(len(n) - WINDOW + 1):
-            if n[i:i + WINDOW] in windows:
+            if n[i:i + WINDOW] in found:
                 mark[i:i + WINDOW] = b"\x01" * WINDOW
         covered += mark.count(1)
     return {"covered": covered, "chars": total, "coverage": covered / total if total else None, "calls": len(used)}

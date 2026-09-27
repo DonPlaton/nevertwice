@@ -737,6 +737,59 @@ except AC.AccountingError as e:
     no_end = str(e)
 check("Q-A5-1: a unit without an end_write stamp (aborted) has no coverage - refused, never 0", "end_write" in no_end,
       no_end)
+
+
+def reference_coverage(item_texts, bodies, *, end_write_at):
+    """The first implementation (a127869), windows of ALL request strings - the reference C-2 must equal."""
+    end = AC._when({"t": end_write_at}, "t")
+    used = [b for b in bodies if b.get("status") == 200 and AC._when(b, "t0") <= end]
+    strs = [AC.normalize_ws(s) for b in used for s in (b.get("strings") or []) if isinstance(s, str)]
+    windows = {s[i:i + 32] for s in strs for i in range(len(s) - 31)}
+    covered = total = 0
+    for text in item_texts:
+        n = AC.normalize_ws(text)
+        total += len(n)
+        if len(n) < 32:
+            covered += len(n) if n and any(n in s for s in strs) else 0
+            continue
+        mark = bytearray(len(n))
+        for i in range(len(n) - 31):
+            if n[i:i + 32] in windows:
+                mark[i:i + 32] = b"\x01" * 32
+        covered += mark.count(1)
+    return {"covered": covered, "chars": total, "coverage": covered / total if total else None, "calls": len(used)}
+
+
+CASES = {"head and tail": ([ITEM], [body("Extract the facts:\n" + mid_cut)]),
+         "framing": ([ITEM], framed[:1]),
+         "nothing": ([ITEM, "a short one"], []),
+         "31 chars": ([ITEM], [body(AC.normalize_ws(ITEM)[10:41])]),
+         "repeats": ([ITEM, ITEM, "short item"], [body(ITEM), body("again: " + ITEM), body(ITEM + " " + ITEM, "short item")]),
+         "shorts": (["short item", "not there at all", "short but absent here"], [body("xx short item yy")]),
+         "mixed": ([ITEM, "short item", mid_cut[:50]], [body(mid_cut, "yy short item"), body(ITEM, status=500),
+                                                        body(ITEM, t0="2026-09-28T11:00:00+00:00")])}
+diff = {k: (AC.unit_coverage(i, b, end_write_at=END), reference_coverage(i, b, end_write_at=END))
+        for k, (i, b) in CASES.items()}
+check("Q-A5-1 (C-2): the unit-bounded pass gives exactly the reference's numbers - a cut middle, framing, nothing, 31 "
+      "characters, repeats, short items, a failed and a late request", all(a == b for a, b in diff.values()),
+      str({k: v for k, v in diff.items() if v[0] != v[1]}))
+import random  # noqa: E402
+import tracemalloc  # noqa: E402
+rng = random.Random(7)
+VOCAB = ["memory", "ledger", "upload", "retry", "session", "episode", "graph", "edge", "node", "fact", "report",
+         "quarterly", "network", "client", "server", "adoption", "interview", "canvas", "lake", "sunrise"]
+DISTINCT = [" ".join(rng.choice(VOCAB) for _ in range(3000)) for _ in range(100)]     # 100 strings of ~20 KB
+BIG = [body(*DISTINCT[j * 10:(j + 1) * 10]) for _r in range(10) for j in range(10)]   # 20 MB: each string sent 10x
+BIG_ITEMS = [DISTINCT[3][500:800], "a sentence that no request ever carried, long enough", "short"]
+tracemalloc.start()
+cvb = AC.unit_coverage(BIG_ITEMS, BIG, end_write_at=END)
+_cur, peak = tracemalloc.get_traced_memory()
+tracemalloc.stop()
+sent = sum(len(s) for b in BIG for s in b["strings"])
+check("Q-A5-1 (C-2): 20 MB of request strings (graphiti-like repeats) - the peak memory is bounded by the unit's items "
+      "and one string at a time, not by the bodies (< 8 MB), and the result is right",
+      sent > 19_000_000 and peak < 8_000_000 and cvb["covered"] == len(AC.normalize_ws(DISTINCT[3][500:800])) + 0 + 0
+      and cvb["calls"] == 100, f"sent={sent} peak={peak} {cvb}")
 BD = Path(tempfile.mkdtemp(prefix="nvt3_bodies_"))
 (BD / "bodies" / "mem0").mkdir(parents=True)
 (BD / "bodies" / "mem0" / "r1.u1.jsonl").write_bytes(
