@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import hashlib
 import importlib.util
+import json
 import math
 import subprocess
 import sys
@@ -50,6 +51,20 @@ ARM_ORDER_DOMAIN = "nvt3-arm-order"
 
 class SchedulerError(RuntimeError):
     """A plan or a value the preregistration does not allow; nothing was scheduled."""
+
+
+class SystemClock:
+    """The scheduler's clock: UTC for records, monotonic for ceilings."""
+
+    @staticmethod
+    def utc():
+        import datetime as _dt  # noqa: PLC0415
+        return _dt.datetime.now(_dt.timezone.utc)
+
+    @staticmethod
+    def monotonic() -> float:
+        import time as _time  # noqa: PLC0415
+        return _time.monotonic()
 
 
 def _status_log():
@@ -218,6 +233,8 @@ class LaunchSpec:
     hf_offline: bool = True
     requirement: str = "required"
     unwitnessed_reason: str | None = None
+    pipes: bool = False                        # stdin and stdout are the arm protocol's pipes (arms/base.py)
+    stderr_path: str | None = None             # the child's stderr, appended to a file in its fake home - never a PIPE
 
 
 class Scheduler:
@@ -247,11 +264,190 @@ class Scheduler:
             env = self.launch.build_env(self.c, parent_env=self.parent_env, unit=d, path_dirs=spec.path_dirs,
                                         declared=dict(spec.declared), catcher_url=self.catcher_url,
                                         hf_offline=spec.hf_offline)
-            child = self.launch.spawn(
-                self.c, list(spec.argv), env=env, cwd=d.cwd,
-                record={"role": role, "stand": stand, "run": run, "arm": arm, "unit": unit},
-                parent_env=self.parent_env, catcher_url=self.catcher_url, token_names=spec.token_names,
-                claude_names=spec.claude_names, env_exception=spec.env_exception, argv_exception=spec.argv_exception,
-                canaries=self.canaries, popen=self.popen, witnesses=self.witnesses, requirement=spec.requirement,
-                unwitnessed_reason=spec.unwitnessed_reason, window=window)
+            kw: dict = {"stdin": subprocess.PIPE, "stdout": subprocess.PIPE} if spec.pipes else {}
+            err = open(spec.stderr_path, "ab") if spec.stderr_path else None   # noqa: SIM115 - handed to the child
+            if err is not None:
+                kw["stderr"] = err
+            try:
+                child = self.launch.spawn(
+                    self.c, list(spec.argv), env=env, cwd=d.cwd,
+                    record={"role": role, "stand": stand, "run": run, "arm": arm, "unit": unit},
+                    parent_env=self.parent_env, catcher_url=self.catcher_url, token_names=spec.token_names,
+                    claude_names=spec.claude_names, env_exception=spec.env_exception,
+                    argv_exception=spec.argv_exception, canaries=self.canaries, popen=self.popen,
+                    witnesses=self.witnesses, requirement=spec.requirement,
+                    unwitnessed_reason=spec.unwitnessed_reason, window=window, **kw)
+            finally:
+                if err is not None:
+                    err.close()                  # the child holds its own handle
         return child, d
+
+    def write_turn(self, launcher: Any, *, stand: str, runs: Sequence[str], units: Sequence[str],
+                   ops_for: Callable[[str, str], Sequence[Mapping]], ceilings: Mapping[str, float],
+                   status_ids: Mapping[str, str]) -> dict:
+        """One arm's write stage in a block (A5): {(run, unit): UnitRecord}."""
+        return _write_turn(self, launcher, stand=stand, runs=runs, units=units, ops_for=ops_for, ceilings=ceilings,
+                           status_ids=status_ids)
+
+
+# ── A5: the write turn ─────────────────────────────────────────────────────────────────────────────────────────
+
+def _arm_base():
+    """research/v3/arms/base.py - the protocol's harness side (ArmClient and its errors)."""
+    mod = sys.modules.get("v3_arm_base_for_scheduler")
+    if mod is None:
+        spec = importlib.util.spec_from_file_location("v3_arm_base_for_scheduler", HERE / "arms" / "base.py")
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules["v3_arm_base_for_scheduler"] = mod
+        spec.loader.exec_module(mod)
+    return mod
+
+
+class UnitClient:
+    """One unit's child: its protocol client and its process tree."""
+
+    def __init__(self, child: Any, *, stage: str) -> None:
+        self.child, self.stage = child, stage
+        self.arm = _arm_base().ArmClient(child.process)
+
+    @property
+    def pid(self) -> int:
+        return self.child.process.pid
+
+    def request(self, op: str, *, timeout: float, **fields) -> dict:
+        return self.arm.request(op, timeout=timeout, **fields)
+
+    def kill_tree(self) -> None:
+        self.child.kill_tree()
+
+    def exit_code(self, timeout: float = 10.0) -> int | None:
+        try:
+            return self.child.process.wait(timeout)
+        except subprocess.TimeoutExpired:
+            return None
+
+    def close(self, *, timeout: float = 30.0) -> int:
+        return self.arm.close(timeout=timeout)
+
+
+class ChildArmLauncher:
+    """An arm whose units are children speaking arms/base.py's protocol. ``argv_for(spec_path)`` is the child's argv;
+    ``spec_for(stage, stand=, run=, unit=, dirs=, write_dirs=)`` its spec, written as JSON into the unit's fake home -
+    never its cwd - before the spawn; stderr goes to <home>/stderr.<stage>.log."""
+
+    def __init__(self, name: str, *, argv_for: Callable[[Path], Sequence[str]], spec_for: Callable[..., dict],
+                 store_persistence: str = "disk", path_dirs: Sequence[str] = (), declared: Mapping[str, str] | None = None,
+                 token_names: Sequence[str] = ()) -> None:
+        if store_persistence not in ("disk", "memory"):
+            raise SchedulerError(f"store_persistence {store_persistence!r} is disk or memory (Q25(4))")
+        self.name, self.argv_for, self.spec_for = name, argv_for, spec_for
+        self.store_persistence, self.path_dirs = store_persistence, tuple(path_dirs)
+        self.declared, self.token_names = dict(declared or {}), tuple(token_names)
+
+    def open(self, stage: str, *, sched: "Scheduler", stand: str, run: str, unit: str, write_dirs: Any = None) -> UnitClient:
+        def build(d: Any) -> LaunchSpec:
+            spec_path = Path(d.home) / f"spec.{stage}.json"
+            spec_path.write_text(json.dumps(self.spec_for(stage, stand=stand, run=run, unit=unit, dirs=d,
+                                                          write_dirs=write_dirs), sort_keys=True), encoding="utf-8")
+            return LaunchSpec(argv=tuple(self.argv_for(spec_path)), declared=self.declared, path_dirs=self.path_dirs,
+                              token_names=self.token_names, pipes=True,
+                              stderr_path=str(Path(d.home) / f"stderr.{stage}.log"))
+        child, _d = sched.spawn_child(build, role=f"arm-{stage}", stand=stand, run=run, arm=self.name,
+                                      unit=unit if stage == "write" else f"{unit}.q")
+        client = UnitClient(child, stage=stage)
+        client.dirs = _d
+        return client
+
+
+@dataclass
+class UnitRecord:
+    """One (arm, run, unit)'s write stage, as the out= record and P1 (Q12) read it."""
+    arm: str
+    run: str
+    unit: str
+    spawn_id: str | None = None
+    pid: int | None = None
+    ops: list = field(default_factory=list)
+    footprint: Any = None
+    seal: Any = None
+    rc: int | None = None
+    active_s: float = 0.0
+    aborted: str | None = None             # None | "ceiling" | "crash" (D2)
+    error: str | None = None
+    client: Any = None                     # a memory-store arm's live client, kept for its read stage (Q25(4))
+    dirs: Any = None
+
+
+def _write_unit(sched: "Scheduler", launcher: Any, *, stand: str, run: str, unit: str, ops: Sequence[Mapping],
+                ceiling: float, status_id: str) -> UnitRecord:
+    """One unit's write stage under its ceiling (D1: the unit's own active time). A ceiling kills the child's tree and
+    writes UNIT-ABORT reason=ceiling; a child that dies or breaks the protocol is UNIT-ABORT reason=crash with its exit
+    code (D2); a product's ok:false on one write is that operation's error, and the unit goes on."""
+    B = _arm_base()
+    rec = UnitRecord(arm=launcher.name, run=run, unit=unit)
+    start = sched.clock.monotonic()
+    deadline = start + ceiling
+    left = lambda: deadline - sched.clock.monotonic()  # noqa: E731
+    client = None
+    try:
+        client = launcher.open("write", sched=sched, stand=stand, run=run, unit=unit)
+        rec.spawn_id, rec.pid, rec.dirs = client.child.spawn_id, client.pid, getattr(client, "dirs", None)
+        if left() <= 0:
+            raise B.ArmTimeout("hello: the ceiling passed before the child answered")
+        hello = client.request("hello", timeout=left())
+        if (hello.get("protocol"), hello.get("arm"), hello.get("stage")) != (B.PROTOCOL, launcher.name, "write"):
+            raise B.ArmError(f"hello: {hello.get('protocol')}/{hello.get('arm')}/{hello.get('stage')} is not this arm's "
+                             f"write stage")
+        for op in ops:
+            if left() <= 0:
+                raise B.ArmTimeout("write: the ceiling passed")
+            t0 = sched.clock.utc().isoformat()
+            try:
+                out = client.request("write", timeout=left(), **op)
+                rec.ops.append({"op_id": out.get("op_id"), "t0": t0, "t1": sched.clock.utc().isoformat(), "ok": True,
+                                "error": None})
+            except (B.ArmTimeout, B.ArmDied, B.ArmPoisoned):
+                raise
+            except B.ArmError as e:
+                if client.arm.poisoned:
+                    raise
+                rec.ops.append({"op_id": (op.get("item") or {}).get("item_id"), "t0": t0,
+                                "t1": sched.clock.utc().isoformat(), "ok": False, "error": str(e)})
+        if left() <= 0:
+            raise B.ArmTimeout("end_write: the ceiling passed")
+        end = client.request("end_write", timeout=left())
+        rec.footprint, rec.seal = end.get("footprint"), end.get("seal")
+        if launcher.store_persistence == "memory":
+            rec.client = client                                       # Q25(4): the store lives in this process
+        else:
+            rec.rc = client.close(timeout=max(1.0, left()))
+    except B.ArmTimeout as e:
+        rec.aborted, rec.error = "ceiling", str(e)
+        if client is not None:
+            client.kill_tree()
+            rec.rc = client.exit_code()
+        sched.status.unit_abort(status_id, unit, reason="ceiling")
+    except B.ArmError as e:
+        rec.aborted, rec.error = "crash", str(e)
+        if client is not None:
+            client.kill_tree()
+            rec.rc = client.exit_code()
+        sched.status.unit_abort(status_id, unit, reason="crash", rc=rec.rc if rec.rc is not None else -1)
+    finally:
+        rec.active_s = sched.clock.monotonic() - start
+    return rec
+
+
+def _write_turn(sched: "Scheduler", launcher: Any, *, stand: str, runs: Sequence[str], units: Sequence[str],
+                ops_for: Callable[[str, str], Sequence[Mapping]], ceilings: Mapping[str, float],
+                status_ids: Mapping[str, str]) -> dict:
+    """One arm's write stage in a block: every (run, unit) at once - block size x runs, identical for every arm
+    (§5.6), never more than the scheduler's concurrency - and the turn ends when all of them have."""
+    from concurrent.futures import ThreadPoolExecutor  # noqa: PLC0415
+    pairs = [(r, u) for r in runs for u in units]
+    width = sched.concurrency or len(pairs)
+    with ThreadPoolExecutor(max_workers=width) as pool:
+        futs = {(r, u): pool.submit(_write_unit, sched, launcher, stand=stand, run=r, unit=u, ops=ops_for(r, u),
+                                    ceiling=ceilings[u], status_id=status_ids[r]) for r, u in pairs}
+        return {k: f.result() for k, f in futs.items()}
+
