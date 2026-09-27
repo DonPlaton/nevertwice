@@ -9,7 +9,7 @@
   competitor-lacks-capability:k).
 * Claude Code's reads (Q-47-4, Q28): R-all is MEMORY.md, then every other file of the memory directory in
   lexicographic order of its relative path, each file one item; R-index (the V row) is MEMORY.md's first 200 lines or
-  25 KB, whichever ends first. A symlink, a non-file or a file that is not UTF-8 text refuses by name - the reader never
+  25 KB, whichever ends first - a line ends at LF only. A symlink, a non-file or a file that is not UTF-8 text refuses by name - the reader never
   follows a link out of the memory directory or guesses an encoding.
 
 ``count(text) -> int`` and ``cut(text, n) -> str`` (the longest prefix of at most n tokens) come from research/v3/tokens.py
@@ -122,7 +122,10 @@ def claude_r_index(memdir: Path) -> str:
     if MEMORY_INDEX not in files:
         return ""
     text = _read_text(files[MEMORY_INDEX], MEMORY_INDEX)
-    head = "".join(text.splitlines(keepends=True)[:R_INDEX_LINES])
+    # A line ends at LF only - never str.splitlines(), which also cuts at U+2028, U+2029, U+0085, CR, VT, FF and
+    # \x1c-\x1e inside a line and would hand the reader fewer than 200 of the competitor's lines (PT-SL, the A6 j4 class).
+    lines = text.split("\n")
+    head = "\n".join(lines[:R_INDEX_LINES]) + ("\n" if len(lines) > R_INDEX_LINES else "")
     raw = head.encode("utf-8")
     if len(raw) > R_INDEX_BYTES:
         head = raw[:R_INDEX_BYTES].decode("utf-8", "ignore")        # never half a character

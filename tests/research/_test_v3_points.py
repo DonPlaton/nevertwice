@@ -20,6 +20,7 @@ import os
 import shutil
 import sys
 import tempfile
+import threading
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -130,9 +131,22 @@ def stubborn_cut(text: str, n: int) -> str:
     return cut(text, n)
 
 
-check("a re-cut that does not shorten refuses instead of looping",
-      raises(lambda: PT.fill([words(3499, "p") + " x", words(4000, "q")], count=merging_count, cut=stubborn_cut),
-             PT.PointError, "shorter"))
+outcome: dict = {}
+
+
+def fill_stubborn() -> None:
+    try:
+        PT.fill([words(3499, "p") + " x", words(4000, "q")], count=merging_count, cut=stubborn_cut)
+        outcome["r"] = "no error"
+    except PT.PointError as e:
+        outcome["r"] = str(e)
+
+
+worker = threading.Thread(target=fill_stubborn, daemon=True)
+worker.start()
+worker.join(20)
+check("a re-cut that does not shorten refuses instead of looping (bounded: a loop is a named FAIL, not a hang)",
+      not worker.is_alive() and "shorter" in outcome.get("r", ""), outcome.get("r", "still looping after 20 s"))
 calls = {"n": 0}
 
 
@@ -174,6 +188,13 @@ try:
     (md / "MEMORY.md").write_bytes(lines.encode())
     idx = PT.claude_r_index(md)
     check("R-index: the first 200 lines when they are under 25 KB", idx == "".join(f"line {i}\n" for i in range(200)))
+    odd = "".join(f"line {i} a\u2028b\u0085c\rd\x0be\x0cf\x1cg\u2029h\n" for i in range(300))
+    (md / "MEMORY.md").write_bytes(odd.encode())
+    idx = PT.claude_r_index(md)
+    check("PT-SL R-index counts LF-terminated lines only: U+2028, U+0085, CR, VT, FF, \\x1c and U+2029 inside a line "
+          "do not end it - exactly 200 lines", idx.count("\n") == 200 and idx == "".join(odd.split("\n")[i] + "\n"
+                                                                                     for i in range(200)),
+          f"{idx.count(chr(10))} LF lines, {len(idx)} chars")
     big = "".join(("é" * 200) + "\n" for _ in range(150))            # 150 lines of ~401 bytes: 25 KB ends first
     (md / "MEMORY.md").write_bytes(big.encode())
     idx = PT.claude_r_index(md)
