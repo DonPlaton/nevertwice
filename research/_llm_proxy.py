@@ -881,6 +881,8 @@ class OllamaLeg:
             self.log(f"ollama leg failed: {type(e).__name__}")
             _send_local(cs, 502, "Bad Gateway", b"ollama unreachable")
         else:
+            if is_llm and stage.get("stage") == "write":         # Q-A5-1: a local writer's request reached Ollama
+                capture_body(self.run_dir, arm=self.arm, unit=unit, t0=t0, request_key=None, via="ollama", body=body)
             try:
                 framer = ResponseFramer(method)
                 framer.feed(first)
@@ -901,6 +903,28 @@ class OllamaLeg:
                       {"arm": self.arm, "unit": unit, "path": path, "is_embed": is_embed, "is_llm": is_llm,
                        "status": status, "error": error, "fallback_local": bool(is_llm and self.cloud_arm),
                        "t0": _iso(t0), "t1": _iso(time.time()), **stage})
+
+
+BODIES_DIR = "bodies"
+
+
+def capture_body(run_dir: Path, *, arm: str, unit: str | None, t0: float, request_key: str | None, via: str,
+                 body: bytes) -> bool:
+    """Q-A5-1 O-a: the parsed strings (strings_in) of one writer-LLM request sent in the write stage - one record per
+    call in <run_dir>/bodies/<arm>/<unit>.jsonl, for K76's coverage (accounting.unit_coverage). The runs tree only,
+    never committed, kept until E5 like the answer texts (Q8); the proxy token travels in a header, never in a body.
+    A body that does not parse, or a call without a unit prefix, leaves nothing (the call record says why). True when
+    a record was written."""
+    if not unit:
+        return False
+    try:
+        obj = json.loads(body)
+    except ValueError:
+        return False
+    _append_jsonl(Path(run_dir) / BODIES_DIR / arm / f"{unit}.jsonl",
+                  {"arm": arm, "unit": unit, "t0": _iso(t0), "request_key": request_key, "via": via,
+                   "strings": strings_in(obj)})
+    return True
 
 
 class _Prefixed:
@@ -1294,6 +1318,10 @@ class Proxy:
                     _refuse(cs, 502, "Bad Gateway", b"upstream send failed")              # body read: to EOF
                     return
                 ctr.bytes_up += len(out) + len(body)
+                if (rec is not None and role == "write" and self.stage.get("stage") == "write"
+                        and rec.get("endpoint") in ("v1", "anthropic")):
+                    capture_body(self.config.run_dir, arm=arm.arm, unit=unit, t0=t0,     # Q-A5-1: the writer's text
+                                 request_key=rec.get("request_key"), via="write", body=body)
                 tee = TeeParser() if rec is not None else None
                 keep, framer, ttfb, abandoned = self._pipe_response(cs, up, method, ctr, tee)
                 if rec is not None:

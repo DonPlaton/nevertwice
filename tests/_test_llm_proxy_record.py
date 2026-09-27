@@ -274,6 +274,30 @@ check("/anthropic SSE: model, input and output tokens, a thinking block, the too
       r["response_model"] == "deepseek-flash" and r["usage"]["prompt"] == 50 and r["usage"]["completion"] == 11
       and r["thinking"] is True and r["tools_called"] == ["Read"] and r["system_fingerprint"] is None, str(r))
 
+print("\n- Q-A5-1: the writer's request strings, for K76's coverage -")
+COVER = "a sentence of the unit that is long enough to be a window of the coverage"
+ctl("/stage", {"block": "b1", "stage": "write"})
+call(W, "/u/r1.cov-1/v1/chat/completions", {"model": "deepseek-flash", "messages": [{"role": "user", "content": COVER}]})
+rw = records(px)[-1]
+call(R, "/u/r1.cov-1/v1/chat/completions", {"model": "deepseek-flash", "messages": [{"role": "user",
+                                                                                     "content": "reader text only"}]})
+call(W, "/u/r1.cov-1/v1/chat/completions", {"model": "other-model", "messages": [{"role": "user",
+                                                                                  "content": "refused text"}]})
+ctl("/stage", {"block": "b1", "stage": "questions"})
+call(W, "/u/r1.cov-1/v1/chat/completions", {"model": "deepseek-flash", "messages": [{"role": "user",
+                                                                                     "content": "question stage text"}]})
+ctl("/stage", {"block": "b1", "stage": "write"})
+_bf = px.config.run_dir / "bodies" / "nevertwice" / "r1.cov-1.jsonl"
+_braw = _bf.read_bytes() if _bf.exists() else b""
+_bl = [json.loads(x) for x in _braw.decode("utf-8").split("\n") if x.strip()]
+check("Q-A5-1: a writer call in the write stage leaves its parsed strings in bodies/<arm>/<run>.<unit>.jsonl - keyed "
+      "like its call record, via the write port", len(_bl) == 1 and COVER in _bl[0]["strings"]
+      and _bl[0]["request_key"] == rw["request_key"] and _bl[0]["via"] == "write" and _bl[0]["unit"] == "r1.cov-1"
+      and _bl[0]["t0"] == rw["t0"], str(_bl)[:300])
+check("Q-A5-1: never a reader call, a refused call or a call in the question stage - and never the token",
+      bool(_braw) and all(t_ not in _braw for t_ in (b"reader text only", b"refused text", b"question stage text",
+                                                     T_ARM.encode())), _braw.decode("utf-8", "replace")[:300])
+
 print("\n- the request key -")
 k1 = P.request_key({"a": 1, "b": [1, 2]}, "nevertwice")
 check("the request key ignores key order and whitespace", k1 == P.request_key(json.loads('{ "b":[1,2], "a":1 }'), "nevertwice"))
@@ -378,11 +402,18 @@ print("\n- nothing written holds what it must not -")
 forbidden = [ST.SENTINEL_KEY, *CANARIES.values(), "Ivan Testov", "ivan.testov@example.org", "ivantestov",
              "purple elephant", "Иван", "extract", "hello-from-target"]
 files = [f for f in TMP.rglob("*") if f.is_file() and f.name != "deepseek.env"]
-leaks = [(f.name, w) for f in files for w in forbidden if w.encode("utf-8") in f.read_bytes()]
-check(f"no key, canary, marker text, name or body in the {len(files)} written files", leaks == [], str(leaks[:5]))
-check("the run directory holds only the logs", {f.name for f in files} <= {"calls.jsonl", "flags.jsonl", "catcher.jsonl",
-                                                                          "windows_proxy.jsonl"},
-      str(sorted({f.name for f in files})))
+bodies = [f for f in files if "bodies" in f.relative_to(TMP).parts]         # Q-A5-1: the writers' request strings
+logs_ = [f for f in files if f not in bodies]
+leaks = [(f.name, w) for f in logs_ for w in forbidden if w.encode("utf-8") in f.read_bytes()]
+check(f"no key, canary, marker text, name or body in the {len(logs_)} written log files", leaks == [], str(leaks[:5]))
+body_leaks = [(f.name, w) for f in bodies for w in forbidden if w != "extract" and w.encode("utf-8") in f.read_bytes()]
+check(f"Q-A5-1: the {len(bodies)} body files hold request strings only - never the key, a canary, an owner's name or "
+      f"marker (such a call is refused before it is sent), nor an answer", bodies and body_leaks == [],
+      str(body_leaks[:5]))
+check("the run directory holds only the logs - and the writers' request strings under bodies/<arm>/<run>.<unit>.jsonl",
+      {f.name for f in logs_} <= {"calls.jsonl", "flags.jsonl", "catcher.jsonl", "windows_proxy.jsonl"}
+      and all(f.parent.parent.name == "bodies" and f.suffix == ".jsonl" for f in bodies),
+      str(sorted({str(f.relative_to(TMP)) for f in files})))
 
 print("\n- R-FSYNC: a record is on the disk before the proxy goes on - flushed, then fsynced -")
 import ast as _ast  # noqa: E402

@@ -246,6 +246,20 @@ try:
 except ValueError:
     check("the config file cannot move the Ollama upstream with the real key", True)
 check("127.0.0.1:11434 was never dialled", ("127.0.0.1", 11434) not in dialled and dialled, str(set(dialled)))
+print("\n- Q-A5-1: a local writer's request strings, for K76's coverage -")
+px.stage = {"block": "b1", "stage": "write"}
+COVER = b'{"model":"m","messages":[{"role":"user","content":"a local sentence long enough for a coverage window"}]}'
+call(lp, "/u/r1.cov-2/api/chat", COVER)
+call(lp, "/u/r1.cov-2/api/embed", b'{"model":"m","input":"an embedded text never counted as reaching a writer"}')
+px.stage = {"block": "b1", "stage": "questions"}
+call(lp, "/u/r1.cov-2/api/chat", b'{"model":"m","messages":[{"role":"user","content":"a question stage chat"}]}')
+px.stage = {"block": None, "stage": None}
+_bf = TMP / "run" / "bodies" / "local" / "r1.cov-2.jsonl"
+_bl = [json.loads(x) for x in _bf.read_bytes().decode("utf-8").split("\n") if x.strip()] if _bf.exists() else []
+check("Q-A5-1: a generation call on the leg in the write stage leaves its parsed strings (via ollama); an embedding "
+      "call and a question-stage call never do", len(_bl) == 1 and _bl[0]["via"] == "ollama"
+      and "a local sentence long enough for a coverage window" in _bl[0]["strings"]
+      and not any("embedded text" in s or "question stage" in s for b_ in _bl for s in b_["strings"]), str(_bl)[:300])
 idle = P.OllamaLeg("idle", mode="pace", cloud_arm=False, upstream=("127.0.0.1", OL.port), log=lambda m: None, run_dir=TMP)
 check("an idle leg reports calls: 0 (never an absent record)", idle.transport().get("calls") == 0, str(idle.transport()))
 
