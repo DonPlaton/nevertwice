@@ -164,6 +164,11 @@ try:
           "(launch.new_token), never a bare hex", all(re.fullmatch(r"nvt3-[a-z0-9-]+-[0-9a-f]{32}", t_) and
                                                           t_.startswith(L.TOKEN_PREFIX) for t_ in sec["tokens"].values()),
           str(sorted(t_[:12] for t_ in sec["tokens"].values())))
+    def _safe(name):
+        return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
+    check("B-TOKEN (BTc): each token names its own arm or role - nvt3-<its name>- (launch.new_token's form)",
+          all(tok.startswith(f"nvt3-{_safe(n_)}-") for n_, tok in sec["tokens"].items()),
+          str({n_: tok[:24] for n_, tok in sec["tokens"].items()}))
     env_ok = L.assert_env(C_ENV, {"SystemRoot": "C:\\Windows", "DEEPSEEK_API_KEY": sec["tokens"]["mem0"]}, parent_env={},
                           catcher_url="http://127.0.0.1:47001/")
     check("B-TOKEN: ... and launch.assert_env accepts it as DEEPSEEK_API_KEY",

@@ -507,20 +507,28 @@ check("B-RST: a body over MAX_BODY - the client reads its 413", d413.startswith(
       and re_ is None, f"{d413[:40]!r} {se} {re_}")
 
 
-def guard_threads() -> int:
-    return sum(1 for th in threading.enumerate() if "_guard" in th.name)
+def guard_threads() -> set:
+    """The proxy's live connection threads, as objects: a row waits for the ones ITS exchange started, never on a count
+    that other rows' lingering threads confound."""
+    return {th for th in threading.enumerate() if "_guard" in th.name}
 
 
+DRAIN_PREREG = 2.0                                       # the auditor's ruling - never the module's (mutable) constant
+check("B-RST: the drain's time limit is the ruled 2 s", P.DRAIN_S == DRAIN_PREREG, str(P.DRAIN_S))
 base_threads = guard_threads()
 dh, se, re_, took, held = refused_exchange(NW, head_of("wrong-token", 1000), b"y" * 10, hold=True)
 t_hold = time.monotonic()
-while guard_threads() > base_threads and time.monotonic() - t_hold < 5:
+mine = guard_threads() - base_threads                      # this exchange's connection thread
+while any(th.is_alive() for th in mine) and time.monotonic() - t_hold < 5:
     time.sleep(0.05)
 thread_gone = time.monotonic() - t_hold
+gone_while_held = not any(th.is_alive() for th in mine)    # read BEFORE the client lets go
 held.close()
-check("B-RST: a client that holds its connection reads the 401 and end-of-file at once (the proxy's shutdown), and "
-      "the proxy's connection thread ends within 2 s + e", dh.startswith(b"HTTP/1.1 401") and took < 1.0
-      and guard_threads() <= base_threads and thread_gone <= P.DRAIN_S + 0.6, f"took={took:.2f} gone={thread_gone:.2f}")
+check("B-RST (BRc): a client that got its 401 and holds its socket, 990 body bytes owed and no end-of-file - it read "
+      "the answer and end-of-file at once, and the proxy's connection thread ended within 2 s + e while it still held",
+      dh.startswith(b"HTTP/1.1 401") and took < 1.0 and len(mine) == 1 and gone_while_held
+      and thread_gone <= DRAIN_PREREG + 0.6,
+      f"took={took:.2f} threads={len(mine)} gone={thread_gone:.2f} while_held={gone_while_held}")
 _bpx.stop()
 _bup.close()
 
@@ -581,10 +589,82 @@ _th2 = threading.Thread(target=lambda: _got2.append((P._refuse(_d, 401, "Unautho
                                                      time.monotonic() - _t0)), daemon=True)
 _th2.start()
 _th2.join(6)
+_alive2 = _th2.is_alive()                                  # read BEFORE the peer closes
 _c.close()
 _d.close()
 check("B-RST: a client that sends nothing more and never closes - the drain gives up after 2 s",
-      len(_got2) == 1 and _got2[0][0] == 0 and 1.5 <= _got2[0][1] <= P.DRAIN_S + 0.6, str(_got2))
+      not _alive2 and len(_got2) == 1 and _got2[0][0] == 0 and 1.5 <= _got2[0][1] <= DRAIN_PREREG + 0.6,
+      f"alive={_alive2} {_got2}")
+_g, _h = socket.socketpair()
+_got4: list = []
+_t4 = time.monotonic()
+_g.sendall(b"v" * 900)                                     # the rest of a 1000-byte body; 100 came with the head
+_th4 = threading.Thread(target=lambda: _got4.append((P._refuse(_h, 401, "Unauthorized",
+                                                               headers=[("Content-Length", "1000")], buffered=100),
+                                                     time.monotonic() - _t4)), daemon=True)
+_th4.start()
+_th4.join(6)
+_alive4 = _th4.is_alive()
+_g.close()
+_h.close()
+check("B-RST (BRf): head and part of the body came in one packet, the rest was sent, the client holds - _refuse drops "
+      "exactly Content-Length - buffered (900) and returns at once, not at the time limit",
+      not _alive4 and len(_got4) == 1 and _got4[0][0] == 900 and _got4[0][1] < 1.0, f"alive={_alive4} {_got4}")
+_e1, _e2 = socket.socketpair()
+_got5: list = []
+_t5 = time.monotonic()
+_e1.sendall(b"w" * 500)                                    # bytes past a request whose body was read, then end-of-file
+_e1.shutdown(socket.SHUT_WR)
+_th5 = threading.Thread(target=lambda: _got5.append((P._refuse(_e2, 502, "Bad Gateway", b"upstream unreachable"),
+                                                     time.monotonic() - _t5)), daemon=True)
+_th5.start()
+_th5.join(6)
+_alive5 = _th5.is_alive()
+_e1.close()
+_e2.close()
+check("B-RST (BRe): a refusal after the body was read (no headers given) drains to end-of-file - all 500 bytes the "
+      "client sent past it, at once - never a length of 0 that leaves them unread for the close's RST",
+      not _alive5 and len(_got5) == 1 and _got5[0][0] == 500 and _got5[0][1] < 1.0, f"alive={_alive5} {_got5}")
+
+_dead = Upstream()
+_dead_port = _dead.port
+_dead.close()                                              # an upstream that refuses: the proxy answers 502
+_hcfg = P.ProxyConfig(arms=[P.ArmConfig(arm="nevertwice", mode="record", token=T_ARM, pinned_model="deepseek-flash")],
+                      run_dir=TMP / "brh", upstream_host="127.0.0.1", upstream_port=_dead_port, upstream_tls=False,
+                      control_token="ctl-token")
+_hpx = P.Proxy(_hcfg, P.read_key(KEYFILE), log=lambda m: None)
+_hports = _hpx.start()
+_body = json.dumps({"model": "deepseek-flash", "messages": [{"role": "user", "content": "q"}]}).encode()
+_base502 = guard_threads()
+d502, se, re_, took502, held502 = refused_exchange(_hports["arms"]["nevertwice"]["write"],
+                                                   head_of(T_ARM, len(_body)), _body, hold=True)
+t_resp = time.time()                                       # the 502 and end-of-file are in: the drain runs on
+_mine502 = guard_threads() - _base502
+time.sleep(0.3)
+_calls = [json.loads(x) for x in (TMP / "brh" / "calls.jsonl").read_text(encoding="utf-8").splitlines()] \
+    if (TMP / "brh" / "calls.jsonl").exists() else []
+_draining = len(_mine502) == 1 and all(th.is_alive() for th in _mine502)   # the client holds: the drain waits on it
+held502.close()
+_t_close = time.monotonic()
+while any(th.is_alive() for th in _mine502) and time.monotonic() - _t_close < 5:
+    time.sleep(0.05)
+_ended502 = time.monotonic() - _t_close
+_hpx.stop()
+
+
+def _secs(iso_: str) -> float:
+    import datetime as _dt  # noqa: PLC0415
+    return _dt.datetime.fromisoformat(iso_.replace("Z", "+00:00")).timestamp()
+
+
+_c502 = _calls[-1] if _calls else {}
+check("B-RST (BRh): upstream unreachable, the client holds its socket - its 502 comes at once, and the call's record is "
+      "already written while the drain still runs, its t1 the failure's (no later than the 502), not the drain's end",
+      d502.startswith(b"HTTP/1.1 502") and _c502.get("upstream_error") and _c502.get("t1")
+      and _secs(_c502["t1"]) <= t_resp + 0.3, f"{d502[:20]!r} t_resp={t_resp:.2f} {_c502.get('t1')} {_c502.get('upstream_error')} took={took502:.2f}")
+check("B-RST (BRh): ... the proxy drains that held socket to end-of-file - its connection thread still runs 0.3 s after "
+      "the 502 and ends once the client closes, well inside the 2 s limit",
+      _draining and _ended502 < 1.0, f"draining={_draining} threads={len(_mine502)} ended_after_close={_ended502:.2f}")
 
 print("\n- R-TOOLS: an arm with write_port false has no write port - its catcher and reader only -")
 _up = Upstream()

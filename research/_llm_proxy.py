@@ -957,19 +957,20 @@ def _send_local(sock: socket.socket, status: int, reason: str, body: bytes = b""
 DRAIN_S = 2.0
 
 
-def _refuse(sock: socket.socket, status: int, reason: str, body: bytes = b"", *, headers=(), buffered: int = 0) -> int:
+def _refuse(sock: socket.socket, status: int, reason: str, body: bytes = b"", *, headers=None, buffered: int = 0) -> int:
     """B-RST: THE local refusal of _client - every one goes through here. The answer (Connection: close),
-    shutdown(SHUT_WR), then the rest of the request read and dropped: Content-Length - buffered bytes, or until
-    end-of-file when there is no usable length (a chunked body has none), DRAIN_S seconds in all; the caller's return
-    then closes the socket. Returns the bytes dropped, which are counted nowhere: the refusal is counted once, by its
-    caller."""
+    shutdown(SHUT_WR), then the rest of the request read and dropped: Content-Length - buffered bytes when the refusal
+    comes before the body (the headers given), or until end-of-file when there is no usable length - a chunked body, or
+    a refusal after the body was read (no headers given: nothing more of this request is owed) - DRAIN_S seconds in
+    all; the caller's return then closes the socket. Returns the bytes dropped, which are counted nowhere: the refusal
+    is counted once, by its caller."""
     _send_local(sock, status, reason, body)
     try:
         sock.shutdown(socket.SHUT_WR)
     except OSError:
         return 0
-    length = None
-    if "chunked" not in (_hget(headers, "transfer-encoding") or "").lower():
+    length = None                                        # no headers given: the body was read - to end-of-file
+    if headers is not None and "chunked" not in (_hget(headers, "transfer-encoding") or "").lower():
         try:
             length = int(_hget(headers, "content-length") or 0)
         except ValueError:
@@ -1254,8 +1255,7 @@ class Proxy:
                 del buf[:length]
                 if buf:                                  # a second request before this one was answered
                     ctr.refused_pipelined += 1
-                    _refuse(cs, 400, "Bad Request", b"pipelined requests are refused",
-                            headers=headers, buffered=len(buf))
+                    _refuse(cs, 400, "Bad Request", b"pipelined requests are refused")   # body read: to EOF
                     return
                 rec = None
                 if arm.mode == "record":
@@ -1264,8 +1264,7 @@ class Proxy:
                     if refusal:
                         rec.update(refused=refusal, t1=_iso(time.time()))
                         self._write_call(rec)
-                        _refuse(cs, 400, "Bad Request", f"refused: {refusal}".encode(),
-                                headers=headers, buffered=len(buf))
+                        _refuse(cs, 400, "Bad Request", f"refused: {refusal}".encode())    # body read: to EOF
                         return
                 body, injected = self._fallback(arm, method, path, headers, body)
                 ctr.thinking_injected += injected
@@ -1282,7 +1281,7 @@ class Proxy:
                         if rec is not None:                  # the record first: its t1 is the failure's, not the drain's
                             rec.update(upstream_error=type(e).__name__, t1=_iso(time.time()), thinking_injected=injected)
                             self._write_call(rec)
-                        _refuse(cs, 502, "Bad Gateway", b"upstream unreachable", headers=headers, buffered=len(buf))
+                        _refuse(cs, 502, "Bad Gateway", b"upstream unreachable")          # body read: to EOF
                         return
                 try:
                     up.sendall(out + body)
@@ -1292,7 +1291,7 @@ class Proxy:
                     if rec is not None:                  # B-SEND: a key lost here must reach transport_lost
                         rec.update(upstream_error=type(e).__name__, t1=_iso(time.time()), thinking_injected=injected)
                         self._write_call(rec)
-                    _refuse(cs, 502, "Bad Gateway", b"upstream send failed", headers=headers, buffered=len(buf))
+                    _refuse(cs, 502, "Bad Gateway", b"upstream send failed")              # body read: to EOF
                     return
                 ctr.bytes_up += len(out) + len(body)
                 tee = TeeParser() if rec is not None else None
