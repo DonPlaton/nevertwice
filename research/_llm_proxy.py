@@ -1234,6 +1234,9 @@ class Proxy:
                     ctr.upstream_errors += 1
                     self.log(f"upstream send failed: {type(e).__name__}")
                     _send_local(cs, 502, "Bad Gateway", b"upstream send failed")
+                    if rec is not None:                  # B-SEND: a key lost here must reach transport_lost
+                        rec.update(upstream_error=type(e).__name__, t1=_iso(time.time()), thinking_injected=injected)
+                        self._write_call(rec)
                     return
                 ctr.bytes_up += len(out) + len(body)
                 tee = TeeParser() if rec is not None else None

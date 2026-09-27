@@ -162,6 +162,37 @@ check("a recording arm's request with Connection: close gets EOF right after the
 pxc.stop()
 upc.close()
 
+
+class _SendFails:
+    """An upstream socket that connected but fails on the first send (a reset keep-alive upstream, a broken pipe - the
+    auditor's B-SEND): the proxy must still write the call's record, or a key lost this way never becomes
+    transport_lost."""
+
+    def __init__(self, exc: type[OSError]) -> None:
+        self.exc = exc
+
+    def sendall(self, data: bytes) -> None:
+        raise self.exc("the upstream went away")
+
+    def close(self) -> None:
+        pass
+
+
+for n, exc in enumerate((ConnectionResetError, BrokenPipeError)):
+    pxs, portss, ups = make(f"run_send{n}")
+    pxs._upstream = lambda exc=exc: _SendFails(exc)
+    gots = call(portss["arms"]["nevertwice"]["write"], "/u/r1.u1/v1/chat/completions",
+                {"model": "deepseek-flash", "messages": [], "thinking": {"type": "disabled"}})
+    rs = records(pxs)
+    check(f"B-SEND: a send that fails ({exc.__name__}) is a 502 AND a call record - upstream_error, t1, the request "
+          f"key and thinking_injected, no status",
+          gots.startswith(b"HTTP/1.1 502") and len(rs) == 1 and rs[0].get("upstream_error") == exc.__name__
+          and bool(rs[0].get("t1")) and bool(rs[0].get("request_key")) and rs[0].get("status") is None
+          and rs[0].get("thinking_injected") == 0 and pxs.counters["nevertwice"].upstream_errors == 1,
+          f"{gots[:30]!r} {rs}")
+    pxs.stop()
+    ups.close()
+
 px, ports, up = make("run1")
 W = ports["arms"]["nevertwice"]["write"]
 R = ports["arms"]["nevertwice"]["reader"]
