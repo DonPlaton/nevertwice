@@ -214,6 +214,31 @@ def check_seal(unit_dir, store) -> dict:
     return seal
 
 
+def write_state_seal(unit_dir, store_uri: str, digest: str, **meta) -> dict:
+    """The end of the write stage for a store that is not a directory - a graph in a server (the auditor's Q-46b-1): its
+    URI and a digest of its state, computed by the adapter from the product's own reads, written beside the unit."""
+    seal = {**meta, "store": store_uri, "sha256": digest, "kind": "state"}
+    path = os.path.join(os.fspath(unit_dir), SEAL_NAME)
+    with open(path + ".tmp", "wb") as fh:
+        fh.write(_encode(seal))
+    os.replace(path + ".tmp", path)
+    return seal
+
+
+def check_state_seal(unit_dir, store_uri: str, digest: str) -> dict:
+    """The start of the read stage for such a store: the sealed URI, the sealed state."""
+    try:
+        with open(os.path.join(os.fspath(unit_dir), SEAL_NAME), "rb") as fh:
+            seal = json.loads(fh.read().decode("utf-8"))
+    except (OSError, ValueError) as e:
+        raise SealError(f"the write stage's seal is missing or unreadable ({type(e).__name__})") from None
+    if seal.get("kind") != "state" or seal.get("store") != store_uri:
+        raise SealError("the read stage's store is not the one the write stage sealed")
+    if digest != seal.get("sha256"):
+        raise SealError("the store changed between the stages (its state digest differs)")
+    return seal
+
+
 class ArmClient:
     """The harness side of one child process (stdin/stdout pipes in binary mode)."""
 

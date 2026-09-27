@@ -203,6 +203,26 @@ with tempfile.TemporaryDirectory(prefix="v3seal_") as sd:
     (s_a / "a").write_bytes(b"bc")
     check("the digest keeps the path/bytes boundary: file 'ab' holding 'c' is not file 'a' holding 'bc' (S5)",
           B.tree_digest(s_ab)[0] != B.tree_digest(s_a)[0])
+    su = Path(sd) / "graph_unit"
+    su.mkdir()
+    st = B.write_state_seal(su, "falkordb://127.0.0.1:6380/u1", "d" * 64, arm="zep-graphiti", counts={"edges": 2})
+    check("write_state_seal: kind state, the store URI and the digest beside the unit",
+          st["kind"] == "state" and st["store"] == "falkordb://127.0.0.1:6380/u1" and st["sha256"] == "d" * 64
+          and (su / B.SEAL_NAME).is_file(), str(st))
+    check("check_state_seal: the same URI and digest pass",
+          safely(lambda: B.check_state_seal(su, "falkordb://127.0.0.1:6380/u1", "d" * 64), {}).get("kind") == "state")
+    check("check_state_seal: another store URI is refused",
+          raises(lambda: B.check_state_seal(su, "falkordb://127.0.0.1:6390/u1", "d" * 64), B.SealError, "not the one"))
+    check("check_state_seal: another state digest is refused",
+          raises(lambda: B.check_state_seal(su, "falkordb://127.0.0.1:6380/u1", "e" * 64), B.SealError,
+                 "changed between the stages"))
+    B.write_seal(su, store)
+    check("check_state_seal: a directory seal is not a state seal",
+          raises(lambda: B.check_state_seal(su, str(store.resolve()), B.tree_digest(store)[0]), B.SealError,
+                 "not the one"))
+    (su / B.SEAL_NAME).unlink()
+    check("check_state_seal: a missing seal is refused", raises(lambda: B.check_state_seal(su, "x", "y"), B.SealError,
+                                                                "missing"))
     d1 = B.tree_digest(store)
     d2 = B.tree_digest(str(store))
     check("tree_digest is deterministic and takes str or Path", d1 == d2 and len(d1[0]) == 64, str(d1))
