@@ -12,9 +12,11 @@ Ollama's model residency - each refusing, before a byte is sent, anything outsid
   /api/embed {model, input: [], keep_alive: 0} - an unload and nothing else (R5: an embedding-only tag is unloaded
   through /api/embed). ps() names the resident models. unload() asks /api/ps FIRST and sends nothing for a model it
   does not name (B-OLW: an embed call for a model that is not loaded would load it into the owner's VRAM); names are
-  compared with their tags - a tagless name is the ":latest" one (B-OLN); after an unload /api/ps must no longer name
-  the model (§5.6: one resident Ollama model per stage). No generation is ever asked: a body with any other field
-  refuses.
+  compared with their tags - a tagless name is the ":latest" one (B-OLN); after an unload /api/ps must stop naming
+  the model within UNLOAD_WAIT_S (§5.6: one resident Ollama model per stage). B-OLA: Ollama answers the unload at
+  once (expireRunner) and frees the runner afterwards, after its VRAM recovery wait - /api/ps names the model until
+  then, so the check asks /api/ps again every UNLOAD_POLL_S, never once. No generation is ever asked: a body with any
+  other field refuses.
 """
 from __future__ import annotations
 
@@ -22,6 +24,7 @@ import http.client
 import importlib.util
 import json
 import sys
+import time
 from pathlib import Path
 from typing import Any, Callable, Sequence
 
@@ -29,6 +32,7 @@ HERE = Path(__file__).resolve().parent
 LOOPBACK = "127.0.0.1"
 TIMEOUT_S = 30.0
 OLLAMA_PORT = 11434
+UNLOAD_WAIT_S, UNLOAD_POLL_S = 30.0, 0.25          # B-OLA: how long an unloaded model may still be named by /api/ps
 
 
 def _scheduler():
@@ -136,8 +140,10 @@ def full_name(model: str) -> str:
 class OllamaCtl:
     """The local Ollama, for residency only: which models are loaded, and unloading one."""
 
-    def __init__(self, *, port: int = OLLAMA_PORT, host: str = LOOPBACK, timeout: float = TIMEOUT_S) -> None:
+    def __init__(self, *, port: int = OLLAMA_PORT, host: str = LOOPBACK, timeout: float = TIMEOUT_S,
+                 unload_wait_s: float = UNLOAD_WAIT_S) -> None:
         self.host, self.port, self.timeout = _loopback(host), int(port), timeout
+        self.unload_wait_s = unload_wait_s
 
     @staticmethod
     def _allowed(method: str, path: str, body: Any) -> bool:
@@ -161,7 +167,8 @@ class OllamaCtl:
         return sorted(m.get("name") for m in (out or {}).get("models") or [] if isinstance(m, dict))
 
     def unload(self, model: str, *, embedder: bool = False) -> str:
-        """"not resident" (nothing sent) or "unloaded" (sent, and /api/ps checked)."""
+        """"not resident" (nothing sent) or "unloaded" (sent, and /api/ps asked until it no longer names the model -
+        at most unload_wait_s: Ollama frees the runner after it has answered the unload, B-OLA)."""
         name = full_name(model)
         if name not in {full_name(m) for m in self.ps()}:
             return "not resident"
@@ -169,6 +176,10 @@ class OllamaCtl:
             self._request("POST", "/api/embed", {"model": name, "input": [], "keep_alive": 0})
         else:
             self._request("POST", "/api/generate", {"model": name, "keep_alive": 0})
-        if name in {full_name(m) for m in self.ps()}:
-            raise ControlError(f"{name} is still resident after its unload (§5.6: one resident model per stage)")
+        deadline = time.monotonic() + self.unload_wait_s
+        while name in {full_name(m) for m in self.ps()}:
+            if time.monotonic() >= deadline:
+                raise ControlError(f"{name} is still resident {self.unload_wait_s:g} s after its unload (§5.6: one "
+                                   f"resident model per stage)")
+            time.sleep(UNLOAD_POLL_S)
         return "unloaded"

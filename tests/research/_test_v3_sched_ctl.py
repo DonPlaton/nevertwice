@@ -9,7 +9,8 @@
 * OllamaCtl: the allowlist - GET /api/ps, POST /api/generate {model, keep_alive: 0}, POST /api/embed {model, input: [],
   keep_alive: 0} - and nothing else, refused before a byte; unload() asks /api/ps first and sends nothing for a model
   it does not name (B-OLW: an embed call would load it), compares names with their tags (B-OLN: "bge-m3" is
-  "bge-m3:latest"), and checks /api/ps no longer names the model;
+  "bge-m3:latest"), and checks /api/ps no longer names the model - asked again until it does, within unload_wait_s
+  (B-OLA: Ollama answers an unload before it frees the runner);
 * both clients refuse a host other than 127.0.0.1.
 
     python tests/research/_test_v3_sched_ctl.py
@@ -59,7 +60,7 @@ def err(fn) -> str:
     except CT.ControlError as e:
         return str(e)
     except Exception as e:  # noqa: BLE001
-        return f"not a ControlError: {type(e).__name__}: {e}"
+        return f"not a ControlError: {type(e).__name__}"      # no text: a keyword row never passes on it
 
 
 class Fake:
@@ -70,6 +71,8 @@ class Fake:
         self.status = 200
         self.resident = {"nvt3-bge-m3-d1:latest", "qwen3:8b"}
         self.sticky = False                                   # an unload that does not unload
+        self.lag = 0                                          # B-OLA: /api/ps answers naming a model after its unload
+        self.pending: dict[str, int] = {}
         fake = self
 
         class H(BaseHTTPRequestHandler):
@@ -79,10 +82,18 @@ class Fake:
                 fake.seen.append((self.command, self.path, self.headers.get("Authorization"), body))
                 if self.path == "/api/ps":
                     out = {"models": [{"name": m} for m in sorted(fake.resident)]}
+                    for m in list(fake.pending):              # Ollama frees the runner after answering the unload
+                        fake.pending[m] -= 1
+                        if fake.pending[m] <= 0:
+                            del fake.pending[m]
+                            fake.resident.discard(m)
                 elif self.path in ("/api/generate", "/api/embed"):
                     obj = json.loads(body or b"{}")
                     if obj.get("keep_alive") == 0 and not fake.sticky:
-                        fake.resident.discard(obj.get("model"))
+                        if fake.lag:
+                            fake.pending[obj.get("model")] = fake.lag
+                        else:
+                            fake.resident.discard(obj.get("model"))
                     out = {"done": True}
                 else:
                     out = {"ok": True}
@@ -154,7 +165,9 @@ try:
     check("an empty token refuses - the control port needs its bearer token", "token" in err(lambda: CT.ProxyControl(fk.port, "")))
 
     print("\n- OllamaCtl -")
-    oc = CT.OllamaCtl(port=fk.port)
+    check("B-OLA: an unload is waited for up to UNLOAD_WAIT_S by default (Ollama frees the runner after answering)",
+          CT.OllamaCtl(port=fk.port).unload_wait_s == CT.UNLOAD_WAIT_S >= 10, str(CT.UNLOAD_WAIT_S))
+    oc = CT.OllamaCtl(port=fk.port, unload_wait_s=0.5)                  # the sticky rows below wait this long
     check("ps() names the resident models", oc.ps() == ["nvt3-bge-m3-d1:latest", "qwen3:8b"]
           and fk.seen[-1][:2] == ("GET", "/api/ps"))
     oc.unload("qwen3:8b")
@@ -166,8 +179,16 @@ try:
     check("unload() of an embedding tag posts {model, input: [], keep_alive: 0} to /api/embed (R5)",
           len(emb) == 1 and json.loads(emb[0][3]) == {"model": "nvt3-bge-m3-d1:latest", "input": [], "keep_alive": 0})
     check("and each unload is checked on /api/ps", oc.ps() == [] and fk.seen[-2][1] == "/api/ps")
+    fk.resident, fk.lag = {"qwen3:8b"}, 3
+    n = len(fk.seen)
+    got = err(lambda: CT.OllamaCtl(port=fk.port, unload_wait_s=10.0).unload("qwen3:8b"))
+    ps_after = [s[1] for s in fk.seen[n:]].count("/api/ps") - 1              # the first one is B-OLW's ask
+    check("B-OLA: a model /api/ps still names for 3 answers after its unload is waited for, not refused - Ollama "
+          "answers the unload at once and frees the runner after its VRAM recovery",
+          got == "no error" and ps_after == 4 and fk.resident == set(), f"{got} ps after the unload: {ps_after}")
+    fk.lag = 0
     fk.resident, fk.sticky = {"qwen3:8b"}, True
-    check("an unload /api/ps still names is a ControlError (one resident model per stage, §5.6)",
+    check("an unload /api/ps still names after unload_wait_s is a ControlError (one resident model per stage, §5.6)",
           "still resident" in err(lambda: oc.unload("qwen3:8b")))
     fk.sticky = False
     fk.resident = set()
