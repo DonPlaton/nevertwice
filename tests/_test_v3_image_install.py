@@ -13,8 +13,12 @@ _docker_step runs against a stub launch whose build_env is the real one:
 * the load and the store-independent checks: RootFS.Layers == diff_ids, the config's config keys equal, the Id the
   config digest (classic) or the manifest digest (containerd), recorded; the image set after = before + exactly the
   new image - an extra or a lost image is a problem;
-* every docker call: DOCKER_CONFIG an empty directory in its unit, no DOCKER_HOST even when the parent has one, no
-  proxy variable; the manifest declares both image windows exactly as the code does.
+* every docker call: DOCKER_CONFIG an empty directory in its unit's HOME (B-C4B-CWD: never its cwd, which the contract's
+  spawn refuses when not empty), no DOCKER_HOST even when the parent has one, no proxy variable - and the stub spawn
+  runs the REAL L.check_cwd and L.assert_env on what _docker_step hands it (the producer -> consumer seam); the docker
+  CLI is the contract's named exception; the manifest declares both image windows exactly as the code does;
+* C4B-2: the engine must say linux/amd64 (Server.Os, Server.Arch recorded) before the window; C4B-3: the ref is absent
+  only on exit 1 with "No such image" on stderr.
 
     python tests/_test_v3_image_install.py
 """
@@ -82,8 +86,9 @@ REF = II.ref_for("letta/letta", sha(MAN))
 
 
 class FakeWindow:
-    def __init__(self, *, summary=None, tamper=None, untunnelled=None, drop=None, problems=()):
+    def __init__(self, *, summary=None, tamper=None, untunnelled=None, drop=None, problems=(), same_size=None):
         self.summary, self.tamper, self.untunnelled = summary or dict(SUMMARY), tamper, untunnelled
+        self.same_size = same_size
         self.drop, self.problems = drop, list(problems)
         self.seen: dict = {}
 
@@ -98,6 +103,8 @@ class FakeWindow:
             (blobs / sha(self.tamper).split(":")[1]).write_bytes(b"changed on the disk")
         if self.drop:
             (blobs / sha(self.drop).split(":")[1]).unlink()
+        if self.same_size:                          # other bytes, the very same length
+            (blobs / sha(self.same_size).split(":")[1]).write_bytes(b"x" * len(self.same_size))
         hosts = [h for h in kw["hosts"] if h != self.untunnelled]
         return {"problems": list(self.problems), "check": {"complete": True}, "issuers": [], "catcher": [{"host": h, "tunnelled": True} for h in hosts],
                 "jobs": [{"unit": str(unit), "summary": [self.summary]}]}
@@ -107,13 +114,14 @@ class FakeDocker:
     """A docker CLI over an image store: {id: [refs]}."""
 
     def __init__(self, *, store="containerd", ref_present=False, load_rc=0, daemon_rc=0, inspect_patch=None, extra=None,
-                 lose=None, absent_rc=None, dirty=()):
+                 lose=None, absent_rc=None, dirty=(), engine=("linux", "amd64"), absent_err=None, fail_arms=()):
         self.images = {"sha256:" + "1" * 64: ["owner/thing:latest"], "sha256:" + "2" * 64: ["owner/other:1"]}
         if ref_present:
             self.images["sha256:" + "3" * 64] = [REF]
         self.store, self.load_rc, self.daemon_rc = store, load_rc, daemon_rc
         self.inspect_patch, self.extra, self.lose = inspect_patch or {}, extra, lose
         self.absent_rc, self.dirty = absent_rc, set(dirty)
+        self.engine, self.absent_err, self.fail_arms = engine, absent_err, set(fail_arms)
         self.calls: list = []
         self.loaded_tar = None
 
@@ -127,11 +135,16 @@ class FakeDocker:
         self.calls.append(list(argv))
         a = argv[0]
         if arm == "absent" and self.absent_rc is not None:
-            return self.absent_rc, b"", b"", CLEAN
+            return self.absent_rc, b"", self.absent_err or b"", CLEAN
+        if arm == "absent" and self.absent_err is not None:
+            return 1, b"", self.absent_err, CLEAN
+        if arm in self.fail_arms:                  # that call fails with nothing on stdout
+            return 1, b"", b"Error response from daemon: something broke", CLEAN
         if a in ("version", "info") and self.daemon_rc:
             return self.daemon_rc, b"", b"cannot connect", CLEAN
         if a == "version":
-            return 0, json.dumps({"Server": {"Version": "29.1.3"}}).encode(), b"", CLEAN
+            return 0, json.dumps({"Client": {"Os": "windows", "Arch": "amd64"},
+                                  "Server": {"Version": "29.1.3", "Os": self.engine[0], "Arch": self.engine[1]}}).encode(), b"", CLEAN
         if a == "info":
             return 0, json.dumps({"DockerRootDir": "/var/lib/docker", "Driver": "overlayfs",
                                   "DriverStatus": [["driver-type", "io.containerd.snapshotter.v1"]]}).encode(), b"", CLEAN
@@ -140,7 +153,7 @@ class FakeDocker:
         if argv[:2] == ["image", "inspect"]:
             iid = next((i for i, refs in self.images.items() if argv[2] in refs), None)
             if iid is None:
-                return 1, b"", b"No such image", CLEAN
+                return 1, b"", f"Error response from daemon: No such image: {argv[2]}".encode(), CLEAN
             got = {"Id": iid, "RootFS": {"Type": "layers", "Layers": list(CONFIG["rootfs"]["diff_ids"])},
                    "Config": {**CONFIG["config"], "Labels": None}, **self.inspect_patch}
             return 0, json.dumps([got]).encode(), b"", CLEAN
@@ -171,12 +184,12 @@ def contract(tag):
 BIG = 1 << 50
 
 
-def run(tag, *, window=None, docker=None, free=BIG, name="letta"):
+def run(tag, *, window=None, docker=None, free=BIG, name="letta", volume=Path("C:\\"), free_bytes=None):
     c = contract(tag)
     w, d = window or FakeWindow(), docker or FakeDocker()
     try:
         rec = II.run_image_install(c, L, w, name=name, run="d1", via_port=1, parent_env={}, python=Path("py.exe"),
-                                   docker=d, free_bytes=lambda p: free, docker_volume=Path("C:\\"))
+                                   docker=d, free_bytes=free_bytes or (lambda p: free), docker_volume=volume)
         err = None
     except Exception as e:  # noqa: BLE001 - a refusal is the row's to read
         rec, err = {}, e
@@ -190,7 +203,8 @@ check("read only first: docker version and info recorded - the server version, D
       "snapshotter - and the image set before, all ahead of the window", [x[:2] for x in D.calls[:3]]
       == [["version", "--format"], ["info", "--format"], ["image", "ls"]]
       and rec.get("docker", {}).get("server_version") == "29.1.3" and rec["docker"]["docker_root_dir"] == "/var/lib/docker"
-      and rec["docker"]["containerd_snapshotter"] is True and rec.get("images_before") == 2, str(rec.get("docker")))
+      and rec["docker"]["containerd_snapshotter"] is True and rec.get("images_before") == 2
+      and rec["docker"].get("server_os") == "linux" and rec["docker"].get("server_arch") == "amd64", str(rec.get("docker")))
 check("the window runs the declared repository's OCI job on exactly the declared hosts",
       W.seen.get("window") == "a8-docker-letta" and W.seen.get("hosts") == [II.REGISTRY, II.AUTH, *II.CDN_HOSTS]
       and W.seen.get("jobs") == [II.oci_job("letta")] and II.oci_job("letta")["repo"] == "letta/letta", str(W.seen.get("hosts")))
@@ -261,6 +275,39 @@ rec, C, W, D, err = run("size", window=FakeWindow(summary=BADSIZE))
 check("a blob of the right digest but not the summary's declared size stops it before the load",
       any("not its digest's bytes or its size" in p for p in rec.get("problems") or [])
       and not any(x[0] == "load" for x in D.calls), str(rec.get("problems")))
+for label, engine in (("windows", ("windows", "amd64")), ("arm64", ("linux", "arm64"))):
+    rec, C, W, D, err = run(f"engine_{label}", docker=FakeDocker(engine=engine))
+    check(f"C4B-2: an engine that says {engine[0]}/{engine[1]} is refused by name before the window - the image would "
+          f"land in another engine", any(f"the daemon's engine is {engine[0]}/{engine[1]}" in p for p in rec.get("problems") or [])
+          and not W.seen and not any(x[0] == "load" for x in D.calls)
+          and rec.get("docker", {}).get("server_os") == engine[0], str(rec.get("problems")))
+rec, C, W, D, err = run("absent_daemon_err", docker=FakeDocker(absent_err=b"Error response from daemon: i/o timeout"))
+check("C4B-3: exit 1 from the ref's inspect without \"No such image\" on stderr (a daemon error) is not absence - a "
+      "problem by name, nothing loaded", any("absence could not be read" in p for p in rec.get("problems") or [])
+      and not any(x[0] == "load" for x in D.calls), str(rec.get("problems")))
+rec, C, W, D, err = run("absent_rc125", docker=FakeDocker(absent_rc=125, absent_err=b"Error: No such image: x"))
+check("C4B-3: \"No such image\" on stderr with an exit other than 1 is not absence either - both are required",
+      any("absence could not be read" in p for p in rec.get("problems") or [])
+      and not any(x[0] == "load" for x in D.calls), str(rec.get("problems")))
+rec, C, W, D, err = run("dirty_load_named", docker=FakeDocker(dirty={"load"}))
+check("D-C4b-2: a dirty load stays a problem (the run exits 1) and the record names the image left loaded",
+      any("docker load check counted 1 egress" in p for p in rec.get("problems") or []) and rec.get("loaded_ref") == REF,
+      str({k: rec.get(k) for k in ("problems", "loaded_ref")}))
+rec, C, W, D, err = run("same_size", window=FakeWindow(same_size=L2))
+check("a blob of the right size but other bytes on the disk stops it before the load",
+      any("not its digest's bytes or its size" in p for p in rec.get("problems") or [])
+      and not any(x[0] == "load" for x in D.calls), str(rec.get("problems")))
+asked: list = []
+rec, C, W, D, err = run("default_volume", volume=None, free_bytes=lambda p: asked.append(p) or BIG)
+check("with no volume given, the headroom is read on C:\\ (Docker Desktop's data)", asked == [Path("C:\\")]
+      and rec.get("headroom", {}).get("volume") == "C:\\", str(asked))
+rec, C, W, D, err = run("ls_before_fail", docker=FakeDocker(fail_arms={"ls-before"}))
+check("an image ls that fails before the window is a problem by name, and no window runs",
+      any("docker image ls failed before the window" in p for p in rec.get("problems") or []) and not W.seen,
+      str(rec.get("problems")))
+rec, C, W, D, err = run("inspect_fail", docker=FakeDocker(fail_arms={"inspect"}))
+check("an inspect that fails after the load is a problem by name - no JSON crash on its empty output",
+      err is None and any("cannot be inspected" in p for p in rec.get("problems") or []), f"{err!r} {rec.get('problems')}")
 rec, C, W, D, err = run("down", docker=FakeDocker(daemon_rc=1))
 check("a daemon that does not answer stops everything before the window",
       any("daemon is not answering" in p for p in rec.get("problems") or []) and not W.seen, str(rec.get("problems")))
@@ -325,7 +372,12 @@ class Proc:
 
 
 def stub_spawn(c, argv, **kw):
+    """B-C4B-CWD (the auditor): the one function the stub replaces is the one that checks - so it runs the REAL checks
+    of launch.spawn on what _docker_step hands it."""
     seen["argv"], seen["env"] = list(argv), dict(kw["env"])
+    seen["reasons"] = (L.check_cwd(c, kw["cwd"], kw["record"])
+                       + L.assert_env(c, kw["env"], parent_env=kw["parent_env"], catcher_url=kw["catcher_url"])
+                       + L.assert_argv(c, argv))
     return SimpleNamespace(process=Proc(), kill_tree=lambda: None)
 
 
@@ -337,11 +389,16 @@ parent = {"SystemRoot": os.environ.get("SystemRoot", r"C:\Windows"), "DOCKER_HOS
 rc, out, errb, chk = II._docker_step(c3, Lstub, docker_exe=II.DOCKER, argv=["version"], stand="_install.x", run="d1",
                                      arm="version", parent_env=parent, native=None, fs=None, check_id="t")
 cfgdir = Path(seen["env"].get("DOCKER_CONFIG", "")) if seen.get("env") else Path("")
+check("B-C4B-CWD: what _docker_step hands the spawn passes the contract's own checks - check_cwd (the cwd fresh and "
+      "EMPTY), assert_env and assert_argv - with no reason", seen.get("reasons") == [], str(seen.get("reasons")))
 check("every docker call: DOCKER_CONFIG is an empty directory in its unit (never the parent's), no DOCKER_HOST even "
       "when the parent has one, no proxy variable, the system docker CLI", seen.get("argv", [None])[0] == str(II.DOCKER)
       and cfgdir.is_dir() and list(cfgdir.iterdir()) == [] and str(c3.runs_root) in str(cfgdir)
       and "DOCKER_HOST" not in seen["env"] and not any(k.upper() in ("HTTPS_PROXY", "HTTP_PROXY") for k in seen["env"]),
       str(sorted(seen.get("env", {}))))
+
+check("the docker CLI image_install runs is the contract's named exception (launch.Contract.default)",
+      L.Contract.default().binary_exceptions.get(str(II.DOCKER)) == "the system docker CLI", str(II.DOCKER))
 
 print("\n- the manifest declares both image windows as the code does -")
 MANW = json.loads((ROOT / "research" / "v3" / "fetch_manifest.json").read_text(encoding="utf-8"))["windows"]

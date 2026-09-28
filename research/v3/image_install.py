@@ -2,22 +2,27 @@
 """PREREG-V3 A8 C4b (the auditor's Q-C4-1..5): an arm's container image by digest - letta, FalkorDB - loaded into the
 owner's Docker store from verified blobs, with no pull, no login and no setting changed.
 
-1. Read-only, before anything: ``docker version`` and ``docker info`` (recorded: the server version, DockerRootDir,
-   the storage driver and whether the containerd snapshotter is on), and the image set. Every docker call is a
-   contract spawn of the system docker CLI with DOCKER_CONFIG = an empty directory in its unit (so no credential and
-   no config of the owner's is read) and no DOCKER_HOST (the allowlist never passes one).
+1. Read-only, before anything: ``docker version`` and ``docker info`` (recorded: the server version, its Os and Arch,
+   DockerRootDir, the storage driver and whether the containerd snapshotter is on), and the image set. The engine must
+   say linux/amd64, else it is refused by name before the window (C4B-2: the default pipe follows Docker Desktop's
+   engine mode, and a Windows-containers engine would take the image into the wrong store). Every docker call is a
+   contract spawn of the system docker CLI with DOCKER_CONFIG = an empty directory in its unit's HOME - never its cwd,
+   which the spawn requires empty (B-C4B-CWD) - so no credential and no config of the owner's is read, and no
+   DOCKER_HOST (the allowlist never passes one).
 2. ONE declared window ``a8-docker-<name>`` - hosts exactly the registry, its token service and the declared CDN
    host(s) (fetch_manifest.json) - running the fetch child's OCI job (research/v3/fetch_child.py, oci_job): the newest
    release by the numbers, its one linux/amd64 manifest, config and layers checked on the disk as they stream. Every
    host the job reached must have been tunnelled by the catcher.
 3. After the window, offline: every blob re-read from the disk against its digest and size; the ref
-   ``nvt3/<repo>:<manifest digest's first 12>`` must be ABSENT from the store; the headroom rule on the volume that
+   ``nvt3/<repo>:<manifest digest's first 12>`` must be ABSENT from the store - absent means exit 1 with "No such
+   image" on stderr, anything else is "could not be read" (C4B-3); the headroom rule on the volume that
    holds Docker's data (C: when unknown): free - 3 x the layers' compressed size >= 10 GiB, else blocked:disk:<name>
    for the owner; an OCI image-layout tar of the PLATFORM manifest, built on D: from the verified blobs only.
 4. ``docker load -i`` that tar, then store-independent checks on ``docker image inspect <ref>``: RootFS.Layers ==
    the config's rootfs.diff_ids, every key of the config's "config" equal in .Config, and .Id - the config digest on
    the classic store, the manifest digest on the containerd store; which one it is, is recorded. The image set after
-   the load must be the set before plus exactly the new image.
+   the load must be the set before plus exactly the new image. From a successful load on, the record names the loaded
+   ref (loaded_ref), so a later problem - a dirty boundary check on the load included - leaves it named.
 
 The record (<runs>/_install/a8-docker-<name>/<run>/image_record.json) carries all of it, the OCI job's summary (no
 token, no signed query), the tar's sha256, and every problem by name; a problem stops what comes after it. Removing
@@ -157,7 +162,7 @@ def _docker_step(c, L, *, docker_exe: Path, argv: list[str], stand: str, run: st
     """One docker CLI call: a contract spawn under its own boundary check, DOCKER_CONFIG an empty directory in its unit,
     no proxy variable, no DOCKER_HOST."""
     unit = L.make_unit_dirs(c, stand, run, arm, arm[0] + "1")
-    cfg = Path(unit.cwd) / "docker_config_empty"
+    cfg = Path(unit.home) / "docker_config_empty"   # B-C4B-CWD: the cwd must stay empty for the spawn's check_cwd
     cfg.mkdir(parents=True, exist_ok=True)
     env = L.build_env(c, parent_env=parent_env, unit=unit, path_dirs=[docker_exe.parent],
                       declared={"DOCKER_CONFIG": os.fspath(cfg)}, catcher_url="", proxies=False)
@@ -205,7 +210,7 @@ def run_image_install(c, L, F, *, name: str, run: str, via_port: int, parent_env
     free_bytes = free_bytes or (lambda p: shutil.disk_usage(p).free)
     record: dict = {"window": window, "run": run, "image": name, "repo": repo, "problems": []}
 
-    def dk(argv: list[str], arm: str) -> tuple[int | None, str]:
+    def dk(argv: list[str], arm: str) -> tuple[int | None, str, str]:
         if docker is not None:
             rc, out, err, chk = docker(argv, arm, f"install-{window}-{run}-{arm}")
         else:
@@ -216,20 +221,27 @@ def run_image_install(c, L, F, *, name: str, run: str, via_port: int, parent_env
         record.setdefault("docker_calls", []).append({"argv": list(argv), "rc": rc, "check": summ})
         record["problems"] += IV.check_problems(f"docker {arm}", summ)
         text = out.decode("utf-8", "replace") if isinstance(out, bytes) else str(out)
-        return rc, text
+        etext = err.decode("utf-8", "replace") if isinstance(err, bytes) else str(err or "")
+        return rc, text, etext
 
     # 1. read only: the daemon's facts and the image set before
-    rc, out = dk(["version", "--format", "{{json .}}"], "version")
-    rc2, out2 = dk(["info", "--format", "{{json .}}"], "info")
+    rc, out, _ = dk(["version", "--format", "{{json .}}"], "version")
+    rc2, out2, _ = dk(["info", "--format", "{{json .}}"], "info")
     if rc != 0 or rc2 != 0:
         record["problems"].append(f"docker version/info failed ({rc}, {rc2}) - the daemon is not answering")
         return _write(base, record)
     ver, info = json.loads(out), json.loads(out2)
     status = [list(x) for x in info.get("DriverStatus") or []]
-    record["docker"] = {"server_version": (ver.get("Server") or {}).get("Version"), "docker_root_dir": info.get("DockerRootDir"),
+    server = ver.get("Server") or {}
+    record["docker"] = {"server_version": server.get("Version"), "server_os": server.get("Os"),
+                        "server_arch": server.get("Arch"), "docker_root_dir": info.get("DockerRootDir"),
                         "driver": info.get("Driver"), "driver_status": status,
                         "containerd_snapshotter": any(x and x[0] == "driver-type" and "snapshotter" in str(x[-1]) for x in status)}
-    rc, out = dk(["image", "ls", "--all", "--quiet", "--no-trunc"], "ls-before")
+    if (server.get("Os"), server.get("Arch")) != ("linux", "amd64"):
+        record["problems"].append(f"the daemon's engine is {server.get('Os')}/{server.get('Arch')}, not linux/amd64 - "
+                                  f"the image would land in another engine (C4B-2); refused before the window")
+        return _write(base, record)
+    rc, out, _ = dk(["image", "ls", "--all", "--quiet", "--no-trunc"], "ls-before")
     if rc != 0:
         record["problems"].append("docker image ls failed before the window")
         return _write(base, record)
@@ -263,10 +275,10 @@ def run_image_install(c, L, F, *, name: str, run: str, via_port: int, parent_env
     record["ref"] = ref
     if record["problems"]:
         return _write(base, record)
-    rc, _ = dk(["image", "inspect", ref], "absent")
+    rc, _, err = dk(["image", "inspect", ref], "absent")
     if rc == 0:
         record["problems"].append(f"the ref {ref} is already in the store - refused, nothing loaded (Q-C4-4)")
-    elif rc != 1:                                  # a timeout or a daemon error says nothing about the ref
+    elif rc != 1 or "No such image" not in err:    # C4B-3: a timeout or a daemon error says nothing about the ref
         record["problems"].append(f"the ref {ref}'s absence could not be read (docker image inspect exit {rc}) - "
                                   f"nothing loaded (Q-C4-4)")
     if record["problems"]:
@@ -281,12 +293,13 @@ def run_image_install(c, L, F, *, name: str, run: str, via_port: int, parent_env
     tar_path = base / f"{name}.oci.tar"
     record["layout_sha256"] = build_layout(blob_dir, summary, ref, tar_path)
     # 4. the load and the store-independent checks
-    rc, out = dk(["load", "--input", os.fspath(tar_path)], "load")
+    rc, out, _ = dk(["load", "--input", os.fspath(tar_path)], "load")
     record["load_output_tail"] = out[-400:]
     if rc != 0:
         record["problems"].append(f"docker load failed (exit {rc})")
         return _write(base, record)
-    rc, out = dk(["image", "inspect", ref], "inspect")
+    record["loaded_ref"] = ref                     # D-C4b-2: named from here on, whatever comes after
+    rc, out, _ = dk(["image", "inspect", ref], "inspect")
     if rc != 0:
         record["problems"].append(f"the loaded ref {ref} cannot be inspected")
         return _write(base, record)
@@ -295,7 +308,7 @@ def run_image_install(c, L, F, *, name: str, run: str, via_port: int, parent_env
     probs, store = post_load(inspect, config, summary)
     record["problems"] += probs
     record["store"], record["image_id"] = store, inspect.get("Id")
-    rc, out = dk(["image", "ls", "--all", "--quiet", "--no-trunc"], "ls-after")
+    rc, out, _ = dk(["image", "ls", "--all", "--quiet", "--no-trunc"], "ls-after")
     after = sorted(set(out.split())) if rc == 0 else None
     new = sorted(set(after or []) - set(before))
     record["images_after"], record["images_new"] = (len(after) if after is not None else None), new

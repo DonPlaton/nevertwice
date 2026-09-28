@@ -12,6 +12,8 @@
 * the offline install: --require-hashes --no-deps --no-index --find-links <the wheels> -r <the lock>, no index URL;
 * the import probe takes plain names only; the declared venvs (mem0_v3 = mem0ai 2.2.0, PREREG §2.2);
 * run_lock_install refuses before any spawn: an undeclared venv, an existing venv, a used run label.
+* the seam (B-C4B-CWD, the auditor): install_v3_data._step with the offline pip's declared env hands a stub spawn
+  that runs launch's REAL check_cwd, assert_env and assert_argv - no reason.
 
     python tests/_test_v3_lock_install.py
 """
@@ -304,6 +306,53 @@ b9 = refusal(lambda: LI.run_lock_install(C, Lspy, Fake, venv=TMP / "polygon" / "
 check("LN3 (the auditor): a venv that declares no base, or names an undeclared one, is refused by name (LI-1) before any "
       "directory is made", all("declares no base" in r and "LI-1" in r for r in (nb, b9))
       and not (C.runs_root / "_install" / "a8-pypi-nb_v3").exists() and spawned == [], f"{nb} | {b9}")
+
+print("\n- the seam: what install_v3_data._step hands the spawn, with the offline pip's declared env -")
+seam: dict = {}
+
+
+class _SeamW:
+    def __init__(self, *a, **k):
+        self.native = None
+
+    def begin_check(self, cid):
+        pass
+
+    def end_check(self, cid):
+        return {"complete": True, "native": {"hits": 0, "loopback_hits": 0}, "fs": {"fs_hits": 0}}
+
+
+class _SeamProc:
+    returncode = 0
+
+    def communicate(self, timeout=None):
+        return b"", b""
+
+
+def _seam_spawn(c, argv, **kw):
+    """B-C4B-CWD's seam row (the auditor): the stub replaces the one function that checks, so it runs the REAL checks
+    of launch.spawn - check_cwd, assert_env, assert_argv - on what _step hands it."""
+    seam["reasons"] = (L.check_cwd(c, kw["cwd"], kw["record"])
+                       + L.assert_env(c, kw["env"], parent_env=kw["parent_env"], catcher_url=kw["catcher_url"])
+                       + L.assert_argv(c, argv))
+    seam["env"] = dict(kw["env"])
+    return SimpleNamespace(process=_SeamProc(), kill_tree=lambda: None)
+
+
+IV = LI._iv()
+CS = L.Contract(polygon_root=TMP / "ps", runs_root=TMP / "ps" / "runs" / "v3", repo_root=ROOT, owner_home=TMP / "owner",
+                secrets_dir=TMP / "secrets", quarantine_root=TMP / "q", conservation_root=TMP / "cv")
+Lseam = SimpleNamespace(make_unit_dirs=L.make_unit_dirs, build_env=L.build_env, Witnesses=_SeamW, spawn=_seam_spawn,
+                        NativeEgressWitness=lambda: None, FsWitness=lambda s: None, watched_set=lambda c: [])
+vpy = CS.polygon_root / "mem0_v3" / "Scripts" / "python.exe"
+seam_argv = LI.install_argv(vpy, [], CS.runs_root / "_install" / "a8-pypi-mem0_v3" / "s1" / "lock.txt",
+                            CS.runs_root / "_fetch" / "a8-pypi-mem0_v3" / "s1" / "j1" / "wheels")
+IV._step(CS, Lseam, stand="_install.a8-pypi-mem0_v3", run="s1", arm="pip", argv=seam_argv, path_dirs=[vpy.parent],
+         parent_env={"SystemRoot": os.environ.get("SystemRoot", r"C:\Windows")}, native=None, fs=None, check_id="seam",
+         declared=LI.offline_env(CS))
+check("B-C4B-CWD seam (the auditor): the offline pip step - install_v3_data._step with lock_install's declared env - "
+      "passes the contract's own spawn checks (a fresh EMPTY cwd, the env, the argv) with no reason",
+      seam.get("reasons") == [] and seam.get("env", {}).get("PIP_CONFIG_FILE") == os.devnull, str(seam.get("reasons")))
 
 shutil.rmtree(TMP, ignore_errors=True)
 print(f"\nv3 lock install: {PASSED} passed, {FAILED} failed")
