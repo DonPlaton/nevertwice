@@ -352,9 +352,9 @@ def proxy_boundary_inputs(calls: Iterable[Mapping[str, Any]], catcher: Iterable[
     """The proxy's half of artifact.boundary_block(): the hit fields summed over the arm-run's call records (a refused
     call's included - the proxy refuses a canary hit and still writes it), and the catcher's refused egress by host:
     the arm's across this log, not the run's - a catcher record carries no run, and the arm's runs share its port.
-    B-OLM-VIS: ollama_refused - the arm-run's Ollama-leg records whose error is a refusal (refused:path,
-    refused:encoded-target, refused:model-store): a call the stand refused changed the product's behaviour, so the
-    row is not clean (P0h). A record with no <run>.<unit> prefix is the arm's, counted in each run, as a catcher
+    B-OLM-VIS: ollama_refused - the arm-run's Ollama-leg records whose error is a refusal of a path (LEG_REFUSALS):
+    a call the stand refused changed the product's behaviour, so the row is not clean (P0h). Q4: the leg's scan
+    hits (canary, ancestor canary, owner marker) add to the P0h hit counts. A record with no <run>.<unit> prefix is the arm's, counted in each run, as a catcher
     record is. ``ollama`` is required: no refusal is 0, never 'not measured'."""
     sums = dict.fromkeys(HIT_FIELDS, 0)
     for c in _arm_run(calls, arm, run):
@@ -371,9 +371,20 @@ def proxy_boundary_inputs(calls: Iterable[Mapping[str, Any]], catcher: Iterable[
     for r in ollama:
         u = r.get("unit")
         r_run = u.split(".", 1)[0] if isinstance(u, str) and "." in u else None
-        if r.get("arm") == arm and str(r.get("error") or "").startswith("refused:") and r_run in (run, None):
+        if r.get("arm") != arm or r_run not in (run, None):
+            continue
+        if r.get("error") in LEG_REFUSALS:
             leg_refused += 1
+        for f in HIT_FIELDS:                             # Q4: the leg's scan hits (a refused one included) are P0h too
+            v = r.get(f)
+            if isinstance(v, int) and not isinstance(v, bool) and v > 0:
+                sums[f] += v
     return {**sums, "egress_attempts": dict(sorted(refused.items())), "ollama_refused": leg_refused}
+
+
+#: B-OLM-VIS (amendment A2): the Ollama leg's refusals of a path - the stand's, counted as ollama_refused. A refusal for
+#: a canary or an owner marker (Q4) is the product's leak: a canary_hits / owner_marker_hits count, never this one.
+LEG_REFUSALS = ("refused:path", "refused:encoded-target", "refused:model-store")
 
 
 #: TB7, the auditor's Q-12-6 and Q-A7-8: the provider's host (its /anthropic endpoint is on it too) and the SDK

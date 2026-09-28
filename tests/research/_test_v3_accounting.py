@@ -413,6 +413,22 @@ check("B-OLM-VIS: the Ollama leg's refusals of the arm-run are counted - refused
       "with no unit prefix (the arm's, as a catcher record is) - never another arm's or run's, an answered call or a "
       "failed one", pbo.get("ollama_refused") == 3, str(pbo))
 check("B-OLM-VIS: an arm-run the leg refused nothing is 0 - never 'not measured'", pb0.get("ollama_refused") == 0, str(pb0))
+oll_q4 = [{"arm": "mem0", "unit": "r1.u1", "error": "refused:canary", "status": None, "canary_hits": 1,
+           "ancestor_canary_hits": 0, "owner_marker_hits": 0},
+          {"arm": "mem0", "unit": "r1.u2", "error": None, "status": 200, "canary_hits": 0, "ancestor_canary_hits": 1,
+           "owner_marker_hits": 0},
+          {"arm": "mem0", "unit": "r1.u3", "error": "refused:owner_marker", "status": None, "canary_hits": 0,
+           "ancestor_canary_hits": 0, "owner_marker_hits": 1},
+          {"arm": "zep", "unit": "r1.u1", "error": "refused:canary", "status": None, "canary_hits": 1}]
+try:
+    pb4 = AC.proxy_boundary_inputs([], [], arm="mem0", run="r1", ollama=oll_q4)
+except Exception as e:  # noqa: BLE001 - the row FAILs by name
+    pb4 = {"error": f"{type(e).__name__}: {e}"}
+check("Q4: the leg's scan hits are the arm-run's P0h counts too - a refused canary, an owner marker, an ancestor hit on "
+      "a call it forwarded (another arm's never) - and a refused:canary or refused:owner_marker is the product's leak, "
+      "never ollama_refused: one event, counted once",
+      (pb4.get("canary_hits"), pb4.get("owner_marker_hits"), pb4.get("ancestor_canary_hits"), pb4.get("ollama_refused"))
+      == (1, 1, 1, 0), str(pb4))
 CHECK_OK = {"check_id": "S1.b01", "complete": True, "native": {"hits": 0, "complete": True},
             "containers": [None, {"hits": 1, "complete": True}], "fs": {"fs_hits": 0, "changed_labels": []}}
 w = AC.witness_inputs(CHECK_OK)

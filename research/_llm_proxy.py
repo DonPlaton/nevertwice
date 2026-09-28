@@ -68,7 +68,7 @@ import threading
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable
+from typing import Any, Callable
 
 UPSTREAM_HOST = "api.deepseek.com"
 UPSTREAM_PORT = 443
@@ -854,8 +854,11 @@ class OllamaLeg:
 
     def __init__(self, arm: str, *, mode: str, cloud_arm: bool, upstream: tuple[str, int], log: Callable[[str], None],
                  run_dir: Path, connect: Callable[[tuple[str, int]], socket.socket] | None = None,
-                 embed_count: Callable[[str], int] | None = None, embed_cap: int | None = None):
+                 embed_count: Callable[[str], int] | None = None, embed_cap: int | None = None,
+                 scan: Callable[[bytes], dict] | None = None, flag: Callable[[str, str, str | None], None] | None = None):
         self.arm, self.cloud_arm, self.upstream, self.log, self.run_dir = arm, cloud_arm, upstream, log, run_dir
+        #: Q4 (R-HOME-CANARY, K1): the proxy's own scan (Proxy.scan_body) and flag - the main path's, never a copy
+        self.scan, self.flag = scan, flag
         self.pacer = load_pacer_copy(arm, mode)
         #: B-OLM-ENC: the paths this leg forwards - the pacer's generation and embed paths, one definition
         self.paths = (frozenset(self.pacer._LLM_PATHS) | frozenset(self.pacer._EMBED_PATHS)
@@ -908,14 +911,16 @@ class OllamaLeg:
                 "prompt_eval_count": pec}
 
     def _refuse_path(self, cs: socket.socket, code: int, reason: str, body: bytes, *, unit: str | None, path: str,
-                     error: str, headers: list[tuple[str, str]], buffered: int, stage: dict) -> None:
+                     error: str, headers: list[tuple[str, str]], buffered: int, stage: dict,
+                     extra: dict | None = None) -> None:
         """A target the leg does not forward (B-OLM-ENC): refused, named in the leg's log and a line in ollama.jsonl -
         never silence. Nothing reaches Ollama. The record is written before the answer: a client that has its 400 or
         403 finds the line already there."""
         t_ref = _iso(time.time())
         _append_jsonl(self.run_dir / "ollama.jsonl",
                       {"arm": self.arm, "unit": unit, "path": path, "is_embed": False, "is_llm": False,
-                       "status": None, "error": error, "fallback_local": False, "t0": t_ref, "t1": t_ref, **stage})
+                       "status": None, "error": error, "fallback_local": False, "t0": t_ref, "t1": t_ref, **stage,
+                       **(extra or {})})
         self.log(f"ollama leg refused {path[:64]!r}: {error}")
         _refuse(cs, code, reason, body, headers=headers, buffered=buffered)
 
@@ -959,6 +964,15 @@ class OllamaLeg:
                 return
             buf += chunk
         body = bytes(buf[:length])
+        hits = self.scan(body) if self.scan is not None else {}
+        if hits.get("canary_hits") or hits.get("owner_marker_hits"):     # Q4: never Ollama, as never the provider
+            kind = "canary" if hits.get("canary_hits") else "owner_marker"
+            if self.flag is not None:
+                self.flag(self.arm, kind, None)
+            self._refuse_path(cs, 403, "Forbidden", b"a planted canary or the owner's words never reach Ollama", unit=unit,
+                              path=path, error=f"refused:{kind}", headers=headers, buffered=len(buf), stage=stage,
+                              extra=hits)
+            return
         lines = [f"{method} {path} HTTP/1.1", f"Host: {self.upstream[0]}:{self.upstream[1]}"]
         lines += [f"{k}: {v}" for k, v in headers if k.lower() in ("content-type", "accept")]
         lines += [f"Content-Length: {len(body)}", "Connection: close"]
@@ -1033,26 +1047,45 @@ class OllamaLeg:
             if is_embed and status == 200 and error is None and framer.done:
                 embed = self.embed_stats(body, bytes(answer))
             if is_llm and stage.get("stage") == "write" and status == 200 and error is None and framer.done:
-                capture_body(self.run_dir, arm=self.arm, unit=unit, t0=t0, request_key=None, via="ollama",  # C-1
-                             body=body, status=200)
+                try:
+                    capture_body(self.run_dir, arm=self.arm, unit=unit, t0=t0, request_key=None, via="ollama",  # C-1
+                                 body=body, status=200, scan=self.scan)
+                except CaptureRefused as e:
+                    if self.flag is not None:
+                        self.flag(self.arm, e.kind, None)
         _append_jsonl(self.run_dir / "ollama.jsonl",
                       {"arm": self.arm, "unit": unit, "path": path, "is_embed": is_embed, "is_llm": is_llm,
                        "status": status, "error": error, "fallback_local": bool(is_llm and self.cloud_arm),
-                       "t0": _iso(t0), "t1": _iso(time.time()), **stage, **embed})
+                       "t0": _iso(t0), "t1": _iso(time.time()), **stage, **embed, **hits})
 
 
 BODIES_DIR = "bodies"
 
 
+class CaptureRefused(RuntimeError):
+    """Q4: a body capture_body would have written carries a planted canary or the owner's words - never written;
+    ``kind`` (canary or owner_marker) is what the caller flags."""
+
+    def __init__(self, kind: str) -> None:
+        super().__init__(f"a body with a {kind} hit is never written")
+        self.kind = kind
+
+
 def capture_body(run_dir: Path, *, arm: str, unit: str | None, t0: float, request_key: str | None, via: str,
-                 body: bytes, status: int) -> bool:
+                 body: bytes, status: int, scan: Callable[[bytes], dict] | None) -> bool:
     """Q-A5-1 O-a: the parsed strings (strings_in) of one writer-LLM request sent in the write stage - one record per
     call in <run_dir>/bodies/<arm>/<unit>.jsonl, for K76's coverage (accounting.unit_coverage). The runs tree only,
     never committed, kept until E5 like the answer texts (Q8); the proxy token travels in a header, never in a body.
     C-1: called only once the LLM answered with a completed 200 - a request that failed (5xx, 429, a cut answer) made
     no memory, and its text never counts as having reached the writer; ``status`` is kept in the record. A body that
     does not parse, or a call without a unit prefix, leaves nothing (the call record says why). True when a record was
-    written."""
+    written. Q4: ``scan`` (the proxy's scan_body) runs first - a canary or an owner marker raises CaptureRefused and
+    nothing is written; a missing scan is refused, never skipped."""
+    if scan is None:
+        raise ValueError("capture_body needs the proxy's scan - a body is never written unscanned (Q4)")
+    hits = scan(body)
+    if hits.get("canary_hits") or hits.get("owner_marker_hits"):
+        raise CaptureRefused("canary" if hits.get("canary_hits") else "owner_marker")
     if not unit:
         return False
     try:
@@ -1196,7 +1229,7 @@ class Proxy:
             count, cap = self._embed_tokenizer(config)
         self.legs = {a.arm: OllamaLeg(a.arm, mode=config.ollama_mode, cloud_arm=a.cloud_arm,
                                       upstream=tuple(config.ollama_upstream), log=self.log, run_dir=config.run_dir,
-                                      embed_count=count, embed_cap=cap)
+                                      embed_count=count, embed_cap=cap, scan=self.scan_body, flag=self._flag)
                      for a in config.arms if a.ollama_leg}
 
     @staticmethod
@@ -1530,8 +1563,12 @@ class Proxy:
                     self._finish_call(arm, rec, framer, tee, t0, ttfb, abandoned, injected, path)
                     if (role == "write" and rec.get("stage") == "write" and rec.get("endpoint") in ("v1", "anthropic")
                             and rec.get("status") == 200 and rec.get("complete") and not rec.get("client_abandoned")):
-                        capture_body(self.config.run_dir, arm=arm.arm, unit=unit, t0=t0,   # Q-A5-1, C-1: answered
-                                     request_key=rec.get("request_key"), via="write", body=body, status=200)
+                        try:
+                            capture_body(self.config.run_dir, arm=arm.arm, unit=unit, t0=t0,   # Q-A5-1, C-1
+                                         request_key=rec.get("request_key"), via="write", body=body, status=200,
+                                         scan=self.scan_body)
+                        except CaptureRefused as e:
+                            self._flag(arm.arm, e.kind, rec.get("request_key"))
                 version = rest.rsplit(" ", 1)[-1].upper()
                 conn = (_hget(headers, "connection") or "").lower()
                 if not keep or "close" in conn or (version == "HTTP/1.0" and "keep-alive" not in conn):
@@ -1580,16 +1617,8 @@ class Proxy:
             self.counters[arm.arm].tool_violation += 1
             self._flag(arm.arm, "tool_violation", rec["request_key"])
             return rec, "tool_violation"
-        strings = strings_in(obj) if obj is not None else []
-        raw = body.decode("utf-8", "replace")
-        for kind, value in self._canaries.items():
-            if value in raw or any(value in s for s in strings):
-                if kind == "ancestor":
-                    rec["ancestor_canary_hits"] += 1
-                else:
-                    rec["canary_hits"] += 1
-        if self.markers is not None and strings and self.markers.hit(strings):
-            rec["owner_marker_hits"] = 1
+        for f_, n_ in self._scan(body, obj).items():
+            rec[f_] += n_
         ctr = self.counters[arm.arm]
         ctr.canary_hits += rec["canary_hits"]
         ctr.ancestor_canary_hits += rec["ancestor_canary_hits"]
@@ -1601,6 +1630,28 @@ class Proxy:
             self._flag(arm.arm, kind, rec["request_key"])
             return rec, kind
         return rec, None
+
+    def _scan(self, body: bytes, obj: Any) -> dict:
+        """R-HOME-CANARY, K1: the planted canaries in the raw body or its strings, and the owner's markers in its
+        strings - {canary_hits, ancestor_canary_hits, owner_marker_hits}. One scan for the write and reader ports, the
+        Ollama leg (Q4) and capture_body."""
+        strings = strings_in(obj) if obj is not None else []
+        raw = body.decode("utf-8", "replace")
+        out = {"canary_hits": 0, "ancestor_canary_hits": 0, "owner_marker_hits": 0}
+        for kind, value in self._canaries.items():
+            if value in raw or any(value in s for s in strings):
+                out["ancestor_canary_hits" if kind == "ancestor" else "canary_hits"] += 1
+        if self.markers is not None and strings and self.markers.hit(strings):
+            out["owner_marker_hits"] = 1
+        return out
+
+    def scan_body(self, body: bytes) -> dict:
+        """_scan of a raw body - parsed as JSON where it parses (its strings), else only its raw text."""
+        try:
+            obj = json.loads(body) if body else None
+        except ValueError:
+            obj = None
+        return self._scan(body, obj)
 
     def _finish_call(self, arm: ArmConfig, rec: dict, framer, tee: TeeParser, t0: float, ttfb: float | None,
                      abandoned: bool, injected: int, path: str) -> None:

@@ -452,6 +452,46 @@ if have_tok:
     check("TB7: a tokenizer.json off its sha stops the proxy - no leg counts with another tokenizer",
           "not the pinned" in wrong, wrong)
 
+print("\n- Q4: the leg runs the main path's canary and owner-marker scan; capture_body scans before it writes -")
+CAN = "nvt3-canary-home-Q4q4Q4q4"
+cfg_s = P.ProxyConfig(arms=[P.ArmConfig(arm="local", token="t-local", ollama_leg=True, cloud_arm=False)],
+                      run_dir=TMP / "run_scan", upstream_host="127.0.0.1", upstream_port=1, upstream_tls=False,
+                      control_token="ctl", ollama_upstream=("127.0.0.1", OL.port))
+pxs = P.Proxy(cfg_s, P.read_key(TMP / "deepseek.env"), log=lambda m: None, canaries={"home": CAN},
+              markers=P.OwnerMarkers({"name": "Ivan Testov"}, []))
+ports_s = pxs.start()
+ls_ = ports_s["arms"]["local"]["ollama"]
+OL.attempts.clear()
+got_can = call(ls_, "/u/r1.sc/api/chat", json.dumps({"model": "m", "messages": [
+    {"role": "user", "content": f"my notes: {CAN}"}]}).encode())
+got_mark = call(ls_, "/u/r1.sm/api/embed", json.dumps({"model": "m", "input": "a letter from Ivan Testov"}).encode())
+got_clean = call(ls_, "/u/r1.sk/api/embed", b'{"model":"m","input":"nothing of the owner"}')
+_ol_s = [json.loads(x) for x in (TMP / "run_scan" / "ollama.jsonl").read_bytes().decode("utf-8").split("\n")
+         if x.strip()] if (TMP / "run_scan" / "ollama.jsonl").exists() else []
+by_unit = {r.get("unit"): r for r in _ol_s}
+fl_s = [json.loads(x) for x in (TMP / "run_scan" / "flags.jsonl").read_bytes().decode("utf-8").split("\n")
+        if x.strip()] if (TMP / "run_scan" / "flags.jsonl").exists() else []
+check("Q4 (R-HOME-CANARY, K1): a leg request carrying a planted canary or an owner marker is refused (403) and never "
+      "reaches Ollama - its ollama.jsonl line names refused:canary / refused:owner_marker with its hit count, and the "
+      "arm's flag is in flags.jsonl; a clean one still goes through",
+      got_can.startswith(b"HTTP/1.1 403") and got_mark.startswith(b"HTTP/1.1 403") and got_clean.startswith(b"HTTP/1.1 200")
+      and "/api/chat" not in OL.attempts and OL.attempts.get("/api/embed") == 1
+      and (by_unit.get("r1.sc") or {}).get("error") == "refused:canary" and (by_unit.get("r1.sc") or {}).get("canary_hits") == 1
+      and (by_unit.get("r1.sm") or {}).get("error") == "refused:owner_marker"
+      and (by_unit.get("r1.sm") or {}).get("owner_marker_hits") == 1
+      and sorted(f.get("kind") for f in fl_s if f.get("arm") == "local") == ["canary", "owner_marker"],
+      f"{got_can[:20]!r} {got_mark[:20]!r} {got_clean[:20]!r} {OL.attempts} {by_unit} {fl_s}")
+pxs.stop()
+try:
+    P.capture_body(TMP / "run_scan", arm="local", unit="r1.cb", t0=0.0, request_key=None, via="ollama",
+                   body=json.dumps({"messages": [{"role": "user", "content": CAN}]}).encode(), status=200,
+                   scan=pxs.scan_body)
+    cap = "written"
+except Exception as e:  # noqa: BLE001 - CaptureRefused by name, anything else FAILs the row by name
+    cap = f"refused:{e.kind}" if type(e).__name__ == "CaptureRefused" else f"{type(e).__name__}: {e}"
+check("Q4: capture_body scans a body before it writes it - a canary is refused by name (CaptureRefused) and no record "
+      "is written", cap == "refused:canary" and not (TMP / "run_scan" / "bodies" / "local" / "r1.cb.jsonl").exists(), cap)
+
 px.stop()
 pxo.stop()
 OL.close()
