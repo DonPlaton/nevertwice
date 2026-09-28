@@ -307,6 +307,15 @@ res = F.run_checks(dest, work, runner=FakeRunner(home=alias))
 check("M25: a venv whose home names the base another way (a junction here; an 8.3 name on the owner's machine) is ok - "
       "realpath on both sides", res["venv_ok"] is True and str(alias) != str(dest), str(res))
 os.rmdir(alias) if os.name == "nt" else alias.unlink()
+alias2 = TMP / "the_base_by_another_name"          # A8C1-1: the TOOLS side reached through another spelling
+if os.name == "nt":
+    _winapi.CreateJunction(str(dest), str(alias2))
+else:
+    os.symlink(dest, alias2, target_is_directory=True)
+res = F.run_checks(alias2, work, runner=FakeRunner(home=dest))
+check("M25 (A8C1-1): a base reached through another spelling while the venv names the real path is ok too - realpath "
+      "on the tools side as well", res["venv_ok"] is True, str(res))
+os.rmdir(alias2) if os.name == "nt" else alias2.unlink()
 res = F.run_checks(dest, work, runner=FakeRunner(version="3.12.10"), expected_version="3.12.10")
 check("C1: the base's own version is checked against the declared one - 3.12.10 is 3.12.10", res["version_ok"] is True, str(res))
 res = F.run_checks(dest, work, runner=FakeRunner(version="3.12.10"), expected_version="3.12.1")
@@ -419,6 +428,16 @@ else:
           and (r12.get("newest_check") or {}).get("newest") == "3.12.10" and r12["checks"]["version_ok"] is True
           and (C12.runs_root / "_tools" / "py-base-312" / "py-base-312.json").is_file()
           and (C12.polygon_root / "py312" / "python.exe").is_file(), f"{e12} {wl12} {r12.get('fs_watched_excludes')}")
+    C9, base9 = contract("unknown")
+    work9 = C9.runs_root / "_tools" / "py-base-999"
+    try:
+        F.run_window(C9, L, version="3.99.0", dest=C9.polygon_root / "py399", work=work9, via_port=1, window="py-base-999",
+                     native=L.NativeEgressWitness(sampler=AnySampler(), tick_s=60, jobs=None))
+        check("A8C1-3: an undeclared window is refused by name before anything is made", False)
+    except Exception as e:  # noqa: BLE001 - only the window's own refusal, naming the window, passes
+        check("A8C1-3: an undeclared window is refused by name before anything is made - no work directory, no "
+              "window line", isinstance(e, F.FetchRefused) and "py-base-999" in str(e) and not work9.exists()
+              and not (C9.runs_root / "_launch" / "windows.jsonl").exists(), f"{type(e).__name__}: {e}")
     C, base = contract("taken")
     (C.runs_root / "_tools" / F.WINDOW).mkdir(parents=True)
     try:
@@ -437,6 +456,58 @@ else:
         check("no identifiable hop listener refuses the fetch", False)
     except F.FetchRefused as e:
         check("no identifiable hop listener refuses the fetch, by name", "hop's listener" in str(e), str(e))
+
+print("\n- A8C1-2: main()'s verdict - every clause of it -")
+import contextlib  # noqa: E402
+import io as _io  # noqa: E402
+from types import SimpleNamespace  # noqa: E402
+
+GOOD = {"sha512_verified": True, "checks": {"venv_ok": True, "tools_unchanged_by_checks": True, "version_ok": True},
+        "check": {"complete": True, "native_hits": 0, "fs_hits": 0}}
+FLIPS = {"sha512_verified": ("sha512_verified",), "venv_ok": ("checks", "venv_ok"),
+         "tools_unchanged_by_checks": ("checks", "tools_unchanged_by_checks"), "version_ok": ("checks", "version_ok"),
+         "complete": ("check", "complete"), "native_hits": ("check", "native_hits"), "fs_hits": ("check", "fs_hits")}
+_real_load, _real_run = F._load_launch, F.run_window
+seen_kw: list = []
+
+
+def rc_for(rec):
+    F._load_launch = lambda: SimpleNamespace(Contract=SimpleNamespace(default=lambda: SimpleNamespace(
+        polygon_root=TMP / "mainpoly", runs_root=TMP / "mainpoly" / "runs")), network_via_port=lambda c: 1)
+    F.run_window = lambda *a, **k: (seen_kw.append(k), rec)[1]
+    try:
+        with contextlib.redirect_stdout(_io.StringIO()):
+            return F.main(["--window", "py-base-312"])
+    finally:
+        F._load_launch, F.run_window = _real_load, _real_run
+
+
+rc_good = rc_for(json.loads(json.dumps(GOOD)))
+flipped = {}
+for clause, path in FLIPS.items():
+    rec = json.loads(json.dumps(GOOD))
+    tgt = rec
+    for k in path[:-1]:
+        tgt = tgt[k]
+    tgt[path[-1]] = 1 if clause in ("native_hits", "fs_hits") else False
+    flipped[clause] = rc_for(rec)
+check("A8C1-2: main() exits 0 only when every clause holds - the package's SHA512, the venv, the unchanged base, the "
+      "base's own version, a complete check with 0 egress and 0 file-system hits; each one false alone exits 1",
+      rc_good == 0 and all(v == 1 for v in flipped.values()), f"good={rc_good} {flipped}")
+check("A8C1-2: main() runs the declared base's window - its version, its target, its work directory",
+      seen_kw and seen_kw[0].get("window") == "py-base-312" and seen_kw[0].get("version") == "3.12.10"
+      and Path(seen_kw[0].get("dest")).name == "py312" and Path(seen_kw[0].get("work")).name == "py-base-312",
+      str(seen_kw[:1]))
+n_before = len(seen_kw)
+try:
+    with contextlib.redirect_stderr(_io.StringIO()):
+        rc_for_unknown = F.main(["--window", "py-base-999"])
+except SystemExit as e:
+    rc_for_unknown = ("argparse", e.code)
+except Exception as e:  # noqa: BLE001 - any other failure is not the command line's refusal
+    rc_for_unknown = (type(e).__name__, str(e))
+check("A8C1-2: main() takes only a declared window - another is the command line's refusal, and no window runs",
+      rc_for_unknown == ("argparse", 2) and len(seen_kw) == n_before, str(rc_for_unknown))
 
 shutil.rmtree(TMP, ignore_errors=True)
 print(f"\nv3 fetch py-base: {PASSED} passed, {FAILED} failed")
