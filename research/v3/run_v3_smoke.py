@@ -7,7 +7,8 @@ never an adapter's own counts):
 * calls: the arm-run's forwarded calls (accounting.cloud_counters; its cloud_bypass is not measured on a smoke and is
   never printed, Q-12-6);
 * failures: transport_lost, failed_outcomes and upstream_errors (the proxy's log), unit_aborts (the scheduler's unit
-  records, write and question stages), reader_format_failures (the answer rows);
+  records, write and question stages), reader_format_failures (the answer rows), background_writes (R9: accounting's
+  background_writes, a questions-stage write-port call that never succeeded included - Q1, reported, never raised);
 * items: the retrievable items the end_write footprints report, over the units that were not aborted;
 * tokens: by phase, from the proxy's log;
 * seconds: the units' active time, write and question stages;
@@ -34,7 +35,8 @@ from typing import Any, Iterable, Mapping
 
 HERE = Path(__file__).resolve().parent
 SMOKE_FIELDS = ("calls", "failures", "items", "tokens", "seconds", "yield", "coverage")
-FAILURE_FIELDS = ("transport_lost", "failed_outcomes", "upstream_errors", "unit_aborts", "reader_format_failures")
+FAILURE_FIELDS = ("transport_lost", "failed_outcomes", "upstream_errors", "unit_aborts", "reader_format_failures",
+                  "background_writes")
 NO_WRITER = "n/a: no writer LLM"
 RESULTS_DIR = HERE / "results"
 SCORE_WORDS = re.compile(r"score|verdict|gold|twin|judge|label|accura|correct|exact_match|(^|_)(em|f1)($|_)", re.I)
@@ -182,7 +184,8 @@ def summarize(result: Mapping[str, Any], log: Any, *, stand: str, key_question: 
                             "upstream_errors": cc["upstream_errors"],
                             "unit_aborts": sum(1 for rec in w.values() if rec.aborted)
                             + sum(1 for u in w if (q.get(u) or {}).get("aborted")),
-                            "reader_format_failures": sum(1 for r in reads if (r.get("answer") or {}).get("format_failure"))},
+                            "reader_format_failures": sum(1 for r in reads if (r.get("answer") or {}).get("format_failure")),
+                            "background_writes": bw["count"]},
                "items": sum(items.values()), "tokens": cc["tokens"],
                "seconds": round(sum(rec.active_s for rec in w.values())
                                 + sum(float((q.get(u) or {}).get("active_s") or 0.0) for u in w), 3),

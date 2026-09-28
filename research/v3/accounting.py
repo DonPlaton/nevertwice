@@ -177,7 +177,10 @@ def classify_keys(calls: Iterable[Mapping[str, Any]]) -> dict[tuple[str, str], d
     body written twice in a unit, the second time lost). The §4.5 key is sha256(body || arm), with no unit in it, and
     one session body is written in several units: classified across units, one unit's loss would hide behind another
     unit's success (B-ACC1). "classes" lists the episodes' classes in order; "last_ok" is the t0 of the group's last
-    success (None without one) - a failed attempt after it belongs to the trailing never episode."""
+    success (None without one) - a failed attempt after it belongs to the trailing never episode. Q1 (F6, the auditor:
+    count, never raise): a write-port body retried after stage('questions') is one key whose phase is its first
+    occurrence's - "spans_phases" names the phases it crossed; a key on two port roles stays a record inconsistency.
+    "port_role" is the key's first call's."""
     by_key: dict[tuple[str, str], list] = defaultdict(list)
     for c in calls:
         if c.get("refused"):
@@ -189,9 +192,12 @@ def classify_keys(calls: Iterable[Mapping[str, Any]]) -> dict[tuple[str, str], d
     out = {}
     for (unit, key), cs in by_key.items():
         cs = sorted(cs, key=lambda c: _when(c, "t0"))
-        phases = {attribute(c)[3] for c in cs}
-        if len(phases) != 1:
-            raise AccountingError(f"the request key {key[:12]} spans the phases {sorted(phases)}")
+        phase_seq = [attribute(c)[3] for c in cs]
+        phases = set(phase_seq)
+        roles = {c.get("port_role") for c in cs}
+        if len(phases) != 1 and roles != {"write"}:
+            raise AccountingError(f"the request key {key[:12]} spans the phases {sorted(phases)} on the port roles "
+                                  f"{sorted(map(str, roles))}")
         classes, fails = [], []
         for c in cs:
             if not succeeded(c):
@@ -208,8 +214,9 @@ def classify_keys(calls: Iterable[Mapping[str, Any]]) -> dict[tuple[str, str], d
         if fails:
             classes.append("never")
         last_ok = max((_when(c, "t0") for c in cs if succeeded(c)), default=None)
-        out[(unit, key)] = {"phase": phases.pop(), "unit": unit, "attempts": len(cs), "classes": classes,
-                            "last_ok": last_ok}
+        out[(unit, key)] = {"phase": phase_seq[0], "unit": unit, "attempts": len(cs), "classes": classes,
+                            "last_ok": last_ok, "spans_phases": sorted(phases) if len(phases) > 1 else None,
+                            "port_role": cs[0].get("port_role")}
     return out
 
 
@@ -237,6 +244,8 @@ def cloud_counters(calls: list, *, arm: str, run: str, stand: str, cloud_bypass:
     failed = []
     for k, v, e in eps:
         if v["phase"] != "write" and e == "never":
+            if v.get("port_role") == "write":            # Q1 (C21): a questions-stage write-port call is R9 background
+                continue                                 # activity - background_writes() counts it, with its status
             q = kq.get(k)
             if q is None:
                 raise AccountingError(f"a {v['phase']}-phase key {k[1][:12]} of {k[0]} that never succeeded has no question")
@@ -256,7 +265,8 @@ def cloud_counters(calls: list, *, arm: str, run: str, stand: str, cloud_bypass:
     reasoning = 0
     for c in forwarded:
         u = c.get("usage") or {}
-        ph = attribute(c)[3]
+        v = keys.get((split_unit(c.get("unit"))[1], c.get("request_key")))
+        ph = v["phase"] if v is not None else attribute(c)[3]   # Q1: a key's calls count in its (first) phase
         if ph in tokens:
             for k in tokens[ph]:
                 tokens[ph][k] += int(u.get(k) or 0)
@@ -278,6 +288,7 @@ def cloud_counters(calls: list, *, arm: str, run: str, stand: str, cloud_bypass:
                                  for u in sorted({v["unit"] for _k, v, e in eps if e == "late_recovered"})],
         "transport_lost": len(lost),
         "transport_lost_units": sorted({keys[k]["unit"] for k in lost}),
+        "spans_phases": sum(1 for v in keys.values() if v.get("spans_phases")),     # Q1: flagged, counted once
         "duplicate_body_groups": len(dup),
         "ambiguous_recoveries": sum(1 for v in dup for e in v["classes"] if e in ("recovered", "late_recovered")),
         "upstream_errors": sum(1 for c in forwarded if (isinstance(c.get("status"), int) and c["status"] >= 500)
@@ -302,20 +313,38 @@ def background_writes(calls: Iterable[Mapping[str, Any]], *, arm: str, run: str,
     """R9 (the auditor's O-a): the arm-run's write-port calls whose t0 is later than the unit's end_write return (the
     harness's stamp) and outside every question operation's window [t0, t1] of the unit - the product kept writing
     after its adapter said the write stage was done. A unit with no end_write stamp (aborted in its write stage) has no
-    after. {count, units}."""
+    after. Q1 (C21, the auditor: count, never raise): a questions-stage write-port key whose attempts never succeeded
+    is background activity too, inside a read window or not - counted once, by its last attempt's status, unless its
+    calls were counted already. {count, units, statuses: {status or error name: count}}."""
     ends = {u: _when({"t": s}, "t") for u, s in end_write_at.items()}
     wins = {u: [(_when({"t": a}, "t"), _when({"t": b}, "t")) for a, b in ws] for u, ws in read_windows.items()}
     hits: list[str] = []
-    for c in _arm_run(calls, arm, run):
-        if c.get("port_role") != "write":
-            continue
+    statuses: dict[str, int] = defaultdict(int)
+    counted: set = set()
+    writes = [c for c in _arm_run(calls, arm, run) if c.get("port_role") == "write"]
+    for c in writes:
         unit = split_unit(c.get("unit"))[1]
         if unit not in ends:
             continue
         t0 = _when(c, "t0")
         if t0 > ends[unit] and not any(a <= t0 <= b for a, b in wins.get(unit, ())):
             hits.append(unit)
-    return {"count": len(hits), "units": sorted(set(hits))}
+            statuses[_status_name(c)] += 1
+            counted.add((unit, c.get("request_key")))
+    asked = [c for c in writes if c.get("stage") == "questions" and not c.get("refused")]
+    for (unit, key), v in classify_keys(asked).items():
+        if unit in ends and v["classes"][-1:] == ["never"] and (unit, key) not in counted:
+            last = max((c for c in asked if split_unit(c.get("unit"))[1] == unit and c.get("request_key") == key),
+                       key=lambda c: _when(c, "t0"))
+            hits.append(unit)
+            statuses[_status_name(last)] += 1
+    return {"count": len(hits), "units": sorted(set(hits)), "statuses": dict(sorted(statuses.items()))}
+
+
+def _status_name(c: Mapping[str, Any]) -> str:
+    """A call's outcome as background_writes names it: its HTTP status, else its upstream error, else "none"."""
+    st = c.get("status")
+    return str(st) if isinstance(st, int) and not isinstance(st, bool) else str(c.get("upstream_error") or "none")
 
 
 def proxy_boundary_inputs(calls: Iterable[Mapping[str, Any]], catcher: Iterable[Mapping[str, Any]], *, arm: str,

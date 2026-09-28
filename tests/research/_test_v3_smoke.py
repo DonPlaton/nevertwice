@@ -139,6 +139,16 @@ try:
           m["calls"] == 3 and m["failures"]["transport_lost"] == 1 and m["failures"]["upstream_errors"] == 1
           and m["failures"]["failed_outcomes"] == 0 and m["tokens"]["write"]["prompt"] == 100
           and m["tokens"]["answer"]["prompt"] == 50, str(m))
+    log_bg = AC.ProxyLog(calls=[*LOG.calls, dict(call("u1", "kbg", stage="questions", status=500),
+                                                 t0="2026-09-28T10:30:00+00:00", t1="2026-09-28T10:30:05+00:00")])
+    try:
+        f_bg = {r["arm"]: r for r in summary(log=log_bg)["arm_runs"]}["mem0"]["failures"]
+    except Exception as e:  # noqa: BLE001 - the row FAILs by name
+        f_bg = {"error": f"{type(e).__name__}: {e}"}
+    check("Q1 (C21): a questions-stage write-port call that never succeeded after end_write is reported in the summary "
+          "- failures.background_writes (R9) - never a refusal, never a failed outcome",
+          f_bg.get("background_writes") == 1 and f_bg.get("failed_outcomes") == 0
+          and m["failures"].get("background_writes") == 0, f"{f_bg} {m['failures']}")
     check("SM-counts: unit aborts and reader format failures are the scheduler's records",
           m["failures"]["unit_aborts"] == 1 and m["failures"]["reader_format_failures"] == 1
           and rows["bm25-floor"]["failures"]["unit_aborts"] == 1, str(m["failures"]))

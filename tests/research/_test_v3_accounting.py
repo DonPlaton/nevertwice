@@ -166,8 +166,23 @@ check("classes: ok, recovered, late_recovered, recovered at exactly 30 min, neve
       [keys.get(("u1", k), {}).get("classes") for k in ("ok1", "rec", "late", "edge", "lostw", "aband")]
       == [["ok"], ["recovered"], ["late_recovered"], ["recovered"], ["never"], ["recovered"]],
       str({k: v.get("classes") for k, v in keys.items()}))
-check("a key whose calls span two phases refuses",
+check("a key whose calls span two port roles refuses - the same body on the write and the reader port is a record "
+      "inconsistency (Q1 keeps AccountingError for those)",
       "spans the phases" in err(lambda: AC.classify_keys([call("x"), call("x", role="reader")])))
+sp_calls = [call("sp", status=500, t0=1), call("sp", stage="questions", t0=5)]
+try:
+    ksp = AC.classify_keys(sp_calls).get(("u1", "sp"), {})
+    ct_sp = AC.cloud_counters(sp_calls, arm="mem0", run="r1", stand="S1", cloud_bypass=0, background_writes=0)
+except Exception as e:  # noqa: BLE001 - the rows FAIL by name
+    ksp = ct_sp = {"error": f"{type(e).__name__}: {e}"}
+check("Q1 (F6): a write-stage body retried after stage('questions') belongs to the write phase by its key's first "
+      "occurrence - flagged spans_phases, one key, never a refusal", ksp.get("phase") == "write"
+      and ksp.get("spans_phases") == ["read", "write"] and ksp.get("attempts") == 2
+      and ksp.get("classes") == ["recovered"], str(ksp))
+check("Q1 (F6): ... and in the counters it is one recovered key whose tokens are the write phase's, spans_phases 1",
+      ct_sp.get("spans_phases") == 1 and ct_sp.get("transport_recovered") == 1 and ct_sp.get("transport_lost") == 0
+      and (ct_sp.get("tokens") or {}).get("write", {}).get("prompt") == 200
+      and (ct_sp.get("tokens") or {}).get("read", {}).get("prompt") == 0, str(ct_sp)[:300])
 check("MA15: recovery is measured to the success's t1 - a failure at 0:00 answered 29:59..30:05 is late_recovered",
       AC.classify_keys([call("m15", status=500, t0=0), call("m15", t0=29 + 59 / 60, t1=30 + 5 / 60)]).get(
           ("u1", "m15"), {}).get("classes") == ["late_recovered"])
@@ -314,7 +329,27 @@ bw = AC.background_writes(bw_calls, arm="mem0", run="r1", end_write_at={"u1": t(
                           read_windows={"u1": [(t(9.5), t(10.5))]})
 check("a write-port call after end_write and outside every read window is background - before end_write, inside a "
       "read window, on the reader's port, another arm's or run's, or a unit with no end_write stamp is not",
-      bw == {"count": 2, "units": ["u1"]}, str(bw))
+      bw == {"count": 2, "units": ["u1"], "statuses": {"200": 2}}, str(bw))
+bgf = [call("w1", t0=1), call("bgf", stage="questions", status=500, t0=10),
+       call("bgf", stage="questions", status=None, upstream_error="ProtocolError", t0=10.2)]
+try:
+    ct_bgf = AC.cloud_counters(bgf, arm="mem0", run="r1", stand="S1", cloud_bypass=0, background_writes=1)
+    bw_f = AC.background_writes(bgf, arm="mem0", run="r1", end_write_at={"u1": t(3)},
+                                read_windows={"u1": [(t(9.5), t(10.5))]})
+except Exception as e:  # noqa: BLE001 - the row FAILs by name
+    ct_bgf = bw_f = {"error": f"{type(e).__name__}: {e}"}
+check("Q1 (C21): a questions-stage write-port call that never succeeds is R9 background activity - never a 'has no "
+      "question' refusal, never a failed outcome; background_writes counts its key once, inside a read window or not, "
+      "with its last status", ct_bgf.get("failed_outcomes") == 0
+      and bw_f == {"count": 1, "units": ["u1"], "statuses": {"ProtocolError": 1}}, f"{ct_bgf.get('error')} {bw_f}")
+try:
+    bw_o = AC.background_writes([call("w1", t0=1), call("bgo", stage="questions", status=503, t0=12)], arm="mem0",
+                                run="r1", end_write_at={"u1": t(3)}, read_windows={"u1": [(t(9.5), t(10.5))]})
+except Exception as e:  # noqa: BLE001 - the row FAILs by name
+    bw_o = {"error": f"{type(e).__name__}: {e}"}
+check("Q1 (C21): a questions-stage write-port call after end_write, outside every read window, that never succeeded is "
+      "counted ONCE - by the after-end_write rule, never again as a never-succeeded key",
+      bw_o == {"count": 1, "units": ["u1"], "statuses": {"503": 1}}, str(bw_o))
 check("the bound: a call exactly at the end_write stamp is not after it; one exactly at either edge of a read window is "
       "inside", AC.background_writes([call("e", t0=3), call("f", stage="questions", t0=10.5),
                                      call("g", stage="questions", t0=9.5)], arm="mem0", run="r1",
