@@ -13,7 +13,10 @@ proxy answers 401 itself and opens no upstream connection. With it, the proxy:
 * streams the upstream response to the client byte for byte as it arrives - SSE, keep-alive comments and blank
   lines included - with no buffering, no parsing beyond the framing needed to find the end of a response on a
   kept-alive connection, and no retry;
-* closes the upstream connection when the client goes away, and counts ``client_abandoned``.
+* closes the upstream connection when the client goes away, and counts ``client_abandoned``;
+* times its own hop per call, the same code in every mode (Q-AB-2, for the §4.6 A/B): request read to upstream send
+  done, the connect subtracted, plus first upstream byte in to that byte sent - clock reads at those boundaries, no
+  parsing, no byte changed; kept in memory only (``own_hop_ms``, at most OWN_HOP_CAP, the rest ``own_hop_dropped``).
 
 The key is bound to its host (X1/X2): the upstream is api.deepseek.com:443 over TLS, fixed in code; the only other
 upstream ever accepted is plain text on 127.0.0.1, and only when the key file is not the real one under
@@ -87,6 +90,8 @@ NEVER_OPEN = (Path(r"D:\Coding\_nevertwice_owner_data_quarantine"), Path(r"D:\Ob
 _HOSTNAME = re.compile(r"[A-Za-z0-9._:\[\]-]{1,253}")
 MAX_HEAD = 64 * 1024
 MAX_BODY = 32 * 1024 * 1024
+#: Q-AB-2: at most this many own-hop samples are kept per arm; each one past it is counted in own_hop_dropped.
+OWN_HOP_CAP = 20_000
 _UNIT = re.compile(r"/u/([A-Za-z0-9._-]{1,128})(/.*)$")
 #: The only keys a proxy config file may carry; anything else (a CONNECT target, say) is refused at load.
 CONFIG_KEYS = frozenset({"arms", "run_dir", "thinking_branch", "upstream", "scan_roots", "via", "j3",
@@ -304,6 +309,11 @@ class Counters:
     records: int = 0
     catcher_hosts: list = field(default_factory=list)
     catcher_open: int = 0                   # F-P2-6: catcher connections whose log line is not written yet
+    #: Q-AB-2: per forwarded call that got a reply byte, the time the proxy itself held it, in ms - request read to
+    #: upstream send done (the upstream connect subtracted) plus first upstream byte in to that byte sent to the
+    #: client. The same code in every mode; at most OWN_HOP_CAP kept, the rest counted.
+    own_hop_ms: list = field(default_factory=list)
+    own_hop_dropped: int = 0
 
 
 # ── HTTP/1.1 pieces ─────────────────────────────────────────────────────
@@ -1372,6 +1382,7 @@ class Proxy:
                     buf += chunk
                 body = bytes(buf[:length])
                 del buf[:length]
+                t_read = time.perf_counter()             # Q-AB-2: the own hop starts with the whole request read
                 if buf:                                  # a second request before this one was answered
                     ctr.refused_pipelined += 1
                     _refuse(cs, 400, "Bad Request", b"pipelined requests are refused")   # body read: to EOF
@@ -1388,9 +1399,12 @@ class Proxy:
                 body, injected = self._fallback(arm, method, path, headers, body)
                 ctr.thinking_injected += injected
                 out = self._outgoing_head(method, path, headers, len(body))
+                connect_s = 0.0
                 if up is None:
                     try:
+                        c0 = time.perf_counter()
                         up = self._upstream()
+                        connect_s = time.perf_counter() - c0     # Q-AB-2: the network's, not the proxy's
                         ctr.upstream_connections += 1
                     except OSError as e:
                         ctr.upstream_errors += 1
@@ -1412,9 +1426,12 @@ class Proxy:
                         self._write_call(rec)
                     _refuse(cs, 502, "Bad Gateway", b"upstream send failed")              # body read: to EOF
                     return
+                hop_in = time.perf_counter() - t_read - connect_s
                 ctr.bytes_up += len(out) + len(body)
                 tee = TeeParser() if rec is not None else None
-                keep, framer, ttfb, abandoned = self._pipe_response(cs, up, method, ctr, tee)
+                keep, framer, ttfb, abandoned, hop_out = self._pipe_response(cs, up, method, ctr, tee)
+                if hop_out is not None:
+                    self._own_hop(ctr, (hop_in + hop_out) * 1000)
                 if rec is not None:
                     self._finish_call(arm, rec, framer, tee, t0, ttfb, abandoned, injected, path)
                     if (role == "write" and rec.get("stage") == "write" and rec.get("endpoint") in ("v1", "anthropic")
@@ -1516,6 +1533,14 @@ class Proxy:
             self._flag(arm.arm, "thinking_call", rec["request_key"])
         self._write_call(rec)
 
+    def _own_hop(self, ctr: Counters, ms: float) -> None:
+        """Q-AB-2: one own-hop sample, in memory only; past OWN_HOP_CAP it is counted as dropped, never kept."""
+        with self._lock:
+            if len(ctr.own_hop_ms) < OWN_HOP_CAP:
+                ctr.own_hop_ms.append(round(ms, 3))
+            else:
+                ctr.own_hop_dropped += 1
+
     def _write_call(self, rec: dict) -> None:
         with self._lock:
             self.counters[rec["arm"]].records += 1
@@ -1554,13 +1579,16 @@ class Proxy:
     def _pipe_response(self, cs: socket.socket, up: socket.socket, method: str, ctr: Counters,
                        tee: TeeParser | None = None):
         """Upstream bytes to the client as they arrive; a copy to ``tee`` only after each forwarded write.
-        Returns (keep both connections, the framer, time of the first upstream byte, client abandoned)."""
+        Returns (keep both connections, the framer, time of the first upstream byte, client abandoned, the
+        own hop's outbound part: seconds from the first upstream byte in to its sendall to the client done -
+        None when no byte reached the client)."""
         framer = ResponseFramer(method, tee.feed if tee is not None else None)
         sel = selectors.DefaultSelector()
         sel.register(up, selectors.EVENT_READ, "up")
         sel.register(cs, selectors.EVENT_READ, "client")
         watching_client = True
         ttfb = None
+        hop_out = None
         try:
             while not framer.done:
                 if isinstance(up, ssl.SSLSocket) and up.pending():      # TLS bytes already decrypted
@@ -1575,7 +1603,7 @@ class Proxy:
                             peek = b""
                         if not peek:                         # the client went away: cancel upstream now
                             ctr.client_abandoned += 1
-                            return False, framer, ttfb, True
+                            return False, framer, ttfb, True, hop_out
                         sel.unregister(cs)                   # pipelined bytes: leave them, stop watching
                         watching_client = False
                         continue
@@ -1586,35 +1614,39 @@ class Proxy:
                     except OSError as e:
                         ctr.upstream_errors += 1
                         self.log(f"upstream read failed: {type(e).__name__}")
-                        return False, framer, ttfb, False
+                        return False, framer, ttfb, False, hop_out
                     if not data:
                         try:
                             framer.eof()
                         except ProtocolError:
                             ctr.upstream_errors += 1
-                            return False, framer, ttfb, False
+                            return False, framer, ttfb, False, hop_out
                         break
-                    if ttfb is None:
+                    first = ttfb is None
+                    if first:
                         ttfb = time.time()
+                        f0 = time.perf_counter()
                     try:
                         cs.sendall(data)                     # forwarded first ...
                     except OSError:
                         ctr.client_abandoned += 1
-                        return False, framer, ttfb, True
+                        return False, framer, ttfb, True, hop_out
+                    if first:
+                        hop_out = time.perf_counter() - f0
                     try:
                         used = framer.feed(data)             # ... then teed and framed
                     except ProtocolError:                    # B-SEND2: a reply we cannot frame is still a call
                         framer.protocol_error = True
                         ctr.upstream_errors += 1
                         ctr.bytes_down += len(data)
-                        return False, framer, ttfb, False
+                        return False, framer, ttfb, False, hop_out
                     ctr.bytes_down += len(data)
                     if used < len(data):                     # bytes past this response: upstream misbehaved
                         ctr.upstream_errors += 1
-                        return False, framer, ttfb, False
+                        return False, framer, ttfb, False, hop_out
                 if framer.state == "until_close" and framer.done:
                     break
-            return framer.done and not framer.close_after, framer, ttfb, False
+            return framer.done and not framer.close_after, framer, ttfb, False, hop_out
         finally:
             sel.close()
 

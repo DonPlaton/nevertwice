@@ -16,6 +16,9 @@ with the usage chunk, tool calls in deltas, /anthropic SSE with a thinking block
   is forwarded byte for byte; /user/balance goes out on the scheduler port only; the catcher tunnels a CONNECT only
   inside an open window, only to its hosts.
 * No written file holds a body, a key, a canary, a marker's text, or a name from the owner's files.
+* Q-AB-2, the own hop: one sample per forwarded call in raw and record mode alike, the reply bytes unchanged, the
+  upstream's wait and the connect left out, the proxy's own work kept in, the formula pinned on a scripted clock,
+  the list capped with every sample past the cap counted; a raw arm writes nothing in the run directory (T6).
 
     python tests/_test_llm_proxy_record.py
 """
@@ -765,6 +768,151 @@ check("R-TOOLS: write_port false - catcher and reader ports, no write port; anot
 _loaded = P.ProxyConfig.load(TMP / "wp_cfg.json", {}, test_upstream_ok=True)
 check("R-TOOLS: the config file carries write_port (false read as false, absent means true)",
       [a.write_port for a in _loaded.arms] == [False, True], str([a.write_port for a in _loaded.arms]))
+
+print("\n- Q-AB-2: the proxy's own hop - one path in both modes, bounded, the upstream's wait and the connect excluded -")
+
+
+class HopUpstream(Upstream):
+    """/v1/chat/completions/wait answers after 0.3 s: the upstream's own time, which the own hop must not hold."""
+
+    def _serve(self, c, path):
+        if path.startswith(b"/v1/chat/completions/wait"):
+            time.sleep(0.3)
+        return super()._serve(c, path)
+
+
+T_RAW = ST.TOKEN + "r"
+HOP_BODY = {"model": "deepseek-flash", "messages": []}
+
+
+def hop_proxy(run: str):
+    """One process, the A/B's two ArmConfigs of one product arm: the same but for mode, name, token and ports."""
+    up = HopUpstream()
+    arms = [P.ArmConfig(arm="mem0", mode="record", token=T_ARM, pinned_model="deepseek-flash"),
+            P.ArmConfig(arm="mem0-raw", mode="raw", token=T_RAW, pinned_model="deepseek-flash")]
+    cfg = P.ProxyConfig(arms=arms, run_dir=TMP / run, upstream_host="127.0.0.1", upstream_port=up.port,
+                        upstream_tls=False, control_token="ctl-token")
+    px = P.Proxy(cfg, P.read_key(KEYFILE), log=lambda m: None)
+    return px, px.start(), up
+
+
+def hop_calls(px, ports, path: str = "/u/u1/v1/chat/completions", n: int = 1) -> dict:
+    """n calls on each of the two arms; each arm's replies, in order."""
+    got = {}
+    for arm, tok in (("mem0", T_ARM), ("mem0-raw", T_RAW)):
+        got[arm] = [call(ports["arms"][arm]["write"], path, HOP_BODY, token=tok) for _ in range(n)]
+    return got
+
+
+def samples(px, arm: str) -> list:
+    return list(getattr(px.counters[arm], "own_hop_ms", None) or [])
+
+
+hp, hports, hup = hop_proxy("hop")
+hgot = hop_calls(hp, hports, n=3)
+check("Q-AB-2 (2): every forwarded call adds one own-hop sample, raw and record alike - one path, not two",
+      len(samples(hp, "mem0")) == 3 and len(samples(hp, "mem0-raw")) == 3
+      and getattr(hp.counters["mem0"], "own_hop_dropped", None) == 0
+      and getattr(hp.counters["mem0-raw"], "own_hop_dropped", None) == 0,
+      f"{samples(hp, 'mem0')} {samples(hp, 'mem0-raw')}")
+n_sent = len(hup.sent)
+hraw = call(hports["arms"]["mem0-raw"]["write"], "/u/u1/v1/chat/completions", HOP_BODY, token=T_RAW)
+check("Q-AB-2 (1): with the own hop measured, a raw arm's client gets the upstream's reply byte for byte",
+      len(hup.sent) == n_sent + 1 and hraw == hup.sent[-1], f"{hraw[:60]!r} vs {hup.sent[-1][:60]!r}")
+hrec = call(hports["arms"]["mem0"]["write"], "/u/u1/v1/chat/completions", HOP_BODY, token=T_ARM)
+check("... and so does a recording arm's client", len(hup.sent) == n_sent + 2 and hrec == hup.sent[-1])
+hc = json.loads(call(hports["control"], "/counters", {}, token="ctl-token").partition(b"\r\n\r\n")[2] or b"{}")
+check("Q-AB-2: /counters carries each arm's own-hop samples and the count dropped past the cap",
+      all(len(hc.get(a, {}).get("own_hop_ms") or []) == 4 and hc.get(a, {}).get("own_hop_dropped") == 0
+          for a in ("mem0", "mem0-raw")), str({a: sorted(v)[:4] for a, v in hc.items()}))
+k0 = {a: len(samples(hp, a)) for a in ("mem0", "mem0-raw")}
+t_w = time.monotonic()
+hop_calls(hp, hports, path="/u/u1/v1/chat/completions/wait")
+waited = time.monotonic() - t_w
+new = {a: samples(hp, a)[k0[a]:] for a in k0}
+check("Q-AB-2: the upstream's own wait (0.3 s) is not in the own hop, in either mode",
+      waited >= 0.6 and all(len(v) == 1 and v[0] < 150 for v in new.values()), f"{waited:.2f}s {new}")
+_orig_up = hp._upstream
+
+
+def _slow_upstream():
+    time.sleep(0.3)
+    return _orig_up()
+
+
+hp._upstream = _slow_upstream
+k0 = {a: len(samples(hp, a)) for a in ("mem0", "mem0-raw")}
+hop_calls(hp, hports)
+new = {a: samples(hp, a)[k0[a]:] for a in k0}
+check("Q-AB-2: the upstream connect (0.3 s) is not in the own hop, in either mode",
+      all(len(v) == 1 and v[0] < 150 for v in new.values()), str(new))
+hp._upstream = _orig_up
+_orig_fb = hp._fallback
+
+
+def _slow_fallback(*a, **kw):
+    time.sleep(0.2)
+    return _orig_fb(*a, **kw)
+
+
+hp._fallback = _slow_fallback
+k0 = {a: len(samples(hp, a)) for a in ("mem0", "mem0-raw")}
+hop_calls(hp, hports)
+new = {a: samples(hp, a)[k0[a]:] for a in k0}
+check("Q-AB-2: time the proxy spends between the request read and the upstream send is in the own hop, both modes",
+      all(len(v) == 1 and v[0] >= 200 for v in new.values()), str(new))
+hp._fallback = _orig_fb
+
+
+class _ScriptedClock:
+    """time, but perf_counter returns the script: request read, connect start, connect end, upstream send done,
+    first upstream byte, first client byte sent - one fresh connection's six boundaries."""
+
+    def __init__(self, script):
+        self.script = list(script)
+
+    def perf_counter(self):
+        return self.script.pop(0)
+
+    def __getattr__(self, name):
+        return getattr(time, name)
+
+
+for arm, tok in (("mem0", T_ARM), ("mem0-raw", T_RAW)):
+    k0 = len(samples(hp, arm))
+    P.time = _ScriptedClock([10.000, 10.100, 10.400, 10.410, 11.000, 11.004])
+    try:
+        call(hports["arms"][arm]["write"], "/u/u1/v1/chat/completions", HOP_BODY, token=tok)
+    finally:
+        P.time = time
+    new = samples(hp, arm)[k0:]
+    check(f"Q-AB-2: {arm}: own hop = (send done - read) - connect + (first byte sent - first byte in) = 114 ms",
+          new == [114.0], str(new))
+hp.stop()
+hup.close()
+
+_cap = getattr(P, "OWN_HOP_CAP", None)
+check("Q-AB-2 (4): the sample list has a named cap", isinstance(_cap, int) and _cap >= 1000, str(_cap))
+hp, hports, hup = hop_proxy("hop_cap")
+P.OWN_HOP_CAP = 2
+try:
+    hop_calls(hp, hports, n=5)
+finally:
+    P.OWN_HOP_CAP = _cap
+check("Q-AB-2 (4): past the cap no sample is kept, and each one dropped is counted",
+      all(len(samples(hp, a)) == 2 and getattr(hp.counters[a], "own_hop_dropped", None) == 3 for a in ("mem0", "mem0-raw")),
+      str({a: (samples(hp, a), getattr(hp.counters[a], "own_hop_dropped", None)) for a in ("mem0", "mem0-raw")}))
+hp.stop()
+hup.close()
+
+hp, hports, hup = hop_proxy("hop_raw_only")
+for _ in range(2):
+    call(hports["arms"]["mem0-raw"]["write"], "/u/u1/v1/chat/completions", HOP_BODY, token=T_RAW)
+written = sorted(str(f.relative_to(TMP / "hop_raw_only")) for f in (TMP / "hop_raw_only").rglob("*"))
+check("T6 at the proxy: a raw arm's calls write nothing in the run directory - no calls.jsonl, bodies/ or flags.jsonl",
+      len(samples(hp, "mem0-raw")) == 2 and written == [], str(written))
+hp.stop()
+hup.close()
 
 shutil.rmtree(TMP, ignore_errors=True)
 print(f"\nproxy recording: {PASSED} passed, {FAILED} failed")
