@@ -10,7 +10,8 @@ instrument did not measure is refused, not zeroed):
   once, by its FINAL outcome (by_status, by_exception_type and gave_up are exclusive per call), so
   failed_outcomes = their sum over embed calls + our arm's degraded recalls (P0 a), and failed_outcomes_llm = the same
   sum over LLM calls, which the pacer counts after its bounded retry; attempts that later succeeded are only in
-  llm_retries. The TB7 fields (embed_at_cap, fallback_local) and embed_models_seen (ruling B2) are required;
+  llm_retries. The TB7 fields (embed_at_cap, fallback_local), embed_models_seen (ruling B2) and direct_calls
+  (R-EMBED-PATH: the child's Ollama calls past its arm's proxy leg - the pacer's route) are required;
 * cloud_transport(): every P0(b) counter and every "also written" field of §2.3, required;
 * boundary_block(): the four P0h counters from the proxy and the witnesses; an incomplete or absent witness raises;
 * p1_block(): P1 bands - <= 2 % no label, 2-10 % "lossy-writer (x%)", > 10 % raises P1Exceeds with the dominant class
@@ -192,7 +193,7 @@ def _final_failures(d: Mapping, name: str) -> int:
 
 
 def ollama_transport(pacer: Mapping, *, embed_at_cap: int, fallback_local: int, embed_models_seen: Sequence[str],
-                     degraded_recalls: int) -> dict:
+                     degraded_recalls: int, direct_calls: int) -> dict:
     """Q5 O-a: the integer totals m5 reads, the pacer's own record kept whole under `detail`."""
     calls = _count("calls", pacer.get("calls"))
     bp = pacer.get("bypass_calls")
@@ -208,6 +209,7 @@ def ollama_transport(pacer: Mapping, *, embed_at_cap: int, fallback_local: int, 
             "bypass_calls": sum(_count("bypass_calls", v) for v in bp.values()),
             "embed_at_cap": _count("embed_at_cap", embed_at_cap),
             "fallback_local": _count("fallback_local", fallback_local),
+            "direct_calls": _count("direct_calls", direct_calls),
             "embed_models_seen": sorted(set(models)),
             "detail": dict(pacer)}
 
@@ -478,6 +480,8 @@ def p0a(row: Mapping, ctx: P0Context, arm: str) -> list[str]:
     out = []
     if ot.get("bypass_calls", 0) > 0:
         out.append("P0a: bypass_calls > 0")
+    if ot.get("direct_calls", 0) > 0:
+        out.append("P0a: direct_calls > 0 (an Ollama reached past the arm's proxy leg, R-EMBED-PATH)")
     if ot.get("failed_outcomes", 0) > 0:
         out.append("P0a: failed embed outcomes (400s and degraded recalls included)")
     if ot.get("failed_outcomes_llm", 0) > 0:

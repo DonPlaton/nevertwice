@@ -2435,6 +2435,53 @@ def test_t11g_e2e_remeasure_row_refusal_refuses_a_failed_asof_run() -> None:
                   "invalid_reason", refusal is not None and "invalid" in refusal, str(refusal))
 
 
+def test_t12_route_counts_calls_past_the_leg_as_direct() -> None:
+    print("\n- T12 (R-EMBED-PATH): set_route - the leg's calls counted, any other Ollama host is direct_calls, invalid -")
+    with _isolated():
+        clock = FakeClock()
+        pacer._now, pacer._sleep = clock.now, clock.sleep
+
+        def ok(*a, **k):
+            return "OK"
+        urllib.request.urlopen = ok
+        pacer.install(mode="observe")
+        try:
+            with _crash_guard("T12: before set_route the leg's port is no Ollama host - its call is not counted",
+                              "T12: with the route, the leg's calls and the direct ones are counted; direct_calls 2, "
+                              "the route named, the run invalid",
+                              "T12: without a route the record keeps v2's shape - no route, no direct_calls",
+                              "T12: a route needs a port in 1..65535"):
+                urllib.request.urlopen(urllib.request.Request("http://127.0.0.1:43210/api/embed"))
+                check("T12: before set_route the leg's port is no Ollama host - its call is not counted",
+                      pacer.snapshot()["calls"] == 0, str(pacer.snapshot()["calls"]))
+                pacer.set_route("127.0.0.1", 43210)
+                for _ in range(3):
+                    urllib.request.urlopen(urllib.request.Request("http://127.0.0.1:43210/u/r1.u1/api/embed"))
+                for _ in range(2):
+                    urllib.request.urlopen(urllib.request.Request("http://127.0.0.1:11434/api/embed"))
+                out: dict = {}
+                pacer.attach(out)
+                ot = out.get("ollama_transport", {})
+                check("T12: with the route, the leg's calls and the direct ones are counted; direct_calls 2, the route "
+                      "named, the run invalid", ot.get("calls") == 5 and ot.get("direct_calls") == 2
+                      and ot.get("route") == "127.0.0.1:43210" and out.get("valid") is False
+                      and "past the one route" in (out.get("invalid_reason") or ""), f"{ot} {out.get('invalid_reason')}")
+                pacer.clear_route()
+                out2: dict = {}
+                pacer.attach(out2)
+                check("T12: without a route the record keeps v2's shape - no route, no direct_calls",
+                      "route" not in out2.get("ollama_transport", {})
+                      and "direct_calls" not in out2.get("ollama_transport", {}), str(out2.get("ollama_transport")))
+                try:
+                    pacer.set_route("127.0.0.1", 0)
+                    bad = "accepted"
+                except ValueError as e:
+                    bad = str(e)
+                check("T12: a route needs a port in 1..65535", "1..65535" in bad, bad)
+        finally:
+            pacer.clear_route()
+
+
 def test_zz_every_check_passed() -> None:
     """Bare pytest must reach the same verdict as this suite's exit code.
 
@@ -2474,7 +2521,8 @@ def main() -> int:
                test_t11e_async_llm_via_httpx_mocktransport,
                test_t11f_llm_timeout_recovers_in_pace_invalid_in_observe,
                test_t11g_e2e_remeasure_row_refusal_refuses_a_failed_asof_run,
-               test_t11h_httpx_non_raised_llm_failure_is_tallied):
+               test_t11h_httpx_non_raised_llm_failure_is_tallied,
+               test_t12_route_counts_calls_past_the_leg_as_direct):
         fn()
     print(f"\nollama_pacer: {PASSED} passed, {FAILED} failed")
     return 1 if FAILED else 0

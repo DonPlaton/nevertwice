@@ -417,7 +417,7 @@ def arm_row(system: str, stand: str) -> dict:
             "boundary": A.boundary_block(proxy=AC.proxy_boundary_inputs(lg, [], arm=system, run="r1"),
                                          witnesses=AC.witness_inputs({**CHECK_OK, "containers": []})),
             "ollama_transport": A.ollama_transport(PACER, embed_at_cap=0, fallback_local=0, embed_models_seen=[D1],
-                                                   degraded_recalls=0),
+                                                   degraded_recalls=0, direct_calls=0),
             "p1": A.p1_block(lost_ops=[{"reason": "transport"}], transport_lost=1, logical_writes=100),
             "yield": A.yield_block(unit="row", scored=True, units=[{"retrievable": 2, "chars_in": 900, "chars": 1000}] * 2),
             "questions": [{"qid": "q0", "invalid": None}], "units_dropped": []}
@@ -580,7 +580,7 @@ check("a unit with no characters is refused by artifact, not zeroed here",
               "no characters"))
 
 print("\n- TB4.10b' cache_inputs (K60, K61) through artifact.cache_record; the verdicts are m5 --anchor's -")
-BUILT_OT = A.ollama_transport(PACER, embed_at_cap=0, fallback_local=0, embed_models_seen=[D1], degraded_recalls=0)
+BUILT_OT = A.ollama_transport(PACER, embed_at_cap=0, fallback_local=0, embed_models_seen=[D1], degraded_recalls=0, direct_calls=0)
 B = {("c/vec.json", "5" * 64): {"commit": ANCHOR, "utc": "2026-10-01T10:00:00+00:00", "ollama_transport": BUILT_OT}}
 ci = AC.cache_inputs([{"path": "c/vec.json", "sha256": "5" * 64, "hits": 9, "misses": 3}], B)
 try:

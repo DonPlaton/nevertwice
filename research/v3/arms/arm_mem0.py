@@ -141,7 +141,10 @@ def bind(spec: Mapping[str, Any], env: Mapping[str, str]) -> tuple[Any, dict]:
     ollama_port = int(spec["ollama_url"].rsplit(":", 1)[1].split("/")[0])
     rec["http_doors"] = HC.install(proxy_port=spec["port"], ollama_ports=(ollama_port,))
     import _ollama_pacer as P  # noqa: PLC0415 - copied beside this file; installed AFTER the counter (Q-46-4)
-    P.install("pace")
+    P.install("observe")               # R-EMBED-PATH: the proxy leg paces and retries - one layer for every arm
+    P.set_route("127.0.0.1", ollama_port)        # the leg is the one route; any other Ollama is direct_calls
+    rec["pacer"] = "observe"
+    rec["ollama_route"] = spec["ollama_url"]
     with urllib.request.urlopen(spec["ollama_url"].rstrip("/") + "/api/tags", timeout=30) as r:
         tags = json.loads(r.read() or b"{}")
     if not _tag_present(tags, spec["embed_tag"]):

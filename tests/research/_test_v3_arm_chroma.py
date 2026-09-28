@@ -203,6 +203,11 @@ try:
     U.mkdir(parents=True)
     c, err = start("w", spec_for("w", "write", U))
     h = safely(lambda: c.request("hello"), {})
+    _st = h.get("start") or {}
+    check("R-EMBED-PATH (c): the start record - the pacer in observe mode (the proxy leg paces and retries) and the "
+          "spec's Ollama URL as the arm's one route", _st.get("pacer") == "observe"
+          and _st.get("ollama_route") == f"http://127.0.0.1:{OLLAMA.port}",
+          str({k: _st.get(k) for k in ("pacer", "ollama_route")}))
     check("hello: the venv's chromadb, no LLM, the tag", h.get("system") == "chromadb" and h.get("llm_label") is None
           and h.get("embedder") == TAG and str(FAKES) in str(((h.get("start") or {}).get("product") or {}).get("file")),
           str(h)[:300] + err.read_bytes().decode("utf-8", "replace")[-300:])

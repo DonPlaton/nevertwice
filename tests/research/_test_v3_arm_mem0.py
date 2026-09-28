@@ -242,6 +242,11 @@ try:
     U1.mkdir(parents=True)
     c, err = start("w1", spec_for("w1", "mem0", "write", U1))
     h = safely(lambda: c.request("hello"), {})
+    _st = h.get("start") or {}
+    check("R-EMBED-PATH (c): the start record - the pacer in observe mode (the proxy leg paces and retries) and the "
+          "spec's Ollama URL as the arm's one route", _st.get("pacer") == "observe"
+          and _st.get("ollama_route") == f"http://127.0.0.1:{OLLAMA.port}",
+          str({k: _st.get(k) for k in ("pacer", "ollama_route")}))
     st = h.get("start") or {}
     check("hello: the product is the venv's mem0 (found through PYTHONPATH, not in the arm directory)",
           h.get("system") == "mem0" and str(FAKES) in str((st.get("product") or {}).get("file"))

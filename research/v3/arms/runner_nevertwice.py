@@ -66,8 +66,11 @@ TOKEN_PREFIX = "nvt3-"
 EXTRACT_NUM_PREDICT = 4096                   # B1, rev1 §2.2 "Output cap"
 SECRET_WORDS = ("KEY", "TOKEN", "SECRET", "PASSWORD")
 _ID = re.compile(r"[A-Za-z0-9_-]{1,64}")     # Q3: a run or unit id has no dot - /u/<run>.<unit> splits on it
-SPEC_KEYS = ("arm", "stage", "stand", "run", "unit", "unit_dir", "port", "embed_tag", "extract_temp",
+SPEC_KEYS = ("arm", "stage", "stand", "run", "unit", "unit_dir", "port", "ollama_port", "embed_tag", "extract_temp",
              "max_transcript", "s7", "record_path")
+#: R-EMBED-PATH: the engine's three Ollama URLs (_engine_config.py:317-319), each on the arm's proxy leg.
+OLLAMA_ROUTES = (("OLLAMA_URL", "OLLAMA_URL", "/api/generate"), ("OLLAMA_EMBED_URL", "OLLAMA_EMBED_URL", "/api/embed"),
+                 ("OLLAMA_TAGS_URL", "OLLAMA_TAGS_URL", "/api/tags"))
 
 
 class Refused(RuntimeError):
@@ -86,14 +89,25 @@ def proxy_url(port: int, run: str, unit: str) -> str:
     return f"http://127.0.0.1:{port}/u/{run}.{unit}/v1/chat/completions"
 
 
-def declared_env(arm: str, *, run: str, unit: str, port: int | None, embed_tag: str,
+def leg_url(ollama_port: int, run: str, unit: str, path: str) -> str:
+    """R-EMBED-PATH: an Ollama endpoint on the arm's proxy leg, tagged with the unit (/u/<run>.<unit>, Q3)."""
+    base = proxy_url(ollama_port, run, unit).rsplit("/v1/chat/completions", 1)[0]
+    return base + path
+
+
+def declared_env(arm: str, *, run: str, unit: str, port: int | None, embed_tag: str, ollama_port: int | None = None,
                  extract_temp: float | None = None, max_transcript: int | None = None) -> dict[str, str]:
-    """The NEVERTWICE_* and DeepSeek variables rev1 §2.2 declares for ``arm`` - everything but the proxy token."""
+    """The NEVERTWICE_* and DeepSeek variables rev1 §2.2 declares for ``arm`` - everything but the proxy token - and
+    the engine's three Ollama URLs on the arm's proxy leg (R-EMBED-PATH: every arm embeds through its leg)."""
     if arm not in ARMS:
         raise ValueError(f"unknown arm {arm!r}")
     if not (isinstance(embed_tag, str) and embed_tag.strip()):
         raise ValueError("the embed tag is required (rev1 §5.1)")
+    if ollama_port is None:
+        raise ValueError("the arm embeds through Ollama: its proxy leg's port is required - never the direct 11434 "
+                         "(R-EMBED-PATH)")
     env = {"NEVERTWICE_EMBED_MODEL": embed_tag, "NEVERTWICE_XRERANK": "0"}
+    env.update({name: leg_url(ollama_port, run, unit, path) for name, _attr, path in OLLAMA_ROUTES})
     if arm in LLM_ARMS:
         env.update({"NEVERTWICE_CLOUD": "deepseek", "NEVERTWICE_DEEPSEEK_MODEL": DEEPSEEK_MODEL,
                     "DEEPSEEK_URL": proxy_url(port, run, unit), "NEVERTWICE_CLOUD_FALLBACK": "0"})
@@ -193,6 +207,9 @@ def positive_checks(spec: Mapping[str, Any], declared: Mapping[str, str], token:
         problems.append(f"verify_no_live_paths: {str(e).splitlines()[0]}")
     if m.EMBED_MODEL != spec["embed_tag"]:
         problems.append("EMBED_MODEL is not the declared tag")
+    for name, attr, _path in OLLAMA_ROUTES:                           # R-EMBED-PATH: all three, not only embed
+        if getattr(m, attr, None) != declared.get(name):
+            problems.append(f"the engine's {attr} is not the declared leg URL")
     if environ.get("NEVERTWICE_XRERANK") != "0":
         problems.append("NEVERTWICE_XRERANK is not 0 (rev1: off)")
     if arm in LLM_ARMS:
@@ -225,7 +242,8 @@ def bind(spec: Mapping[str, Any], env: Mapping[str, str]) -> tuple[dict, dict]:
                            "checks": []}
     # 1. the environment carries the declared values
     declared = declared_env(arm, run=spec["run"], unit=spec["unit"], port=spec["port"], embed_tag=spec["embed_tag"],
-                            extract_temp=spec["extract_temp"], max_transcript=spec["max_transcript"])
+                            ollama_port=spec["ollama_port"], extract_temp=spec["extract_temp"],
+                            max_transcript=spec["max_transcript"])
     rec["declared"] = {k: masked(k, v) for k, v in sorted(declared.items())}
     off = sorted(k for k, v in declared.items() if env.get(k) != v)
     if off:
@@ -273,8 +291,10 @@ def bind(spec: Mapping[str, Any], env: Mapping[str, str]) -> tuple[dict, dict]:
     if arm == "nevertwice-ablation":
         rec["ablation"] = _load("v3_ablation_c1", REPO / "research" / "v3" / "ablation_c1.py").enable(m)
     pacer = _load("v3_ollama_pacer", REPO / "research" / "_ollama_pacer.py")
-    pacer.install("pace")
-    rec["pacer"] = "pace"
+    pacer.install("observe")                      # R-EMBED-PATH: the leg paces and retries - one layer for every arm
+    pacer.set_route("127.0.0.1", spec["ollama_port"])
+    rec["pacer"] = "observe"
+    rec["ollama_route"] = {name: declared[name] for name, _a, _p in OLLAMA_ROUTES}
     # 7. the environment as recorded - names always, values masked
     rec["nevertwice_env"] = {k: masked(k, v) for k, v in sorted(os.environ.items()) if k.startswith("NEVERTWICE_")}
     rec["env_names"] = sorted(os.environ)

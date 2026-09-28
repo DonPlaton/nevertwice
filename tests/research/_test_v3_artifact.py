@@ -137,7 +137,7 @@ def row(system: str, *, sid: list[str], **over) -> dict:
         r["cloud_transport"] = A.cloud_transport(CLOUD)
     if d["embeds_via_ollama"] or d["llm_transport"] == "ollama":
         r["ollama_transport"] = A.ollama_transport(PACER, embed_at_cap=0, fallback_local=0, embed_models_seen=[D1],
-                                                   degraded_recalls=0)
+                                                   degraded_recalls=0, direct_calls=0)
     if d["llm"] is not None:
         r["p1"] = A.p1_block(lost_ops=[], transport_lost=0, logical_writes=20)
         r["yield"] = A.yield_block(unit="conversation", scored=True,
@@ -172,16 +172,17 @@ pac = copy.deepcopy(PACER)
 pac["failed_outcomes"] = {"by_status": {400: 2, 500: 1}, "by_exception_type": {"ReadTimeout": 1}, "gave_up": 1}
 pac["failed_outcomes_llm"] = {"by_status": {503: 1}, "by_exception_type": {}, "gave_up": 2}
 pac["bypass_calls"] = {"requests": 1, "aiohttp": 2}
-ot = A.ollama_transport(pac, embed_at_cap=3, fallback_local=1, embed_models_seen=[D1, D1], degraded_recalls=2)
+ot = A.ollama_transport(pac, embed_at_cap=3, fallback_local=1, embed_models_seen=[D1, D1], degraded_recalls=2,
+                        direct_calls=4)
 check("failed_outcomes = by_status + by_exception_type + gave_up over embed calls + degraded recalls (2+1+1+1+2)",
       ot["failed_outcomes"] == 7, str(ot["failed_outcomes"]))
 check("failed_outcomes_llm = the same sum over LLM calls (1+2)", ot["failed_outcomes_llm"] == 3)
-check("bypass_calls sums the pacer's per-library counts; embed_at_cap and fallback_local as given",
-      (ot["bypass_calls"], ot["embed_at_cap"], ot["fallback_local"]) == (3, 3, 1))
+check("bypass_calls sums the pacer's per-library counts; embed_at_cap, fallback_local and direct_calls as given",
+      (ot["bypass_calls"], ot["embed_at_cap"], ot["fallback_local"], ot["direct_calls"]) == (3, 3, 1, 4))
 check("embed_models_seen is the set of models the embed calls named (B2)", ot["embed_models_seen"] == [D1])
 check("the pacer's own record is kept whole under detail", ot.get("detail") == pac)
-for kw in ("embed_at_cap", "fallback_local", "embed_models_seen", "degraded_recalls"):
-    args = dict(embed_at_cap=0, fallback_local=0, embed_models_seen=[D1], degraded_recalls=0)
+for kw in ("embed_at_cap", "fallback_local", "embed_models_seen", "degraded_recalls", "direct_calls"):
+    args = dict(embed_at_cap=0, fallback_local=0, embed_models_seen=[D1], degraded_recalls=0, direct_calls=0)
     args.pop(kw)
     try:
         A.ollama_transport(PACER, **args)
@@ -192,10 +193,13 @@ for kw in ("embed_at_cap", "fallback_local", "embed_models_seen", "degraded_reca
 for badm in ([""], ["  "], [None], [3]):
     check(f"M3: an embed model name {badm[0]!r} is refused (B2 names each call's model)",
           refused(lambda badm=badm: A.ollama_transport(PACER, embed_at_cap=0, fallback_local=0, embed_models_seen=badm,
-                                                       degraded_recalls=0), "embed_models_seen"))
+                                                       degraded_recalls=0, direct_calls=0), "embed_models_seen"))
+check("R-EMBED-PATH: direct_calls must be a measured count - None is refused, never 0",
+      refused(lambda: A.ollama_transport(PACER, embed_at_cap=0, fallback_local=0, embed_models_seen=[D1],
+                                         degraded_recalls=0, direct_calls=None), "direct_calls"))
 check("a pacer record without its failure dicts is refused",
       refused(lambda: A.ollama_transport({"calls": 1, "bypass_calls": {}}, embed_at_cap=0, fallback_local=0,
-                                         embed_models_seen=[D1], degraded_recalls=0), "failure record"))
+                                         embed_models_seen=[D1], degraded_recalls=0, direct_calls=0), "failure record"))
 
 print("\n- cloud_transport and boundary -")
 for k in ("thinking_calls", "fingerprints_seen", "tokens"):
@@ -213,7 +217,7 @@ b = A.boundary_block(proxy={**PROXY, "canary_hits": 1}, witnesses=[{**WITNESSES[
 check("boundary counts: canary from the proxy, egress from the witnesses", (b["canary_hits"], b["egress_hits"]) == (1, 2))
 
 print("\n- K60/K61 cache records (B2) -")
-BUILT = A.ollama_transport(PACER, embed_at_cap=0, fallback_local=0, embed_models_seen=[D1], degraded_recalls=0)
+BUILT = A.ollama_transport(PACER, embed_at_cap=0, fallback_local=0, embed_models_seen=[D1], degraded_recalls=0, direct_calls=0)
 cr = A.cache_record(path="stores/S4/r1/vec.json", sha256="4" * 64, built_commit=ANCHOR,
                     built_utc="2026-10-01T09:30:00+00:00", built_ollama_transport=BUILT, hits=50, misses=0)
 check("cache_record carries path, sha256, hits, misses and the build's whole ollama_transport (embed_models_seen)",
@@ -376,6 +380,8 @@ def has(fl: list[str], letter: str) -> bool:
 
 
 check("P0a: bypass_calls > 0", has(flags(lambda r: r["ollama_transport"].__setitem__("bypass_calls", 1)), "a"))
+check("P0a (R-EMBED-PATH): direct_calls > 0 - an Ollama reached past the arm's proxy leg",
+      has(flags(lambda r: r["ollama_transport"].__setitem__("direct_calls", 1)), "a"))
 check("P0a: a failed embed outcome", has(flags(lambda r: r["ollama_transport"].__setitem__("failed_outcomes", 1)), "a"))
 check("P0a: failed_outcomes_llm", has(flags(lambda r: r["ollama_transport"].__setitem__("failed_outcomes_llm", 1)), "a"))
 check("P0a: needs Ollama, 0 paced calls, K61 not holding",
@@ -602,7 +608,7 @@ else:
              "must name exactly one model")
         cached = copy.deepcopy(f_a1)
         mem(cached)["ollama_transport"] = A.ollama_transport({**PACER, "calls": 0}, embed_at_cap=0, fallback_local=0,
-                                                             embed_models_seen=[], degraded_recalls=0)
+                                                             embed_models_seen=[], degraded_recalls=0, direct_calls=0)
         mem(cached)["caches"] = [cr]
         v = m5(cached)
         check("m5 PASSes a fully cache-served arm (K61) whose cache build names the D1 tag", v == [], str(v[:3]))

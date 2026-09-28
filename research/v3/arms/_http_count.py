@@ -7,7 +7,7 @@ stdlib-only; the clients it wraps (httpx, requests) are wrapped only when the pr
 
     import _http_count as HC
     HC.install(proxy_port=41000)       # FIRST - then the pacer wraps these wrappers
-    import _ollama_pacer; _ollama_pacer.install("pace")
+    import _ollama_pacer; _ollama_pacer.install("observe")   # R-EMBED-PATH: the proxy leg paces
 
 Installed before the pacer, the counter sits INSIDE it: each attempt the pacer makes, a retry included, is one request
 here, as it is one request at the proxy. Four doors are wrapped: urllib.request.urlopen, httpx.Client.send,

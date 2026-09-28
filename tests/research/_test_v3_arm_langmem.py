@@ -217,6 +217,11 @@ try:
     print("\n- the langmem arm: one process, both stages -")
     c, err = start("l1", spec_for("l1", "langmem"))
     h = safely(lambda: c.request("hello"), {})
+    _st = h.get("start") or {}
+    check("R-EMBED-PATH (c): the start record - the pacer in observe mode (the proxy leg paces and retries) and the "
+          "spec's Ollama URL as the arm's one route", _st.get("pacer") == "observe"
+          and _st.get("ollama_route") == f"http://127.0.0.1:{OLLAMA.port}",
+          str({k: _st.get(k) for k in ("pacer", "ollama_route")}))
     check("hello: the venv's langmem, the DeepSeek label, the tag",
           h.get("system") == "langmem" and str(FAKES) in str(((h.get("start") or {}).get("product") or {}).get("file"))
           and h.get("llm_label") == "deepseek:deepseek-flash" and h.get("embedder") == TAG,

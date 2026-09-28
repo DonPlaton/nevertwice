@@ -610,7 +610,7 @@ def plan_launcher_factory(cfg: RunConfig, c: Any) -> Callable[..., Any]:
              unit_chars: Mapping[str, int]) -> Any:
         return PL.PlanLauncher(arm, stand=stand_id, python=ar.python, proxy=proxy, stager=stager,
                                unit_block=unit_block, embed_tag=cfg.embed_tag, dated=True, unit_chars=unit_chars,
-                               ollama_url=cfg.ollama_url, extra=ar.extra).launcher(SC.ChildArmLauncher)
+                               extra=ar.extra).launcher(SC.ChildArmLauncher)
     return make
 
 

@@ -237,6 +237,11 @@ try:
     print("\n- S6L: the Ollama leg, one process for both stages -")
     c, err = start("l1", spec_for("l1", "ollama"), s6l_env())
     h = safely(lambda: c.request("hello"), {})
+    _st = h.get("start") or {}
+    check("R-EMBED-PATH (c): the start record - the pacer in observe mode (the proxy leg paces and retries) and the "
+          "spec's Ollama URL as the arm's one route", _st.get("pacer") == "observe"
+          and _st.get("ollama_route") == OLLAMA.url,
+          str({k: _st.get(k) for k in ("pacer", "ollama_route")}))
     check("hello: agentic_memory from the venv, the S6L writer", h.get("system") == "a-mem"
           and h.get("llm_label") == "ollama:qwen3-coder:30b"
           and str(FAKES) in str(((h.get("start") or {}).get("product") or {}).get("file")),

@@ -185,6 +185,9 @@ _LLM_FAILURES = {"by_status": {}, "by_exception_type": {}, "gave_up": 0}
 #: the aggregate without anyone able to see it. Tallied by (host, port) at the exact same
 #: point `_COUNTERS["calls"]` increments, so per-host sums always equal the aggregate.
 _CALLS_BY_HOST: dict = {}
+#: R-EMBED-PATH (v3, the auditor's ruling): the ONE Ollama route a child may use - its arm's proxy leg, (host, port).
+#: set_route() names it; attach() then counts as direct_calls every paced call to another recognised Ollama host.
+_ROUTE: tuple | None = None
 
 #: K11 (the auditor's finding on 623a1df): litellm 1.100.0's ASYNC path (amem_eval's own
 #: dependency) routes its httpx.AsyncClient through a custom transport backed by aiohttp
@@ -235,8 +238,25 @@ def _host_port(url: str) -> tuple[str, int]:
     return host, port
 
 
+def set_route(host: str, port: int) -> None:
+    """R-EMBED-PATH: the child's one Ollama route (its arm's proxy leg). The route becomes a recognised Ollama host - its
+    calls are counted - and attach() reports as direct_calls every paced call to any other recognised host (the
+    default 127.0.0.1:11434): an Ollama reached past the leg. clear_route() undoes it."""
+    global _ROUTE
+    if not (isinstance(port, int) and not isinstance(port, bool) and 1 <= port <= 65535):
+        raise ValueError(f"set_route: a port in 1..65535, not {port!r}")
+    _ROUTE = ((host or "").lower(), port)
+
+
+def clear_route() -> None:
+    global _ROUTE
+    _ROUTE = None
+
+
 def _ollama_hosts() -> frozenset:
     hosts = set(_DEFAULT_HOSTS)
+    if _ROUTE is not None:
+        hosts.add(_ROUTE)
     for var in _HOST_ENV_VARS:
         val = os.environ.get(var)
         if not val:
@@ -1181,6 +1201,12 @@ def attach(out: dict, *, since: dict | None = None) -> None:
         #: narrower `max_inflight` (call-only) - see `_CONCURRENT_STATE`'s docstring.
         max_inflight = _COUNTERS["max_inflight"]
         max_concurrent_paced = _COUNTERS["max_concurrent_paced"]
+        route = _ROUTE
+        by_host_now = dict(_CALLS_BY_HOST)
+    direct_calls = None
+    if route is not None:                                            # R-EMBED-PATH: past the leg
+        before_h = (since or {}).get("_calls_by_host", {})
+        direct_calls = sum(n - before_h.get(k, 0) for k, n in by_host_now.items() if k != route)
     out["ollama_transport"] = {
         "calls": calls, "pace_sleep_s": round(pace_sleep_s, 3), "retries": retries,
         "retry_sleep_s": round(retry_sleep_s, 3), "gave_up": gave_up,
@@ -1207,7 +1233,13 @@ def attach(out: dict, *, since: dict | None = None) -> None:
                                 "by_exception_type": failed_by_exc_llm,
                                 "gave_up": failed_gave_up_llm},
     }
+    if route is not None:
+        out["ollama_transport"]["route"] = f"{route[0]}:{route[1]}"
+        out["ollama_transport"]["direct_calls"] = direct_calls
     reasons = []
+    if direct_calls:
+        reasons.append(f"{direct_calls} paced call(s) reached an Ollama host other than the arm's proxy leg "
+                       f"{route[0]}:{route[1]} - past the one route (R-EMBED-PATH)")
     if bypass_requests > 0 or bypass_aiohttp > 0:
         culprits = [name for name, n in
                    (("requests", bypass_requests), ("aiohttp", bypass_aiohttp)) if n > 0]

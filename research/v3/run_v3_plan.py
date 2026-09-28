@@ -476,7 +476,6 @@ CODE_SOURCES = {"base.py": ARMS_DIR / "base.py", "_http_count.py": ARMS_DIR / "_
                 "_ollama_pacer.py": HERE.parent / "_ollama_pacer.py", "_rest.py": ARMS_DIR / "_rest.py"}
 RUNNER_LLM = ("nevertwice", "nevertwice-rawtext", "nevertwice-ablation")
 PROXY_TOKEN_ARMS = {**{a: "DEEPSEEK_API_KEY" for a in (*RUNNER_LLM, "mem0", "langmem", "zep-graphiti")}}
-DIRECT_OLLAMA = "http://127.0.0.1:11434"                  # the in-process pacer counts it; the Ollama leg is letta's
 LETTA_CONTAINER_HOST = "host.docker.internal"
 EXTRA_NEEDED = {**{a: ("extract_temp",) for a in RUNNER_LLM}, "a-mem": ("llm", "product_pin"),
                 "zep-graphiti": ("falkor_host", "falkor_port"), "letta": ("server_url", "openapi_sha256", "agent")}
@@ -523,7 +522,7 @@ class PlanLauncher:
 
     def __init__(self, arm: str, *, stand: str, python: str | os.PathLike, proxy: Any, stager: CodeStager,
                  unit_block: Mapping[str, str], embed_tag: str, dated: bool, unit_chars: Mapping[str, int] | None = None,
-                 ollama_url: str = DIRECT_OLLAMA, extra: Mapping[str, Any] | None = None) -> None:
+                 extra: Mapping[str, Any] | None = None) -> None:
         self.spec = arm_spec(arm)
         self.arm, self.stand, self.python = arm, stand, Path(python)
         if not self.python.is_absolute():
@@ -531,7 +530,7 @@ class PlanLauncher:
         self.proxy, self.stager, self.unit_block = proxy, stager, dict(unit_block)
         check_ids((), self.unit_block)
         self.embed_tag, self.dated, self.unit_chars = embed_tag, bool(dated), dict(unit_chars or {})
-        self.ollama_url, self.extra = ollama_url, dict(extra or {})
+        self.extra = dict(extra or {})
         need = EXTRA_NEEDED.get(arm, ())
         wrong = sorted(set(need) ^ set(self.extra))
         if wrong:
@@ -580,28 +579,32 @@ class PlanLauncher:
         if store_dirs is None:
             raise PlanError(f"{self.arm}: a read stage without its write stage's directories")
         a, ad = self.arm, self.spec.adapter
+        # R-EMBED-PATH (the auditor): every arm reaches Ollama through its own proxy leg, tagged with the unit - one
+        # witness of calls, embed_at_cap, the unit and the pacing for all; an arm without a leg is refused, never direct
+        leg = (lambda: (self._need_port("ollama"), self._url("ollama", run, unit))[1]) if ad != "arm_letta.py" else None
         s: dict[str, Any] = {"arm": a, "stage": "both" if memory else stage, "stand": stand, "run": run, "unit": unit,
                              "unit_dir": str(Path(store_dirs.cwd)),
                              "record_path": str(Path(dirs.home) / f"start.{stage}.json")}
         if ad == "runner_nevertwice.py":
             llm = a in RUNNER_LLM
-            s.update(port=self._need_port("write") if llm else None, embed_tag=self.embed_tag,
+            s.update(port=self._need_port("write") if llm else None, ollama_port=self._need_port("ollama"),
+                     embed_tag=self.embed_tag,
                      extract_temp=self.extra.get("extract_temp") if llm else None,
                      max_transcript=self._max_transcript(unit), s7=base_stand(stand) == "S7" and a == "nevertwice")
         elif ad == "arm_chroma.py":
-            s.update(embed_tag=self.embed_tag, ollama_url=self.ollama_url)
+            s.update(embed_tag=self.embed_tag, ollama_url=leg())
         elif ad in ("arm_mem0.py", "arm_langmem.py"):
             s.update(port=self._need_port("write") if a in ("mem0", "langmem") else None, embed_tag=self.embed_tag,
-                     ollama_url=self.ollama_url, dated=self.dated)
+                     ollama_url=leg(), dated=self.dated)
         elif ad == "arm_amem.py":
             llm = self.extra["llm"]
             s.update(llm=llm, llm_model=adapter_constant(ad, "LLMS")[llm],
                      port=self._need_port("write") if llm == "deepseek" else None,
                      ollama_leg_url=self._url("ollama", run, unit) if llm == "ollama" else None,
-                     embed_tag=self.embed_tag, ollama_url=self.ollama_url, dated=self.dated,
+                     embed_tag=self.embed_tag, ollama_url=leg(), dated=self.dated,
                      product_pin=self.extra["product_pin"])
         elif ad == "arm_graphiti.py":
-            s.update(port=self._need_port("write"), embed_tag=self.embed_tag, ollama_url=self.ollama_url,
+            s.update(port=self._need_port("write"), embed_tag=self.embed_tag, ollama_url=leg(),
                      falkor_host=self.extra["falkor_host"], falkor_port=self.extra["falkor_port"], dated=self.dated)
         elif ad == "arm_letta.py":
             s.update(server_url=self.extra["server_url"], openapi_sha256=self.extra["openapi_sha256"],
@@ -629,6 +632,7 @@ class PlanLauncher:
             llm = self.arm in RUNNER_LLM
             return _runner().declared_env(self.arm, run=run, unit=unit,
                                           port=self._need_port("write") if llm else None, embed_tag=self.embed_tag,
+                                          ollama_port=self._need_port("ollama"),
                                           extract_temp=self.extra.get("extract_temp") if llm else None,
                                           max_transcript=self._max_transcript(unit))
         if self.arm == "a-mem":
@@ -684,6 +688,8 @@ class PlanLauncher:
                 "token_names": [n] if n else [], "declared_names": sorted(self.declared()),
                 "argv_exception": self.argv_exception(), "spec_keys": list(self.spec_keys),
                 "ports": {r: self._port(r) for r in ("write", "reader", "ollama")},
+                "ollama_route": (f"http://127.0.0.1:{self._port('ollama')}/u/<run>.<unit>"          # R-EMBED-PATH
+                                 if isinstance(self._port("ollama"), int) else None),
                 "store_persistence": self.spec.store_persistence,
                 "code_copies": [r for r in self.stager.records if r["arm"] == self.arm and r["stand"] == self.stand]}
 

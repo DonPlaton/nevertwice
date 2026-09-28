@@ -349,7 +349,7 @@ try:
     PY = TMP / "poly" / "arms314" / "Scripts" / "python.exe"
     LLM_ARMS = (*PL.RUNNER_LLM, "mem0", "langmem", "a-mem", "zep-graphiti", "letta")
     ports = {"arms": {a: {"reader": 42000 + i, **({"write": 41000 + i} if a in LLM_ARMS else {}),
-                          **({"ollama": 43000 + i} if a in ("letta", "a-mem") else {})} for i, a in enumerate(ALL)}}
+                          **({"ollama": 43000 + i} if a != "bm25-floor" else {})} for i, a in enumerate(ALL)}}
     sec = RP.build_secrets(ALL)
     PX = SimpleNamespace(ports=ports, tokens=sec["tokens"])
     EXTRA = {**{a: {"extract_temp": 0.0} for a in PL.RUNNER_LLM}, "a-mem": {"llm": "deepseek",
@@ -393,6 +393,40 @@ try:
             bad_keys[a] = f"{type(e).__name__}: {e}"
     check("PLL: every arm's spec has exactly its adapter's SPEC_KEYS (read from the adapter's source)", not bad_keys,
           str(bad_keys))
+    routes, bad_route = {}, {}
+    for i, a in enumerate(ALL):
+        if a in ("bm25-floor", "letta"):                       # no Ollama at all / the server's own leg port (B-A3)
+            continue
+        want = f"http://127.0.0.1:{43000 + i}/u/r1.u2"
+        try:
+            s2 = spec_of(a, "r1", "u2")
+            if PL.ARMS[a].adapter == "runner_nevertwice.py":
+                got = (s2.get("ollama_port"), env_of(a, "r1", "u2").get("OLLAMA_EMBED_URL"))
+                ok = got == (43000 + i, want + "/api/embed")
+            else:
+                got = s2.get("ollama_url")
+                ok = got == want
+            routes[a] = got
+            if not ok:
+                bad_route[a] = got
+        except Exception as e:  # noqa: BLE001 - the row FAILs by name
+            bad_route[a] = f"{type(e).__name__}: {e}"
+    check("R-EMBED-PATH: every Ollama arm of the roster reaches Ollama through its own proxy leg with the unit's "
+          "/u/<run>.<unit> - the adapters' spec ollama_url, the runner's ollama_port and its engine's OLLAMA_EMBED_URL "
+          "- never the direct 11434", len(routes) == len(ALL) - 2 and not bad_route
+          and not any("11434" in str(v) for v in routes.values()), str(bad_route or routes)[:400])
+    no_leg = SimpleNamespace(ports={"arms": {"mem0": {"reader": 1, "write": 2}}}, tokens=sec["tokens"])
+    try:
+        PL.PlanLauncher("mem0", stand="S4", python=PY, proxy=no_leg, stager=stager, unit_block=UB,
+                        embed_tag="nvt3-bge-m3-d1:latest", dated=True).spec_for(
+            "write", stand="S4", run="r1", unit="u1", dirs=dirs("mem0", "r8", "u1"), write_dirs=None)
+        nl = "accepted"
+    except PL.PlanError as e:
+        nl = str(e)
+    except Exception as e:  # noqa: BLE001
+        nl = f"not refused by the plan: {type(e).__name__}: {e}"
+    check("R-EMBED-PATH: an Ollama arm the proxy gave no leg is refused by name - never sent to the direct 11434",
+          "no ollama port" in nl, nl)
     mem = {a: (specs[a] or {}).get("stage") for a in ALL if PL.ARMS[a].store_persistence == "memory"}
     check("PLL (B-P1): langmem-store is a memory arm like langmem and a-mem - its one child is the 'both' stage",
           PL.ARMS["langmem-store"].store_persistence == "memory" and mem == {"a-mem": "both", "langmem": "both",
@@ -430,8 +464,9 @@ try:
           not off, str(off))
     nollm = [a for a in ALL if a not in LLM_ARMS]
     check("PLL (2): an arm without an LLM gets no proxy port in its spec and no URL in its environment",
-          all((specs[a] or {}).get("port") is None and not any("URL" in k for k in env_of(a, "r1", "u1"))
-              for a in nollm), str({a: specs[a].get("port") for a in nollm}))
+          all((specs[a] or {}).get("port") is None
+              and not any("URL" in k for k in env_of(a, "r1", "u1") if not k.startswith("OLLAMA_"))   # the leg's are
+              for a in nollm), str({a: specs[a].get("port") for a in nollm}))                          # R-EMBED-PATH's
     probs = {}
     PENV = {"SystemRoot": os.environ.get("SystemRoot", r"C:\Windows")} if os.name == "nt" else {}
     for a in ALL:

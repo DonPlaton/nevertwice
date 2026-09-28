@@ -219,7 +219,8 @@ def child_env(declared: dict, *, token: str | None = TOKEN, extra: dict | None =
 def make_spec(name: str, arm: str, stage: str, unit_dir: Path, *, run="r1", unit="u1", s7=False,
               max_transcript=None, extract_temp=None) -> dict:
     return {"arm": arm, "stage": stage, "stand": "s1", "run": run, "unit": unit, "unit_dir": str(unit_dir),
-            "port": None if arm == RN.RANKER else FAKE.port, "embed_tag": TAG, "extract_temp": extract_temp,
+            "port": None if arm == RN.RANKER else FAKE.port, "ollama_port": FAKE.port, "embed_tag": TAG,
+            "extract_temp": extract_temp,
             "max_transcript": max_transcript, "s7": s7, "record_path": str(TMP / f"{name}.start.json")}
 
 
@@ -228,7 +229,7 @@ def start(name: str, spec: dict, *, env: dict | None = None, cwd: Path | None = 
     sp.write_text(json.dumps(spec), encoding="utf-8")
     if env is None:
         env = child_env(RN.declared_env(spec["arm"], run=spec["run"], unit=spec["unit"], port=spec["port"],
-                                        embed_tag=TAG, extract_temp=spec["extract_temp"],
+                                        embed_tag=TAG, ollama_port=FAKE.port, extract_temp=spec["extract_temp"],
                                         max_transcript=spec["max_transcript"]),
                         token=None if spec["arm"] == RN.RANKER else TOKEN)
     wd = cwd or TMP / f"cwd_{name}"
@@ -257,7 +258,7 @@ def refused_hello(name: str, spec: dict, env: dict | None = None) -> str:
 
 try:
     print("\n- the declared variables (rev1 §2.2) -")
-    d = RN.declared_env("nevertwice", run="r1", unit="u1", port=41000, embed_tag=TAG)
+    d = RN.declared_env("nevertwice", run="r1", unit="u1", port=41000, embed_tag=TAG, ollama_port=FAKE.port)
     check("the URL is the proxy port's /u/<run>.<unit>/v1/chat/completions on 127.0.0.1",
           d.get("DEEPSEEK_URL") == "http://127.0.0.1:41000/u/r1.u1/v1/chat/completions", str(d.get("DEEPSEEK_URL")))
     check("deepseek-flash, fallback 0, XRERANK 0, the embed tag, CLOUD deepseek",
@@ -265,26 +266,35 @@ try:
           and d.get("NEVERTWICE_XRERANK") == "0" and d.get("NEVERTWICE_EMBED_MODEL") == TAG
           and d.get("NEVERTWICE_CLOUD") == "deepseek", str(d))
     check("the proxy token is never a declared value (it travels in the environment only)", RN.TOKEN_NAME not in d)
+    check("R-EMBED-PATH: the engine's three Ollama URLs are the arm's proxy leg with /u/<run>.<unit> - generate, embed, "
+          "tags - for the full arm and the ranker alike", all(
+              dd.get(n) == f"http://127.0.0.1:{FAKE.port}/u/r1.u1{path}"
+              for dd in (d, RN.declared_env(RN.RANKER, run="r1", unit="u1", port=None, embed_tag=TAG,
+                                            ollama_port=FAKE.port))
+              for n, _a, path in RN.OLLAMA_ROUTES), str({n: d.get(n) for n, _a, _p in RN.OLLAMA_ROUTES}))
+    check("R-EMBED-PATH: without its leg's port the arm is refused - never the direct 11434",
+          raises(lambda: RN.declared_env("nevertwice", run="r1", unit="u1", port=41000, embed_tag=TAG), ValueError,
+                 "R-EMBED-PATH"))
     check("a run or unit id with a dot is refused (Q3)",
-          raises(lambda: RN.declared_env("nevertwice", run="r.1", unit="u1", port=41000, embed_tag=TAG), ValueError,
+          raises(lambda: RN.declared_env("nevertwice", run="r.1", unit="u1", port=41000, embed_tag=TAG, ollama_port=FAKE.port), ValueError,
                  "no dots"))
-    dr = RN.declared_env(RN.RANKER, run="r1", unit="u1", port=None, embed_tag=TAG)
+    dr = RN.declared_env(RN.RANKER, run="r1", unit="u1", port=None, embed_tag=TAG, ollama_port=FAKE.port)
     check("the ranker has no LLM: CLOUD none, no URL, no fallback variable",
           dr.get("NEVERTWICE_CLOUD") == "none" and "DEEPSEEK_URL" not in dr and "NEVERTWICE_CLOUD_FALLBACK" not in dr,
           str(dr))
     check("... and a proxy port for the ranker is refused",
-          raises(lambda: RN.declared_env(RN.RANKER, run="r1", unit="u1", port=41000, embed_tag=TAG), ValueError,
+          raises(lambda: RN.declared_env(RN.RANKER, run="r1", unit="u1", port=41000, embed_tag=TAG, ollama_port=FAKE.port), ValueError,
                  "no LLM"))
     check("the ablation needs its window (Q14), and only the ablation sets one",
-          raises(lambda: RN.declared_env("nevertwice-ablation", run="r1", unit="u1", port=1, embed_tag=TAG), ValueError,
+          raises(lambda: RN.declared_env("nevertwice-ablation", run="r1", unit="u1", port=1, embed_tag=TAG, ollama_port=FAKE.port), ValueError,
                  "Q14")
-          and raises(lambda: RN.declared_env("nevertwice", run="r1", unit="u1", port=1, embed_tag=TAG,
+          and raises(lambda: RN.declared_env("nevertwice", run="r1", unit="u1", port=1, embed_tag=TAG, ollama_port=FAKE.port,
                                              max_transcript=100), ValueError, "only the ablation")
-          and RN.declared_env("nevertwice-ablation", run="r1", unit="u1", port=1, embed_tag=TAG,
+          and RN.declared_env("nevertwice-ablation", run="r1", unit="u1", port=1, embed_tag=TAG, ollama_port=FAKE.port,
                               max_transcript=5000).get("NEVERTWICE_MAX_TRANSCRIPT") == "5000")
     check("the extraction temperature is declared only when set (the sensitivity row), as a float",
           "NEVERTWICE_EXTRACT_TEMP" not in d and RN.declared_env("nevertwice", run="r1", unit="u1", port=1,
-                                                                 embed_tag=TAG, extract_temp=0)
+                                                                 embed_tag=TAG, ollama_port=FAKE.port, extract_temp=0)
           .get("NEVERTWICE_EXTRACT_TEMP") == "0.0")
     check("masked(): KEY / TOKEN / SECRET / PASSWORD in any case -> <set>; other names keep their value",
           [RN.masked(n, "v") for n in ("DEEPSEEK_API_KEY", "x_token", "NEVERTWICE_Secret_x", "db_password",
@@ -316,12 +326,13 @@ try:
            token=TOKEN, max_transcript=None):
         spec = {"arm": arm, "run": "r1", "unit": "u1", "port": None if arm == RN.RANKER else 41000, "embed_tag": TAG,
                 "extract_temp": None, "max_transcript": max_transcript}
-        declared = RN.declared_env(arm, run="r1", unit="u1", port=spec["port"], embed_tag=TAG,
+        declared = RN.declared_env(arm, run="r1", unit="u1", port=spec["port"], embed_tag=TAG, ollama_port=FAKE.port,
                                    max_transcript=max_transcript)
         md = dict(VAULT=ST, EMBED_MODEL=TAG, ACTIVE_CLOUD="none" if arm == RN.RANKER else "deepseek",
                   DEEPSEEK_MODEL="deepseek-flash", DEEPSEEK_URL=URL, provider_key=lambda _p: TOKEN,
                   cloud_fallback_enabled=lambda: False, extract_temperature=lambda: 0.2, EXTRACT_NUM_PREDICT=4096,
                   MAX_TRANSCRIPT_CHARS=12000 if max_transcript is None else max_transcript)
+        md.update({name: declared[name] for name, _a, _p in RN.OLLAMA_ROUTES})   # R-EMBED-PATH: the leg URLs
         md.update(m_over or {})
         m = NS(**md)
         cfg = NS(**{"VAULT": ST, "PROJECTS_ROOT": TR, **(cfg_over or {})})
@@ -330,6 +341,9 @@ try:
                                   SG=FakeSG(mods, live), store=ST, transcripts=TR,
                                   environ={"NEVERTWICE_XRERANK": xrerank})
 
+    wrong = {n: (pc(m_over={a: f"http://127.0.0.1:11434{path}"})) for n, a, path in RN.OLLAMA_ROUTES}
+    check("R-EMBED-PATH (b): the bind checks all three of the engine's Ollama URLs - each one off the leg is named",
+          all(any(f"the engine's {n} is not the declared leg URL" in x for x in wrong[n]) for n in wrong), str(wrong))
     check("a correct binding has no problem - for the full arm, the ranker and the ablation",
           pc() == [] and pc(RN.RANKER, token=None) == [] and pc("nevertwice-ablation", max_transcript=4321) == [],
           str((pc(), pc(RN.RANKER, token=None), pc("nevertwice-ablation", max_transcript=4321))))
@@ -382,13 +396,14 @@ try:
     RN.sandbox_guard = NS(mode=lambda: None, store=lambda: None, _loaded_project_modules=lambda: {})
     UI = TMP / "iso" / "u1"
     UI.mkdir(parents=True)
-    env_i = dict(RN.declared_env("nevertwice", run="r1", unit="u1", port=41000, embed_tag=TAG), **{RN.TOKEN_NAME: TOKEN})
+    env_i = dict(RN.declared_env("nevertwice", run="r1", unit="u1", port=41000, embed_tag=TAG, ollama_port=FAKE.port), **{RN.TOKEN_NAME: TOKEN})
     saved_env = dict(os.environ)
     try:
         msg_i = ""
         try:
             RN.bind({"arm": "nevertwice", "stage": "write", "stand": "s1", "run": "r1", "unit": "u1",
-                     "unit_dir": str(UI), "port": 41000, "embed_tag": TAG, "extract_temp": None,
+                     "unit_dir": str(UI), "port": 41000, "ollama_port": FAKE.port, "embed_tag": TAG,
+                     "extract_temp": None,
                      "max_transcript": None, "s7": False, "record_path": str(TMP / "iso.json")}, env_i)
         except Exception as e:  # noqa: BLE001
             msg_i = f"{type(e).__name__}: {e}"
@@ -451,7 +466,7 @@ try:
     U1 = TMP / "runs" / "s1" / "r1" / "nevertwice" / "u1"
     U1.mkdir(parents=True)
     spec_w = make_spec("w1", "nevertwice", "write", U1)
-    env_w = child_env(RN.declared_env("nevertwice", run="r1", unit="u1", port=FAKE.port, embed_tag=TAG),
+    env_w = child_env(RN.declared_env("nevertwice", run="r1", unit="u1", port=FAKE.port, embed_tag=TAG, ollama_port=FAKE.port),
                       extra=PLANTED)
     c, p, err_w = start("w1", spec_w, env=env_w, cwd=U1)
     h = safely(lambda: c.request("hello"), {})
@@ -475,6 +490,11 @@ try:
           and (st.get("nevertwice_env") or {}).get("NEVERTWICE_EMBED_MODEL") == TAG, str(st.get("isolate_values")))
     check("XRERANK=0 from isolate() equals rev1's off: kept and recorded",
           (st.get("kept_from_isolate") or {}).get("NEVERTWICE_XRERANK") == "0", str(st.get("kept_from_isolate")))
+    check("R-EMBED-PATH (c): the start record says the pacer runs in observe mode (the leg paces) and names the three "
+          "Ollama URLs on the arm's leg with its unit - what m5 checks against 'the leg with /u/ of its own unit'",
+          st.get("pacer") == "observe" and st.get("ollama_route") == {
+              n: f"http://127.0.0.1:{FAKE.port}/u/r1.u1{path}" for n, _a, path in RN.OLLAMA_ROUTES},
+          str({k: st.get(k) for k in ("pacer", "ollama_route")}))
     check("the positive checks all ran", st.get("checks") == ["declared values and token",
                                                                "reload with only config loaded",
                                                                "stores, paths and backend"], str(st.get("checks")))
@@ -512,6 +532,8 @@ try:
     embeds = [x for x in FAKE.calls if x["path"].endswith("/api/embed")]
     check("the product embedded with the declared tag", embeds and all(x["body"].get("model") == TAG for x in embeds),
           str({x["body"].get("model") for x in embeds}))
+    check("R-EMBED-PATH: the product's embeddings went to the arm's leg, tagged with its unit (/u/r1.u1/api/embed)",
+          embeds and all(x["path"] == "/u/r1.u1/api/embed" for x in embeds), str({x["path"] for x in embeds}))
     e = safely(lambda: c.request("end_write"), {})
     seal_w = e.get("seal") or {}
     check("end_write seals the store: its path and digest beside it (Q-45-5)",
@@ -557,7 +579,7 @@ try:
     U2 = TMP / "runs" / "s1" / "r1" / "nevertwice" / "u2"
     U2.mkdir(parents=True)
     s2 = make_spec("x1", "nevertwice", "write", U2, unit="u2")
-    base_env = RN.declared_env("nevertwice", run="r1", unit="u2", port=FAKE.port, embed_tag=TAG)
+    base_env = RN.declared_env("nevertwice", run="r1", unit="u2", port=FAKE.port, embed_tag=TAG, ollama_port=FAKE.port)
     bad_url = dict(base_env, DEEPSEEK_URL=f"http://127.0.0.1:{FAKE.port}/v1/chat/completions")
     msg = refused_hello("x1", s2, env=child_env(bad_url))
     check("an environment whose DEEPSEEK_URL is the base URL only is refused by name",
@@ -582,7 +604,7 @@ try:
     UR.mkdir(parents=True)
     rk = make_spec("x7", RN.RANKER, "write", UR, unit="u9")
     msg = refused_hello("x7", rk, env=child_env(RN.declared_env(RN.RANKER, run="r1", unit="u9", port=None,
-                                                               embed_tag=TAG), token=TOKEN))
+                                                               embed_tag=TAG, ollama_port=FAKE.port), token=TOKEN))
     check("the ranker with a proxy token set is refused (it has no LLM)", "ranker has no LLM" in msg, msg[:200])
     msg = refused_hello("x8", dict(s2, record_path=str(TMP / "x8.start.json"), stage="erase"))
     check("an unknown stage in the spec is refused", "unknown arm" in msg, msg[:200])
