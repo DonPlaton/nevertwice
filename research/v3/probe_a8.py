@@ -37,6 +37,9 @@ This part (C5a) holds the verdicts; they read records, never a product:
   (letta_calls) and its conformance (lt_conformance), the recall route under a pattern declared first
   (lt_recall_route) and Point V's archival page size from the schema (lt_archival_default); the layer
   facts wait for the previous Letta release's source, fetched in its own window;
+* C5f (the auditor's Q-C5-6, Q-C5-7): Claude Code's offered tools read from its package by a pattern declared
+  first (cc_offered_tools; any count but one is attempt 2, a discovery spawn), recorded for launch's D7
+  (record_cc_offered), and its CLAUDE_CONFIG_DIR names from the probe's discovery spawn (cc_config_names);
 * ``verdict``: "pass" only when every field is ok, there is no problem, every boundary check is complete with 0/0 and
   no catcher line belongs to the arm; else the first blocked:<reason> - the fields in their declared order, then the
   problems - else "fail". The proxy's own spawn is unwitnessed by design (launch.spawn_proxy): 0/0 covers the product
@@ -928,6 +931,69 @@ def lt_archival_default(doc: Mapping) -> dict:
         return _field(None, rule=rule, ok=False, source=_oa_source(doc), failed=f"the default is {d!r}",
                       blocked=f"blocked:source-changed:{field}")
     return _field(d, rule=rule, ok=True, source=_oa_source(doc))
+
+
+# ── C5f (the auditor's Q-C5-6, Q-C5-7): Claude Code's offered tools and config names, offline ─────────────────────
+
+#: Q-C5-7 attempt 1: the tools the pinned Claude Code offers, read from its installed package as data - one match of a
+#: pattern declared here before any read of that package: one array literal of quoted tool names holding Bash, Read and
+#: Write, in cli.js. Declared blind: no earlier Claude Code sits on this machine to read as data (unlike mem0 2.0.19),
+#: so any count but one goes to attempt 2 - one named discovery spawn (role=probe, stand=_a8, every tool disallowed,
+#: the upstream the fake), its list taken from the init event - declared with it.
+CC_OFFERED_SOURCE = ("cli.js", r'\[(?=[^\]]*"Bash")(?=[^\]]*"Read")(?=[^\]]*"Write")((?:"[A-Za-z]+",\s*)+"[A-Za-z]+")\]')
+
+
+def cc_offered_tools(package_dir: str | os.PathLike) -> dict:
+    """Q-C5-7 attempt 1: the offered tools from the package's cli.js - exactly one match of CC_OFFERED_SOURCE gives
+    the names in their order with the file's sha256; none or two or more is blocked:attempt-2:cc_offered (the match
+    count kept); no cli.js is blocked:source-missing:cc_offered."""
+    name, pattern = CC_OFFERED_SOURCE
+    p = Path(package_dir) / name
+    if not p.is_file():
+        return {"value": None, "blocked": "blocked:source-missing:cc_offered"}
+    data = p.read_bytes()
+    found = list(re.finditer(pattern, data.decode("utf-8", "replace")))
+    if len(found) != 1:
+        return {"value": None, "matches": len(found), "blocked": "blocked:attempt-2:cc_offered"}
+    sha = hashlib.sha256(data).hexdigest()
+    return {"value": re.findall(r'"([A-Za-z]+)"', found[0].group(1)), "sha256": sha, "source": f"{name}@sha256:{sha}"}
+
+
+def record_cc_offered(L: Any, offered: Mapping, binary_sha256: str) -> dict:
+    """Q-C5-7: attempt 1's tools become launch's _OFFERED record for D7, under the pinned binary's sha256
+    (launch.record_offered_tools). A blocked result records no tools but launch's attempt-1 failure for that binary
+    (launch.record_offered_attempt1, C-CC-1) - the one door through which attempt 2's discovery spawn may run."""
+    if offered.get("blocked") or not offered.get("value"):
+        why = offered.get("blocked") or "blocked:no-tools:cc_offered"
+        L.record_offered_attempt1(binary_sha256, why)
+        return {"recorded": False, "blocked": why, "attempt1_failed_for": binary_sha256}
+    L.record_offered_tools(binary_sha256, offered["value"])
+    return {"recorded": True, "binary_sha256": binary_sha256, "tools": list(offered["value"])}
+
+
+def cc_config_names(spawns_log: str | os.PathLike, spawn_id: str) -> dict:
+    """Q-C5-6: the probe's discovery spawn's recording IS the allowed list of CLAUDE_CONFIG_DIR names - read from the
+    spawn journal by the spawn's id: its names, its entries (name, kind, size, sha256) and the binary's sha256, for the
+    auditor's review before FREEZE-V3 (then launch.record_config_names). A spawn that was not a discovery, a refused
+    one, or no such spawn is refused by name."""
+    field = "cc_config_names"
+    lines = []
+    p = Path(spawns_log)
+    if p.is_file():
+        lines = [json.loads(x) for x in p.read_bytes().decode("utf-8").split("\n") if x.strip()]
+    hits = [x for x in lines if x.get("spawn_id") == spawn_id]
+    if len(hits) != 1:
+        return {"value": None, "blocked": f"blocked:source-{'missing' if not hits else 'ambiguous'}:{field}"}
+    e = hits[0]
+    if e.get("refused"):
+        return {"value": None, "blocked": f"blocked:refused-spawn:{field}"}
+    cc = e.get("claude_code") or {}
+    cfg = cc.get("config") or {}
+    if cfg.get("mode") != "discovery":
+        return {"value": None, "blocked": f"blocked:not-discovery:{field}"}
+    entries = list(cfg.get("entries") or [])
+    return {"value": sorted(x["name"] for x in entries), "entries": entries, "binary_sha256": cc.get("sha256"),
+            "source": f"{p.name}:{spawn_id}"}
 
 
 def formats(sites: Mapping) -> dict:

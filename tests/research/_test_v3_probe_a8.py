@@ -1360,6 +1360,68 @@ check("C5b lt_archival_default: a default that is not a positive int is blocked:
       "blocked:source-missing",
       ok(lambda: all(v.get("blocked") == "blocked:source-changed:lt_archival_default" for v in ad_bad.values())
          and ad_missing.get("blocked") == "blocked:source-missing:lt_archival_default"), str((ad_bad, ad_missing))[:500])
+
+print("\n- C5f (Q-C5-6, Q-C5-7): Claude Code's offered tools from its package (attempt 1), its config names from discovery -")
+LA = _load("v3_launch_for_a8_t", ROOT / "research" / "v3" / "launch.py")
+PKG = TMP / "cc_pkg"
+PKG.mkdir()
+ARR = '["Bash", "Read", "Write", "Edit", "Glob", "Grep", "WebFetch", "Task"]'
+(PKG / "cli.js").write_text(f'var a=1;const T={ARR};function f(){{return ["x","y"]}}', encoding="utf-8")
+off = S.cc_offered_tools(PKG)
+check("C5f cc_offered_tools: the pattern declared before any read of the package - one array literal of quoted tool "
+      "names holding Bash, Read and Write - in cli.js",
+      ok(lambda: P.CC_OFFERED_SOURCE == ("cli.js", r'\[(?=[^\]]*"Bash")(?=[^\]]*"Read")(?=[^\]]*"Write")'
+                                                   r'((?:"[A-Za-z]+",\s*)+"[A-Za-z]+")\]')))
+check("C5f cc_offered_tools: exactly one match gives the tools, in their order, the file's sha256 named",
+      ok(lambda: off["value"] == ["Bash", "Read", "Write", "Edit", "Glob", "Grep", "WebFetch", "Task"]
+         and off["sha256"] == hashlib.sha256((PKG / "cli.js").read_bytes()).hexdigest()
+         and off["source"].startswith("cli.js@sha256:") and off.get("blocked") is None), str(off)[:300])
+(PKG / "cli.js").write_text(f"const T={ARR};const U={ARR};", encoding="utf-8")
+off2 = S.cc_offered_tools(PKG)
+(PKG / "cli.js").write_text('const T=["Read","Write"];', encoding="utf-8")
+off0 = S.cc_offered_tools(PKG)
+(PKG / "cli.js").unlink()
+offm = S.cc_offered_tools(PKG)
+check("C5f cc_offered_tools: two matches or none go to attempt 2 by name (Q-C5-7: one discovery spawn), the count kept; "
+      "no cli.js is blocked:source-missing",
+      ok(lambda: off2.get("blocked") == "blocked:attempt-2:cc_offered" and off2.get("matches") == 2
+         and off0.get("blocked") == "blocked:attempt-2:cc_offered" and off0.get("matches") == 0
+         and offm.get("blocked") == "blocked:source-missing:cc_offered"), str((off2, off0, offm))[:400])
+LA._OFFERED.clear()
+LA._OFFERED_ATTEMPT1.clear()
+rec_off = S.record_cc_offered(LA, off, "b" * 64)
+a1_after_ok = dict(LA._OFFERED_ATTEMPT1)
+rec_bad = S.record_cc_offered(LA, off2, "e" * 64)
+check("C5f record_cc_offered: one match writes launch's _OFFERED for D7 under the binary's sha256; attempt 1 blocked "
+      "writes no tools but launch's attempt-1 failure for that binary (C-CC-1) - the one door to attempt 2",
+      ok(lambda: rec_off == {"recorded": True, "binary_sha256": "b" * 64, "tools": off["value"]}
+         and LA._OFFERED == {"sha256": "b" * 64, "tools": tuple(off["value"])} and a1_after_ok == {}
+         and rec_bad == {"recorded": False, "blocked": "blocked:attempt-2:cc_offered", "attempt1_failed_for": "e" * 64}
+         and LA._OFFERED_ATTEMPT1 == {"e" * 64: "blocked:attempt-2:cc_offered"}), str((rec_off, rec_bad))[:300])
+LA._OFFERED.clear()
+LA._OFFERED_ATTEMPT1.clear()
+SPL = TMP / "spawns_c5f.jsonl"
+disc = {"spawn_id": "s1", "refused": False, "claude_code": {"sha256": "b" * 64, "config": {
+    "first": False, "mode": "discovery", "entries": [{"name": "projects", "kind": "dir", "size": 5, "sha256": "c" * 64},
+                                                     {"name": ".claude.json", "kind": "file", "size": 2, "sha256": "d" * 64}]}}}
+plain = {"spawn_id": "s2", "refused": False, "claude_code": {"sha256": "b" * 64, "config": {"first": False, "names": []}}}
+refd = {**disc, "spawn_id": "s3", "refused": True}
+SPL.write_text("\n".join(json.dumps(x) for x in (disc, plain, refd)) + "\n", encoding="utf-8")
+names = S.cc_config_names(SPL, "s1")
+check("C5f cc_config_names: the probe's discovery spawn's recording IS the list - its names, entries and binary sha256, "
+      "for the auditor's review before FREEZE-V3",
+      ok(lambda: names["value"] == [".claude.json", "projects"] and names["binary_sha256"] == "b" * 64
+         and names["entries"] == disc["claude_code"]["config"]["entries"]), str(names)[:300])
+SPL2 = TMP / "spawns_c5f_dup.jsonl"
+SPL2.write_text("\n".join(json.dumps(x) for x in (disc, disc)) + "\n", encoding="utf-8")
+nm_dup = S.cc_config_names(SPL2, "s1")
+check("C5f cc_config_names: two journal lines with one spawn id are ambiguous - never the first",
+      ok(lambda: nm_dup.get("blocked") == "blocked:source-ambiguous:cc_config_names"), str(nm_dup)[:300])
+nm_bad = {k: S.cc_config_names(SPL, k) for k in ("s2", "s3", "s9")}
+check("C5f cc_config_names: a spawn that was not a discovery, a refused one, or none by that id is refused by name",
+      ok(lambda: nm_bad["s2"].get("blocked") == "blocked:not-discovery:cc_config_names"
+         and nm_bad["s3"].get("blocked") == "blocked:refused-spawn:cc_config_names"
+         and nm_bad["s9"].get("blocked") == "blocked:source-missing:cc_config_names"), str(nm_bad)[:400])
 check("C4A-8 / C5A-8: no verdict raised on any row - every failure came back as a field", RAISED == [], str(RAISED))
 _cleanup()
 print(f"\nv3 probe a8: {PASSED} passed, {FAILED} failed")
