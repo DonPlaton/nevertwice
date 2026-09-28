@@ -32,6 +32,11 @@ This part (C5a) holds the verdicts; they read records, never a product:
   (M0_HELPER_SHAPES), the add path, add() and the builder by their writes, defaults and calls' arguments (M0_WRITES,
   M0_DEFAULTS, M0_CALLS), the config's custom instructions (M0_CONFIG_DEFAULTS) and the adapter's side (M0_ADAPTER);
   the probe record carries them all (bound_facts, bound_blocked);
+* C5b (the auditor's Q-C5b-1 = O-a): letta's OpenAPI-generic facts, offline - the document's pin over canonical
+  JSON (lt_pin, R-C5-1) and its stability over starts (lt_stable), the adapter's call table read as data
+  (letta_calls) and its conformance (lt_conformance), the recall route under a pattern declared first
+  (lt_recall_route) and Point V's archival page size from the schema (lt_archival_default); the layer
+  facts wait for the previous Letta release's source, fetched in its own window;
 * ``verdict``: "pass" only when every field is ok, there is no problem, every boundary check is complete with 0/0 and
   no catcher line belongs to the arm; else the first blocked:<reason> - the fields in their declared order, then the
   problems - else "fail". The proxy's own spawn is unwitnessed by design (launch.spawn_proxy): 0/0 covers the product
@@ -744,6 +749,185 @@ def bound_blocked(bf: Mapping) -> list[str]:
     if fr is not None and not fr:
         out.append("m0_message_frame: parse_messages frames no role")
     return out
+
+
+# ── C5b (the auditor's Q-C5b-1 = O-a): letta's OpenAPI-generic facts, offline - no container, no child, no source ──
+
+#: Q-47-8b: the recall (conversation) search route - one path under an agent's messages, recall memory or conversations
+#: that ends in /search - declared before any real document is read (Q-C5b-1). None: the reader is core + archival, a
+#: declared deviation (an E5 row); two or more: blocked:ambiguous-route.
+LT_RECALL_ROUTE = r"^/v1/agents/(\{agent_id\}/)?(messages|recall[-_]memory|conversations?)/search/?$"
+#: the names the route's search mode goes by - a query parameter or a JSON body property; its schema default is the mode
+LT_RECALL_MODE = ("search_mode", "mode")
+#: Point V's page size: the archival listing (arm_letta's list_passages), its method and its page-size query parameter
+LT_ARCHIVAL = ("/v1/agents/{agent_id}/archival-memory", "get", "limit")
+_OA_METHODS = ("get", "put", "post", "delete", "patch")
+
+
+def _rest_module() -> Any:
+    return _mod("v3_rest_for_a8", "arms/_rest.py")
+
+
+def _oa_deref(obj: Any, doc: Mapping) -> Any:
+    """A local $ref followed to its target (a chain of them, at most 32)."""
+    for _ in range(32):
+        if not (isinstance(obj, Mapping) and isinstance(obj.get("$ref"), str) and obj["$ref"].startswith("#/")):
+            return obj
+        node: Any = doc
+        for part in obj["$ref"][2:].split("/"):
+            node = node.get(part) if isinstance(node, Mapping) else None
+        obj = node
+    return None
+
+
+def _oa_source(doc: Mapping) -> str:
+    return f"openapi.json@sha256:{_canon_sha(doc)}"
+
+
+def lt_pin(raw: bytes) -> dict:
+    """R-C5-1: the OpenAPI document's pin - _rest.document_sha256, the sha256 over canonical JSON that the adapter checks
+    at every start - with the raw bytes' sha256 and the path count beside it."""
+    rule = "the document's sha256 over canonical JSON (R-C5-1)"
+    try:
+        doc = json.loads(raw)
+    except ValueError:
+        doc = None
+    if not isinstance(doc, dict):
+        return _field(None, rule=rule, ok=False, failed="the document is not a JSON object",
+                      blocked="blocked:unparsable-openapi")
+    return _field({"sha256": _rest_module().document_sha256(raw), "raw_sha256": hashlib.sha256(raw).hexdigest(),
+                   "paths": len(doc.get("paths") or {})}, rule=rule, ok=True)
+
+
+def lt_stable(raws: Sequence[bytes]) -> dict:
+    """R-C5-1, L1: the documents of two or more starts - one canonical sha is stable; otherwise the paths whose items
+    differ, blocked:unstable-openapi. One start compares nothing: blocked:one-start."""
+    rule = "one canonical sha256 over every start's document (R-C5-1)"
+    if len(raws) < 2:
+        return _field(None, rule=rule, ok=False, failed="one start is not a comparison", blocked="blocked:one-start")
+    pins = [lt_pin(r) for r in raws]
+    bad = [p for p in pins if p.get("blocked")]
+    if bad:
+        return _field(None, rule=rule, ok=False, failed=bad[0]["rule_failed"], blocked=bad[0]["blocked"])
+    shas = sorted({p["value"]["sha256"] for p in pins})
+    if len(shas) == 1:
+        return _field(shas[0], rule=rule, ok=True)
+    docs = [json.loads(r) for r in raws]
+    names = sorted(set().union(*(set(d.get("paths") or {}) for d in docs)))
+    paths = [n for n in names if len({_canon_sha((d.get("paths") or {}).get(n)) for d in docs}) > 1]
+    if not paths:
+        paths = ["(outside paths)"]
+    out = _field(None, rule=rule, ok=False, failed=f"{len(shas)} documents; they differ at {paths}",
+                 blocked="blocked:unstable-openapi")
+    out["paths"] = paths
+    return out
+
+
+def letta_calls(path: str | os.PathLike | None = None) -> dict:
+    """C5b: the letta adapter's declared calls (arms/arm_letta.py's CALLS), read from its source by the AST as data and
+    built as _rest.Call - the adapter is never imported here. An entry that is not C(<literals>) is
+    blocked:source-changed:lt_calls, the entries named, never evaluated."""
+    R = _rest_module()
+    p = Path(path) if path is not None else HERE / "arms" / "arm_letta.py"
+    try:
+        tree = ast.parse(p.read_bytes().decode("utf-8"))
+    except (OSError, SyntaxError, UnicodeDecodeError):
+        return {"value": None, "blocked": "blocked:source-missing:lt_calls"}
+    hits = [n for n in tree.body if isinstance(n, ast.Assign) and len(n.targets) == 1
+            and isinstance(n.targets[0], ast.Name) and n.targets[0].id == "CALLS" and isinstance(n.value, ast.Dict)]
+    if len(hits) != 1:
+        return {"value": None, "blocked": f"blocked:source-{'missing' if not hits else 'ambiguous'}:lt_calls"}
+    out: dict = {}
+    bad: list[str] = []
+    for k, v in zip(hits[0].value.keys, hits[0].value.values):
+        name = k.value if isinstance(k, ast.Constant) and isinstance(k.value, str) else ast.unparse(k) if k else "**"
+        try:
+            if not (isinstance(v, ast.Call) and isinstance(v.func, ast.Name) and v.func.id == "C"
+                    and all(kw.arg is not None for kw in v.keywords)):
+                raise ValueError(name)
+            out[name] = R.Call(*[ast.literal_eval(a) for a in v.args],
+                               **{kw.arg: ast.literal_eval(kw.value) for kw in v.keywords})
+        except (ValueError, TypeError, SyntaxError):
+            bad.append(name)
+    if bad or not out:
+        return {"value": None, "entries": bad, "blocked": "blocked:source-changed:lt_calls"}
+    return out
+
+
+def lt_conformance(doc: Mapping, calls: Mapping) -> dict:
+    """Q-47-2: the adapter's declared calls against the document (_rest.conformance) - every problem is the value, and
+    any is blocked:openapi-mismatch."""
+    rule = "every declared call is carried by the document as declared (_rest.conformance, Q-47-2)"
+    if calls.get("blocked"):
+        return _field(None, rule=rule, ok=False, failed=calls["blocked"], blocked=calls["blocked"])
+    problems = _rest_module().conformance(calls, doc)
+    if problems:
+        return _field(problems, rule=rule, ok=False, source=_oa_source(doc), failed="; ".join(problems),
+                      blocked="blocked:openapi-mismatch")
+    return _field([], rule=rule, ok=True, source=_oa_source(doc))
+
+
+def lt_recall_route(doc: Mapping) -> dict:
+    """Q-47-8b: the recall search route under LT_RECALL_ROUTE - its path, its methods and its default mode (a query
+    parameter's or a JSON body property's schema default, named in LT_RECALL_MODE; None without one). No route is a
+    declared deviation, never a failure; two or more are blocked:ambiguous-route, all named."""
+    rule = "exactly one path under the declared recall-route pattern, or none (a declared deviation)"
+    paths = sorted(p for p in (doc.get("paths") or {}) if re.fullmatch(LT_RECALL_ROUTE, p))
+    if not paths:
+        out = _field(None, rule=rule, ok=True, source=_oa_source(doc))
+        out["deviation"] = ("no recall search route in the document - the reader is core + archival (Q-47-8b), a "
+                            "declared deviation that may understate Letta (an E5 row)")
+        return out
+    if len(paths) > 1:
+        out = _field(None, rule=rule, ok=False, source=_oa_source(doc), failed=f"{len(paths)} routes: {paths}",
+                     blocked="blocked:ambiguous-route")
+        out["paths"] = paths
+        return out
+    item = doc["paths"][paths[0]]
+    methods = sorted(m for m in item if m in _OA_METHODS)
+    mode = None
+    for m in methods:
+        op = item[m]
+        params = [_oa_deref(p, doc) for p in list(item.get("parameters") or []) + list(op.get("parameters") or [])]
+        props: dict = {}
+        body = _oa_deref(op.get("requestBody"), doc) if op.get("requestBody") else None
+        if isinstance(body, Mapping):
+            schema = _oa_deref(((body.get("content") or {}).get("application/json") or {}).get("schema"), doc)
+            props = dict((schema or {}).get("properties") or {}) if isinstance(schema, Mapping) else {}
+        cands = [_oa_deref(p.get("schema"), doc) for p in params if isinstance(p, Mapping) and p.get("in") == "query"
+                 and p.get("name") in LT_RECALL_MODE] + [_oa_deref(props[n], doc) for n in LT_RECALL_MODE if n in props]
+        found = [c["default"] for c in cands if isinstance(c, Mapping) and "default" in c]
+        if found:
+            mode = found[0]
+            break
+    return _field({"path": paths[0], "methods": methods, "mode": mode}, rule=rule, ok=True, source=_oa_source(doc))
+
+
+def lt_archival_default(doc: Mapping) -> dict:
+    """Point V's page size: the archival listing's page-size query parameter's schema default (through $ref) - a
+    positive int, else blocked:source-changed. None in the schema leaves Point V refusing: its source basis is deferred
+    (Q-C5b-1). No listing, or no such parameter, is blocked:source-missing."""
+    path, method, name = LT_ARCHIVAL
+    rule = "the archival listing's page-size default, from the schema (Point V)"
+    field = "lt_archival_default"
+    item = (doc.get("paths") or {}).get(path) or {}
+    op = item.get(method)
+    params = [_oa_deref(p, doc) for p in list(item.get("parameters") or []) + list((op or {}).get("parameters") or [])]
+    hit = [p for p in params if isinstance(p, Mapping) and p.get("in") == "query" and p.get("name") == name]
+    if op is None or len(hit) != 1:
+        return _field(None, rule=rule, ok=False, source=_oa_source(doc), failed=f"{method.upper()} {path} ?{name}",
+                      blocked=f"blocked:source-{'ambiguous' if len(hit) > 1 else 'missing'}:{field}")
+    schema = _oa_deref(hit[0].get("schema"), doc) or {}
+    if "default" not in schema:
+        out = _field(None, rule=rule, ok=True, source=_oa_source(doc))
+        out["deviation"] = ("no page-size default in the schema - Point V keeps refusing (its source basis is deferred, "
+                            "Q-C5b-1)")
+        return out
+    d = schema["default"]
+    if not isinstance(d, int) or isinstance(d, bool) or d < 1:
+        return _field(None, rule=rule, ok=False, source=_oa_source(doc), failed=f"the default is {d!r}",
+                      blocked=f"blocked:source-changed:{field}")
+    return _field(d, rule=rule, ok=True, source=_oa_source(doc))
 
 
 def formats(sites: Mapping) -> dict:

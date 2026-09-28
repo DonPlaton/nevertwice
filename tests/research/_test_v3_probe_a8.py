@@ -1207,6 +1207,136 @@ for label, text, want in (
     got = adapter_with(text)
     check(f"F-C6-4 (Q-C6-1): {label} makes no bound - named ({want})", ok(lambda: text != ADP and any(want in x for x in got)),
           str(got)[:300])
+
+print("\n- C5b (Q-C5b-1 = O-a): letta's OpenAPI-generic facts, offline, on the independent fake document -")
+import copy  # noqa: E402
+FL = _load("v3_fake_letta_for_a8_t", ROOT / "tests" / "fixtures" / "v3_fake_products" / "_fake_letta.py")
+AL = _load("v3_arm_letta_for_a8_t", ROOT / "research" / "v3" / "arms" / "arm_letta.py")
+LDOC = copy.deepcopy(FL.DOC)
+LRAW = json.dumps(LDOC, sort_keys=True).encode("utf-8")
+LCANON = hashlib.sha256(json.dumps(LDOC, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+                        .encode("utf-8")).hexdigest()
+pin_l = S.lt_pin(LRAW)
+pin_pretty = S.lt_pin(json.dumps(LDOC, indent=2).encode("utf-8"))
+check("C5b lt_pin (R-C5-1): the document's pin is the sha256 over canonical JSON, the raw bytes' sha recorded beside it - "
+      "another key order or layout keeps the pin; a body that is not a JSON object is blocked:unparsable-openapi",
+      ok(lambda: pin_l["ok"] is True and pin_l["value"] == {"sha256": LCANON, "raw_sha256": hashlib.sha256(LRAW).hexdigest(),
+                                                            "paths": len(LDOC["paths"])}
+         and pin_pretty["value"]["sha256"] == LCANON
+         and all(S.lt_pin(b).get("blocked") == "blocked:unparsable-openapi" for b in (b"<html>", b"[1, 2]", b""))),
+      str(pin_l)[:300])
+LDOC2 = copy.deepcopy(LDOC)
+LDOC2["paths"]["/v1/agents/{agent_id}/archival-memory"]["get"]["parameters"].append(
+    {"name": "descending", "in": "query", "schema": {"type": "boolean"}})
+st_same = S.lt_stable([LRAW, json.dumps(LDOC, indent=2).encode("utf-8")])
+st_diff = S.lt_stable([LRAW, json.dumps(LDOC2).encode("utf-8")])
+st_one = S.lt_stable([LRAW])
+check("C5b lt_stable (R-C5-1, L1): two starts' documents with one canonical sha are stable; otherwise "
+      "blocked:unstable-openapi naming the paths that differ; one start is not a comparison",
+      ok(lambda: st_same["ok"] is True and st_same["value"] == LCANON
+         and st_diff.get("blocked") == "blocked:unstable-openapi"
+         and st_diff.get("paths") == ["/v1/agents/{agent_id}/archival-memory"]
+         and st_one.get("blocked") == "blocked:one-start"), str((st_same, st_diff, st_one))[:400])
+LCALLS = S.letta_calls()
+check("C5b letta_calls: the adapter's declared call table, read from arm_letta.py as data (never imported) - every call "
+      "as the adapter itself builds it",
+      ok(lambda: isinstance(LCALLS, dict) and set(LCALLS) == set(AL.CALLS)
+         and all((c.method, c.path, c.query, c.body, c.response) == (a.method, a.path, a.query, a.body, a.response)
+                 for c, a in ((LCALLS[k], AL.CALLS[k]) for k in AL.CALLS))), str(sorted(LCALLS) if isinstance(LCALLS, dict) else LCALLS)[:300])
+bad_src = TMP / "arm_letta_bad.py"
+bad_src.write_text((ROOT / "research" / "v3" / "arms" / "arm_letta.py").read_text(encoding="utf-8").replace(
+    'C("GET", "/v1/agents/{agent_id}/context"', 'C("GET", "/v1/agents/" + AGENT + "/context"'), encoding="utf-8")
+calls_bad = S.letta_calls(bad_src)
+check("C5b letta_calls: a call table entry that is not a literal is blocked:source-changed, never evaluated",
+      ok(lambda: isinstance(calls_bad, dict) and calls_bad.get("blocked") == "blocked:source-changed:lt_calls"
+         and "context" in (calls_bad.get("entries") or [])), str(calls_bad)[:300])
+conf = S.lt_conformance(LDOC, LCALLS)
+LDOC3 = copy.deepcopy(LDOC)
+del LDOC3["paths"]["/v1/agents/{agent_id}/context"]
+conf_bad = S.lt_conformance(LDOC3, LCALLS)
+check("C5b lt_conformance: the adapter's calls against the document (_rest.conformance) - none differs on the fake; a "
+      "route the document lacks is blocked:openapi-mismatch, the call named",
+      ok(lambda: conf["ok"] is True and conf["value"] == [] and conf_bad.get("blocked") == "blocked:openapi-mismatch"
+         and any(p.startswith("context:") for p in conf_bad["value"])), str((conf, conf_bad))[:400])
+check("C5b: the recall route's pattern and the archival listing, declared before any real document is read",
+      ok(lambda: P.LT_RECALL_ROUTE == r"^/v1/agents/(\{agent_id\}/)?(messages|recall[-_]memory|conversations?)/search/?$"
+         and P.LT_RECALL_MODE == ("search_mode", "mode")
+         and P.LT_ARCHIVAL == ("/v1/agents/{agent_id}/archival-memory", "get", "limit")))
+rr0 = S.lt_recall_route(LDOC)
+
+
+def with_paths(**extra):
+    d = copy.deepcopy(LDOC)
+    d["paths"].update(extra)
+    return d
+
+
+R_GET = {"parameters": [FL.AGENT_ID], "get": {"parameters": [
+    {"name": "query", "in": "query", "required": True, "schema": FL.STR},
+    {"name": "search_mode", "in": "query", "schema": {"type": "string", "enum": ["vector", "fts", "hybrid"],
+                                                     "default": "hybrid"}}],
+    "responses": {"200": FL._json(FL._arr(FL._ref("LettaMessageUnion")))}}}
+R_POST = {"post": {"requestBody": {"required": True, "content": {"application/json": {"schema": {
+    "type": "object", "properties": {"agent_id": FL.STR, "query": FL.STR,
+                                     "mode": {"$ref": "#/components/schemas/SearchMode"}}}}}},
+    "responses": {"200": FL._json(FL._arr(FL._ref("LettaMessageUnion")))}}}
+DOC_POST = with_paths(**{"/v1/agents/messages/search": R_POST})
+DOC_POST["components"]["schemas"]["SearchMode"] = {"type": "string", "enum": ["vector", "hybrid"], "default": "vector"}
+R_NOMODE = {"parameters": [FL.AGENT_ID], "get": {"parameters": [
+    {"name": "query", "in": "query", "required": True, "schema": FL.STR}], "responses": {"200": FL._json(FL.STR)}}}
+rr1 = S.lt_recall_route(with_paths(**{"/v1/agents/{agent_id}/messages/search": R_GET}))
+rr_post = S.lt_recall_route(DOC_POST)
+rr_nomode = S.lt_recall_route(with_paths(**{"/v1/agents/{agent_id}/recall-memory/search": R_NOMODE}))
+rr2 = S.lt_recall_route(with_paths(**{"/v1/agents/{agent_id}/messages/search": R_GET, "/v1/agents/messages/search": R_POST["post"] and R_POST}))
+check("C5b lt_recall_route (Q-47-8b): no route under the declared pattern is a declared deviation - the reader is core + "
+      "archival, an E5 row - never a failure; the archival search route is not a recall route",
+      ok(lambda: rr0["ok"] is True and rr0["value"] is None and "E5" in rr0["deviation"]), str(rr0)[:300])
+check("C5b lt_recall_route: exactly one route gives its path, its methods and its default mode - a query parameter's "
+      "default, a JSON body property's default through $ref - or no mode when it has no mode parameter",
+      ok(lambda: rr1["value"] == {"path": "/v1/agents/{agent_id}/messages/search", "methods": ["get"], "mode": "hybrid"}
+         and rr_post["value"] == {"path": "/v1/agents/messages/search", "methods": ["post"], "mode": "vector"}
+         and rr_nomode["value"] == {"path": "/v1/agents/{agent_id}/recall-memory/search", "methods": ["get"], "mode": None}
+         and all(x["ok"] is True for x in (rr1, rr_post, rr_nomode))), str((rr1, rr_post, rr_nomode))[:500])
+check("C5b lt_recall_route: two routes under the pattern are blocked:ambiguous-route, both named - never the first",
+      ok(lambda: rr2.get("blocked") == "blocked:ambiguous-route"
+         and rr2.get("paths") == ["/v1/agents/messages/search", "/v1/agents/{agent_id}/messages/search"]), str(rr2)[:300])
+
+
+def with_limit(schema=None, *, ref=False, drop=False):
+    d = copy.deepcopy(LDOC)
+    op = d["paths"]["/v1/agents/{agent_id}/archival-memory"]["get"]
+    if drop:
+        del d["paths"]["/v1/agents/{agent_id}/archival-memory"]
+        return d
+    params = [p for p in op["parameters"] if p.get("name") != "limit"]
+    p = {"name": "limit", "in": "query", "schema": schema if schema is not None else FL.INT}
+    if ref:
+        d["components"]["parameters"] = {"Limit": p}
+        p = {"$ref": "#/components/parameters/Limit"}
+    op["parameters"] = params + [p]
+    return d
+
+
+ad0 = S.lt_archival_default(LDOC)
+ad50 = S.lt_archival_default(with_limit({"type": "integer", "default": 50}))
+ad_ref = S.lt_archival_default(with_limit({"type": "integer", "default": 50}, ref=True))
+ad_any = S.lt_archival_default(with_limit({"anyOf": [{"type": "integer"}, {"type": "null"}], "default": 1000}))
+DOC_PS = with_limit({"$ref": "#/components/schemas/PageSize"})
+DOC_PS["components"]["schemas"]["PageSize"] = {"type": "integer", "default": 20}
+ad_sref = S.lt_archival_default(DOC_PS)
+check("C5b lt_archival_default: a parameter schema given by $ref is followed to its default",
+      ok(lambda: ad_sref["ok"] is True and ad_sref["value"] == 20), str(ad_sref)[:300])
+check("C5b lt_archival_default: the archival listing's page-size default from the schema - a parameter's own, through a "
+      "$ref, beside an anyOf; none in the schema leaves Point V refusing (the source basis is deferred, Q-C5b-1)",
+      ok(lambda: ad0["ok"] is True and ad0["value"] is None and "Point V" in ad0["deviation"]
+         and ad50["value"] == 50 and ad_ref["value"] == 50 and ad_any["value"] == 1000
+         and all(x["ok"] is True for x in (ad50, ad_ref, ad_any))), str((ad0, ad50, ad_ref, ad_any))[:500])
+ad_bad = {repr(v): S.lt_archival_default(with_limit({"type": "integer", "default": v})) for v in ("50", True, 0, -5, 1.5)}
+ad_missing = S.lt_archival_default(with_limit(drop=True))
+check("C5b lt_archival_default: a default that is not a positive int is blocked:source-changed; no archival listing is "
+      "blocked:source-missing",
+      ok(lambda: all(v.get("blocked") == "blocked:source-changed:lt_archival_default" for v in ad_bad.values())
+         and ad_missing.get("blocked") == "blocked:source-missing:lt_archival_default"), str((ad_bad, ad_missing))[:500])
 check("C4A-8 / C5A-8: no verdict raised on any row - every failure came back as a field", RAISED == [], str(RAISED))
 _cleanup()
 print(f"\nv3 probe a8: {PASSED} passed, {FAILED} failed")

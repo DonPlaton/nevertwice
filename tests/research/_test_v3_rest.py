@@ -324,9 +324,19 @@ try:
           snap["calls"] == {"add_notes": 1, "list": 1, "create": 2, "boom": 1} and snap["errors"] == {"boom": 1},
           json.dumps(snap))
     raw = rest.raw_get("/openapi.json")
-    check("raw_get returns the document's bytes, and document_sha256 is their sha256",
-          json.loads(raw) == DOC and R.document_sha256(raw) == hashlib.sha256(raw).hexdigest())
-    pin = hashlib.sha256(raw).hexdigest()
+    canon = hashlib.sha256(json.dumps(json.loads(raw), sort_keys=True, separators=(",", ":"),
+                                      ensure_ascii=False).encode("utf-8")).hexdigest()
+    pretty = json.dumps(json.loads(raw), indent=3).encode("utf-8")
+    try:
+        doc_shas = (R.document_sha256(raw), R.document_sha256(pretty))
+        not_json = raises(lambda: R.document_sha256(b"<html>not the document</html>"), R.RestError)
+    except Exception as e:  # noqa: BLE001 - the row below FAILs by name
+        doc_shas, not_json = (repr(e), None), None
+    check("raw_get returns the document's bytes; document_sha256 is the sha256 over canonical JSON (R-C5-1: sort_keys, "
+          "no whitespace) - key order and layout do not move it, and a body that is not JSON is refused by name",
+          json.loads(raw) == DOC and doc_shas == (canon, canon) and canon != hashlib.sha256(raw).hexdigest()
+          and not_json is not None and "not JSON" in not_json, str((doc_shas, not_json)))
+    pin = canon
     ok = R.verify_server(rest, pin, CALLS)
     check("verify_server passes the pinned document that carries every declared call",
           ok == {"openapi_sha256": pin, "calls_checked": len(CALLS)}, str(ok))

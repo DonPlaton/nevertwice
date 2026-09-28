@@ -120,7 +120,9 @@ def child_env(extra: dict | None = None) -> dict:
 
 
 def pin(fake) -> str:
-    return hashlib.sha256(fake.doc_bytes()).hexdigest()
+    """R-C5-1: the pin is the sha256 over canonical JSON (sort_keys, no whitespace), computed here independently."""
+    return hashlib.sha256(json.dumps(json.loads(fake.doc_bytes()), sort_keys=True, separators=(",", ":"),
+                                     ensure_ascii=False).encode("utf-8")).hexdigest()
 
 
 def spec_for(name: str, stage: str, unit_dir: Path, fake, *, dated: bool = True, **over) -> dict:

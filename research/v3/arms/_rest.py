@@ -279,7 +279,14 @@ def conformance(calls: Mapping[str, Call], doc: Mapping) -> list[str]:
 
 
 def document_sha256(raw: bytes) -> str:
-    return hashlib.sha256(raw).hexdigest()
+    """R-C5-1 (the auditor): the document's sha256 over canonical JSON - sort_keys, no whitespace, UTF-8 - so a server
+    that serializes the same document in another key order or layout keeps its pin; the A8 pin is taken the same way."""
+    try:
+        doc = json.loads(raw)
+    except ValueError:
+        raise RestError("the server's OpenAPI document is not JSON - no sha256 is taken") from None
+    return hashlib.sha256(json.dumps(doc, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+                          .encode("utf-8")).hexdigest()
 
 
 # -- the client side --
