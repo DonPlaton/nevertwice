@@ -124,8 +124,12 @@ ARM_KEYS = {"python", "llm", "llm_transport", "embeds_via_ollama", "extra"}
 
 
 def load_run_config(path: str | os.PathLike, *, secrets_dir: str | os.PathLike) -> RunConfig:
-    """The run config (see the module docstring); every problem named, nothing defaulted."""
-    raw = Path(path).read_bytes()
+    """The run config (see the module docstring); every problem named, nothing defaulted - a missing or unreadable file
+    too (B-RV-CFG: the CLI's own refusal, never a raw OSError)."""
+    try:
+        raw = Path(path).read_bytes()
+    except OSError as e:
+        raise CLIError(f"{path}: no run config ({type(e).__name__})") from None
     try:
         d = json.loads(raw.decode("utf-8"))
     except (UnicodeDecodeError, ValueError) as e:

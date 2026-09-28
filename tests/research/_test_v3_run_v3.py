@@ -125,6 +125,12 @@ try:
           "relative python, a bool campaign seed, no arm at all - each refused by name",
           all(v != "accepted" and not v.startswith("not refused") for v in outs.values())
           and "campaign_seed is an int" in outs["a bool seed (RVe)"] and "no arm" in outs["no arm (RVh)"], str(outs))
+    (TMP / "cfg_dir.json").mkdir()
+    unread = {"missing": err(lambda: RV.load_run_config(TMP / "no_such_config.json", secrets_dir=sec)),
+              "a directory": err(lambda: RV.load_run_config(TMP / "cfg_dir.json", secrets_dir=sec))}
+    check("CLI-config (B-RV-CFG): a missing or unreadable run config is the CLI's own refusal - 'no run config', by path "
+          "- never a raw OSError", all("no run config" in v and not v.startswith("not refused") for v in unread.values()),
+          str(unread))
 
     print("\n- the S4 smoke's units -")
     LME = [lme_rec(i) for i in range(500)]
@@ -641,6 +647,15 @@ try:
           and ab_cli["probe run without mem0"].startswith("CLIError: --mem0-probe-run")
           and ab_cli["a path"].startswith("CLIError:") and "not a run id" in ab_cli["a path"]
           and all("none.json" not in v for v in ab_cli.values()), str(ab_cli)[:500])
+    no_cfg = {"stand": cli_err(["stand", "--stand", "S4", "--smoke", "--arms", "nevertwice", "--runs", "r1", "--config",
+                                none_cfg]),
+              "A/B": ab_err(["--stand", "S4", "--arms", "nevertwice", "--config", none_cfg])}
+    check("B-RV-CFG: both command lines refuse a missing run config by name ('no run config', the path named) - a "
+          "CLIError, exit 2 through __main__, never a traceback",
+          "no run config" in no_cfg["stand"] and not no_cfg["stand"].startswith("not refused")
+          and no_cfg["A/B"].startswith("CLIError:") and "no run config" in no_cfg["A/B"]
+          and all("none.json" in v for v in no_cfg.values()), str(no_cfg)[:400])
+
     class SimpleContract:
         def __init__(self, runs_root):
             self.runs_root = runs_root
