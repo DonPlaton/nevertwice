@@ -1269,6 +1269,38 @@ try:
           and "UNIT-ABORT" not in (TMP / "STATUS28").read_text(encoding="utf-8"),
           f"{e28!r} asked {gate28.asked} {w28} {q28.get('aborted')} {q28.get('active_s')}")
 
+    class SlowGateQ(SlowGate):
+        """Admits the write stage's ask; the question stage's ask waits 700 virtual seconds first."""
+
+        def admits_new_unit(self):
+            self.asked += 1
+            if self.asked == 2:
+                vcg.offset += 700.0
+                return False
+            return True
+
+    for sub in ("live", "passed", "seen", "ops", "hb"):
+        shutil.rmtree(SHARED / sub, ignore_errors=True)
+    (SHARED / "live").mkdir()
+    st28q = SL.StatusLog(TMP / "STATUS28q", now=vcg.utc, local_tz=dt.timezone.utc)
+    st28q.campaign_start(anchor="c" * 40, prereg="d" * 64, freeze="e" * 64)
+    gate28q = SlowGateQ()
+    s28q = SC.Scheduler(C, PC12(), st28q, L, vcg, None, tag="scored", witnesses=W12(), parent_env=dict(os.environ),
+                        catcher_url="http://127.0.0.1:47001", hooks=SimpleNamespace(gate=gate28q),
+                        home_canaries=L.Canaries.generate())
+    sp28q = SC.StandPlan(stand="SGQ", runs=("r1",), launchers={"a1": launcher("a1", expect=1)}, campaign_seed=20260927,
+                         unit_tokens={"g2": 1000}, medians={("a1", "SGQ"): 0.0001}, write_ops=lambda a, r, u: OPS(r, u),
+                         read_plan=lambda a, u: [SC.ReadReq(qid=f"{u}-q1", query="x")],
+                         answer=lambda *a_: {"sha256": "6" * 64}, embed_tag=None, commit="c" * 40, dirty=False)
+    st28q.stand("SGQ", "START", model="m", changelog="2026-09-10", order=1)
+    res28q, e28q = attempt(lambda: s28q.run_block(sp28q, SC.BlockPlan(block="b01", units=("g2",))))
+    q28q = ((res28q or {}).get("questions") or {}).get("a1", {}).get(("r1", "g2")) or {}
+    check("B-GATE-D1 (the question stage): a 700 virtual s wait at the gate before the unit's question stage is no "
+          "active time either - no UNIT-ABORT by the ceiling, the stage's active seconds under 600",
+          e28q is None and gate28q.asked >= 2 and q28q.get("aborted") is None and q28q.get("active_s", 1e9) < 600
+          and "UNIT-ABORT" not in (TMP / "STATUS28q").read_text(encoding="utf-8"),
+          f"{e28q!r} asked {gate28q.asked} {q28q.get('aborted')} {q28q.get('active_s')}")
+
     def ops_refusing(r, u):
         if u == "p2":
             raise ValueError("the plan refuses p2's ops (a speaker outside the sample's two)")
