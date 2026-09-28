@@ -45,6 +45,15 @@ def percentile(values: Sequence[float], q: float) -> float:
     return s[k]
 
 
+def added_over(samples: Sequence[float], baseline: Sequence[float]) -> list[float]:
+    """Each sample's excess over the baseline's median, never below 0 - the hop benchmark's rule, and the A/B's added
+    time to first byte (Q-AB-2: the recording legs' own-hop samples over the raw legs')."""
+    if not baseline:
+        raise ValueError("no baseline samples - no median, so no added time")
+    base = statistics.median(baseline)
+    return [max(0.0, v - base) for v in samples]
+
+
 def widened(metric: str, raw: Sequence[float], *, calls_per_unit: float = 0.0) -> tuple[float, float]:
     """The range of the raw-forward runs for one metric, widened as §4.6 fixes it."""
     lo, hi = min(raw), max(raw)
@@ -176,8 +185,7 @@ def hop_benchmark(n: int = 200, proxy_module_path: Path | None = None) -> dict:
             ports = px.start()
             via = _ttfb(ports["arms"]["hop"]["write"], "nvt3-hop-token", n)
             px.stop()
-            base = statistics.median(direct)
-            added = [max(0.0, v - base) for v in via]
+            added = added_over(via, direct)
             out[mode] = {"p50_ms": round(percentile(added, 50), 3), "p95_ms": round(percentile(added, 95), 3), "n": n}
         out["direct_p50_ms"] = round(statistics.median(direct), 3)
     finally:

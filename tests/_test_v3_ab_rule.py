@@ -75,6 +75,15 @@ try:
     check("the rule wants exactly two runs of each leg", False)
 except ValueError:
     check("the rule wants exactly two runs of each leg", True)
+_added = getattr(A, "added_over", None)
+check("Q-AB-2: added_over - each sample over the baseline's MEDIAN (not its mean), never below 0",
+      _added is not None and _added([5.0, 12.0, 2.0], [1.0, 2.0, 30.0]) == [3.0, 10.0, 0.0],
+      str(_added([5.0, 12.0, 2.0], [1.0, 2.0, 30.0]) if _added else None))
+try:
+    _added([1.0], [])
+    check("Q-AB-2: added_over refuses an empty baseline (no median, no figure)", False)
+except (ValueError, TypeError) as e:
+    check("Q-AB-2: added_over refuses an empty baseline (no median, no figure)", _added is not None, repr(e))
 hop = A.hop_benchmark(n=40)
 check("the hop microbenchmark reports added p50/p95 for raw-forward and recording",
       all(k in hop and hop[k]["n"] == 40 and hop[k]["p50_ms"] >= 0 and hop[k]["p95_ms"] >= hop[k]["p50_ms"]
