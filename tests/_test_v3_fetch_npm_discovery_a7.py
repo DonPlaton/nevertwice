@@ -152,6 +152,9 @@ try:
           and json.loads(Path(res["discovery_path"]).read_text(encoding="utf-8"))["search"] == res["search"])
     check("the documents' sha256 are recorded", len(res.get("package_document_sha256") or "") == 64
           and len(res.get("search_sha256") or "") == 64)
+    check("B-NPMP: the search's total is kept beside its one page, and a full page is flagged - a cut list never "
+          "reads as the whole result", res.get("search_total") == 2 and res.get("search_page_full") is False,
+          f"{res.get('search_total')} {res.get('search_page_full')}")
     check("nothing is placed as a pin", not (c.runs_root / "_pins").exists())
 
     print("\n- the package is absent: a 404 is the finding, the search still runs -")
@@ -190,6 +193,15 @@ try:
           any("not exactly the two" in p for p in D.discover({"run": "x", "jobs": [
               {"unit": str(TMP), "summary": [{"id": "npm:package-document", "status": 404},
                                             {"id": "npm:tarball", "ok": True}]}]})["problems"]))
+    full_u = TMP / "fullpage"
+    (full_u / D.SEARCH_SAVE).parent.mkdir(parents=True, exist_ok=True)
+    (full_u / D.SEARCH_SAVE).write_text(json.dumps({"objects": [{"package": {"name": f"p{i}"}}
+                                                                for i in range(D._DECL["search_size"])], "total": 900}))
+    got_full = D.discover({"run": "x", "jobs": [{"unit": str(full_u), "summary": [
+        {"id": "npm:package-document", "status": 404}, {"id": "npm:search", "ok": True}]}]})
+    check("B-NPMP: a search page holding search_size hits is flagged full, beside the registry's total - more may be "
+          "past it", got_full.get("search_page_full") is True and got_full.get("search_total") == 900,
+          f"{got_full.get('search_page_full')} {got_full.get('search_total')} {got_full.get('problems')}")
 
     print("\n- run_discovery names a window that ran elsewhere (a stand-in window, no child) -")
 
@@ -217,6 +229,34 @@ try:
         got = D.run_discovery(_StubC(root), L, _StubF(rec), run="d9", python=Path(sys.executable), via_port=1,
                               parent_env={})
         check(f"{label} is a named problem", any(want in x for x in got.get("problems") or []), str(got.get("problems")))
+
+    print("\n- main(): the manifest's disk floor, an ASCII print -")
+    import contextlib  # noqa: E402,PLC0415
+    import io  # noqa: E402,PLC0415
+    from types import SimpleNamespace  # noqa: E402,PLC0415
+
+    seen_kw: dict = {}
+
+    def _capture_run(c_, L_, F_, **kw):
+        seen_kw.update(kw)
+        return {"problems": [], "window_problems": [], "search": [{"name": "x", "description": "a hit → \U0001f680"}]}
+
+    saved = (D._load, D.run_discovery)
+    D._load = lambda name, path: SimpleNamespace(Contract=SimpleNamespace(default=lambda: SimpleNamespace(runs_root=TMP)),
+                                                 network_via_port=lambda c_: 47999)
+    D.run_discovery = _capture_run
+    out_ = io.StringIO()
+    try:
+        with contextlib.redirect_stdout(out_):
+            rc_main = D.main(["--run", "d8", "--python", sys.executable])
+    finally:
+        D._load, D.run_discovery = saved
+    floor = json.loads(D.MANIFEST.read_text(encoding="utf-8"))["disk"]["floor_gb"] << 30
+    check("B-NPMFLOOR: main() runs the window under the manifest's disk floor (max(100 GB, 3x the window)), as every "
+          "other window does - never the two documents' 51 MiB", rc_main == 0 and seen_kw.get("need_bytes", 0) >= floor,
+          f"rc={rc_main} need_bytes={seen_kw.get('need_bytes')} floor={floor}")
+    check("B-NPMOUT: main() prints ASCII - a hit's description outside cp1251 cannot kill a piped Windows stdout",
+          out_.getvalue().isascii() and "\\u2192" in out_.getvalue(), out_.getvalue()[:120])
 finally:
     shutil.rmtree(TMP, ignore_errors=True)
 

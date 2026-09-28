@@ -324,9 +324,19 @@ def discovery_phase1(pins: dict) -> dict:
          "save": f"meta/{k}/{_safe(r)}/revision.json", "max_bytes": META_MAX} for k, r in hf_repos(pins)]}
 
 
+def _unit_of(results: list, job_index: int) -> Path | None:
+    """The unit directory of the job at ``job_index`` in its jobs list, None when that job did not run. B-D3IDX: a
+    builder that returns None leaves no result, so a result's list position is not its job index - its "index" is."""
+    for pos, r in enumerate(results):
+        if r.get("index", pos) == job_index:
+            return Path(r["unit"])
+    return None
+
+
 def _read_prev(results: list, phase_index: int, rel: str):
-    p = Path(results[phase_index]["unit"]) / rel
-    return json.loads(p.read_bytes()) if p.is_file() else None
+    u = _unit_of(results, phase_index)
+    p = u / rel if u is not None else None
+    return json.loads(p.read_bytes()) if p is not None and p.is_file() else None
 
 
 def discovery_phase2(pins: dict):
@@ -492,8 +502,7 @@ def d2_jobs() -> list:
 def d2_report(record: dict) -> dict:
     """Names only: AMA-Hub's new name, head and tree size; mem0's newest evaluation commit, whether its tree holds
     evaluation/, the pinned commit (the newest whose tree holds it) and why, and the evaluation/ file names."""
-    units = [Path(j["unit"]) for j in record["jobs"]]
-    rd = lambda i, rel: json.loads((units[i] / rel).read_bytes()) if i < len(units) and (units[i] / rel).is_file() else None  # noqa: E731
+    rd = lambda i, rel: _read_prev(record["jobs"], i, rel)  # noqa: E731 - by job index (B-D3IDX)
     repo, head = rd(0, f"gh/{_safe(AMA_HUB)}/repo.json") or {}, rd(0, f"gh/{_safe(AMA_HUB)}/head.json") or {}
     ama_tree = rd(1, f"gh/{_safe(AMA_HUB)}/tree.json") or {}
     commits = rd(0, f"gh/{_safe(MEM0)}/evaluation_commits.json") or []
@@ -600,8 +609,7 @@ def d3_report(record: dict) -> dict:
     candidate paths for phase 2; the model's revision and its files. Every value is data from the answers. Tags and
     releases are ONE page each (B-D3P): tags_page_full / releases_page_full say the page was full, so an older pinned
     tag may be past it - phase 2 then asks for the next page or the tag by name, and never reads 'no such version'."""
-    units = [Path(j["unit"]) for j in record["jobs"]]
-    rd = lambda i, rel: json.loads((units[i] / rel).read_bytes()) if i < len(units) and (units[i] / rel).is_file() else None  # noqa: E731
+    rd = lambda i, rel: _read_prev(record["jobs"], i, rel)  # noqa: E731 - by job index: phase c may not run (B-D3IDX)
     status = {r.get("id"): r.get("status") for j in record["jobs"] for r in j["summary"]}
     repos = {}
     for r in D3_REPOS:

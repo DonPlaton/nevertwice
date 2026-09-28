@@ -155,6 +155,9 @@ def discover(record: dict) -> dict:
         out["search_sha256"] = hashlib.sha256(raw).hexdigest()
         try:
             out["search"] = summarise_search(raw)
+            total = json.loads(raw.decode("utf-8")).get("total")
+            out["search_total"] = total if isinstance(total, int) and not isinstance(total, bool) else None
+            out["search_page_full"] = len(out["search"]) >= _DECL["search_size"]   # B-NPMP: more may be past it
         except (ValueError, UnicodeDecodeError) as e:
             out["problems"].append(f"the search answer does not read: {type(e).__name__}: {e}")
     else:
@@ -169,10 +172,13 @@ def window_problems(rec: dict) -> list[str]:
 
 
 def run_discovery(c, L, F, *, run: str, python: Path, via_port: int, parent_env, native=None, fs=None,
-                  child_env_extra: dict | None = None, volume: Path | None = None) -> dict:
+                  child_env_extra: dict | None = None, volume: Path | None = None, need_bytes: int | None = None) -> dict:
+    """The window, then its discovery record (see the module docstring). ``need_bytes``: the free-space floor - main()
+    passes the manifest's (B-NPMFLOOR); by default 3x the two documents' caps."""
     rec = F.run_child_window(c, L, window=WINDOW, hosts=[HOST], jobs=jobs(), python=python, via_port=via_port, run=run,
                              parent_env=parent_env, native=native, fs=fs, child_env_extra=child_env_extra,
-                             need_bytes=3 * (DOC_MAX + SEARCH_MAX), volume=volume)
+                             need_bytes=need_bytes if need_bytes is not None else 3 * (DOC_MAX + SEARCH_MAX),
+                             volume=volume)
     out = discover(rec)
     out["window_problems"] = window_problems(rec)
     if sorted(rec.get("hosts") or []) != [HOST]:
@@ -199,9 +205,10 @@ def main(argv: list[str] | None = None) -> int:
     if via is None:
         print("no declared hop (network.json)", file=sys.stderr)
         return 2
+    disk = json.loads(MANIFEST.read_text(encoding="utf-8"))["disk"]          # B-NPMFLOOR: every window's Q-A3-2 floor
     res = run_discovery(c, L, F, run=args.run, python=Path(args.python), via_port=via, parent_env=os.environ,
-                        volume=Path("D:/"))
-    print(json.dumps(res, indent=1, default=str, ensure_ascii=False))
+                        volume=Path("D:/"), need_bytes=max(int(disk["floor_gb"]) << 30, 3 * (DOC_MAX + SEARCH_MAX)))
+    print(json.dumps(res, indent=1, default=str))       # B-NPMOUT: ASCII - a piped cp1251 stdout cannot fail on a hit
     return 0 if not (res["problems"] or res["window_problems"]) else 1
 
 

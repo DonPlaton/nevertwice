@@ -169,6 +169,29 @@ try:
           "'no such version'", full["repos"][SM]["tags_page_full"] is True and full["repos"][SM]["releases_page_full"] is True
           and full["repos"][CG]["tags_page_full"] is False, json.dumps({k: full["repos"][SM].get(k) for k in (
               "tags_page_full", "releases_page_full")}))
+    ud = {i: TMP / "d3idx" / f"j{i}" for i in (0, 1, 3)}                  # phase c (2) did not run: no repository
+    mdir = F._safe(F.D3_HF_MODEL)
+    (ud[1] / "meta" / "models" / mdir).mkdir(parents=True)
+    (ud[1] / "meta" / "models" / mdir / "revision.json").write_text(json.dumps({"sha": "b" * 40}))
+    (ud[3] / "meta" / "models" / mdir).mkdir(parents=True)
+    (ud[3] / "meta" / "models" / mdir / "tree.json").write_text(json.dumps([{"type": "file", "path": "config.json",
+                                                                            "size": 1, "oid": "c" * 40}]))
+    ud[0].mkdir(parents=True)
+    idx = F.d3_report({"jobs": [{"index": i, "unit": str(u), "summary": []} for i, u in ud.items()]})
+    check("B-D3IDX: phase c skipped (no repository resolved) - the model's tree phase d fetched is still in the report: "
+          "a result is read by its job index, never by its list position", idx["model"]["revision"] == "b" * 40
+          and [f["path"] for f in idx["model"]["files"]] == ["config.json"], json.dumps(idx["model"]))
+    u2 = {i: TMP / "d2idx" / f"j{i}" for i in (0, 2)}                    # phase 1 did not run
+    m0 = u2[0] / "gh" / F._safe(F.MEM0)
+    m0.mkdir(parents=True)
+    (m0 / "evaluation_commits.json").write_text(json.dumps([{"sha": "d" * 40, "parents": [{"sha": "e" * 40}]}]))
+    (u2[2] / "gh" / F._safe(F.MEM0)).mkdir(parents=True)
+    (u2[2] / "gh" / F._safe(F.MEM0) / "tree_parent.json").write_text(json.dumps(
+        {"tree": [{"path": "evaluation/run.py", "type": "blob"}]}))
+    rep2 = F.d2_report({"jobs": [{"index": i, "unit": str(u), "summary": []} for i, u in u2.items()]})
+    check("B-D3IDX (d2_report): phase 1 skipped - the parent tree phase 2 fetched still pins mem0's evaluation commit: "
+          "read by job index, never by list position", rep2["mem0"]["pinned_commit"] == "e" * 40
+          and rep2["mem0"]["evaluation_files"] == ["evaluation/run.py"], json.dumps(rep2["mem0"]))
     print("\n- main(): plan d3 only in window a7-discovery, on the plan's hosts - refused before any spawn -")
     import contextlib  # noqa: E402,PLC0415
     import io  # noqa: E402,PLC0415
