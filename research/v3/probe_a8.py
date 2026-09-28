@@ -147,7 +147,11 @@ def m0_temperature(src: Mapping, calls: Iterable[Mapping], *, run: str, unit: st
     raw, blocked = _source_value(src, "m0_temperature", rule)
     if blocked:
         return blocked
-    value = float(raw)
+    try:
+        value = float(raw)
+    except (TypeError, ValueError):                  # C5A-9: a source value that is not a number is named, never raised
+        return _field(None, rule=rule, ok=False, source=src.get("source"), failed=f"the source's value {raw!r}",
+                      blocked="blocked:source-unparsable:m0_temperature")
     lines = mine(calls, arm="mem0", run=run, unit=unit)
     if not lines:
         return _field(value, rule=rule, ok=False, source=src.get("source"), failed="unmeasured: no line")
