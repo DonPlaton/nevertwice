@@ -594,6 +594,129 @@ check("the calls reach m0_temperature under the right unit (0.9 against the sour
       ok(lambda: F6["m0_temperature"]["ok"] is False and F6["m0_usage"]["ok"] is True), str(F6.get("m0_temperature")))
 check("m0_nlp is information: the imports listed, never failing the probe", ok(lambda: F["m0_nlp"]["ok"] is True
       and [x["value"] for x in F["m0_nlp"]["value"]] == ["entity_extraction", "lemmatization"]), str(F.get("m0_nlp")))
+print("\n- C6 C1: the source facts of mem0's writer bound, declared before any read of 2.2.0 -")
+M3 = TMP / "site_bound"
+SYS_PROMPT = "You extract memories. \u00e9" * 3
+FILES3 = {
+    "openai/_constants.py": b"import httpx\n\nDEFAULT_TIMEOUT = 600\nDEFAULT_MAX_RETRIES = 2\n",
+    "openai/_client.py": (b"class OpenAI(SyncAPIClient):\n    def __init__(\n        self,\n        *,\n"
+                          b"        max_retries: int = DEFAULT_MAX_RETRIES,\n    ):\n        pass\n\n\n"
+                          b"class AsyncOpenAI(AsyncAPIClient):\n    def __init__(\n        self,\n        *,\n"
+                          b"        max_retries: int = DEFAULT_MAX_RETRIES,\n    ):\n        pass\n"),
+    "mem0/llms/deepseek.py": (b"class DeepSeekLLM(LLMBase):\n    def __init__(self, config=None):\n"
+                              b"        self.client = OpenAI(base_url=base_url, timeout=t)\n"),
+    "mem0/configs/llms/deepseek.py": b"class C:\n    def __init__(\n        self,\n        max_tokens: int = 2000,\n    ):\n        pass\n",
+    "mem0/llms/base.py": b"class LLMBase:\n    def _p(self):\n            params[\"max_tokens\"] = self.config.max_tokens\n",
+    "mem0/configs/prompts.py": (
+        b'ADDITIVE_EXTRACTION_PROMPT = """' + SYS_PROMPT.encode("utf-8") + b'"""\n\n'
+        b'AGENT_CONTEXT_SUFFIX = """agent suffix"""\n\n'
+        b"PAST_MESSAGE_TRUNCATION_LIMIT = 300\n\n\n"
+        b"def _format_conversation_history(messages):\n    result = \"\"\n    for msg in messages:\n"
+        b"        result += f\"{role}: {_truncate_content(content)}\\n\"\n    return result\n\n\n"
+        b"def _serialize_memories(memories):\n    return json.dumps(memories or [], ensure_ascii=False)\n\n\n"
+        b"def generate_additive_extraction_prompt(existing_memories=None, new_messages=None, *, last_k_messages=None,\n"
+        b"                                      custom_instructions=None, use_input_language=False):\n"
+        b"    sections = []\n"
+        b"    sections.append(f\"## Last k Messages\\n{_format_conversation_history(last_k_messages)}\")\n"
+        b"    sections.append(f\"## Existing Memories\\n{_serialize_memories(existing_memories)}\")\n"
+        b"    sections.append(f\"## New Messages\\n{_format_new_messages(new_messages)}\")\n"
+        b"    if custom_instructions:\n        sections.append(f\"## Custom Instructions\\n{custom_instructions}\")\n"
+        b"    if use_input_language:\n        sections.append(\"## Language\\nkeep it\")\n"
+        b"    sections.append(\"# Output:\")\n    return \"\\n\\n\".join(sections)\n"),
+    "mem0/memory/main.py": (
+        b"class Memory:\n    def _add_to_vector_store(self, messages, metadata, filters, infer, prompt=None):\n"
+        b"        last_messages = self.db.get_last_messages(session_scope, limit=10)\n"
+        b"        existing_results = self.vector_store.search(\n            query=parsed_messages,\n"
+        b"            vectors=query_embedding,\n            top_k=10,\n            filters=search_filters,\n        )\n"
+        b"        for idx, mem in enumerate(existing_results):\n"
+        b"            existing_memories.append({\"id\": str(idx), \"text\": mem.payload.get(\"data\", \"\")})\n"
+        b"        system_prompt = ADDITIVE_EXTRACTION_PROMPT\n"
+        b"        user_prompt = generate_additive_extraction_prompt(\n            existing_memories=existing_memories,\n"
+        b"            new_messages=parsed_messages,\n            last_k_messages=last_messages,\n"
+        b"            custom_instructions=custom_instr,\n        )\n"
+        b"        entity = self.vector_store.search(query=q, top_k=1)\n"),
+    "mem0/memory/utils.py": (b"def parse_messages(messages):\n    response = \"\"\n    for msg in messages:\n"
+                             b"        if role == \"system\":\n            response += f\"system: {content}\\n\"\n"
+                             b"        elif role == \"user\":\n            response += f\"user: {content}\\n\"\n"
+                             b"        elif role == \"assistant\":\n            response += f\"assistant: {content}\\n\"\n"
+                             b"    return response\n"),
+}
+for rel, data in FILES3.items():
+    (M3 / rel).parent.mkdir(parents=True, exist_ok=True)
+    (M3 / rel).write_bytes(data)
+BF = S.mem0_bound_facts(M3)
+val = {k: (v.get("value") if isinstance(v, dict) else None) for k, v in BF.items()} if isinstance(BF, dict) else {}
+check("C6: every declared bound fact read from the tree - retries 2 (the SDK's), the client default, one client "
+      "with no override, max_tokens 2000 and its send line, the prompts' literal bytes, the prompt call's keywords, "
+      "the two windows, the truncation limit and its use, the memory shape, the message frames",
+      ok(lambda: val["m0_max_retries"] == "2" and val["m0_client_default"] == "DEFAULT_MAX_RETRIES"
+         and val["m0_client_ctor"] == [{"line": 3, "keywords": ["base_url", "timeout"], "starstar": False}]
+         and val["m0_client_override"] == [] and val["m0_max_tokens"] == "2000" and BF["m0_max_tokens_sent"].get("line") == 3
+         and val["m0_system_prompt"] == len(SYS_PROMPT.encode("utf-8")) and val["m0_agent_suffix"] == len(b"agent suffix")
+         and val["m0_system_prompt_used"] == "ADDITIVE_EXTRACTION_PROMPT"
+         and val["m0_prompt_call"] == sorted(P.M0_PROMPT_CALL) and val["m0_last_k"] == "10" and val["m0_top_k"] == "10"
+         and val["m0_trunc_limit"] == "300" and BF["m0_trunc_used"].get("line") and BF["m0_memory_item"].get("line")
+         and val["m0_memory_dump"] == "False" and val["m0_message_frame"] == ["assistant", "system", "user"]
+         and S.bound_blocked(BF) == []), str(val)[:600])
+up = val.get("m0_user_prompt") if isinstance(val.get("m0_user_prompt"), dict) else {}
+check("C6: the user prompt's sections by the AST - each append's constant bytes and fields, the conditional ones "
+      "marked, the separator of its join",
+      ok(lambda: up["separator"] == "\n\n" and [(x["const_bytes"], x["fields"], x["conditional"]) for x in up["parts"]] == [
+          (len("## Last k Messages\n"), ["_format_conversation_history(last_k_messages)"], False),
+          (len("## Existing Memories\n"), ["_serialize_memories(existing_memories)"], False),
+          (len("## New Messages\n"), ["_format_new_messages(new_messages)"], False),
+          (len("## Custom Instructions\n"), ["custom_instructions"], True),
+          (len("## Language\nkeep it"), [], True), (len("# Output:"), [], False)]), str(up)[:400])
+check("C6: the add path's own top_k - the search that fills existing memories, not the entity search's top_k=1; a bare "
+      "top_k= would be ambiguous", ok(lambda: val["m0_top_k"] == "10" and S.fact_in(S.scope(M3, "mem0/memory/main.py",
+                                          "Memory._add_to_vector_store", name="t"), r"top_k=(\d+)", name="t").get("blocked")
+                                      == "blocked:source-ambiguous:t"), str(val.get("m0_top_k")))
+check("C6: the retries' default is OpenAI's own __init__, never AsyncOpenAI's", ok(lambda: BF["m0_client_default"]["line"] == 5),
+      str(BF.get("m0_client_default")))
+check("the declared bound facts, written out, all relative paths",
+      ok(lambda: set(P.M0_BOUND_SOURCE) == {"m0_max_retries", "m0_client_default", "m0_client_ctor", "m0_client_override",
+                                            "m0_max_tokens", "m0_max_tokens_sent", "m0_system_prompt", "m0_agent_suffix",
+                                            "m0_system_prompt_used", "m0_user_prompt", "m0_prompt_call", "m0_last_k",
+                                            "m0_top_k", "m0_trunc_limit", "m0_trunc_used", "m0_memory_item",
+                                            "m0_memory_dump", "m0_message_frame"}
+         and all(not Path(v[0]).is_absolute() for v in P.M0_BOUND_SOURCE.values())))
+
+
+def bound_with(rel, data):
+    (M3 / rel).write_bytes(data)
+    try:
+        return S.bound_blocked(S.mem0_bound_facts(M3))
+    finally:
+        (M3 / rel).write_bytes(FILES3[rel])
+
+
+for label, rel, data, want in (
+        ("a client with max_retries", "mem0/llms/deepseek.py",
+         b"class DeepSeekLLM(LLMBase):\n    def __init__(self, config=None):\n        self.client = OpenAI(base_url=u, max_retries=5)\n",
+         "m0_client_ctor"),
+        ("a client built with **kwargs", "mem0/llms/deepseek.py",
+         b"class DeepSeekLLM(LLMBase):\n    def __init__(self, config=None):\n        self.client = OpenAI(**opts)\n", "m0_client_ctor"),
+        ("two clients", "mem0/llms/deepseek.py",
+         b"class DeepSeekLLM(LLMBase):\n    def __init__(self, config=None):\n        a = OpenAI()\n        b = OpenAI()\n",
+         "m0_client_ctor"),
+        ("with_options anywhere in the LLM", "mem0/llms/deepseek.py",
+         b"class DeepSeekLLM(LLMBase):\n    def __init__(self, config=None):\n        self.client = OpenAI(base_url=u)\n"
+         b"        self.client = self.client.with_options(timeout=5)\n", "m0_client_override"),
+        ("a prompt field nobody declared", "mem0/configs/prompts.py",
+         FILES3["mem0/configs/prompts.py"].replace(b'sections.append("# Output:")', b'sections.append(f"## X\\n{secret}")'),
+         "blocked:source-changed:m0_user_prompt"),
+        ("a prompt call with another keyword", "mem0/memory/main.py",
+         FILES3["mem0/memory/main.py"].replace(b"custom_instructions=custom_instr,", b"summary=s,"), "m0_prompt_call"),
+        ("a system prompt that is not a literal", "mem0/configs/prompts.py",
+         FILES3["mem0/configs/prompts.py"].replace(b'ADDITIVE_EXTRACTION_PROMPT = """', b'ADDITIVE_EXTRACTION_PROMPT = X + """'),
+         "blocked:source-changed:m0_system_prompt"),
+        ("two system prompts", "mem0/configs/prompts.py",
+         FILES3["mem0/configs/prompts.py"] + b'\nADDITIVE_EXTRACTION_PROMPT = "again"\n', "blocked:source-ambiguous:m0_system_prompt"),
+        ("no truncation of the history lines", "mem0/configs/prompts.py",
+         FILES3["mem0/configs/prompts.py"].replace(b"{_truncate_content(content)}", b"{content}"),
+         "blocked:source-missing:m0_trunc_used")):
+    got = bound_with(rel, data)
+    check(f"C6: {label} makes no bound - named ({want})", ok(lambda: any(want in x for x in got)), str(got)[:300])
 check("C4A-8 / C5A-8: no verdict raised on any row - every failure came back as a field", RAISED == [], str(RAISED))
 _cleanup()
 print(f"\nv3 probe a8: {PASSED} passed, {FAILED} failed")

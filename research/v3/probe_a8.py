@@ -23,6 +23,11 @@ This part (C5a) holds the verdicts; they read records, never a product:
   checks for are source facts (``nlp_facts``); ``m0_nlp_active`` reads what the adapter saw after the adds - the model
   installed, both models loaded, no failed flag, by exactly those names, no catcher line - never loading anything
   itself; anything else is blocked:nlp-off;
+* C6 C1 (the auditor's Q-C6-1..7): the source facts of mem0's writer bound are declared in M0_BOUND_SOURCE (from 2.0.19
+  and its openai SDK): the SDK's own retries and that the DeepSeek client keeps them, max_tokens and its send line, the
+  system prompt's bytes (literal_bytes), the user prompt's sections (prompt_parts: constant bytes, fields declared in
+  M0_PROMPT_FIELDS), the prompt call's keywords, the last-k window and its truncation, the top_k window and a memory's
+  shape, the message frames; ``mem0_bound_facts`` reads them, ``bound_blocked`` names every reason they make no bound;
 * ``verdict``: "pass" only when every field is ok, there is no problem, every boundary check is complete with 0/0 and
   no catcher line belongs to the arm; else the first blocked:<reason> - the fields in their declared order, then the
   problems - else "fail". The proxy's own spawn is unwitnessed by design (launch.spawn_proxy): 0/0 covers the product
@@ -77,6 +82,52 @@ M0_SOURCE = {
     # the model the product itself checks for (and downloads at run time when it is missing) - NLP-2 fetches exactly it
     "m0_nlp_model": ("mem0/utils/spacy_models.py", "_ensure_model_available", r'spacy\.util\.is_package\("([\w.-]+)"\)'),
 }
+#: C6 (the auditor's Q-C6-1..3): the source facts of mem0's writer bound, declared from 2.0.19 (and its openai SDK)
+#: before any read of 2.2.0. Forms: (file, pattern); (file, qualified name, pattern); (file, name) for a module-level
+#: string literal's bytes (literal_bytes); the AST ones say so in their comment.
+M0_BOUND_SOURCE = {
+    # R = the add path's LLM sites x (1 + the SDK's own retries) - the retries from the INSTALLED openai (Q-C6-3)
+    "m0_max_retries": ("openai/_constants.py", r"^DEFAULT_MAX_RETRIES = (\d+)\s*$"),
+    "m0_client_default": ("openai/_client.py", "OpenAI.__init__", r"^\s+max_retries: int = (DEFAULT_MAX_RETRIES),\s*$"),
+    # AST: exactly one OpenAI(...) in DeepSeekLLM.__init__, with no max_retries keyword and no **kwargs
+    "m0_client_ctor": ("mem0/llms/deepseek.py", "DeepSeekLLM.__init__", "OpenAI"),
+    # and no max_retries or with_options anywhere in the DeepSeek LLM - must be ABSENT
+    "m0_client_override": ("mem0/llms/deepseek.py", r"\b(max_retries|with_options)\b"),
+    # O = the DeepSeek config's max_tokens default, and the line that sends it
+    "m0_max_tokens": ("mem0/configs/llms/deepseek.py", r"^\s+max_tokens: int = (\d+),\s*$"),
+    "m0_max_tokens_sent": ("mem0/llms/base.py", r'^\s+params\["max_tokens"\] = self\.config\.max_tokens\s*$'),
+    # F: the system prompt (and the agent suffix, counted conservatively), and where the add path takes it
+    "m0_system_prompt": ("mem0/configs/prompts.py", "ADDITIVE_EXTRACTION_PROMPT"),
+    "m0_agent_suffix": ("mem0/configs/prompts.py", "AGENT_CONTEXT_SUFFIX"),
+    "m0_system_prompt_used": ("mem0/memory/main.py", "Memory._add_to_vector_store",
+                              r"^\s+system_prompt = (ADDITIVE_EXTRACTION_PROMPT)\s*$"),
+    # AST: the user prompt's sections - each append's constant bytes and its fields (prompt_parts), and its separator
+    "m0_user_prompt": ("mem0/configs/prompts.py", "generate_additive_extraction_prompt", "sections"),
+    # AST: the keywords the add path passes to it
+    "m0_prompt_call": ("mem0/memory/main.py", "Memory._add_to_vector_store", "generate_additive_extraction_prompt"),
+    # the two windows: the last messages and the existing memories (anchored on the add path's own search call)
+    "m0_last_k": ("mem0/memory/main.py", "Memory._add_to_vector_store", r"get_last_messages\(session_scope, limit=(\d+)\)"),
+    "m0_top_k": ("mem0/memory/main.py", "Memory._add_to_vector_store",
+                 r"existing_results = self\.vector_store\.search\([^)]*?top_k=(\d+)"),
+    # the last-k lines are cut to a limit of characters (F-C6-2), in the history formatter
+    "m0_trunc_limit": ("mem0/configs/prompts.py", r"^PAST_MESSAGE_TRUNCATION_LIMIT = (\d+)\s*$"),
+    "m0_trunc_used": ("mem0/configs/prompts.py", "_format_conversation_history",
+                      r'result \+= f"\{role\}: \{_truncate_content\(content\)\}\\n"'),
+    # an existing memory's shape in the prompt (F-C6-3: serialized by json.dumps)
+    "m0_memory_item": ("mem0/memory/main.py", "Memory._add_to_vector_store",
+                       r'existing_memories\.append\(\{"id": str\(idx\), "text": mem\.payload\.get\("data", ""\)\}\)'),
+    "m0_memory_dump": ("mem0/configs/prompts.py", "_serialize_memories",
+                       r"return json\.dumps\(memories or \[\], ensure_ascii=(False)\)"),
+    # the new message's frame in parse_messages: every "<role>: {content}\n" form (a set fact)
+    "m0_message_frame": ("mem0/memory/utils.py", "parse_messages", r'f"(\w+): \{content\}\\n"'),
+}
+#: the fields the user prompt may interpolate - declared before the read; any other is blocked:source-changed
+M0_PROMPT_FIELDS = frozenset({"_format_summary(summary)", "_format_conversation_history(last_k_messages)",
+                              "_serialize_memories(recently_extracted_memories)", "_serialize_memories(existing_memories)",
+                              "_format_new_messages(new_messages)", "observation_date", "current_date",
+                              "custom_instructions"})
+#: the keywords the add path may pass to the prompt builder (Q-C6-1: custom instructions are the config's, None here)
+M0_PROMPT_CALL = frozenset({"existing_memories", "new_messages", "last_k_messages", "custom_instructions"})
 M0_NLP_VARS = ("m0_nlp_full_var", "m0_nlp_lemma_var", "m0_nlp_failed_full_var", "m0_nlp_failed_lemma_var")
 #: the adapter's state key -> the source fact naming it
 M0_NLP_NAMES = {"full": "m0_nlp_full_var", "lemma": "m0_nlp_lemma_var", "failed_full": "m0_nlp_failed_full_var",
@@ -241,6 +292,139 @@ def llm_sites(sc: Mapping, dotted: str) -> dict:
     if not out:
         return {"value": None, "file": sc["file"], "blocked": "blocked:source-missing:m0_llm_sites"}
     return {"value": out, "file": sc["file"], "sha256": sc["sha256"], "source": sc["source"]}
+
+
+def literal_bytes(root: Path, rel: str, name: str, *, field: str) -> dict:
+    """Exactly one module-level ``name = "<a str literal>"`` in the file, read and parsed as data: its UTF-8 bytes."""
+    path = _source_path(root, rel, field)
+    if not path.is_file():
+        return {"value": None, "file": rel, "blocked": f"blocked:source-missing:{field}"}
+    data = path.read_bytes()
+    try:
+        tree = ast.parse(data.decode("utf-8", "replace"))
+    except SyntaxError:
+        return {"value": None, "file": rel, "blocked": f"blocked:source-unparsable:{field}"}
+    hits = [n for n in tree.body if isinstance(n, ast.Assign) and len(n.targets) == 1
+            and isinstance(n.targets[0], ast.Name) and n.targets[0].id == name]
+    if len(hits) != 1:
+        return {"value": None, "file": rel, "blocked": f"blocked:source-{'missing' if not hits else 'ambiguous'}:{field}"}
+    v = hits[0].value
+    if not (isinstance(v, ast.Constant) and isinstance(v.value, str)):
+        return {"value": None, "file": rel, "line": hits[0].lineno, "blocked": f"blocked:source-changed:{field}"}
+    sha = hashlib.sha256(data).hexdigest()
+    return {"value": len(v.value.encode("utf-8")), "file": rel, "line": hits[0].lineno, "sha256": sha,
+            "source": f"{rel}:{hits[0].lineno}@sha256:{sha}"}
+
+
+def ctor_calls(sc: Mapping, name: str, *, field: str) -> dict:
+    """Every call of the bare name ``name`` in the scope, by the AST: its line, its keyword names, and whether it passes
+    **kwargs. The value is the list; none is blocked:source-missing."""
+    if sc.get("blocked"):
+        return {"value": None, "blocked": sc["blocked"]}
+    tree = ast.parse(textwrap.dedent(sc["text"]))
+    calls = [{"line": sc["first_line"] + n.lineno - 1, "keywords": sorted(k.arg for k in n.keywords if k.arg),
+              "starstar": any(k.arg is None for k in n.keywords)}
+             for n in ast.walk(tree) if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id == name]
+    if not calls:
+        return {"value": None, "blocked": f"blocked:source-missing:{field}"}
+    return {"value": calls, "source": sc["source"]}
+
+
+def call_keywords(sc: Mapping, dotted: str, *, field: str) -> dict:
+    """The keyword names of exactly one call of ``dotted`` (a bare or a dotted name) in the scope."""
+    if sc.get("blocked"):
+        return {"value": None, "blocked": sc["blocked"]}
+    tree = ast.parse(textwrap.dedent(sc["text"]))
+    calls = [n for n in ast.walk(tree) if isinstance(n, ast.Call)
+             and ((isinstance(n.func, ast.Name) and n.func.id == dotted) or _dotted(n.func) == dotted)]
+    if len(calls) != 1:
+        return {"value": None, "blocked": f"blocked:source-{'missing' if not calls else 'ambiguous'}:{field}"}
+    kw = calls[0].keywords
+    if any(k.arg is None for k in kw) or calls[0].args:
+        return {"value": None, "blocked": f"blocked:source-changed:{field}"}
+    return {"value": sorted(k.arg for k in kw), "line": sc["first_line"] + calls[0].lineno - 1, "source": sc["source"]}
+
+
+def prompt_parts(sc: Mapping, *, field: str) -> dict:
+    """The user prompt's sections, by the AST: every ``sections.append(<str or f-string>)`` - its constant UTF-8 bytes,
+    the expressions it interpolates, whether it sits under an if - and the separator of the one
+    ``"<sep>".join(sections)`` it returns. An interpolated field outside M0_PROMPT_FIELDS is blocked:source-changed."""
+    if sc.get("blocked"):
+        return {"value": None, "blocked": sc["blocked"]}
+    tree = ast.parse(textwrap.dedent(sc["text"]))
+    parts: list = []
+
+    def walk(node: ast.AST, under_if: bool) -> None:
+        if (isinstance(node, ast.Call) and _dotted(node.func) == "sections.append" and len(node.args) == 1):
+            a = node.args[0]
+            if isinstance(a, ast.Constant) and isinstance(a.value, str):
+                parts.append({"const_bytes": len(a.value.encode("utf-8")), "fields": [], "conditional": under_if})
+            elif isinstance(a, ast.JoinedStr):
+                const = sum(len(v.value.encode("utf-8")) for v in a.values if isinstance(v, ast.Constant))
+                fields = [ast.unparse(v.value) for v in a.values if isinstance(v, ast.FormattedValue)]
+                parts.append({"const_bytes": const, "fields": fields, "conditional": under_if})
+            else:
+                parts.append({"const_bytes": None, "fields": [ast.unparse(a)], "conditional": under_if})
+        for child in ast.iter_child_nodes(node):
+            walk(child, under_if or isinstance(node, ast.If))
+    walk(tree, False)
+    joins = [n for n in ast.walk(tree) if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
+             and n.func.attr == "join" and isinstance(n.func.value, ast.Constant) and n.args
+             and isinstance(n.args[0], ast.Name) and n.args[0].id == "sections"]
+    if not parts or len(joins) != 1:
+        return {"value": None, "blocked": f"blocked:source-{'missing' if not parts or not joins else 'ambiguous'}:{field}"}
+    unknown = sorted({f for x in parts for f in x["fields"]} - M0_PROMPT_FIELDS)
+    if unknown or any(x["const_bytes"] is None for x in parts):
+        return {"value": None, "fields": unknown, "blocked": f"blocked:source-changed:{field}"}
+    return {"value": {"parts": parts, "separator": joins[0].func.value.value}, "source": sc["source"]}
+
+
+def mem0_bound_facts(site: Path) -> dict:
+    """C6: every declared M0_BOUND_SOURCE fact, read from the installed mem0 and openai SDK as data."""
+    B = M0_BOUND_SOURCE
+    out: dict = {}
+    for k in ("m0_max_retries", "m0_max_tokens", "m0_max_tokens_sent", "m0_trunc_limit"):
+        out[k] = fact(site, B[k][0], B[k][1], name=k, group=1 if k != "m0_max_tokens_sent" else 0)
+    for k in ("m0_client_default", "m0_system_prompt_used", "m0_last_k", "m0_top_k", "m0_trunc_used", "m0_memory_item",
+              "m0_memory_dump"):
+        rel, qual, pattern = B[k]
+        out[k] = fact_in(scope(site, rel, qual, name=k), pattern, name=k, group=1 if k not in ("m0_trunc_used",
+                                                                                              "m0_memory_item") else 0)
+    for k in ("m0_system_prompt", "m0_agent_suffix"):
+        out[k] = literal_bytes(site, B[k][0], B[k][1], field=k)
+    rel, qual, name = B["m0_client_ctor"]
+    out["m0_client_ctor"] = ctor_calls(scope(site, rel, qual, name="m0_client_ctor"), name, field="m0_client_ctor")
+    rel, pattern = B["m0_client_override"]
+    out["m0_client_override"] = all_in(site, rel, pattern, name="m0_client_override")
+    rel, qual, _ = B["m0_user_prompt"]
+    out["m0_user_prompt"] = prompt_parts(scope(site, rel, qual, name="m0_user_prompt"), field="m0_user_prompt")
+    rel, qual, dotted = B["m0_prompt_call"]
+    out["m0_prompt_call"] = call_keywords(scope(site, rel, qual, name="m0_prompt_call"), dotted, field="m0_prompt_call")
+    rel, qual, pattern = B["m0_message_frame"]
+    sc = scope(site, rel, qual, name="m0_message_frame")
+    out["m0_message_frame"] = ({"value": None, "blocked": sc["blocked"]} if sc.get("blocked") else
+                               {"value": sorted(set(re.findall(pattern, sc["text"]))), "source": sc["source"]})
+    return out
+
+
+def bound_blocked(bf: Mapping) -> list[str]:
+    """The reasons mem0's bound facts do not make a bound: a blocked fact, a client that overrides the retries, a prompt
+    call with keywords other than M0_PROMPT_CALL, a frame with no role - each by name (C6)."""
+    out = [f"{k}: {v['blocked']}" for k, v in bf.items() if isinstance(v, Mapping) and v.get("blocked")]
+    ctor = (bf.get("m0_client_ctor") or {}).get("value")
+    if ctor is not None and (len(ctor) != 1 or "max_retries" in ctor[0]["keywords"] or ctor[0]["starstar"]):
+        out.append(f"m0_client_ctor: the DeepSeek LLM's client is not built once with the SDK's own retries: {ctor}")
+    ov = (bf.get("m0_client_override") or {}).get("value")
+    if ov:
+        out.append(f"m0_client_override: the DeepSeek LLM names {sorted({x['value'] for x in ov})} - the retries may be "
+                   "overridden (Q-C6-3)")
+    kw = (bf.get("m0_prompt_call") or {}).get("value")
+    if kw is not None and set(kw) != M0_PROMPT_CALL:
+        out.append(f"m0_prompt_call: the add path passes {kw}, not {sorted(M0_PROMPT_CALL)}")
+    fr = (bf.get("m0_message_frame") or {}).get("value")
+    if fr is not None and not fr:
+        out.append("m0_message_frame: parse_messages frames no role")
+    return out
 
 
 def formats(sites: Mapping) -> dict:
