@@ -104,7 +104,7 @@ class GitHub:
                 return 200, dict(hdrs or {}), b"", sha(body), len(body)
             return 200, dict(hdrs or {}), body, sha(body), len(body)
         if host == RAW and bare == COMPAT:
-            return ok_(json.dumps(k.get("compat", {"spacy": {"3.8": {MODEL: ["3.8.0", V, "3.8.2", "4.0.0.dev1"],
+            return ok_(json.dumps(k.get("compat", {"spacy": {"3.8": {MODEL: [V, "3.8.2", "3.8.0", "4.0.0.dev1"],
                                                                       "de_core_news_sm": ["3.8.0"]},
                                                              "3.7": {MODEL: ["3.7.1"]}}})).encode())
         if host == API and bare == f"/repos/{REPO}/releases/tags/{TAG}":
@@ -153,10 +153,10 @@ def run(tag, job=None, **knobs):
 print("- a whole model -")
 o, g, cw = run("ok")
 check("the job passes", ok(lambda: o.get("ok") is True and o.get("error") is None), str(o.get("error")))
-check("the version: compatibility.json under spaCy 3.8 (the locked 3.8.7's major.minor), the newest X.Y.Z by its "
-      "numbers (3.8.10, not the list's first 3.8.0, never a dev release) - the first recorded beside it",
-      ok(lambda: o["version"] == V and o["compat"] == {"spacy_minor": "3.8", "listed": ["3.8.0", V, "3.8.2", "4.0.0.dev1"],
-                                                      "first": "3.8.0", "newest": V}), str(o.get("compat")))
+check("the version: compatibility.json under spaCy 3.8 (the locked 3.8.7's major.minor), its first entry - the one "
+      "spacy.cli.download takes - which is also the newest X.Y.Z by its numbers (never a dev release)",
+      ok(lambda: o["version"] == V and o["compat"] == {"spacy_minor": "3.8", "listed": [V, "3.8.2", "3.8.0", "4.0.0.dev1"],
+                                                      "first": V, "newest": V}), str(o.get("compat")))
 check("the release: the one asset named <model>-<version>-py3-none-any.whl, its digest the sha256, not TLS-only",
       ok(lambda: o["asset"] == {"name": NAME, "size": len(WHL), "digest": f"sha256:{sha(WHL)}",
                                 "path": f"/{REPO}/releases/download/{TAG}/{NAME}"} and o["tls_only"] is False
@@ -199,6 +199,16 @@ cases = [
     ("no_minor", {"compat": {"spacy": {"3.7": {MODEL: ["3.7.1"]}}}}, "lists no spaCy 3.8"),
     ("no_model", {"compat": {"spacy": {"3.8": {"de_core_news_sm": ["3.8.0"]}}}}, f"lists no {MODEL} for spaCy 3.8"),
     ("no_xyz", {"compat": {"spacy": {"3.8": {MODEL: ["3.8.0.dev1", "latest"]}}}}, "no X.Y.Z version"),
+    ("first_not_newest", {"compat": {"spacy": {"3.8": {MODEL: ["3.8.0", V, "3.8.2"]}}}},
+     f"compatibility.json's first entry 3.8.0 is not its newest {V}"),
+    ("repo_dots", {"job": {**JOB, "repo": "../x"}}, "not a GitHub repository name"),
+    ("repo_deep", {"job": {**JOB, "repo": "a/b/c"}}, "not a GitHub repository name"),
+    ("repo_empty", {"job": {**JOB, "repo": ""}}, "not a GitHub repository name"),
+    ("spacy_rc", {"job": {**JOB, "spacy": "3.8.0rc1"}}, "not an X.Y.Z version"),
+    ("spacy_dev", {"job": {**JOB, "spacy": "3.8.0.dev0"}}, "not an X.Y.Z version"),
+    ("url_query", {"release": {"id": 1, "tag_name": TAG, "assets": [
+        {"name": NAME, "size": len(WHL), "digest": f"sha256:{sha(WHL)}", "browser_download_url": f"https://{WEB}/{REPO}/releases/download/{TAG}/{NAME}?x=1"}]}},
+     "not github.com's own download path"),
     ("api_404", {"api_status": 404}, "the release API answered 404"),
     ("no_asset", {"release": {"id": 1, "tag_name": TAG, "assets": []}}, "0 assets named"),
     ("two_assets", {"release": {"id": 1, "tag_name": TAG, "assets": [
@@ -228,7 +238,9 @@ cases = [
 for tag, knobs, want in cases:
     job = knobs.pop("job", None)
     o, g, cw = run(tag, job=job, **knobs)
-    check(f"refused by name: {tag}", ok(lambda: o.get("ok") is False and want in (o.get("error") or "")), str(o.get("error")))
+    sent = [c for c in g.calls]
+    check(f"refused by name: {tag}", ok(lambda: o.get("ok") is False and want in (o.get("error") or "")
+                                        and (not tag.startswith(("repo_", "spacy_")) or sent == [])), str(o.get("error")))
 o, g, cw = run("tampered_file", served=WHL[:-1] + b"!")
 check("a refused file is not left on the disk", ok(lambda: not (cw / "model" / NAME).exists()), str(list(cw.rglob("*"))))
 

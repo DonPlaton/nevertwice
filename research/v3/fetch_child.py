@@ -35,8 +35,9 @@ recorded, never fatal. Files land under <cwd>/oci/blobs/sha256/.
 
 B-NLP NLP-2 adds {"kind": "gh_model", "model", "spacy", "repo", "raw_host", "api_host", "web_host", "compat_path",
 "cdn_hosts", "hosts", "max_meta_bytes", "max_asset_bytes"} (gh_model_job, the auditor's rule of 07:19 and Q-NLP-1): the
-model's version is the newest X.Y.Z that explosion/spacy-models' compatibility.json lists under the LOCKED spaCy's
-major.minor (the list's first entry recorded beside it); the release by its tag <model>-<version> must hold exactly one
+model's version is the entry explosion/spacy-models' compatibility.json lists FIRST under the LOCKED spaCy's
+major.minor (the one spacy.cli.download takes), and it must be the newest X.Y.Z by its numbers - when they differ the job
+refuses by name and the auditor rules, neither is picked by hand; the release by its tag <model>-<version> must hold exactly one
 asset <model>-<version>-py3-none-any.whl at github.com's own download path, its "digest" the sha256 the stream is
 checked against (none: TLS-only trust, recorded as a declared limit); github.com answers the file or redirects it once,
 to a declared CDN host over https on 443 with no userinfo and no Authorization; the CDN host is recorded, the signed
@@ -468,7 +469,7 @@ def oci_job(job: dict, *, send, cwd: Path) -> dict:
 
 _MODEL = re.compile(r"[A-Za-z0-9_]{1,64}")
 _XYZ = re.compile(r"(\d+)\.(\d+)\.(\d+)")
-_GH_REPO = re.compile(r"[A-Za-z0-9_.-]{1,100}/[A-Za-z0-9_.-]{1,100}")
+_GH_REPO = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,99}/[A-Za-z0-9][A-Za-z0-9_.-]{0,99}")   # G2: no "..", no leading dot
 
 
 def gh_model_job(job: dict, *, send, cwd: Path) -> dict:
@@ -510,8 +511,12 @@ def gh_model_job(job: dict, *, send, cwd: Path) -> dict:
         xyz = [v for v in listed if isinstance(v, str) and _XYZ.fullmatch(v)]
         if not xyz:
             raise Refused(f"compatibility.json lists no X.Y.Z version of {model} for spaCy {minor}")
-        version = max(xyz, key=lambda v: tuple(int(x) for x in v.split(".")))
-        out["compat"] = {"spacy_minor": minor, "listed": listed, "first": listed[0], "newest": version}
+        newest = max(xyz, key=lambda v: tuple(int(x) for x in v.split(".")))
+        out["compat"] = {"spacy_minor": minor, "listed": listed, "first": listed[0], "newest": newest}
+        if listed[0] != newest:                     # the auditor (07:4x): spacy.cli.download takes the first entry
+            raise Refused(f"compatibility.json's first entry {listed[0]} is not its newest {newest} - neither is picked "
+                          f"by hand")
+        version = newest
         # 2. the release by its tag: exactly one wheel asset, at github.com's own download path
         tag = f"{model}-{version}"
         name = f"{tag}-py3-none-any.whl"

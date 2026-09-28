@@ -87,6 +87,14 @@
    "cdn_hosts": ["production.cloudflare.docker.com"],
    "max_redirects": 1
   },
+  "a8-spacy-model": {
+   "hosts": ["raw.githubusercontent.com", "api.github.com", "github.com", "objects.githubusercontent.com", "release-assets.githubusercontent.com"],
+   "install": "B-NLP NLP-2 (the auditor, 07:19; Q-NLP-1 = O-a): the spaCy model mem0's pinned source checks for - the version compatibility.json lists first under the locked spaCy's major.minor (it must be its newest), the release's one wheel asset checked against its digest as it streams, at most one redirect to a declared GitHub CDN host; then pip offline --require-hashes --no-deps --no-index into mem0_v3 (model_install)",
+   "repo": "explosion/spacy-models",
+   "compat_path": "/explosion/spacy-models/master/compatibility.json",
+   "cdn_hosts": ["objects.githubusercontent.com", "release-assets.githubusercontent.com"],
+   "max_redirects": 1
+  },
   "a8-docker-falkordb": {
    "hosts": ["registry-1.docker.io", "auth.docker.io", "production.cloudflare.docker.com"],
    "image": "A8 C4 (the auditor's Q-C4-1..5): the FalkorDB image for zep-graphiti, by the same rules",
