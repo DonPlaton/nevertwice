@@ -406,6 +406,15 @@ try:
           isinstance(sc, list) and [w for w, _c in sc] == ["tree-start", "block", "tree-end"]
           and sc_probs == ["witness: S4-smoke-9.tree-start: fs hits=1 (P0h) ['watched']"]
           and [w for w, _c in sc_part or []] == ["tree-start"], f"{sc} {sc_probs} {sc_part}")
+    try:
+        sc_none = RV.smoke_checks({"tree_start": {"clean": True}, "blocks": [{"order": 1}]})
+        sc_none_probs = [p for _w, ch in sc_none for p in RV.witness_problems(ch)]
+    except Exception as e:  # noqa: BLE001 - the row FAILs by name
+        sc_none, sc_none_probs = f"{type(e).__name__}: {e}", []
+    check("Q3 (the auditor's T5): a window the stand reached without a check record keeps None - a block with no "
+          "'check' and a tree check with no 'witness_check' are both listed, and witness_problems names both as not "
+          "measured (never silently dropped)", sc_none == [("tree-start", None), ("block", None)]
+          and len(sc_none_probs) == 2 and all("no check record" in p for p in sc_none_probs), f"{sc_none} {sc_none_probs}")
     print("\n- the forecast (Q-A6-2): an upper bound, not pilot medians -")
     fc_out = RV.forecast_arms({"bm25-floor": None, "nevertwice": "deepseek-flash"},
                               {"nevertwice": {"u1": ["a" * 100, "é" * 20000, "x" * 60000]}}, {("u1", "q0"): "p" * 50},
