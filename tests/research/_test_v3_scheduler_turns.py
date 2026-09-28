@@ -712,7 +712,7 @@ try:
             self.sleeps.append(s)
             self.offset += s
 
-    def w3_world(stand, sfile, knobs, answer, tag="smoke"):
+    def w3_world(stand, sfile, knobs, answer, tag="smoke", gate=None):
         for sub in ("live", "passed", "seen", "ops", "fails"):
             shutil.rmtree(SHARED / sub, ignore_errors=True)
         (SHARED / "live").mkdir()
@@ -720,6 +720,7 @@ try:
         st = SL.StatusLog(TMP / sfile, now=vc.utc, local_tz=dt.timezone.utc)
         s = SC.Scheduler(C, FakeProxyCtl(), st, L, vc, None, tag=tag, witnesses=FakeWitnesses(),
                          parent_env=dict(os.environ), catcher_url="http://127.0.0.1:47001",
+                         hooks=SimpleNamespace(gate=gate) if gate is not None else None,
                          home_canaries=L.Canaries.generate() if tag == "scored" else None)
         if tag == "scored":
             st.campaign_start(anchor="c" * 40, prereg="d" * 64, freeze="e" * 64)
@@ -731,7 +732,7 @@ try:
         st.stand(stand, "START", model="m", changelog="2026-09-10", order=1)
         res, err = attempt(lambda: s.run_block(sp, SC.BlockPlan(block="b01", units=("x1",))))
         if err is not None:
-            return {"reads": [{"error": repr(err)}, {}], "aborted": f"raised {err!r}"}, vc
+            return {"reads": [{"error": repr(err)}, {}], "aborted": f"raised {err!r}", "raised": err}, vc
         return res["questions"]["a1"][("r1", "x1")], vc
 
     q, vc = w3_world("SW1", "STATUS8", {("r1", "x1"): {"fail_reads": 1}}, lambda *a_: {"sha256": "3" * 64})
@@ -761,6 +762,65 @@ try:
     check("an answer the reader could not give is re-asked the same way (two re-asks, then answered)",
           q["reads"][0].get("reasks") == 2 and q["reads"][0]["answer"] == {"sha256": "4" * 64} and vc.sleeps == [300.0, 300.0],
           f"{q['reads']} {vc.sleeps}")
+
+    print("\n- B-REASK-HALT: the incident gate's halt ends a re-ask pause at once - the stand stops, it never re-asks a "
+          "halted provider -")
+
+    class HaltGate:
+        """The gate driver's shape: admits every unit; halt_kind() reads None for its first ``clear`` asks, then '402'
+        (the driver polls calls.jsonl on its own thread, so a halt can come before a pause or in the middle of one)."""
+
+        def __init__(self, clear):
+            self.clear, self.asked = clear, 0
+
+        def admits_new_unit(self):
+            return True
+
+        def halt_kind(self):
+            self.asked += 1
+            return "402" if self.clear is not None and self.asked > self.clear else None
+
+    def paid_402(*a_):
+        raise SC.ReaskableError("reader: upstream 402")
+
+    def halted_rows(sfile, q, vc):
+        """(the error's halt, the ABORT lines, the UNIT-ABORT lines) of a stand stopped by the halt."""
+        lines = (TMP / sfile).read_text(encoding="utf-8").splitlines()
+        return (SC._halt_of(q.get("raised")), [x for x in lines if " ABORT " in x],
+                [x for x in lines if " UNIT-ABORT " in x])
+
+    q, vc = w3_world("SH1", "STATUS10h", {}, paid_402, gate=HaltGate(clear=0))
+    h1, ab1, ua1 = halted_rows("STATUS10h", q, vc)
+    check("B-REASK-HALT: an answer that failed while the gate is halted is never re-asked - no pause at all, the unit "
+          "raises the halt, and the block's ABORT says reason=402 (a 402 is the provider's, never harness-error)",
+          vc.sleeps == [] and h1 == "402" and len(ab1) == 1 and " reason=402" in ab1[0] and not ua1,
+          f"sleeps={vc.sleeps[:4]}.. n={len(vc.sleeps)} halt={h1} {ab1} {ua1} {q.get('aborted')}")
+    q, vc = w3_world("SH2", "STATUS10i", {}, paid_402, gate=HaltGate(clear=4))
+    h2, ab2, _ua2 = halted_rows("STATUS10i", q, vc)
+    check("B-REASK-HALT: a halt that comes during a pause ends it at the next GATE_POLL_S - 4 slices slept, not the 300 s "
+          "spacing, and the halt is raised by name",
+          vc.sleeps == [SC.GATE_POLL_S] * 4 and h2 == "402" and len(ab2) == 1 and " reason=402" in ab2[0],
+          f"sleeps={vc.sleeps[:6]}.. n={len(vc.sleeps)} halt={h2} {ab2} {q.get('aborted')}")
+    paid = {"n": 0}
+
+    def paid_402_counted(*a_):
+        paid["n"] += 1
+        raise SC.ReaskableError("reader: upstream 402")
+
+    n_slices = int(SC.REASK_SPACING_S / SC.GATE_POLL_S)
+    q, vc = w3_world("SH4", "STATUS10k", {}, paid_402_counted, gate=HaltGate(clear=n_slices))
+    h4, _ab4, _ua4 = halted_rows("STATUS10k", q, vc)
+    check("B-REASK-HALT: a halt seen only at the end of a whole pause is still asked before the re-ask - the halted "
+          "provider is called once, never re-asked",
+          paid["n"] == 1 and len(vc.sleeps) == n_slices and h4 == "402",
+          f"answers={paid['n']} n={len(vc.sleeps)} halt={h4} {q.get('aborted')}")
+    calls["n"] = 0
+    q, vc = w3_world("SH3", "STATUS10j", {}, flaky_answer, gate=HaltGate(clear=None))
+    check("B-REASK-HALT: a gate that never halts changes nothing in W3 - two pauses of 300 s each (asked every "
+          "GATE_POLL_S), the answer recovers, and the pauses are still no active time (D1)",
+          q["reads"][0].get("reasks") == 2 and q["reads"][0].get("answer") == {"sha256": "4" * 64}
+          and abs(sum(vc.sleeps) - 2 * SC.REASK_SPACING_S) < 1e-6 and max(vc.sleeps or [0.0]) <= SC.GATE_POLL_S
+          and q.get("active_s", 1e9) < 300, f"{q['reads']} n={len(vc.sleeps)} sum={sum(vc.sleeps)} {q.get('active_s')}")
 
     print("\n- FIX-SCHED B-RC: a unit's exit code is the child's own; a kill of ours is SIGKILL; a refusal is no unit -")
     B_ = SC._arm_base()

@@ -43,6 +43,23 @@ def _load(name: str, path: Path):
 
 
 RV = _load("v3_run_v3_smk", ROOT / "research" / "v3" / "run_v3.py")
+_RUN_SMOKE = RV.run_smoke
+TOOK: list = [None]                                       # the last smoke's seconds (B-REASK-HALT's row reads them)
+
+
+def _timed_run_smoke(*a, **k):
+    """Every smoke of this suite says when it started and how long it took (a hang shows as a start with no end)."""
+    t0 = __import__("time").monotonic()
+    TOOK[0] = None
+    print(f"  time: run_smoke {k.get('arm_names')} started", flush=True)
+    try:
+        return _RUN_SMOKE(*a, **k)
+    finally:
+        TOOK[0] = __import__("time").monotonic() - t0
+        print(f"  time: run_smoke {k.get('arm_names')} took {TOOK[0]:.1f} s", flush=True)
+
+
+RV.run_smoke = _timed_run_smoke
 L = RV.load("launch.py", smoke=True)
 SC = RV.load("scheduler.py", smoke=True)
 P = RV.load("run_v3_proxy.py", smoke=True)
@@ -424,6 +441,12 @@ try:
           and len(end4) == 1 and " halt=402 " in end4[0]
           and any("HALT: the incident gate halted (402)" in p_ for p_ in err4) and SL.self_check(TMP / "STATUS") == [],
           f"{crash4} {rc4} {new4} halt={run4.get('halt')} {end4} {err4[:3]} {SL.self_check(TMP / 'STATUS')[:2]}")
+    took4 = TOOK[0]
+    abort4 = [x for x in status4.splitlines() if new4 and " ABORT " in x and f" {new4[-1]}/" in x]
+    check("B-REASK-HALT: the 402 halt stops the stand inside one re-ask spacing - the reader's failed answers are "
+          "never paused 5 min and re-asked against a halted provider, and the block's open arm-runs are ABORT reason=402",
+          took4 is not None and took4 < SC.REASK_SPACING_S and abort4 != [] and all(" reason=402" in x for x in abort4),
+          f"took={took4} {abort4[:3]}")
 
     print("\n- Q3: a dirty witness check fails the smoke by name -")
     out5: list = []

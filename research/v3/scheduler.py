@@ -94,6 +94,16 @@ class ReaskableError(RuntimeError):
     """The answer hook's transport failure (the reader's call did not come back): the stand may re-ask it (W3)."""
 
 
+class StandHalted(SchedulerError):
+    """B-REASK-HALT: the incident gate halted while a unit waited to re-ask (W3) - the unit stops at once and the stand
+    by the B-OPEN path; ``halt`` names the kind (401, 402, 403 or harness-error), as run_v3_gate.GateHalted's does."""
+
+    def __init__(self, halt: str, who: str) -> None:
+        super().__init__(f"{who}: the incident gate halted ({halt}) during a re-ask pause - no re-ask, the stand stops "
+                         f"(§4.5)")
+        self.halt = halt
+
+
 class SystemClock:
     """The scheduler's clock: UTC for records, monotonic for ceilings, sleep for the re-ask pauses."""
 
@@ -775,10 +785,32 @@ def _question_unit(sched: "Scheduler", launcher: Any, sp: StandPlan, *, run: str
     left = lambda: deadline + paused[0] - sched.clock.monotonic()  # noqa: E731
     budget = _budget(B, sched.clock, lambda: deadline + paused[0])
     sleep = getattr(sched.clock, "sleep", None) or __import__("time").sleep
+    gated = getattr(sched.hooks, "gate", None) is not None if sched.hooks is not None else False
+
+    def pause() -> None:
+        """W3's spacing. B-REASK-HALT: under an incident gate it is slept GATE_POLL_S at a time and the gate's halt is
+        asked before every slice and once more before the re-ask - the driver sets it from its own poll, so it can
+        come in the middle of a pause, and a 402 halt must not wait out two 5-min pauses per unit (nor be re-asked).
+        Without a gate there is nothing to hear: one sleep."""
+        if not gated:
+            sleep(REASK_SPACING_S)
+            paused[0] += REASK_SPACING_S
+            return
+        slept = 0.0
+        while True:
+            halt = _gate_halt(sched)
+            if halt is not None:
+                raise StandHalted(halt, who)
+            if slept >= REASK_SPACING_S:
+                return
+            step = min(GATE_POLL_S, REASK_SPACING_S - slept)
+            sleep(step)
+            slept += step
+            paused[0] += step
 
     def reask(attempt: Callable[[], Any], retry_on: tuple) -> tuple[Any, int, str | None]:
         """(the result, or None if still unrecovered; the re-asks made; the last error) - W3's order after the client's
-        own retries: at most REASK_MAX re-asks, REASK_SPACING_S apart."""
+        own retries: at most REASK_MAX re-asks, REASK_SPACING_S apart, each pause ended by a halt (B-REASK-HALT)."""
         n, last = 0, None
         while True:
             try:
@@ -790,8 +822,7 @@ def _question_unit(sched: "Scheduler", launcher: Any, sp: StandPlan, *, run: str
                 if n >= REASK_MAX:
                     return None, n, last
                 n += 1
-                sleep(REASK_SPACING_S)
-                paused[0] += REASK_SPACING_S
+                pause()
 
     client = wrec.client
     out["counters_include_write"] = client is not None       # B-WCTR: the memory-store arm's one process counts on
