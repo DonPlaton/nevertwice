@@ -1429,6 +1429,91 @@ check("C5f cc_config_names: a spawn that was not a discovery, a refused one, or 
       ok(lambda: nm_bad["s2"].get("blocked") == "blocked:not-discovery:cc_config_names"
          and nm_bad["s3"].get("blocked") == "blocked:refused-spawn:cc_config_names"
          and nm_bad["s9"].get("blocked") == "blocked:source-missing:cc_config_names"), str(nm_bad)[:400])
+
+print("\n- C5d (Q-C5d-1 = O-c): an npm tarball's generic facts - its pin, its members, its package.json - read in memory -")
+import base64  # noqa: E402
+import io  # noqa: E402
+import tarfile  # noqa: E402
+
+
+def make_tgz(files: dict, links: dict | None = None) -> bytes:
+    buf = io.BytesIO()
+    with tarfile.open(fileobj=buf, mode="w:gz") as tf:
+        for name, data in files.items():
+            ti = tarfile.TarInfo(name)
+            ti.size = len(data)
+            tf.addfile(ti, io.BytesIO(data))
+        for name, target in (links or {}).items():
+            ti = tarfile.TarInfo(name)
+            ti.type, ti.linkname = tarfile.SYMTYPE, target
+            tf.addfile(ti)
+    return buf.getvalue()
+
+
+PJ = {"name": "some-server", "version": "0.0.8", "main": "dist/index.js", "bin": {"some-server": "bin/cli.js"},
+      "scripts": {"build": "tsc", "postinstall": "node scripts/fetch.js", "prepare": "husky"},
+      "dependencies": {"express": "^4.19.0"}, "engines": {"node": ">=18"}}
+TGZ = make_tgz({"package/package.json": json.dumps(PJ).encode("utf-8"), "package/dist/index.js": b"module.exports={}",
+                "package/bin/cli.js": b"#!/usr/bin/env node"})
+SRI = "sha512-" + base64.b64encode(hashlib.sha512(TGZ).digest()).decode("ascii")
+pin_ok = S.npm_pin_check(TGZ, integrity=SRI, sha256=hashlib.sha256(TGZ).hexdigest())
+check("C5d npm_pin_check: the tarball's sha512, as npm's integrity writes it, equals the registry's, and its sha256 the "
+      "pin's - both recorded with the size",
+      ok(lambda: pin_ok["ok"] is True and pin_ok["value"] == {"integrity": SRI, "sha256": hashlib.sha256(TGZ).hexdigest(),
+                                                              "size": len(TGZ)}), str(pin_ok)[:300])
+pin_bad = {"a changed byte": S.npm_pin_check(TGZ[:-1] + bytes([TGZ[-1] ^ 1]), integrity=SRI),
+           "another sha256": S.npm_pin_check(TGZ, integrity=SRI, sha256="0" * 64),
+           "an integrity that is not sha512": S.npm_pin_check(TGZ, integrity="sha1-" + "A" * 27 + "="),
+           "no integrity": S.npm_pin_check(TGZ, integrity="")}
+check("C5d npm_pin_check: a changed byte or another sha256 is blocked:pin-mismatch; an integrity that is not a sha512 SRI "
+      "is blocked:unparsable-integrity",
+      ok(lambda: pin_bad["a changed byte"].get("blocked") == "blocked:pin-mismatch"
+         and pin_bad["another sha256"].get("blocked") == "blocked:pin-mismatch"
+         and pin_bad["an integrity that is not sha512"].get("blocked") == "blocked:unparsable-integrity"
+         and pin_bad["no integrity"].get("blocked") == "blocked:unparsable-integrity"), str(pin_bad)[:500])
+mem = S.tar_members(TGZ)
+check("C5d tar_members: every member read in memory, never extracted - name, type, size and a file's sha256",
+      ok(lambda: mem["ok"] is True and mem["value"]["members"] == [
+          {"name": "package/package.json", "type": "file", "size": len(json.dumps(PJ).encode("utf-8")),
+           "sha256": hashlib.sha256(json.dumps(PJ).encode("utf-8")).hexdigest()},
+          {"name": "package/dist/index.js", "type": "file", "size": 17, "sha256": hashlib.sha256(b"module.exports={}").hexdigest()},
+          {"name": "package/bin/cli.js", "type": "file", "size": 19, "sha256": hashlib.sha256(b"#!/usr/bin/env node").hexdigest()}]
+         and mem["value"]["unsafe"] == [] and not (TMP / "package").exists()), str(mem)[:500])
+unsafe = {"a climbing name": S.tar_members(make_tgz({"package/../../evil.js": b"x"})),
+          "an absolute name": S.tar_members(make_tgz({"/etc/evil": b"x"})),
+          "a drive": S.tar_members(make_tgz({"C:/evil.js": b"x"})),
+          "a symlink": S.tar_members(make_tgz({"package/package.json": b"{}"}, links={"package/link": "../../outside"}))}
+check("C5d tar_members: a member that climbs out, an absolute one, or a link is blocked:unsafe-member, each named - "
+      "nothing is written either way",
+      ok(lambda: all(v.get("blocked") == "blocked:unsafe-member" for v in unsafe.values())
+         and unsafe["a climbing name"]["unsafe"] == ["package/../../evil.js"] and unsafe["a symlink"]["unsafe"] == ["package/link"]),
+      str(unsafe)[:500])
+check("C5d tar_members: bytes that are not a gzip tarball are blocked:unparsable-tarball",
+      ok(lambda: S.tar_members(b"not a tarball").get("blocked") == "blocked:unparsable-tarball"))
+pkg = S.npm_package_json(TGZ)
+check("C5d npm_package_json: the package root's package.json as data - name, version, main, bin, scripts with the "
+      "install-time ones named, dependencies, engines",
+      ok(lambda: pkg["ok"] is True and pkg["value"] == {
+          "root": "package", "name": "some-server", "version": "0.0.8", "main": "dist/index.js",
+          "bin": {"some-server": "bin/cli.js"}, "scripts": PJ["scripts"],
+          "install_scripts": {"postinstall": "node scripts/fetch.js", "prepare": "husky"},
+          "dependencies": {"express": "^4.19.0"}, "engines": {"node": ">=18"}}), str(pkg)[:500])
+pkg_root = S.npm_package_json(make_tgz({"some-server-0.0.8/package.json": json.dumps(PJ).encode("utf-8")}))
+check("C5d npm_package_json: the package root is the tarball's own, whatever its name ('package/' only as a rule)",
+      ok(lambda: pkg_root["ok"] is True and pkg_root["value"]["root"] == "some-server-0.0.8"), str(pkg_root)[:300])
+pkg_bad = {"none": S.npm_package_json(make_tgz({"package/index.js": b"x"})),
+           "two roots": S.npm_package_json(make_tgz({"a/package.json": b"{}", "b/package.json": b"{}"})),
+           "not JSON": S.npm_package_json(make_tgz({"package/package.json": b"{nope"})),
+           "a list": S.npm_package_json(make_tgz({"package/package.json": b"[1]"}))}
+check("C5d npm_package_json: none at a package root is blocked:source-missing, two roots ambiguous, a body that is not "
+      "a JSON object blocked:unparsable - a nested package.json is not the package's",
+      ok(lambda: pkg_bad["none"].get("blocked") == "blocked:source-missing:npm_package_json"
+         and pkg_bad["two roots"].get("blocked") == "blocked:source-ambiguous:npm_package_json"
+         and pkg_bad["not JSON"].get("blocked") == "blocked:unparsable:npm_package_json"
+         and pkg_bad["a list"].get("blocked") == "blocked:unparsable:npm_package_json"
+         and S.npm_package_json(make_tgz({"package/package.json": json.dumps(PJ).encode(),
+                                          "package/node_modules/x/package.json": b"{}"}))["ok"] is True),
+      str(pkg_bad)[:500])
 check("C4A-8 / C5A-8: no verdict raised on any row - every failure came back as a field", RAISED == [], str(RAISED))
 _cleanup()
 print(f"\nv3 probe a8: {PASSED} passed, {FAILED} failed")

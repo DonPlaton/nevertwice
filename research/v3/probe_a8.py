@@ -40,6 +40,9 @@ This part (C5a) holds the verdicts; they read records, never a product:
 * C5f (the auditor's Q-C5-6, Q-C5-7): Claude Code's offered tools read from its package by a pattern declared
   first (cc_offered_tools; any count but one is attempt 2, a discovery spawn), recorded for launch's D7
   (record_cc_offered), and its CLAUDE_CONFIG_DIR names from the probe's discovery spawn (cc_config_names);
+* C5d (the auditor's Q-C5d-1 = O-c): an npm tarball's generic facts, read in memory and never extracted - its pin
+  (npm_pin_check: sha512 integrity and sha256), its members (tar_members, unsafe ones named) and its
+  package.json (npm_package_json, install scripts named); supermemory's product facts wait for 0.0.7's window;
 * ``verdict``: "pass" only when every field is ok, there is no problem, every boundary check is complete with 0/0 and
   no catcher line belongs to the arm; else the first blocked:<reason> - the fields in their declared order, then the
   problems - else "fail". The proxy's own spawn is unwitnessed by design (launch.spawn_proxy): 0/0 covers the product
@@ -48,18 +51,21 @@ This part (C5a) holds the verdicts; they read records, never a product:
 from __future__ import annotations
 
 import ast
+import base64
 import hashlib
 import importlib.util
+import io
 import json
 import os
 import re
 import secrets as _secrets
 import sys
+import tarfile
 import textwrap
 import time
 from dataclasses import dataclass, field
 from types import SimpleNamespace
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Iterable, Mapping, Sequence
 
 #: The adapter's start answer when mem0's own OpenAI client is wrapped (research/v3/arms/arm_mem0.py, Q-AB-1).
@@ -994,6 +1000,99 @@ def cc_config_names(spawns_log: str | os.PathLike, spawn_id: str) -> dict:
     entries = list(cfg.get("entries") or [])
     return {"value": sorted(x["name"] for x in entries), "entries": entries, "binary_sha256": cc.get("sha256"),
             "source": f"{p.name}:{spawn_id}"}
+
+
+# ── C5d (the auditor's Q-C5d-1 = O-c): an npm tarball's generic facts, read in memory, never extracted ─────────────
+#: The product facts of supermemory-local wait for their basis - the previous release, read as data in its own declared
+#: window before the pinned one (the letta rule); these parts need none: the pin, the members, the package.json.
+
+_NPM_SRI = re.compile(r"sha512-[A-Za-z0-9+/]{86}==")
+#: the npm lifecycle scripts an install runs (named as data - nothing here runs one)
+NPM_INSTALL_SCRIPTS = ("preinstall", "install", "postinstall", "prepare")
+
+
+def npm_pin_check(tgz: bytes, *, integrity: str, sha256: str | None = None) -> dict:
+    """The tarball against its pin: its sha512 as npm's integrity writes it ("sha512-<base64>") must equal the
+    registry's, and its sha256 the pin's when one is given - both recorded with the size. Another value is
+    blocked:pin-mismatch; an integrity that is not a sha512 SRI is blocked:unparsable-integrity."""
+    rule = "the tarball's sha512 equals the registry's integrity, its sha256 the pin's"
+    if not (isinstance(integrity, str) and _NPM_SRI.fullmatch(integrity)):
+        return _field(None, rule=rule, ok=False, failed=f"integrity {integrity!r}", blocked="blocked:unparsable-integrity")
+    got = {"integrity": "sha512-" + base64.b64encode(hashlib.sha512(tgz).digest()).decode("ascii"),
+           "sha256": hashlib.sha256(tgz).hexdigest(), "size": len(tgz)}
+    if got["integrity"] != integrity or (sha256 is not None and got["sha256"] != sha256):
+        out = _field(None, rule=rule, ok=False, failed="the tarball is not the pinned one", blocked="blocked:pin-mismatch")
+        out["got"] = got
+        return out
+    return _field(got, rule=rule, ok=True)
+
+
+def _tar(tgz: bytes) -> tarfile.TarFile | None:
+    try:
+        return tarfile.open(fileobj=io.BytesIO(tgz), mode="r:gz")
+    except (tarfile.TarError, OSError, EOFError):
+        return None
+
+
+def tar_members(tgz: bytes) -> dict:
+    """Every member of the tarball, read in memory (tarfile over gzip) and never extracted: name, type, size and a
+    file's sha256, in the archive's order. A name that is absolute, has a drive or climbs out (".."), or a link, is
+    blocked:unsafe-member with each named - data either way, nothing is written. Not a gzip tarball:
+    blocked:unparsable-tarball."""
+    rule = "every member read in memory, none unsafe"
+    tf = _tar(tgz)
+    if tf is None:
+        return _field(None, rule=rule, ok=False, failed="not a gzip tarball", blocked="blocked:unparsable-tarball")
+    members, unsafe = [], []
+    try:
+        for m in tf.getmembers():
+            kind = ("file" if m.isfile() else "dir" if m.isdir() else "symlink" if m.issym() else
+                    "hardlink" if m.islnk() else "other")
+            row = {"name": m.name, "type": kind, "size": m.size}
+            if m.isfile():
+                row["sha256"] = hashlib.sha256(tf.extractfile(m).read()).hexdigest()
+            members.append(row)
+            parts = PurePosixPath(m.name.replace("\\", "/")).parts
+            if (m.name.startswith(("/", "\\")) or re.match(r"^[A-Za-z]:", m.name) or ".." in parts
+                    or kind in ("symlink", "hardlink", "other")):
+                unsafe.append(m.name)
+    except (tarfile.TarError, OSError, EOFError):
+        return _field(None, rule=rule, ok=False, failed="the tarball does not read to its end",
+                      blocked="blocked:unparsable-tarball")
+    if unsafe:
+        out = _field({"members": members, "unsafe": unsafe}, rule=rule, ok=False, failed=f"unsafe members {unsafe}",
+                     blocked="blocked:unsafe-member")
+        out["unsafe"] = unsafe
+        return out
+    return _field({"members": members, "unsafe": []}, rule=rule, ok=True)
+
+
+def npm_package_json(tgz: bytes) -> dict:
+    """The package's own package.json - the one at the package root ("<root>/package.json", npm's "package/" as a rule),
+    read in memory as data: name, version, main, bin, scripts with the install-time ones named (NPM_INSTALL_SCRIPTS),
+    dependencies, engines. None at a root is blocked:source-missing, two roots ambiguous, a body that is not a JSON
+    object blocked:unparsable; a nested package.json (a vendored dependency's) is not the package's."""
+    field = "npm_package_json"
+    rule = "exactly one package.json at the package root, a JSON object"
+    tf = _tar(tgz)
+    if tf is None:
+        return _field(None, rule=rule, ok=False, failed="not a gzip tarball", blocked=f"blocked:unparsable:{field}")
+    try:
+        roots = [m for m in tf.getmembers() if m.isfile() and len(PurePosixPath(m.name).parts) == 2
+                 and PurePosixPath(m.name).name == "package.json"]
+        if len(roots) != 1:
+            return _field(None, rule=rule, ok=False, failed=f"{len(roots)} package.json at a root",
+                          blocked=f"blocked:source-{'missing' if not roots else 'ambiguous'}:{field}")
+        d = json.loads(tf.extractfile(roots[0]).read().decode("utf-8"))
+    except (tarfile.TarError, OSError, EOFError, UnicodeDecodeError, ValueError):
+        d = None
+    if not isinstance(d, dict):
+        return _field(None, rule=rule, ok=False, failed="package.json is not a JSON object", blocked=f"blocked:unparsable:{field}")
+    scripts = d.get("scripts") if isinstance(d.get("scripts"), dict) else {}
+    value = {"root": PurePosixPath(roots[0].name).parts[0], **{k: d.get(k) for k in ("name", "version", "main", "bin")},
+             "scripts": scripts, "install_scripts": {k: scripts[k] for k in NPM_INSTALL_SCRIPTS if k in scripts},
+             **{k: d.get(k) for k in ("dependencies", "engines")}}
+    return _field(value, rule=rule, ok=True)
 
 
 def formats(sites: Mapping) -> dict:
