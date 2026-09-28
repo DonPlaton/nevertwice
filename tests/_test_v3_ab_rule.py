@@ -77,13 +77,30 @@ except ValueError:
     check("the rule wants exactly two runs of each leg", True)
 _added = getattr(A, "added_over", None)
 check("Q-AB-2: added_over - each sample over the baseline's MEDIAN (not its mean), never below 0",
-      _added is not None and _added([5.0, 12.0, 2.0], [1.0, 2.0, 30.0]) == [3.0, 10.0, 0.0],
-      str(_added([5.0, 12.0, 2.0], [1.0, 2.0, 30.0]) if _added else None))
+      _added is not None and _added([5.0, 12.0, 2.0, 1.0], [1.0, 2.0, 30.0]) == [3.0, 10.0, 0.0, 0.0],
+      str(_added([5.0, 12.0, 2.0, 1.0], [1.0, 2.0, 30.0]) if _added else None))
 try:
     _added([1.0], [])
     check("Q-AB-2: added_over refuses an empty baseline (no median, no figure)", False)
 except (ValueError, TypeError) as e:
     check("Q-AB-2: added_over refuses an empty baseline (no median, no figure)", _added is not None, repr(e))
+_calls: list = []
+_real_added = A.added_over
+
+
+def _spy(samples, baseline):
+    _calls.append((samples, baseline))
+    return _real_added(samples, baseline)
+
+
+A.added_over = _spy
+try:
+    A.hop_benchmark(n=10)
+finally:
+    A.added_over = _real_added
+check("HOP-4 (the auditor): hop_benchmark takes each mode's added time over the DIRECT samples - one baseline list for "
+      "both modes, never the mode's own samples", len(_calls) == 2 and _calls[0][1] is _calls[1][1]
+      and all(s is not b and len(s) == 10 and len(b) == 10 for s, b in _calls), str([(len(s), len(b)) for s, b in _calls]))
 hop = A.hop_benchmark(n=40)
 check("the hop microbenchmark reports added p50/p95 for raw-forward and recording",
       all(k in hop and hop[k]["n"] == 40 and hop[k]["p50_ms"] >= 0 and hop[k]["p95_ms"] >= hop[k]["p50_ms"]

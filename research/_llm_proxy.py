@@ -1542,6 +1542,13 @@ class Proxy:
             self._flag(arm.arm, "thinking_call", rec["request_key"])
         self._write_call(rec)
 
+    def counters_snapshot(self) -> dict:
+        """/counters' body: every arm's counters copied under the lock - catcher_hosts and catcher_open move together,
+        and every list and dict is a copy, so a json.dumps outside the lock never walks a live container (HOP-2)."""
+        with self._lock:
+            return {a: {k: (list(v) if isinstance(v, list) else dict(v) if isinstance(v, dict) else v)
+                        for k, v in vars(c).items()} for a, c in self.counters.items()}
+
     def _own_hop(self, ctr: Counters, ms: float) -> None:
         """Q-AB-2: one own-hop sample, in memory only; past OWN_HOP_CAP it is counted as dropped, never kept."""
         with self._lock:
@@ -1770,9 +1777,7 @@ class Proxy:
         if path == "/health":
             out = {"ok": True}
         elif path == "/counters":
-            with self._lock:                            # a snapshot: catcher_hosts and catcher_open move together
-                out = {a: {k: (list(v) if isinstance(v, list) else dict(v) if isinstance(v, dict) else v)
-                           for k, v in vars(c).items()} for a, c in self.counters.items()}
+            out = self.counters_snapshot()
         elif path == "/flags":
             out = dict(self.flags)
         elif path == "/ollama":

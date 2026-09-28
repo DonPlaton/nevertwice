@@ -135,13 +135,14 @@ def contract(tag):
                       system_dirs=(Path(sys.executable).parent,)), base
 
 
-def install(tag, routes, specs, imports, dists):
+def install(tag, routes, specs, imports, dists, parent_env=None):
     srv = TF.TlsHttpServer(made[0], made[1], routes)
     hop = TF.TunnelHop(srv.port)
     c, base = contract(tag)
     try:
         rec = LI.run_lock_install(c, L, F, python=Path(sys.executable), venv=c.polygon_root / "t_v3", venv_name="t_v3",
-                                  run="l1", via_port=hop.port, parent_env=os.environ, specs=specs, imports=imports,
+                                  run="l1", via_port=hop.port, parent_env=parent_env or os.environ, specs=specs,
+                                  imports=imports,
                                   dists=dists, native=L.NativeEgressWitness(sampler=AnySampler(), tick_s=60, jobs=None),
                                   fs=L.FsWitness([L.WatchSpec("watched", base / "watched")]),
                                   child_env_extra={"SSL_CERT_FILE": str(made[0]), "PIP_CERT": str(made[0])},
@@ -159,8 +160,10 @@ B1, B2 = wheel("nvt3b", "0.1.0"), wheel("nvt3b", "0.2.0")
 CLEAN = {"complete": True, "native_hits": 0, "loopback_hits": 0, "fs_hits": 0}
 
 print("- E1, E2: a whole lock install -")
+POISON = {"PIP_INDEX_URL": "https://evil.example/simple", "PIP_EXTRA_INDEX_URL": "https://evil.example/extra",
+          "PIP_CONFIG_FILE": str(TMP / "evil_pip.ini"), "PIP_FIND_LINKS": "https://evil.example/links"}
 rec, C, BASE = install("ok", index({"nvt3a": [A], "nvt3b": [B1, B2]}), ["nvt3a==1.0.0"], ["nvt3a", "nvt3b"],
-                       ["nvt3a", "nvt3b"])
+                       ["nvt3a", "nvt3b"], parent_env={**os.environ, **POISON})
 sha = {fn: hashlib.sha256(d).hexdigest() for fn, d in (A, B1, B2)}
 check("E1: the install has no problem", rec.get("problems") == [], str(rec.get("problems")))
 check("E1: pip's own resolver picked the tree - nvt3a 1.0.0 and its dependency nvt3b at the newest 0.2.0 - and the lock "
@@ -186,6 +189,18 @@ check("E2: the offline install is one spawn with no proxy variable, --no-index a
       and "--no-index" in (rec.get("install_argv") or []) and (rec.get("install_argv") or [""])[-1].endswith("lock.txt"),
       str(offline[:1])[:200] + str(rec.get("install_argv"))[:200])
 check("E1: the record is written", (C.runs_root / "_install" / "a8-pypi-t_v3" / "l1" / "install_record.json").is_file())
+venv_py = LI._iv().venv_python(C.polygon_root / "t_v3")
+pip_children = [s for s in spawns if "PIP_CACHE_DIR" in s.get("env_names", []) or (s.get("role") == "install" and s.get("arm") == "pip")]
+check("E2b (the auditor): pip runs on the venv's own interpreter (never the harness's), isolated (-I), and no PIP_* of the "
+      "parent's environment - PIP_INDEX_URL, PIP_EXTRA_INDEX_URL, PIP_CONFIG_FILE, PIP_FIND_LINKS were set there - "
+      "reaches either pip child; only the window's own declared PIP_* reach the resolving one",
+      len(pip_children) == 2
+      and all(os.path.normcase(os.path.realpath((s.get("binary") or {}).get("path", ""))) ==
+              os.path.normcase(os.path.realpath(venv_py)) for s in pip_children)
+      and (rec.get("install_argv") or [None, None])[1] == "-I"
+      and not any(n in POISON for n in offline[0]["env_names"]) if offline else False,
+      str([((s.get("binary") or {}).get("path"), [n for n in s.get("env_names", []) if n.startswith("PIP_")])
+           for s in pip_children])[:400])
 
 print("\n- E3: attempt 1 takes wheels only -")
 sd = ("nvt3c-1.0.0.tar.gz", b"not a wheel")

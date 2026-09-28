@@ -921,6 +921,8 @@ class PayUpstream(HopUpstream):
     """/v1/chat/completions/pay answers 402, as DeepSeek does when the balance is gone; /forbidden 403, /key 401."""
 
     def _serve(self, c, path):
+        if path.startswith(b"/v1/chat/completions/close"):   # HOP-1: the upstream closes before its first byte
+            return False
         for tail, code in ((b"/pay", b"402 Payment Required"), (b"/forbidden", b"403 Forbidden"), (b"/key", b"401 Unauthorized")):
             if path.startswith(b"/v1/chat/completions" + tail):
                 err = b'{"error":{"message":"no"}}'
@@ -951,6 +953,27 @@ call(pports["arms"]["mem0-raw"]["write"], "/u/u1/v1/chat/completions", HOP_BODY,
 check("... a request the proxy itself refused (401, no upstream) is not an upstream status",
       dict(getattr(pp.counters["mem0-raw"], "upstream_statuses", None) or {}).get("401") == 1
       and pp.counters["mem0-raw"].refused_auth == 1)
+before = {a: (len(pp.counters[a].own_hop_ms), pp.counters[a].upstream_errors) for a in st}
+for arm, tok in (("mem0", T_ARM), ("mem0-raw", T_RAW)):
+    call(pports["arms"][arm]["write"], "/u/u1/v1/chat/completions/close", HOP_BODY, token=tok)
+after = {a: (len(pp.counters[a].own_hop_ms), pp.counters[a].upstream_errors) for a in st}
+check("HOP-1 (the auditor): an upstream that closes before its first byte adds no own-hop sample, raw and record alike "
+      "- it is an upstream error, never a hop",
+      all(after[a][0] == before[a][0] and after[a][1] == before[a][1] + 1 for a in st), f"{before} -> {after}")
+snap_fn = getattr(pp, "counters_snapshot", None)
+snap = snap_fn() if callable(snap_fn) else {}
+live_st, live_hop = pp.counters["mem0"].upstream_statuses, pp.counters["mem0"].own_hop_ms
+frozen = json.dumps(snap, sort_keys=True)
+call(pports["arms"]["mem0"]["write"], "/u/u1/v1/chat/completions/pay", HOP_BODY, token=T_ARM)
+call(pports["arms"]["mem0"]["write"], "/u/u1/v1/chat/completions", HOP_BODY, token=T_ARM)
+check("HOP-2 (the auditor's O-a): Proxy.counters_snapshot() copies every container under the lock - its dicts and lists "
+      "are not the live ones, and later calls do not change it (so /counters' json.dumps never walks a live dict)",
+      snap and snap["mem0"]["upstream_statuses"] is not live_st and snap["mem0"]["own_hop_ms"] is not live_hop
+      and json.dumps(snap, sort_keys=True) == frozen and snap["mem0"]["upstream_statuses"] != dict(live_st),
+      str(snap.get("mem0", {}).get("upstream_statuses")))
+pc2 = json.loads(call(pports["control"], "/counters", {}, token="ctl-token").partition(b"\r\n\r\n")[2] or b"{}")
+check("HOP-2: /counters answers with that snapshot", pc2.get("mem0", {}).get("upstream_statuses")
+      == dict(pp.counters["mem0"].upstream_statuses), str(pc2.get("mem0", {}).get("upstream_statuses")))
 pp.stop()
 pu.close()
 
