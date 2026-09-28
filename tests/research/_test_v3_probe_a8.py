@@ -667,6 +667,13 @@ check("C6: the user prompt's sections by the AST - each append's constant bytes 
           (len("## New Messages\n"), ["_format_new_messages(new_messages)"], False),
           (len("## Custom Instructions\n"), ["custom_instructions"], True),
           (len("## Language\nkeep it"), [], True), (len("# Output:"), [], False)]), str(up)[:400])
+(M3 / "mem0/configs/prompts.py").write_bytes(FILES3["mem0/configs/prompts.py"].replace(b'f\"## New Messages\\n{', "f\"## Nouveaux Messages \u00e9\\n{".encode("utf-8")))
+try:
+    up17 = ((S.mem0_bound_facts(M3).get("m0_user_prompt") or {}).get("value") or {}).get("parts") or []
+finally:
+    (M3 / "mem0/configs/prompts.py").write_bytes(FILES3["mem0/configs/prompts.py"])
+check("B17: an f-string section's non-ASCII constant is counted in bytes, never in characters",
+      ok(lambda: up17[2]["const_bytes"] == len("## Nouveaux Messages \u00e9\n".encode("utf-8"))), str(up17[2:3]))
 check("C6: the add path's own top_k - the search that fills existing memories, not the entity search's top_k=1; a bare "
       "top_k= would be ambiguous", ok(lambda: val["m0_top_k"] == "10" and S.fact_in(S.scope(M3, "mem0/memory/main.py",
                                           "Memory._add_to_vector_store", name="t"), r"top_k=(\d+)", name="t").get("blocked")
@@ -680,6 +687,9 @@ check("the declared bound facts, written out, all relative paths",
                                             "m0_top_k", "m0_trunc_limit", "m0_trunc_used", "m0_memory_item",
                                             "m0_memory_dump", "m0_message_frame"}
          and all(not Path(v[0]).is_absolute() for v in P.M0_BOUND_SOURCE.values())))
+
+
+PRO, MAI = FILES3["mem0/configs/prompts.py"], FILES3["mem0/memory/main.py"]
 
 
 def bound_with(rel, data):
@@ -712,11 +722,64 @@ for label, rel, data, want in (
          "blocked:source-changed:m0_system_prompt"),
         ("two system prompts", "mem0/configs/prompts.py",
          FILES3["mem0/configs/prompts.py"] + b'\nADDITIVE_EXTRACTION_PROMPT = "again"\n', "blocked:source-ambiguous:m0_system_prompt"),
+        ("B6: parse_messages with no role frame", "mem0/memory/utils.py",
+         b"def parse_messages(messages):\n    return \"\".join(m[\"content\"] for m in messages)\n", "m0_message_frame"),
+        ("B8: a system prompt that is bytes", "mem0/configs/prompts.py",
+         PRO.replace(b'ADDITIVE_EXTRACTION_PROMPT = """' + SYS_PROMPT.encode("utf-8") + b'"""',
+                     b'ADDITIVE_EXTRACTION_PROMPT = b"plain bytes"'), "blocked:source-changed:m0_system_prompt"),
+        ("B8: a system prompt that is a number", "mem0/configs/prompts.py",
+         PRO.replace(b'ADDITIVE_EXTRACTION_PROMPT = """' + SYS_PROMPT.encode("utf-8") + b'"""',
+                     b"ADDITIVE_EXTRACTION_PROMPT = 123"), "blocked:source-changed:m0_system_prompt"),
+        ("B11: the prompt call with **extra", "mem0/memory/main.py",
+         MAI.replace(b"custom_instructions=custom_instr,", b"custom_instructions=custom_instr, **extra,"),
+         "blocked:source-changed:m0_prompt_call"),
+        ("B11: the prompt call with a positional", "mem0/memory/main.py",
+         MAI.replace(b"generate_additive_extraction_prompt(\n", b"generate_additive_extraction_prompt(\n            summary,\n"),
+         "blocked:source-changed:m0_prompt_call"),
+        ("B12: two calls of the prompt builder", "mem0/memory/main.py",
+         MAI + b"        again = generate_additive_extraction_prompt(existing_memories=[])\n",
+         "blocked:source-ambiguous:m0_prompt_call"),
+        ("B14: a section appended from a variable", "mem0/configs/prompts.py",
+         PRO.replace(b'sections.append("# Output:")', b'sections.append(header)'), "blocked:source-changed:m0_user_prompt"),
+        ("B16: two joins of the sections", "mem0/configs/prompts.py",
+         PRO.replace(b'    return "\\n\\n".join(sections)', b'    x = "\\n".join(sections)\n    return "\\n\\n".join(sections)'),
+         "blocked:source-ambiguous:m0_user_prompt"),
+        ("C6C1-1: sections.extend", "mem0/configs/prompts.py",
+         PRO.replace(b'sections.append("# Output:")', b'sections.extend(["# Output:"])'), "blocked:source-changed:m0_user_prompt"),
+        ("C6C1-1: sections.insert", "mem0/configs/prompts.py",
+         PRO.replace(b'sections.append("# Output:")', b'sections.insert(0, "# Output:")'), "blocked:source-changed:m0_user_prompt"),
+        ("C6C1-1: sections +=", "mem0/configs/prompts.py",
+         PRO.replace(b'sections.append("# Output:")', b'sections += ["# Output:"]'), "blocked:source-changed:m0_user_prompt"),
+        ("C6C1-1: a non-empty initial list", "mem0/configs/prompts.py",
+         PRO.replace(b"    sections = []\n", b'    sections = ["# Preface"]\n'), "blocked:source-changed:m0_user_prompt"),
+        ("C6C1-1: an assignment by index", "mem0/configs/prompts.py",
+         PRO.replace(b'sections.append("# Output:")', b'sections.append("# Output:")\n    sections[0] = "x"'),
+         "blocked:source-changed:m0_user_prompt"),
+        ("C6C1-1: an alias that appends", "mem0/configs/prompts.py",
+         PRO.replace(b'sections.append("# Output:")', b's = sections\n    s.append("# Output:")'), "blocked:source-changed:m0_user_prompt"),
+        ("C6C1-1: sections passed to a function", "mem0/configs/prompts.py",
+         PRO.replace(b'sections.append("# Output:")', b'_add_output(sections)'), "blocked:source-changed:m0_user_prompt"),
+        ("C6C1-1: an annotated non-empty initial list", "mem0/configs/prompts.py",
+         PRO.replace(b"    sections = []\n", b'    sections: list = ["# Preface"]\n'), "blocked:source-changed:m0_user_prompt"),
+        ("C6C1-1: a bound append", "mem0/configs/prompts.py",
+         PRO.replace(b'sections.append("# Output:")', b'add = sections.append\n    add("# Output:")'),
+         "blocked:source-changed:m0_user_prompt"),
+        ("B14: a section appended from a declared field, not a literal", "mem0/configs/prompts.py",
+         PRO.replace(b'sections.append("# Output:")', b'sections.append(custom_instructions)'),
+         "blocked:source-changed:m0_user_prompt"),
         ("no truncation of the history lines", "mem0/configs/prompts.py",
          FILES3["mem0/configs/prompts.py"].replace(b"{_truncate_content(content)}", b"{content}"),
          "blocked:source-missing:m0_trunc_used")):
     got = bound_with(rel, data)
     check(f"C6: {label} makes no bound - named ({want})", ok(lambda: any(want in x for x in got)), str(got)[:300])
+(M3 / "mem0/configs/prompts.py").write_bytes(PRO.replace(b'sections.append("# Output:")', b'sections.extend(["# Output:"])'))
+try:
+    upx = S.mem0_bound_facts(M3).get("m0_user_prompt") or {}
+finally:
+    (M3 / "mem0/configs/prompts.py").write_bytes(PRO)
+LN_OUT = 1 + next(i for i, x in enumerate(PRO.split(b"\n")) if b'sections.append("# Output:")' in x)
+check("C6C1-1: the blocked user prompt names each other use of sections by its file line",
+      ok(lambda: upx["uses"] == [f"line {LN_OUT}: sections.extend"]), str(upx)[:300])
 check("C4A-8 / C5A-8: no verdict raised on any row - every failure came back as a field", RAISED == [], str(RAISED))
 _cleanup()
 print(f"\nv3 probe a8: {PASSED} passed, {FAILED} failed")

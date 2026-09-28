@@ -354,8 +354,16 @@ def prompt_parts(sc: Mapping, *, field: str) -> dict:
     tree = ast.parse(textwrap.dedent(sc["text"]))
     parts: list = []
 
+    def is_append(n: ast.AST) -> bool:
+        return isinstance(n, ast.Call) and _dotted(n.func) == "sections.append" and len(n.args) == 1
+
+    def is_join(n: ast.AST) -> bool:
+        return (isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute) and n.func.attr == "join"
+                and isinstance(n.func.value, ast.Constant) and bool(n.args) and isinstance(n.args[0], ast.Name)
+                and n.args[0].id == "sections")
+
     def walk(node: ast.AST, under_if: bool) -> None:
-        if (isinstance(node, ast.Call) and _dotted(node.func) == "sections.append" and len(node.args) == 1):
+        if is_append(node):
             a = node.args[0]
             if isinstance(a, ast.Constant) and isinstance(a.value, str):
                 parts.append({"const_bytes": len(a.value.encode("utf-8")), "fields": [], "conditional": under_if})
@@ -368,9 +376,21 @@ def prompt_parts(sc: Mapping, *, field: str) -> dict:
         for child in ast.iter_child_nodes(node):
             walk(child, under_if or isinstance(node, ast.If))
     walk(tree, False)
-    joins = [n for n in ast.walk(tree) if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
-             and n.func.attr == "join" and isinstance(n.func.value, ast.Constant) and n.args
-             and isinstance(n.args[0], ast.Name) and n.args[0].id == "sections"]
+    joins = [n for n in ast.walk(tree) if is_join(n)]
+    # C6C1-1 (the auditor): a section added any other way than append would be uncounted. Held as the list of the
+    # allowed USES of the name, not of the forbidden writes: ``sections`` may appear only as the target of
+    # ``sections = []``, the receiver of an append the walk above counts, and the argument of a join the joins above
+    # count - the same predicates, so nothing is allowed that is not counted. Any other use - another method, an
+    # augmented or annotated assignment, a non-empty value, an index, an alias, a bound method, an argument that may
+    # write it - is blocked:source-changed
+    allowed = {id(n.func.value) for n in ast.walk(tree) if is_append(n)} | {id(n.args[0]) for n in joins}
+    allowed |= {id(n.targets[0]) for n in ast.walk(tree) if isinstance(n, ast.Assign) and len(n.targets) == 1
+                and isinstance(n.targets[0], ast.Name) and isinstance(n.value, ast.List) and not n.value.elts}
+    parent = {id(c): n for n in ast.walk(tree) for c in ast.iter_child_nodes(n)}
+    other = sorted({f"line {sc['first_line'] + n.lineno - 1}: {ast.unparse(parent[id(n)])[:80]}"
+                    for n in ast.walk(tree) if isinstance(n, ast.Name) and n.id == "sections" and id(n) not in allowed})
+    if other:
+        return {"value": None, "uses": other, "blocked": f"blocked:source-changed:{field}"}
     if not parts or len(joins) != 1:
         return {"value": None, "blocked": f"blocked:source-{'missing' if not parts or not joins else 'ambiguous'}:{field}"}
     unknown = sorted({f for x in parts for f in x["fields"]} - M0_PROMPT_FIELDS)
