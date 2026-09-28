@@ -403,6 +403,10 @@ class WallCapGate:
 
 # ── part 2b: the smoke run ─────────────────────────────────────────────────────────────────────────────────────
 
+#: B-SMOKE-FLAGS: the proxy's flag kinds that are also P0h counts (accounting.proxy_boundary_inputs) - one event each.
+P0H_FLAGS = {"canary": "canary_hits", "owner_marker": "owner_marker_hits"}
+
+
 def cl100k_max_token_bytes(bpe_file: str | os.PathLike) -> int:
     """The longest token of the pinned cl100k vocabulary in bytes - the bound's B (FORECAST_FORMULA)."""
     import base64  # noqa: PLC0415
@@ -449,9 +453,11 @@ def run_smoke(cfg: RunConfig, *, stand: str, arm_names: Sequence[str], runs: Seq
     the homes, the scheduler and the proxy, the proxy, the hooks and the incident gate under the stand's wall ceiling,
     the scheduler's stand, then the gate and the proxy stopped (in that order: the gate's last poll may probe), the
     summary printed as SMOKE_FIELDS lines and written under <runs>/<stand id>/_smoke/ (summary.json, and run.json with
-    each arm-run's P0h counters and every problem). 0 only when the stand completed, no failure counter
-    (run_v3_smoke.iter_problems) and no P0h counter is above 0, the proxy stopped by itself and STATUS self-checks
-    clean; every problem goes to stderr by name."""
+    each arm-run's P0h counters, the proxy's flags by arm and kind, and every problem). 0 only when the stand completed,
+    no failure counter (run_v3_smoke.iter_problems), no P0h counter and no proxy flag (B-SMOKE-FLAGS: every
+    zero-tolerance kind - model_mismatch, tool_violation, canary, owner_marker, thinking_call, unparsable,
+    home_canary_missing) is above 0, the proxy stopped by itself and STATUS self-checks clean; every problem goes to
+    stderr by name."""
     c, L = deps.contract, deps.L
     if stand not in SMOKE_STANDS:
         raise CLIError(f"a smoke of {stand} is not possible yet - only {SMOKE_STANDS} (templates.PENDING, §5.6)")
@@ -554,10 +560,25 @@ def run_smoke(cfg: RunConfig, *, stand: str, arm_names: Sequence[str], runs: Seq
     log = AC.load_proxy(h.run_dir)
     boundary = {f"{a}/{r}": AC.proxy_boundary_inputs(log.calls, log.catcher, arm=a, run=r) for a in arms for r in runs}
     record["boundary"] = boundary
+    # B-SMOKE-FLAGS (the auditor): every zero-tolerance flag the proxy wrote is a problem by kind and arm - a canary or
+    # an owner marker is ONE event with its P0h count (said once, in the P0h line); any other kind stands alone
+    flags: dict[str, dict[str, int]] = {}
+    for fl in log.flags:
+        per = flags.setdefault(str(fl.get("arm")), {})
+        per[str(fl.get("kind"))] = per.get(str(fl.get("kind")), 0) + 1
+    record["flags"] = flags
     for k, b in boundary.items():
-        hit = {f: b[f] for f in ("canary_hits", "owner_marker_hits") if b.get(f)}
+        hit = {f: b[f] for f in P0H_FLAGS.values() if b.get(f)}
         if hit:
-            problems.append(f"P0h: {k} {hit} - a planted canary or an owner marker reached the proxy")
+            arm = k.split("/", 1)[0]
+            same = {kind: flags[arm][kind] for kind in P0H_FLAGS if flags.get(arm, {}).get(kind)}
+            problems.append(f"P0h: {k} {hit} - a planted canary or an owner marker reached the proxy"
+                            + (f" (the same events as {arm}'s flags {same} - counted once)" if same else ""))
+    for a, kinds in sorted(flags.items()):
+        for kind, cnt in sorted(kinds.items()):
+            if kind in P0H_FLAGS and any((boundary.get(f"{a}/{r}") or {}).get(P0H_FLAGS[kind]) for r in runs):
+                continue                                             # said in the P0h line above
+            problems.append(f"flag: {kind} {a} x{cnt}" + (" - with no P0h count" if kind in P0H_FLAGS else ""))
     if res is not None and answer is not None and "blocks" in res:
         try:
             summ = SM.summarize(res, log, stand=stand_id, key_question=answer.key_question,

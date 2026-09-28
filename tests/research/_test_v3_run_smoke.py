@@ -9,6 +9,8 @@ under a temporary launch contract (this suite spawns children):
   and sends its text to its write port - the proxy refuses it and flags it canary, the arm-run's P0h counter is above
   0 in run.json and the exit code 1 names it; the canary's value is written nowhere;
 * SMK-second: the next smoke is S4-smoke-2 at order 2, and a clean one exits 0;
+* B-SMOKE-FLAGS: the proxy's zero-tolerance flags (a fake arm child's model_mismatch, tool_violation and unparsable
+  body) are problems by kind and arm, counted in run.json, exit code 1; a canary is one event with its P0h count;
 * B-ATTEMPT: an attempt that fails after its preflight and before STAND START exits 1 by name and leaves the smoke id
   unspent; the next attempt takes the same id in its own directories (named by its preflight line), never "not fresh".
 
@@ -70,6 +72,16 @@ import base as B
 spec = json.load(open(sys.argv[1], encoding="utf-8"))
 
 
+def send(body):
+    req = urllib.request.Request(os.environ["NVT3_WRITE_URL"], data=body, method="POST",
+                                 headers={"Authorization": "Bearer " + os.environ["NVT3_WRITE_TOKEN"],
+                                          "Content-Type": "application/json"})
+    try:
+        urllib.request.build_opener(urllib.request.ProxyHandler({})).open(req, timeout=20).read()
+    except Exception:
+        pass
+
+
 class H:
     def __init__(self):
         self.items = []
@@ -79,15 +91,14 @@ class H:
         if spec["stage"] == "write" and spec.get("leak"):     # a product that reads its home's CLAUDE.md
             with open(os.path.join(os.environ["HOME"], ".claude", "CLAUDE.md"), encoding="utf-8") as f:
                 text = f.read()
-            body = json.dumps({"model": "deepseek-flash", "thinking": {"type": "disabled"},
-                               "messages": [{"role": "user", "content": "my notes: " + text}]}).encode()
-            req = urllib.request.Request(os.environ["NVT3_WRITE_URL"], data=body, method="POST",
-                                         headers={"Authorization": "Bearer " + os.environ["NVT3_WRITE_TOKEN"],
-                                                  "Content-Type": "application/json"})
-            try:
-                urllib.request.build_opener(urllib.request.ProxyHandler({})).open(req, timeout=20).read()
-            except Exception:
-                pass
+            send(json.dumps({"model": "deepseek-flash", "thinking": {"type": "disabled"},
+                             "messages": [{"role": "user", "content": "my notes: " + text}]}).encode())
+        if spec["stage"] == "write" and spec.get("misbehave"):   # B-SMOKE-FLAGS: three zero-tolerance kinds
+            msg = [{"role": "user", "content": "hello"}]
+            send(json.dumps({"model": "deepseek-v4-pro", "messages": msg}).encode())            # model_mismatch
+            send(json.dumps({"model": "deepseek-flash", "messages": msg,
+                             "tools": [{"type": "function", "function": {"name": "Bash"}}]}).encode())  # tool_violation
+            send(b'{"model": "deepseek-flash", ')                                                 # unparsable
 
     def hello(self):
         return {"protocol": B.PROTOCOL, "arm": spec["arm"], "stage": spec["stage"], "pid": os.getpid()}
@@ -210,12 +221,13 @@ def stop_proxy(h):
     return {"rc": 0 if not left else 1, "killed": False, "shutdown_error": None}
 
 
-def make_launcher_factory(leak: set):
+def make_launcher_factory(leak: set, misbehave: set = frozenset()):
     def make(arm, ar, *, stand_id, proxy, unit_block, unit_chars):
         writes = ar.llm_transport == "cloud:deepseek"
 
         def spec_for(stage, *, stand, run, unit, dirs, write_dirs):
             return {"arm": arm, "stage": stage, "run": run, "unit": unit, "leak": arm in leak,
+                    "misbehave": arm in misbehave,
                     "write_dir": str(write_dirs.cwd) if write_dirs is not None else None}
 
         def declared_for(stage, *, stand, run, unit, dirs, write_dirs):
@@ -227,7 +239,7 @@ def make_launcher_factory(leak: set):
     return make
 
 
-def deps_for(up, *, leak: set, out: list, err: list):
+def deps_for(up, *, leak: set, out: list, err: list, misbehave: set = frozenset()):
     return RV.SmokeDeps(
         contract=C, L=L, native=L.NativeEgressWitness(sampler=Quiet(), tick_s=60, jobs=None),
         fs=L.FsWitness([L.WatchSpec("watched", TMP / "watched")]), clock=SC.SystemClock(), ollama_ctl=None,
@@ -238,7 +250,7 @@ def deps_for(up, *, leak: set, out: list, err: list):
         truncate=lambda text: SimpleNamespace(text=text, truncated=False), templates=(TEMPLATE, TEMPLATE5),
         locomo_question=lambda q, cat: q,
         decl=lambda py, *, arm: {"python": str(py), "arm": arm, "version": "test"},
-        make_launcher=make_launcher_factory(leak), start_proxy=start_proxy, stop_proxy=stop_proxy, post=P.post,
+        make_launcher=make_launcher_factory(leak, misbehave), start_proxy=start_proxy, stop_proxy=stop_proxy, post=P.post,
         proxy_route={"test_upstream": {"host": "127.0.0.1", "port": up.port, "tls": False}},
         now_utc=lambda: "2026-09-28T00:00:00Z", lists_dir=LISTS, s1_sha256=S1["ids_sha256"],
         out=out.append, err=err.append)
@@ -339,6 +351,30 @@ try:
     starts = [x for x in status_text.splitlines() if " STAND S4-smoke-2 START " in x]
     check("SMK-second: the second smoke is S4-smoke-2 at order 2, and a clean one exits 0",
           crash2 is None and rc2 == 0 and len(starts) == 1 and " order=2" in starts[0], f"{crash2} {rc2} {err2[:4]}")
+
+    print("\n- B-SMOKE-FLAGS: the proxy's zero-tolerance flags are the smoke's problems -")
+    out3: list = []
+    err3: list = []
+    try:
+        rc3 = RV.run_smoke(CFG, stand="S4", arm_names=["bm25-floor", "nevertwice"], runs=["r1"],
+                           deps=deps_for(up, leak=set(), misbehave={"nevertwice"}, out=out3, err=err3))
+        crash3 = None
+    except Exception as e:  # noqa: BLE001
+        rc3, crash3 = None, f"{type(e).__name__}: {e}"
+    sd3s = sorted((C.runs_root / "S4-smoke-3" / "_smoke").glob("attempt-*"))
+    run3 = json.loads((sd3s[-1] / "run.json").read_text(encoding="utf-8")) if sd3s else {}
+    fl3 = (run3.get("flags") or {}).get("nevertwice") or {}
+    named = {k for k in ("model_mismatch", "tool_violation", "unparsable")
+             if any(p.startswith(f"problem: flag: {k} nevertwice x") for p in err3)}
+    check("B-SMOKE-FLAGS: a model_mismatch, a tool_violation and an unparsable body from a fake arm child are flagged "
+          "by the proxy; each kind is a problem by name, the exit code is 1, and run.json counts the flags by arm and "
+          "kind", crash3 is None and rc3 == 1 and named == {"model_mismatch", "tool_violation", "unparsable"}
+          and set(fl3) == {"model_mismatch", "tool_violation", "unparsable"} and all(v >= 1 for v in fl3.values())
+          and not (run3.get("flags") or {}).get("bm25-floor"), f"{crash3} {rc3} {fl3} {err3[:5]}")
+    p0h_lines = [p for p in err1 if p.startswith("problem: P0h: nevertwice/r1")]
+    check("B-SMOKE-FLAGS: a canary is one event - the P0h line says it is the same as the arm's canary flags, and no "
+          "separate canary flag problem is added", len(p0h_lines) == 1 and "counted once" in p0h_lines[0]
+          and not any(p.startswith("problem: flag: canary") for p in err1), str(err1[:5]))
 finally:
     up.close()
     shutil.rmtree(TMP, ignore_errors=True)
