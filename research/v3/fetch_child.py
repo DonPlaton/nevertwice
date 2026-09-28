@@ -26,10 +26,12 @@ A job: {"hosts": [exact host names], "max_redirects": 0|1, "requests": [
 A8 C4 adds one more job kind, {"kind": "oci", "repo", "registry", "auth", "service", "cdn_hosts", "hosts", "platform",
 "max_meta_bytes", "max_blob_bytes"} (oci_job, the auditor's Q-C4-1..3): an anonymous pull token for exactly
 repository:<repo>:pull, held in memory only and sent only to the registry; every page of the tags list; the newest
-release ^v?X.Y.Z$ by the numbers, all its tags resolving to one index; that index's one linux/amd64 manifest; the
+release ^v?X.Y.Z$ by the numbers, all its tags resolving to one index; that index's one linux/amd64 manifest - or,
+C4A-6, a plain image manifest whose config says linux/amd64 (checked before any layer; index_digest None); the
 config and each layer by digest, each checked on the disk against its digest and size, a blob redirect followed once
-and only to a declared CDN host, which never gets the token, and whose signed query is never recorded; the digest
-behind "latest" recorded as information only. Files land under <cwd>/oci/blobs/sha256/.
+and only to a declared CDN host over https on 443 without userinfo, which never gets the token, and whose signed query
+is never recorded; the digest behind "latest" read right after the tags (C4A-5), information only - a non-200 there is
+recorded, never fatal. Files land under <cwd>/oci/blobs/sha256/.
 
     <py314>\\python.exe research\\v3\\fetch_child.py   (the job on stdin)
 """
@@ -319,7 +321,9 @@ def _blob(call, *, registry: str, repo: str, digest: str, size, authz: dict, cdn
         u = urllib.parse.urlsplit(target)
         if u.scheme != "https" or u.hostname not in cdn or u.port not in (None, 443) or u.username or u.password:
             out["refused_redirect_host"] = u.hostname
-            raise Refused(f"the blob {digest[:19]} redirects to an undeclared host {u.hostname!r} (Q-C4-3) - not followed")
+            why = ("an undeclared host" if u.hostname not in cdn else
+                   "not https" if u.scheme != "https" else f"port {u.port}" if u.port not in (None, 443) else "userinfo")
+            raise Refused(f"the blob {digest[:19]} redirects to {u.hostname!r} - {why} (Q-C4-3); not followed")
         st, h, _, sha, n = call("GET", u.hostname, (u.path or "/") + (f"?{u.query}" if u.query else ""), {},
                                 max_bytes=blob_max, save_to=dest)      # exactly one redirect, no Authorization
         if st in _REDIRECTS:
@@ -345,11 +349,11 @@ def oci_job(job: dict, *, send, cwd: Path) -> dict:
         plat = job.get("platform") or {"os": "linux", "architecture": "amd64"}
         meta_max, blob_max = int(job["max_meta_bytes"]), int(job["max_blob_bytes"])
 
-        def call(method, host, path, headers, *, max_bytes=meta_max, save_to=None):
+        def call(method, host, path, headers, *, max_bytes=meta_max, save_to=None, tolerate=False):
             st, h, body, sha, n = send(method, host, path, dict(headers), max_bytes=max_bytes, save_to=save_to)
             out["requests"].append({"method": method, "host": host, "status": st,
                                     "path": path.split("?", 1)[0] if host in cdn else path})
-            if st == 429:
+            if st == 429 and not tolerate:
                 out["rate_limited"] = True
                 raise Refused("rate-limited: status 429")
             return st, h, body, sha, n
@@ -376,11 +380,16 @@ def oci_job(job: dict, *, send, cwd: Path) -> dict:
             tags += json.loads(body).get("tags") or []
             path = _next_link(h.get("link"), registry, repo)
         out["tags_seen"], out["tag_pages"] = len(tags), pages
+        accept = {"Accept": ", ".join(OCI_INDEX + OCI_MANIFEST)}
+        # C4A-5 (the auditor): the digest behind "latest" in the same minute as the tags - information only, so a
+        # non-200 there is recorded and never ends the job
+        st, _h, lbody, _, _ = call("GET", registry, f"/v2/{repo}/manifests/latest", {**authz, **accept}, tolerate=True)
+        out["latest_status"] = st
+        out["latest_digest"] = ("sha256:" + hashlib.sha256(lbody).hexdigest()) if st == 200 else None
         pick = release_tags(tags)
         if pick is None:
             raise Refused("no tag is a release ^v?X.Y.Z$")
         key, variants = pick
-        accept = {"Accept": ", ".join(OCI_INDEX + OCI_MANIFEST)}
         got: dict = {}
         for t in variants:
             st, h, body, _, _ = call("GET", registry, f"/v2/{repo}/manifests/{t}", {**authz, **accept})
@@ -393,25 +402,33 @@ def oci_job(job: dict, *, send, cwd: Path) -> dict:
         if len({d for d, _b, _c in got.values()}) != 1:
             raise Refused(f"the tags {variants} of one version resolve to different indexes "
                           f"{ {t: v[0][:19] for t, v in got.items()} } - refused (Q-C4-1)")
-        index_digest, index_body, ctype = got[variants[0]]
-        index = json.loads(index_body)
-        if (index.get("mediaType") or ctype) not in OCI_INDEX:
-            raise Refused(f"{variants[0]} names no image index ({index.get('mediaType') or ctype}) - attempt 2 is Q-A8-4's")
-        cands = [m for m in index.get("manifests") or []
-                 if (m.get("platform") or {}).get("os") == plat["os"]
-                 and (m.get("platform") or {}).get("architecture") == plat["architecture"]
-                 and not (m.get("platform") or {}).get("variant")]
-        if len(cands) != 1:
-            raise Refused(f"the index of {variants[0]} holds {len(cands)} {plat['os']}/{plat['architecture']} manifests, "
-                          f"not one - attempt 2 is Q-A8-4's (the newest installable release), never picked by hand")
-        mdig = cands[0].get("digest")
-        if not _DIGEST.fullmatch(str(mdig)):
-            raise Refused("the platform manifest's digest is not sha256:<64 hex>")
-        st, h, mbody, _, _ = call("GET", registry, f"/v2/{repo}/manifests/{mdig}", {**authz, "Accept": ", ".join(OCI_MANIFEST)})
-        if st != 200 or "sha256:" + hashlib.sha256(mbody).hexdigest() != mdig:
-            raise Refused("the platform manifest is not its digest's bytes")
-        man = json.loads(mbody)
-        mtype = man.get("mediaType") or h.get("content-type")
+        tag_digest, tag_body, ctype = got[variants[0]]
+        doc = json.loads(tag_body)
+        tag_type = doc.get("mediaType") or ctype
+        single = tag_type in OCI_MANIFEST             # C4A-6: a plain image manifest, checked on its config below
+        if single:
+            index_digest, mdig, mbody, man, mtype = None, tag_digest, tag_body, doc, tag_type
+        elif tag_type in OCI_INDEX:
+            index_digest = tag_digest
+            cands = [m for m in doc.get("manifests") or []
+                     if (m.get("platform") or {}).get("os") == plat["os"]
+                     and (m.get("platform") or {}).get("architecture") == plat["architecture"]
+                     and not (m.get("platform") or {}).get("variant")]
+            if len(cands) != 1:
+                raise Refused(f"the index of {variants[0]} holds {len(cands)} {plat['os']}/{plat['architecture']} manifests, "
+                              f"not one - attempt 2 is Q-A8-4's (the newest installable release), never picked by hand")
+            mdig = cands[0].get("digest")
+            if not _DIGEST.fullmatch(str(mdig)):
+                raise Refused("the platform manifest's digest is not sha256:<64 hex>")
+            st, h, mbody, _, _ = call("GET", registry, f"/v2/{repo}/manifests/{mdig}",
+                                      {**authz, "Accept": ", ".join(OCI_MANIFEST)})
+            if st != 200 or "sha256:" + hashlib.sha256(mbody).hexdigest() != mdig:
+                raise Refused("the platform manifest is not its digest's bytes")
+            man = json.loads(mbody)
+            mtype = man.get("mediaType") or h.get("content-type")
+        else:
+            raise Refused(f"{variants[0]} names neither an image index nor an image manifest ({tag_type}) - attempt 2 "
+                          f"is Q-A8-4's")
         if mtype not in OCI_MANIFEST:
             raise Refused(f"the platform manifest is a {mtype}, not an image manifest")
         oci = cwd / "oci"
@@ -419,15 +436,21 @@ def oci_job(job: dict, *, send, cwd: Path) -> dict:
         blobs.mkdir(parents=True, exist_ok=True)
         (blobs / mdig.split(":", 1)[1]).write_bytes(mbody)
         cfg, layers = man["config"], list(man["layers"])
-        for b in [cfg, *layers]:
+        _blob(call, registry=registry, repo=repo, digest=cfg.get("digest"), size=cfg.get("size"), authz=authz, cdn=cdn,
+              dest=blobs / str(cfg.get("digest")).split(":", 1)[-1], blob_max=blob_max, out=out)
+        if single:                                  # C4A-6: its platform is its config's - before any layer
+            conf = json.loads((blobs / cfg["digest"].split(":", 1)[1]).read_bytes())
+            if (conf.get("os"), conf.get("architecture")) != (plat["os"], plat["architecture"]) or conf.get("variant"):
+                raise Refused(f"the image manifest of {variants[0]} is {conf.get('os')}/{conf.get('architecture')}"
+                              f"{'/' + conf['variant'] if conf.get('variant') else ''}, not {plat['os']}/"
+                              f"{plat['architecture']} - attempt 2 is Q-A8-4's")
+        for b in layers:
             _blob(call, registry=registry, repo=repo, digest=b.get("digest"), size=b.get("size"), authz=authz, cdn=cdn,
                   dest=blobs / str(b.get("digest")).split(":", 1)[-1], blob_max=blob_max, out=out)
-        st, _h, lbody, _, _ = call("GET", registry, f"/v2/{repo}/manifests/latest", {**authz, **accept})
         out.update(ok=True, repo=repo, version=".".join(str(x) for x in key), tag=variants[0], tag_variants=variants,
-                   index_digest=index_digest, manifest_digest=mdig, manifest_media_type=mtype,
+                   index_digest=index_digest, single_manifest=single, manifest_digest=mdig, manifest_media_type=mtype,
                    manifest_bytes=len(mbody), config={"digest": cfg["digest"], "size": cfg["size"]},
-                   layers=[{"digest": x["digest"], "size": x["size"], "mediaType": x.get("mediaType")} for x in layers],
-                   latest_digest=("sha256:" + hashlib.sha256(lbody).hexdigest()) if st == 200 else None)
+                   layers=[{"digest": x["digest"], "size": x["size"], "mediaType": x.get("mediaType")} for x in layers])
         return out
     except (Refused, OSError, ssl.SSLError, http.client.HTTPException, ValueError, KeyError, TypeError) as e:
         out["error"] = f"{type(e).__name__}: {str(e)[:300]}"
