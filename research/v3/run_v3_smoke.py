@@ -6,7 +6,8 @@ Per arm-run of a smoke stand, from the scheduler's stand result and the recordin
 never an adapter's own counts):
 * calls: the arm-run's forwarded calls (accounting.cloud_counters; its cloud_bypass is not measured on a smoke and is
   never printed, Q-12-6);
-* failures: transport_lost, failed_outcomes and upstream_errors (the proxy's log), unit_aborts (the scheduler's unit
+* failures: transport_lost, failed_outcomes (never a question of a unit the stand did not record - its block ABORTed
+  by the gate's halt, B-REASK-HALT) and upstream_errors (the proxy's log), unit_aborts (the scheduler's unit
   records, write and question stages), reader_format_failures (the answer rows), background_writes (R9: accounting's
   background_writes, a questions-stage write-port call that never succeeded included - Q1, reported, never raised);
 * items: the retrievable items the end_write footprints report, over the units that were not aborted;
@@ -143,8 +144,9 @@ def _yield(stand: str, items: Mapping[str, int], cover: Mapping[str, Mapping[str
 def summarize(result: Mapping[str, Any], log: Any, *, stand: str, key_question: Mapping[tuple[str, str], str],
               item_texts: Mapping[str, Any], run_dir: str | os.PathLike,
               no_writer: Iterable[str] | None = None) -> dict:
-    """{"stand": stand, "arm_runs": [row, ...]} - one row per arm-run, exactly its SMOKE_FIELDS (see the module
-    docstring). ``item_texts``: unit -> its items' texts (the coverage denominator); ``run_dir``: the proxy's run
+    """{"stand": stand, "arm_runs": [row, ...], "unrecorded": [...]} - one row per arm-run, exactly its SMOKE_FIELDS
+    (see the module docstring); "unrecorded" names, per arm-run with any, the question keys of units the stand never
+    recorded (B-REASK-HALT: counted apart from failed_outcomes, never dropped silently) and their units. ``item_texts``: unit -> its items' texts (the coverage denominator); ``run_dir``: the proxy's run
     directory (its bodies); ``no_writer``: only a check - the arms the caller expects to have no writer LLM, which
     must be the plan's (C-3)."""
     if log.problems:
@@ -156,7 +158,7 @@ def summarize(result: Mapping[str, Any], log: Any, *, stand: str, key_question: 
         raise SmokeError(f"no_writer {sorted(set(no_writer))} is not the plan's {sorted(plan_no_writer)} - a writer arm "
                          f"named in it would print its coverage as n/a (C-3)")
     no_writer = plan_no_writer
-    rows = []
+    rows, unrecorded = [], []
     for (arm, run), ar in sorted(runs.items()):
         w, q = ar["write"], ar["questions"]
         reads = [r for u in w for r in (q.get(u) or {}).get("reads") or []]
@@ -167,7 +169,7 @@ def summarize(result: Mapping[str, Any], log: Any, *, stand: str, key_question: 
                                                    if r.get("t0") and r.get("t1")] for u in w})
         cc = A.cloud_counters(log.calls, arm=arm, run=run, stand=base_stand(stand), cloud_bypass=None,
                               background_writes=bw["count"], ollama=log.ollama, key_question=key_question,
-                              dropped=dropped)
+                              dropped=dropped, unrecorded_units=sorted({u for u, _k in key_question} - set(w)))
         items = {u: retrievable(rec.footprint) for u, rec in w.items() if rec.aborted is None}
         if arm in no_writer:
             y = cov = NO_WRITER
@@ -192,9 +194,12 @@ def summarize(result: Mapping[str, Any], log: Any, *, stand: str, key_question: 
                "yield": y, "coverage": cov}
         check_row(row)
         rows.append(row)
+        if cc["unrecorded_keys"]:
+            unrecorded.append({"arm": arm, "run": run, "unrecorded_keys": cc["unrecorded_keys"],
+                               "units": cc["unrecorded_units"]})
     if not rows:
         raise SmokeError(f"{stand}: the stand result holds no arm-run")
-    return {"stand": stand, "arm_runs": rows}
+    return {"stand": stand, "arm_runs": rows, "unrecorded": unrecorded}
 
 
 def render(summary: Mapping[str, Any]) -> str:

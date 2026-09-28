@@ -228,24 +228,32 @@ def _arm_run(calls: Iterable[Mapping[str, Any]], arm: str, run: str) -> list:
 def cloud_counters(calls: list, *, arm: str, run: str, stand: str, cloud_bypass: int, background_writes: int,
                    ollama: Iterable = (),
                    key_question: Mapping[tuple[str, str], str] | None = None, dropped: Iterable[str] = (),
-                   incident_units: Iterable[str] = (), product_retries: int | None = None) -> dict:
+                   incident_units: Iterable[str] = (), product_retries: int | None = None,
+                   unrecorded_units: Iterable[str] = ()) -> dict:
     """The counters artifact.cloud_transport() takes, for one arm-run on a stand. key_question maps (unit, request key)
     to its question; cloud_bypass is measured by the boundary instruments, background_writes by background_writes()
     from the harness's end_write stamps (R9) - neither is ever defaulted; product_retries is the
-    reconciliation's (K87 check 2) unless given."""
+    reconciliation's (K87 check 2) unless given. unrecorded_units: the units the stand never recorded - their block
+    was ABORTed (B-REASK-HALT: the incident gate's halt ends a unit waiting to re-ask) - whose never-succeeded question
+    keys are no product outcome: counted in unrecorded_keys (their units in unrecorded_units), beside failed_outcomes
+    and never in it (the auditor's condition 2)."""
     mine = _arm_run(calls, arm, run)
     forwarded = [c for c in mine if not c.get("refused")]
     keys = classify_keys(mine)
     dropped = set(dropped)
+    unrecorded = set(unrecorded_units)
     kq = dict(key_question or {})
     eps = [(k, v, e) for k, v in sorted(keys.items()) for e in v["classes"]]
     lost = [k for k, v, e in eps if v["phase"] == "write" and e == "never"]
     dup = [v for v in keys.values() if v["phase"] == "write" and sum(e != "never" for e in v["classes"]) >= 2]
-    failed = []
+    failed, cut = [], []
     for k, v, e in eps:
         if v["phase"] != "write" and e == "never":
             if v.get("port_role") == "write":            # Q1 (C21): a questions-stage write-port call is R9 background
                 continue                                 # activity - background_writes() counts it, with its status
+            if v["unit"] in unrecorded:                  # B-REASK-HALT: no unit record, no outcome - counted apart
+                cut.append(k)
+                continue
             q = kq.get(k)
             if q is None:
                 raise AccountingError(f"a {v['phase']}-phase key {k[1][:12]} of {k[0]} that never succeeded has no question")
@@ -274,6 +282,8 @@ def cloud_counters(calls: list, *, arm: str, run: str, stand: str, cloud_bypass:
     return {
         "calls": len(forwarded),
         "failed_outcomes": len(failed),
+        "unrecorded_keys": len(cut),
+        "unrecorded_units": sorted({keys[k]["unit"] for k in cut}),
         "fallback_local": sum(1 for o in ollama if o.get("arm") == arm and o.get("fallback_local")
                               and split_unit(o.get("unit"))[0] == run),
         "model_mismatch": sum(1 for c in mine if c.get("refused") == "model_mismatch"),

@@ -354,6 +354,22 @@ check("the bound: a call exactly at the end_write stamp is not after it; one exa
       "inside", AC.background_writes([call("e", t0=3), call("f", stage="questions", t0=10.5),
                                      call("g", stage="questions", t0=9.5)], arm="mem0", run="r1",
                            end_write_at={"u1": t(3)}, read_windows={"u1": [(t(9.5), t(10.5))]})["count"] == 0)
+halt_calls = [call("w1", t0=1), call("qh", unit="r1.u9", role="reader", stage="questions", status=402, t0=10),
+              call("qf", role="reader", stage="questions", status=503, t0=11)]
+halt_kq = {("u9", "qh"): "u9:q1", ("u1", "qf"): "u1:q1"}
+try:
+    ct_h = AC.cloud_counters(halt_calls, arm="mem0", run="r1", stand="S1", cloud_bypass=0, background_writes=0,
+                             key_question=halt_kq, unrecorded_units=["u9"])
+    ct_h0 = AC.cloud_counters(halt_calls, arm="mem0", run="r1", stand="S1", cloud_bypass=0, background_writes=0,
+                              key_question=halt_kq)
+except Exception as e:  # noqa: BLE001 - the row FAILs by name
+    ct_h = ct_h0 = {"error": f"{type(e).__name__}: {e}"}
+check("B-REASK-HALT (the auditor's condition 2): a question key of a unit the stand never recorded - its block ABORTed "
+      "by the halt, the re-ask never made - that never succeeded is no failed outcome; unrecorded_keys counts it, and a "
+      "recorded unit's never key is still one; unrecorded_units names the unit", ct_h.get("failed_outcomes") == 1
+      and ct_h.get("unrecorded_keys") == 1 and ct_h.get("unrecorded_units") == ["u9"]
+      and ct_h0.get("failed_outcomes") == 2 and ct_h0.get("unrecorded_keys") == 0 and ct_h0.get("unrecorded_units") == [],
+      f"{ct_h} | {ct_h0}"[:400])
 ct_bw = AC.cloud_counters(bw_calls, arm="mem0", run="r1", stand="S1", cloud_bypass=0, background_writes=bw["count"])
 check("the count reaches the artifact, and artifact's P0b names it",
       "P0b: background_writes > 0" in A.p0b({"arm_decl": {"llm_transport": "cloud:deepseek"},

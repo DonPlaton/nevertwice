@@ -149,6 +149,34 @@ try:
           "- failures.background_writes (R9) - never a refusal, never a failed outcome",
           f_bg.get("background_writes") == 1 and f_bg.get("failed_outcomes") == 0
           and m["failures"].get("background_writes") == 0, f"{f_bg} {m['failures']}")
+    log_h = AC.ProxyLog(calls=[*LOG.calls, call("u9", "k9", role="reader", stage="questions", status=402, t=22)])
+    try:
+        s_h = summary(log=log_h, key_question={**KQ, ("u9", "k9"): "u9:q1"})
+        f_h = {r["arm"]: r for r in s_h["arm_runs"]}["mem0"]["failures"]
+        back_h = json.loads(SM.write(s_h, TMP / "runs" / "S4-smoke-h" / "_smoke" / "summary.json",
+                                     results_dir=TMP / "research" / "v3" / "results").read_text(encoding="utf-8"))
+    except Exception as e:  # noqa: BLE001 - the row FAILs by name
+        s_h, back_h, f_h = {}, {}, {"error": f"{type(e).__name__}: {e}"}
+    check("B-REASK-HALT (the auditor's condition 2): a question of a unit the stand never recorded (its block ABORTed "
+          "by the halt: no unit record, the re-ask never made) is no failed outcome of the smoke",
+          f_h.get("failed_outcomes") == 0 and f_h.get("unit_aborts") == 1, str(f_h))
+    want_h = [{"arm": "mem0", "run": "r1", "unrecorded_keys": 1, "units": ["u9"]}]
+    check("B-REASK-HALT (condition 2, the auditor's addition): the smoke names what it did not count - summary.json says "
+          "how many unrecorded keys and of which unit, per arm-run (bm25-floor has none and is not listed)",
+          s_h.get("unrecorded") == want_h and back_h.get("unrecorded") == want_h,
+          f"{s_h.get('unrecorded')} | {back_h.get('unrecorded')}")
+    check("... and a smoke with nothing unrecorded says so - an empty list, never a missing key", s.get("unrecorded") == [],
+          str(s.get("unrecorded")))
+    log_f = AC.ProxyLog(calls=[*log_h.calls, call("u1", "kf", role="reader", stage="questions", status=503, t=24)])
+    try:
+        s_f = summary(log=log_f, key_question={**KQ, ("u9", "k9"): "u9:q1", ("u1", "kf"): "u1:q9"})
+        f_f = {r["arm"]: r for r in s_f["arm_runs"]}["mem0"]["failures"]
+    except Exception as e:  # noqa: BLE001 - the row FAILs by name
+        s_f, f_f = {}, {"error": f"{type(e).__name__}: {e}"}
+    check("B-REASK-HALT (condition 2, the auditor's U2): a RECORDED unit's question key that never succeeded stays a "
+          "failed outcome of the smoke - only the unit the stand did not record is unrecorded, never every unit",
+          f_f.get("failed_outcomes") == 1 and s_f.get("unrecorded") == want_h,
+          f"{f_f} | {s_f.get('unrecorded')}")
     check("SM-counts: unit aborts and reader format failures are the scheduler's records",
           m["failures"]["unit_aborts"] == 1 and m["failures"]["reader_format_failures"] == 1
           and rows["bm25-floor"]["failures"]["unit_aborts"] == 1, str(m["failures"]))
