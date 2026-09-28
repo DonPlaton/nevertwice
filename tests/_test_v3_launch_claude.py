@@ -530,15 +530,28 @@ check("Q-C5-6 discovery outside stand _a8, or not by role probe, is refused by n
       and any("unknown Claude Code mode" in r for r in got_g), str((got_e, got_f, got_g)))
 saved_off = dict(L._OFFERED)
 L._OFFERED.clear()
+getattr(L, "_OFFERED_ATTEMPT1", {}).clear()
+uh0, cfgh0, sth0 = cc7_unit("_a8", "d6")
+got_h0 = cc7_session(uh0, cfgh0, sth0, {**RD, "unit": "d6"}, mode="discovery")
+_rec_a1 = getattr(L, "record_offered_attempt1", lambda s, r: None)
+_rec_a1("0" * 64, "blocked:attempt-2:cc_offered")
+uh1, cfgh1, sth1 = cc7_unit("_a8", "d7")
+got_h1 = cc7_session(uh1, cfgh1, sth1, {**RD, "unit": "d7"}, mode="discovery")
+check("C-CC-1: attempt 1 comes first - a discovery spawn with no offered-tools record is refused unless attempt 1 failed "
+      "for THIS binary (none recorded, or one for another sha256)",
+      any("only after attempt 1 failed for this binary" in r for r in got_h0)
+      and any("only after attempt 1 failed for this binary" in r for r in got_h1), str((got_h0, got_h1)))
+_rec_a1(BIN_SHA, "blocked:attempt-2:cc_offered")
 uh, cfgh, sth = cc7_unit("_a8", "d5")
 got_h = cc7_session(uh, cfgh, sth, {**RD, "unit": "d5"}, mode="discovery")
 off_h = last_cc().get("offered")
 ui, cfgi, sti = cc7_unit("cc", "q7b")
 got_i = cc7_session(ui, cfgi, sti, {**R7, "unit": "q7b"})
-check("Q-C5-7 attempt 2: a discovery spawn runs before any record of the offered tools (D7 waived there, and said so); a "
-      "campaign spawn without the record is still refused",
-      got_h == [] and off_h == "waived: discovery (Q-C5-7 attempt 2)"
+check("Q-C5-7 attempt 2: after attempt 1 failed for this binary, a discovery spawn runs without the offered-tools record "
+      "(D7 waived, the record saying after what); a campaign spawn without the record is still refused",
+      got_h == [] and off_h == "waived: attempt 2 after blocked:attempt-2:cc_offered"
       and any("no A8 record of the tools" in r for r in got_i), str((got_h, off_h, got_i)))
+getattr(L, "_OFFERED_ATTEMPT1", {}).clear()
 L._OFFERED.update(saved_off)
 p_same = L.init_tools_problems(list(reversed(OFFERED)))
 kept = dict(L._OFFERED)
@@ -549,8 +562,11 @@ check("Q-C5-7: the first spawn's init-event tools must equal the record - a mism
       str((p_same, p_more, L._OFFERED)))
 L._OFFERED.clear()
 p_none = L.init_tools_problems(OFFERED)
-check("Q-C5-7: without a record there is nothing the init event can equal - blocked:unsupported-surface",
-      len(p_none) == 1 and p_none[0].startswith("blocked:unsupported-surface"), str(p_none))
+p_empty = L.init_tools_problems([])
+check("Q-C5-7 (the auditor's K15): without a record there is nothing the init event can equal - its tools, or none at "
+      "all, are blocked:unsupported-surface",
+      len(p_none) == 1 and p_none[0].startswith("blocked:unsupported-surface")
+      and len(p_empty) == 1 and p_empty[0].startswith("blocked:unsupported-surface"), str((p_none, p_empty)))
 L._OFFERED.update(saved_off)
 u_nc = L.make_unit_dirs(CC, "_a8", "r", "mem0", "nc1")
 called.clear()

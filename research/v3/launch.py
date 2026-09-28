@@ -825,12 +825,15 @@ def spawn(c: Contract, argv: Sequence[str], *, env: Mapping[str, str], cwd: str 
             reasons += cfg_reasons
             cfg_register = (_norm(cfg), first_sha) if first_sha is not None else None
         offered_ok = bool(_OFFERED.get("tools")) and _OFFERED.get("sha256") == cc_sha
-        if not offered_ok and cc_mode != CC_DISCOVERY:                                                 # D7
-            reasons.append("no A8 record of the tools this pinned Claude Code offers")
+        attempt1 = _OFFERED_ATTEMPT1.get(cc_sha) if cc_sha else None
+        waived = not offered_ok and cc_mode == CC_DISCOVERY and attempt1 is not None           # C-CC-1: attempt 2
+        if not offered_ok and not waived:                                                              # D7
+            reasons.append("no A8 record of the tools this pinned Claude Code offers" + (
+                " - discovery waives it only after attempt 1 failed for this binary (C-CC-1)"
+                if cc_mode == CC_DISCOVERY else ""))
         claude_rec = {"version": c.claude_code_version, "binary_pinned": pinned_cc is not None,
                       "form": "node+cli.js" if node_form else "binary", "sha256": cc_sha, "config": cfg_rec,
-                      "offered": "recorded" if offered_ok else ("waived: discovery (Q-C5-7 attempt 2)"
-                                                                if cc_mode == CC_DISCOVERY else None)}
+                      "offered": "recorded" if offered_ok else (f"waived: attempt 2 after {attempt1}" if waived else None)}
     entry = {
         "spawn_id": spawn_id, "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         **{k: record.get(k) for k in ("role", "stand", "run", "arm", "unit")},
@@ -1864,6 +1867,9 @@ CC_DISCOVERY = "discovery"
 CC_PROBE_STAND = "_a8"
 #: A8's record of the top-level names the pinned product keeps in CLAUDE_CONFIG_DIR (Q-47-7), by the binary's sha256.
 _CONFIG_NAMES: dict = {}
+#: C-CC-1 (the auditor): attempt 1's failures, {binary sha256: its blocked reason} - Q-C5-7's order is the package read
+#: first; only after it failed for THIS binary may a discovery spawn run without the offered-tools record (attempt 2).
+_OFFERED_ATTEMPT1: dict[str, str] = {}
 #: Q-47-7: {norm(CLAUDE_CONFIG_DIR): {settings_sha256, unit}} - registered by a unit's first session, one per unit.
 _CC_CONFIGS: dict[str, dict] = {}
 _CLAUDE_PACKAGE = ("@anthropic-ai", "claude-code")
@@ -1880,6 +1886,12 @@ def record_offered_tools(binary_sha256: str, tools: Sequence[str]) -> None:
     """A8: the tool names the pinned binary offers, read from it and recorded; --disallowedTools must then equal
     them minus the four file tools, exactly (L1). Never passed in by a spawn's caller."""
     _OFFERED["sha256"], _OFFERED["tools"] = binary_sha256, tuple(tools)
+
+
+def record_offered_attempt1(binary_sha256: str, blocked_reason: str) -> None:
+    """C-CC-1: the probe's package read (Q-C5-7 attempt 1) gave other than one match for this binary - the only door
+    through which a discovery spawn (attempt 2) may run without the offered-tools record. Never a spawn caller's."""
+    _OFFERED_ATTEMPT1[binary_sha256] = blocked_reason
 
 
 def init_tools_problems(tools: Sequence[str]) -> list[str]:
