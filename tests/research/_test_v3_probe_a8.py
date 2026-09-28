@@ -434,7 +434,8 @@ tf = S.fact(M2, P.M0_SOURCE["m0_temperature"][0], P.M0_SOURCE["m0_temperature"][
 check("the DeepSeek config's own temperature default, one match", tf.get("value") == "0.3" and tf.get("line") == 5, str(tf))
 check("every declared mem0 source fact names a relative file and a pattern, fixed in code before any read of 2.2.0",
       set(P.M0_SOURCE) == {"m0_temperature", "m0_thinking", "m0_timestamp", "m0_llm_sites", "m0_content_key",
-                           "m0_item_key", "m0_nlp"} and all(not Path(v[0]).is_absolute() for v in P.M0_SOURCE.values()))
+                           "m0_item_key", "m0_nlp", *P.M0_NLP_VARS, "m0_nlp_model"}
+      and all(not Path(v[0]).is_absolute() for v in P.M0_SOURCE.values()))
 ik = S.fact_in(sc, P.M0_SOURCE["m0_item_key"][2], name="m0_item_key")
 check("the item's text key, read where the texts are taken", ik.get("value") == "text" and ik.get("line") == 19, str(ik))
 
@@ -459,6 +460,50 @@ for label, fn, want_line in (("a while", "_add_to_vector_store", 4), ("a list co
 ns = S.scope(M2, "mem0/memory/nested.py", "Memory.add", name="m0_n")
 check("Q5 (the auditor): only the module's own top-level class is taken - a class of the same name nested in a "
       "function is not", ns.get("first_line") == 8 and "blocked" not in ns, str({k: ns.get(k) for k in ("first_line", "blocked")}))
+print("\n- NLP-3 (the auditor's passive check): spaCy's state as mem0 left it, read, never loaded -")
+(M2 / "mem0/utils").mkdir(parents=True, exist_ok=True)
+SPM = (b"import threading\n\n_nlp_full = None\n_nlp_lemma = None\n_load_failed_full = False\n_load_failed_lemma = False\n"
+       b"_lock = threading.Lock()\n\n\ndef _ensure_model_available():\n    import spacy\n"
+       b"    if not spacy.util.is_package(\"en_core_web_sm\"):\n        download(\"en_core_web_sm\")\n")
+(M2 / "mem0/utils/spacy_models.py").write_bytes(SPM)
+NF = S.nlp_facts(M2)
+check("the module's state names and the model the product checks for are source facts, each one match",
+      {k: (v or {}).get("value") for k, v in NF.items()} == {"m0_nlp_full_var": "_nlp_full", "m0_nlp_lemma_var": "_nlp_lemma",
+                                                            "m0_nlp_failed_full_var": "_load_failed_full",
+                                                            "m0_nlp_failed_lemma_var": "_load_failed_lemma",
+                                                            "m0_nlp_model": "en_core_web_sm"}
+      and NF["m0_nlp_model"].get("line") == 12, str({k: (v or {}).get("value") for k, v in NF.items()}))
+NAMES = {"full": "_nlp_full", "lemma": "_nlp_lemma", "failed_full": "_load_failed_full",
+         "failed_lemma": "_load_failed_lemma", "model": "en_core_web_sm"}
+ON = {"names": NAMES, "module": True, "nlp_full": True, "nlp_lemma": True, "failed_full": False, "failed_lemma": False,
+      "is_package": True}
+r = S.m0_nlp_active(ON, NF, catcher_lines=0)
+check("both models loaded after the adds, no failed flag, the model installed, no catcher line: active",
+      r["ok"] is True and r["value"] == {"model": "en_core_web_sm", "nlp_full": True, "nlp_lemma": True}, str(r))
+for label, patch, want in (("the model not installed", {"is_package": False}, "is_package"),
+                           ("the model's install unknown", {"is_package": None}, "is_package"),
+                           ("a failed full load", {"failed_full": True}, "failed_full"),
+                           ("a failed lemma load", {"failed_lemma": True}, "failed_lemma"),
+                           ("an unknown failed flag", {"failed_full": None}, "failed_full"),
+                           ("no full model after the adds", {"nlp_full": False}, "nlp_full"),
+                           ("no lemma model after the adds", {"nlp_lemma": False}, "nlp_lemma"),
+                           ("the module never imported", {"module": False}, "module")):
+    r = S.m0_nlp_active({**ON, **patch}, NF, catcher_lines=0)
+    check(f"{label} is blocked:nlp-off, named", r["ok"] is False and r.get("blocked") == "blocked:nlp-off"
+          and want in r["rule_failed"], str(r))
+r = S.m0_nlp_active(ON, NF, catcher_lines=1)
+check("a catcher line of the unit (a run-time model download) is blocked:nlp-off", r.get("blocked") == "blocked:nlp-off"
+      and "catcher" in r["rule_failed"], str(r))
+r = S.m0_nlp_active({**ON, "names": {**NAMES, "full": "_nlp"}}, NF, catcher_lines=0)
+check("the adapter must read exactly the names the pinned source defines - another name is blocked:nlp-off",
+      r.get("blocked") == "blocked:nlp-off" and "_nlp" in r["rule_failed"], str(r))
+r = S.m0_nlp_active(None, NF, catcher_lines=0)
+check("no state from the adapter is blocked:nlp-off by that name, never a pass", r.get("blocked") == "blocked:nlp-off"
+      and "no nlp state" in (r.get("rule_failed") or ""), str(r))
+(M2 / "mem0/utils/spacy_models.py").write_bytes(SPM.replace(b"_load_failed_lemma = False\n", b""))
+r = S.m0_nlp_active(ON, S.nlp_facts(M2), catcher_lines=0)
+check("a state name the pinned source no longer defines carries blocked:source-missing - it comes to the auditor",
+      r.get("blocked") == "blocked:source-missing:m0_nlp_failed_lemma_var", str(r))
 check("C4A-8 / C5A-8: no verdict raised on any row - every failure came back as a field", RAISED == [], str(RAISED))
 _cleanup()
 print(f"\nv3 probe a8: {PASSED} passed, {FAILED} failed")

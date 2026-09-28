@@ -19,6 +19,10 @@ This part (C5a) holds the verdicts; they read records, never a product:
   are a set each line must belong to (C5A-10); ``m0_calls_per_add`` bounds the answered lines by the sites x the adds
   (a site in a loop: blocked:source-unbounded); a thinking field mentioned in the DeepSeek LLM is
   blocked:source-changed - its meaning goes to the auditor;
+* B-NLP NLP-3 (the auditor's PASSIVE check): spacy_models' four module-level state names and the model the product
+  checks for are source facts (``nlp_facts``); ``m0_nlp_active`` reads what the adapter saw after the adds - the model
+  installed, both models loaded, no failed flag, by exactly those names, no catcher line - never loading anything
+  itself; anything else is blocked:nlp-off;
 * ``verdict``: "pass" only when every field is ok, there is no problem, every boundary check is complete with 0/0 and
   no catcher line belongs to the arm; else the first blocked:<reason> - the fields in their declared order, then the
   problems - else "fail". The proxy's own spawn is unwitnessed by design (launch.spawn_proxy): 0/0 covers the product
@@ -59,7 +63,18 @@ M0_SOURCE = {
     "m0_item_key": ("mem0/memory/main.py", "Memory._add_to_vector_store", r'mem_texts = \[m\.get\("(\w+)", ""\)'),
     # Q-A8-8: the spaCy-backed utilities main.py imports at module level - every one, for the auditor
     "m0_nlp": ("mem0/memory/main.py", r"^from mem0\.utils\.(entity_extraction|lemmatization|spacy_models) import"),
+    # B-NLP NLP-3 (the auditor's passive check, 07:3x): the module state the adapter READS after the adds - never a load
+    "m0_nlp_full_var": ("mem0/utils/spacy_models.py", r"^(_nlp_full) = None\s*$"),
+    "m0_nlp_lemma_var": ("mem0/utils/spacy_models.py", r"^(_nlp_lemma) = None\s*$"),
+    "m0_nlp_failed_full_var": ("mem0/utils/spacy_models.py", r"^(_load_failed_full) = False\s*$"),
+    "m0_nlp_failed_lemma_var": ("mem0/utils/spacy_models.py", r"^(_load_failed_lemma) = False\s*$"),
+    # the model the product itself checks for (and downloads at run time when it is missing) - NLP-2 fetches exactly it
+    "m0_nlp_model": ("mem0/utils/spacy_models.py", "_ensure_model_available", r'spacy\.util\.is_package\("([\w.-]+)"\)'),
 }
+M0_NLP_VARS = ("m0_nlp_full_var", "m0_nlp_lemma_var", "m0_nlp_failed_full_var", "m0_nlp_failed_lemma_var")
+#: the adapter's state key -> the source fact naming it
+M0_NLP_NAMES = {"full": "m0_nlp_full_var", "lemma": "m0_nlp_lemma_var", "failed_full": "m0_nlp_failed_full_var",
+                "failed_lemma": "m0_nlp_failed_lemma_var", "model": "m0_nlp_model"}
 WITNESS_SCOPE = ("the boundary checks cover the product child's tree only; the probe proxy's own spawn is unwitnessed "
                  "by design (launch.spawn_proxy) - R-C5-9")
 
@@ -374,6 +389,49 @@ def m0_calls_per_add(sites: Mapping, calls: Iterable[Mapping], *, run: str, unit
     over = answered > bound * adds
     return _field(value, rule=rule, ok=not over, source=sites.get("source"),
                   failed=f"{answered} answered lines over the bound {bound} x {adds} adds" if over else "")
+
+
+def nlp_facts(root: Path) -> dict:
+    """NLP-3's source facts: the four module-level state names of mem0.utils.spacy_models and the model the product
+    checks for, each exactly one match."""
+    out = {k: fact(root, M0_SOURCE[k][0], M0_SOURCE[k][1], name=k) for k in M0_NLP_VARS}
+    rel, qual, pattern = M0_SOURCE["m0_nlp_model"]
+    out["m0_nlp_model"] = fact_in(scope(root, rel, qual, name="m0_nlp_model"), pattern, name="m0_nlp_model")
+    return out
+
+
+def m0_nlp_active(state: Mapping | None, facts: Mapping[str, Mapping], *, catcher_lines: int) -> dict:
+    """B-NLP NLP-3 (the auditor's PASSIVE check): what the adapter read of spaCy's state after the adds, never loading
+    anything - the model installed (metadata only), both models loaded, neither failed flag set, by exactly the names
+    the pinned source defines; and no catcher line (no run-time download). Anything else is blocked:nlp-off."""
+    rule = ("after the adds: the model installed, both models loaded, no failed flag, read by the pinned source's names; "
+            "no catcher line")
+    for k in (*M0_NLP_VARS, "m0_nlp_model"):
+        if (facts.get(k) or {}).get("blocked"):
+            b = facts[k]["blocked"]
+            return _field(None, rule=rule, ok=False, failed=b, blocked=b)
+    if not state:
+        return _field(None, rule=rule, ok=False, failed="no nlp state from the adapter", blocked="blocked:nlp-off")
+    model = facts["m0_nlp_model"]["value"]
+    bad = []
+    names = state.get("names") or {}
+    for key, fk in M0_NLP_NAMES.items():
+        if names.get(key) != facts[fk]["value"]:
+            bad.append(f"the adapter read {names.get(key)!r} for {key}, the source defines {facts[fk]['value']!r}")
+    if state.get("module") is not True:
+        bad.append("module: mem0.utils.spacy_models was never imported")
+    if state.get("is_package") is not True:
+        bad.append(f"is_package: {model} is not installed ({state.get('is_package')!r})")
+    for f in ("failed_full", "failed_lemma"):
+        if state.get(f) is not False:
+            bad.append(f"{f} is {state.get(f)!r}")
+    for f in ("nlp_full", "nlp_lemma"):
+        if state.get(f) is not True:
+            bad.append(f"{f}: no model loaded after the adds")
+    if catcher_lines:
+        bad.append(f"{catcher_lines} catcher line(s) of the unit - a run-time download")
+    value = {"model": model, "nlp_full": state.get("nlp_full"), "nlp_lemma": state.get("nlp_lemma")}
+    return _field(value, rule=rule, ok=not bad, failed="; ".join(bad), blocked="blocked:nlp-off" if bad else None)
 
 
 def m0_timestamp(src: Mapping) -> dict:
