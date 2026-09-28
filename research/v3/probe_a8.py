@@ -631,8 +631,11 @@ def config_default(root: Path, rel: str, cls: str, attr: str, declared: str, *, 
         return {"value": None, "blocked": f"blocked:source-{'missing' if not hits else 'ambiguous'}:{field}"}
     v = hits[0].value
     if isinstance(v, ast.Call):
+        # the declared form's keywords only (2.0.19: description=, default=) - a default_factory, an alias or a
+        # positional value beside them could decide the value; any of them is <the call>, never its default=
         kw = [k for k in v.keywords if k.arg == "default"]
-        found = ast.unparse(kw[0].value) if len(kw) == 1 and not v.args else f"<{ast.unparse(v)}>"
+        others = {k.arg for k in v.keywords} - {"default", "description"}
+        found = ast.unparse(kw[0].value) if len(kw) == 1 and not v.args and not others else f"<{ast.unparse(v)}>"
     else:
         found = ast.unparse(v) if v is not None else "<no value>"
     line = sc["first_line"] + hits[0].lineno - 1

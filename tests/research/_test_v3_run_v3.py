@@ -489,6 +489,21 @@ try:
           and "m0_top_k" in refusals["a blocked fact the record did not list"]
           and "m0_fn_dates" in refusals["a declared fact missing"] and "m0_calls_per_add" in refusals["no site count"]
           and all(v != "accepted" and not v.startswith("not refused") for v in refusals.values()), str(refusals)[:600])
+    sites_bad = {repr(x): err(lambda x=x: RV.writer_bound(rec_with(fields={"m0_calls_per_add": {
+        "ok": True, "value": {"bound_per_add": x, "adds": 3, "answered": 3}}}))) for x in (0, True, -1, "1", None)}
+    check("C2 FC-mem0-refuse (the auditor's R5): a site count of 0, True, -1, \"1\" or none is refused by name - a zero or "
+          "a bool R would price mem0's writer at nothing, an underestimate by construction",
+          all("m0_calls_per_add" in v and not v.startswith("not refused") for v in sites_bad.values()), str(sites_bad)[:500])
+    _wb_saved = dict(RV.WRITER_BOUNDS)
+    RV.WRITER_BOUNDS["mem0"] = dict(wb)
+    try:
+        r19 = err(lambda: RV.forecast({"mem0": "deepseek-flash"}, {"u1": ["ab"]}, {}, runs=1, max_token_bytes=128))
+    finally:
+        RV.WRITER_BOUNDS.clear()
+        RV.WRITER_BOUNDS.update(_wb_saved)
+    check("C2 FC-refuse (the auditor's R19): the session form refuses a message arm by its granularity even with a bound "
+          "for it in WRITER_BOUNDS - its ops are messages, never sessions", "messages" in r19 and "no upper bound" in r19
+          and RV.WRITER_BOUNDS == _wb_saved, r19[:300])
     fa_nv = c2val(lambda: RV.forecast_arms({"bm25-floor": None, "nevertwice": "deepseek-flash"},
                                            {"nevertwice": {"u1": ["a" * 100, "é" * 20000, "x" * 60000]}},
                                            {("u1", "q0"): "p" * 50}, runs=2, max_token_bytes=128, bounds=RV.WRITER_BOUNDS), {})
