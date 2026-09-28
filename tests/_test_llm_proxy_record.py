@@ -914,6 +914,46 @@ check("T6 at the proxy: a raw arm's calls write nothing in the run directory - n
 hp.stop()
 hup.close()
 
+print("\n- D-AB-8: the upstream's statuses, counted in memory in both modes (the A/B's 401/402/403 stop) -")
+
+
+class PayUpstream(HopUpstream):
+    """/v1/chat/completions/pay answers 402, as DeepSeek does when the balance is gone; /forbidden 403, /key 401."""
+
+    def _serve(self, c, path):
+        for tail, code in ((b"/pay", b"402 Payment Required"), (b"/forbidden", b"403 Forbidden"), (b"/key", b"401 Unauthorized")):
+            if path.startswith(b"/v1/chat/completions" + tail):
+                err = b'{"error":{"message":"no"}}'
+                self._send(c, b"HTTP/1.1 " + code + b"\r\nContent-Type: application/json\r\nContent-Length: "
+                           + str(len(err)).encode() + b"\r\n\r\n" + err)
+                return True
+        return super()._serve(c, path)
+
+
+pu = PayUpstream()
+_arms = [P.ArmConfig(arm="mem0", mode="record", token=T_ARM, pinned_model="deepseek-flash"),
+         P.ArmConfig(arm="mem0-raw", mode="raw", token=T_RAW, pinned_model="deepseek-flash")]
+pp = P.Proxy(P.ProxyConfig(arms=_arms, run_dir=TMP / "pay", upstream_host="127.0.0.1", upstream_port=pu.port,
+                           upstream_tls=False, control_token="ctl-token"), P.read_key(KEYFILE), log=lambda m: None)
+pports = pp.start()
+for arm, tok in (("mem0", T_ARM), ("mem0-raw", T_RAW)):
+    for tail in ("", "/pay", "/forbidden", "/key"):
+        call(pports["arms"][arm]["write"], "/u/u1/v1/chat/completions" + tail, HOP_BODY, token=tok)
+st = {a: dict(getattr(pp.counters[a], "upstream_statuses", None) or {}) for a in ("mem0", "mem0-raw")}
+check("D-AB-8: every upstream reply's status is counted in memory, raw and record alike - 402, 403 and 401 included "
+      "(the proxy's own refusals are not the upstream's)",
+      all(st[a] == {"200": 1, "402": 1, "403": 1, "401": 1} for a in st), str(st))
+pc_ = json.loads(call(pports["control"], "/counters", {}, token="ctl-token").partition(b"\r\n\r\n")[2] or b"{}")
+check("... and /counters carries them",
+      all((pc_.get(a) or {}).get("upstream_statuses") == {"200": 1, "402": 1, "403": 1, "401": 1} for a in st),
+      str({a: (pc_.get(a) or {}).get("upstream_statuses") for a in st}))
+call(pports["arms"]["mem0-raw"]["write"], "/u/u1/v1/chat/completions", HOP_BODY, token="nvt3-wrong-token")
+check("... a request the proxy itself refused (401, no upstream) is not an upstream status",
+      dict(getattr(pp.counters["mem0-raw"], "upstream_statuses", None) or {}).get("401") == 1
+      and pp.counters["mem0-raw"].refused_auth == 1)
+pp.stop()
+pu.close()
+
 shutil.rmtree(TMP, ignore_errors=True)
 print(f"\nproxy recording: {PASSED} passed, {FAILED} failed")
 sys.exit(1 if FAILED else 0)

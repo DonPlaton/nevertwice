@@ -16,7 +16,9 @@ proxy answers 401 itself and opens no upstream connection. With it, the proxy:
 * closes the upstream connection when the client goes away, and counts ``client_abandoned``;
 * times its own hop per call, the same code in every mode (Q-AB-2, for the §4.6 A/B): request read to upstream send
   done, the connect subtracted, plus first upstream byte in to that byte sent - clock reads at those boundaries, no
-  parsing, no byte changed; kept in memory only (``own_hop_ms``, at most OWN_HOP_CAP, the rest ``own_hop_dropped``).
+  parsing, no byte changed; kept in memory only (``own_hop_ms``, at most OWN_HOP_CAP, the rest ``own_hop_dropped``);
+* counts each upstream reply's status in memory, in every mode (``upstream_statuses``, D-AB-8: the A/B's 401/402/403
+  stop reads its raw legs there - the framing already reads the status line, nothing else is parsed).
 
 The key is bound to its host (X1/X2): the upstream is api.deepseek.com:443 over TLS, fixed in code; the only other
 upstream ever accepted is plain text on 127.0.0.1, and only when the key file is not the real one under
@@ -314,6 +316,9 @@ class Counters:
     #: client. The same code in every mode; at most OWN_HOP_CAP kept, the rest counted.
     own_hop_ms: list = field(default_factory=list)
     own_hop_dropped: int = 0
+    #: D-AB-8: every upstream reply's status line, counted in memory in every mode ("402": n) - the A/B's 401/402/403
+    #: stop reads it on its raw legs too; the proxy's own refusals are not in it
+    upstream_statuses: dict = field(default_factory=dict)
 
 
 # ── HTTP/1.1 pieces ─────────────────────────────────────────────────────
@@ -1432,6 +1437,10 @@ class Proxy:
                 keep, framer, ttfb, abandoned, hop_out = self._pipe_response(cs, up, method, ctr, tee)
                 if hop_out is not None:
                     self._own_hop(ctr, (hop_in + hop_out) * 1000)
+                if framer.status:
+                    with self._lock:                     # D-AB-8: the same in every mode
+                        k = str(framer.status)
+                        ctr.upstream_statuses[k] = ctr.upstream_statuses.get(k, 0) + 1
                 if rec is not None:
                     self._finish_call(arm, rec, framer, tee, t0, ttfb, abandoned, injected, path)
                     if (role == "write" and rec.get("stage") == "write" and rec.get("endpoint") in ("v1", "anthropic")
@@ -1762,8 +1771,8 @@ class Proxy:
             out = {"ok": True}
         elif path == "/counters":
             with self._lock:                            # a snapshot: catcher_hosts and catcher_open move together
-                out = {a: {k: (list(v) if isinstance(v, list) else v) for k, v in vars(c).items()}
-                       for a, c in self.counters.items()}
+                out = {a: {k: (list(v) if isinstance(v, list) else dict(v) if isinstance(v, dict) else v)
+                           for k, v in vars(c).items()} for a, c in self.counters.items()}
         elif path == "/flags":
             out = dict(self.flags)
         elif path == "/ollama":
