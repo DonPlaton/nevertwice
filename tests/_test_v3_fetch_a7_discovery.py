@@ -152,7 +152,8 @@ try:
           and [f["path"] for f in rep["model"]["files"]] == ["config.json", "model.safetensors"]
           and rep["model"]["files"][1]["lfs_sha256"] == "f" * 64)
     check("the window's own problems are the named 404s of the unknown repository only",
-          all(ZP in p or "exited with 3" in p for p in rec["problems"]) and rec["check"]["complete"]
+          any(ZP in p for p in rec["problems"]) and all(ZP in p or "exited with 3" in p for p in rec["problems"])
+          and rec["check"]["complete"]
           and rec["check"]["native_hits"] == 0, str(rec["problems"]))
     check("B-D3P: one page of tags and releases here - not full, so nothing older is hidden",
           sm["tags_page_full"] is False and sm["releases_page_full"] is False)

@@ -315,8 +315,9 @@ bw = AC.background_writes(bw_calls, arm="mem0", run="r1", end_write_at={"u1": t(
 check("a write-port call after end_write and outside every read window is background - before end_write, inside a "
       "read window, on the reader's port, another arm's or run's, or a unit with no end_write stamp is not",
       bw == {"count": 2, "units": ["u1"]}, str(bw))
-check("the bound: a call exactly at the end_write stamp is not after it; one exactly at a read window's edge is inside",
-      AC.background_writes([call("e", t0=3), call("f", stage="questions", t0=10.5)], arm="mem0", run="r1",
+check("the bound: a call exactly at the end_write stamp is not after it; one exactly at either edge of a read window is "
+      "inside", AC.background_writes([call("e", t0=3), call("f", stage="questions", t0=10.5),
+                                     call("g", stage="questions", t0=9.5)], arm="mem0", run="r1",
                            end_write_at={"u1": t(3)}, read_windows={"u1": [(t(9.5), t(10.5))]})["count"] == 0)
 ct_bw = AC.cloud_counters(bw_calls, arm="mem0", run="r1", stand="S1", cloud_bypass=0, background_writes=bw["count"])
 check("the count reaches the artifact, and artifact's P0b names it",

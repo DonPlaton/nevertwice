@@ -422,9 +422,19 @@ forbidden = [ST.SENTINEL_KEY, *CANARIES.values(), "Ivan Testov", "ivan.testov@ex
 files = [f for f in TMP.rglob("*") if f.is_file() and f.name != "deepseek.env"]
 bodies = [f for f in files if "bodies" in f.relative_to(TMP).parts]         # Q-A5-1: the writers' request strings
 logs_ = [f for f in files if f not in bodies]
-leaks = [(f.name, w) for f in logs_ for w in forbidden if w.encode("utf-8") in f.read_bytes()]
+
+
+def _forms(w: str) -> list[bytes]:
+    """A word as the files could hold it: its UTF-8 bytes AND its JSON escape - every proxy file is json.dumps with
+    ensure_ascii, so 'Иван' is only ever written as \\u0418..., which the raw bytes never matched."""
+    return [w.encode("utf-8"), json.dumps(w)[1:-1].encode("ascii")]
+
+
+leaks = [(f.name, w) for f in logs_ for w in forbidden if any(x in f.read_bytes() for x in _forms(w))]
 check(f"no key, canary, marker text, name or body in the {len(logs_)} written log files", leaks == [], str(leaks[:5]))
-body_leaks = [(f.name, w) for f in bodies for w in forbidden if w != "extract" and w.encode("utf-8") in f.read_bytes()]
+ANSWERS = ["fp_abc123"]                                    # V1_JSON's own strings: an answer is never a body
+body_leaks = [(f.name, w) for f in bodies for w in [*forbidden, *ANSWERS] if w != "extract"
+              and any(x in f.read_bytes() for x in _forms(w))]
 check(f"Q-A5-1: the {len(bodies)} body files hold request strings only - never the key, a canary, an owner's name or "
       f"marker (such a call is refused before it is sent), nor an answer", bodies and body_leaks == [],
       str(body_leaks[:5]))

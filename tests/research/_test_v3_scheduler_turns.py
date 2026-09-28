@@ -81,7 +81,7 @@ def attempt(fn):
 
 
 FAKE_ARM = r'''
-import json, os, sys, threading, time
+import hashlib, json, os, sys, threading, time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import base as B
 spec = json.load(open(sys.argv[1], encoding="utf-8"))
@@ -89,12 +89,31 @@ shared = spec["shared"]
 knobs = spec.get("knobs") or {}
 STREAMS = {}
 _claim = B.claim_stdio
+os.makedirs(os.path.join(shared, "base_sha"), exist_ok=True)       # the Q9 mirror as THIS child imported it
+with open(os.path.join(shared, "base_sha", str(os.getpid())), "w") as _f:
+    with open(B.__file__, "rb") as _b:
+        _f.write(hashlib.sha256(_b.read()).hexdigest())
+
+
+class _MuteBye:
+    """knobs mute_bye: the answer to bye never comes - the child hangs at its close (B-RC at the close)."""
+
+    def __init__(self, f):
+        self.f = f
+
+    def write(self, b):
+        if b'"op":"bye"' in b:
+            time.sleep(60)
+        return self.f.write(b)
+
+    def flush(self):
+        return self.f.flush()
 
 
 def _claim_and_keep():
     fin, fout = _claim()
     STREAMS["out"] = fout
-    return fin, fout
+    return fin, (_MuteBye(fout) if knobs.get("mute_bye") else fout)
 
 
 B.claim_stdio = _claim_and_keep              # main_with looks the name up in base's globals
@@ -303,6 +322,9 @@ try:
           "moment end_write returned, before counters was asked (R9 background_writes cannot see it)",
           [o["op_id"] for o in r11.ops] == ["u1-i0", "u1-i1"] and isinstance(c11.get("t"), float)
           and dt.datetime.fromisoformat(r11.end_write_utc).timestamp() <= c11["t"], f"{r11.end_write_utc} {c11}")
+    base_shas = {p.read_text() for p in (SHARED / "base_sha").iterdir()} if (SHARED / "base_sha").exists() else set()
+    check("the Q9 mirror as the children imported it: every fake arm's own base.py hashed to the repository's",
+          base_shas == {hashlib.sha256(BASE_SRC).hexdigest()}, str(base_shas))
     for a in order:
         for r in ("r1", "r2"):
             status.end(ids[(a, r)], rc=0, wall_s=1.0, units=2, out=f"runs/{a}.{r}.json")
@@ -357,8 +379,8 @@ try:
     sm = status.start("SX", "b03", "r1", "am", pid=os.getpid(), tag="smoke")
     rm = sched.write_turn(launcher("am", expect=1, store="memory"), stand="SX", runs=["r1"], units=["u6"], ops_for=OPS,
                           ceilings={"u6": 60.0}, status_ids={"r1": sm})[("r1", "u6")]
-    check("B-WCTR: a memory-store arm's write stage records its counters too (the snapshot at end_write)",
-          (rm.counters or {}).get("stage") == "write" and (rm.counters or {}).get("items") == 1, str(rm.counters))
+    check("B-WCTR: a memory-store arm's write stage records its counters too (the snapshot at end_write: OPS wrote 2)",
+          (rm.counters or {}).get("stage") == "write" and (rm.counters or {}).get("items") == 2, str(rm.counters))
     check("the memory-store unit's client is kept, its child still alive and answering",
           rm.client is not None and rm.client.child.process.poll() is None
           and rm.client.request("read", timeout=10, qid="q", query="x")["items"][0]["item_id"] == "u6-i0")
@@ -549,13 +571,17 @@ try:
             self.ev.append(("judge", self.name, ended))
 
     class GateScript:
-        """Refuses the first `closed` asks, then admits (the IncidentGate shape the scheduler reads)."""
+        """Refuses the first `closed` asks, then admits (the IncidentGate shape the scheduler reads). ``spawns``, when
+        given, counts the stand's spawns so far: each refusing ask records it - a unit spawned while the gate refused
+        shows as a count above 0."""
 
-        def __init__(self, closed):
-            self.closed, self.asked = closed, 0
+        def __init__(self, closed, spawns=None):
+            self.closed, self.asked, self.spawns, self.at_refusal = closed, 0, spawns, []
 
         def admits_new_unit(self):
             self.asked += 1
+            if self.asked <= self.closed and self.spawns is not None:
+                self.at_refusal.append(self.spawns())
             return self.asked > self.closed
 
     class StandHooks:
@@ -646,14 +672,19 @@ try:
     r_ = s.run_stand(sp, [SC.BlockPlan(block="b01", units=("w1",))], judges=judges, order=4)
     check("... a smoke stand on a dirty tree runs, the tree check recorded", r_["tree_start"]["clean"] is False
           and "STAND SU START" in (TMP / "STATUS6").read_text(encoding="utf-8"))
-    gate = GateScript(closed=3)
+    def sg_spawns():
+        return sum(1 for x in L.spawns_log(C).read_text(encoding="utf-8").splitlines()
+                   if json.loads(x).get("stand") == "SG")
+
+    gate = GateScript(closed=3, spawns=sg_spawns)
     s, sp, judges, ev, gpu, st = stand_world("smoke", gate=gate, stand="SG", sfile="STATUS7")
-    t_gate = time.monotonic()
     s.run_stand(sp, [SC.BlockPlan(block="b01", units=("w1",))], judges=judges, order=5)
     spawns = [json.loads(x) for x in L.spawns_log(C).read_text(encoding="utf-8").splitlines()]
     sg = [x for x in spawns if x.get("stand") == "SG"]
-    check("T20: no unit spawns while the gate refuses - it asked until it admitted, then the unit ran",
-          gate.asked >= 4 and len(sg) >= 1, f"asked {gate.asked}, spawns {len(sg)}")
+    check("T20: no unit spawns while the gate refuses - it asked until it admitted, then the unit ran (every refusing "
+          "ask saw no spawn of the stand yet: a unit spawned before its gate, or past it, is caught)",
+          gate.asked >= 4 and len(sg) >= 1 and gate.at_refusal == [0, 0, 0],
+          f"asked {gate.asked}, spawns {len(sg)}, at refusal {gate.at_refusal}")
 
     print("\n- A8 (W3): a failed read or answer is re-asked at most twice, at least 5 min apart; then unrecovered -")
 

@@ -252,8 +252,10 @@ if made is not None:
     ctl(ports, "/window", {"name": "held", "state": "close"})
     import inspect  # noqa: E402
 
-    check("F-P2-6: /counters is a snapshot taken under the proxy's lock",
-          "with self._lock:" in inspect.getsource(P.Proxy._control).split('path == "/counters"', 1)[1].split("elif", 1)[0])
+    ctr_src = inspect.getsource(P.Proxy._control).split('path == "/counters"', 1)[1].split("elif", 1)[0]
+    check("F-P2-6: /counters is a snapshot taken under the proxy's lock (since HOP-2, in Proxy.counters_snapshot)",
+          "self.counters_snapshot()" in ctr_src and "with self._lock:" in inspect.getsource(P.Proxy.counters_snapshot),
+          ctr_src.strip()[:80])
     print("\n- STOP-DRAIN (CI e8e9088): a tunnel open when stop() is called leaves its line before stop() returns -")
     ctl(ports, "/window", {"name": "at-stop", "state": "open", "hosts": [HOST], "arms": ["fetch"]})
     at_stop = _real_connect(("127.0.0.1", fetch_p))

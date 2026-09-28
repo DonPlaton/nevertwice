@@ -250,7 +250,21 @@ check("spawn_child: a fresh unit directory under <runs>/<stand>/<run>/<arm>/<uni
       and {k: recs[0][k] for k in ("role", "stand", "run", "arm", "unit")} == {"role": "arm-write", "stand": "S1",
                                                                              "run": "r1", "arm": "mem0", "unit": "u1"}
       and recs[0]["refused"] is False and child.process.pid > 40000, f"{dirs} {recs}")
-check("the build callback gets the unit's directories (the spec is written from them)", SPEC(dirs).argv[0] == sys.executable)
+seen_d: list = []
+
+
+def _capture(d):
+    seen_d.append(d)
+    return SPEC(d)
+
+
+try:
+    _ch_b, d_b = s1.spawn_child(_capture, role="arm-write", stand="S1", run="r1", arm="mem0", unit="u-build")
+except L.ContractViolation as e:
+    _ch_b, d_b = None, f"refused: {e}"
+check("the build callback gets the unit's directories (the spec is written from them) - the very dirs spawn_child "
+      "returns, made for that unit", len(seen_d) == 1 and seen_d[0] is d_b
+      and getattr(d_b, "cwd", None) == s1.c.runs_root / "S1" / "r1" / "mem0" / "u-build", f"{seen_d} {d_b}")
 bad = SC.LaunchSpec(argv=(str(TMPS / "not-a-binary.exe"),))
 try:
     s1.spawn_child(lambda d: bad, role="arm-write", stand="S1", run="r1", arm="mem0", unit="u2")
