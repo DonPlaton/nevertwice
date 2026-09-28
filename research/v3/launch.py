@@ -58,7 +58,7 @@ import time
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable, Collection, Mapping, Sequence
+from typing import Any, Callable, Collection, Mapping, Sequence
 
 REPO = Path(__file__).resolve().parents[2]
 #: §2.6.4 names the owner's home literally; it is pinned here, not read from an environment a harness could fake.
@@ -2146,6 +2146,37 @@ def _walk_items(obj):
 
 # ── the proxy process (A2.4) ────────────────────────────────────────────
 
+def _drain_pipe(stream: Any, path: Path) -> None:
+    """B-PIPE: one of the proxy's pipes, read to its end by a daemon thread and appended to ``path`` (its run
+    directory). Unread, a pipe fills - 4 KiB on Windows - and every proxy thread that logs then blocks for good, in the
+    middle of a call and before its record is written. A file that cannot be written leaves the pipe drained anyway."""
+    if stream is None or not hasattr(stream, "readline"):
+        return
+
+    def run() -> None:
+        f = None
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            f = open(path, "ab")  # noqa: SIM115 - held until the pipe ends
+        except OSError:
+            f = None
+        try:
+            for chunk in iter(stream.readline, b""):
+                if f is not None:
+                    try:
+                        f.write(chunk)
+                        f.flush()
+                    except OSError:
+                        pass
+        except (OSError, ValueError):
+            pass
+        finally:
+            if f is not None:
+                f.close()
+
+    threading.Thread(target=run, daemon=True, name=f"drain-{path.name}").start()
+
+
 def spawn_proxy(c: Contract, python: str | os.PathLike, *, script: Path, config_path: Path, key_file: Path | None = None,
                 stdin_secrets: Mapping, unit: UnitDirs, parent_env: Mapping[str, str], ready_timeout: float = 30.0,
                 popen: Callable[..., subprocess.Popen] = subprocess.Popen,
@@ -2179,6 +2210,8 @@ def spawn_proxy(c: Contract, python: str | os.PathLike, *, script: Path, config_
     child = spawn(c, argv, env=env, cwd=unit.cwd, record={"role": "proxy"}, parent_env=parent_env, catcher_url="",
                   argv_exception=exc, popen=popen, requirement="optional", unwitnessed_reason=reason,
                   stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    run_dir = Path(json.loads(Path(config_path).read_text(encoding="utf-8"))["run_dir"])
+    _drain_pipe(child.process.stderr, run_dir / "proxy.stderr.log")        # B-PIPE: from its first byte
     child.process.stdin.write((json.dumps(dict(stdin_secrets)) + "\n").encode("utf-8"))
     child.process.stdin.close()
     line: list[bytes] = []
@@ -2189,7 +2222,7 @@ def spawn_proxy(c: Contract, python: str | os.PathLike, *, script: Path, config_
     if not got.startswith("READY "):
         child.kill_tree()
         raise ContractViolation(["the proxy did not report READY in time"])
-    run_dir = Path(json.loads(Path(config_path).read_text(encoding="utf-8"))["run_dir"])
+    _drain_pipe(child.process.stdout, run_dir / "proxy.stdout.log")        # B-PIPE: whatever follows READY
     data = (run_dir / "ports.json").read_bytes()
     if hashlib.sha256(data).hexdigest() != got.split(" ", 1)[1]:
         child.kill_tree()

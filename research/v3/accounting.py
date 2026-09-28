@@ -356,10 +356,12 @@ def embed_inputs(ollama: Iterable[Mapping[str, Any]], *, arm: str, expected: boo
     token sum differs from Ollama's prompt_eval_count is counted, never adjusted (a systematic difference is the
     pilot's finding). A call recorded without the leg's count refuses by name - an unmeasured cap is never 0. R-EMBED-PATH
     (the auditor): ``expected`` - the arm embeds through Ollama (embeds_via_ollama) - and its leg recorded no answered
-    embed call refuses too: every Ollama embedder goes through its leg, so none recorded is "not measured", not 0."""
+    embed call refuses too: every Ollama embedder goes through its leg, so none recorded is "not measured", not 0.
+    B-EMB-ERR: a record whose answer was cut after its 200 head (the leg names the error and writes no stats) is no
+    answered call - it is skipped, never read as a leg without a tokenizer."""
     out = {"embed_at_cap": 0, "calls": 0, "inputs": 0, "tokens": 0, "prompt_eval_count": 0, "mismatched_calls": 0}
     for r in ollama:
-        if r.get("arm") != arm or not r.get("is_embed") or r.get("status") != 200:
+        if r.get("arm") != arm or not r.get("is_embed") or r.get("status") != 200 or r.get("error"):
             continue
         for f in ("embed_at_cap", "embed_inputs", "embed_tokens"):
             v = r.get(f)

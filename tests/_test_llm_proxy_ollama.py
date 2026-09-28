@@ -103,7 +103,11 @@ class FakeOllama:
             self.attempts[path] = self.attempts.get(path, 0) + 1
             q = self.script.get(path) or [(200, EMBED_OK)]
             status, body = q.pop(0) if len(q) > 1 else q[0]
-            if status == 200 and body == "NDJSON":
+            if status == 200 and body == "CUT":           # B-OLR: Ollama closes inside its answer
+                out = b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 100\r\n\r\n" + EMBED_OK[:10]
+            elif status == 200 and body == "BADHEAD":     # B-OLR: a status line whose code is no number
+                out = b"HTTP/1.1 abc OK\r\nContent-Length: 0\r\n\r\n"
+            elif status == 200 and body == "NDJSON":
                 out = b"HTTP/1.1 200 OK\r\nContent-Type: application/x-ndjson\r\nTransfer-Encoding: chunked\r\n\r\n"
                 for line in NDJSON:
                     out += b"%x\r\n%s\r\n" % (len(line), line)
@@ -276,6 +280,45 @@ check("Q-A5-1: a generation call on the leg in the write stage leaves its parsed
 idle = P.OllamaLeg("idle", mode="pace", cloud_arm=False, upstream=("127.0.0.1", OL.port), log=lambda m: None, run_dir=TMP)
 check("an idle leg reports calls: 0 (never an absent record)", idle.transport().get("calls") == 0, str(idle.transport()))
 
+print("\n- B-OLR: an answer Ollama cut keeps its record; B-OLM: the model store is never reached -")
+OL.script["/api/embed"] = [(200, "CUT")]
+call(lp, "/u/r1.cut/api/embed")
+OL.script["/api/embed"] = [(200, EMBED_OK)]
+_ol = [json.loads(x) for x in (TMP / "run" / "ollama.jsonl").read_bytes().decode("utf-8").split("\n") if x.strip()]
+cut = [r for r in _ol if r.get("unit") == "r1.cut"]
+check("B-OLR: an embed answer Ollama closed inside its body is a line in ollama.jsonl - error ProtocolError, no embed "
+      "stats - never a handler error that leaves no record", len(cut) == 1 and cut[0].get("error") == "ProtocolError"
+      and "embed_inputs" not in cut[0], str(cut))
+OL.script["/api/embed"] = [(200, "BADHEAD")]
+got_bh = call(lp, "/u/r1.badhead/api/embed")
+OL.script["/api/embed"] = [(200, EMBED_OK)]
+_ol = [json.loads(x) for x in (TMP / "run" / "ollama.jsonl").read_bytes().decode("utf-8").split("\n") if x.strip()]
+bh = [r for r in _ol if r.get("unit") == "r1.badhead"]
+check("B-OLR: an answer whose status line does not parse (a code that is no number) is a 502 to the client and a line in "
+      "ollama.jsonl naming the error - never a handler error that leaves no record and no answer",
+      got_bh.startswith(b"HTTP/1.1 502") and len(bh) == 1 and bh[0].get("error") == "ValueError"
+      and bh[0].get("status") is None, f"{got_bh[:30]!r} {bh}")
+OL.attempts.clear()
+got_lf = call(lp, "/u/r1.lf/api/embed\nX-Injected: 1")
+_s = socket.create_connection(("127.0.0.1", lp))
+_s.sendall(b"POST /u/r1.cl/api/embed HTTP/1.1\r\nHost: x\r\nContent-Length: x\r\n\r\n{}")
+got_cl = ST._read_all(_s, 5)
+_s.close()
+check("B-X4-LINE on the leg: a request TARGET carrying a bare LF is refused (400) and never reaches Ollama",
+      got_lf.startswith(b"HTTP/1.1 400") and not OL.attempts, f"{got_lf[:30]!r} {OL.attempts}")
+check("B-FRAME on the leg: a Content-Length that is no number is refused (400) and never reaches Ollama - never a "
+      "ValueError that drops the connection unanswered", got_cl.startswith(b"HTTP/1.1 400") and not OL.attempts,
+      f"{got_cl[:30]!r} {OL.attempts}")
+got_pull = call(lp, "/u/r1.pull/api/pull", b'{"model":"qwen3:8b"}')
+got_del = call(lp, "/u/r1.pull/api/delete", b'{"model":"qwen3:8b"}')
+_ol = [json.loads(x) for x in (TMP / "run" / "ollama.jsonl").read_bytes().decode("utf-8").split("\n") if x.strip()]
+refused = [r for r in _ol if r.get("unit") == "r1.pull"]
+check("B-OLM: a pull or a delete on the leg is refused (403) and never reaches Ollama - the owner's model store is not "
+      "the product's, and a pull is egress no witness sees; each refusal is a line in ollama.jsonl",
+      got_pull.startswith(b"HTTP/1.1 403") and got_del.startswith(b"HTTP/1.1 403") and "/api/pull" not in OL.attempts
+      and "/api/delete" not in OL.attempts and [r.get("error") for r in refused] == ["refused:model-store"] * 2,
+      f"{got_pull[:30]!r} {OL.attempts} {refused}")
+
 print("\n- TB7 embed_at_cap (Q-A7-7 O-a): each input counted by the pinned tokenizer, prompt_eval_count beside it -")
 AC = _load("v3_accounting_for_oll", ROOT / "research" / "v3" / "accounting.py")
 px.stage = {"block": None, "stage": None}
@@ -312,6 +355,23 @@ except Exception as e:  # noqa: BLE001 - only accounting's named refusal passes 
     un = str(e) if isinstance(e, AC.AccountingError) else f"not refused by name: {type(e).__name__}: {e}"
 check("TB7: an embed call recorded without the leg's count refuses in accounting - an unmeasured cap is never 0",
       cloud_rec and cloud_rec[0].get("embed_at_cap") is None and "no measured" in un, un)
+cut_rec = [r for r in olog if r.get("unit") == "r1.cut" and r["arm"] == "local"]
+try:
+    ei_cut = AC.embed_inputs([*[r for r in both if r["arm"] == "local"], *cut_rec], arm="local")
+except Exception as e:  # noqa: BLE001 - the row FAILs by name
+    ei_cut = f"{type(e).__name__}: {e}"
+check("B-EMB-ERR: an embed answer cut after its 200 head (the leg's record carries its error and no stats) is no answered "
+      "call - it neither refuses the arm's TB7 accounting as 'no tokenizer' nor counts", len(cut_rec) == 1
+      and ei_cut == ei, f"{cut_rec} {ei_cut}")
+OL.script["/v1/embeddings"] = [(200, b'{"object":"list","data":[{"embedding":[0.1]}],"model":"m",'
+                                     b'"usage":{"prompt_tokens":5,"total_tokens":5}}')]
+call(lp, "/u/r1.oa/v1/embeddings", b'{"model":"m","input":"one two three"}')
+oa = [json.loads(x) for x in (TMP / "run" / "ollama.jsonl").read_bytes().decode("utf-8").split("\n")
+      if x.strip() and '"r1.oa"' in x]
+check("B-OAEMB: an embed call on Ollama's OpenAI-compatible /v1/embeddings (zep-graphiti's OpenAIEmbedder) is an embed "
+      "call - its TB7 stats are measured and usage.prompt_tokens stands for prompt_eval_count",
+      len(oa) == 1 and oa[0].get("is_embed") is True
+      and (oa[0].get("embed_inputs"), oa[0].get("embed_tokens"), oa[0].get("prompt_eval_count")) == (1, 5, 5), str(oa))
 try:
     from tokenizers import Tokenizer, models, pre_tokenizers, processors  # noqa: E402
     vocab = {"<s>": 0, "</s>": 1, "[UNK]": 2, "one": 3, "two": 4, "three": 5}

@@ -223,7 +223,13 @@ class _BrokenReply:
 
 for n, (label, reply) in enumerate((
         ("a chunk without its CRLF", b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n2\r\n{}XX0\r\n\r\n"),
-        ("a header line without a colon", b"HTTP/1.1 200 OK\r\nNoColonHere\r\nContent-Length: 2\r\n\r\n{}"))):
+        ("a header line without a colon", b"HTTP/1.1 200 OK\r\nNoColonHere\r\nContent-Length: 2\r\n\r\n{}"),
+        ("B-FRAME: a Content-Length that is no number", b"HTTP/1.1 200 OK\r\nContent-Length: 2, 2\r\n\r\n{}"),
+        ("B-FRAME: a chunk size that is not hexadecimal",
+         b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\nzz\r\n{}\r\n0\r\n\r\n"),
+        ("B-FRAME: a negative Content-Length", b"HTTP/1.1 200 OK\r\nContent-Length: -1\r\n\r\n{}"),
+        ("B-FRAME: a negative chunk size (-2 steps the framer back onto the size line's own CRLF, and the reply reads "
+         "as whole)", b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n-2\r\n0\r\n\r\n"))):
     pxb, portsb, upb = make(f"run_broken{n}")
     fake = _BrokenReply(reply)
     pxb._upstream = lambda fake=fake: fake.mine

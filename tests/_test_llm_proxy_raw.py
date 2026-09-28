@@ -277,6 +277,12 @@ got = exchange(wp, request(wp, "/v1/chat/completions", BODY, extra="Expect: 100-
 check("Expect: 100-continue is answered locally, then the response follows",
       got.startswith(b"HTTP/1.1 100 Continue\r\n\r\nHTTP/1.1 200"), got[:60].decode())
 check("Expect is not forwarded", b"expect" not in up.requests[-1].lower())
+c_big = up.connections
+got_big = exchange(wp, (f"POST /v1/chat/completions HTTP/1.1\r\nHost: x\r\nAuthorization: Bearer {ST.TOKEN}\r\n"
+                        f"Content-Length: {P.MAX_BODY + 1}\r\nExpect: 100-continue\r\n\r\n").encode())
+check("an Expect: 100-continue above MAX_BODY is answered 413 at once - never a 100 Continue that invites the body the "
+      "proxy then refuses", got_big.startswith(b"HTTP/1.1 413") and b"100 Continue" not in got_big
+      and up.connections == c_big, got_big[:60].decode("latin-1"))
 got = exchange(cp, b"CONNECT api.example.com:443 HTTP/1.1\r\nHost: api.example.com:443\r\n\r\n")
 cj = (TMP / "run" / "catcher.jsonl").read_bytes().decode()
 check("the catcher refuses a CONNECT (403) and records its host", got.startswith(b"HTTP/1.1 403")
@@ -378,6 +384,16 @@ check("X4 a header carrying a bare LF is refused (400) with no upstream connecti
       got.startswith(b"HTTP/1.1 400") and up.connections == c0, got[:40].decode("latin-1"))
 head = px._outgoing_head("POST", "/v1/chat/completions", [("User-Agent", "x\nAccept-Encoding: gzip")], 2)
 check("X4 ... and _outgoing_head never writes such a header", b"Accept-Encoding" not in head)
+c1 = up.connections
+got_line = exchange(wp, request(wp, "/v1/chat/completions\nAccept-Encoding: gzip", BODY))
+check("B-X4-LINE: a request TARGET carrying a bare LF is refused (400) with no upstream connection - the head is split "
+      "at CRLF only, so it reached the upstream's request line as a header line of its own",
+      got_line.startswith(b"HTTP/1.1 400") and up.connections == c1, got_line[:40].decode("latin-1"))
+c2, rh2 = up.connections, px.counters["a1"].refused_header
+got_cl = exchange(wp, request(wp, "/v1/chat/completions", BODY).replace(b"Content-Length: ", b"Content-Length: x"))
+check("B-FRAME: a Content-Length that is no number is refused (400) with no upstream connection - never a ValueError "
+      "that drops the connection unanswered", got_cl.startswith(b"HTTP/1.1 400") and up.connections == c2
+      and px.counters["a1"].refused_header == rh2 + 1, f"{got_cl[:40]!r} {px.counters['a1'].refused_header}")
 cp = ports["arms"]["a1"]["catcher"]
 exchange(cp, f"CONNECT owner-data-{'Z' * 5000}:443 HTTP/1.1\r\nHost: x\r\n\r\n".encode())
 last = (TMP / "run" / "catcher.jsonl").read_bytes().decode().splitlines()[-1]
@@ -834,6 +850,16 @@ except Exception:  # noqa: BLE001
     child.kill_tree()
     rc = None
 out, err = child.process.stdout.read(), child.process.stderr.read()
+for _p in ("proxy.stdout.log", "proxy.stderr.log"):           # B-PIPE: its pipes are drained into its run directory
+    for _i in range(50):
+        if (pdir / _p).exists():
+            break
+        time.sleep(0.1)
+out += (pdir / "proxy.stdout.log").read_bytes() if (pdir / "proxy.stdout.log").exists() else b""
+err += (pdir / "proxy.stderr.log").read_bytes() if (pdir / "proxy.stderr.log").exists() else b""
+check("B-PIPE: the full proxy's stdout and stderr are drained into its run directory",
+      (pdir / "proxy.stdout.log").is_file() and (pdir / "proxy.stderr.log").is_file(),
+      str(sorted(p.name for p in pdir.iterdir())))
 check("the proxy shuts down cleanly on /shutdown", rc == 0, str(rc))
 rec = [json.loads(x) for x in L.spawns_log(C).read_bytes().decode().splitlines() if '"proxy"' in x][-1]
 check("its environment carries no key, token or proxy variable",
@@ -845,7 +871,7 @@ check("X6 the proxy's read exceptions are its script and the key file at their a
       and "PYTHONPATH" not in rec["env_names"], str((rec.get("argv_exception"), rec.get("env_exception"))))
 check("the tokens reached it on stdin only: absent from the spawn record",
       ST.TOKEN.encode() not in spawn_bytes and secrets["control_token"].encode() not in spawn_bytes)
-check("the real process printed no key (stdout, stderr)", KEY not in out and KEY not in err, err[-200:].decode("utf-8", "replace"))
+check("the real process printed no key (stdout, stderr, and their drained logs)", KEY not in out and KEY not in err, err[-200:].decode("utf-8", "replace"))
 check("the files it wrote hold no key", all(KEY not in f.read_bytes() for f in pdir.rglob("*") if f.is_file()))
 up.close()
 

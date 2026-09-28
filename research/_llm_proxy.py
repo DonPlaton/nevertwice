@@ -368,6 +368,21 @@ def _hget(headers: list[tuple[str, str]], name: str) -> str | None:
     return None
 
 
+def _smuggles(start: str, headers: list[tuple[str, str]]) -> bool:
+    """X4: a CR, LF or NUL anywhere in the request line or a header - the head is split at CRLF only, so a bare LF in
+    the TARGET survived into the upstream's request line as a header line of its own (B-X4-LINE)."""
+    bad = ("\r", "\n", "\0")
+    return any(ch in start for ch in bad) or any(ch in k or ch in v for k, v in headers for ch in bad)
+
+
+def _content_length(headers: list[tuple[str, str]]) -> int | None:
+    """The request's Content-Length (0 when absent), or None when it is no plain decimal number (B-FRAME)."""
+    v = _hget(headers, "content-length")
+    if v is None or v == "":
+        return 0
+    return int(v) if v.isascii() and v.isdigit() else None
+
+
 class ResponseFramer:
     """Follows an HTTP/1.1 response's framing as its bytes pass through, without changing any of them, so the proxy
     knows where a response ends on a kept-alive connection. ``feed`` returns how many of the given bytes belong to
@@ -423,6 +438,8 @@ class ResponseFramer:
             elif "chunked" in te:
                 self.state = "chunk_size"
             elif cl is not None:
+                if not (cl.isascii() and cl.isdigit()):  # B-FRAME: "12, 12" or "-1" is no length - a ProtocolError,
+                    raise ProtocolError("a Content-Length that is not a number")   # never a ValueError past B-SEND2
                 self.remaining = int(cl)
                 self.state = "length"
                 if self.remaining == 0:
@@ -455,7 +472,12 @@ class ResponseFramer:
                 if line == b"":
                     self.done = True
                 return consumed
-            size = int(line.split(b";", 1)[0].strip() or b"0", 16)
+            try:
+                size = int(line.split(b";", 1)[0].strip() or b"0", 16)
+            except ValueError:                           # B-FRAME: the reply is still a call (B-SEND2)
+                raise ProtocolError("a chunk size that is not hexadecimal") from None
+            if size < 0:
+                raise ProtocolError("a negative chunk size")
             if size == 0:
                 self.state = "trailer"
             else:
@@ -762,6 +784,21 @@ class TeeParser:
 
 OLLAMA_HOST, OLLAMA_PORT = "127.0.0.1", 11434          # the local server; never the key, never another host
 PACER_PATH = Path(__file__).resolve().parent / "_ollama_pacer.py"
+#: B-OLM: the endpoints that change the owner's model store - a pull or push is also egress no witness sees (Ollama is
+#: outside every arm's tree), a delete removes the owner's models. A product's leg never reaches them (403).
+OLLAMA_MODEL_STORE = ("/api/pull", "/api/push", "/api/delete", "/api/create", "/api/copy", "/api/blobs")
+
+
+def _ollama_mutating(path: str) -> bool:
+    p = path.split("?", 1)[0].rstrip("/").lower()
+    return any(p == e or p.startswith(e + "/") for e in OLLAMA_MODEL_STORE)
+
+
+def _openai_embed(path: str) -> bool:
+    """B-OAEMB: Ollama's OpenAI-compatible embeddings endpoint - zep-graphiti's OpenAIEmbedder posts to <leg>/v1 +
+    /embeddings. The pacer's own embed paths are the native two, so without this its calls were no embed calls at all:
+    no TB7 stats, no failed embed outcome for P0a, and R-EMBED-PATH's 'none recorded' refusal for the arm."""
+    return path.split("?", 1)[0].rstrip("/").endswith("/v1/embeddings")
 
 
 def load_pacer_copy(arm: str, mode: str = "pace"):
@@ -853,6 +890,8 @@ class OllamaLeg:
             head_end = response.index(b"\r\n\r\n") + 4
             answer = json.loads(_dechunk(response[head_end:], response[:head_end]) or b"{}")
             v = answer.get("prompt_eval_count")
+            if v is None and isinstance(answer.get("usage"), dict):      # B-OAEMB: the OpenAI-shaped answer's count
+                v = answer["usage"].get("prompt_tokens")
             pec = v if isinstance(v, int) and not isinstance(v, bool) else None
         except (ValueError, TypeError, AttributeError):
             pec = None
@@ -869,18 +908,32 @@ class OllamaLeg:
         start, headers = _parse_head(head)
         method, _, rest = start.partition(" ")
         target = rest.rsplit(" ", 1)[0]
-        if any(ch in k or ch in v for k, v in headers for ch in ("\r", "\n", "\0")):
-            _send_local(cs, 400, "Bad Request", b"a header carries CR, LF or NUL")
+        if _smuggles(start, headers):                    # X4, the request line included (B-X4-LINE)
+            _refuse(cs, 400, "Bad Request", b"a header carries CR, LF or NUL", headers=headers, buffered=len(buf))
             return
         if "chunked" in (_hget(headers, "transfer-encoding") or "").lower():
-            _send_local(cs, 411, "Length Required")
+            _refuse(cs, 411, "Length Required", headers=headers, buffered=len(buf))
             return
         m = _UNIT.match(target)
         unit, path = (m.group(1), m.group(2)) if m else (None, target)
         if ".." in path or not path.startswith("/"):
-            _send_local(cs, 404, "Not Found")
+            _refuse(cs, 404, "Not Found", headers=headers, buffered=len(buf))
             return
-        length = int(_hget(headers, "content-length") or 0)
+        if _ollama_mutating(path):                       # B-OLM: the owner's models are never pulled, pushed,
+            self.log(f"ollama leg refused a model-store call: {path.split('?', 1)[0][:64]}")   # created or deleted
+            _refuse(cs, 403, "Forbidden", b"the leg forwards no call that changes Ollama's model store",
+                    headers=headers, buffered=len(buf))
+            t_ref = _iso(time.time())
+            _append_jsonl(self.run_dir / "ollama.jsonl",
+                          {"arm": self.arm, "unit": unit, "path": path, "is_embed": False, "is_llm": False,
+                           "status": None, "error": "refused:model-store", "fallback_local": False, "t0": t_ref,
+                           "t1": t_ref, **stage})
+            return
+        length = _content_length(headers)
+        if length is None:                               # B-FRAME: no plain decimal length - refused, never a crash
+            _refuse(cs, 400, "Bad Request", b"a Content-Length that is not a number", headers=headers,
+                    buffered=len(buf))
+            return
         while len(buf) < length:
             chunk = cs.recv(65536)
             if not chunk:
@@ -892,7 +945,7 @@ class OllamaLeg:
         lines += [f"Content-Length: {len(body)}", "Connection: close"]
         out = ("\r\n".join(lines) + "\r\n\r\n").encode("latin-1") + body
         url = f"http://{self.upstream[0]}:{self.upstream[1]}{path}"
-        is_embed, is_llm = self.pacer._is_embed_path(url), self.pacer._is_llm_path(url)
+        is_embed, is_llm = self.pacer._is_embed_path(url) or _openai_embed(path), self.pacer._is_llm_path(url)
         self.calls += 1
         if is_llm and self.cloud_arm:
             self.fallback_local += 1
@@ -932,14 +985,14 @@ class OllamaLeg:
                 cs.sendall(e.raw)                            # exactly what Ollama said
             except OSError:
                 pass
-        except OSError as e:
-            error = type(e).__name__
+        except (OSError, ProtocolError, ValueError, IndexError) as e:   # B-OLR: a head that does not parse is a
+            error = type(e).__name__                                     # failed call with its record, like an OSError
             self.log(f"ollama leg failed: {type(e).__name__}")
             _send_local(cs, 502, "Bad Gateway", b"ollama unreachable")
         else:
             answer = bytearray(first) if is_embed else None      # TB7: the embed answer, for prompt_eval_count
+            framer = ResponseFramer(method)
             try:
-                framer = ResponseFramer(method)
                 framer.feed(first)
                 cs.sendall(first)
                 status = framer.status
@@ -954,6 +1007,8 @@ class OllamaLeg:
                         answer += chunk
             except OSError:
                 error = "client_or_upstream_closed"
+            except ProtocolError:                            # B-OLR: Ollama closed inside its answer, or sent one the
+                error = "ProtocolError"                      # framer cannot follow - the call keeps its record
             finally:
                 up.close()
             if is_embed and status == 200 and error is None and framer.done:
@@ -1112,6 +1167,7 @@ class Proxy:
         self.windows: dict[str, dict] = {}          # A3.a: name -> {"hosts": frozenset, "arms": frozenset}
         self._listeners: list[socket.socket] = []
         self._stop = threading.Event()
+        self._stopped = threading.Event()           # B-SHUT: set when stop() has drained, the process's own exit waits
         self._threads: list[threading.Thread] = []
         self.scan_refused = 0
         self._lock = threading.Lock()
@@ -1215,23 +1271,28 @@ class Proxy:
     def stop(self, *, drain_s: float = STOP_DRAIN_S) -> dict[str, int]:
         """Stop accepting, then wait up to ``drain_s`` until every open catcher connection has written its line to
         catcher.jsonl (CI e8e9088: a tunnel open at the stop must leave its record). Returns the arms whose
-        connections are still open at the deadline, by count - {} when every line is written."""
+        connections are still open at the deadline, by count - {} when every line is written. B-SHUT: _stopped is set
+        at its end, whatever happened - the process's main loop exits on it, not on _stop, so a /shutdown's drain
+        (run on a daemon Timer) is never cut short by the interpreter's exit."""
         self._stop.set()
-        for s in self._listeners:
-            try:
-                s.close()
-            except OSError:
-                pass
-        deadline = time.monotonic() + drain_s
-        while True:
-            with self._lock:
-                still = {a: c.catcher_open for a, c in self.counters.items() if c.catcher_open}
-            if not still or time.monotonic() >= deadline:
-                break
-            time.sleep(0.05)
-        if still:
-            self.log(f"stop: {sum(still.values())} catcher connection(s) still open after {drain_s} s")
-        return still
+        try:
+            for s in self._listeners:
+                try:
+                    s.close()
+                except OSError:
+                    pass
+            deadline = time.monotonic() + drain_s
+            while True:
+                with self._lock:
+                    still = {a: c.catcher_open for a, c in self.counters.items() if c.catcher_open}
+                if not still or time.monotonic() >= deadline:
+                    break
+                time.sleep(0.05)
+            if still:
+                self.log(f"stop: {sum(still.values())} catcher connection(s) still open after {drain_s} s")
+            return still
+        finally:
+            self._stopped.set()
 
     # flags ------------------------------------------------------------------------------------------------------
     def _load_flags(self) -> dict[str, int]:
@@ -1346,7 +1407,7 @@ class Proxy:
                 method, _, rest = start.partition(" ")
                 target = rest.rsplit(" ", 1)[0]
                 ctr.requests += 1
-                if any(ch in k or ch in v for k, v in headers for ch in ("\r", "\n", "\0")):
+                if _smuggles(start, headers):
                     ctr.refused_header += 1                  # X4: no smuggled header line reaches the upstream
                     _refuse(cs, 400, "Bad Request", b"a header carries CR, LF or NUL",
                             headers=headers, buffered=len(buf))
@@ -1373,12 +1434,17 @@ class Proxy:
                     ctr.refused_path += 1
                     _refuse(cs, 404, "Not Found", b"path not forwarded", headers=headers, buffered=len(buf))
                     return
-                if (_hget(headers, "expect") or "").lower() == "100-continue":
-                    cs.sendall(b"HTTP/1.1 100 Continue\r\n\r\n")
-                length = int(_hget(headers, "content-length") or 0)
+                length = _content_length(headers)
+                if length is None:                       # B-FRAME: a length that is no number is refused, never a
+                    ctr.refused_header += 1              # ValueError that drops the connection unanswered
+                    _refuse(cs, 400, "Bad Request", b"a Content-Length that is not a number",
+                            headers=headers, buffered=len(buf))
+                    return
                 if length > MAX_BODY:
                     _refuse(cs, 413, "Payload Too Large", headers=headers, buffered=len(buf))
                     return
+                if (_hget(headers, "expect") or "").lower() == "100-continue":
+                    cs.sendall(b"HTTP/1.1 100 Continue\r\n\r\n")
                 while len(buf) < length:
                     chunk = cs.recv(65536)
                     if not chunk:
@@ -1933,13 +1999,18 @@ def main(argv: list[str] | None = None) -> int:
     secrets = json.loads(sys.stdin.readline() or "{}")          # tokens: never argv, file or environment
     if args.cmd == "catch":
         proxy, _ports, digest = start_catch(args.config, secrets)
-        print(f"READY {digest}", flush=True)
-        try:
-            while not proxy._stop.is_set():
-                time.sleep(0.2)
-        except KeyboardInterrupt:
-            proxy.stop()
-        return 0
+    else:
+        started = _start_serve(args, secrets)
+        if isinstance(started, int):
+            return started                               # UPSTREAM_FAILED, said on stdout
+        proxy, digest = started
+    print(f"READY {digest}", flush=True)
+    _serve_until_stopped(proxy)                          # B-SHUT: one call site, so both modes wait for stop()'s drain
+    return 0
+
+
+def _start_serve(args: argparse.Namespace, secrets: dict) -> "tuple[Proxy, str] | int":
+    """The full proxy of ``serve``, started, with its ports file's digest - or 4 when the TLS upstream fails (R4)."""
     real_key = _under(os.path.realpath(args.key_file), os.path.realpath(SECRETS_ROOT)) or _under(args.key_file, SECRETS_ROOT)
     config = ProxyConfig.load(args.config, secrets, test_upstream_ok=not real_key)
     key = read_key(args.key_file)
@@ -1957,14 +2028,18 @@ def main(argv: list[str] | None = None) -> int:
         proxy.log(f"upstream via {info['via']}: issuer O={info['issuer_o']!r} CN={info['issuer_cn']!r} "
                   f"notAfter={info['not_after']!r}")
     ports = proxy.start()
-    digest = write_ports(config.run_dir, ports)
-    print(f"READY {digest}", flush=True)
+    return proxy, write_ports(config.run_dir, ports)
+
+
+def _serve_until_stopped(proxy: "Proxy", *, poll_s: float = 0.2) -> None:
+    """The process lives until stop() has FINISHED (B-SHUT): /shutdown runs stop() on a daemon Timer and stop() sets
+    _stop first, so a loop on _stop alone returned at once and the interpreter's exit cut the drain short - a tunnel
+    open at the stop lost its catcher.jsonl line. A Ctrl-C stops here, in this thread."""
     try:
-        while not proxy._stop.is_set():
-            time.sleep(0.2)
+        while not proxy._stopped.is_set():
+            time.sleep(poll_s)
     except KeyboardInterrupt:
         proxy.stop()
-    return 0
 
 
 if __name__ == "__main__":

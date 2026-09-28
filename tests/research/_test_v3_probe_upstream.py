@@ -226,8 +226,11 @@ check("probe_a8.m0_usage passes on the proxy's own record of the fake's answers"
 emb = [r for r in (getattr(log, "ollama", []) or []) if r.get("arm") == "mem0"]
 check("M21 (Q-C5-3): the embed went through the /u/ leg - the proxy's Ollama record carries arm and unit, answered 200",
       ok(lambda: se == 200 and any(r.get("unit") == "r1.u1" and r.get("is_embed") and r.get("status") == 200 for r in emb)), str(emb)[:300])
-check("a trap reached through the leg is 403 at the client and in the fake's trap list", ok(lambda: sp == 403
-      and ol.traps[-1]["path"] == "/api/pull" and len(ol.traps) == 3), f"{sp} {ol.traps}")
+check("a trap reached through the leg is 403 at the client - refused by the leg itself (B-OLM: no pull reaches "
+      "Ollama), so the fake's trap list is unchanged, and the refusal is in the proxy's Ollama record",
+      ok(lambda: sp == 403 and len(ol.traps) == 2 and any(r.get("path") == "/api/pull"
+                                                          and r.get("error") == "refused:model-store" for r in emb)),
+      f"{sp} {ol.traps} {[r for r in emb if r.get('path') == '/api/pull']}")
 check("the fake upstream saw the proxy's sentinel key, never the arm's token", ok(lambda: all(
       (r.get("authorization") or "") == "Bearer nvt3-probe-KEYSENTINEL-0000" for r in ds2.requests) and len(ds2.requests) == 2),
       str([r.get("authorization") for r in ds2.requests]))

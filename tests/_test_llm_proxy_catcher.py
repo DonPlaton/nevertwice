@@ -25,6 +25,7 @@ import os
 import shutil
 import socket
 import ssl
+import subprocess
 import sys
 import tempfile
 import time
@@ -374,6 +375,56 @@ except Exception:  # noqa: BLE001
     child.kill_tree()
     rc = None
 check("it shuts down cleanly", rc == 0, str(rc))
+check("B-PIPE: spawn_proxy drains the proxy's stderr into its run directory from the start, and its stdout after READY "
+      "- a pipe nobody reads blocks every logging thread once it fills (4 KiB on Windows)",
+      (pdir / "proxy.stderr.log").is_file() and (pdir / "proxy.stdout.log").is_file(),
+      str(sorted(p.name for p in pdir.iterdir())))
+_noisy = subprocess.Popen([sys.executable, "-c", "import sys\nfor i in range(1000): print('x' * 40, file=sys.stderr, "
+                           "flush=True)"], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+L._drain_pipe(_noisy.stderr, TMP / "noisy" / "stderr.log")
+try:
+    _noisy_rc = _noisy.wait(timeout=20)
+except subprocess.TimeoutExpired:
+    _noisy.kill()
+    _noisy_rc = None
+wait_until(lambda: (TMP / "noisy" / "stderr.log").stat().st_size >= 41_000)
+check("B-PIPE: a child writing 41 KB to a drained stderr pipe exits by itself, and every byte reaches the log",
+      _noisy_rc == 0 and (TMP / "noisy" / "stderr.log").stat().st_size >= 41_000,
+      f"rc={_noisy_rc} {(TMP / 'noisy' / 'stderr.log').stat().st_size if (TMP / 'noisy' / 'stderr.log').exists() else None}")
+if made is not None:
+    srv2 = TF.TlsHttpServer(made[0], made[1], {"/x": (200, [("Content-Type", "text/plain")], BODY)})
+    hop2 = TF.TunnelHop(srv2.port)
+    pdir2 = C.runs_root / "_proxy" / "c2"
+    pdir2.mkdir(parents=True)
+    ccfg2 = pdir2 / "catch_config.json"
+    ccfg2.write_bytes(json.dumps({"run_dir": str(pdir2), "catchers": ["fetch"],
+                                  "via": {"host": "127.0.0.1", "port": hop2.port}}).encode())
+    child2, cports2 = L.spawn_proxy(C, sys.executable, script=script, config_path=ccfg2,
+                                    stdin_secrets={"control_token": "ctl"},
+                                    unit=L.make_unit_dirs(C, "_proxy", "c2", "proxy", "p1"), parent_env=os.environ,
+                                    catcher_only=True)
+    ctl(cports2, "/window", {"name": "at-exit", "state": "open", "hosts": [HOST], "arms": ["fetch"]})
+    held2 = _real_connect(("127.0.0.1", cports2["arms"]["fetch"]["catcher"]))
+    held2.settimeout(10)
+    held2.sendall(f"CONNECT {HOST}:443 HTTP/1.1\r\nHost: {HOST}:443\r\n\r\n".encode())
+    head2 = b""
+    while b"\r\n\r\n" not in head2:
+        head2 += held2.recv(1)
+    ctl(cports2, "/shutdown", {})
+    try:
+        rc2 = child2.process.wait(timeout=20)
+    except subprocess.TimeoutExpired:
+        child2.kill_tree()
+        rc2 = None
+    f2 = pdir2 / "catcher.jsonl"
+    lines2 = [json.loads(x) for x in f2.read_bytes().decode().splitlines()] if f2.exists() else []
+    check("B-SHUT: a tunnel open when the PROCESS is told to stop (/shutdown) leaves its catcher.jsonl line before the "
+          "process exits - its main loop waits for stop()'s drain, not for the stop flag stop() sets first",
+          head2.startswith(b"HTTP/1.1 200") and rc2 == 0 and any(r.get("host") == HOST and r.get("tunnelled")
+                                                                   for r in lines2), f"{head2[:20]!r} rc={rc2} {lines2}")
+    held2.close()
+    hop2.close()
+    srv2.close()
 for label, kw in (("catcher-only with a key file", {"catcher_only": True, "key_file": TMP / "k.env"}),
                   ("the full proxy without a key file", {"catcher_only": False})):
     u2 = L.make_unit_dirs(C, "_proxy", "c1", "proxy", f"p-{len(label)}")
