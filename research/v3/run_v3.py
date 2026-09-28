@@ -31,9 +31,11 @@ A9).
   lines and <runs>/<stand id>/_smoke/<attempt>/{summary,run}.json with each arm-run's P0h counters; an attempt's
   directories are named by its preflight line (B-ATTEMPT: an attempt that fails before STAND START leaves the id
   unspent). SmokeDeps carries everything it reaches outside this module;
-* main(): `stand --tag scored` is refused by name until A9; `stand --stand S4 --smoke` builds the real SmokeDeps (the
-  contract, the witnesses, the pinned tokenizers and templates, the run config's arms, the proxy through the declared
-  hop, .loop/campaign-v3-log/STATUS) and runs the smoke.
+* main(): `stand --tag scored` is refused by name until A9; `stand --stand S4 --smoke` checks --mem0-probe-run before
+  anything is read and builds the real SmokeDeps through cli_deps (real_smoke_deps: the contract, the witnesses, the
+  pinned tokenizers and templates, the run config's arms, the proxy through the declared hop,
+  .loop/campaign-v3-log/STATUS; writer_bounds from writer_bounds_for) - ab_harness's command line the same (R-AB-CLI) -
+  and runs the smoke.
 """
 from __future__ import annotations
 
@@ -530,10 +532,13 @@ _RUN_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}")
 
 
 def check_mem0_probe_run(arm_names: Sequence[str], mem0_probe_run: str | None) -> None:
-    """C3 (Q-C6-5): --mem0-probe-run is required when mem0 is in --arms, and only then."""
+    """C3 (Q-C6-5), R-AB-CLI: --mem0-probe-run is required when mem0 is in --arms, and only then, and it is a run id - a
+    name, never a path. Both command lines call it before anything is read."""
     if ("mem0" in arm_names) != (mem0_probe_run is not None):
         raise CLIError("--mem0-probe-run is required when mem0 is in --arms, and only then - mem0's writer is forecast at "
                        "its probe's bound (Q-C6-5)")
+    if mem0_probe_run is not None and not _RUN_ID.fullmatch(mem0_probe_run):
+        raise CLIError(f"{mem0_probe_run!r} is not a run id (a name, never a path) - no mem0 bound")
 
 
 def writer_bounds_for(arm_names: Sequence[str], runs_root: str | os.PathLike, *, mem0_probe_run: str | None,
@@ -544,8 +549,6 @@ def writer_bounds_for(arm_names: Sequence[str], runs_root: str | os.PathLike, *,
     out = {a: dict(b) for a, b in WRITER_BOUNDS.items()}
     if mem0_probe_run is None:
         return out
-    if not _RUN_ID.fullmatch(mem0_probe_run):
-        raise CLIError(f"{mem0_probe_run!r} is not a run id (a name, never a path) - no mem0 bound")
     p = Path(runs_root) / "_a8" / mem0_probe_run / "mem0" / "probe.json"
     try:
         data = p.read_bytes()
@@ -811,26 +814,20 @@ def parser() -> argparse.ArgumentParser:
     return ap
 
 
-def main(argv: Sequence[str] | None = None) -> int:
-    args = parser().parse_args(argv)
-    if args.cmd == "stand" and args.tag == "scored":
-        raise CLIError("--tag scored waits for A9 (the judges, the change log, the assembly) - refused")
-    if args.stand not in SMOKE_STANDS:
-        raise CLIError(f"a smoke of {args.stand} is not possible yet - only {SMOKE_STANDS} (templates.PENDING, §5.6)")
-    arm_names = [a for a in args.arms.split(",") if a]
-    check_mem0_probe_run(arm_names, args.mem0_probe_run)       # before anything is read (C3)
+def real_smoke_deps(c: Any, cfg: RunConfig, *, writer_bounds: Mapping[str, Mapping[str, Any]]) -> SmokeDeps:
+    """The real deps of a stand or an A/B (run_v3.main's and ab_harness.main's): the contract, the witnesses, the pinned
+    tokenizers and templates, the run config's arms, the proxy through the declared hop, .loop/campaign-v3-log/STATUS,
+    and ``writer_bounds`` - which a command line takes from writer_bounds_for, through cli_deps only."""
     import datetime as dt  # noqa: PLC0415
     import time  # noqa: PLC0415
     L, SC, PL = load("launch.py", smoke=True), load("scheduler.py", smoke=True), load("run_v3_plan.py", smoke=True)
     P, LD, CP = load("run_v3_proxy.py", smoke=True), load("loaders.py", smoke=True), load("corpus_pin_v3.py", smoke=True)
     TK, TP = load("tokens.py", smoke=True), load("templates.py", smoke=True)
-    c = L.Contract.default()
-    cfg = load_run_config(args.config, secrets_dir=c.secrets_dir)
     pins, hub = Path(c.runs_root) / "_pins", Path(c.hf_home or Path(c.polygon_root) / "hf_cache") / "hub"
     bpe = CP.location("tiktoken_cl100k_base", hf_hub=hub, pins_root=pins)
     bpe_sha = CP.PINS["tiktoken_cl100k_base"]["sha256"]
     bge = CP.location("bge_m3_tokenizer_json", hf_hub=hub, pins_root=pins)
-    deps = SmokeDeps(
+    return SmokeDeps(
         contract=c, L=L, native=L.NativeEgressWitness(), fs=L.FsWitness(L.watched_set(c)), clock=SC.SystemClock(),
         ollama_ctl=load("sched_ctl.py", smoke=True).OllamaCtl(), monotonic=time.monotonic, environ=os.environ,
         status_path=Path(c.repo_root) / ".loop" / "campaign-v3-log" / "STATUS",       # PREREG-V3 rev1: the STATUS file
@@ -845,9 +842,27 @@ def main(argv: Sequence[str] | None = None) -> int:
         proxy_route={"via_port": L.network_via_port(c)},
         embed_tokenizer={"path": str(bge), "sha256": CP.PINS["bge_m3_tokenizer_json"]["sha256"]},
         now_utc=lambda: dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        writer_bounds=writer_bounds_for(arm_names, c.runs_root, mem0_probe_run=args.mem0_probe_run))
-    return run_smoke(cfg, stand=args.stand, arm_names=arm_names,
-                     runs=[r for r in args.runs.split(",") if r], deps=deps)
+        writer_bounds=writer_bounds)
+
+
+def cli_deps(c: Any, cfg: RunConfig, arm_names: Sequence[str], mem0_probe_run: str | None) -> SmokeDeps:
+    """R-AB-CLI (M30): the one way a command line builds its deps - writer_bounds from writer_bounds_for, so an arm set
+    with mem0 is never left at the default bounds; both run_v3.main and ab_harness.main go through it."""
+    return real_smoke_deps(c, cfg, writer_bounds=writer_bounds_for(arm_names, c.runs_root, mem0_probe_run=mem0_probe_run))
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    args = parser().parse_args(argv)
+    if args.cmd == "stand" and args.tag == "scored":
+        raise CLIError("--tag scored waits for A9 (the judges, the change log, the assembly) - refused")
+    if args.stand not in SMOKE_STANDS:
+        raise CLIError(f"a smoke of {args.stand} is not possible yet - only {SMOKE_STANDS} (templates.PENDING, §5.6)")
+    arm_names = [a for a in args.arms.split(",") if a]
+    check_mem0_probe_run(arm_names, args.mem0_probe_run)       # before anything is read (C3)
+    c = load("launch.py", smoke=True).Contract.default()
+    cfg = load_run_config(args.config, secrets_dir=c.secrets_dir)
+    return run_smoke(cfg, stand=args.stand, arm_names=arm_names, runs=[r for r in args.runs.split(",") if r],
+                     deps=cli_deps(c, cfg, arm_names, args.mem0_probe_run))
 
 
 if __name__ == "__main__":

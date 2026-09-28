@@ -614,6 +614,76 @@ try:
                                               "--config", str(TMP / "none.json"), "--mem0-probe-run", "p1"])}
     check("C3 CLI (Q-C6-5): --mem0-probe-run is required iff mem0 is in --arms - refused by name before the config or "
           "anything else is read", all("--mem0-probe-run" in v for v in cli.values()), str(cli)[:400])
+    cli_path = cli_err(["stand", "--stand", "S4", "--smoke", "--arms", "mem0", "--runs", "r1", "--config",
+                        str(TMP / "none.json"), "--mem0-probe-run", "../_a8/p1"])
+    check("C3 CLI (R-AB-CLI): a --mem0-probe-run that is a path is refused as not a run id before the config is read",
+          "not a run id" in cli_path and "none.json" not in cli_path, cli_path[:300])
+    print("\n- R-AB-CLI (M30): the A/B's command line takes --mem0-probe-run exactly as the stand's -")
+    AB = _load("v3_ab_harness_for_run_v3_t", ROOT / "research" / "v3" / "ab_harness.py")
+
+    def ab_err(argv):
+        try:
+            getattr(AB, "main")(argv)
+            return "accepted"
+        except SystemExit as e:
+            return f"not refused by the CLI: SystemExit {e.code}"
+        except Exception as e:  # noqa: BLE001 - the A/B's own run_v3 instance: its CLIError is named by class
+            return f"{type(e).__name__}: {e}"
+
+    none_cfg = str(TMP / "none.json")
+    ab_cli = {"mem0 without": ab_err(["--stand", "S4", "--arms", "nevertwice,mem0", "--config", none_cfg]),
+              "probe run without mem0": ab_err(["--stand", "S4", "--arms", "nevertwice", "--config", none_cfg,
+                                                "--mem0-probe-run", "p1"]),
+              "a path": ab_err(["--stand", "S4", "--arms", "mem0", "--config", none_cfg, "--mem0-probe-run", "..\\p1"])}
+    check("R-AB-CLI: the A/B's command line refuses --mem0-probe-run without mem0, mem0 without it, and a run id that is "
+          "a path - each by the CLI's own refusal, before the config is read",
+          ab_cli["mem0 without"].startswith("CLIError: --mem0-probe-run")
+          and ab_cli["probe run without mem0"].startswith("CLIError: --mem0-probe-run")
+          and ab_cli["a path"].startswith("CLIError:") and "not a run id" in ab_cli["a path"]
+          and all("none.json" not in v for v in ab_cli.values()), str(ab_cli)[:500])
+    class SimpleContract:
+        def __init__(self, runs_root):
+            self.runs_root = runs_root
+
+    seen_deps: list = []
+    _real = getattr(RV, "real_smoke_deps", None)
+    RV.real_smoke_deps = lambda c_, cfg_, **kw: seen_deps.append(kw) or "deps"
+    try:
+        cd = c2val(lambda: RV.cli_deps(SimpleContract(PRUN), "cfg", ["nevertwice", "mem0"], "p1"))
+        cd0 = c2val(lambda: RV.cli_deps(SimpleContract(PRUN), "cfg", ["nevertwice"], None))
+    finally:
+        RV.real_smoke_deps = _real
+    check("R-AB-CLI: cli_deps builds the real deps with writer_bounds from writer_bounds_for - mem0's from its probe record "
+          "when mem0 is an arm, never the default; WRITER_BOUNDS' without it",
+          cd == "deps" and cd0 == "deps" and len(seen_deps) == 2
+          and "source" in seen_deps[0]["writer_bounds"].get("mem0", {}) and seen_deps[1]["writer_bounds"] == RV.WRITER_BOUNDS,
+          str(seen_deps)[:300])
+
+    def main_calls(src, owner):
+        tree = ast.parse(src)
+        fns = [n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "main"]
+        return [ast.unparse(n) for n in sorted((n for f in fns for n in ast.walk(f) if isinstance(n, ast.Call)
+                                                 and ast.unparse(n.func).split(".")[-1] in ("cli_deps", "SmokeDeps",
+                                                                                            "check_mem0_probe_run",
+                                                                                            "load_run_config")),
+                                                key=lambda n: (n.lineno, n.col_offset))]
+
+    rsd = [n for n in ast.parse((ROOT / "research" / "v3" / "run_v3.py").read_text(encoding="utf-8")).body
+           if isinstance(n, ast.FunctionDef) and n.name == "real_smoke_deps"]
+    rsd_kw = [{k.arg: ast.unparse(k.value) for k in x.keywords} for f in rsd for x in ast.walk(f)
+              if isinstance(x, ast.Call) and ast.unparse(x.func) == "SmokeDeps"]
+    check("R-AB-CLI: real_smoke_deps hands its writer_bounds argument to the one SmokeDeps it builds - never the default",
+          len(rsd_kw) == 1 and rsd_kw[0].get("writer_bounds") == "writer_bounds", str(rsd_kw)[:300])
+    rv_main = main_calls((ROOT / "research" / "v3" / "run_v3.py").read_text(encoding="utf-8"), "run_v3")
+    ab_main = main_calls((ROOT / "research" / "v3" / "ab_harness.py").read_text(encoding="utf-8"), "ab_harness")
+    check("R-AB-CLI: both command lines check --mem0-probe-run first and build their deps only through cli_deps - no "
+          "SmokeDeps of their own, so mem0 is never left at the default bounds",
+          rv_main == ["check_mem0_probe_run(arm_names, args.mem0_probe_run)",
+                      "load_run_config(args.config, secrets_dir=c.secrets_dir)",
+                      "cli_deps(c, cfg, arm_names, args.mem0_probe_run)"]
+          and ab_main == ["RV.check_mem0_probe_run(arm_names, args.mem0_probe_run)",
+                          "RV.load_run_config(args.config, secrets_dir=c.secrets_dir)",
+                          "RV.cli_deps(c, cfg, arm_names, args.mem0_probe_run)"], str((rv_main, ab_main))[:500])
     import dataclasses  # noqa: E402
     fdef = {f.name: f for f in dataclasses.fields(RV.SmokeDeps)}
     check("C3 SmokeDeps.writer_bounds: WRITER_BOUNDS' by default, as a copy - a stand without mem0 needs no probe",
@@ -655,22 +725,25 @@ try:
     check("WC-cap: the smoke's wall ceiling is Q26's 6 h; with one unit ceiling (scheduler.DEBUG_CEILING_S) the worst "
           "case is 12 h", RV.SMOKE_WALL_CAP_H == 6.0 and RV.SMOKE_WALL_CAP_H + SCH.DEBUG_CEILING_S / 3600 == 12.0)
 
-    print("\n- part 2b's seams: what only main() names -")
+    print("\n- part 2b's seams: what only the real deps name -")
     import ast  # noqa: E402
     SRC = (ROOT / "research" / "v3" / "run_v3.py").read_text(encoding="utf-8")
     TREE = ast.parse(SRC)
     fns = {n.name: n for n in TREE.body if isinstance(n, ast.FunctionDef)}
 
-    outside_main = [n for n in TREE.body if not (isinstance(n, ast.FunctionDef) and n.name == "main")]
+    outside_main = [n for n in TREE.body if not (isinstance(n, ast.FunctionDef) and n.name == "real_smoke_deps")]
     loop_outside = [ast.unparse(x)[:60] for n in outside_main for x in ast.walk(n)
                     if isinstance(x, ast.Constant) and isinstance(x.value, str) and x.value in (".loop", "campaign-v3-log")]
     env_outside = [ast.unparse(x)[:60] for n in outside_main for x in ast.walk(n)
                    if isinstance(x, ast.Attribute) and ast.unparse(x) == "os.environ"]
+    rsd_callers = sorted({f.name for f in TREE.body if isinstance(f, ast.FunctionDef) for x in ast.walk(f)
+                          if isinstance(x, ast.Call) and ast.unparse(x.func) == "real_smoke_deps"})
     check("CLI-status-injected, CLI-environ-injected: the STATUS path (.loop/campaign-v3-log) and os.environ are named "
-          "in main() alone - run_smoke takes both from its deps, so a test never reaches the owner's STATUS or env",
-          "main" in fns and loop_outside == [] and env_outside == []
-          and any(isinstance(x, ast.Constant) and x.value == ".loop" for x in ast.walk(fns["main"]))
-          and "os.environ" in ast.unparse(fns["main"]),
+          "in real_smoke_deps() alone, which only cli_deps() calls (R-AB-CLI: both command lines) - run_smoke takes both "
+          "from its deps, so a test never reaches the owner's STATUS or env",
+          "real_smoke_deps" in fns and loop_outside == [] and env_outside == [] and rsd_callers == ["cli_deps"]
+          and any(isinstance(x, ast.Constant) and x.value == ".loop" for x in ast.walk(fns["real_smoke_deps"]))
+          and "os.environ" in ast.unparse(fns["real_smoke_deps"]),
           f"{loop_outside} {env_outside}")
     reads_key = [ast.unparse(x)[:80] for x in ast.walk(TREE) if isinstance(x, ast.Call)
                  and (ast.unparse(x.func) in ("open", "read_key") or ast.unparse(x.func).endswith((".read_text",

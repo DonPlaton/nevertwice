@@ -5,6 +5,8 @@ anchor and blocks it; its runs are tagged debug.
 
 The auditor's rulings (TB4.13, 2026-09-28), as this module implements them:
 
+* The command line (R-AB-CLI, M30): python ab_harness.py --stand S4 --arms <a,b> --config <run config>
+  [--mem0-probe-run <run>] - the deps through run_v3.cli_deps, --mem0-probe-run as the stand's.
 * D-AB-1: a module of its own - run_v3.run_smoke is not touched; its parts are reused (s1_order, s4_smoke_units,
   unit_tokens, questions_for, boundary_canaries, preflight, forecast, WallCapGate, SmokeDeps).
 * D-AB-2: the units are the first AB_UNITS units of the S4 smoke (the S1 order's positions 481-483), computed once;
@@ -558,3 +560,37 @@ def run_ab(cfg: Any, *, stand: str, arm_names: Sequence[str], deps: Any, thinkin
     for p in problems:
         deps.err(f"problem: {p}")
     return ABResult(rc=exit_code(problems, verdicts, stop), record_path=path, problems=problems)
+
+
+# ── the command line (R-AB-CLI, M30) ───────────────────────────────────────────────────────────────────────────
+
+def parser():
+    import argparse  # noqa: PLC0415
+    ap = argparse.ArgumentParser(prog="ab_harness.py", description="PREREG-V3 TB4.13: the recording-vs-raw A/B (§4.6)")
+    ap.add_argument("--stand", required=True)
+    ap.add_argument("--arms", required=True)
+    ap.add_argument("--config", required=True)
+    ap.add_argument("--mem0-probe-run", help="the mem0 probe run whose record bounds mem0's writer (Q-C6-5)")
+    return ap
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    """R-AB-CLI (M30): the A/B from the command line - --mem0-probe-run checked exactly as the stand's (run_v3.
+    check_mem0_probe_run, before anything is read), the deps built through run_v3.cli_deps only (writer_bounds from
+    writer_bounds_for, never the default when mem0 is an arm)."""
+    args = parser().parse_args(argv)
+    RV = _rv()
+    arm_names = [a for a in args.arms.split(",") if a]
+    RV.check_mem0_probe_run(arm_names, args.mem0_probe_run)          # before anything is read (R-AB-CLI)
+    c = RV.load("launch.py", smoke=True).Contract.default()
+    cfg = RV.load_run_config(args.config, secrets_dir=c.secrets_dir)
+    return run_ab(cfg, stand=args.stand, arm_names=arm_names, deps=RV.cli_deps(c, cfg, arm_names, args.mem0_probe_run)).rc
+
+
+if __name__ == "__main__":
+    import sys
+    try:
+        sys.exit(main())
+    except (_rv().CLIError, ABError) as e:
+        sys.stderr.write(f"refused: {e}\n")
+        sys.exit(2)
