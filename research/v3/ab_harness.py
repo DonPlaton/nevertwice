@@ -30,9 +30,12 @@ The auditor's rulings (TB4.13, 2026-09-28), as this module implements them:
   ollama.jsonl lines (written the same in both modes) are counted and named in the record.
 * Q-AB-3: the preflight carries the forecast of every A/B (run_v3.forecast, which refuses an arm without a
   WRITER_BOUNDS entry - no DeepSeek spend without a forecast, on a debug run too).
-* No incident gate: a raw leg's calls are not recorded, so a gate reading calls.jsonl would see the recording legs
-  only - an asymmetry; every leg runs under the same wall ceiling alone, and an upstream failure shows in the
-  metrics of the leg it hit.
+* D-AB-8: no incident gate - a raw leg's calls are not recorded, so a gate reading calls.jsonl would see the recording
+  legs only; an upstream failure shows in the metrics of the leg it hit. But §4.5's stops act the same on every leg:
+  a 401, 402 or 403 on any ArmConfig (the proxy's in-memory upstream_statuses, kept in both modes) stops the A/B by
+  name - StopGate refuses the next unit, no later leg runs, exit EXIT_STOP - and every later A/B is refused until
+  OWNER_FILE is written beside the stopped one's ab.json (stopped_without_owner): the owner's word, never a repeat.
+  exit_code() adds no allowance of any kind.
 
 The record: <runs>/_ab/<stand>-ab-<n>/ab.json (written once): the arms, the units, the legs in order with their
 times, stands, mappings, per-unit and per-run metrics (each metric's source named), fallback counts, the thinking
@@ -56,6 +59,9 @@ LEGS = ("raw1", "rec1", "rec2", "raw2")          # ABBA (D-AB-3): a steady drift
 AB_UNITS = 3                                     # §4.6: "on the first 3 smoke haystacks"
 AB_TAG = "debug"
 METRICS = ("calls", "tokens_in", "tokens_out", "lost_share", "items", "wall_s")
+STOP_STATUSES = ("401", "402", "403")           # §4.5's stops: the key, the balance, the account
+OWNER_FILE = "owner.json"                       # beside a stopped A/B's ab.json: the owner's word that it may go on
+EXIT_STOP = 3                                   # a stop: the owner's to resolve, never a repeat
 
 
 class ABError(ValueError):
@@ -254,6 +260,52 @@ def _delta(before: Mapping, after: Mapping, name: str) -> dict:
             "fallback_local": (oa.get("fallback_local") or 0) - (ob.get("fallback_local") or 0)}
 
 
+def _stops(base: Mapping[str, Any], now: Mapping[str, Any]) -> dict:
+    """{ArmConfig: {status: new count}} of STOP_STATUSES the upstream answered since ``base`` - any ArmConfig of the
+    process (arms, twins, the scheduler's port), raw or recording alike (the proxy counts them in memory, D-AB-8)."""
+    out: dict = {}
+    for name, c in now.items():
+        was = (base.get(name) or {}).get("upstream_statuses") or {}
+        got = {s: n - was.get(s, 0) for s, n in (c.get("upstream_statuses") or {}).items()
+               if s in STOP_STATUSES and n - was.get(s, 0) > 0}
+        if got:
+            out[name] = got
+    return out
+
+
+class StopGate:
+    """D-AB-8 (the auditor's condition): the A/B's gate - it has no incident gate (a raw leg writes no calls.jsonl),
+    but a 401, 402 or 403 on any ArmConfig stops it: no new unit starts (raising here, the scheduler's B-OPEN closes
+    the stand), no later leg runs, and it is not repeated - it waits for the owner (§4.5)."""
+
+    def __init__(self, control: Any, base: Mapping[str, Any]) -> None:
+        self.control, self.base = control, base
+
+    def admits_new_unit(self) -> bool:
+        seen = _stops(self.base, self.control.counters())
+        if seen:
+            raise ABError(f"D-AB-8: the upstream answered {seen} - no new unit starts; the A/B stops (§4.5)")
+        return True
+
+
+def stopped_without_owner(runs_root: str | Path) -> list[Path]:
+    """The ab.json of every earlier A/B that stopped on 401/402/403 and has no OWNER_FILE beside it (§4.5)."""
+    out = []
+    for f in sorted(Path(runs_root, "_ab").glob("*/attempt-*/ab.json")):
+        if json.loads(f.read_bytes().decode("utf-8")).get("stop") and not (f.parent / OWNER_FILE).exists():
+            out.append(f)
+    return out
+
+
+def exit_code(problems: Sequence[str], verdicts: Mapping[str, Any], stop: Mapping[str, Any] | None) -> int:
+    """0 only when nothing is wrong and every arm's verdict is in tolerance - no allowance of any kind (a test's
+    timing-noise tolerance is the test's, never the harness's); EXIT_STOP for a 401/402/403 stop; 1 otherwise."""
+    if stop:
+        return EXIT_STOP
+    ok = not problems and bool(verdicts) and all(v.get("in_tolerance") is True for v in verdicts.values())
+    return 0 if ok else 1
+
+
 def _jsonl(path: Path) -> list[dict]:
     if not path.exists():
         return []
@@ -287,6 +339,10 @@ def run_ab(cfg: Any, *, stand: str, arm_names: Sequence[str], deps: Any, thinkin
     SC, PL, P, H, SL, SM, TP, PT, AR = (RV.load(f, smoke=True) for f in (
         "scheduler.py", "run_v3_plan.py", "run_v3_proxy.py", "run_v3_hooks.py", "status_log.py", "run_v3_smoke.py",
         "templates.py", "points.py", "ab_rule.py"))
+    held = stopped_without_owner(c.runs_root)
+    if held:
+        raise ABError(f"an earlier A/B stopped on 401/402/403 and waits for the owner (§4.5, D-AB-8): {held[0]} has "
+                      f"no {OWNER_FILE} beside it - no A/B starts before the owner's word")
     ab_id, n = next_ab_id(deps.status_path, stand)
 
     # the units: computed once, the first AB_UNITS of the smoke (D-AB-2)
@@ -333,7 +389,9 @@ def run_ab(cfg: Any, *, stand: str, arm_names: Sequence[str], deps: Any, thinkin
                          unit=L.make_unit_dirs(c, ab_id, "_harness", "proxy", attempt), parent_env=env, witnesses=W)
     problems: list[str] = []
     legs: list[dict] = []
+    stop: dict | None = None
     status = SL.StatusLog(Path(deps.status_path))
+    base_counters = h.control.counters()
     try:
         for i, leg in enumerate(LEGS, 1):
             stand_id = f"{ab_id}-{leg}"
@@ -364,13 +422,16 @@ def run_ab(cfg: Any, *, stand: str, arm_names: Sequence[str], deps: Any, thinkin
                                          answer=answer, embed_tag=cfg.embed_tag, dated=True, points=lambda a: ("B",),
                                          k_at=PT.K_AT, smaps=su["smaps"], truncate=deps.truncate, bodies_dir=h.run_dir)
                 hooks.bind(sched, sp)
-                hooks.gate = RV.WallCapGate(None, deadline=deps.monotonic() + RV.SMOKE_WALL_CAP_H * 3600,
+                hooks.gate = RV.WallCapGate(StopGate(h.control, base_counters),
+                                            deadline=deps.monotonic() + RV.SMOKE_WALL_CAP_H * 3600,
                                             monotonic=deps.monotonic, cap_h=RV.SMOKE_WALL_CAP_H)
                 res = sched.run_stand(sp, blocks, judges=(), order=i)
             except Exception as e:  # noqa: BLE001 - the leg's failure is named; no later leg runs
                 problems.append(f"{leg}: the stand did not complete: {type(e).__name__}: {e}")
                 rec["t1"] = deps.now_utc()
                 legs.append(rec)
+                seen = _stops(base_counters, h.control.counters())
+                stop = {"leg": leg, "statuses": seen} if seen else None
                 break
             rec["t1"] = deps.now_utc()
             after = _snapshot(h)
@@ -389,10 +450,19 @@ def run_ab(cfg: Any, *, stand: str, arm_names: Sequence[str], deps: Any, thinkin
                     problems.append(f"{leg}: {e}")
                 rec["proxy"][a] = _delta(before, after, mapping.get(a, a))
             legs.append(rec)
+            seen = _stops(base_counters, after["counters"])
+            if seen:                                       # D-AB-8: no later leg - the owner's, never a repeat
+                stop = {"leg": leg, "statuses": seen}
+                break
     finally:
         pstop = dict(deps.stop_proxy(h))
     if pstop.get("killed") or pstop.get("rc") not in (0,):
         problems.append(f"the proxy did not stop by itself: {pstop}")
+    if stop:
+        stop["rule"] = "§4.5 (D-AB-8): the A/B stops by name, is not repeated, and waits for the owner"
+        problems.insert(0, f"STOP: {stop['leg']}: the upstream answered {stop['statuses']} - the A/B stops, is not "
+                           f"repeated, and waits for the owner (§4.5, D-AB-8; {OWNER_FILE} beside ab.json lets the next "
+                           f"one start)")
 
     # the checks over all four legs, in one loop each (D-AB-2, D-AB-4, T6)
     done = [lg for lg in legs if "means" in lg]
@@ -429,7 +499,7 @@ def run_ab(cfg: Any, *, stand: str, arm_names: Sequence[str], deps: Any, thinkin
 
     # the verdicts
     verdicts: dict = {}
-    if not problems:
+    if not problems and not stop:
         for a in arms:
             by = {lg["leg"]: lg for lg in done}
             rec_s = [v for lg in ("rec1", "rec2") for v in by[lg]["proxy"][a]["own_hop_ms"]]
@@ -454,7 +524,7 @@ def run_ab(cfg: Any, *, stand: str, arm_names: Sequence[str], deps: Any, thinkin
                               "lost_share": "accounting.lost_operations(ops, calls=[]) - the adapter's view (Q-AB-4)"}
                           for a in arms},
               "forecast_usd": fc["usd_total"], "preflight_position": pf["position"], "proxy_stop": pstop,
-              "hop_benchmark": hop, "verdicts": verdicts, "problems": problems}
+              "hop_benchmark": hop, "verdicts": verdicts, "stop": stop, "problems": problems}
     ab_dir.mkdir(parents=True, exist_ok=True)
     path = ab_dir / "ab.json"
     with open(path, "xb") as f:
@@ -464,5 +534,4 @@ def run_ab(cfg: Any, *, stand: str, arm_names: Sequence[str], deps: Any, thinkin
                  f"p95={v['ttfb_added_ms']['p95']:.3f}ms")
     for p in problems:
         deps.err(f"problem: {p}")
-    ok = not problems and verdicts and all(v["in_tolerance"] for v in verdicts.values())
-    return ABResult(rc=0 if ok else 1, record_path=path, problems=problems)
+    return ABResult(rc=exit_code(problems, verdicts, stop), record_path=path, problems=problems)

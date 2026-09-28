@@ -16,6 +16,10 @@ fake arm children under a temporary launch contract (this suite spawns children)
   name, mode, token and ports (loaded back from the proxy's own config); Q-AB-7: a raw leg's child speaks to the
   twin's port with the twin's token, a recording leg's to the arm's;
 * T6: the raw twin leaves no calls.jsonl line, no bodies/ and no flags.jsonl line; its Ollama lines are named;
+* D-AB-8 (the auditor's condition): a 402 on a raw leg and on a recording leg - in the write stage (StopGate refuses the
+  next unit: the stopped leg asks no question) or in the reader's calls after the last gate (the check after the leg)
+  - stops the A/B by name, exit 3, no later leg; the next A/B is refused until the owner's owner.json exists; the
+  exit code takes no allowance (a wall-only failure is 1);
 * in process: unit_metrics over mem0's LLMUsage and our engine's llm_stats, a memory-store arm's cumulative question
   counters, an aborted unit or a stage without counters refused, an arm without a source refused; next_ab_id.
 
@@ -144,6 +148,21 @@ SL.StatusLog(st0, local_tz=__import__("datetime").timezone.utc).stand("S4-ab-2-r
 check("next_ab_id: one past the highest <stand>-ab-<n>-<leg> STAND START; 1 on a new file",
       AB.next_ab_id(st0, "S4") == ("S4-ab-3", 3) and AB.next_ab_id(TMP / "none", "S4") == ("S4-ab-1", 1),
       str(AB.next_ab_id(st0, "S4")))
+wall_only = {"nevertwice": {"in_tolerance": False, "failures": ["recording run 1: wall_s 9.9 outside [-inf, 9]"]}}
+codes = (AB.exit_code([], wall_only, None), AB.exit_code([], {"a": {"in_tolerance": True}}, None),
+         AB.exit_code(["x"], {"a": {"in_tolerance": True}}, None), AB.exit_code(["STOP"], {}, {"leg": "raw1"}),
+         AB.exit_code([], {}, None))
+check("the real A/B takes no wall-time allowance (the auditor): a wall-only failure exits 1; 0 only in tolerance with no "
+      "problem; a 401/402/403 stop exits 3 (the owner's); no verdict is 1", codes == (1, 0, 1, 3, 1), str(codes))
+held = TMP / "held"
+(held / "_ab" / "S4-ab-1" / "attempt-00001").mkdir(parents=True)
+(held / "_ab" / "S4-ab-1" / "attempt-00001" / "ab.json").write_text(json.dumps({"stop": {"leg": "raw1"}}), encoding="utf-8")
+(held / "_ab" / "S4-ab-2" / "attempt-00002").mkdir(parents=True)
+(held / "_ab" / "S4-ab-2" / "attempt-00002" / "ab.json").write_text(json.dumps({"stop": None}), encoding="utf-8")
+h1 = [p_.parent.parent.name for p_ in AB.stopped_without_owner(held)]
+(held / "_ab" / "S4-ab-1" / "attempt-00001" / AB.OWNER_FILE).write_text("{}", encoding="utf-8")
+check("D-AB-8: an A/B that stopped waits for the owner - it holds every later A/B until its owner.json exists",
+      h1 == ["S4-ab-1"] and AB.stopped_without_owner(held) == [], f"{h1} {AB.stopped_without_owner(held)}")
 
 FAKE_ARM = r'''
 import hashlib, json, os, sys, time, urllib.request
@@ -160,7 +179,8 @@ if spec["stage"] == "write":                                                    
 
 
 def send(body):
-    req = urllib.request.Request(os.environ["NVT3_WRITE_URL"], data=body, method="POST",
+    url = os.environ["NVT3_WRITE_URL"] + ("-pay" if spec["run"] in spec.get("pay_on", []) else "")
+    req = urllib.request.Request(url, data=body, method="POST",
                                  headers={"Authorization": "Bearer " + os.environ["NVT3_WRITE_TOKEN"],
                                           "Content-Type": "application/json"})
     urllib.request.build_opener(urllib.request.ProxyHandler({})).open(req, timeout=20).read()
@@ -194,6 +214,11 @@ class H:
         return {"footprint": {"retrievable": len(self.items)}, "seal": {"sha256": "0" * 64}}
 
     def read(self, qid, query, k=10):
+        if spec["run"] in spec.get("pay_read_on", []):     # D-AB-8: the reader's next call finds the balance gone
+            req = urllib.request.Request(os.environ["NVT3_WRITE_URL"] + "-arm402", data=b"{}", method="POST",
+                                         headers={"Authorization": "Bearer " + os.environ["NVT3_WRITE_TOKEN"],
+                                                  "Content-Type": "application/json"})
+            urllib.request.build_opener(urllib.request.ProxyHandler({})).open(req, timeout=20).read()
         return {"qid": qid, "items": [{"text": t, "rank": i + 1} for i, t in enumerate(self.items[:k])]}
 
     def counters(self):
@@ -216,9 +241,23 @@ BAL = json.dumps({"is_available": True, "balance_infos": [{"currency": "USD", "t
 
 
 class Upstream(ST.FakeUpstream):
+    reader_402 = False
+
     def _serve(self, c, path):
         p = path.split(b"?", 1)[0]
-        if p.endswith(b"/nvt3-writer"):
+        if p.endswith(b"/nvt3-writer-arm402"):
+            self.reader_402 = True
+        if self.reader_402 and p.endswith(b"/chat/completions"):
+            err = b'{"error":{"message":"Insufficient Balance"}}'
+            self._send(c, b"HTTP/1.1 402 Payment Required\r\nContent-Type: application/json\r\nContent-Length: "
+                       + str(len(err)).encode() + b"\r\n\r\n" + err)
+            return True
+        if p.endswith(b"/nvt3-writer-pay"):             # D-AB-8: the balance is gone
+            err = b'{"error":{"message":"Insufficient Balance"}}'
+            self._send(c, b"HTTP/1.1 402 Payment Required\r\nContent-Type: application/json\r\nContent-Length: "
+                       + str(len(err)).encode() + b"\r\n\r\n" + err)
+            return True
+        if p.endswith(b"/nvt3-writer") or p.endswith(b"/nvt3-writer-arm402"):
             body = WRITER
         elif p.endswith(b"/chat/completions"):
             body = READER
@@ -314,10 +353,11 @@ def stop_proxy(h):
     return {"rc": 0 if not left else 1, "killed": False, "shutdown_error": None}
 
 
-def make_launcher_factory(generate_on=()):
+def make_launcher_factory(generate_on=(), pay_on=(), pay_read_on=()):
     def make(arm, ar, *, stand_id, proxy, unit_block, unit_chars):
         def spec_for(stage, *, stand, run, unit, dirs, write_dirs):
             return {"arm": arm, "stage": stage, "run": run, "unit": unit, "generate_on": list(generate_on),
+                    "pay_on": list(pay_on), "pay_read_on": list(pay_read_on),
                     "seen_dir": str(SEEN), "write_dir": str(write_dirs.cwd) if write_dirs is not None else None}
 
         def declared_for(stage, *, stand, run, unit, dirs, write_dirs):
@@ -329,7 +369,7 @@ def make_launcher_factory(generate_on=()):
     return make
 
 
-def deps_for(up, *, out: list, err: list, generate_on=()):
+def deps_for(up, *, out: list, err: list, generate_on=(), pay_on=(), pay_read_on=()):
     return RV.SmokeDeps(
         contract=C, L=L, native=L.NativeEgressWitness(sampler=Quiet(), tick_s=60, jobs=None),
         fs=L.FsWitness([L.WatchSpec("watched", TMP / "watched")]), clock=SC.SystemClock(), ollama_ctl=None,
@@ -339,7 +379,7 @@ def deps_for(up, *, out: list, err: list, generate_on=()):
         cl100k_source="t" * 64, max_token_bytes=128,
         truncate=lambda text: SimpleNamespace(text=text, truncated=False), templates=(TEMPLATE, TEMPLATE5),
         locomo_question=lambda q, cat: q, decl=lambda py, *, arm: {"python": str(py), "arm": arm, "version": "test"},
-        make_launcher=make_launcher_factory(generate_on), start_proxy=start_proxy, stop_proxy=stop_proxy, post=P.post,
+        make_launcher=make_launcher_factory(generate_on, pay_on, pay_read_on), start_proxy=start_proxy, stop_proxy=stop_proxy, post=P.post,
         proxy_route={"test_upstream": {"host": "127.0.0.1", "port": up.port, "tls": False}},
         now_utc=lambda: __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(),
         lists_dir=LISTS, s1_sha256=S1["ids_sha256"], out=out.append, err=err.append)
@@ -360,7 +400,9 @@ def run(**kw) -> tuple:
         f.unlink()
     try:
         res = AB.run_ab(CFG, stand="S4", arm_names=["nevertwice"], deps=deps_for(up, out=out, err=err,
-                                                                              generate_on=kw.pop("generate_on", ())),
+                                                                              generate_on=kw.pop("generate_on", ()),
+                                                                              pay_on=kw.pop("pay_on", ()),
+                                                                              pay_read_on=kw.pop("pay_read_on", ())),
                         hop_n=20, **kw)
         crash = None
     except Exception as e:  # noqa: BLE001 - a crash FAILs the rows by name
@@ -515,6 +557,43 @@ try:
     check("D-AB-4: the thinking field injected on the recording legs only is refused by name",
           any(p.startswith("nevertwice: the declared thinking field was injected on legs ['rec1', 'rec2'] only")
               for p in p3), str(p3))
+
+    print("\n- D-AB-8: a 401/402/403 on any leg stops the A/B, which waits for the owner -")
+    res4, crash4, rec4, _o4, _e4 = run(pay_on=("raw1",))
+    stop4 = rec4.get("stop") or {}
+    check("D-AB-8: a 402 on a RAW leg stops the A/B by name - no later leg, exit 3, no verdict; the stop names the twin's "
+          "402s (the proxy's in-memory counts)", crash4 is None and res4.rc == 3
+          and [lg.get("leg") for lg in rec4.get("legs") or []] == ["raw1"] and stop4.get("leg") == "raw1"
+          and ((stop4.get("statuses") or {}).get("nevertwice-abraw") or {}).get("402", 0) > 0 and not rec4.get("verdicts")
+          and any(p.startswith("STOP: raw1:") for p in rec4.get("problems") or []), f"{crash4} {stop4} {rec4.get('problems')}")
+    asked = list((C.runs_root / f"{rec4.get('ab')}-raw1" / "_answers").rglob("*.json"))
+    check("D-AB-8: StopGate refuses the next unit - after the write stage's 402s the stopped leg asks no question (the "
+          "reader is never called)", rec4.get("ab") and asked == [], str(asked[:2]))
+    pfl = C.runs_root / "_launch" / "preflight.jsonl"
+    n_pf = len(pfl.read_text(encoding="utf-8").splitlines())
+    res5a, crash5a, _r, _o, _e = run()
+    check("D-AB-8: after the stop no A/B starts before the owner's word - refused by name, nothing spent (no preflight "
+          "line)", res5a is None and "waits for the owner" in (crash5a or "")
+          and len(pfl.read_text(encoding="utf-8").splitlines()) == n_pf, str(crash5a))
+    (res4.record_path.parent / AB.OWNER_FILE).write_text(json.dumps({"owner": "test"}), encoding="utf-8")
+    res5, crash5, rec5, _o5, _e5 = run(pay_on=("rec2",))
+    stop5 = rec5.get("stop") or {}
+    check("D-AB-8: a 402 on a RECORDING leg stops the A/B the same way - raw1, rec1, rec2 ran, raw2 never; exit 3",
+          crash5 is None and res5.rc == 3 and [lg.get("leg") for lg in rec5.get("legs") or []] == ["raw1", "rec1", "rec2"]
+          and stop5.get("leg") == "rec2" and ((stop5.get("statuses") or {}).get("nevertwice") or {}).get("402", 0) > 0
+          and any(p.startswith("STOP: rec2:") for p in rec5.get("problems") or []), f"{crash5} {stop5}")
+    (res5.record_path.parent / AB.OWNER_FILE).write_text(json.dumps({"owner": "test"}), encoding="utf-8")
+    spacing0, SC.REASK_SPACING_S = SC.REASK_SPACING_S, 0.01
+    try:
+        res6, crash6, rec6, _o6, _e6 = run(pay_read_on=("rec2",))
+    finally:
+        SC.REASK_SPACING_S = spacing0
+        up.reader_402 = False
+    stop6 = rec6.get("stop") or {}
+    check("D-AB-8: a 402 that comes after the last gate (the reader's, in rec2's question stage) stops the A/B after that "
+          "leg - raw2 never runs; exit 3", crash6 is None and res6.rc == 3
+          and [lg.get("leg") for lg in rec6.get("legs") or []] == ["raw1", "rec1", "rec2"] and stop6.get("leg") == "rec2"
+          and ((stop6.get("statuses") or {}).get("nevertwice") or {}).get("402", 0) > 0, f"{crash6} {stop6}")
 finally:
     for pr in PROXIES:
         try:
