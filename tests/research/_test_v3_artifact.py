@@ -384,6 +384,12 @@ check("P0a (R-EMBED-PATH): direct_calls > 0 - an Ollama reached past the arm's p
       has(flags(lambda r: r["ollama_transport"].__setitem__("direct_calls", 1)), "a"))
 check("P0a: a failed embed outcome", has(flags(lambda r: r["ollama_transport"].__setitem__("failed_outcomes", 1)), "a"))
 check("P0a: failed_outcomes_llm", has(flags(lambda r: r["ollama_transport"].__setitem__("failed_outcomes_llm", 1)), "a"))
+check("P0a (R-TOOLS): an LLM call on the Ollama leg of an arm that declares NO LLM (fallback_local > 0) is flagged - p0b "
+      "judges fallback_local for cloud arms only, so it was silent",
+      any("declares no LLM" in x for x in flags(lambda r: (r["arm_decl"].__setitem__("llm", None),
+                                                          r["ollama_transport"].__setitem__("fallback_local", 1)))))
+check("... and a cloud arm's leg fallback stays p0b's (no second P0a flag)",
+      not any("declares no LLM" in x for x in flags(lambda r: r["ollama_transport"].__setitem__("fallback_local", 1))))
 check("P0a: needs Ollama, 0 paced calls, K61 not holding",
       has(flags(lambda r: r["ollama_transport"].__setitem__("calls", 0)), "a"))
 check("... but 0 paced calls with K61 holding is not P0a",

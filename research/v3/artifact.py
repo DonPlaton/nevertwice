@@ -486,6 +486,9 @@ def p0a(row: Mapping, ctx: P0Context, arm: str) -> list[str]:
         out.append("P0a: failed embed outcomes (400s and degraded recalls included)")
     if ot.get("failed_outcomes_llm", 0) > 0:
         out.append("P0a: failed_outcomes_llm after the pacer's bounded retry")
+    if "llm" in d and d["llm"] is None and ot.get("fallback_local", 0) > 0:
+        out.append("P0a: fallback_local > 0 - an LLM call on the Ollama leg of an arm that declares no LLM (R-TOOLS: "
+                   "never silence; p0b judges fallback_local for cloud arms only)")
     needs = d.get("llm_transport") == "ollama" or d.get("embeds_via_ollama")
     if needs and ot.get("calls", 0) == 0 and not ctx.k61.get(arm):
         out.append("P0a: needs Ollama but counts no paced call, and K61 does not hold")
