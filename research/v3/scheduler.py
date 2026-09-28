@@ -1031,13 +1031,17 @@ _RUN_ID = _re.compile(r"[A-Za-z0-9_-]+")
 
 
 def _tree(sched: "Scheduler", stand: str, name: str) -> dict:
-    """The tree check (Q10, D10) inside a witness check of its own - never inside a window (Q11)."""
+    """The tree check (Q10, D10) inside a witness check of its own - never inside a window (Q11). Q3 (the auditor): that
+    check's record rides on the verdict as witness_check - a hit in the STAND START/END window is the stand's (rev1
+    §2.6.9: an arm's orphan that outlived its kill, a write into the watched set), so the smoke reads it too."""
     cid = f"{stand}.{name}"
     sched.witnesses.begin_check(cid)
     try:
-        return dict(sched.hooks.tree_check())
+        v = dict(sched.hooks.tree_check())
     finally:
-        sched.witnesses.end_check(cid)
+        check = sched.witnesses.end_check(cid)
+    v["witness_check"] = check
+    return v
 
 
 def _run_stand(sched: "Scheduler", sp: StandPlan, blocks: Sequence[BlockPlan], *, judges: Sequence[Any],

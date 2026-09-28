@@ -625,6 +625,21 @@ def witness_problems(check: Any) -> list[str]:
     return out
 
 
+def smoke_checks(res: Any) -> list[tuple[str, Any]]:
+    """Q3 (the auditor): every witness check of a stand result, labeled by its window - the tree check at STAND START
+    (tree-start), each block's (block), the tree check at STAND END (tree-end); a window the stand never reached is
+    left out, one it reached without a record keeps None (witness_problems names it)."""
+    if not isinstance(res, Mapping):
+        return []
+    out: list[tuple[str, Any]] = []
+    if isinstance(res.get("tree_start"), Mapping):
+        out.append(("tree-start", res["tree_start"].get("witness_check")))
+    out += [("block", b.get("check") if isinstance(b, Mapping) else None) for b in res.get("blocks") or []]
+    if isinstance(res.get("tree_end"), Mapping):
+        out.append(("tree-end", res["tree_end"].get("witness_check")))
+    return out
+
+
 def boundary_problems(boundary: Mapping[str, Mapping[str, Any]], flags: Mapping[str, Mapping[str, int]],
                       runs: Sequence[str]) -> list[str]:
     """The smoke's boundary problems: each arm-run's P0h counts from the proxy (a canary or an owner marker is ONE event
@@ -834,9 +849,9 @@ def run_smoke(cfg: RunConfig, *, stand: str, arm_names: Sequence[str], runs: Seq
             problems += [f"smoke: {p}" for p in SM.iter_problems(summ)]     # its failures by name (the exit code's)
         except Exception as e:  # noqa: BLE001 - named; the record below still says what the stand did
             problems.append(f"no smoke summary: {type(e).__name__}: {e}")
-    checks = [b.get("check") for b in (res or {}).get("blocks") or []] if isinstance(res, Mapping) else []
-    record["witness_checks"] = checks                # Q3: the witnesses are the smoke's verdict too
-    problems += [p for ch in checks for p in witness_problems(ch)]
+    checks = smoke_checks(res)                       # Q3: the witnesses - the tree checks' too - are the verdict
+    record["witness_checks"] = [{"window": w, **(ch if isinstance(ch, Mapping) else {"check": ch})} for w, ch in checks]
+    problems += [p for _w, ch in checks for p in witness_problems(ch)]
     problems += [f"STATUS: {p}" for p in SL.self_check(Path(deps.status_path))]
     record["problems"] = problems
     with open(smoke_dir / "run.json", "xb") as f:

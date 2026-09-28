@@ -649,6 +649,11 @@ try:
           and lines3[0].split()[2:5] == ["STAND", "SZ", "START"] and lines3[-1].split()[2:5] == ["STAND", "SZ", "END"],
           f"{ev[:6]} {lines3[0][:60]}")
     check("T19: a smoke stand never judges", not [e for e in ev if e[0] == "judge"] and res.get("judged") == [])
+    check("Q3 (the auditor): each tree check's own witness record rides on its verdict (witness_check) - the STAND "
+          "START and STAND END windows are read, never dropped",
+          (res.get("tree_start") or {}).get("witness_check") == {"check_id": "SZ.tree-start", "complete": True}
+          and (res.get("tree_end") or {}).get("witness_check") == {"check_id": "SZ.tree-end", "complete": True},
+          f"{(res.get('tree_start') or {}).get('witness_check')} {(res.get('tree_end') or {}).get('witness_check')}")
     s, sp, judges, ev, gpu, st = stand_world("smoke", stand="SJ", sfile="STATUS4")
     s.tag = "scored"
     st.campaign_start(anchor="c" * 40, prereg="d" * 64, freeze="e" * 64)

@@ -392,6 +392,20 @@ try:
           and len(bp) == 3, str(bp))
     check("Q3: an arm's own egress count in a smoke reads 'unmeasured: one harness catcher (Q-12-1)' - never {} (every "
           "child speaks to the harness's one catcher)", RV.EGRESS_UNMEASURED == "unmeasured: one harness catcher (Q-12-1)")
+    tree_dirty = {**ok_check, "check_id": "S4-smoke-9.tree-start", "fs": {"fs_hits": 1, "changed_labels": ["watched"]}}
+    try:
+        sc = RV.smoke_checks({"tree_start": {"clean": True, "witness_check": tree_dirty}, "blocks": [{"check": ok_check}],
+                              "tree_end": {"clean": True, "witness_check": {**ok_check,
+                                                                            "check_id": "S4-smoke-9.tree-end"}}})
+        sc_probs = [p for _w, ch in sc for p in RV.witness_problems(ch)]
+        sc_part = RV.smoke_checks({"tree_start": {"clean": True, "witness_check": ok_check}, "blocks": []})
+    except Exception as e:  # noqa: BLE001 - the row FAILs by name
+        sc, sc_probs, sc_part = f"{type(e).__name__}: {e}", [], None
+    check("Q3 (the auditor): the tree checks' witnesses are the smoke's too - tree-start, each block, tree-end, labeled "
+          "by window; an fs hit in the STAND START window is a problem by name; a window never reached is left out",
+          isinstance(sc, list) and [w for w, _c in sc] == ["tree-start", "block", "tree-end"]
+          and sc_probs == ["witness: S4-smoke-9.tree-start: fs hits=1 (P0h) ['watched']"]
+          and [w for w, _c in sc_part or []] == ["tree-start"], f"{sc} {sc_probs} {sc_part}")
     print("\n- the forecast (Q-A6-2): an upper bound, not pilot medians -")
     fc_out = RV.forecast_arms({"bm25-floor": None, "nevertwice": "deepseek-flash"},
                               {"nevertwice": {"u1": ["a" * 100, "é" * 20000, "x" * 60000]}}, {("u1", "q0"): "p" * 50},
