@@ -542,14 +542,30 @@ def _rmtree_writable(path: Path) -> list[str]:
     return left
 
 
-def _cleanup() -> None:
-    """The store goes whole at exit; what cannot go is named on stderr in one line, never raised."""
-    if _STORE is None or not os.path.lexists(_STORE):
+def _remove_dir(path: Path, what: str) -> None:
+    """``path`` goes whole; what cannot go is named on stderr in one line, never raised."""
+    if not os.path.lexists(path):
         return
     try:
-        left = _rmtree_writable(_STORE)
+        left = _rmtree_writable(path)
     except OSError as e:                            # the walk itself failed: named, never raised at exit
-        left = [f"{_STORE}: {type(e).__name__}: {e}"]
+        left = [f"{path}: {type(e).__name__}: {e}"]
     if left:
-        print(f"sandbox_guard: the sandbox store {_STORE} was not removed whole - {len(left)} path(s) left, "
+        print(f"sandbox_guard: {what} {path} was not removed whole - {len(left)} path(s) left, "
               f"first {left[0]}", file=sys.stderr)
+
+
+def remove_at_exit(path) -> Path:
+    """B-TMP-LEAK: a throwaway directory a test fixture made (tests/_sandbox.make_sandbox) goes at
+    exit the way the sandbox store does - whole, ReadOnly cleared, a remainder named on stderr.
+    The fixture made one per call with mkdtemp and never removed it: 6572 b3_ vaults, 94 GB, sat in
+    %TEMP% by 2026-09-28 and filled the disk."""
+    p = Path(path)
+    atexit.register(_remove_dir, p, "the throwaway directory")
+    return p
+
+
+def _cleanup() -> None:
+    """The store goes whole at exit (B-SBX-RMTREE)."""
+    if _STORE is not None:
+        _remove_dir(_STORE, "the sandbox store")

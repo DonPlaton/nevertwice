@@ -575,6 +575,46 @@ def test_no_mirror_and_no_fixed_env_file_reaches_a_sandbox() -> None:
           f"{sandbox_guard.BRIDGED_PREFIXES} vs {config.LEGACY_PREFIXES}")
 
 
+TMPLEAK_CHILD = '''\
+import os
+import stat
+import sys
+sys.path.insert(0, {here!r})
+import _env_guard  # noqa: F401 - isolated like every suite
+import memory_hook as m
+from _sandbox import make_sandbox
+d = make_sandbox(m, "tmpleak_")
+obj = d / ".git" / "objects" / "ab" / "cd"
+obj.parent.mkdir(parents=True)
+obj.write_bytes(b"blob")
+os.chmod(obj, stat.S_IREAD)
+import sandbox_guard
+print(sandbox_guard.store(), flush=True)
+print(d, flush=True)
+'''
+
+
+def test_a_fixture_sandbox_goes_with_its_process() -> None:
+    """B-TMP-LEAK (the auditor): tests/_sandbox.make_sandbox made a temp vault with mkdtemp and never removed it - no
+    atexit, no cleanup - and 56 suites use it: 6572 b3_ vaults alone, 94 GB, sat in %TEMP% by 2026-09-28 and filled
+    the disk. A child that makes one (a ReadOnly git object in it, as git leaves) and exits must leave nothing."""
+    print("\n- a fixture's sandbox goes when its process does (B-TMP-LEAK) -")
+    with tempfile.TemporaryDirectory(prefix="nevertwice_tmpleak_") as tmp:
+        script = Path(tmp) / "child.py"
+        script.write_text(TMPLEAK_CHILD.format(here=str(HERE)), encoding="utf-8")
+        proc = subprocess.run([sys.executable, str(script)], capture_output=True, text=True, encoding="utf-8",
+                              errors="replace", timeout=300, env=dict(os.environ, PYTHONUTF8="1"))
+    out = proc.stdout.strip().splitlines()
+    home, made = (Path(out[-2]), Path(out[-1])) if len(out) >= 2 else (None, None)
+    check("B-TMP-LEAK: a child that makes a fixture sandbox (a ReadOnly git object in it) and exits leaves no directory "
+          "behind - neither the fixture's nor its own sandbox store - and says nothing about it",
+          proc.returncode == 0 and made is not None and made.name.startswith("tmpleak_") and not made.exists()
+          and home.name.startswith("nevertwice_test_home_") and not home.exists()
+          and "not removed whole" not in proc.stderr,
+          f"rc={proc.returncode} made={made} exists={made.exists() if made else None} home={home} "
+          f"exists={home.exists() if home else None} stderr={proc.stderr.strip()[-300:]!r}")
+
+
 def test_the_cleanup_removes_what_git_wrote_or_says_what_it_left() -> None:
     """B-SBX-RMTREE (the auditor): `_cleanup` removed the store with rmtree(ignore_errors=True). Git writes its object
     files ReadOnly; on Windows rmtree cannot unlink those, and ignore_errors hid it - 11 stores in %TEMP% hold only

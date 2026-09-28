@@ -25,6 +25,9 @@ def make_sandbox(m, prefix: str = "nwtest_", offline: bool = False) -> Path:
     long as nobody's shell exports the matching NEVERTWICE_* var. Pinned here, every time, so
     the suites that assert these defaults test the code's default, not the machine's env."""
     d = Path(tempfile.mkdtemp(prefix=prefix))
+    # B-TMP-LEAK: gone at exit, whole (ReadOnly git objects included) - registered before anything
+    # below can raise, so a refused sandbox goes too. Never removed before: 94 GB of b3_ vaults.
+    sandbox_guard.remove_at_exit(d)
     # The TRANSCRIPT root, before the rebase that derives `_PROJECTS_ROOT_NORM` from it.
     # `_rebase_vault` moves every vault-derived constant and this is not one of them - it is
     # a separate setting - so a sandboxed suite kept the machine's real `~/.claude/projects`,
