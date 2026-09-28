@@ -748,10 +748,11 @@ def spawn(c: Contract, argv: Sequence[str], *, env: Mapping[str, str], cwd: str 
           env_exception: Mapping[str, Sequence[Path]] | None = None, argv_exception: Mapping[int, Path] | None = None,
           canaries: Sequence[str] = (), popen: Callable[..., subprocess.Popen] = subprocess.Popen,
           witnesses: "Witnesses | None" = None, requirement: str = "required", unwitnessed_reason: str | None = None,
-          window: "Window | None" = None, **popen_kw) -> Child:
+          window: "Window | None" = None, cc_mode: str | None = None, **popen_kw) -> Child:
     """Check everything, write the record, then start the child and register it with the native egress witness.
     A refusal is recorded too, then raised. A required spawn needs the native witness (AQ2); an optional one
-    without it needs a written reason of at least 12 characters, which the record keeps."""
+    without it needs a written reason of at least 12 characters, which the record keeps. ``cc_mode`` CC_DISCOVERY is
+    the A8 probe's only (role=probe, stand=CC_PROBE_STAND; Q-C5-6)."""
     spawn_id = uuid.uuid4().hex
     reasons: list[str] = [f"Popen argument not allowed: {k}" for k in sorted(popen_kw) if k not in POPEN_ALLOWED]
     native = witnesses.native if witnesses is not None else None
@@ -788,6 +789,14 @@ def spawn(c: Contract, argv: Sequence[str], *, env: Mapping[str, str], cwd: str 
                  or any(_in_claude_package(str(a)) for a in argv)                          # D6: node + cli.js
                  or (pinned_cc is not None and any(_norm(str(a)) == _norm(pinned_cc) for a in argv)))
     claude_rec = None
+    cfg_register = None
+    if cc_mode is not None:
+        if cc_mode != CC_DISCOVERY:
+            reasons.append(f"unknown Claude Code mode {cc_mode!r}")
+        elif record.get("role") != "probe" or record.get("stand") != CC_PROBE_STAND:
+            reasons.append(f"the discovery mode is the A8 probe's only (role=probe, stand={CC_PROBE_STAND}; Q-C5-6)")
+        if not is_claude:
+            reasons.append("a Claude Code mode on a spawn that is not Claude Code")
     if is_claude:
         unit_home = Path(os.path.abspath(os.fspath(cwd)) + ".home")
         memdir = unit_home / "memory"
@@ -802,20 +811,26 @@ def spawn(c: Contract, argv: Sequence[str], *, env: Mapping[str, str], cwd: str 
                                      launcher=list(argv[:2]) if node_form else None)
         if check_ancestors_for_claude(c)["found"]:
             reasons.append("a CLAUDE.md, CLAUDE.local.md or .claude sits in an ancestor of the runs tree")
-        cfg = env.get("CLAUDE_CONFIG_DIR")
-        if not cfg or not _within(cfg, unit_home) or not os.path.isdir(cfg):
-            reasons.append("CLAUDE_CONFIG_DIR is not a directory inside this unit's fake home")
-        elif set(os.listdir(cfg)) != CLAUDE_CONFIG_ALLOWED:
-            reasons.append("CLAUDE_CONFIG_DIR holds something other than exactly our settings.json")   # D4/D5
         cc_file = str(argv[1]) if node_form else str(argv[0])
         if (pinned_cc is None or _norm(cc_file) != _norm(pinned_cc) or _norm(_real(cc_file)) != _norm(_real(pinned_cc))
                 or (not node_form and (binary is None or _norm(binary.path) != _norm(pinned_cc)))):
             reasons.append("the binary is not the polygon-pinned Claude Code")
         cc_sha = _sha256_file(cc_file) if os.path.isfile(cc_file) else None
-        if not _OFFERED.get("tools") or _OFFERED.get("sha256") != cc_sha:                          # D7
+        cfg = env.get("CLAUDE_CONFIG_DIR")
+        cfg_rec: dict = {}
+        if not cfg or not _within(cfg, unit_home) or not os.path.isdir(cfg):
+            reasons.append("CLAUDE_CONFIG_DIR is not a directory inside this unit's fake home")
+        else:                                                                     # D4/D5 on the first, Q-47-7 after
+            cfg_reasons, cfg_rec, first_sha = check_claude_config(cfg, cwd, mode=cc_mode, binary_sha256=cc_sha)
+            reasons += cfg_reasons
+            cfg_register = (_norm(cfg), first_sha) if first_sha is not None else None
+        offered_ok = bool(_OFFERED.get("tools")) and _OFFERED.get("sha256") == cc_sha
+        if not offered_ok and cc_mode != CC_DISCOVERY:                                                 # D7
             reasons.append("no A8 record of the tools this pinned Claude Code offers")
         claude_rec = {"version": c.claude_code_version, "binary_pinned": pinned_cc is not None,
-                      "form": "node+cli.js" if node_form else "binary", "sha256": cc_sha}
+                      "form": "node+cli.js" if node_form else "binary", "sha256": cc_sha, "config": cfg_rec,
+                      "offered": "recorded" if offered_ok else ("waived: discovery (Q-C5-7 attempt 2)"
+                                                                if cc_mode == CC_DISCOVERY else None)}
     entry = {
         "spawn_id": spawn_id, "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         **{k: record.get(k) for k in ("role", "stand", "run", "arm", "unit")},
@@ -836,6 +851,10 @@ def spawn(c: Contract, argv: Sequence[str], *, env: Mapping[str, str], cwd: str 
     _append_jsonl(spawns_log(c), entry)
     if reasons:
         raise ContractViolation(reasons)
+    if cfg_register is not None:                   # Q-47-7: the unit's first session names its one CLAUDE_CONFIG_DIR
+        _CC_CONFIGS[cfg_register[0]] = {"settings_sha256": cfg_register[1], "unit": _norm(cwd)}
+        if _norm(cwd) in _CC_UNITS:
+            _CC_UNITS[_norm(cwd)]["config"] = cfg_register[0]
     _FRESH.discard(_norm(cwd))                     # handed to a child: no longer fresh
     jobs = native.jobs if native is not None else None
     if os.name == "nt":
@@ -1834,6 +1853,19 @@ MIN_DISALLOWED = frozenset({"Bash", "WebFetch", "Task"})
 #: as user memory and a .credentials.json is used as credentials; the decoys live in <unit>.home/.claude instead,
 #: where they show whether CLAUDE_CONFIG_DIR is honoured.
 CLAUDE_CONFIG_ALLOWED = frozenset({"settings.json"})
+#: Q-47-7 (the auditor, 27.09) and Q-C5-6: the names refused anywhere in CLAUDE_CONFIG_DIR, in any case, on every session
+#: and in discovery too - user memory, credentials, and the hook, agent and command surfaces.
+CLAUDE_CONFIG_FORBIDDEN = frozenset({"claude.md", ".credentials.json", "hooks", "agents", "commands",
+                                     "settings.local.json"})
+#: Q-C5-6: the probe-only mode of a Claude Code spawn - the probe's second session runs before A8's list of the
+#: product's config names exists, and its recording of them IS that list; its attempt-2 spawn (Q-C5-7) runs before
+#: the record of the offered tools exists. Only role=probe on stand CC_PROBE_STAND may use it.
+CC_DISCOVERY = "discovery"
+CC_PROBE_STAND = "_a8"
+#: A8's record of the top-level names the pinned product keeps in CLAUDE_CONFIG_DIR (Q-47-7), by the binary's sha256.
+_CONFIG_NAMES: dict = {}
+#: Q-47-7: {norm(CLAUDE_CONFIG_DIR): {settings_sha256, unit}} - registered by a unit's first session, one per unit.
+_CC_CONFIGS: dict[str, dict] = {}
 _CLAUDE_PACKAGE = ("@anthropic-ai", "claude-code")
 
 
@@ -1848,6 +1880,92 @@ def record_offered_tools(binary_sha256: str, tools: Sequence[str]) -> None:
     """A8: the tool names the pinned binary offers, read from it and recorded; --disallowedTools must then equal
     them minus the four file tools, exactly (L1). Never passed in by a spawn's caller."""
     _OFFERED["sha256"], _OFFERED["tools"] = binary_sha256, tuple(tools)
+
+
+def init_tools_problems(tools: Sequence[str]) -> list[str]:
+    """Q-C5-7: the tools the first spawn reports in its init event must equal A8's record; otherwise the arm is
+    blocked:unsupported-surface and the record is withdrawn - no later spawn passes D7 until A8 records again."""
+    want, got = set(_OFFERED.get("tools") or ()), set(tools)
+    if want and got == want:
+        return []
+    _OFFERED.clear()
+    return [f"blocked:unsupported-surface: the init event's tools are not A8's record (only in the event: "
+            f"{sorted(got - want)}, only in the record: {sorted(want - got)}) - the record is withdrawn"]
+
+
+def record_config_names(binary_sha256: str, names: Sequence[str]) -> None:
+    """Q-47-7: A8's list of the top-level names the pinned product keeps in CLAUDE_CONFIG_DIR - the probe's discovery
+    recording, after the auditor's review (it enters FREEZE-V3). Never passed in by a spawn's caller."""
+    _CONFIG_NAMES["sha256"], _CONFIG_NAMES["names"] = binary_sha256, frozenset(names)
+
+
+def _is_link(p: Path) -> bool:
+    return os.path.islink(p) or os.path.isjunction(p)
+
+
+def _config_entry(path: Path) -> dict:
+    """Q-C5-6: one top-level entry of CLAUDE_CONFIG_DIR as discovery records it - name, kind, size and sha256 (a
+    directory's over "<relative path>\\0<sha256>\\n" of its files, sorted, links never followed)."""
+    if path.is_file():
+        return {"name": path.name, "kind": "file", "size": path.stat().st_size, "sha256": _sha256_file(path)}
+    files = []
+    for dirpath, dirnames, filenames in os.walk(path, followlinks=False):
+        dirnames[:] = [d for d in dirnames if not _is_link(Path(dirpath) / d)]
+        files += [Path(dirpath) / f for f in filenames if not _is_link(Path(dirpath) / f)]
+    rows = sorted((f.relative_to(path.parent).as_posix(), f) for f in files)
+    body = "".join(f"{rel}\0{_sha256_file(f)}\n" for rel, f in rows)
+    return {"name": path.name, "kind": "dir", "size": sum(f.stat().st_size for _, f in rows),
+            "sha256": hashlib.sha256(body.encode("utf-8")).hexdigest()}
+
+
+def check_claude_config(cfg: str | os.PathLike, cwd: str | os.PathLike, *, mode: str | None,
+                        binary_sha256: str | None) -> tuple[list[str], dict, str | None]:
+    """Q-47-7 / Q-C5-6: (reasons, record, the settings sha a first session registers). Always: no forbidden name
+    anywhere, in any case, no link or junction, a settings.json. A unit's first session: exactly our settings.json
+    (D4/D5), and no other CLAUDE_CONFIG_DIR registered for the unit (one per unit). A later one: its settings.json
+    byte-equal to the first session's, and every other top-level name in A8's recorded names for this binary - or, in
+    discovery, every other name recorded (name, kind, size, sha256). That the directory is the unit's own is spawn's
+    check (it lies in the unit's fake home)."""
+    root = Path(cfg)
+    reasons: list[str] = []
+    forbidden, links = [], []
+    for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
+        for n in dirnames + filenames:
+            p = Path(dirpath) / n
+            if n.lower() in CLAUDE_CONFIG_FORBIDDEN:
+                forbidden.append(p.relative_to(root).as_posix())
+            if _is_link(p):
+                links.append(p.relative_to(root).as_posix())
+        dirnames[:] = [d for d in dirnames if not _is_link(Path(dirpath) / d)]
+    if forbidden:
+        reasons.append(f"names forbidden in CLAUDE_CONFIG_DIR, always (Q-47-7): {sorted(forbidden)}")
+    if links:
+        reasons.append(f"a link or junction inside CLAUDE_CONFIG_DIR: {sorted(links)}")
+    settings = root / "settings.json"
+    if not settings.is_file() or _is_link(settings):
+        reasons.append("CLAUDE_CONFIG_DIR has no settings.json of its own")
+        return reasons, {}, None
+    sha = _sha256_file(settings)
+    top = sorted(n for n in os.listdir(root) if n != "settings.json")
+    known = _CC_CONFIGS.get(_norm(cfg))
+    if known is None:
+        unit_cfg = (_CC_UNITS.get(_norm(cwd)) or {}).get("config")
+        if unit_cfg is not None and unit_cfg != _norm(cfg):
+            reasons.append("the unit's sessions share one CLAUDE_CONFIG_DIR per unit (Q-47-7) - this is another one")
+        if top:
+            reasons.append("CLAUDE_CONFIG_DIR holds something other than exactly our settings.json")   # D4/D5
+        return reasons, {"first": True}, sha
+    if sha != known["settings_sha256"]:              # the unit's own: spawn checks it lies in this unit's fake home
+        reasons.append("settings.json is not byte-equal to the unit's first session's (Q-47-7)")
+    if mode == CC_DISCOVERY:
+        return reasons, {"first": False, "mode": CC_DISCOVERY, "entries": [_config_entry(root / n) for n in top]}, None
+    names = _CONFIG_NAMES.get("names") if _CONFIG_NAMES.get("sha256") == binary_sha256 else None
+    if top and names is None:
+        reasons.append("no A8 record of the product's config names for this pinned Claude Code (Q-47-7)")
+    elif names is not None and set(top) - names:
+        reasons.append(f"names outside A8's recorded names in CLAUDE_CONFIG_DIR: {sorted(set(top) - names)} "
+                       "(an unknown is investigated, never passed)")
+    return reasons, {"first": False, "names": top}, None
 
 
 def new_home_canary() -> str:

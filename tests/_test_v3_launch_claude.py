@@ -25,6 +25,12 @@
 * Q-47-6: the sessions of one claude-code-memory unit run in that unit's directory one after another (Claude Code binds
   its memory to the project's working directory); another unit, another arm, a directory that is not empty, or a
   session while the previous one still runs is refused; each reuse is a line of the spawn journal.
+* Q-47-7 / Q-C5-6 (B-C5-1): one CLAUDE_CONFIG_DIR per unit - exactly our settings.json on its first session (D4/D5);
+  a later session holds settings.json byte-equal plus only the top-level names A8 recorded for this binary; CLAUDE.md,
+  .credentials.json, hooks, agents, commands and settings.local.json are refused anywhere, in any case, always, and so
+  is a link or junction; the probe-only discovery mode (role=probe, stand=_a8) records every other name - name, kind,
+  size, sha256 - instead, and runs before the offered-tools record (D7 waived there, Q-C5-7 attempt 2, B-C5-2); the
+  first spawn's init-event tools must equal the record, else blocked:unsupported-surface and the record is withdrawn.
 
     python tests/_test_v3_launch_claude.py
 """
@@ -313,11 +319,11 @@ u_r = L.make_unit_dirs(CC, "cc", "r", "claude-code-memory", "reuse1")
 
 
 def cc_session(unit_dirs, record, *, mutate=None):
-    cfg_dir = unit_dirs.home / "claude_config"
+    cfg_dir = unit_dirs.home / "claude_config"      # Q-47-7: one CLAUDE_CONFIG_DIR per unit, made before its first session
     if cfg_dir.exists():
-        shutil.rmtree(cfg_dir)
-        (unit_dirs.home / "empty-mcp.json").unlink()
-    cfg, settings = L.make_claude_config(unit_dirs, home_canary=L.new_home_canary())
+        cfg, settings = cfg_dir, cfg_dir / "settings.json"
+    else:
+        cfg, settings = L.make_claude_config(unit_dirs, home_canary=L.new_home_canary())
     av = L.claude_code_argv(CC.claude_code_binary, settings_path=settings, empty_mcp_path=unit_dirs.home / "empty-mcp.json",
                             memdir=unit_dirs.memdir, offered_tools=OFFERED)
     env = L.build_env(CC, parent_env=os.environ, unit=unit_dirs, path_dirs=[], catcher_url="http://127.0.0.1:47004",
@@ -371,6 +377,194 @@ try:
 except L.ContractViolation as e:
     check("Q-47-6 another arm's unit directory is never reusable, even by its own unit",
           any("not created fresh" in r for r in e.reasons), str(e.reasons))
+
+print("\n- Q-47-7 / Q-C5-6: one CLAUDE_CONFIG_DIR per unit; a later session holds settings.json byte-equal plus the "
+      "recorded names; discovery is the A8 probe's only -")
+import hashlib  # noqa: E402
+
+
+def cc7_unit(stand, unit):
+    u7 = L.make_unit_dirs(CC, stand, "r", "claude-code-memory", unit)
+    cfg7, settings7 = L.make_claude_config(u7, home_canary=L.new_home_canary())
+    return u7, cfg7, settings7
+
+
+def cc7_session(u7, cfg7, settings7, record, *, mode=None):
+    av = L.claude_code_argv(CC.claude_code_binary, settings_path=settings7, empty_mcp_path=u7.home / "empty-mcp.json",
+                            memdir=u7.memdir, offered_tools=OFFERED)
+    env7 = L.build_env(CC, parent_env=os.environ, unit=u7, path_dirs=[], catcher_url="http://127.0.0.1:47004",
+                       declared={"CLAUDE_CONFIG_DIR": str(cfg7)})
+    called.clear()
+    try:
+        L.spawn(CC, av, env=env7, cwd=u7.cwd, record=record, parent_env=os.environ, catcher_url="http://127.0.0.1:47004",
+                popen=_Popen, requirement="optional", unwitnessed_reason="lockdown suite: never started",
+                **({"cc_mode": mode} if mode is not None else {}))
+        return []
+    except L.ContractViolation as e:
+        return list(e.reasons)
+
+
+def last_cc():
+    return json.loads(L.spawns_log(CC).read_bytes().decode().splitlines()[-1]).get("claude_code") or {}
+
+
+def put(path: Path, data: bytes = b"x") -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(data)
+    return path
+
+
+BIN_SHA = L._sha256_file(CC.claude_code_binary)
+L.record_offered_tools(BIN_SHA, OFFERED)
+L._CONFIG_NAMES.clear() if hasattr(L, "_CONFIG_NAMES") else None
+u7, cfg7, st7 = cc7_unit("cc", "q7a")
+R7 = {"role": "claude-code", "arm": "claude-code-memory", "stand": "cc", "run": "r", "unit": "q7a"}
+first7 = cc7_session(u7, cfg7, st7, R7)
+check("Q-47-7 a unit's first session: its CLAUDE_CONFIG_DIR holds exactly our settings.json (D4/D5), recorded as the first",
+      first7 == [] and last_cc().get("config", {}).get("first") is True, str(first7 or last_cc()))
+put(cfg7 / "projects" / "slug-q7a" / "s1.jsonl", b'{"a": 1}\n')
+put(cfg7 / "todos" / "t.json", b"[]")
+put(cfg7 / ".claude.json", b"{}")
+got7 = cc7_session(u7, cfg7, st7, R7)
+check("Q-47-7 a later session with the product's files but no A8 record of the config names is refused by name",
+      any("no A8 record of the product's config names" in r for r in got7) and called == [], str(got7))
+L.record_config_names(BIN_SHA, [".claude.json", "projects", "statsig", "todos"])
+got7 = cc7_session(u7, cfg7, st7, R7)
+check("Q-47-7 a later session with the product's files under the recorded names passes - settings.json byte-equal, "
+      "the names present recorded", got7 == [] and last_cc().get("config") == {"first": False,
+                                                                              "names": [".claude.json", "projects", "todos"]},
+      str(got7 or last_cc()))
+for label, make, want in (
+        ("a CLAUDE.md at the top", lambda: put(cfg7 / "CLAUDE.md"), "CLAUDE.md"),
+        ("a claude.md deep inside the product's files", lambda: put(cfg7 / "projects" / "slug-q7a" / "claude.md"), "claude.md"),
+        ("a .credentials.json", lambda: put(cfg7 / ".credentials.json"), ".credentials.json"),
+        ("a hooks directory", lambda: put(cfg7 / "hooks" / "pre.json"), "hooks"),
+        ("an agents directory", lambda: put(cfg7 / "agents" / "a.md"), "agents"),
+        ("a commands directory", lambda: put(cfg7 / "commands" / "c.md"), "commands"),
+        ("a settings.local.json", lambda: put(cfg7 / "settings.local.json"), "settings.local.json")):
+    planted = make()
+    got7 = cc7_session(u7, cfg7, st7, R7)
+    check(f"Q-47-7 {label} in CLAUDE_CONFIG_DIR is refused by name, always",
+          any("forbidden in CLAUDE_CONFIG_DIR" in r and want in r for r in got7) and called == [], str(got7))
+    top = cfg7 / planted.relative_to(cfg7).parts[0]
+    if planted.parent != cfg7 and top.name != "projects":
+        shutil.rmtree(top)
+    else:
+        planted.unlink()
+L.record_config_names("0" * 64, [".claude.json", "projects", "statsig", "todos"])
+got7 = cc7_session(u7, cfg7, st7, R7)
+check("Q-47-7 names recorded for another binary's sha are no record for this one - the later session is refused",
+      any("no A8 record of the product's config names" in r for r in got7), str(got7))
+L.record_config_names(BIN_SHA, [".claude.json", "projects", "statsig", "todos"])
+put(cfg7 / "notes.txt")
+got7 = cc7_session(u7, cfg7, st7, R7)
+check("Q-47-7 a name outside the recorded list is refused by name - an unknown is investigated, never passed",
+      any("outside A8's recorded names" in r and "notes.txt" in r for r in got7), str(got7))
+(cfg7 / "notes.txt").unlink()
+orig7 = st7.read_bytes()
+st7.write_bytes(orig7.replace(b"}", b" }", 1))
+got7 = cc7_session(u7, cfg7, st7, R7)
+check("Q-47-7 a later session whose settings.json is not byte-equal to the first session's is refused",
+      any("settings.json is not byte-equal" in r for r in got7), str(got7))
+st7.write_bytes(orig7)
+import _winapi  # noqa: E402
+_winapi.CreateJunction(str(u7.memdir), str(cfg7 / "statsig"))
+got7 = cc7_session(u7, cfg7, st7, R7)
+check("Q-47-7 a link or junction inside CLAUDE_CONFIG_DIR is refused by name, even under a recorded name",
+      any("a link or junction inside CLAUDE_CONFIG_DIR" in r for r in got7), str(got7))
+os.rmdir(cfg7 / "statsig")
+check("Q-47-7 ... and with every plant removed the unit's next session passes again", cc7_session(u7, cfg7, st7, R7) == [])
+cfg7b = u7.home / "claude_config_2"
+cfg7b.mkdir()
+(cfg7b / "settings.json").write_bytes(orig7)
+got7 = cc7_session(u7, cfg7b, cfg7b / "settings.json", R7)
+check("Q-47-7 a new CLAUDE_CONFIG_DIR for a later session of the same unit is refused - one per unit",
+      any("one CLAUDE_CONFIG_DIR per unit" in r for r in got7), str(got7))
+shutil.rmtree(cfg7b)
+
+uz, cfgz, stz = cc7_unit("cc", "q7z")
+Rz = {**R7, "unit": "q7z"}
+put(cfgz / "CLAUDE.md")
+got_z1 = cc7_session(uz, cfgz, stz, Rz)
+(cfgz / "CLAUDE.md").unlink()
+put(cfgz / "todos" / "t.json", b"[]")
+got_z2 = cc7_session(uz, cfgz, stz, Rz)
+check("Q-47-7 a refused first session registers nothing: the unit's next session is still its first (D4/D5), so a "
+      "product file there is refused even under a recorded name",
+      any("forbidden" in r for r in got_z1) and any("exactly our settings.json" in r for r in got_z2), str((got_z1, got_z2)))
+ud, cfgd, std = cc7_unit("_a8", "d1")
+RD = {"role": "probe", "arm": "claude-code-memory", "stand": "_a8", "run": "r", "unit": "d1"}
+check("Q-C5-6 the probe's first session is an ordinary first session (D4/D5)", cc7_session(ud, cfgd, std, RD) == [])
+f1 = put(cfgd / "newthing.bin", b"abc")
+put(cfgd / "projects" / "p" / "a.jsonl", b"12")
+put(cfgd / "projects" / "p" / "b.jsonl", b"345")
+got_d = cc7_session(ud, cfgd, std, RD, mode="discovery")
+tree = hashlib.sha256(("projects/p/a.jsonl\0" + hashlib.sha256(b"12").hexdigest() + "\n"
+                       + "projects/p/b.jsonl\0" + hashlib.sha256(b"345").hexdigest() + "\n").encode("utf-8")).hexdigest()
+check("Q-C5-6 discovery: the probe's second session passes with names no list holds yet, each recorded - name, kind, "
+      "size and sha256 (a directory's over its files' relative paths and sha256s) - which IS the allowed list",
+      got_d == [] and last_cc().get("config") == {"first": False, "mode": "discovery", "entries": [
+          {"name": "newthing.bin", "kind": "file", "size": 3, "sha256": hashlib.sha256(b"abc").hexdigest()},
+          {"name": "projects", "kind": "dir", "size": 5, "sha256": tree}]}, str(got_d or last_cc()))
+put(cfgd / "CLAUDE.md")
+got_d = cc7_session(ud, cfgd, std, RD, mode="discovery")
+check("Q-C5-6 discovery: a forbidden name is still refused", any("forbidden in CLAUDE_CONFIG_DIR" in r for r in got_d),
+      str(got_d))
+(cfgd / "CLAUDE.md").unlink()
+origd = std.read_bytes()
+std.write_bytes(origd + b"\n")
+got_d = cc7_session(ud, cfgd, std, RD, mode="discovery")
+check("Q-C5-6 discovery: settings.json is still byte-equal", any("settings.json is not byte-equal" in r for r in got_d),
+      str(got_d))
+std.write_bytes(origd)
+ue, cfge, ste = cc7_unit("cc", "d2")
+RE = {"role": "probe", "arm": "claude-code-memory", "stand": "cc", "run": "r", "unit": "d2"}
+got_e = cc7_session(ue, cfge, ste, RE, mode="discovery")
+uf, cfgf, stf = cc7_unit("_a8", "d3")
+got_f = cc7_session(uf, cfgf, stf, {**RD, "unit": "d3", "role": "claude-code"}, mode="discovery")
+ug, cfgg, stg = cc7_unit("_a8", "d4")
+got_g = cc7_session(ug, cfgg, stg, {**RD, "unit": "d4"}, mode="free")
+check("Q-C5-6 discovery outside stand _a8, or not by role probe, is refused by name; an unknown mode is refused",
+      any("discovery mode is the A8 probe's only" in r for r in got_e)
+      and any("discovery mode is the A8 probe's only" in r for r in got_f)
+      and any("unknown Claude Code mode" in r for r in got_g), str((got_e, got_f, got_g)))
+saved_off = dict(L._OFFERED)
+L._OFFERED.clear()
+uh, cfgh, sth = cc7_unit("_a8", "d5")
+got_h = cc7_session(uh, cfgh, sth, {**RD, "unit": "d5"}, mode="discovery")
+off_h = last_cc().get("offered")
+ui, cfgi, sti = cc7_unit("cc", "q7b")
+got_i = cc7_session(ui, cfgi, sti, {**R7, "unit": "q7b"})
+check("Q-C5-7 attempt 2: a discovery spawn runs before any record of the offered tools (D7 waived there, and said so); a "
+      "campaign spawn without the record is still refused",
+      got_h == [] and off_h == "waived: discovery (Q-C5-7 attempt 2)"
+      and any("no A8 record of the tools" in r for r in got_i), str((got_h, off_h, got_i)))
+L._OFFERED.update(saved_off)
+p_same = L.init_tools_problems(list(reversed(OFFERED)))
+kept = dict(L._OFFERED)
+p_more = L.init_tools_problems(OFFERED + ["NotebookEdit2"])
+check("Q-C5-7: the first spawn's init-event tools must equal the record - a mismatch is blocked:unsupported-surface and "
+      "the record is withdrawn", p_same == [] and kept == saved_off and len(p_more) == 1
+      and p_more[0].startswith("blocked:unsupported-surface") and "NotebookEdit2" in p_more[0] and L._OFFERED == {},
+      str((p_same, p_more, L._OFFERED)))
+L._OFFERED.clear()
+p_none = L.init_tools_problems(OFFERED)
+check("Q-C5-7: without a record there is nothing the init event can equal - blocked:unsupported-surface",
+      len(p_none) == 1 and p_none[0].startswith("blocked:unsupported-surface"), str(p_none))
+L._OFFERED.update(saved_off)
+u_nc = L.make_unit_dirs(CC, "_a8", "r", "mem0", "nc1")
+called.clear()
+try:
+    L.spawn(CC, [sys.executable, "-c", "pass"], env=L.build_env(CC, parent_env=os.environ, unit=u_nc, path_dirs=[],
+                                                              declared={}, catcher_url="http://127.0.0.1:47004"),
+            cwd=u_nc.cwd, record={"role": "probe", "arm": "mem0", "stand": "_a8", "run": "r", "unit": "nc1"},
+            parent_env=os.environ, catcher_url="http://127.0.0.1:47004", popen=_Popen, requirement="optional",
+            unwitnessed_reason="lockdown suite: never started", cc_mode="discovery")
+    got_nc = []
+except L.ContractViolation as e:
+    got_nc = list(e.reasons)
+check("Q-C5-6 a Claude Code mode on a spawn that is not Claude Code is refused by name",
+      any("not Claude Code" in r for r in got_nc) and called == [], str(got_nc))
 
 print("\n- R-CC-WIT: the home canary in the unit's settings, and the fake home's decoys -")
 _pspec = importlib.util.spec_from_file_location("v3_llm_proxy_for_claude", ROOT / "research" / "_llm_proxy.py")
