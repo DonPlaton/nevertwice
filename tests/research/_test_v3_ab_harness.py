@@ -231,7 +231,8 @@ class H:
 
     def read(self, qid, query, k=10):
         if spec["run"] in spec.get("pay_read_on", []):     # D-AB-8: the reader's next call finds the balance gone
-            req = urllib.request.Request(os.environ["NVT3_WRITE_URL"] + "-arm402", data=b"{}", method="POST",
+            body = json.dumps({"model": "deepseek-flash", "messages": [{"role": "user", "content": "recall"}]}).encode()
+            req = urllib.request.Request(os.environ["NVT3_WRITE_URL"] + "-arm402", data=body, method="POST",
                                          headers={"Authorization": "Bearer " + os.environ["NVT3_WRITE_TOKEN"],
                                                   "Content-Type": "application/json"})
             urllib.request.build_opener(urllib.request.ProxyHandler({})).open(req, timeout=20).read()
@@ -461,16 +462,24 @@ try:
                                      and lg.get("unit_input_sha256") == shas for lg in legs)
           and shas and len(set(shas)) == 3, str([(lg.get("leg"), lg.get("units")) for lg in legs]))
     per = [(lg["leg"], u, x) for lg in legs for u, x in (lg.get("metrics", {}).get("nevertwice") or {}).items()]
-    check("T4: every leg's tokens are the product's own count (40/4 per writer call) plus the reader's usage (7/3) - "
-          "never the upstream's 1000/100 the proxy saw",
-          len(per) == 12 and all(x["writer_calls"] == 3 and x["reader_calls"] == 1 and x["tokens_in"] == 3 * 40 + 7
-                                 and x["tokens_out"] == 3 * 4 + 3 and x["calls"] == 4 for _l, _u, x in per),
+    PLAN = RV.load("run_v3_plan.py", smoke=True)
+    su_ab = RV.s4_smoke_units([lme_rec(i) for i in range(500)], ORDER, stand_id="S4-ab-w")
+    W = {u.unit_id: len(PLAN.write_ops(PLAN.ARMS["nevertwice"], u, dated=True, smap=su_ab["smaps"].get(u.unit_id)))
+         for u in su_ab["units"][:3]}
+    check("Q5: the plan writes each A/B unit of the nevertwice arm by session - 2 write ops for the fixture's 2 "
+          "sessions (the writer's call count the rows below expect; the rows once said 3, the turns)",
+          W == {u: 2 for u in want_units} and PLAN.ARMS["nevertwice"].granularity == "session", str(W))
+    check("T4: every leg's tokens are the product's own count (40/4 per writer call, one call per write op) plus the "
+          "reader's usage (7/3) - never the upstream's 1000/100 the proxy saw",
+          len(per) == 12 and all(x["writer_calls"] == W.get(u) and x["reader_calls"] == 1
+                                 and x["tokens_in"] == W.get(u, 0) * 40 + 7 and x["tokens_out"] == W.get(u, 0) * 4 + 3
+                                 and x["calls"] == W.get(u, 0) + 1 for _l, u, x in per),
           str([(lg_, u_, x_["tokens_in"], x_["writer_calls"]) for lg_, u_, x_ in per][:4]))
     run_dir = C.runs_root / "_ab" / "S4-ab-1" / "_proxy"
     calls = [json.loads(x) for f in run_dir.rglob("calls.jsonl") for x in f.read_text(encoding="utf-8").splitlines()]
     wcalls = [x for x in calls if x.get("arm") == "nevertwice" and x.get("port_role") == "write"]
     check("T4: ... while the proxy recorded 1000 prompt tokens per writer call on the recording legs only",
-          len(wcalls) == 2 * 3 * 3 and all((x.get("usage") or {}).get("prompt") == 1000 for x in wcalls)
+          len(wcalls) == 2 * sum(W.values()) and all((x.get("usage") or {}).get("prompt") == 1000 for x in wcalls)
           and {x.get("unit", "").split(".")[0] for x in wcalls} == {"rec1", "rec2"},
           str([(x.get("unit"), x.get("usage")) for x in wcalls[:3]]))
     t6 = (rec1.get("t6") or {}).get("nevertwice-abraw") or {}
@@ -479,9 +488,9 @@ try:
           and "ollama_jsonl_lines" in t6 and not any(x.get("arm") == "nevertwice-abraw" for x in calls)
           and not list(run_dir.rglob("bodies/nevertwice-abraw")), str(t6))
     inj = {lg["leg"]: ((lg.get("proxy") or {}).get("nevertwice") or {}).get("thinking_injected") for lg in legs}
-    check("T5: under the declared thinking fallback the field is injected on all four legs alike - the 9 writer calls "
-          "of each (the reader's body says thinking itself) (M-AB-fallback-one-leg)",
-          len(inj) == 4 and all(v == 3 * 3 for v in inj.values()), str(inj))
+    check("T5: under the declared thinking fallback the field is injected on all four legs alike - every writer call "
+          "of each, one per write op (the reader's body says thinking itself) (M-AB-fallback-one-leg)",
+          len(inj) == 4 and all(v == sum(W.values()) for v in inj.values()), f"{inj} want {sum(W.values())}")
     pc = PX.ProxyConfig.load(PROXIES[0]["config"], PROXIES[0]["secrets"], test_upstream_ok=True) if PROXIES else None
     by = {a.arm: a for a in pc.arms} if pc else {}
     import dataclasses as _dc  # noqa: E402
@@ -600,16 +609,22 @@ try:
           and any(p.startswith("STOP: rec2:") for p in rec5.get("problems") or []), f"{crash5} {stop5}")
     (res5.record_path.parent / AB.OWNER_FILE).write_text(json.dumps({**WORD, "who": "the test, as the owner"}), encoding="utf-8")
     spacing0, SC.REASK_SPACING_S = SC.REASK_SPACING_S, 0.01
+    n_req6 = len(up.requests)
     try:
         res6, crash6, rec6, _o6, _e6 = run(pay_read_on=("rec2",))
     finally:
         SC.REASK_SPACING_S = spacing0
+        r402_6 = up.reader_402
         up.reader_402 = False
     stop6 = rec6.get("stop") or {}
+    paths6 = [r.split(b" ", 2)[1].decode("latin-1")[-40:] for r in up.requests[n_req6:]]
     check("D-AB-8: a 402 that comes after the last gate (the reader's, in rec2's question stage) stops the A/B after that "
           "leg - raw2 never runs; exit 3", crash6 is None and res6.rc == 3
           and [lg.get("leg") for lg in rec6.get("legs") or []] == ["raw1", "rec1", "rec2"] and stop6.get("leg") == "rec2"
-          and ((stop6.get("statuses") or {}).get("nevertwice") or {}).get("402", 0) > 0, f"{crash6} {stop6}")
+          and ((stop6.get("statuses") or {}).get("nevertwice") or {}).get("402", 0) > 0,
+          f"{crash6} {stop6} rc={getattr(res6, 'rc', None)} legs={[lg.get('leg') for lg in rec6.get('legs') or []]} "
+          f"problems={(rec6.get('problems') or [])[:3]} reader_402={r402_6} n_paths={len(paths6)} "
+          f"arm402={sum('arm402' in p for p in paths6)} tail={paths6[-6:]}")
 finally:
     for pr in PROXIES:
         try:
