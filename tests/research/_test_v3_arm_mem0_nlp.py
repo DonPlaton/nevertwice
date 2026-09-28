@@ -95,6 +95,20 @@ check("the real installed-check reads metadata only: a distribution this interpr
       ok(lambda: A._installed("pip") is True and A._installed("nvt3-no-such-distribution-x") is False
          and "spacy" not in sys.modules), str(sorted(m for m in sys.modules if "spacy" in m)))
 
+import importlib.metadata as _md  # noqa: E402
+_real_dist = _md.distribution
+
+
+def _unreadable(name):
+    raise OSError("metadata unreadable")
+
+
+_md.distribution = _unreadable
+try:
+    unreadable = A._installed("en_core_web_sm")
+finally:
+    _md.distribution = _real_dist
+check("S4 (the auditor): metadata that cannot be read is unknown (None) - never True", unreadable is None, repr(unreadable))
 before = set(sys.modules)
 check("called as counters() calls it - the live module table, the real metadata check - it imports nothing: no spaCy, "
       "no mem0 module appears", ok(lambda: A.nlp_state()["module"] is False

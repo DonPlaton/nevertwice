@@ -32,10 +32,16 @@ from __future__ import annotations
 
 import ast
 import hashlib
+import importlib.util
 import json
 import os
 import re
+import secrets as _secrets
+import sys
 import textwrap
+import time
+from dataclasses import dataclass, field
+from types import SimpleNamespace
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
@@ -75,6 +81,21 @@ M0_NLP_VARS = ("m0_nlp_full_var", "m0_nlp_lemma_var", "m0_nlp_failed_full_var", 
 #: the adapter's state key -> the source fact naming it
 M0_NLP_NAMES = {"full": "m0_nlp_full_var", "lemma": "m0_nlp_lemma_var", "failed_full": "m0_nlp_failed_full_var",
                 "failed_lemma": "m0_nlp_failed_lemma_var", "model": "m0_nlp_model"}
+#: C5a-2c (the auditor's Q-DRV-5): the probe's writes, declared data fixed before any run - three messages of one dated
+#: session, user and assistant, as run_v3_plan.write_ops builds a message unit's ops. Their sha goes into probe.json.
+M0_OPS = [
+    {"item": {"item_id": "a8m1", "session_id": "a8s1", "speaker": "Alice", "text": "I moved to Lisbon last spring.",
+              "role": "user"}, "date": "2026-03-02T10:00:00Z"},
+    {"item": {"item_id": "a8m2", "session_id": "a8s1", "speaker": "Bob", "text": "How do you like the city so far?",
+              "role": "assistant"}, "date": "2026-03-02T10:00:00Z"},
+    {"item": {"item_id": "a8m3", "session_id": "a8s1", "speaker": "Alice", "text": "I work at a bakery near the river.",
+              "role": "user"}, "date": "2026-03-02T10:00:00Z"},
+]
+#: the one text the fake's one answer carries, in the pinned source's own shape (Q-DRV-5)
+M0_SCRIPT_TEXT = "Alice lives in Lisbon and works at a bakery"
+#: the probe's fields, in their declared order (the verdict takes the first blocked reason in this order)
+M0_FIELDS = ("m0_pin", "m0_client", "m0_usage", "m0_calls_per_add", "m0_temperature", "m0_thinking", "m0_format_tools",
+             "m0_timestamp", "m0_nlp_active", "m0_nlp")
 WITNESS_SCOPE = ("the boundary checks cover the product child's tree only; the probe proxy's own spawn is unwitnessed "
                  "by design (launch.spawn_proxy) - R-C5-9")
 
@@ -432,6 +453,289 @@ def m0_nlp_active(state: Mapping | None, facts: Mapping[str, Mapping], *, catche
         bad.append(f"{catcher_lines} catcher line(s) of the unit - a run-time download")
     value = {"model": model, "nlp_full": state.get("nlp_full"), "nlp_lemma": state.get("nlp_lemma")}
     return _field(value, rule=rule, ok=not bad, failed="; ".join(bad), blocked="blocked:nlp-off" if bad else None)
+
+
+def mem0_source_facts(site: Path) -> dict:
+    """Every declared M0_SOURCE fact, read from the installed mem0's site-packages as data (C5a-2c)."""
+    out: dict = {}
+    rel, pattern = M0_SOURCE["m0_temperature"]
+    out["m0_temperature"] = fact(site, rel, pattern, name="m0_temperature")
+    out["m0_thinking"] = thinking_fact(site)
+    for k in ("m0_timestamp", "m0_content_key", "m0_item_key"):
+        rel, qual, pattern = M0_SOURCE[k]
+        out[k] = fact_in(scope(site, rel, qual, name=k), pattern, name=k)
+    rel, qual, dotted = M0_SOURCE["m0_llm_sites"]
+    out["m0_llm_sites"] = llm_sites(scope(site, rel, qual, name="m0_llm_sites"), dotted)
+    out["m0_format"] = formats(out["m0_llm_sites"])
+    rel, pattern = M0_SOURCE["m0_nlp"]
+    out["m0_nlp"] = all_in(site, rel, pattern, name="m0_nlp")
+    out["nlp"] = nlp_facts(site)
+    return out
+
+
+def mem0_script(facts: Mapping) -> list[dict] | dict:
+    """Q-DRV-5: the fake DeepSeek's ONE answer, in the pinned source's own shape {content_key: [{item_key: text}]} - every
+    call, the scheduler's and the gate's probes included, gets a valid mem0 answer; a blocked shape fact is blocked."""
+    for k in ("m0_content_key", "m0_item_key"):
+        if (facts.get(k) or {}).get("blocked"):
+            return {"blocked": facts[k]["blocked"]}
+    body = {facts["m0_content_key"]["value"]: [{facts["m0_item_key"]["value"]: M0_SCRIPT_TEXT}]}
+    return [{"content": json.dumps(body)}]
+
+
+def mem0_fields(*, start: Mapping | None, counters: Mapping, calls: Iterable[Mapping], catcher_lines: int,
+                facts: Mapping, install_record: Mapping | None, run: str, unit: str, adds: int) -> dict:
+    """The mem0 probe's fields in M0_FIELDS order, each from its own inputs (C5a-2c)."""
+    calls = list(calls)
+    nlp = facts.get("m0_nlp") or {}
+    nlp_info = (_field(nlp.get("value"), rule="information (Q-A8-8): the spaCy-backed utilities main.py imports", ok=True,
+                       source=nlp.get("source")) if not nlp.get("blocked") else
+                _field(None, rule="information (Q-A8-8)", ok=False, failed=nlp["blocked"], blocked=nlp["blocked"]))
+    out = {
+        "m0_pin": m0_pin(install_record),
+        "m0_client": m0_client(start),
+        "m0_usage": m0_usage(counters.get("llm_usage"), calls, run=run, unit=unit),
+        "m0_calls_per_add": m0_calls_per_add(facts["m0_llm_sites"], calls, run=run, unit=unit, adds=adds),
+        "m0_temperature": m0_temperature(facts["m0_temperature"], calls, run=run, unit=unit),
+        "m0_thinking": m0_thinking(facts["m0_thinking"], calls, run=run, unit=unit),
+        "m0_format_tools": m0_format_tools(facts["m0_format"], calls, run=run, unit=unit),
+        "m0_timestamp": m0_timestamp(facts["m0_timestamp"]),
+        "m0_nlp_active": m0_nlp_active(counters.get("nlp"), facts["nlp"], catcher_lines=catcher_lines),
+        "m0_nlp": nlp_info,
+    }
+    return {k: out[k] for k in M0_FIELDS}
+
+
+# ── C5a-2c: the driver (the auditor's Q-DRV-1..5) ──────────────────────────────────────────────────────────────
+
+HERE = Path(__file__).resolve().parent
+PROBE_UNIT, PROBE_BLOCK, PROBE_STAND = "u1", "b01", "_a8"
+TEST_UPSTREAM_NOTE = ("the probe's proxy ran in test-upstream mode: its DeepSeek upstream and its Ollama leg's upstream "
+                      "are the loopback fakes (probe_upstream) on 127.0.0.1, plain text, with a sentinel key file "
+                      "outside the secrets root - that changes only the upstream socket and its binding; every arm "
+                      "port, token, recording and refusal is the campaign's own (Q-DRV-4)")
+
+
+def _canon_sha(obj: Any) -> str:
+    return hashlib.sha256(json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")).hexdigest()
+
+
+def _json_file(path: Path) -> dict | None:
+    try:
+        return json.loads(Path(path).read_bytes())
+    except (OSError, ValueError):
+        return None
+
+
+def embed_pin(runs_root: Path, run: str = "d1") -> dict:
+    """Q-DRV-5: the campaign's own embed tag and digest, read from the D1 tag record's JSON
+    (<runs>/_d1tag/<run>/record.json, written by d1_tag.py) - a missing, unreadable or failed record, or one with no tag,
+    is blocked:no-embed-pin."""
+    path = Path(runs_root) / "_d1tag" / run / "record.json"
+    rec = _json_file(path)
+    tag = (rec or {}).get("tag") or {}
+    if rec is None or rec.get("problems") or not tag.get("name") or not tag.get("digest"):
+        return {"blocked": "blocked:no-embed-pin", "path": str(path)}
+    return {"tag": tag["name"], "digest": tag["digest"], "path": str(path),
+            "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+
+
+class ProbeGate:
+    """Q-DRV-2: the probe's gate - StopGate AND GateDriver. A 401/402/403 makes StopGate raise (the unit never starts);
+    an open incident makes GateDriver refuse; only both admitting admits the unit."""
+
+    def __init__(self, stop: Any, driver: Any) -> None:
+        self.stop, self.driver = stop, driver
+
+    def admits_new_unit(self) -> bool:
+        return bool(self.stop.admits_new_unit()) and bool(self.driver.admits_new_unit())
+
+
+def _mod(name: str, rel: str) -> Any:
+    mod = sys.modules.get(name)
+    if mod is None:
+        spec = importlib.util.spec_from_file_location(name, HERE / rel)
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules[name] = mod
+        spec.loader.exec_module(mod)
+    return mod
+
+
+def probe_modules() -> SimpleNamespace:
+    """The campaign's own modules the driver runs on (never copies of their logic)."""
+    return SimpleNamespace(SC=_mod("v3_scheduler_for_a8", "scheduler.py"), PL=_mod("v3_run_v3_plan_for_a8", "run_v3_plan.py"),
+                           RP=_mod("v3_run_v3_proxy_for_a8", "run_v3_proxy.py"), SL=_mod("v3_status_log_for_a8", "status_log.py"),
+                           G=_mod("v3_run_v3_gate_for_a8", "run_v3_gate.py"), IN=_mod("v3_incidents_for_a8", "incidents.py"),
+                           AB=_mod("v3_ab_harness_for_a8", "ab_harness.py"), AC=_mod("v3_accounting_for_a8", "accounting.py"),
+                           IV=_mod("v3_install_v3_data_for_a8", "install_v3_data.py"), RV=_mod("v3_run_v3_for_a8", "run_v3.py"),
+                           U=_mod("v3_probe_upstream_for_a8", "probe_upstream.py"))
+
+
+@dataclass
+class ProbeDeps:
+    """What the driver touches, injectable (as run_v3.run_smoke's deps): a real run takes real_deps()."""
+    modules: Any
+    environ: dict
+    proxy_python: Path
+    native: Any = None
+    fs: Any = None
+    start_proxy: Any = None
+    stop_proxy: Any = None
+    post: Any = None
+    make_witnesses: Any = None
+    make_scheduler: Any = None
+    make_launcher: Any = None
+    clock: Any = None
+    extra: dict = field(default_factory=dict)
+
+
+def real_deps(c: Any, L: Any, *, environ: Mapping[str, str], proxy_python: Path) -> ProbeDeps:
+    M = probe_modules()
+    return ProbeDeps(
+        modules=M, environ=dict(environ), proxy_python=Path(proxy_python), native=L.NativeEgressWitness(),
+        fs=L.FsWitness(L.watched_set(c)), start_proxy=lambda c_, **kw: M.RP.start(c_, spawn=L.spawn_proxy, **kw),
+        stop_proxy=M.RP.stop, post=M.RP.post,
+        make_witnesses=lambda c_, native, fs, canaries: L.Witnesses(c_, native=native, fs=fs, canaries=canaries),
+        make_scheduler=lambda *a, **k: M.SC.Scheduler(*a, **k),
+        make_launcher=lambda c_, h, python, tag, units: M.PL.PlanLauncher(
+            "mem0", stand=PROBE_STAND, python=python, proxy=h, stager=M.PL.CodeStager(c_.runs_root),
+            unit_block={u: PROBE_BLOCK for u in units}, embed_tag=tag, dated=True,
+            unit_chars={u: sum(len(o["item"]["text"]) for o in M0_OPS) for u in units}).launcher(M.SC.ChildArmLauncher),
+        clock=M.SC.SystemClock())
+
+
+def run_mem0_probe(c: Any, L: Any, *, run: str, install_run: str, model_run: str, deps: ProbeDeps,
+                   d1_run: str = "d1") -> dict:
+    """C5a-2c: the mem0 probe, after its windows (see the module docstring and the auditor's Q-DRV-1..5): the adapter
+    from a CodeStager copy through the campaign's ChildArmLauncher on stand _a8, against the loopback fakes behind the
+    real proxy; one unit's write stage (M0_OPS), its counters, the proxy's records; the fields, the verdict,
+    probe.json - written once."""
+    M = deps.modules
+    arm_dir = Path(c.runs_root) / PROBE_STAND / run / "mem0"
+    dest = arm_dir / "probe.json"
+    if dest.exists():
+        raise ProbeError(f"{dest} exists - a probe record is written once (Q-C5-1)")
+    record: dict = {"arm": "mem0", "run": run, "unit": PROBE_UNIT, "install_run": install_run, "model_run": model_run,
+                    "witness_scope": WITNESS_SCOPE, "ops_sha256": _canon_sha(M0_OPS),
+                    "probe_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}
+
+    def done(fields: dict, problems: list[str], checks: list, catcher_lines: int) -> dict:
+        record["fields"], record["problems"] = fields, problems
+        record["outcome"], record["reasons"] = verdict(fields, problems=problems, checks=checks, catcher_lines=catcher_lines)
+        record["utc"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        write_probe(dest, record)
+        return record
+
+    runs = Path(c.runs_root)
+    irec = _json_file(runs / "_install" / "a8-pypi-mem0_v3" / install_run / "install_record.json")
+    pin_field = m0_pin(irec)
+    if pin_field.get("blocked"):
+        return done({"m0_pin": pin_field}, [], [], 0)
+    mrec = _json_file(runs / "_install" / "a8-spacy-model" / model_run / "model_record.json")
+    if mrec is None or mrec.get("problems"):
+        return done({"m0_pin": pin_field}, ["blocked:model-not-installed - no clean a8-spacy-model record: mem0 would "
+                                            "download it at run time (B-NLP)"], [], 0)
+    record["installed_sets"] = {"install": irec.get("installed_set_sha256"),          # R-NLP-SET: the pair
+                                "model": mrec.get("model_installed_set_sha256")}
+    venv = Path(irec["venv"])
+    site = next((x for x in venv.rglob("site-packages") if x.is_dir()), None)
+    if site is None:
+        return done({"m0_pin": pin_field}, [f"blocked:not-installed - {venv} has no site-packages"], [], 0)
+    facts = mem0_source_facts(site)
+    script = mem0_script(facts)
+    if isinstance(script, dict):
+        return done({"m0_pin": pin_field}, [f"{script['blocked']} - the fake's answer has no source shape"], [], 0)
+    pin = embed_pin(runs, d1_run)
+    record["embed_pin"] = pin
+    if pin.get("blocked"):
+        return done({"m0_pin": pin_field}, [f"{pin['blocked']} - {pin['path']}"], [], 0)
+    fd = M.U.FakeDeepSeek(script)
+    fo = M.U.FakeOllama(tag=pin["tag"], digest=pin["digest"])
+    record.update(script_sha256=fd.script_sha256, test_upstream=TEST_UPSTREAM_NOTE,
+                  ceiling_s=M.SC.DEBUG_CEILING_S)
+    env = dict(deps.environ)
+    wiring = M.RV.boundary_canaries(L, c, env)
+    W = deps.make_witnesses(c, deps.native, deps.fs, wiring["canaries"])
+    proxy_dir = arm_dir / "_proxy"
+    proxy_dir.mkdir(parents=True, exist_ok=True)
+    key_file = proxy_dir / "sentinel.env"                  # outside the secrets root: test_upstream_ok, never the key
+    key_file.write_bytes(f"DEEPSEEK_API_KEY=nvt3-a8probe-KEYSENTINEL-{_secrets.token_hex(8)}\n".encode())
+    cfg = M.RP.build_config({"mem0": {"llm": M.RP.PINNED_MODEL, "llm_transport": M.RP.PROVIDER_TRANSPORT,
+                                      "embeds_via_ollama": True}},
+                            run_dir=proxy_dir / "run", test_upstream={"host": "127.0.0.1", "port": fd.port, "tls": False},
+                            test_ollama_upstream=("127.0.0.1", fo.port))
+    problems: list[str] = []
+    checks: list = []
+    w = None
+    gd = None
+    h = deps.start_proxy(c, python=deps.proxy_python, key_file=key_file, config=cfg,
+                         secrets=M.RP.build_secrets(["mem0"], roles=("scheduler",), canaries=wiring["proxy"]),
+                         unit=L.make_unit_dirs(c, PROBE_STAND, "_harness", "proxy", run), parent_env=env, witnesses=W)
+    status_path = runs / PROBE_STAND / run / "STATUS"
+    try:
+        status = M.SL.StatusLog(status_path)
+        hooks = SimpleNamespace(gate=None)
+        sched = deps.make_scheduler(c, h.control, status, L, deps.clock, None, tag="debug", witnesses=W, parent_env=env,
+                                    catcher_url=M.RP.catcher_url(h), hooks=hooks,
+                                    canaries=wiring["scheduler"]["canaries"],
+                                    home_canaries=wiring["scheduler"]["home_canaries"])
+        send_probe = M.RV.probe(deps.post, h.ports["scheduler"], h.tokens["scheduler"])
+        model = send_probe().get("model")
+        record["expected_model"] = model
+        if not model:
+            raise ProbeError("the scheduler port's probe named no model - the gate would have no expected model")
+        gd = M.G.GateDriver(M.IN.IncidentGate(), calls_path=Path(h.run_dir) / "calls.jsonl", status=status,
+                            send_probe=send_probe, id_prefix=f"{PROBE_STAND}-{run}-inc", expected_models=[model])
+        hooks.gate = ProbeGate(M.AB.StopGate(h.control, h.control.counters()), gd)
+        gd.start()
+        venv_py = M.IV.venv_python(venv)
+        launcher = deps.make_launcher(c, h, venv_py, pin["tag"], [PROBE_UNIT])
+        status.stand(PROBE_STAND, "START", model=model, changelog="a8-probe", order=1)
+        status.block_start(PROBE_STAND, PROBE_BLOCK, units=[PROBE_UNIT], arm_order=["mem0"], seed=0)   # probe, one arm
+        sid = status.start(PROBE_STAND, PROBE_BLOCK, run, "mem0", pid=sched.pid, tag="debug")
+        cid = f"a8-mem0-{run}"
+        t0 = time.monotonic()
+        W.begin_check(cid)
+        h.control.stage(f"{PROBE_STAND}/{PROBE_BLOCK}", "write")
+        try:
+            recs = sched.write_turn(launcher, stand=PROBE_STAND, runs=[run], units=[PROBE_UNIT],
+                                    ops_for=lambda r, u: M0_OPS, ceilings={PROBE_UNIT: M.SC.DEBUG_CEILING_S},
+                                    status_ids={run: sid})
+        finally:
+            h.control.stage(None, None)
+            checks.append(("probe", M.IV.check_summary(W.end_check(cid))))
+        w = recs[(run, PROBE_UNIT)]
+        rc = 0 if (w.aborted is None and w.error is None) else 1
+        status.end(sid, rc=rc, wall_s=time.monotonic() - t0, units=1, out=str(dest))
+        status.block_end(PROBE_STAND, PROBE_BLOCK)
+        status.stand(PROBE_STAND, "END", model=model, changelog="a8-probe")
+    except Exception as e:  # noqa: BLE001 - the probe's failure is named; the gate, the proxy, the fakes stop below
+        problems.append(f"the probe did not complete: {type(e).__name__}: {e}")
+    finally:
+        if gd is not None:
+            gd.stop()
+            problems += [f"gate: {x}" for x in gd.problems]
+        pstop = dict(deps.stop_proxy(h))
+        fd.close()
+        fo.close()
+    record["proxy_stop"] = pstop
+    if pstop.get("killed") or pstop.get("rc") not in (0,):
+        problems.append(f"the proxy did not stop by itself: {pstop}")
+    record["status_sha256"] = hashlib.sha256(status_path.read_bytes()).hexdigest() if status_path.exists() else None
+    record["fake_traps"], record["fake_unknown"] = list(fo.traps), list(fo.unknown)
+    problems += [f"the fake Ollama saw a trap: {t}" for t in fo.traps]
+    problems += [f"the fake Ollama saw an unserved path: {t}" for t in fo.unknown]
+    log = M.AC.load_proxy(Path(h.run_dir))
+    problems += [f"proxy record: {x}" for x in log.problems]
+    if w is None:
+        return done({"m0_pin": pin_field}, problems or ["the probe did not complete"], checks, len(log.catcher))
+    if w.aborted is not None or w.error is not None:
+        problems.append(f"the unit did not finish: aborted {w.aborted}, error {w.error}")
+    problems += [f"a write failed: {o}" for o in (w.ops or []) if isinstance(o, Mapping) and o.get("ok") is False]
+    start = _json_file(Path(w.dirs.home) / "start.write.json")
+    fields = mem0_fields(start=start, counters=w.counters or {}, calls=log.calls, catcher_lines=len(log.catcher),
+                         facts=facts, install_record=irec, run=run, unit=PROBE_UNIT, adds=len(M0_OPS))
+    return done(fields, problems, checks, len(log.catcher))
 
 
 def m0_timestamp(src: Mapping) -> dict:

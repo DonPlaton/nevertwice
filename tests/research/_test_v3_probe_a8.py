@@ -105,6 +105,15 @@ class _Safe:
 S = _Safe()
 
 
+def ok(fn) -> bool:
+    """A row's condition; a raise FAILs that row by its name and the closing row lists it."""
+    try:
+        return bool(fn())
+    except Exception as e:  # noqa: BLE001 - the row reads it
+        RAISED.append(f"condition: {type(e).__name__}: {e}")
+        return False
+
+
 def refused(fn):
     try:
         fn()
@@ -521,6 +530,70 @@ check("no state from the adapter is blocked:nlp-off by that name, never a pass",
 r = S.m0_nlp_active(ON, S.nlp_facts(M2), catcher_lines=0)
 check("a state name the pinned source no longer defines carries blocked:source-missing - it comes to the auditor",
       r.get("blocked") == "blocked:source-missing:m0_nlp_failed_lemma_var", str(r))
+print("\n- C5a-2c: the mem0 probe's assembly - its source facts, its fake's script, its ops, its fields -")
+(M2 / "mem0/utils/spacy_models.py").write_bytes(SPM)
+(M2 / "mem0/llms/deepseek.py").write_bytes(b"class DeepSeekLLM:\n    def generate_response(self, messages):\n        pass\n")
+SF = S.mem0_source_facts(M2)
+check("the source facts: every declared one read from the tree, each by its own rule",
+      ok(lambda: SF["m0_temperature"]["value"] == "0.3" and SF["m0_thinking"] is None and SF["m0_timestamp"]["line"] == 6
+         and SF["m0_llm_sites"]["value"][0]["line"] == 11 and SF["m0_format"]["value"] == "json_object"
+         and SF["m0_content_key"]["value"] == "memory" and SF["m0_item_key"]["value"] == "text"
+         and [x["value"] for x in SF["m0_nlp"]["value"]] == ["entity_extraction", "lemmatization"]
+         and SF["nlp"]["m0_nlp_model"]["value"] == "en_core_web_sm"), str({k: (v or {}).get("value") if isinstance(v, dict) else v
+                                                                             for k, v in SF.items() if k != "nlp"})[:300])
+sc_ = S.mem0_script(SF)
+check("Q-DRV-5 (proposed): the fake's script is ONE answer in the pinned source's own shape - {content_key: [{item_key: "
+      "text}]} - so every call, the gate's probes included, gets a valid mem0 answer",
+      ok(lambda: len(sc_) == 1 and json.loads(sc_[0]["content"]) == {"memory": [{"text": P.M0_SCRIPT_TEXT}]}), str(sc_))
+check("the answer's keys are the source's own, whatever they are - never a literal the probe assumes",
+      ok(lambda: json.loads(S.mem0_script({**SF, "m0_content_key": {"value": "facts"}, "m0_item_key": {"value": "fact"}})[0]["content"])
+         == {"facts": [{"fact": P.M0_SCRIPT_TEXT}]}))
+check("a blocked shape fact is a blocked script - no answer is invented",
+      ok(lambda: S.mem0_script({**SF, "m0_item_key": {"value": None, "blocked": "blocked:source-missing:m0_item_key"}})
+         == {"blocked": "blocked:source-missing:m0_item_key"}))
+check("the ops are declared data: role user or assistant, a speaker, a text, a date on every one (a dated stand)",
+      ok(lambda: len(P.M0_OPS) == 3 and all(o["item"]["role"] in ("user", "assistant") and o["item"]["speaker"]
+                                            and o["item"]["text"] and o["date"][:10] == "2026-03-02" for o in P.M0_OPS)
+         and len({o["item"]["item_id"] for o in P.M0_OPS}) == 3))
+START = {"ok": True, "llm_usage": P.M0_USAGE_SOURCE}
+NLP_ON = {"names": {"full": "_nlp_full", "lemma": "_nlp_lemma", "failed_full": "_load_failed_full",
+                    "failed_lemma": "_load_failed_lemma", "model": "en_core_web_sm"}, "module": True, "nlp_full": True,
+          "nlp_lemma": True, "failed_full": False, "failed_lemma": False, "is_package": True}
+C3 = [line(prompt=1000 + i, completion=10 + i, temperature=0.3) for i in range(3)]
+CNT = {"llm_usage": {"calls": 3, "failed": 0, "no_usage": 0, "prompt_tokens": 3003, "completion_tokens": 33}, "nlp": NLP_ON}
+F = S.mem0_fields(start=START, counters=CNT, calls=C3, catcher_lines=0, facts=SF, install_record=INST, run="r1", unit="u1",
+                  adds=3)
+check("the fields in their declared order, every one from its own inputs - and together they pass",
+      ok(lambda: list(F) == list(P.M0_FIELDS) and all(f["ok"] for f in F.values())
+         and P.verdict(F, problems=[], checks=[("probe", CLEAN)], catcher_lines=0)[0] == "pass"),
+      str({k: (v.get("ok"), v.get("rule_failed")) for k, v in F.items()} if isinstance(F, dict) else F)[:400])
+check("the declared order, written out: the pin first (not installed outranks everything), the client, the usage, the "
+      "bound, the sent fields, the timestamp, the nlp check, then the information",
+      list(P.M0_FIELDS) == ["m0_pin", "m0_client", "m0_usage", "m0_calls_per_add", "m0_temperature", "m0_thinking",
+                            "m0_format_tools", "m0_timestamp", "m0_nlp_active", "m0_nlp"], str(P.M0_FIELDS))
+F2 = S.mem0_fields(start=START, counters=CNT, calls=C3, catcher_lines=1, facts=SF, install_record=INST, run="r1", unit="u1",
+                   adds=3)
+check("the catcher lines reach m0_nlp_active (a run-time download is blocked:nlp-off)",
+      ok(lambda: F2["m0_nlp_active"].get("blocked") == "blocked:nlp-off"), str(F2.get("m0_nlp_active")))
+F3 = S.mem0_fields(start=START, counters=CNT, calls=C3, catcher_lines=0, facts=SF, install_record=INST, run="r1", unit="u1",
+                   adds=2)
+check("the adds reach m0_calls_per_add (3 answered lines over 1 site x 2 adds fail)",
+      ok(lambda: F3["m0_calls_per_add"]["ok"] is False and "bound" in F3["m0_calls_per_add"]["rule_failed"]),
+      str(F3.get("m0_calls_per_add")))
+F4 = S.mem0_fields(start=START, counters={**CNT, "llm_usage": None}, calls=C3, catcher_lines=0, facts=SF,
+                   install_record={**INST, "import_versions": {"dists": {"mem0ai": "2.2.1"}}}, run="r1", unit="u1", adds=3)
+check("the install record reaches m0_pin and the counters' llm_usage reaches m0_usage",
+      ok(lambda: F4["m0_pin"].get("blocked") == "blocked:not-the-pin" and F4["m0_usage"]["ok"] is False), str(F4.get("m0_pin")))
+F5 = S.mem0_fields(start=START, counters=CNT, calls=C3, catcher_lines=0, facts={**SF, "m0_thinking": {"value": None,
+                   "blocked": "blocked:source-changed:m0_thinking"}}, install_record=INST, run="r1", unit="u1", adds=3)
+check("the thinking fact reaches m0_thinking (a changed source is blocked, to the auditor)",
+      ok(lambda: F5["m0_thinking"].get("blocked") == "blocked:source-changed:m0_thinking"), str(F5.get("m0_thinking")))
+F6 = S.mem0_fields(start=START, counters=CNT, calls=[line(prompt=1000 + i, completion=10 + i, temperature=0.9) for i in range(3)],
+                   catcher_lines=0, facts=SF, install_record=INST, run="r1", unit="u1", adds=3)
+check("the calls reach m0_temperature under the right unit (0.9 against the source's 0.3 fails)",
+      ok(lambda: F6["m0_temperature"]["ok"] is False and F6["m0_usage"]["ok"] is True), str(F6.get("m0_temperature")))
+check("m0_nlp is information: the imports listed, never failing the probe", ok(lambda: F["m0_nlp"]["ok"] is True
+      and [x["value"] for x in F["m0_nlp"]["value"]] == ["entity_extraction", "lemmatization"]), str(F.get("m0_nlp")))
 check("C4A-8 / C5A-8: no verdict raised on any row - every failure came back as a field", RAISED == [], str(RAISED))
 _cleanup()
 print(f"\nv3 probe a8: {PASSED} passed, {FAILED} failed")

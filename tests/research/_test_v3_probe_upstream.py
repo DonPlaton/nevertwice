@@ -231,6 +231,52 @@ check("a trap reached through the leg is 403 at the client and in the fake's tra
 check("the fake upstream saw the proxy's sentinel key, never the arm's token", ok(lambda: all(
       (r.get("authorization") or "") == "Bearer nvt3-probe-KEYSENTINEL-0000" for r in ds2.requests) and len(ds2.requests) == 2),
       str([r.get("authorization") for r in ds2.requests]))
+print("\n- Q-DRV-4: build_config's test_ollama_upstream, symmetric with test_upstream -")
+RP = _load("v3_run_proxy_pu", ROOT / "research" / "v3" / "run_v3_proxy.py")
+MEM0 = {"mem0": {"llm": "deepseek-flash", "llm_transport": "cloud:deepseek", "embeds_via_ollama": True}}
+cfgq = RP.build_config(MEM0, run_dir=TMP / "q4", test_upstream={"host": "127.0.0.1", "port": 9, "tls": False},
+                       test_ollama_upstream=("127.0.0.1", 11500))
+check("the parameter puts the Ollama leg's upstream in the config as 127.0.0.1 and its port",
+      ok(lambda: cfgq["ollama"]["upstream"] == ["127.0.0.1", 11500]), str(cfgq.get("ollama")))
+(TMP / "q4").mkdir()
+(TMP / "q4" / "c.json").write_text(json.dumps(cfgq), encoding="utf-8")
+secq = RP.build_secrets(["mem0"])
+
+
+(TMP / "q4" / "o.json").write_text(json.dumps(RP.build_config(MEM0, run_dir=TMP / "q4",
+                                                                test_ollama_upstream=("127.0.0.1", 11500))), encoding="utf-8")
+
+
+def _load_cfg(name, test_ok):
+    """With no test key the X7 rule (run_dir inside the polygon runs tree) comes first: the polygon root is pointed at
+    this suite's TMP for the call, so the Ollama rule itself is what answers - never the real polygon."""
+    saved = PX.POLYGON_RUNS
+    PX.POLYGON_RUNS = TMP
+    try:
+        return PX.ProxyConfig.load(TMP / "q4" / name, secq, test_upstream_ok=test_ok)
+    except ValueError as e:
+        return f"refused: {e}"
+    finally:
+        PX.POLYGON_RUNS = saved
+
+
+check("the proxy takes it only with a test key (X2): with one its Ollama leg goes to that port; without one the "
+      "Ollama upstream alone is refused by name", ok(lambda: tuple(_load_cfg("c.json", True).ollama_upstream) == ("127.0.0.1", 11500)
+                                                     and "cannot change the Ollama upstream" in _load_cfg("o.json", False)),
+      str(_load_cfg("o.json", False))[:120])
+for bad_up in (("10.0.0.1", 11500), ("127.0.0.1", 0), ("127.0.0.1", True), ("127.0.0.1", "11500")):
+    try:
+        RP.build_config(MEM0, run_dir=TMP / "q4b", test_ollama_upstream=bad_up)
+        verdict_q4 = "accepted"
+    except RP.ProxyPlanError as e:
+        verdict_q4 = str(e)
+    check(f"a test Ollama upstream that is not 127.0.0.1 and a port is refused by name: {bad_up!r}",
+          "127.0.0.1 and a port" in verdict_q4, verdict_q4)
+cfgt = RP.build_config(MEM0, run_dir=TMP / "q4c", embed_tokenizer={"path": "t.json", "sha256": "a" * 64},
+                       test_ollama_upstream=("127.0.0.1", 11500))
+check("with an embed tokenizer too, both live in the one ollama block - neither replaces the other",
+      ok(lambda: cfgt["ollama"] == {"embed_tokenizer": {"path": "t.json", "sha256": "a" * 64}, "upstream": ["127.0.0.1", 11500]}),
+      str(cfgt.get("ollama")))
 check("no row's condition raised - every failure came back as a named FAIL", RAISED == [], str(RAISED))
 for f in (ds, ol, ds2):
     f.close()

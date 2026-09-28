@@ -83,7 +83,8 @@ def _ctl():
 def build_config(arms: Mapping[str, Mapping[str, Any]], *, run_dir: str | os.PathLike, thinking_branch: str = "unset",
                  via_port: int | None = None, catcher: str = HARNESS_CATCHER, j3: bool = False,
                  test_upstream: Mapping[str, Any] | None = None,
-                 embed_tokenizer: Mapping[str, str] | None = None) -> dict:
+                 embed_tokenizer: Mapping[str, str] | None = None,
+                 test_ollama_upstream: Sequence[Any] | None = None) -> dict:
     """The proxy's config file (see the module docstring). ``arms``: name -> its arm_decl's llm, llm_transport and
     embeds_via_ollama (required), and options - reader (bool: the arm reads, so it gets a reader port),
     thinking_route (documented or fallback)."""
@@ -133,6 +134,11 @@ def build_config(arms: Mapping[str, Mapping[str, Any]], *, run_dir: str | os.Pat
     if embed_tokenizer is not None and any(a.get("ollama_leg") for a in out_arms):
         cfg["ollama"] = {"embed_tokenizer": {"path": str(embed_tokenizer["path"]),
                                              "sha256": str(embed_tokenizer["sha256"])}}   # TB7: embed_at_cap
+    if test_ollama_upstream is not None:               # Q-DRV-4: the A8 probe's fake Ollama, symmetric with test_upstream
+        host, port = tuple(test_ollama_upstream)
+        if host != LOOPBACK or isinstance(port, bool) or not isinstance(port, int) or not 1 <= port <= 65535:
+            raise ProxyPlanError("a test Ollama upstream is 127.0.0.1 and a port (Q-DRV-4)")
+        cfg.setdefault("ollama", {})["upstream"] = [LOOPBACK, int(port)]   # accepted only with a test key (X2)
     return cfg
 
 
