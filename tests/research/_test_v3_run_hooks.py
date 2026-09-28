@@ -223,6 +223,46 @@ try:
     check("HK-tree-rc: git exiting non-zero is refused by name - no verdict from no listing",
           isinstance(e, HK.HookError) and "exited" in str(e) and "0" not in str(e).split("exited")[1][:3],
           repr(e))
+    repo2 = TMP / "repo2"                                  # a repository of its own: this row moves its HEAD
+    (repo2 / "research").mkdir(parents=True)
+    (repo2 / "research" / "a.py").write_text("x = 1\n", encoding="utf-8")
+    for cmd in (["init", "-q"], ["add", "-A"], ["-c", "commit.gpgsign=false", "commit", "-q", "-m", "c"]):
+        subprocess.run([GIT, "-C", str(repo2), *cmd], check=True, env=genv, capture_output=True)
+    h, s, sp, st = world(sfile="STATUS4b", repo=repo2)
+    v1, e1m = attempt(h.tree_check)
+    (repo2 / "research" / "a.py").write_text("x = 2\n", encoding="utf-8")
+    subprocess.run([GIT, "-C", str(repo2), "-c", "commit.gpgsign=false", "commit", "-q", "-am", "moved"], check=True,
+                   env=genv, capture_output=True)
+    v2, e2m = attempt(h.tree_check)
+    check("B-HEAD-MOVE: with no FREEZE anchor the stand's later tree checks compare with its FIRST HEAD - a commit made "
+          "during the stand is dirty at STAND END, never read as clean against the new HEAD",
+          e1m is None and e2m is None and v1["clean"] is True and v2["clean"] is False
+          and v2["anchor_source"] == "stand-start-head" and any("is not the anchor" in p for p in v2["problems"]),
+          f"{e1m!r} {e2m!r} {v1 and v1.get('problems')} {v2 and v2.get('problems')}")
+    h.bind(s, sp)                                          # the next stand these hooks serve
+    v3, e3m = attempt(h.tree_check)
+    check("B-HEAD-MOVE: bind() starts a new stand - its first tree check anchors on the HEAD it finds, never on the "
+          "previous stand's first HEAD", e3m is None and v3["clean"] is True and v3["anchor_source"] == "head",
+          f"{e3m!r} {v3 and v3.get('problems')} {v3 and v3.get('anchor_source')}")
+
+    class _Hung:
+        """A tree-check child that never finishes and outlives its kill."""
+
+        def __init__(self):
+            self.process = SimpleNamespace(communicate=self._timeout, wait=self._timeout, returncode=None)
+
+        @staticmethod
+        def _timeout(*a, **k):
+            raise subprocess.TimeoutExpired("git", 1)
+
+        def kill_tree(self):
+            pass
+
+    h, s, sp, st = world(sfile="STATUS4c")
+    s.spawn_child = lambda build, **kw: (_Hung(), None)
+    _r, e_hung = attempt(h.tree_check)
+    check("the tree check's git that hangs and outlives its kill is a HookError by name - never a raw TimeoutExpired",
+          isinstance(e_hung, HK.HookError) and "outlived its kill" in str(e_hung), repr(e_hung))
 
     print("\n- the model probe (D8) -")
     fake.routes = {"/chat/completions": (200, {"model": "deepseek-v4-flash", "choices": []})}
@@ -261,6 +301,13 @@ try:
     check("HK-preflight-refuse: below 2x the projection, a 402, a scored stand without a projection - each halts",
           all(isinstance(x, HK.HookError) for x in (e1, e2, e3)) and "below 2x" in str(e1) and "402" in str(e2)
           and "projected" in str(e3), f"{e1!r} | {e2!r} | {e3!r}")
+    halts = []
+    for code in (401, 403):
+        fake.routes = {"/user/balance": (code, {"error": "the key is refused"})}
+        _r, e_k = attempt(lambda: h.preflight("SH"))
+        halts.append((code, isinstance(e_k, HK.HookError) and str(code) in str(e_k)))
+    check("B-HALT-SCHED: a 401 or a 403 on the balance halts a smoke stand too (§4.5's three) - never an 'unread' "
+          "balance the stand goes on past", all(ok for _c, ok in halts), str(halts))
     fake.routes = {}
     rec4, e4 = attempt(lambda: h.preflight("SH"))
     check("HK-preflight-record: an unavailable endpoint is recorded by name as unread (no balance) and does not halt - "
@@ -286,8 +333,9 @@ try:
           e_fb is None and rec_fb["balance"] is None and rec_fb["balance_read"] == "unread: status 404", f"{e_fb!r} {rec_fb}")
     bj = C.runs_root / "_launch" / "balance.jsonl"
     lines = [json.loads(x) for x in bj.read_text(encoding="utf-8").splitlines()] if bj.exists() else []
-    check("HK-preflight-record: every answer is in balance.jsonl, chained (9 asks, the refused ones too)",
-          len(lines) == 9 and L.verify_chain(bj), f"{len(lines)} {L.verify_chain(bj) if bj.exists() else 'none'}")
+    check("HK-preflight-record: every answer is in balance.jsonl, chained (11 asks, the refused ones too - the 401 and "
+          "403 halts included)",
+          len(lines) == 11 and L.verify_chain(bj), f"{len(lines)} {L.verify_chain(bj) if bj.exists() else 'none'}")
 
     print("\n- the barrier read, and the scored stand refused on a dirty tree -")
     h, s, sp, st = world(sfile="STATUS8")

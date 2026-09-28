@@ -4,13 +4,15 @@ model probe, the balance preflight and the barrier read (rev1 §1.3, §4.5, D8, 
 
 * tree_check (Q10, D10): git's one fixed argv (tree_check.argv) as a child of the scheduler's one spawn path, its
   repository the one argv exception; a non-zero exit refuses by name; parse + verdict against the anchor - FREEZE-V3's
-  for a scored stand (none given: refused), the listing's own HEAD before there is one (smoke, debug). The stand plan's
-  commit and dirty flag are set from it, so the run records say what the tree was (Q2).
+  for a scored stand (none given: refused), the listing's own HEAD before there is one (smoke, debug) - at the stand's
+  first check; its later checks compare with that head, so a HEAD that moved during the stand is dirty at STAND END
+  (B-HEAD-MOVE). The stand plan's commit and dirty flag are set from it, so the run records say what the tree was (Q2).
 * model_probe (D8, Q24): a 1-token completion on the scheduler's own port with thinking disabled and no /u/ prefix -
   the call is recorded as arm=scheduler, outside every unit's attribution (R4); the answer's model, which STATUS
   carries, must be one word.
 * preflight (§4.5): GET /user/balance on the scheduler's port, each answer appended to <runs>/_launch/balance.jsonl
-  (chained), a balance that was not read named as such. A 402 halts; a balance below 2x the stand's projected cost
+  (chained), a balance that was not read named as such. A 401, 402 or 403 halts (§4.5's three - B-HALT-SCHED: a
+  revoked key is no "unread" balance); a balance below 2x the stand's projected cost
   halts (incidents.balance_ok), and so does a scored stand with no projection. R-BAL (§4.5: "if the PILOT finds the
   balance endpoint unavailable, the 402 halt alone applies"): a scored stand whose balance was not read halts unless
   FREEZE-V3 declares that fallback (balance_fallback - the pilot's finding); a smoke or debug stand records it and goes
@@ -96,10 +98,12 @@ class Hooks:
         self.balance_fallback = balance_fallback              # R-BAL: FREEZE-V3's record of the pilot's finding
         self.changelog, self.gate, self.clock = changelog, gate, clock
         self.sched = self.sp = None
+        self._head0: str | None = None                       # B-HEAD-MOVE: the stand's first tree check's HEAD
 
     def bind(self, sched: Any, sp: Any) -> None:
         """The scheduler and the stand plan these hooks serve (the scheduler takes the hooks at construction)."""
         self.sched, self.sp = sched, sp
+        self._head0 = None
 
     def _need_bound(self) -> None:
         if self.sched is None or self.sp is None:
@@ -128,16 +132,26 @@ class Hooks:
             out, _err = child.process.communicate(timeout=TREE_TIMEOUT_S)
         except subprocess.TimeoutExpired:
             child.kill_tree()
-            child.process.wait(10.0)
+            try:
+                child.process.wait(10.0)
+            except subprocess.TimeoutExpired:
+                raise HookError(f"git status did not finish in {TREE_TIMEOUT_S:.0f} s, and it outlived its kill") from None
             raise HookError(f"git status did not finish in {TREE_TIMEOUT_S:.0f} s") from None
         rc = child.process.returncode
         if rc != 0:
             raise HookError(f"git status exited {rc} - no listing, no verdict (Q10)")
         st = TC.parse(out)
-        anchor = self.anchor if self.anchor is not None else st.head
+        if self.anchor is not None:
+            anchor, source = self.anchor, "freeze"
+        elif self._head0 is not None:                # B-HEAD-MOVE: the stand's later checks keep its first HEAD
+            anchor, source = self._head0, "stand-start-head"
+        else:
+            anchor, source = st.head, "head"
+        if self._head0 is None:
+            self._head0 = st.head
         v = TC.verdict(st, anchor=anchor, exists=lambda p: (self.repo / p).exists())
         v["anchor"] = anchor
-        v["anchor_source"] = "freeze" if self.anchor is not None else "head"
+        v["anchor_source"] = source
         self.sp.commit, self.sp.dirty = st.head, not v["clean"]           # Q2: the run records say what the tree was
         return v
 
@@ -182,6 +196,9 @@ class Hooks:
         self.sched.launch._append_jsonl(self.sched.c.runs_root / "_launch" / "balance.jsonl", rec)
         if status == 402:
             raise HookError(f"{stand}: the balance endpoint answered 402 - the stand waits for the owner (§4.5)")
+        if status in (401, 403):                     # B-HALT-SCHED: §4.5 halts on all three, never "unread"
+            raise HookError(f"{stand}: the balance endpoint answered {status} - the key is refused, the stand halts "
+                            f"(§4.5)")
         if self.projected_cost is None and self.sched.tag == "scored":
             raise HookError(f"{stand}: a scored stand needs its projected cost for the balance rule (§4.5)")
         if balance is None and self.sched.tag == "scored" and not self.balance_fallback:
