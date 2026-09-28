@@ -8,8 +8,10 @@ Per stand:
   every one must be in the file (subsample.s3_coverage), the ids beyond them are named. The run's record only.
 * S4 - locomo10's sample_ids, unit_order("S4"); 10 conversations; none meets an S4 smoke unit (smoke-<qid> of S1's
   tail).
-* S5 - beam_128k's conversation_ids, unit_order("S5"); 20 conversations; the smoke pin beam_500k is read too, and the
-  two files' conversation ids must not meet (Q-A7-5: by the data, not by the pins).
+* S5 - beam_128k's conversation_ids, unit_order("S5"); 20 conversations. The smoke conversation (BEAM 500K's first)
+  is checked by CONTENT, not by id (Q-A7-5': BEAM numbers conversation_id anew in every split, "1", "10", ...): none of
+  its probing-question texts is one of the 20's, and its chat's canonical start - the sha256 of its first session's
+  first message's content - is none of theirs. The child prints those sha256s only, never a text.
 * S6 - mab_conflict_resolution's metadata.source per row: exactly the 8 sources, one row each (Q-A7-4), then
   s6_order("sh") and s6_order("mh"); both lists are built in memory and written only when both pass (Q-A7-6).
 * S7 - ama_swe's [episode_id, domain] for EVERY row (the smoke trajectory comes from the same file): episode ids
@@ -69,17 +71,37 @@ def _parquet_column(path: Path, column: str) -> list:
     return pq.read_table(path, columns=[column]).column(column).to_pylist()
 
 
+def _sha(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def beam_rows(path: Path, facts: Any, *, first_only: bool = False) -> list:
+    """S5 (Q-A7-5'): per conversation [conversation_id, sha256 of the chat's first message content, [sha256 of each
+    probing-question text]] - digests of the text, never the text; ``first_only`` for the smoke file."""
+    import pyarrow.parquet as pq  # noqa: PLC0415 - the child's interpreter has it
+    rows = pq.read_table(path, columns=["conversation_id", "chat", "probing_questions"]).to_pylist()
+    out = []
+    for rec in rows[:1] if first_only else rows:
+        chat = rec.get("chat") or []
+        first = ((chat[0] or [{}])[0] if chat else {}) or {}
+        qs = [q.get("question") for qs in facts.parse_probing(rec.get("probing_questions") or "{}").values()
+              for q in (qs or []) if isinstance(q, dict)]
+        out.append([rec.get("conversation_id"), _sha(str(first.get("content") or "")),
+                    [_sha(q) for q in qs if isinstance(q, str)]])
+    return out
+
+
 def child(stand: str, facts_path: Path, files: Sequence[Path]) -> list:
     """The child's work: per file, the ids the stand needs, in the file's own order - nothing else."""
     facts = _load("v3_dataset_facts_for_lists", Path(facts_path))
     out = []
-    for f in files:
+    for i, f in enumerate(files):
         if stand in ("S3", "S9"):
             out.append([rec["question_id"] for rec in facts.iter_json_array(f)])
         elif stand == "S4":
             out.append([rec["sample_id"] for rec in facts.iter_json_array(f)])
         elif stand == "S5":
-            out.append(_parquet_column(f, "conversation_id"))
+            out.append(beam_rows(f, facts, first_only=i == 1))
         elif stand == "S6":
             out.append([(m or {}).get("source") for m in _parquet_column(f, "metadata")])
         elif stand == "S7":
@@ -105,9 +127,20 @@ def build(stand: str, got: Sequence[Sequence], *, SS: Any, facts: Any, s1_ids: S
         SS.check_disjoint("S4", ids, [f"smoke-{q}" for q in list(s1_ids)[480:500]])
         order = SS.unit_order("S4", ids)
     elif stand == "S5":
-        ids = list(got[0])
-        SS.check_disjoint("S5", ids, got[1])
+        rows, smoke = [list(r) for r in got[0]], [list(r) for r in got[1]]
+        if len(smoke) != 1:
+            raise ValueError(f"S5: {len(smoke)} smoke conversations read, not BEAM 500K's first")
+        s_id, s_start, s_qs = smoke[0]
+        shared_q = sorted(set(s_qs) & {q for r in rows for q in r[2]})
+        if shared_q:
+            raise ValueError(f"S5: the smoke conversation shares {len(shared_q)} probing question(s) with the stand's "
+                             f"conversations (Q-A7-5', by content)")
+        if s_start in {r[1] for r in rows}:
+            raise ValueError("S5: the smoke conversation's chat starts as one of the stand's (Q-A7-5', by content)")
+        ids = [r[0] for r in rows]
         order = SS.unit_order("S5", ids)
+        extra = {"smoke": {"conversation_id": s_id, "questions": len(s_qs), "shared_questions": 0,
+                           "start_matches": 0, "rule": "Q-A7-5': by content, not by id"}}
     elif stand == "S7":
         pairs = [tuple(p) for p in got[0]]
         eps = [e for e, _d in pairs]
@@ -128,7 +161,8 @@ def build(stand: str, got: Sequence[Sequence], *, SS: Any, facts: Any, s1_ids: S
         raise ValueError(f"{stand}: not a stand lists_build builds")
     if stand in EXPECT_N and len(order) != EXPECT_N[stand]:
         raise ValueError(f"{stand}: {len(order)} units, not the {EXPECT_N[stand]} the stand declares")
-    return {"lists": {spec["files"][0]: SS.list_record(stand, order, seed=spec["seed"], rule=spec["rule"])}, "extra": {}}
+    return {"lists": {spec["files"][0]: SS.list_record(stand, order, seed=spec["seed"], rule=spec["rule"])},
+            "extra": extra if stand == "S5" else {}}
 
 
 def _bytes(rec: Mapping) -> bytes:

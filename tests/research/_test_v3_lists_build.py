@@ -218,17 +218,31 @@ try:
         print("       SKIP LB-S5, LB-S6: no interpreter here sees pyarrow in isolated mode (the child runs -I) "
               "- not passed")
     else:
-        beam = write_parquet("beam.parquet", [{"conversation_id": i, "chat": TEXT} for i in range(20)])
-        smoke_ok = write_parquet("beam500.parquet", [{"conversation_id": 100 + i, "chat": TEXT} for i in range(3)])
+        def beam_row(cid, n):
+            return {"conversation_id": cid, "chat": [[{"role": "user", "content": f"{TEXT} chat {n}"}]],
+                    "probing_questions": repr({"ability": [{"question": f"question {n}?"}]})}
+        beam = write_parquet("beam.parquet", [beam_row(str(i + 1), i) for i in range(20)])
+        smoke_ok = write_parquet("beam500.parquet", [beam_row(str(i + 1), 100 + i) for i in range(3)])
         r5, c5, _b, ld5 = run("s5", "S5", {"beam_128k": beam, "beam_500k": smoke_ok})
         l5 = listed(ld5, "S5.json")
-        check("LB-S5: unit_order of the 20 conversation ids as ints (SEED+5); the smoke file read too", r5.get("problems") == []
-              and l5.get("ids") == SS.unit_order("S5", list(range(20))) and all(isinstance(x, int) for x in l5.get("ids", [""]))
-              and r5.get("n_ids") == [20, 3], f"{r5.get('problems')} {l5.get('ids')}")
-        smoke_meet = write_parquet("beam500b.parquet", [{"conversation_id": 7, "chat": TEXT}])
-        r5b, _c, _b, ld5b = run("s5b", "S5", {"beam_128k": beam, "beam_500k": smoke_meet})
-        check("LB-S5: a conversation id both files hold refuses - by the data (Q-A7-5) - and writes no list",
-              any("share ids" in p for p in r5b["problems"]) and not (ld5b / "S5.json").exists(), str(r5b["problems"]))
+        check("LB-S5 (Q-A7-5'): the same conversation ids in both splits with different content pass - unit_order of the "
+              "20 ids as the file types them (strings, SEED+5); the smoke conversation is 500K's first, checked by content",
+              r5.get("problems") == [] and l5.get("ids") == SS.unit_order("S5", [str(i + 1) for i in range(20)])
+              and all(isinstance(x, str) for x in l5.get("ids", [0])) and r5.get("n_ids") == [20, 1]
+              and (r5.get("extra") or {}).get("smoke", {}).get("conversation_id") == "1" and no_text(c5, ld5),
+              f"{r5.get('problems')} {l5.get('ids')} {r5.get('extra')}")
+        smoke_q = write_parquet("beam500q.parquet", [{**beam_row("1", 100), "probing_questions":
+                                                      repr({"other": [{"question": "question 7?"}]})}])
+        r5b, _c, _b, ld5b = run("s5b", "S5", {"beam_128k": beam, "beam_500k": smoke_q})
+        smoke_c = write_parquet("beam500c.parquet", [{**beam_row("1", 100), "chat": [[{"role": "user",
+                                                                                       "content": f"{TEXT} chat 3"}]]}])
+        r5c, _c, _b, ld5c = run("s5c", "S5", {"beam_128k": beam, "beam_500k": smoke_c})
+        check("LB-S5 (Q-A7-5'): a probing question the smoke conversation shares with the stand refuses by name, and so "
+              "does a chat that starts as one of theirs - no list either time",
+              any("shares 1 probing question" in p for p in r5b["problems"])
+              and any("chat starts as one of the stand's" in p for p in r5c["problems"])
+              and not (ld5b / "S5.json").exists() and not (ld5c / "S5.json").exists(),
+              f"{r5b['problems']} | {r5c['problems']}")
 
         fc_rows = [{"metadata": {"source": s, "haystack_sessions": None}, "context": TEXT} for s in
                    sorted(f"factconsolidation_{h}_{t}" for h in ("sh", "mh") for t in ("262k", "6k", "64k", "32k"))]
