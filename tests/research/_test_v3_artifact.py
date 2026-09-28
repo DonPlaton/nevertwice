@@ -107,7 +107,7 @@ CLOUD = {"calls": 12, "models_seen": ["deepseek-v4-flash"], **{k: 0 for k in A.C
          "product_retries": 0, "thinking_injected": 0, "fingerprints_seen": {"v1": ["fp1"], "anthropic": []},
          "straddled_units": [], "empty_content": 0, "json_invalid": 0, "capped": 0, "reasoning_tokens": 0,
          "tokens": {"write": {"in": 10, "out": 5}, "read": {}, "answer": {}}, "incident_units": []}
-PROXY = {"canary_hits": 0, "owner_marker_hits": 0, "ancestor_canary_hits": 0, "egress_attempts": {}}
+PROXY = {"canary_hits": 0, "owner_marker_hits": 0, "ancestor_canary_hits": 0, "egress_attempts": {}, "ollama_refused": 0}
 WITNESSES = [{"kind": "egress", "complete": True, "hits": 0}, {"kind": "fs", "complete": True, "hits": 0}]
 
 
@@ -210,6 +210,9 @@ check("an incomplete witness is refused, never read as 0 (P0h)", refused(
     "incomplete"))
 check("a boundary with no fs witness is refused", refused(lambda: A.boundary_block(proxy=PROXY, witnesses=WITNESSES[:1]),
                                                           "no ['fs'] witness"))
+check("B-OLM-VIS: a proxy record without ollama_refused is refused - an unmeasured count is never 0", refused(
+    lambda: A.boundary_block(proxy={k: v for k, v in PROXY.items() if k != "ollama_refused"}, witnesses=WITNESSES),
+    "ollama_refused"))
 check("a proxy record without owner_marker_hits is refused", refused(
     lambda: A.boundary_block(proxy={k: v for k, v in PROXY.items() if k != "owner_marker_hits"}, witnesses=WITNESSES),
     "owner_marker_hits"))
@@ -416,6 +419,9 @@ check("P0g: a timing row without a measured idle:true", has(A.p0_flags(clean, tc
 check("... and not with {mode: observe, idle: true}",
       not has(flags(lambda r: r.__setitem__("machine_idle", {"mode": "observe", "idle": True}), ctx=tctx), "g"))
 check("P0h: a boundary counter > 0", has(flags(lambda r: r["boundary"].__setitem__("owner_marker_hits", 1)), "h"))
+check("P0h (B-OLM-VIS): the Ollama leg refused the product's call - ollama_refused > 0 flags the row by name, never clean",
+      "P0h: ollama_refused > 0" in flags(lambda r: r["boundary"].__setitem__("ollama_refused", 1))
+      and not any("ollama_refused" in x for x in flags(lambda r: None)))
 check("P0h: a spawn without its environment-assertion record",
       has(A.p0_flags(clean, A.P0Context(**{**CTX.__dict__, "unasserted_spawns": frozenset({sids[1]})}), "mem0"), "h"))
 qs = [{"qid": f"q{i}", "invalid": None} for i in range(100)]

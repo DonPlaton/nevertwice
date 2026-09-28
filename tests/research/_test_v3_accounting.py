@@ -352,15 +352,32 @@ bcalls = [call("b1", t0=1), call("b2", t0=2, ancestor_canary_hits=2),
           call("b6", t0=6, arm="scheduler", unit=None, role="scheduler", stage=None)]
 catcher = [{"arm": "mem0", "host": "api.openai.com", "tunnelled": False}, {"arm": "mem0", "host": "api.openai.com", "tunnelled": False},
            {"arm": "mem0", "host": "x.org", "tunnelled": True}, {"arm": "zep", "host": "y.org", "tunnelled": False}]
-pb = AC.proxy_boundary_inputs(bcalls, catcher, arm="mem0", run="r1")
+pb = AC.proxy_boundary_inputs(bcalls, catcher, arm="mem0", run="r1", ollama=[])
 check("the arm-run's hits summed over its call records, a refused call's included; another arm's and run's never",
       pb.get("canary_hits") == 1 and pb.get("owner_marker_hits") == 0 and pb.get("ancestor_canary_hits") == 2, str(pb))
 check("the catcher's refused egress by host, this arm's only", pb["egress_attempts"] == {"api.openai.com": 2})
 check("MA12: a bool in a hit field refuses - True is not a count",
-      "canary_hits" in err(lambda: AC.proxy_boundary_inputs([call("b", canary_hits=True)], [], arm="mem0", run="r1")))
+      "canary_hits" in err(lambda: AC.proxy_boundary_inputs([call("b", canary_hits=True)], [], arm="mem0", run="r1",
+                                                            ollama=[])))
 check("a call record without a hit field refuses - never 0",
       "canary_hits" in err(lambda: AC.proxy_boundary_inputs([{k: v for k, v in call("b").items() if k != "canary_hits"}],
-                                                            [], arm="mem0", run="r1")))
+                                                            [], arm="mem0", run="r1", ollama=[])))
+oll = [{"arm": "mem0", "unit": "r1.u1", "path": "/api/pull", "error": "refused:path", "status": None},
+       {"arm": "mem0", "unit": "r1.u1", "path": "/api/embed", "error": None, "status": 200, "is_embed": True},
+       {"arm": "mem0", "unit": "r1.u2", "path": "/api/%70ull", "error": "refused:encoded-target", "status": None},
+       {"arm": "mem0", "unit": "r2.u1", "path": "/api/pull", "error": "refused:path", "status": None},
+       {"arm": "zep", "unit": "r1.u1", "path": "/api/pull", "error": "refused:path", "status": None},
+       {"arm": "mem0", "unit": None, "path": "/api/delete", "error": "refused:model-store", "status": None},
+       {"arm": "mem0", "unit": "r1.u3", "path": "/api/embed", "error": "ProtocolError", "status": 200}]
+try:
+    pbo = AC.proxy_boundary_inputs([], [], arm="mem0", run="r1", ollama=oll)
+    pb0 = AC.proxy_boundary_inputs([], [], arm="mem0", run="r1", ollama=[])
+except Exception as e:  # noqa: BLE001 - the rows FAIL by name
+    pbo = pb0 = {"error": f"{type(e).__name__}: {e}"}
+check("B-OLM-VIS: the Ollama leg's refusals of the arm-run are counted - refused:path, refused:encoded-target, and one "
+      "with no unit prefix (the arm's, as a catcher record is) - never another arm's or run's, an answered call or a "
+      "failed one", pbo.get("ollama_refused") == 3, str(pbo))
+check("B-OLM-VIS: an arm-run the leg refused nothing is 0 - never 'not measured'", pb0.get("ollama_refused") == 0, str(pb0))
 CHECK_OK = {"check_id": "S1.b01", "complete": True, "native": {"hits": 0, "complete": True},
             "containers": [None, {"hits": 1, "complete": True}], "fs": {"fs_hits": 0, "changed_labels": []}}
 w = AC.witness_inputs(CHECK_OK)
@@ -415,7 +432,7 @@ def arm_row(system: str, stand: str) -> dict:
     lg = [dict(c, arm=system) for c in late_log]
     return {"arm_decl": decl(system), "runs": [{"status_id": f"{stand}/b01/r1/{system}", "units_dropped_own": 0}],
             "cloud_transport": A.cloud_transport(AC.cloud_counters(lg, arm=system, run="r1", stand=stand, cloud_bypass=0, background_writes=0)),
-            "boundary": A.boundary_block(proxy=AC.proxy_boundary_inputs(lg, [], arm=system, run="r1"),
+            "boundary": A.boundary_block(proxy=AC.proxy_boundary_inputs(lg, [], arm=system, run="r1", ollama=[]),
                                          witnesses=AC.witness_inputs({**CHECK_OK, "containers": []})),
             "ollama_transport": A.ollama_transport(PACER, embed_at_cap=0, fallback_local=0, embed_models_seen=[D1],
                                                    degraded_recalls=0, direct_calls=0),
@@ -655,7 +672,8 @@ with tempfile.TemporaryDirectory(prefix="v3acct_e2e_") as td:
             "cloud_transport": A.cloud_transport(AC.cloud_counters(lg.calls, arm=arm, run="r1", stand="S6", cloud_bypass=0, background_writes=0,
                                                                    ollama=lg.ollama,
                                                                    product_retries=rc["product_retries"])),
-            "boundary": A.boundary_block(proxy=AC.proxy_boundary_inputs(lg.calls, lg.catcher, arm=arm, run="r1"),
+            "boundary": A.boundary_block(proxy=AC.proxy_boundary_inputs(lg.calls, lg.catcher, arm=arm, run="r1",
+                                                                        ollama=lg.ollama),
                                          witnesses=AC.witness_inputs({**CHECK_OK, "containers": []})),
             "ollama_transport": BUILT_OT,
             "p1": A.p1_block(**AC.lost_operations(wops, lg.calls, arm=arm, run="r1")),

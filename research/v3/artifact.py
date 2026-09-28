@@ -13,7 +13,7 @@ instrument did not measure is refused, not zeroed):
   llm_retries. The TB7 fields (embed_at_cap, fallback_local), embed_models_seen (ruling B2) and direct_calls
   (R-EMBED-PATH: the child's Ollama calls past its arm's proxy leg - the pacer's route) are required;
 * cloud_transport(): every P0(b) counter and every "also written" field of §2.3, required;
-* boundary_block(): the four P0h counters from the proxy and the witnesses; an incomplete or absent witness raises;
+* boundary_block(): the five P0h counters from the proxy and the witnesses; an incomplete or absent witness raises;
 * p1_block(): P1 bands - <= 2 % no label, 2-10 % "lossy-writer (x%)", > 10 % raises P1Exceeds with the dominant class
   (the arm is then blocked by the repair logic after its documented attempts, never written as a valid row). A lost
   operation carries its LOSS REASON (counted, published) and its evidence; its BLOCK CLASS - always one of rev1 P1's
@@ -63,7 +63,9 @@ CLOUD_ZERO = ("failed_outcomes", "fallback_local", "model_mismatch", "thinking_c
 CLOUD_ALSO = ("transport_recovered", "transport_lost", "upstream_errors", "client_abandoned", "product_retries",
               "thinking_injected", "fingerprints_seen", "straddled_units", "empty_content", "json_invalid", "capped",
               "reasoning_tokens", "tokens", "incident_units")
-BOUNDARY = ("canary_hits", "owner_marker_hits", "egress_hits", "fs_hits")
+#: P0h's zero-tolerance counters; ollama_refused (B-OLM-VIS): the Ollama leg refused the product's call - the stand
+#: changed the product's behaviour, so the row is not clean.
+BOUNDARY = ("canary_hits", "owner_marker_hits", "egress_hits", "fs_hits", "ollama_refused")
 #: rev1 P1's block classes - the only values a P1 block can name (P3's vocabulary).
 BLOCK_CLASSES = ("structured-output", "tool-calling", "transport")
 #: What a lost operation is counted and published as (TB4.10 ruling; M1 ruling).
@@ -229,9 +231,10 @@ def cloud_transport(counters: Mapping) -> dict:
 
 
 def boundary_block(*, proxy: Mapping, witnesses: Sequence[Mapping]) -> dict:
-    """P0h: canary and owner-marker hits from the proxy's scan, egress and fs hits from the witnesses. An incomplete
-    witness, or a kind with no witness at all, raises - an unmeasured boundary is never 0."""
-    for k in ("canary_hits", "owner_marker_hits", "ancestor_canary_hits", "egress_attempts"):
+    """P0h: canary and owner-marker hits from the proxy's scan, egress and fs hits from the witnesses, and the Ollama
+    leg's refusals (B-OLM-VIS). An incomplete witness, or a kind with no witness at all, raises - an unmeasured boundary
+    is never 0."""
+    for k in ("canary_hits", "owner_marker_hits", "ancestor_canary_hits", "egress_attempts", "ollama_refused"):
         if k not in proxy:
             raise ArtifactRefused(f"the proxy record lacks {k}")
     hits = {"egress": 0, "fs": 0}
@@ -250,7 +253,8 @@ def boundary_block(*, proxy: Mapping, witnesses: Sequence[Mapping]) -> dict:
             "owner_marker_hits": _count("owner_marker_hits", proxy["owner_marker_hits"]),
             "egress_hits": hits["egress"], "fs_hits": hits["fs"],
             "ancestor_canary_hits": _count("ancestor_canary_hits", proxy["ancestor_canary_hits"]),
-            "egress_attempts": dict(proxy["egress_attempts"])}
+            "egress_attempts": dict(proxy["egress_attempts"]),
+            "ollama_refused": _count("ollama_refused", proxy["ollama_refused"])}
 
 
 def cache_record(*, path: str, sha256: str, built_commit: str, built_utc: str, built_ollama_transport: Mapping,

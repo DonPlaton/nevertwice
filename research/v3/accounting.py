@@ -319,10 +319,14 @@ def background_writes(calls: Iterable[Mapping[str, Any]], *, arm: str, run: str,
 
 
 def proxy_boundary_inputs(calls: Iterable[Mapping[str, Any]], catcher: Iterable[Mapping[str, Any]], *, arm: str,
-                          run: str) -> dict:
+                          run: str, ollama: Iterable[Mapping[str, Any]]) -> dict:
     """The proxy's half of artifact.boundary_block(): the hit fields summed over the arm-run's call records (a refused
     call's included - the proxy refuses a canary hit and still writes it), and the catcher's refused egress by host:
-    the arm's across this log, not the run's - a catcher record carries no run, and the arm's runs share its port."""
+    the arm's across this log, not the run's - a catcher record carries no run, and the arm's runs share its port.
+    B-OLM-VIS: ollama_refused - the arm-run's Ollama-leg records whose error is a refusal (refused:path,
+    refused:encoded-target, refused:model-store): a call the stand refused changed the product's behaviour, so the
+    row is not clean (P0h). A record with no <run>.<unit> prefix is the arm's, counted in each run, as a catcher
+    record is. ``ollama`` is required: no refusal is 0, never 'not measured'."""
     sums = dict.fromkeys(HIT_FIELDS, 0)
     for c in _arm_run(calls, arm, run):
         for f in HIT_FIELDS:
@@ -334,7 +338,13 @@ def proxy_boundary_inputs(calls: Iterable[Mapping[str, Any]], catcher: Iterable[
     for c in catcher:
         if c.get("arm") == arm and not c.get("tunnelled"):
             refused[str(c.get("host"))] += 1
-    return {**sums, "egress_attempts": dict(sorted(refused.items()))}
+    leg_refused = 0
+    for r in ollama:
+        u = r.get("unit")
+        r_run = u.split(".", 1)[0] if isinstance(u, str) and "." in u else None
+        if r.get("arm") == arm and str(r.get("error") or "").startswith("refused:") and r_run in (run, None):
+            leg_refused += 1
+    return {**sums, "egress_attempts": dict(sorted(refused.items())), "ollama_refused": leg_refused}
 
 
 #: TB7, the auditor's Q-12-6 and Q-A7-8: the provider's host (its /anthropic endpoint is on it too) and the SDK

@@ -747,7 +747,8 @@ def run_smoke(cfg: RunConfig, *, stand: str, arm_names: Sequence[str], runs: Seq
               "wall_cap_tripped": bool(getattr(getattr(hooks, "gate", None), "tripped", False)),
               "canary_hashes": dict(wiring["canaries"].hashes())}
     log = AC.load_proxy(h.run_dir)
-    boundary = {f"{a}/{r}": AC.proxy_boundary_inputs(log.calls, log.catcher, arm=a, run=r) for a in arms for r in runs}
+    boundary = {f"{a}/{r}": AC.proxy_boundary_inputs(log.calls, log.catcher, arm=a, run=r, ollama=log.ollama)
+                for a in arms for r in runs}
     record["boundary"] = boundary
     # B-SMOKE-FLAGS (the auditor): every zero-tolerance flag the proxy wrote is a problem by kind and arm - a canary or
     # an owner marker is ONE event with its P0h count (said once, in the P0h line); any other kind stands alone
