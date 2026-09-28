@@ -575,6 +575,74 @@ def test_no_mirror_and_no_fixed_env_file_reaches_a_sandbox() -> None:
           f"{sandbox_guard.BRIDGED_PREFIXES} vs {config.LEGACY_PREFIXES}")
 
 
+def test_the_cleanup_removes_what_git_wrote_or_says_what_it_left() -> None:
+    """B-SBX-RMTREE (the auditor): `_cleanup` removed the store with rmtree(ignore_errors=True). Git writes its object
+    files ReadOnly; on Windows rmtree cannot unlink those, and ignore_errors hid it - 11 stores in %TEMP% hold only
+    their .git (2026-09-22..25). The store must go whole, and what cannot go must be named on stderr, never raised."""
+    import contextlib
+    import io
+    import stat
+    print("\n- the cleanup removes what git wrote, or says what it left -")
+    own, own_onexc = sandbox_guard._STORE, sandbox_guard._ONEXC
+    # both of rmtree's hooks where this interpreter has both (onexc from 3.12; the Windows gate's 3.10 has onerror)
+    modes = (True, False) if sys.version_info >= (3, 12) else (False,)
+    with tempfile.TemporaryDirectory(prefix="nevertwice_rmtree_") as tmp:
+        seen = {}
+        for onexc in modes:
+            ro = Path(tmp) / f"store-ro-{'onexc' if onexc else 'onerror'}"
+            obj = ro / ".git" / "objects" / "ab" / "cdef0123"
+            obj.parent.mkdir(parents=True)
+            obj.write_bytes(b"blob")
+            os.chmod(obj, stat.S_IREAD)                  # what git does to its objects (Windows: the ReadOnly bit)
+            err = io.StringIO()
+            try:
+                sandbox_guard._STORE, sandbox_guard._ONEXC = ro, onexc
+                with contextlib.redirect_stderr(err):
+                    sandbox_guard._cleanup()
+                raised = None
+            except Exception as e:  # noqa: BLE001 - the row FAILs by name
+                raised = f"{type(e).__name__}: {e}"
+            finally:
+                sandbox_guard._STORE, sandbox_guard._ONEXC = own, own_onexc
+            seen[ro.name] = (raised, sorted(str(p.relative_to(ro)) for p in ro.rglob("*")) if ro.exists() else None,
+                             err.getvalue()[:200])
+        check("B-SBX-RMTREE: a store whose .git holds a ReadOnly object is removed whole, silently (onexc and onerror)",
+              all(v == (None, None, "") for v in seen.values()), str(seen))
+
+        held = Path(tmp) / "store-held"
+        stuck = held / ".git" / "stuck.bin"
+        stuck.parent.mkdir(parents=True)
+        stuck.write_bytes(b"x")
+        (held / ".git" / "zz_after.txt").write_bytes(b"y")     # walked after stuck.bin: the walk must go on
+        (held / "zz_notes.md").write_bytes(b"z")
+        real_unlink, real_remove = os.unlink, os.remove
+
+        def refuse(p, *a, **k):
+            if Path(p).name == "stuck.bin":
+                raise PermissionError(13, "held open by another process", str(p))
+            return real_unlink(p, *a, **k)
+
+        err2 = io.StringIO()
+        try:
+            sandbox_guard._STORE = held
+            os.unlink = os.remove = refuse
+            with contextlib.redirect_stderr(err2):
+                sandbox_guard._cleanup()
+            raised2 = None
+        except Exception as e:  # noqa: BLE001 - the row FAILs by name
+            raised2 = f"{type(e).__name__}: {e}"
+        finally:
+            os.unlink, os.remove = real_unlink, real_remove
+            sandbox_guard._STORE = own
+        lines = err2.getvalue().splitlines()
+        left = sorted(p.relative_to(held).as_posix() for p in held.rglob("*")) if held.exists() else []
+        check("B-SBX-RMTREE: a file that cannot be removed is named on stderr - one line, with the store and the path - "
+              "the cleanup never raises, and the walk goes on past it (only it and its directory are left)",
+              raised2 is None and len(lines) == 1 and "stuck.bin" in lines[0] and str(held) in lines[0]
+              and left == [".git", ".git/stuck.bin"],
+              f"raised={raised2} left={left} stderr={err2.getvalue()[:300]!r}")
+
+
 def test_zz_every_check_passed() -> None:
     """Bare pytest must reach the same verdict as this suite's exit code.
 

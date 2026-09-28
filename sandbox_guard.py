@@ -42,6 +42,7 @@ from __future__ import annotations
 import atexit
 import os
 import shutil
+import stat
 import sys
 import tempfile
 from pathlib import Path
@@ -512,6 +513,43 @@ def live_reason():
     return _LIVE_REASON
 
 
+_ONEXC = sys.version_info >= (3, 12)               # rmtree's onexc; onerror before it (the Windows gate runs 3.10)
+
+
+def _rmtree_writable(path: Path) -> list[str]:
+    """Remove ``path`` whole; return what could not be removed, as "<path>: <error>".
+
+    B-SBX-RMTREE: git writes its object files ReadOnly, and on Windows rmtree cannot unlink
+    those - with ignore_errors the store's .git stayed behind and nobody heard of it (11 such
+    stores in %TEMP%, 2026-09-22..25). A failed removal clears the ReadOnly bit and tries once
+    more; what still fails is collected. onexc from 3.12, onerror before it (the Windows gate
+    runs 3.10)."""
+    left: list[str] = []
+
+    def retry(func, p, exc) -> None:
+        if isinstance(exc, FileNotFoundError):
+            return                                  # gone already: nothing was left
+        try:
+            os.chmod(p, stat.S_IMODE(os.lstat(p).st_mode) | stat.S_IWRITE)
+            func(p)
+        except OSError as again:
+            left.append(f"{p}: {type(again).__name__}: {again}")
+
+    if _ONEXC:
+        shutil.rmtree(path, onexc=retry)
+    else:
+        shutil.rmtree(path, onerror=lambda func, p, info: retry(func, p, info[1]))
+    return left
+
+
 def _cleanup() -> None:
-    if _STORE is not None:
-        shutil.rmtree(_STORE, ignore_errors=True)
+    """The store goes whole at exit; what cannot go is named on stderr in one line, never raised."""
+    if _STORE is None or not os.path.lexists(_STORE):
+        return
+    try:
+        left = _rmtree_writable(_STORE)
+    except OSError as e:                            # the walk itself failed: named, never raised at exit
+        left = [f"{_STORE}: {type(e).__name__}: {e}"]
+    if left:
+        print(f"sandbox_guard: the sandbox store {_STORE} was not removed whole - {len(left)} path(s) left, "
+              f"first {left[0]}", file=sys.stderr)
