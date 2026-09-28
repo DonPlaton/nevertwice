@@ -342,6 +342,7 @@ check("Q-C5e-1: the freeze check of every product pin, declared as data now - at
       and all(FNC["pins"][v]["dist"] == LI.spec_parts(LI.VENVS[v]["specs"][0])[0]
               and FNC["pins"][v]["version"] == LI.spec_parts(LI.VENVS[v]["specs"][0])[2] for v in LI.VENVS)
       and FNC["pins"]["mem0_v3"]["read"] == "2026-09-23" and FNC["pins"]["graphiti_v3"]["read"] == "2026-09-26"
+      and all(FNC["pins"][v]["read"] == "2026-09-26 (rev1's date; the row names none)" for v in ("langmem_v3", "cognee_v3"))
       and "no install" in FNC.get("rule", "") and "never a silent move" in FNC.get("rule", "")
       and 'pinned X (read D1); newest at freeze Y' in FNC.get("rule", ""), str(FNC)[:400])
 import ast  # noqa: E402

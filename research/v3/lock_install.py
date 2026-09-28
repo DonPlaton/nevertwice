@@ -103,8 +103,8 @@ FREEZE_NEWER_CHECK = {
              "question to the auditor before the campaign - never a silent move"),
     "pins": {"mem0_v3": {"dist": "mem0ai", "version": "2.2.0", "read": "2026-09-23"},
              "graphiti_v3": {"dist": "graphiti-core", "version": "0.30.2", "read": "2026-09-26"},
-             "langmem_v3": {"dist": "langmem", "version": "0.0.30", "read": "2026-09-26"},
-             "cognee_v3": {"dist": "cognee", "version": "1.6.1", "read": "2026-09-26"}}}
+             "langmem_v3": {"dist": "langmem", "version": "0.0.30", "read": "2026-09-26 (rev1's date; the row names none)"},
+             "cognee_v3": {"dist": "cognee", "version": "1.6.1", "read": "2026-09-26 (rev1's date; the row names none)"}}}
 _SPEC = re.compile(r"([A-Za-z0-9][A-Za-z0-9._-]*)(?:\[([A-Za-z0-9._-]+(?:\s*,\s*[A-Za-z0-9._-]+)*)\])?==([A-Za-z0-9.+!-]+)")
 
 
