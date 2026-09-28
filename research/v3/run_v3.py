@@ -23,8 +23,8 @@ A9).
   price as data) - each writer arm at its bound over its own op texts (op_texts_for: the scheduler's write ops,
   op_text: the bytes its writer is given), nevertwice's from WRITER_BOUNDS, mem0's from its probe record
   (writer_bound, M at 1 KiB [A-M0-1]) - and beside it an estimate that is not a bound, one method for every writer
-  arm (writer_estimate, [A-EST-1]); forecast() is the session form its callers use until C3/C4; hours are not
-  forecast;
+  arm (writer_estimate, [A-EST-1]); stand_forecast() is the one the smoke and the A/B call (C3), each writer arm at
+  its bound in SmokeDeps.writer_bounds (writer_bounds_for: mem0's from --mem0-probe-run); hours are not forecast;
 * WallCapGate, SMOKE_WALL_CAP_H (Q26): past the stand's 6 h wall ceiling no new unit starts;
 * run_smoke() (part 2b): the units, the forecast, the preflight, one Canaries object, the proxy, the hooks and the
   incident gate under the wall ceiling, the scheduler's stand, the gate and then the proxy stopped, the SMOKE_FIELDS
@@ -502,25 +502,58 @@ def forecast_arms(writers: Mapping[str, str | None], op_texts: Mapping[str, Mapp
                      f"{SMOKE_WALL_CAP_H} h plus one unit ceiling"}
 
 
-def forecast(writers: Mapping[str, str | None], session_texts: Mapping[str, Sequence[str]],
-             prompts: Mapping[tuple[str, str], str], *, runs: int, max_token_bytes: int,
-             measured: Mapping[str, Any] | None = None, price: Mapping[str, Any] = DEEPSEEK_FLASH_PRICE) -> dict:
-    """The session form (run_smoke's and the A/B harness's until C3/C4 hand them per-arm op texts): every writer arm's
-    op is a session (``session_texts``: unit -> its sessions' text), its bound is WRITER_BOUNDS', and ``measured`` is
-    both the reader's ratio and the writer's (its op texts are those sessions). A writer arm whose ops are not
-    sessions (mem0: messages) has no bound here - forecast_arms with its op texts and its probe's bound."""
+def stand_forecast(arms: Mapping[str, Any], units: Sequence[Any], *, smaps: Mapping[str, Mapping[str, str]],
+                   prompts: Mapping[tuple[str, str], str], runs: int, count: Callable[[str], int], cl100k_source: str,
+                   max_token_bytes: int, writer_bounds: Mapping[str, Mapping[str, Any]], label: str,
+                   dated: bool = True) -> dict:
+    """C3: the forecast a stand writes into its preflight record - the one function the smoke and the A/B call. Each
+    writer arm's op texts (op_texts_for) at its bound in ``writer_bounds`` (WRITER_BOUNDS', mem0's from
+    writer_bounds_for); the reader's measured bytes per cl100k token over the units' session texts, each writer arm's
+    over its own op texts ([A-EST-1]); every ratio's source names the pin and ``label``."""
     PL = load("run_v3_plan.py", smoke=True)
-    for arm, llm in writers.items():
-        spec = PL.ARMS.get(arm)
-        if llm is not None and (arm not in WRITER_BOUNDS or spec is None or spec.granularity != "session"):
-            kind = f"its ops are {spec.granularity} ops (messages, not sessions)" if spec is not None else "it has no plan"
-            raise CLIError(f"arm {arm}: no upper bound for its writer's calls in WRITER_BOUNDS - {kind}: forecast_arms "
-                           "with its op texts and its bound - no forecast, no smoke")
-    ops = {a: dict(session_texts) for a in writers if writers[a] is not None}
-    out = forecast_arms(writers, ops, prompts, runs=runs, max_token_bytes=max_token_bytes, bounds=WRITER_BOUNDS,
-                        measured=measured, measured_ops={a: measured for a in ops} if measured is not None else None,
-                        price=price)
-    return {**out, "session_ops_per_run": sum(len(v) for v in session_texts.values())}
+    writers = {a: ar.llm for a, ar in arms.items()}
+    session = [PL.session_text(s) for u in units for s in u.sessions]
+    measured = {**bytes_per_cl100k_token(session, count),
+                "source": f"cl100k {cl100k_source[:12]} over the {len(session)} session texts of {label}"}
+    op_texts = {a: op_texts_for(a, units, dated=dated, smaps=smaps) for a in sorted(writers) if writers[a] is not None}
+    measured_ops = {}
+    for a, ot in op_texts.items():
+        flat = [t for v in ot.values() for t in v]
+        measured_ops[a] = {**bytes_per_cl100k_token(flat, count),
+                           "source": f"cl100k {cl100k_source[:12]} over {a}'s {len(flat)} op texts of {label}"}
+    return forecast_arms(writers, op_texts, prompts, runs=runs, max_token_bytes=max_token_bytes, bounds=writer_bounds,
+                         measured=measured, measured_ops=measured_ops)
+
+
+#: C3 (Q-C6-5): a probe run is named, never a path
+_RUN_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}")
+
+
+def check_mem0_probe_run(arm_names: Sequence[str], mem0_probe_run: str | None) -> None:
+    """C3 (Q-C6-5): --mem0-probe-run is required when mem0 is in --arms, and only then."""
+    if ("mem0" in arm_names) != (mem0_probe_run is not None):
+        raise CLIError("--mem0-probe-run is required when mem0 is in --arms, and only then - mem0's writer is forecast at "
+                       "its probe's bound (Q-C6-5)")
+
+
+def writer_bounds_for(arm_names: Sequence[str], runs_root: str | os.PathLike, *, mem0_probe_run: str | None,
+                      m_bytes: int = M0_DEFAULT_M) -> dict:
+    """C3: the bounds a stand's writer arms are forecast at - WRITER_BOUNDS', and mem0's from its probe record
+    <runs>/_a8/<run>/mem0/probe.json (writer_bound), with that file's path and sha256 as its source."""
+    check_mem0_probe_run(arm_names, mem0_probe_run)
+    out = {a: dict(b) for a, b in WRITER_BOUNDS.items()}
+    if mem0_probe_run is None:
+        return out
+    if not _RUN_ID.fullmatch(mem0_probe_run):
+        raise CLIError(f"{mem0_probe_run!r} is not a run id (a name, never a path) - no mem0 bound")
+    p = Path(runs_root) / "_a8" / mem0_probe_run / "mem0" / "probe.json"
+    try:
+        data = p.read_bytes()
+        rec = json.loads(data.decode("utf-8"))
+    except (OSError, ValueError) as e:
+        raise CLIError(f"{p}: no readable mem0 probe record ({type(e).__name__}) - no mem0 bound") from None
+    out["mem0"] = {**writer_bound(rec, m_bytes=m_bytes), "source": f"{p}@sha256:{hashlib.sha256(data).hexdigest()}"}
+    return out
 
 
 #: Q-A6-2 / Q26: the smoke stand's wall ceiling - the declared debug ceiling of the pilot and the smoke, 6 h. A unit
@@ -594,6 +627,8 @@ class SmokeDeps:
     embed_tokenizer: Mapping[str, str] | None = None     # TB7: {path, sha256} of the pinned bge-m3 tokenizer.json
     out: Callable[[str], None] = print
     err: Callable[[str], None] = field(default=lambda s: sys.stderr.write(s + "\n"))
+    writer_bounds: Mapping[str, Mapping[str, Any]] = field(      # C3: mem0's from writer_bounds_for
+        default_factory=lambda: {a: dict(b) for a, b in WRITER_BOUNDS.items()})
 
 
 def run_smoke(cfg: RunConfig, *, stand: str, arm_names: Sequence[str], runs: Sequence[str], deps: SmokeDeps) -> int:
@@ -629,14 +664,12 @@ def run_smoke(cfg: RunConfig, *, stand: str, arm_names: Sequence[str], runs: Seq
     t4, t4c5 = deps.templates
     questions = questions_for(units, template=t4, template_abstain=t4c5, locomo_question=deps.locomo_question)
 
-    # the forecast (Q-A6-2, Q-A6-3) and the preflight (Q-A6-1): before STAND START and before any spawn
-    session_texts = {u.unit_id: [PL.session_text(s) for s in u.sessions] for u in units}
-    measured = bytes_per_cl100k_token([t for v in session_texts.values() for t in v], count)
-    measured["source"] = (f"cl100k {deps.cl100k_source[:12]} over the {sum(len(v) for v in session_texts.values())} "
-                          f"session texts of {stand_id}'s {len(units)} units, before the run")
+    # the forecast (Q-A6-2, Q-A6-3, C3) and the preflight (Q-A6-1): before STAND START and before any spawn
     prompts = {k: TP.render(t, {"context": "", "question": q}) for k, (t, q) in questions.items()}
-    fc = forecast({a: ar.llm for a, ar in arms.items()}, session_texts, prompts, runs=len(runs),
-                  max_token_bytes=deps.max_token_bytes, measured=measured)
+    fc = stand_forecast(arms, units, smaps=su["smaps"], prompts=prompts, runs=len(runs), count=count,
+                        cl100k_source=deps.cl100k_source, max_token_bytes=deps.max_token_bytes,
+                        writer_bounds=deps.writer_bounds, dated=True,
+                        label=f"{stand_id}'s {len(units)} units, before the run")
     pf = preflight(c, L, arms, stand_id=stand_id, config_sha256=cfg.sha256, decl=deps.decl, now=deps.now_utc,
                    forecast=fc)
     # an attempt that fails before STAND START leaves the smoke id unspent (Q-A6-1): the next attempt takes the same
@@ -774,6 +807,7 @@ def parser() -> argparse.ArgumentParser:
     st.add_argument("--arms", required=True)
     st.add_argument("--runs", required=True)
     st.add_argument("--config", required=True)
+    st.add_argument("--mem0-probe-run", help="the mem0 probe run whose record bounds mem0's writer (Q-C6-5)")
     return ap
 
 
@@ -783,6 +817,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         raise CLIError("--tag scored waits for A9 (the judges, the change log, the assembly) - refused")
     if args.stand not in SMOKE_STANDS:
         raise CLIError(f"a smoke of {args.stand} is not possible yet - only {SMOKE_STANDS} (templates.PENDING, §5.6)")
+    arm_names = [a for a in args.arms.split(",") if a]
+    check_mem0_probe_run(arm_names, args.mem0_probe_run)       # before anything is read (C3)
     import datetime as dt  # noqa: PLC0415
     import time  # noqa: PLC0415
     L, SC, PL = load("launch.py", smoke=True), load("scheduler.py", smoke=True), load("run_v3_plan.py", smoke=True)
@@ -808,8 +844,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         start_proxy=lambda c_, **kw: P.start(c_, spawn=L.spawn_proxy, **kw), stop_proxy=P.stop, post=P.post,
         proxy_route={"via_port": L.network_via_port(c)},
         embed_tokenizer={"path": str(bge), "sha256": CP.PINS["bge_m3_tokenizer_json"]["sha256"]},
-        now_utc=lambda: dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
-    return run_smoke(cfg, stand=args.stand, arm_names=[a for a in args.arms.split(",") if a],
+        now_utc=lambda: dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        writer_bounds=writer_bounds_for(arm_names, c.runs_root, mem0_probe_run=args.mem0_probe_run))
+    return run_smoke(cfg, stand=args.stand, arm_names=arm_names,
                      runs=[r for r in args.runs.split(",") if r], deps=deps)
 
 

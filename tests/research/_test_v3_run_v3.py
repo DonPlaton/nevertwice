@@ -327,9 +327,9 @@ try:
           before == (False, True) and inner_yes.started and "wall ceiling of 6.0 h" in after and g_yes.tripped
           and not g_no.tripped and inner_yes.asked == 1, f"{before} {after}")
     print("\n- the forecast (Q-A6-2): an upper bound, not pilot medians -")
-    fc_out = RV.forecast({"bm25-floor": None, "nevertwice": "deepseek-flash"},
-                         {"u1": ["a" * 100, "é" * 20000, "x" * 60000]}, {("u1", "q0"): "p" * 50},
-                         runs=2, max_token_bytes=128)
+    fc_out = RV.forecast_arms({"bm25-floor": None, "nevertwice": "deepseek-flash"},
+                              {"nevertwice": {"u1": ["a" * 100, "é" * 20000, "x" * 60000]}}, {("u1", "q0"): "p" * 50},
+                              runs=2, max_token_bytes=128, bounds=RV.WRITER_BOUNDS)
     nw, bm = fc_out["per_arm"].get("nevertwice", {}), fc_out["per_arm"].get("bm25-floor", {})
     check("FC-bound: nevertwice's writer <= 3 requests per session op, each <= 13,000 fixed bytes + the session's UTF-8 "
           "bytes capped at 4 x 12,000, out 4,096; the reader <= 2 requests per question, in <= 2 x (prompt bytes + "
@@ -350,9 +350,10 @@ try:
           and fc_out["hours"].startswith("not forecast") and "6.0 h" in fc_out["hours"], fc_out["hours"])
     meas = RV.bytes_per_cl100k_token(["abcde" * 10, "é" * 5], lambda s: len(s.encode("utf-8")) // 5)
     try:
-        fc_est = RV.forecast({"bm25-floor": None, "nevertwice": "deepseek-flash"},
-                             {"u1": ["a" * 100, "é" * 20000, "x" * 60000]}, {("u1", "q0"): "p" * 50},
-                             runs=2, max_token_bytes=128, measured={**meas, "source": "test texts"})
+        fc_est = RV.forecast_arms({"bm25-floor": None, "nevertwice": "deepseek-flash"},
+                                  {"nevertwice": {"u1": ["a" * 100, "é" * 20000, "x" * 60000]}}, {("u1", "q0"): "p" * 50},
+                                  runs=2, max_token_bytes=128, bounds=RV.WRITER_BOUNDS,
+                                  measured={**meas, "source": "test texts"}, measured_ops={"nevertwice": meas})
     except Exception as e:  # noqa: BLE001 - the row below FAILs by name
         print(f"  (forecast with an estimate raised {type(e).__name__}: {e})")
         fc_est = {"per_arm": None, "usd_total": None}
@@ -374,10 +375,11 @@ try:
     check("FC-ratio-refuse: no cl100k token in the texts - no ratio is guessed",
           "no ratio is guessed" in err(lambda: RV.bytes_per_cl100k_token(["", ""], lambda s: 0)))
     check("FC-refuse: a writer without a bound in WRITER_BOUNDS, or a writer on another model, stops the forecast - "
-          "no forecast, no smoke", "no upper bound" in err(lambda: RV.forecast({"mem0": "deepseek-flash"}, {}, {}, runs=1,
-                                                                                max_token_bytes=128))
-          and "the price does not apply" in err(lambda: RV.forecast({"nevertwice": "gpt-4o"}, {}, {}, runs=1,
-                                                                    max_token_bytes=128)))
+          "no forecast, no smoke",
+          "no upper bound" in err(lambda: RV.forecast_arms({"mem0": "deepseek-flash"}, {}, {}, runs=1, max_token_bytes=128,
+                                                           bounds=RV.WRITER_BOUNDS))
+          and "the price does not apply" in err(lambda: RV.forecast_arms({"nevertwice": "gpt-4o"}, {}, {}, runs=1,
+                                                                         max_token_bytes=128, bounds=RV.WRITER_BOUNDS)))
 
     print("\n- C2 (C6, Q-C6-4..7, [A-M0-1], [A-EST-1]): each writer arm's ops, mem0's bound from its probe, one estimate -")
     import ast  # noqa: E402 - the adapter's write, read as data
@@ -494,22 +496,9 @@ try:
     check("C2 FC-mem0-refuse (the auditor's R5): a site count of 0, True, -1, \"1\" or none is refused by name - a zero or "
           "a bool R would price mem0's writer at nothing, an underestimate by construction",
           all("m0_calls_per_add" in v and not v.startswith("not refused") for v in sites_bad.values()), str(sites_bad)[:500])
-    _wb_saved = dict(RV.WRITER_BOUNDS)
-    RV.WRITER_BOUNDS["mem0"] = dict(wb)
-    try:
-        r19 = err(lambda: RV.forecast({"mem0": "deepseek-flash"}, {"u1": ["ab"]}, {}, runs=1, max_token_bytes=128))
-    finally:
-        RV.WRITER_BOUNDS.clear()
-        RV.WRITER_BOUNDS.update(_wb_saved)
-    check("C2 FC-refuse (the auditor's R19): the session form refuses a message arm by its granularity even with a bound "
-          "for it in WRITER_BOUNDS - its ops are messages, never sessions", "messages" in r19 and "no upper bound" in r19
-          and RV.WRITER_BOUNDS == _wb_saved, r19[:300])
-    fa_nv = c2val(lambda: RV.forecast_arms({"bm25-floor": None, "nevertwice": "deepseek-flash"},
-                                           {"nevertwice": {"u1": ["a" * 100, "é" * 20000, "x" * 60000]}},
-                                           {("u1", "q0"): "p" * 50}, runs=2, max_token_bytes=128, bounds=RV.WRITER_BOUNDS), {})
-    check("C2 FC-arms: the per-arm forecast with nevertwice's op texts and WRITER_BOUNDS gives FC-bound's numbers",
-          c2ok(lambda: fa_nv["per_arm"] == fc_out["per_arm"] and fa_nv["usd_total"] == 2.4788
-               and fa_nv["ops_per_run"] == {"nevertwice": 3}), str(fa_nv.get("per_arm"))[:300])
+    check("C3: one forecast, per arm - the session form is gone (its R19 guard with it), and a per-arm forecast counts "
+          "each writer arm's ops", c2ok(lambda: not hasattr(RV, "forecast") and fc_out["ops_per_run"] == {"nevertwice": 3}),
+          str(fc_out.get("ops_per_run")))
     fa_m0 = c2val(lambda: RV.forecast_arms({"mem0": "deepseek-flash"}, {"mem0": {"u1": ["ab", "é"]}},
                                            {("u1", "q0"): "p" * 50}, runs=1, max_token_bytes=128, bounds={"mem0": wb}), {})
     check("C2 FC-arms: mem0's writer at its probe's bound - 2 ops x 3 requests, in 3 x (23,826 + 2) twice = 142,968, out "
@@ -542,18 +531,125 @@ try:
           "['mem0'] - no ratio is borrowed" in err(lambda: RV.forecast_arms({"mem0": "deepseek-flash"}, {"mem0": {"u1": ["ab"]}}, {}, runs=1,
                                                   max_token_bytes=128, bounds={"mem0": wb},
                                                   measured={**meas, "source": "t"}, measured_ops={})))
-    check("C2 FC-refuse: a writer arm without a bound, or without op texts, stops the per-arm forecast; the session form "
-          "takes no message arm - each by name",
+    check("C2 FC-refuse: a writer arm without a bound, or without op texts, stops the per-arm forecast - each by name",
           "no upper bound" in err(lambda: RV.forecast_arms({"mem0": "deepseek-flash"}, {"mem0": {"u1": ["ab"]}}, {}, runs=1,
                                                            max_token_bytes=128, bounds={}))
           and "no op texts" in err(lambda: RV.forecast_arms({"mem0": "deepseek-flash"}, {}, {}, runs=1, max_token_bytes=128,
-                                                            bounds={"mem0": wb}))
-          and "messages" in err(lambda: RV.forecast({"mem0": "deepseek-flash"}, {"u1": ["ab"]}, {}, runs=1,
-                                                    max_token_bytes=128)))
+                                                            bounds={"mem0": wb})))
     check("C2 FORECAST_FORMULA: states mem0's per-op bound from its probe with M at 1 KiB [A-M0-1], and one estimate "
           "method for every writer arm, once [A-EST-1]",
           c2ok(lambda: "[A-M0-1]" in RV.FORECAST_FORMULA and RV.FORECAST_FORMULA.count("[A-EST-1]") == 1
                and "mem0" in RV.FORECAST_FORMULA))
+
+    print("\n- C3: the stand's forecast, one function for the smoke and the A/B; mem0's bound by --mem0-probe-run -")
+
+    class _Arm:
+        def __init__(self, llm):
+            self.llm = llm
+
+    def words(s):
+        return max(1, len(s.split()))
+
+    ses = [PL.session_text(s) for u in U for s in u.sessions]
+    nv_flat = [t for v in ot_nv.values() for t in v]
+    m0_flat = [t for v in ot_m0.values() for t in v]
+    sf = c2val(lambda: RV.stand_forecast({"bm25-floor": _Arm(None), "nevertwice": _Arm("deepseek-flash"),
+                                          "mem0": _Arm("deepseek-flash")}, U, smaps=sm["smaps"],
+                                         prompts={("u", "q"): "p" * 50}, runs=2, count=words, cl100k_source="c" * 64,
+                                         max_token_bytes=128, writer_bounds={**RV.WRITER_BOUNDS, "mem0": wb},
+                                         label="S4-smoke-3's 20 units"), {})
+    want_sf = c2val(lambda: RV.forecast_arms({"bm25-floor": None, "nevertwice": "deepseek-flash", "mem0": "deepseek-flash"},
+                                             {"nevertwice": ot_nv, "mem0": ot_m0}, {("u", "q"): "p" * 50}, runs=2,
+                                             max_token_bytes=128, bounds={**RV.WRITER_BOUNDS, "mem0": wb},
+                                             measured={**RV.bytes_per_cl100k_token(ses, words), "source": "s"},
+                                             measured_ops={"nevertwice": RV.bytes_per_cl100k_token(nv_flat, words),
+                                                           "mem0": RV.bytes_per_cl100k_token(m0_flat, words)}), {})
+    src = "cl100k " + "c" * 12
+    check("C3 ST-forecast: the stand's forecast is forecast_arms over each writer arm's op texts (op_texts_for, dated), "
+          "its bound from writer_bounds, the reader's ratio over the units' session texts and each writer arm's over its "
+          "own op texts - mem0's framed messages are not nevertwice's sessions; every ratio's source named",
+          c2ok(lambda: sf["per_arm"] == want_sf["per_arm"] and sf["estimate"]["per_arm"] == want_sf["estimate"]["per_arm"]
+               and sf["estimate"]["writer_ratios"]["mem0"] == RV.bytes_per_cl100k_token(m0_flat, words)["ratio"]
+               != sf["estimate"]["bytes_per_cl100k_token"]
+               and sf["estimate"]["measured"]["source"] == f"{src} over the {len(ses)} session texts of S4-smoke-3's 20 units"
+               and sf["estimate"]["writer_measured"]["mem0"]["source"]
+               == f"{src} over mem0's {len(m0_flat)} op texts of S4-smoke-3's 20 units"
+               and sf["ops_per_run"] == {"mem0": len(m0_flat), "nevertwice": len(nv_flat)}), str(sf.get("estimate"))[:400])
+    check("C3 ST-refuse: a writer arm without a bound in writer_bounds stops the stand's forecast by name",
+          "no upper bound" in err(lambda: RV.stand_forecast({"mem0": _Arm("deepseek-flash")}, U, smaps=sm["smaps"],
+                                                            prompts={}, runs=1, count=words, cl100k_source="c" * 64,
+                                                            max_token_bytes=128, writer_bounds=RV.WRITER_BOUNDS, label="x")))
+    PRUN = TMP / "runs_c3"
+    for run_id, rec in (("p1", REC), ("p3", rec_with(outcome="fail"))):
+        (PRUN / "_a8" / run_id / "mem0").mkdir(parents=True, exist_ok=True)
+        (PRUN / "_a8" / run_id / "mem0" / "probe.json").write_text(json.dumps(rec), encoding="utf-8")
+    P1 = PRUN / "_a8" / "p1" / "mem0" / "probe.json"
+    wbf = c2val(lambda: RV.writer_bounds_for(["nevertwice", "mem0"], PRUN, mem0_probe_run="p1"), {})
+    check("C3 writer_bounds_for (Q-C6-5): WRITER_BOUNDS' and mem0's from its probe record <runs>/_a8/<run>/mem0/probe.json, "
+          "that file named by path and sha256; without mem0, WRITER_BOUNDS' alone",
+          c2ok(lambda: wbf["nevertwice"] == RV.WRITER_BOUNDS["nevertwice"]
+               and {k: v for k, v in wbf["mem0"].items() if k != "source"} == wb
+               and wbf["mem0"]["source"] == f"{P1}@sha256:{hashlib.sha256(P1.read_bytes()).hexdigest()}"
+               and RV.writer_bounds_for(["nevertwice"], PRUN, mem0_probe_run=None) == RV.WRITER_BOUNDS), str(wbf)[:400])
+    wbf_bad = {"mem0 without a probe run": err(lambda: RV.writer_bounds_for(["mem0"], PRUN, mem0_probe_run=None)),
+               "a probe run without mem0": err(lambda: RV.writer_bounds_for(["nevertwice"], PRUN, mem0_probe_run="p1")),
+               "no such record": err(lambda: RV.writer_bounds_for(["mem0"], PRUN, mem0_probe_run="p2")),
+               "a run id that is a path": err(lambda: RV.writer_bounds_for(["mem0"], PRUN, mem0_probe_run="../_a8/p1")),
+               "a failed probe": err(lambda: RV.writer_bounds_for(["mem0"], PRUN, mem0_probe_run="p3"))}
+    check("C3 writer_bounds_for: --mem0-probe-run is required iff mem0 is an arm; a missing record, a run id that is not a "
+          "name and a probe that did not pass are each refused by name",
+          "--mem0-probe-run" in wbf_bad["mem0 without a probe run"] and "--mem0-probe-run" in wbf_bad["a probe run without mem0"]
+          and "probe.json" in wbf_bad["no such record"] and "not a run id" in wbf_bad["a run id that is a path"]
+          and "outcome" in wbf_bad["a failed probe"]
+          and all(v != "accepted" and not v.startswith("not refused") for v in wbf_bad.values()), str(wbf_bad)[:600])
+    def cli_err(argv):
+        try:
+            return err(lambda: RV.main(argv))
+        except SystemExit as e:                  # argparse's own exit: not the CLI's named refusal
+            return f"not refused by the CLI: SystemExit {e.code}"
+
+    cli = {"mem0 without": cli_err(["stand", "--stand", "S4", "--smoke", "--arms", "nevertwice,mem0", "--runs", "r1",
+                                    "--config", str(TMP / "none.json")]),
+           "probe run without mem0": cli_err(["stand", "--stand", "S4", "--smoke", "--arms", "nevertwice", "--runs", "r1",
+                                              "--config", str(TMP / "none.json"), "--mem0-probe-run", "p1"])}
+    check("C3 CLI (Q-C6-5): --mem0-probe-run is required iff mem0 is in --arms - refused by name before the config or "
+          "anything else is read", all("--mem0-probe-run" in v for v in cli.values()), str(cli)[:400])
+    import dataclasses  # noqa: E402
+    fdef = {f.name: f for f in dataclasses.fields(RV.SmokeDeps)}
+    check("C3 SmokeDeps.writer_bounds: WRITER_BOUNDS' by default, as a copy - a stand without mem0 needs no probe",
+          c2ok(lambda: fdef["writer_bounds"].default_factory() == RV.WRITER_BOUNDS
+               and fdef["writer_bounds"].default_factory() is not RV.WRITER_BOUNDS))
+    ABSRC = (ROOT / "research" / "v3" / "ab_harness.py").read_text(encoding="utf-8")
+
+    def forecast_calls(src, fn_name):
+        tree = ast.parse(src)
+        fns = [n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name == fn_name]
+        return [{k.arg: ast.unparse(k.value) for k in n.keywords} for f in fns for n in ast.walk(f)
+                if isinstance(n, ast.Call) and ast.unparse(n.func).split(".")[-1] in ("stand_forecast", "forecast",
+                                                                                     "forecast_arms")
+                and ast.unparse(n.func) != "self.forecast"]
+
+    rs_calls = forecast_calls((ROOT / "research" / "v3" / "run_v3.py").read_text(encoding="utf-8"), "run_smoke")
+    ab_calls = forecast_calls(ABSRC, "run_ab")
+    check("C3: run_smoke and the A/B harness forecast through stand_forecast only, at deps.writer_bounds, dated - their "
+          "children suites run it under the lock",
+          len(rs_calls) == 1 and len(ab_calls) == 1
+          and all(c.get("writer_bounds") == "deps.writer_bounds" and c.get("dated") == "True" for c in rs_calls + ab_calls)
+          and "stand_forecast" in ABSRC and "RV.forecast(" not in ABSRC, str((rs_calls, ab_calls))[:400])
+    stale = []
+    for f in sorted((ROOT / "research" / "v3").rglob("*.py")):
+        tree_f = c2val(lambda f=f: ast.parse(f.read_text(encoding="utf-8")))
+        if tree_f is None:
+            stale.append(f"{f.name}: unparsable")
+            continue
+        for n in ast.walk(tree_f):
+            name = (n.func.id if isinstance(n.func, ast.Name) else n.func.attr if isinstance(n.func, ast.Attribute) else None
+                    ) if isinstance(n, ast.Call) else n.name if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) else None
+            if name == "forecast":
+                stale.append(f"{f.relative_to(ROOT).as_posix()}:{n.lineno}")
+    check("C3 (the auditor's condition): no module under research/v3 defines or calls forecast() any more - only "
+          "forecast_arms and stand_forecast", stale == [] and len(list((ROOT / "research" / "v3").rglob("*.py"))) > 20,
+          str(stale)[:300])
     check("C2: no row's condition raised", C2_RAISED == [], str(C2_RAISED)[:400])
     SCH = RV.load("scheduler.py", smoke=True)
     check("WC-cap: the smoke's wall ceiling is Q26's 6 h; with one unit ceiling (scheduler.DEBUG_CEILING_S) the worst "

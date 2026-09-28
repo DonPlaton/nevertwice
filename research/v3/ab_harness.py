@@ -28,8 +28,9 @@ The auditor's rulings (TB4.13, 2026-09-28), as this module implements them:
   verdict by name.
 * T6 / Q-AB-6 O-a: a raw twin leaves no calls.jsonl line, no bodies/<twin>/ and no flags.jsonl line; its Ollama leg's
   ollama.jsonl lines (written the same in both modes) are counted and named in the record.
-* Q-AB-3: the preflight carries the forecast of every A/B (run_v3.forecast, which refuses an arm without a
-  WRITER_BOUNDS entry - no DeepSeek spend without a forecast, on a debug run too).
+* Q-AB-3: the preflight carries the forecast of every A/B (run_v3.stand_forecast, the smoke's own: each writer arm at
+  its bound in deps.writer_bounds, which refuses an arm without one - no DeepSeek spend without a forecast, on a debug
+  run too).
 * D-AB-8: no incident gate - a raw leg's calls are not recorded, so a gate reading calls.jsonl would see the recording
   legs only; an upstream failure shows in the metrics of the leg it hit. But §4.5's stops act the same on every leg:
   a 401, 402 or 403 on any ArmConfig (the proxy's in-memory upstream_statuses, kept in both modes) stops the A/B by
@@ -382,13 +383,11 @@ def run_ab(cfg: Any, *, stand: str, arm_names: Sequence[str], deps: Any, thinkin
     t4, t4c5 = deps.templates
     questions = RV.questions_for(units, template=t4, template_abstain=t4c5, locomo_question=deps.locomo_question)
 
-    # the forecast and the preflight, before any spawn (Q-AB-3)
-    session_texts = {u.unit_id: [PL.session_text(s) for s in u.sessions] for u in units}
-    measured = RV.bytes_per_cl100k_token([t for v in session_texts.values() for t in v], count)
-    measured["source"] = f"cl100k {deps.cl100k_source[:12]} over the {AB_UNITS} A/B units' session texts"
+    # the forecast and the preflight, before any spawn (Q-AB-3; C3: the smoke's own stand_forecast)
     prompts = {k: TP.render(t, {"context": "", "question": q}) for k, (t, q) in questions.items()}
-    fc = RV.forecast({a: ar.llm for a, ar in arms.items()}, session_texts, prompts, runs=len(LEGS),
-                     max_token_bytes=deps.max_token_bytes, measured=measured)
+    fc = RV.stand_forecast(arms, units, smaps=su["smaps"], prompts=prompts, runs=len(LEGS), count=count,
+                           cl100k_source=deps.cl100k_source, max_token_bytes=deps.max_token_bytes,
+                           writer_bounds=deps.writer_bounds, dated=True, label=f"the {AB_UNITS} A/B units")
     pf = RV.preflight(c, L, arms, stand_id=ab_id, config_sha256=cfg.sha256, decl=deps.decl, now=deps.now_utc,
                       forecast=fc)
     attempt = f"attempt-{pf['position']:05d}"
