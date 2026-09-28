@@ -108,6 +108,28 @@ def served(**kw):
     return srv, hop
 
 
+VER12 = "3.12.10"
+FLAT = "/v3-flatcontainer/python/index.json"
+PKGP12 = f"/v3-flatcontainer/python/{VER12}/python.{VER12}.nupkg"
+
+
+def routes12(versions):
+    """A 3.12 base: registration, catalog and package for VER12, and NuGet's flat index of every version."""
+    reg, cat = f"/v3/registration5-semver1/python/{VER12}.json", f"/v3/catalog0/data/2026.09.28/python.{VER12}.json"
+    return {reg: (200, [("Content-Type", "application/json")], json.dumps(
+                {"catalogEntry": f"https://api.nuget.org{cat}", "packageContent": f"https://api.nuget.org{PKGP12}"}).encode()),
+            cat: (200, [("Content-Type", "application/json")], json.dumps(
+                {"id": "python", "version": VER12, "packageHashAlgorithm": "SHA512",
+                 "packageHash": base64.b64encode(hashlib.sha512(PKG).digest()).decode()}).encode()),
+            PKGP12: (200, [], PKG),
+            FLAT: (200, [("Content-Type", "application/json")], json.dumps({"versions": versions}).encode())}
+
+
+def served12(versions):
+    srv = TF.TlsHttpServer(made[0], made[1], routes12(versions))
+    return srv, TF.TunnelHop(srv.port)
+
+
 print("\n- the client, through the hop, TLS verified -")
 if made is None:
     print("  SKIP the tunnel checks: neither cryptography nor openssl is available (not passed)")
@@ -154,6 +176,35 @@ else:
                   f"{e} / {cl.requests}")
         cl.close()
         srv.close(), hop.close()
+    print("\n- C1 (Q-A8-2): the 3.12 base is the newest stable 3.12.x on NuGet, checked in the window -")
+    srv, hop = served12(["3.12.9", "3.12.10", "3.13.1", "3.12.11-rc1", "3.11.9"])
+    cl = F.NugetClient(hop.port, ssl_context=TRUST)
+    try:
+        _p, info12 = F.fetch_package(cl, VER12, newest_of="3.12")
+        err12 = None
+    except Exception as e:  # noqa: BLE001 - a refusal FAILs the row by name
+        info12, err12 = {}, e
+    cl.close()
+    srv.close(), hop.close()
+    nc = info12.get("newest_check") or {}
+    check("C1: NuGet's flat index is read first; the declared 3.12.10 is the newest stable 3.12.x (a pre-release, 3.13 "
+          "and 3.11 do not count) - fetched, and the check is recorded",
+          err12 is None and cl.requests[0] == FLAT and PKGP12 in cl.requests and nc.get("of") == "3.12"
+          and nc.get("newest") == "3.12.10" and nc.get("declared") == "3.12.10", f"{err12} {cl.requests} {nc}")
+    srv, hop = served12(["3.12.9", "3.12.10", "3.12.11"])
+    cl = F.NugetClient(hop.port, ssl_context=TRUST)
+    try:
+        F.fetch_package(cl, VER12, newest_of="3.12")
+        check("C1: a newer 3.12.11 on NuGet refuses the declared 3.12.10 by name, before the package is asked for", False)
+    except Exception as e:  # noqa: BLE001 - only the window's own refusal, by name, passes
+        check("C1: a newer 3.12.11 on NuGet refuses the declared 3.12.10 by name, before the package is asked for",
+              isinstance(e, F.FetchRefused) and "3.12.11" in str(e) and "declared" in str(e)
+              and PKGP12 not in cl.requests, f"{type(e).__name__}: {e} {cl.requests}")
+    cl.close()
+    srv.close(), hop.close()
+    check("C1: the declared bases - py-base-314 (done, unchanged: no flat index) and py-base-312, each with its version "
+          "and its own target directory", F.BASES.get("py-base-314") == {"version": "3.14.4", "dest": "py314", "newest_of": None}
+          and F.BASES.get("py-base-312") == {"version": "3.12.10", "dest": "py312", "newest_of": "3.12"}, str(F.BASES))
 
 print("\n- unpacking tools/ -")
 dest = TMP / "py314"
@@ -180,6 +231,13 @@ Cw = L.Contract(polygon_root=TMP / "pw", runs_root=TMP / "pw" / "runs" / "v3", r
 labels = {s.label for s in F.watch_specs(Cw, L)}
 check("the window's file-system witness watches every idle polygon entry but py314, its install target",
       "polygon_core_bare" in labels and "polygon_py314" not in labels and "repo" in labels, str(sorted(labels)))
+Cw2 = L.Contract(polygon_root=TMP / "pw2", runs_root=TMP / "pw2" / "runs" / "v3", repo_root=ROOT, owner_home=TMP / "o",
+                 secrets_dir=TMP / "s", quarantine_root=TMP / "q", conservation_root=TMP / "cv",
+                 polygon_idle=("core_bare", "py314", "py312"))
+labels12 = {s.label for s in F.watch_specs(Cw2, L, window="py-base-312")}
+check("R5 (the auditor): the py-base-312 window leaves out exactly its own target py312, by name - py314 stays watched",
+      "polygon_py312" not in labels12 and "polygon_py314" in labels12 and "polygon_core_bare" in labels12,
+      str(sorted(labels12)))
 for label, name in (("a .. entry", "tools/../escaped.txt"), ("a drive entry", "tools/C:/escaped.txt"),
                     ("a backslash .. entry", "tools\\..\\escaped.txt")):
     d2 = TMP / f"py314-{abs(hash(name)) % 10000}"
@@ -194,9 +252,9 @@ print("\n- the checks: isolated, no bytecode, a throwaway venv -")
 
 
 class FakeRunner:
-    def __init__(self, *, home_ok=True, write_pyc=False, venv_rc=0):
+    def __init__(self, *, home_ok=True, write_pyc=False, venv_rc=0, version="3.14.4", home=None):
         self.calls = []
-        self.home_ok, self.write_pyc, self.venv_rc = home_ok, write_pyc, venv_rc
+        self.home_ok, self.write_pyc, self.venv_rc, self.version, self.home = home_ok, write_pyc, venv_rc, version, home
 
     def __call__(self, argv, **kw):
         self.calls.append((argv, kw))
@@ -206,14 +264,15 @@ class FakeRunner:
             (tools / "__pycache__" / "x.pyc").write_bytes(b"pyc")
         out = ""
         if argv[3:4] == ["-c"] and "sys.version" in argv[4]:
-            out = "3.14.4 (tags/v3.14.4) [MSC v.1944 64 bit (AMD64)]"
+            out = f"{self.version} (tags/v{self.version}) [MSC v.1944 64 bit (AMD64)]"
         elif argv[3:4] == ["-c"]:
             out = "25.2"
         elif argv[3:5] == ["-m", "venv"]:
             v = Path(argv[-1])
             (v / "Scripts").mkdir(parents=True)
             (v / "Scripts" / "python.exe").write_bytes(b"MZ")
-            (v / "pyvenv.cfg").write_text(f"home = {tools if self.home_ok else TMP}\n", encoding="utf-8")
+            home = self.home if self.home is not None else (tools if self.home_ok else TMP)
+            (v / "pyvenv.cfg").write_text(f"home = {home}\n", encoding="utf-8")
             return subprocess.CompletedProcess(argv, self.venv_rc, "", "")
         return subprocess.CompletedProcess(argv, 0, out, "")
 
@@ -238,6 +297,20 @@ res = F.run_checks(dest, work, runner=FakeRunner(home_ok=False))
 check("a venv whose home is not the base is not ok", res["venv_ok"] is False)
 res = F.run_checks(dest, work, runner=FakeRunner(venv_rc=1))
 check("a venv that fails is not ok", res["venv_ok"] is False)
+alias = TMP / "alias_of_the_base"
+if os.name == "nt":
+    import _winapi  # noqa: E402
+    _winapi.CreateJunction(str(dest), str(alias))
+else:
+    os.symlink(dest, alias, target_is_directory=True)
+res = F.run_checks(dest, work, runner=FakeRunner(home=alias))
+check("M25: a venv whose home names the base another way (a junction here; an 8.3 name on the owner's machine) is ok - "
+      "realpath on both sides", res["venv_ok"] is True and str(alias) != str(dest), str(res))
+os.rmdir(alias) if os.name == "nt" else alias.unlink()
+res = F.run_checks(dest, work, runner=FakeRunner(version="3.12.10"), expected_version="3.12.10")
+check("C1: the base's own version is checked against the declared one - 3.12.10 is 3.12.10", res["version_ok"] is True, str(res))
+res = F.run_checks(dest, work, runner=FakeRunner(version="3.12.10"), expected_version="3.12.1")
+check("C1: ... and 3.12.10 is not 3.12.1 (a prefix is no match)", res["version_ok"] is False, str(res.get("version")))
 
 print("\n- a whole window, fake witnesses -")
 
@@ -317,6 +390,35 @@ else:
                   err is not None and "SHA512" in str(err) and not (C.polygon_root / "py314").exists()
                   and rec["check"]["complete"] is not None, str(err))
         srv.close(), hop.close()
+    C12, base12 = contract("w312")
+    C12 = L.Contract(polygon_root=C12.polygon_root, runs_root=C12.runs_root, repo_root=ROOT, owner_home=base12 / "owner",
+                     secrets_dir=base12 / "secrets", quarantine_root=base12 / "quarantine",
+                     conservation_root=base12 / "conservation", polygon_idle=("py314", "py312"))
+    (base12 / "watched").mkdir(parents=True)
+    srv, hop = served12(["3.12.9", "3.12.10"])
+    nat = L.NativeEgressWitness(sampler=AnySampler(), tick_s=60, jobs=None)
+    try:
+        r12 = F.run_window(C12, L, version=VER12, dest=C12.polygon_root / "py312", work=C12.runs_root / "_tools" / "py-base-312",
+                           via_port=hop.port, window="py-base-312",
+                           client_factory=lambda p: F.NugetClient(p, ssl_context=TRUST), native=nat,
+                           fs=L.FsWitness([L.WatchSpec("watched", base12 / "watched")]),
+                           runner=FakeRunner(version="3.12.10"), hop_sampler=ListenSampler(hop.port, 4343), settle_s=0)
+        e12 = None
+    except Exception as e:  # noqa: BLE001 - a crash FAILs the row by name
+        r12, e12 = {}, e
+    srv.close(), hop.close()
+    wl12 = [json.loads(x) for x in (C12.runs_root / "_launch" / "windows.jsonl").read_bytes().decode().splitlines()] \
+        if (C12.runs_root / "_launch" / "windows.jsonl").exists() else []
+    chk12 = json.loads((C12.runs_root / "_witness" / "py-base-312.json").read_bytes()) \
+        if (C12.runs_root / "_witness" / "py-base-312.json").exists() else {"native": {}}
+    check("C1: a py-base-312 window - START names py-base-312, the hop allowed and revoked under that name, py312 (only) left "
+          "out of the watched set, the newest check and the checks' version_ok in the record, written as py-base-312.json",
+          e12 is None and [w["window"] for w in wl12] == ["py-base-312", "py-base-312"]
+          and chk12["native"].get("allowed_listeners") == [{"reason": "declared hop for window py-base-312", "pid": 4343}]
+          and r12.get("window") == "py-base-312" and r12.get("fs_watched_excludes") == ["polygon_py312"]
+          and (r12.get("newest_check") or {}).get("newest") == "3.12.10" and r12["checks"]["version_ok"] is True
+          and (C12.runs_root / "_tools" / "py-base-312" / "py-base-312.json").is_file()
+          and (C12.polygon_root / "py312" / "python.exe").is_file(), f"{e12} {wl12} {r12.get('fs_watched_excludes')}")
     C, base = contract("taken")
     (C.runs_root / "_tools" / F.WINDOW).mkdir(parents=True)
     try:

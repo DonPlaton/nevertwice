@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""PREREG-V3 R5 and the auditor's amended Q1 (2026-09-26): the py-base-314 bootstrap window.
+"""PREREG-V3 R5 and the auditor's amended Q1 (2026-09-26): the py-base-314 bootstrap window - and, A8 C1 (Q-A8-2), the
+py-base-312 window for the product venvs §2.2 pins to 3.12 (BASES: one entry per declared base).
 
 The launch contract spawns only interpreters under the polygon (B1, R5). So before the first spawn that needs one
 (A2.5), the harness - running OUTSIDE the contract on C:\\Python314 with psutil - fetches CPython 3.14.4 from the
@@ -22,8 +23,14 @@ ordering deviation (bootstrap), not a boundary change.
 * Nothing from the package runs except checks, isolated (-I) and without bytecode (-B, PYTHONDONTWRITEBYTECODE=1):
   its version, ``import ensurepip, venv``, and a throwaway ``-m venv --without-pip`` under <runs>\\_tools, removed
   after. The tools directory's listing must be the same before and after the checks.
+* A8 C1: a base may declare ``newest_of`` ("3.12"): the window then reads NuGet's flat version index first and
+  refuses, before the package is asked for, unless the declared version is the newest stable one of that series (a
+  pre-release does not count) - the pin is declared before the attempt, the window only confirms it. The checks
+  compare the base's own version with the declared one (version_ok). M25: the throwaway venv's home and the base are
+  compared by realpath on both sides (an 8.3 spelling of the same directory is the same base). The watched set leaves
+  out exactly the window's own target, by name (R5).
 
-    python research/v3/fetch_py_base.py [--version 3.14.4]
+    python research/v3/fetch_py_base.py [--window py-base-314|py-base-312] [--version <declared>]
 """
 from __future__ import annotations
 
@@ -48,6 +55,11 @@ NUGET_HOST = "api.nuget.org"
 WINDOW = "py-base-314"
 DEFAULT_VERSION = "3.14.4"
 REGISTRATION = "https://api.nuget.org/v3/registration5-semver1/python/{version}.json"
+FLAT_INDEX = "https://api.nuget.org/v3-flatcontainer/python/index.json"
+#: The declared bases: window -> its version, its directory under the polygon, and the series whose newest stable
+#: version it must be (None: not checked - py-base-314's window is done and stays as it ran).
+BASES = {"py-base-314": {"version": "3.14.4", "dest": "py314", "newest_of": None},
+         "py-base-312": {"version": "3.12.10", "dest": "py312", "newest_of": "3.12"}}
 
 
 class FetchRefused(RuntimeError):
@@ -94,8 +106,34 @@ class NugetClient:
         self.conn.close()
 
 
-def fetch_package(client: NugetClient, version: str) -> tuple[bytes, dict]:
-    """Registration leaf -> catalog entry (SHA512 packageHash) -> package; the bytes must match the hash."""
+def newest_stable(versions: list, series: str) -> str | None:
+    """The newest stable version of ``series`` ("3.12") in NuGet's list - numeric parts only, no pre-release."""
+    best = None
+    for v in versions:
+        parts = str(v).split(".")
+        if len(parts) != 3 or not all(x.isdigit() for x in parts) or ".".join(parts[:2]) != series:   # "-rc1" is no digit
+            continue
+        key = tuple(int(x) for x in parts)
+        if best is None or key > best[0]:
+            best = (key, str(v))
+    return best[1] if best else None
+
+
+def fetch_package(client: NugetClient, version: str, *, newest_of: str | None = None) -> tuple[bytes, dict]:
+    """[With ``newest_of``: NuGet's flat index first - the declared version must be the series' newest stable one.]
+    Registration leaf -> catalog entry (SHA512 packageHash) -> package; the bytes must match the hash."""
+    newest_check = None
+    if newest_of is not None:
+        idx = json.loads(client.get(FLAT_INDEX))
+        versions = idx.get("versions") if isinstance(idx, dict) else None
+        if not isinstance(versions, list):
+            raise FetchRefused("NuGet's flat index lists no versions")
+        newest = newest_stable(versions, newest_of)
+        if newest != version:
+            raise FetchRefused(f"the newest stable python {newest_of}.x on NuGet is {newest}, not the declared {version} - "
+                               f"the pin is declared before the attempt; update it first (Q-A8-2)")
+        newest_check = {"of": newest_of, "declared": version, "newest": newest,
+                        "seen": sorted(str(v) for v in versions if str(v).startswith(newest_of + "."))}
     leaf = json.loads(client.get(REGISTRATION.format(version=version)))
     cat_url, pkg_url = leaf.get("catalogEntry"), leaf.get("packageContent")
     if not isinstance(cat_url, str) or not isinstance(pkg_url, str):
@@ -109,9 +147,12 @@ def fetch_package(client: NugetClient, version: str) -> tuple[bytes, dict]:
     nupkg = client.get(pkg_url)
     if hashlib.sha512(nupkg).digest() != expected:
         raise FetchRefused("the package's SHA512 does not match the catalog's packageHash")
-    return nupkg, {"registration": REGISTRATION.format(version=version), "catalog_entry": cat_url,
-                   "package": pkg_url, "sha512_b64": cat["packageHash"], "sha512_verified": True,
-                   "nupkg_sha256": _sha256(nupkg), "nupkg_bytes": len(nupkg)}
+    info = {"registration": REGISTRATION.format(version=version), "catalog_entry": cat_url,
+            "package": pkg_url, "sha512_b64": cat["packageHash"], "sha512_verified": True,
+            "nupkg_sha256": _sha256(nupkg), "nupkg_bytes": len(nupkg)}
+    if newest_check is not None:
+        info["newest_check"] = newest_check
+    return nupkg, info
 
 
 def unpack_tools(nupkg: bytes, dest: Path) -> list[tuple[str, str]]:
@@ -156,9 +197,10 @@ def _listing(root: Path) -> list[tuple[str, int]]:
     return sorted((p.relative_to(root).as_posix(), p.stat().st_size) for p in root.rglob("*") if p.is_file())
 
 
-def run_checks(tools: Path, work: Path, *, runner=subprocess.run) -> dict:
+def run_checks(tools: Path, work: Path, *, runner=subprocess.run, expected_version: str | None = None) -> dict:
     """The only things run from the package: its version, the two imports, a throwaway venv. Isolated, no bytecode;
-    the tools directory must list the same before and after."""
+    the tools directory must list the same before and after. With ``expected_version``, version_ok says whether the
+    base reports exactly that version (C1)."""
     py = tools / "python.exe"
     sysroot = os.environ.get("SystemRoot", r"C:\Windows")
     env = {"SystemRoot": sysroot, "PATH": str(Path(sysroot) / "System32"), "PYTHONDONTWRITEBYTECODE": "1",
@@ -173,6 +215,8 @@ def run_checks(tools: Path, work: Path, *, runner=subprocess.run) -> dict:
 
     r = run(["-c", "import sys; print(sys.version)"])
     out["version"] = (r.stdout or "").strip() if r.returncode == 0 else None
+    out["version_ok"] = (None if expected_version is None
+                         else bool(out["version"]) and out["version"].split()[0] == expected_version)
     r = run(["-c", "import ensurepip, venv; print(ensurepip.version())"])
     out["ensurepip_venv_import"] = r.returncode == 0
     out["bundled_pip"] = (r.stdout or "").strip() if r.returncode == 0 else None
@@ -185,7 +229,8 @@ def run_checks(tools: Path, work: Path, *, runner=subprocess.run) -> dict:
             if sep and k.strip().lower() == "home":
                 home = v.strip()
     out["venv_ok"] = (r.returncode == 0 and (venv_dir / "Scripts" / "python.exe").is_file()
-                      and home is not None and os.path.normcase(os.path.abspath(home)) == os.path.normcase(str(tools)))
+                      and home is not None                  # M25: realpath on both sides (8.3 names, junctions)
+                      and os.path.normcase(os.path.realpath(home)) == os.path.normcase(os.path.realpath(tools)))
     out["venv_stderr_tail"] = (r.stderr or "")[-300:] if r.returncode != 0 else ""
     shutil.rmtree(venv_dir, ignore_errors=True)
     out["venvcheck_removed"] = not venv_dir.exists()
@@ -193,19 +238,24 @@ def run_checks(tools: Path, work: Path, *, runner=subprocess.run) -> dict:
     return out
 
 
-def watch_specs(c, launch) -> list:
-    """The fixed watched set minus py314, the window's install target (it joins the set after the window)."""
-    return [s for s in launch.watched_set(c) if s.label != "polygon_py314"]
+def watch_specs(c, launch, window: str = WINDOW) -> list:
+    """The fixed watched set minus exactly the window's own install target, by name (R5; it joins the set after)."""
+    target = "polygon_" + BASES[window]["dest"]
+    return [s for s in launch.watched_set(c) if s.label != target]
 
 
-def run_window(c, launch, *, version: str, dest: Path, work: Path, via_port: int, client_factory=NugetClient,
-               native=None, fs=None, runner=subprocess.run, hop_sampler=None, settle_s: float = 1.0) -> dict:
-    """The whole window, self-witnessed. Returns the record (also written to ``work``/py-base-314.json)."""
+def run_window(c, launch, *, version: str, dest: Path, work: Path, via_port: int, window: str = WINDOW,
+               client_factory=NugetClient, native=None, fs=None, runner=subprocess.run, hop_sampler=None,
+               settle_s: float = 1.0) -> dict:
+    """The whole window, self-witnessed. Returns the record (also written to ``work``/<window>.json)."""
+    if window not in BASES:
+        raise FetchRefused(f"{window!r} is no declared base window ({sorted(BASES)})")
+    WINDOW = window                                   # noqa: N806 - the window this run is, by its declared name
     L = launch
     if work.exists():
         raise FetchRefused("the work directory already exists: pick a fresh one")
     work.mkdir(parents=True)
-    specs = watch_specs(c, L)
+    specs = watch_specs(c, L, window)
     W = L.Witnesses(c, native=native if native is not None else L.NativeEgressWitness(jobs=None),
                     fs=fs if fs is not None else L.FsWitness(specs))
     if not W.native.register(os.getpid(), label="harness-" + WINDOW):
@@ -223,7 +273,7 @@ def run_window(c, launch, *, version: str, dest: Path, work: Path, via_port: int
             record["hop_pid"] = hop
             client = client_factory(via_port)
             try:
-                nupkg, info = fetch_package(client, version)
+                nupkg, info = fetch_package(client, version, newest_of=BASES[window]["newest_of"])
                 record.update(info)
                 record["peer"] = client.peer
                 record["requests"] = list(client.requests)
@@ -236,7 +286,7 @@ def run_window(c, launch, *, version: str, dest: Path, work: Path, via_port: int
         record["files"] = len(files)
         record["python_exe_sha256"] = dict(files).get("python.exe")
         record["tools_tree_sha256"] = tree_digest(files)
-        record["checks"] = run_checks(dest, work, runner=runner)
+        record["checks"] = run_checks(dest, work, runner=runner, expected_version=version)
     finally:
         chk = W.end_check(WINDOW)
         record["check"] = {"complete": chk.get("complete"), "native_hits": (chk.get("native") or {}).get("hits"),
@@ -258,21 +308,25 @@ def _load_launch():
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(description="the py-base-314 bootstrap window (R5, amended Q1)")
-    ap.add_argument("--version", default=DEFAULT_VERSION)
+    ap = argparse.ArgumentParser(description="a py-base bootstrap window (R5, amended Q1; A8 C1)")
+    ap.add_argument("--window", default=WINDOW, choices=sorted(BASES))
+    ap.add_argument("--version", default=None, help="the declared version (default: the base's own)")
     args = ap.parse_args(argv)
+    base = BASES[args.window]
+    version = args.version or base["version"]
     L = _load_launch()
     c = L.Contract.default()
     port = L.network_via_port(c)
     if port is None:
         print("no declared hop: <runs>\\_config\\network.json is missing", file=sys.stderr)
         return 2
-    rec = run_window(c, L, version=args.version, dest=c.polygon_root / "py314",
-                     work=c.runs_root / "_tools" / WINDOW, via_port=port)
+    rec = run_window(c, L, version=version, dest=c.polygon_root / base["dest"],
+                     work=c.runs_root / "_tools" / args.window, via_port=port, window=args.window)
     keep = ("sha512_verified", "nupkg_sha256", "python_exe_sha256", "tools_tree_sha256", "files", "peer", "checks",
             "check")
     print(json.dumps({k: rec.get(k) for k in keep}, indent=1))
     ok = (rec.get("sha512_verified") and rec["checks"]["venv_ok"] and rec["checks"]["tools_unchanged_by_checks"]
+          and rec["checks"]["version_ok"]
           and rec["check"]["complete"] and rec["check"]["native_hits"] == 0 and rec["check"]["fs_hits"] == 0)
     return 0 if ok else 1
 
