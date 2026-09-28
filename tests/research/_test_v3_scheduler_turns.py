@@ -739,6 +739,8 @@ try:
           f"{q['reads']} {vc.sleeps} {q.get('aborted')}")
     check("the re-ask pauses are not the unit's active time - 2 x 5 virtual min under the 600 s ceiling abort nothing (D1)",
           q["aborted"] is None and "UNIT-ABORT" not in (TMP / "STATUS9").read_text(encoding="utf-8"))
+    check("B-PAUSE: ... and the recorded active seconds leave them out too - END's wall and the pilot's median are D1's",
+          q.get("active_s", 1e9) < 300, str(q.get("active_s")))
     calls = {"n": 0}
 
     def flaky_answer(arm, run, unit, req, got):
@@ -784,6 +786,9 @@ try:
             if op == "write" and self.script.get("died"):
                 self.arm.poisoned = "died"
                 raise B_.ArmDied("write: the child's stdout closed (exit None)")
+            if op == "read" and self.script.get("read_timeout"):
+                self.arm.poisoned = "timeout"
+                raise B_.ArmTimeout("read: no answer within the unit's ceiling")
             return {"write": {"op_id": (f.get("item") or {}).get("item_id")}, "end_write": {"footprint": 1, "seal": None},
                     "read": {"items": []}, "counters": {}}[op]
 
@@ -1215,6 +1220,143 @@ try:
     check("O1: an arm with no per-unit values and no exception - its declared values as they are, no argv exception",
           cs3.specs and cs3.specs[0][1].declared == {"CONST": "1"} and cs3.specs[0][1].argv_exception is None,
           str(cs3.specs))
+
+    print("\n- B-GATE-D1: a wait at the incident gate is no unit's active time; B-OPS: every op before the first spawn -")
+    vcg = VirtualClock()
+
+    class SlowGate:
+        """Refuses once while 700 virtual seconds pass - an incident longer than a scored unit's 600 s ceiling."""
+
+        def __init__(self):
+            self.asked = 0
+
+        def admits_new_unit(self):
+            self.asked += 1
+            if self.asked == 1:
+                vcg.offset += 700.0
+                return False
+            return True
+
+    for sub in ("live", "passed", "seen", "ops", "hb"):
+        shutil.rmtree(SHARED / sub, ignore_errors=True)
+    (SHARED / "live").mkdir()
+    st28 = SL.StatusLog(TMP / "STATUS28", now=vcg.utc, local_tz=dt.timezone.utc)
+    st28.campaign_start(anchor="c" * 40, prereg="d" * 64, freeze="e" * 64)
+    gate28 = SlowGate()
+    s28 = SC.Scheduler(C, PC12(), st28, L, vcg, None, tag="scored", witnesses=W12(), parent_env=dict(os.environ),
+                       catcher_url="http://127.0.0.1:47001", hooks=SimpleNamespace(gate=gate28),
+                       home_canaries=L.Canaries.generate())
+    sp28 = SC.StandPlan(stand="SGW", runs=("r1",), launchers={"a1": launcher("a1", expect=1)}, campaign_seed=20260927,
+                        unit_tokens={"g1": 1000}, medians={("a1", "SGW"): 0.0001}, write_ops=lambda a, r, u: OPS(r, u),
+                        read_plan=lambda a, u: [SC.ReadReq(qid=f"{u}-q1", query="x")],
+                        answer=lambda *a_: {"sha256": "6" * 64}, embed_tag=None, commit="c" * 40, dirty=False)
+    st28.stand("SGW", "START", model="m", changelog="2026-09-10", order=1)
+    res28, e28 = attempt(lambda: s28.run_block(sp28, SC.BlockPlan(block="b01", units=("g1",))))
+    w28 = ((res28 or {}).get("write") or {}).get("a1", {}).get(("r1", "g1"))
+    q28 = ((res28 or {}).get("questions") or {}).get("a1", {}).get(("r1", "g1")) or {}
+    check("B-GATE-D1: a scored unit that waited 700 virtual s at the incident gate is not killed by its 600 s ceiling "
+          "(an exogenous wait is never the arm's UNIT-ABORT), and neither stage counts the wait in its active seconds",
+          e28 is None and gate28.asked >= 2 and w28 is not None and w28.aborted is None and w28.active_s < 600
+          and q28.get("aborted") is None and q28.get("active_s", 1e9) < 600
+          and "UNIT-ABORT" not in (TMP / "STATUS28").read_text(encoding="utf-8"),
+          f"{e28!r} asked {gate28.asked} {w28} {q28.get('aborted')} {q28.get('active_s')}")
+
+    def ops_refusing(r, u):
+        if u == "p2":
+            raise ValueError("the plan refuses p2's ops (a speaker outside the sample's two)")
+        return OPS(r, u)
+
+    n_sp = len(L.spawns_log(C).read_text(encoding="utf-8").splitlines())
+    _r, e_ops = attempt(lambda: s28.write_turn(launcher("pm", expect=1, store="memory"), stand="SGW", runs=["r1"],
+                                               units=["p1", "p2"], ops_for=ops_refusing,
+                                               ceilings={"p1": 60.0, "p2": 60.0}, status_ids={"r1": "SGW/b01/r1/pm"}))
+    new_sp = L.spawns_log(C).read_text(encoding="utf-8").splitlines()[n_sp:]
+    check("B-OPS: a plan that refuses one unit's ops refuses the arm's write turn before any child is spawned - a "
+          "memory-store writer spawned before it outlived the failed turn", isinstance(e_ops, ValueError)
+          and "p2" in str(e_ops) and new_sp == [], f"{e_ops!r} {len(new_sp)} spawn(s)")
+
+    print("\n- B-RC at the close, B-SIGRC, the write error in the run record, a refused STAND END, a judge's partial -")
+    for sub in ("live", "passed", "seen", "ops", "hb"):
+        shutil.rmtree(SHARED / sub, ignore_errors=True)
+    (SHARED / "live").mkdir()
+    st29 = SL.StatusLog(TMP / "STATUS29", local_tz=dt.timezone.utc)
+    s29 = SC.Scheduler(C, None, st29, L, Clock(), None, tag="smoke", witnesses=SimpleNamespace(native=StubNative()),
+                       parent_env=dict(os.environ), catcher_url="http://127.0.0.1:47001")
+    st29.stand("SBY", "START", model="m", changelog="2026-09-10", order=1)
+    o29, sd29 = SC.arm_order(["a1"], campaign_seed=7, stand="SBY", block="b01")
+    st29.block_start("SBY", "b01", units=["m1", "s1"], arm_order=o29, seed=sd29)
+    sid29 = st29.start("SBY", "b01", "r1", "a1", pid=os.getpid(), tag="smoke")
+    r29, e29 = attempt(lambda: s29.write_turn(launcher("a1", expect=1, knobs={("r1", "m1"): {"mute_bye": True}}),
+                                               stand="SBY", runs=["r1"], units=["m1"], ops_for=OPS,
+                                               ceilings={"m1": 5.0}, status_ids={"r1": sid29}))
+    m29 = (r29 or {}).get(("r1", "m1"))
+    check("B-RC (bye): a child that never answers bye within its ceiling is UNIT-ABORT reason=ceiling with its tree "
+          "killed - never the root's kill code passed off as the child's own exit code",
+          e29 is None and m29 is not None and m29.aborted == "ceiling" and m29.rc is None and m29.signal == "SIGKILL"
+          and any(" UNIT-ABORT SBY/b01/r1/a1/m1 reason=ceiling " in x for x in aborts(TMP / "STATUS29")),
+          f"{e29!r} {m29}")
+    fl29 = FakeLauncher("a1", scripts={("write", "r1", "s1"): {"died": True, "exit_rc": -11}})
+    r29s, e29s = attempt(lambda: s29.write_turn(fl29, stand="SBY", runs=["r1"], units=["s1"], ops_for=OPS,
+                                                 ceilings={"s1": 60.0}, status_ids={"r1": sid29}))
+    s29r = (r29s or {}).get(("r1", "s1"))
+    check("B-SIGRC: a child that died by signal 11 (POSIX returncode -11) is UNIT-ABORT crash signal=SIGSEGV - never "
+          "rc=-11, an exit code that never was", e29s is None and s29r is not None and s29r.rc is None
+          and s29r.signal == "SIGSEGV"
+          and any(" UNIT-ABORT SBY/b01/r1/a1/s1 reason=crash signal=SIGSEGV " in x for x in aborts(TMP / "STATUS29")),
+          f"{e29s!r} {s29r} {aborts(TMP / 'STATUS29')}")
+    st29.end(sid29, rc=0, wall_s=1.0, units=2, out="runs/sby.json")
+    st29.block_end("SBY", "b01")
+    st29.stand("SBY", "END", model="m", changelog="2026-09-10")
+    e31, _l31, _st31 = block_world("STATUS31", {"a1": launcher("a1", expect=1, knobs={("r1", "y1"): {"bad_hello": True}})},
+                                   stand="SE")
+    rr31 = C.runs_root / "SE" / "_records" / "b01" / "r1.a1.json"
+    w31 = (json.loads(rr31.read_text(encoding="utf-8"))["units"]["y1"]["write"] if rr31.is_file() else {})
+    check("the run record keeps an aborted write stage's error - why it ended is in no STATUS line",
+          e31 is None and w31.get("aborted") == "crash" and "hello" in (w31.get("error") or ""), f"{e31!r} {w31}")
+    _res32, e32, text32, _j32 = stand_run("smoke", "SC6", "STATUS32", changelogs={"end": "2026-09-10 (v1.2)"})
+    check("B-OPEN: a STAND END that STATUS refuses (a change log with a space) still closes the stand - STAND END "
+          "model=unread changelog=unread - and the refusal goes on", e32 is not None
+          and " STAND SC6 END model=unread changelog=unread " in text32
+          and SL.self_check(TMP / "STATUS32") == [], f"{e32!r} {text32[-200:]}")
+    s33, sp33, _judges33, ev33, gpu33, st33 = stand_world("scored", stand="SJ2", sfile="STATUS33")
+    st33.campaign_start(anchor="c" * 40, prereg="d" * 64, freeze="e" * 64)
+
+    class LeakyJudge(Judge):
+        def run(self):
+            super().run()
+            gpu33.resident.add("leftover:7b")              # a judge that leaves a second model behind
+
+    lj = LeakyJudge("J9", "gpt-oss:20b", gpu33, ev33, TMP / "STATUS33", "SJ2")
+    _r33, e33 = attempt(lambda: s33.run_stand(sp33, [SC.BlockPlan(block="b01", units=("w1",))], judges=[lj], order=8))
+    part33 = getattr(e33, "partial", None) or {}
+    check("a judge's failure after STAND END (the GPU still holds a model) carries what the stand measured, as B-CL "
+          "and B-TE do", isinstance(e33, SC.SchedulerError) and "still holds" in str(e33)
+          and part33.get("stand") == "SJ2" and len(part33.get("blocks") or []) == 1, f"{e33!r} {sorted(part33)}")
+    s34, sp34, judges34, _ev34, _gpu34, st34 = stand_world("scored", stand="SPF", sfile="STATUS34")
+    st34.campaign_start(anchor="c" * 40, prereg="d" * 64, freeze="e" * 64)
+    s34.hooks.preflight = None                              # hooks without a balance preflight
+    _r34, e34 = attempt(lambda: s34.run_stand(sp34, [SC.BlockPlan(block="b01", units=("w1",))], judges=judges34,
+                                              order=9))
+    text34 = (TMP / "STATUS34").read_text(encoding="utf-8") if (TMP / "STATUS34").exists() else ""
+    check("B-PREFLIGHT: a scored stand whose hooks have no balance preflight is refused before STAND START - the 402 "
+          "halt and the 2x balance rule are never skipped silently", isinstance(e34, SC.SchedulerError)
+          and "preflight" in str(e34) and "STAND SPF START" not in text34, f"{e34!r}")
+    st35 = SL.StatusLog(TMP / "STATUS35", local_tz=dt.timezone.utc)
+    s35 = SC.Scheduler(C, PC12(), st35, L, Clock(), None, tag="smoke", witnesses=W12(), parent_env=dict(os.environ),
+                       catcher_url="http://127.0.0.1:47001")
+    fl35 = FakeLauncher("a1", scripts={("read", "r1", "c1"): {"read_timeout": True}})
+    sp35 = SC.StandPlan(stand="SCT", runs=("r1",), launchers={"a1": fl35}, campaign_seed=7, unit_tokens={"c1": 1000},
+                        medians={}, write_ops=lambda a, r, u: OPS(r, u),
+                        read_plan=lambda a, u: [SC.ReadReq(qid=f"{u}-q1", query="x"), SC.ReadReq(qid=f"{u}-q2", query="y")],
+                        answer=lambda *a_: {"sha256": "7" * 64}, embed_tag=None, commit="c" * 40, dirty=False)
+    st35.stand("SCT", "START", model="m", changelog="2026-09-10", order=1)
+    res35, e35 = attempt(lambda: s35.run_block(sp35, SC.BlockPlan(block="b01", units=("c1",))))
+    q35 = ((res35 or {}).get("questions") or {}).get("a1", {}).get(("r1", "c1")) or {}
+    cut35 = [r for r in q35.get("reads") or [] if r.get("cut")]
+    check("B-CUT: the read the unit's ceiling cut keeps its row - qid, t0, t1 at the abort, cut: true - so R9's read "
+          "windows cover a product call made during it (it is no background write)", e35 is None
+          and q35.get("aborted") == "ceiling" and len(cut35) == 1 and cut35[0]["qid"] == "c1-q1"
+          and bool(cut35[0].get("t0")) and bool(cut35[0].get("t1")), f"{e35!r} {q35}")
 finally:
     shutil.rmtree(TMP, ignore_errors=True)
 
