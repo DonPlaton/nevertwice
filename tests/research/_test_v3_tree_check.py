@@ -110,6 +110,11 @@ check("an untracked path under research/ outside results/: dirty (P0e)", not v("
 check("an untracked path outside research/ is recorded, not dirty (D10 a)", v("? notes.txt")["clean"] is True
       and v("? notes.txt")["untracked"] == ["notes.txt"])
 check("an ignored path under research/ is not dirty (it is ignored)", v("! research/v3/__pycache__/x.cpython-314.pyc")["clean"])
+nest = v("? research/v3/.claude/settings.local.json")
+check("B-CLAUDE-NEST: a .claude/settings.local.json below the root (a session started in research/v3) is recorded "
+      "by name and never fails - the owner's global ignore that hides it is not read here (D10)", nest["clean"] is True
+      and nest["claude"] == ["research/v3/.claude/settings.local.json"] and nest["untracked"] == [], str(nest))
+check("... while anything else under research/ beside it still does", not v("? research/v3/.claude/other.json")["clean"])
 
 print("\n- the heldout name check (§1.3) -")
 for label, entry in (("codesess_code_heldout_ cache", "! research/codesess_code_heldout_42.json"),

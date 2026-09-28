@@ -9,8 +9,9 @@ auditor's Q10 and D10).
 * parse: porcelain v2, NUL-separated - the head (# branch.oid), tracked changes (1, 2 with its original path, u),
   untracked (?) and ignored (!) paths; any other entry refuses by name.
 * verdict (D10 a): dirty = HEAD is not the anchor, or a tracked change anywhere, or an untracked path under research/
-  outside research/v3/results/ (P0e); .claude/ entries are recorded by name (the owner's global ignore is not read in
-  the check's environment, so .claude/settings.local.json shows as untracked) and never fail; the ignored listing is
+  outside research/v3/results/ (P0e); .claude/ entries, and a .claude/settings.local.json in any directory below the
+  root (B-CLAUDE-NEST), are recorded by name (the owner's global ignore is not read in the check's environment, so
+  such a file shows as untracked) and never fail; the ignored listing is
   recorded; the name check (§1.3): no untracked or ignored path matching codesess_code_heldout_* or *heldout* (any
   case), except the auditor's process documents, the public-heldout run logs, and __pycache__ bytecode of a TRACKED
   module - a module file on disk that the listing names neither untracked nor ignored.
@@ -100,6 +101,13 @@ def _tracked_bytecode(path: str, listed: set[str], exists: Callable[[str], bool]
     return exists(module) and module not in listed
 
 
+def _claude_local(path: str) -> bool:
+    """D10: Claude Code's own files - the root .claude/, and a .claude/settings.local.json in any directory below it
+    (B-CLAUDE-NEST: a session started in research/v3 leaves one there, and the owner's global ignore that hides it is
+    not read in the check's environment) - recorded by name, never a problem."""
+    return path.startswith(".claude/") or path.endswith("/.claude/settings.local.json")
+
+
 def verdict(st: TreeState, *, anchor: str, exists: Callable[[str], bool]) -> dict:
     """D10 (a). ``exists(path)`` says whether a repository-relative path is on disk."""
     problems: list[str] = []
@@ -107,7 +115,8 @@ def verdict(st: TreeState, *, anchor: str, exists: Callable[[str], bool]) -> dic
         problems.append(f"HEAD {st.head} is not the anchor {anchor}")
     if st.tracked:
         problems.append(f"{len(st.tracked)} tracked file(s) changed, first {st.tracked[0][1]!r}")
-    research = [p for p in st.untracked if p.startswith("research/") and not p.startswith(RESULTS)]
+    research = [p for p in st.untracked if p.startswith("research/") and not p.startswith(RESULTS)
+                and not _claude_local(p)]
     if research:
         problems.append(f"{len(research)} untracked path(s) under research/ outside {RESULTS}, first {research[0]!r} (P0e)")
     listed = set(st.untracked) | set(st.ignored)
@@ -116,5 +125,5 @@ def verdict(st: TreeState, *, anchor: str, exists: Callable[[str], bool]) -> dic
     if heldout:
         problems.append(f"{len(heldout)} heldout-named path(s) among untracked and ignored files, first {heldout[0]!r}")
     return {"clean": not problems, "problems": problems, "head": st.head, "heldout": heldout,
-            "claude": [p for p in st.untracked + st.ignored if p.startswith(".claude/")],
-            "untracked": [p for p in st.untracked if not p.startswith(".claude/")], "ignored": list(st.ignored)}
+            "claude": [p for p in st.untracked + st.ignored if _claude_local(p)],
+            "untracked": [p for p in st.untracked if not _claude_local(p)], "ignored": list(st.ignored)}
