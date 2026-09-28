@@ -6,13 +6,16 @@ sends the probe and the canary, writes the INCIDENT lines, and halts (rev1 §4.5
   poll, and a U+2028 inside a JSON string never splits a record (bytes are split at b"\\n", nothing else). A line that
   is not a JSON object, or a call without an arm or a readable time, leaves the gate blind to it: a named problem AND
   halted="harness-error" (the auditor's R-GATE-P) - no new unit starts on a gate that cannot see. A crashed poll is the
-  same.
+  same; the offset moves line by line, after each line is handled, so a poll that fails half-way leaves the rest of
+  its batch for the next one (B-GATE-BATCH), and an incident record that cannot be written is named, never raised
+  past its STATUS line (B-GATE-REC).
 * feeding: every record of an arm is observed at its t1 (t0 when it has none); the scheduler's own records are not -
   the driver feeds its probe and canary outcomes itself (IncidentGate.probe/canary), so reading them back would count
   them twice.
 * halts: a 401, 402 or 403 from upstream opens INCIDENT START kind=<status> for its arm and halts - no new unit starts
   again in this process (a 402 waits for the owner, §4.5); a halt has no END. The halt is read before the call's time:
-  a halting call whose time does not read still halts (R-GATE-T).
+  a halting call whose time does not read still halts (R-GATE-T) - and before the scheduler's own records are skipped,
+  and on the probe's and the canary's own answers (B-HALT-SCHED).
 * an incident (Q-12-9 O-a): when the gate opens one, INCIDENT START names the arms in its window and a kind - the most
   frequent failure class there (5xx, 429, timeout for no status or an incomplete answer), a tie going to the earlier
   class in status_log.INCIDENT_KINDS; its END repeats them (STATUS refuses anything else). The mix never hides: the
@@ -87,11 +90,12 @@ class GateDriver:
     def __init__(self, gate: Any, *, calls_path: str | Path, status: Any, send_probe: Callable[[], Mapping[str, Any]],
                  id_prefix: str, expected_models: Iterable[str] = (), clock: Callable[[], float] = time.time,
                  poll_s: float = 1.0, record: Callable[[dict], None] | None = None) -> None:
-        if not [m for m in expected_models if isinstance(m, str) and m]:
+        models = {m for m in expected_models if isinstance(m, str) and m}   # read once: a generator is one pass
+        if not models:
             raise GateError("no expected model: model-event would never fire (R-GATE-M) - pass the model D8's probe named")
         self.gate, self.calls_path, self.status, self.record = gate, Path(calls_path), status, record
         self.send_probe, self.id_prefix, self.clock, self.poll_s = send_probe, id_prefix, clock, poll_s
-        self.models = set(expected_models)
+        self.models = models
         self.offset = 0
         self.halted: str | None = None
         self.problems: list[str] = []
@@ -123,8 +127,7 @@ class GateDriver:
         inc = {"id": self._next_id(), "arms": sorted(set(arms)), "kind": kind}
         self.status.incident(inc["id"], "START", arms=inc["arms"], kind=kind)
         self.incidents.append(dict(inc, state="open", window=window))
-        if self.record is not None:
-            self.record({"event": "INCIDENT START", **inc, "window": window, "t": self.clock()})
+        self._record({"event": "INCIDENT START", **inc, "window": window, "t": self.clock()})
         return inc
 
     def _end(self, inc: Mapping[str, Any]) -> None:
@@ -132,11 +135,25 @@ class GateDriver:
         for x in self.incidents:
             if x["id"] == inc["id"]:
                 x["state"] = "closed"
-        if self.record is not None:
-            self.record({"event": "INCIDENT END", "id": inc["id"], "arms": inc["arms"], "kind": inc["kind"],
-                         "t": self.clock()})
+        self._record({"event": "INCIDENT END", "id": inc["id"], "arms": inc["arms"], "kind": inc["kind"],
+                      "t": self.clock()})
 
-    def _read(self) -> list[dict]:
+    def _record(self, rec: dict) -> None:
+        """B-GATE-REC: the harness's incident record, after the STATUS line - a record that cannot be written is named
+        and halts harness-error, never raised: raised, the STATUS line stood while the driver never learned of it, and
+        the next poll wrote a second START for the same event (or re-sent an END that STATUS then refused for good)."""
+        if self.record is None:
+            return
+        try:
+            self.record(rec)
+        except Exception as e:  # noqa: BLE001 - named, and the gate then refuses new units
+            self._blind(f"the incident record ({rec.get('event')} {rec.get('id')}) could not be written: "
+                        f"{type(e).__name__}: {e}")
+
+    def _lines(self) -> list[tuple[bytes, int]]:
+        """Every whole LF-terminated line after self.offset, each with the byte offset just past it. The offset is
+        advanced by poll() line by line, after each is handled (B-GATE-BATCH: a poll that fails half-way through a
+        batch leaves the rest of it for the next poll, never skipped for good)."""
         try:
             with open(self.calls_path, "rb") as f:
                 f.seek(self.offset)
@@ -146,21 +163,25 @@ class GateDriver:
         end = data.rfind(b"\n")
         if end < 0:
             return []                                    # no whole line yet
-        self.offset += end + 1
-        out = []
+        out, pos = [], self.offset
         for raw in data[:end].split(b"\n"):
-            if not raw.strip():
-                continue
-            try:
-                rec = json.loads(raw.decode("utf-8"))
-            except (UnicodeDecodeError, ValueError):
-                self._blind(f"calls.jsonl: a line at or before byte {self.offset} is not JSON")
-                continue
-            if not isinstance(rec, dict):
-                self._blind(f"calls.jsonl: a line at or before byte {self.offset} is not an object")
-                continue
-            out.append(rec)
+            pos += len(raw) + 1
+            out.append((raw, pos))
         return out
+
+    def _parse(self, raw: bytes, pos: int) -> dict | None:
+        """A line's record, or None - a blank line, or one the gate cannot read (named, R-GATE-P)."""
+        if not raw.strip():
+            return None
+        try:
+            rec = json.loads(raw.decode("utf-8"))
+        except (UnicodeDecodeError, ValueError):
+            self._blind(f"calls.jsonl: the line ending at byte {pos} is not JSON")
+            return None
+        if not isinstance(rec, dict):
+            self._blind(f"calls.jsonl: the line ending at byte {pos} is not an object")
+            return None
+        return rec
 
     def poll(self) -> None:
         I = _incidents()
@@ -168,41 +189,62 @@ class GateDriver:
             if self._model_event is not None:            # Q-12-8: a point event ends at the next poll
                 self._end(self._model_event)
                 self._model_event = None
-            for rec in self._read():
-                arm = rec.get("arm")
-                if not isinstance(arm, str) or not arm:
-                    self._blind("calls.jsonl: a call without an arm")
-                    continue
-                if arm == I.PROBE_ARM:
-                    continue
-                halt = I.halt_kind(rec.get("status"))     # R-GATE-T: before the time - a halt halts, readable or not
-                if halt is not None and self.halted in (None, "harness-error"):
-                    self._start([arm], halt)
-                    self.halted = halt
-                t = _epoch(rec)
-                if t is None:
-                    self._blind(f"a call of {arm} has no readable time")
-                    continue
-                model = rec.get("response_model")
-                if isinstance(model, str) and model and self.models and model not in self.models \
-                        and self._model_event is None:
-                    self._model_event = self._start([arm], "model-event")
-                    self.models.add(model)
-                if I.is_upstream_failure(rec):
-                    self._fails.append((t, arm, failure_kind(rec)))
-                self.gate.observe(arm, t, rec)
-                self._events()
+            for raw, pos in self._lines():
+                rec = self._parse(raw, pos)
+                if rec is not None:
+                    self._observe(I, rec)
+                self.offset = pos
             now = self.clock()
             if self.gate.probe_due(now):
                 call = dict(self.send_probe())
-                if I.is_upstream_failure(call):
-                    self._fails.append((now, I.PROBE_ARM, failure_kind(call)))
-                self.gate.probe(now, call)
-                self._events()
+                if not self._probe_halts(call):
+                    if I.is_upstream_failure(call):
+                        self._fails.append((now, I.PROBE_ARM, failure_kind(call)))
+                    self.gate.probe(now, call)
+                    self._events()
+            now = self.clock()                            # the canary's own time - never the probe's (B-CANARY-T)
             if self.gate.canary_due(now):
                 call = dict(self.send_probe())
-                self.gate.canary(now, not I.is_upstream_failure(call))
-                self._events()
+                if not self._probe_halts(call):
+                    self.gate.canary(now, not I.is_upstream_failure(call))
+                    self._events()
+
+    def _observe(self, I: Any, rec: Mapping[str, Any]) -> None:
+        """One call record: its halt, its model event, its failure, fed to the gate (see the module docstring)."""
+        arm = rec.get("arm")
+        if not isinstance(arm, str) or not arm:
+            self._blind("calls.jsonl: a call without an arm")
+            return
+        halt = I.halt_kind(rec.get("status"))             # R-GATE-T: before the time - a halt halts, readable or not
+        if halt is not None and self.halted in (None, "harness-error"):
+            self._start([arm], halt)                      # B-HALT-SCHED: the scheduler's own port halts too (its
+            self.halted = halt                            # probe, canary, model probe) - checked before its skip
+        if arm == I.PROBE_ARM:
+            return
+        t = _epoch(rec)
+        if t is None:
+            self._blind(f"a call of {arm} has no readable time")
+            return
+        model = rec.get("response_model")
+        if isinstance(model, str) and model and model not in self.models and self._model_event is None:
+            self._model_event = self._start([arm], "model-event")
+            self.models.add(model)
+        if I.is_upstream_failure(rec):
+            self._fails.append((t, arm, failure_kind(rec)))
+        self.gate.observe(arm, t, rec)
+        self._events()
+
+    def _probe_halts(self, call: Mapping[str, Any]) -> bool:
+        """B-HALT-SCHED: a 401, 402 or 403 answered to the scheduler's own probe or canary halts at once (§4.5) - while
+        an incident holds every unit, those are the only calls, and read as a failed canary a 402 kept the incident
+        open for good with no halt said. The call's record in calls.jsonl then finds the gate halted."""
+        halt = _incidents().halt_kind(call.get("status"))
+        if halt is None:
+            return False
+        if self.halted in (None, "harness-error"):
+            self._start([_incidents().PROBE_ARM], halt)
+            self.halted = halt
+        return True
 
     def _events(self) -> None:
         I = _incidents()

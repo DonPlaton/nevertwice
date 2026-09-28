@@ -326,6 +326,85 @@ try:
     w.write(rec("a1", T0, status=500))
     w.d.stop()
     check("stop() reads the last whole lines", len(w.d.gate.failures) == 1, str(len(w.d.gate.failures)))
+
+    print("\n- B-HALT-SCHED, B-CANARY-T, a one-pass expected_models -")
+    w = World("canary402", probes=[{"status": 402, "complete": False}])
+    w.write(*[rec("a1", T0 + i, status=503) for i in range(3)], *[rec("a2", T0 + 3 + i, status=502) for i in range(2)])
+    w.now[0] = T0 + 10
+    w.poll()                                               # the incident opens; its first canary is answered 402
+    kinds = [kv(x, "kind") for x in w.lines(" START ")]
+    check("B-HALT-SCHED: a 402 answered to the incident's canary halts (INCIDENT START kind=402) - while the incident "
+          "holds every unit the canary is the only call, and as a failed canary the 402 kept the incident open for good",
+          w.d.halted == "402" and kinds == ["5xx", "402"] and w.d.admits_new_unit() is False and not w.errors,
+          f"{w.d.halted} {kinds} {w.errors}")
+    w = World("sched402")
+    w.write(rec("scheduler", T0, status=402))
+    w.poll()
+    check("B-HALT-SCHED: a 402 in the scheduler port's own record (its model probe, a probe) halts too - the halt is "
+          "read before the scheduler's records are skipped, and none of them is fed as a failure",
+          w.d.halted == "402" and [kv(x, "kind") for x in w.lines(" START ")] == ["402"]
+          and len(w.d.gate.failures) == 0, f"{w.d.halted} {w.lines(' START ')}")
+    w = World("canaryt")
+    w.write(*[rec("a1", T0 + i, status=500) for i in range(5)])
+    sent_at: list = []
+
+    def slow_probe():                                      # the probe and each canary take 50 s of the gate's clock
+        sent_at.append(w.now[0])
+        w.now[0] += 50
+        return {"status": 503, "complete": True} if len(sent_at) == 1 else {"status": 200, "complete": True}
+    w.d.send_probe = slow_probe
+    w.now[0] = T0 + 6
+    w.poll()                                               # the probe fails (the incident opens), then canary #1
+    w.now[0] = T0 + 6 + 100 + 1                            # 51 s after canary #1 went out (at T0+56 + 50 s of its own)
+    w.poll()
+    check("B-CANARY-T: a canary is timed when it goes out, never at the poll's start - the one after a 50 s probe is "
+          "not taken for one sent 50 s earlier, so the incident does not close two canaries 10 s apart",
+          len(sent_at) == 2 and w.d.gate.last_canary == sent_at[1] and not w.lines(" END "),
+          f"sent at {sent_at} last_canary {w.d.gate.last_canary} ends {w.lines(' END ')}")
+    gen = G.GateDriver(I.IncidentGate(), calls_path=TMP / "gen.calls.jsonl", status=SL.StatusLog(TMP / "gen.STATUS",
+                       local_tz=dt.timezone.utc), send_probe=lambda: {}, id_prefix="inc-gen",
+                       expected_models=(m for m in ["deepseek-v4-flash"]), clock=lambda: T0)
+    with open(TMP / "gen.calls.jsonl", "ab") as f_:
+        f_.write((json.dumps(rec("a1", T0, model="deepseek-v4-pro")) + "\n").encode("utf-8"))
+    gen.poll()
+    gen_lines = (TMP / "gen.STATUS").read_text(encoding="utf-8") if (TMP / "gen.STATUS").exists() else ""
+    check("R-GATE-M: expected models given as a one-pass iterable are read once - model-event still fires",
+          "deepseek-v4-flash" in gen.models and "kind=model-event" in gen_lines, f"{gen.models} {gen_lines[-120:]}")
+
+    class FlakyStatus:
+        """STATUS whose first incident line fails (a lock that timed out) - the next one goes through."""
+
+        def __init__(self, inner):
+            self.inner, self.n = inner, 0
+
+        def incident(self, *a, **k):
+            self.n += 1
+            if self.n == 1:
+                raise RuntimeError("the STATUS lock timed out")
+            return self.inner.incident(*a, **k)
+
+    w = World("batch")
+    w.d.status = FlakyStatus(w.st)
+    w.write(rec("a1", T0, status=402), rec("a2", T0 + 1, status=500))
+    w.poll()                                               # the 402's START fails half-way through the batch
+    w.poll()
+    check("B-GATE-BATCH: a poll that fails half-way through its batch leaves the rest for the next poll - the 402 still "
+          "halts, and the 500 after it is still fed", w.d.halted == "402" and len(w.d.gate.failures) == 1
+          and [kv(x, "kind") for x in w.lines(" START ")] == ["402"], f"{w.d.halted} {len(w.d.gate.failures)} {w.errors}")
+    w = World("recfail")
+
+    def _full(_rec):
+        raise OSError("the incidents file cannot be written")
+    w.d.record = _full
+    w.write(*[rec("a1", T0 + i, status=503) for i in range(3)], *[rec("a2", T0 + 3 + i, status=502) for i in range(2)])
+    w.now[0] = T0 + 10
+    w.poll()
+    w.now[0] = T0 + 75
+    w.poll()
+    check("B-GATE-REC: an incident record that cannot be written is named (harness-error) - never a second INCIDENT "
+          "START for the same event, and the incident still ENDs", len(w.lines(" START ")) == 1
+          and len(w.lines(" END ")) == 1 and w.d.halted == "harness-error"
+          and any("could not be written" in p for p in w.d.problems), f"{w.lines(' START ')} {w.d.problems}")
 finally:
     shutil.rmtree(TMP, ignore_errors=True)
 
