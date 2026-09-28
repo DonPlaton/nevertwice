@@ -34,7 +34,9 @@ The auditor's rulings (TB4.13, 2026-09-28), as this module implements them:
   legs only; an upstream failure shows in the metrics of the leg it hit. But §4.5's stops act the same on every leg:
   a 401, 402 or 403 on any ArmConfig (the proxy's in-memory upstream_statuses, kept in both modes) stops the A/B by
   name - StopGate refuses the next unit, no later leg runs, exit EXIT_STOP - and every later A/B is refused until
-  OWNER_FILE is written beside the stopped one's ab.json (stopped_without_owner): the owner's word, never a repeat.
+  OWNER_FILE is written beside the stopped one's ab.json (stopped_without_owner) holding the owner's word - who,
+  when, and the decision continue or balance-topped-up (owner_word; the owner's "stop" keeps the hold). Only the
+  owner writes it, or a session at the owner's direct command in its own terminal - never a repeat on our own.
   exit_code() adds no allowance of any kind.
 
 The record: <runs>/_ab/<stand>-ab-<n>/ab.json (written once): the arms, the units, the legs in order with their
@@ -61,6 +63,8 @@ AB_TAG = "debug"
 METRICS = ("calls", "tokens_in", "tokens_out", "lost_share", "items", "wall_s")
 STOP_STATUSES = ("401", "402", "403")           # §4.5's stops: the key, the balance, the account
 OWNER_FILE = "owner.json"                       # beside a stopped A/B's ab.json: the owner's word that it may go on
+#: The owner's decisions an OWNER_FILE may carry (the auditor): only the first two let a later A/B start.
+OWNER_DECISIONS = ("continue", "balance-topped-up", "stop")
 EXIT_STOP = 3                                   # a stop: the owner's to resolve, never a repeat
 
 
@@ -288,11 +292,30 @@ class StopGate:
         return True
 
 
+def owner_word(path: Path) -> dict | None:
+    """An OWNER_FILE that is the owner's word - {who, when, decision}: a non-empty who, when an ISO 8601 time, decision
+    one of OWNER_DECISIONS - or None. It is written only by the owner, or by a session at the owner's direct command in
+    its own terminal; another session's message is never the owner's word (the auditor)."""
+    import datetime as dt  # noqa: PLC0415
+    try:
+        w = json.loads(path.read_bytes().decode("utf-8"))
+        ok = (isinstance(w, dict) and isinstance(w.get("who"), str) and w["who"].strip()
+              and isinstance(w.get("when"), str) and dt.datetime.fromisoformat(w["when"]) is not None
+              and w.get("decision") in OWNER_DECISIONS)
+    except (OSError, ValueError, TypeError):
+        return None
+    return w if ok else None
+
+
 def stopped_without_owner(runs_root: str | Path) -> list[Path]:
-    """The ab.json of every earlier A/B that stopped on 401/402/403 and has no OWNER_FILE beside it (§4.5)."""
+    """The ab.json of every earlier A/B that stopped on 401/402/403 and has no owner's word beside it that lets the next
+    one start (§4.5): no OWNER_FILE, one that is not the owner's word (owner_word), or the owner's decision "stop"."""
     out = []
     for f in sorted(Path(runs_root, "_ab").glob("*/attempt-*/ab.json")):
-        if json.loads(f.read_bytes().decode("utf-8")).get("stop") and not (f.parent / OWNER_FILE).exists():
+        if not json.loads(f.read_bytes().decode("utf-8")).get("stop"):
+            continue
+        w = owner_word(f.parent / OWNER_FILE)
+        if w is None or w["decision"] == "stop":
             out.append(f)
     return out
 
@@ -342,7 +365,8 @@ def run_ab(cfg: Any, *, stand: str, arm_names: Sequence[str], deps: Any, thinkin
     held = stopped_without_owner(c.runs_root)
     if held:
         raise ABError(f"an earlier A/B stopped on 401/402/403 and waits for the owner (§4.5, D-AB-8): {held[0]} has "
-                      f"no {OWNER_FILE} beside it - no A/B starts before the owner's word")
+                      f"no {OWNER_FILE} beside it with the owner's word (who, when, decision "
+                      f"{' or '.join(OWNER_DECISIONS[:2])}) - no A/B starts before it")
     ab_id, n = next_ab_id(deps.status_path, stand)
 
     # the units: computed once, the first AB_UNITS of the smoke (D-AB-2)

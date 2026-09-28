@@ -18,8 +18,9 @@ fake arm children under a temporary launch contract (this suite spawns children)
 * T6: the raw twin leaves no calls.jsonl line, no bodies/ and no flags.jsonl line; its Ollama lines are named;
 * D-AB-8 (the auditor's condition): a 402 on a raw leg and on a recording leg - in the write stage (StopGate refuses the
   next unit: the stopped leg asks no question) or in the reader's calls after the last gate (the check after the leg)
-  - stops the A/B by name, exit 3, no later leg; the next A/B is refused until the owner's owner.json exists; the
-  exit code takes no allowance (a wall-only failure is 1);
+  - stops the A/B by name, exit 3, no later leg; the next A/B is refused until an owner.json with the owner's word
+  (who, when, a go-on decision - without them, or with the owner's stop, the hold stays); the exit code takes no
+  allowance (a wall-only failure is 1);
 * in process: unit_metrics over mem0's LLMUsage and our engine's llm_stats, a memory-store arm's cumulative question
   counters, an aborted unit or a stage without counters refused, an arm without a source refused; next_ab_id.
 
@@ -160,9 +161,24 @@ held = TMP / "held"
 (held / "_ab" / "S4-ab-2" / "attempt-00002").mkdir(parents=True)
 (held / "_ab" / "S4-ab-2" / "attempt-00002" / "ab.json").write_text(json.dumps({"stop": None}), encoding="utf-8")
 h1 = [p_.parent.parent.name for p_ in AB.stopped_without_owner(held)]
-(held / "_ab" / "S4-ab-1" / "attempt-00001" / AB.OWNER_FILE).write_text("{}", encoding="utf-8")
-check("D-AB-8: an A/B that stopped waits for the owner - it holds every later A/B until its owner.json exists",
-      h1 == ["S4-ab-1"] and AB.stopped_without_owner(held) == [], f"{h1} {AB.stopped_without_owner(held)}")
+OWNER = held / "_ab" / "S4-ab-1" / "attempt-00001" / AB.OWNER_FILE
+WORD = {"who": "the owner", "when": "2026-09-28T05:00:00+00:00", "decision": "balance-topped-up"}
+still = {}
+for label, obj in (("{}", {}), ("no who", {k: v for k, v in WORD.items() if k != "who"}),
+                   ("an empty who", {**WORD, "who": " "}), ("no when", {k: v for k, v in WORD.items() if k != "when"}),
+                   ("a when that is no time", {**WORD, "when": "yesterday"}), ("no decision", {"who": "o", "when": WORD["when"]}),
+                   ("another decision", {**WORD, "decision": "yes"}), ("the owner's stop", {**WORD, "decision": "stop"}),
+                   ("not JSON", None)):
+    OWNER.write_bytes(b"not json" if obj is None else json.dumps(obj).encode("utf-8"))
+    still[label] = len(AB.stopped_without_owner(held)) == 1
+OWNER.write_text(json.dumps(WORD), encoding="utf-8")
+freed = AB.stopped_without_owner(held) == []
+OWNER.write_text(json.dumps({**WORD, "decision": "continue"}), encoding="utf-8")
+freed = freed and AB.stopped_without_owner(held) == []
+check("D-AB-8: an A/B that stopped holds every later A/B until the owner's word - an owner.json naming who, when (a "
+      "time) and the decision continue or balance-topped-up; one without them, or with the owner's stop, holds it still",
+      h1 == ["S4-ab-1"] and all(still.values()) and freed and AB.OWNER_DECISIONS == ("continue", "balance-topped-up", "stop"),
+      f"{h1} {[k for k, v in still.items() if not v]} freed={freed}")
 
 FAKE_ARM = r'''
 import hashlib, json, os, sys, time, urllib.request
@@ -575,14 +591,14 @@ try:
     check("D-AB-8: after the stop no A/B starts before the owner's word - refused by name, nothing spent (no preflight "
           "line)", res5a is None and "waits for the owner" in (crash5a or "")
           and len(pfl.read_text(encoding="utf-8").splitlines()) == n_pf, str(crash5a))
-    (res4.record_path.parent / AB.OWNER_FILE).write_text(json.dumps({"owner": "test"}), encoding="utf-8")
+    (res4.record_path.parent / AB.OWNER_FILE).write_text(json.dumps({**WORD, "who": "the test, as the owner"}), encoding="utf-8")
     res5, crash5, rec5, _o5, _e5 = run(pay_on=("rec2",))
     stop5 = rec5.get("stop") or {}
     check("D-AB-8: a 402 on a RECORDING leg stops the A/B the same way - raw1, rec1, rec2 ran, raw2 never; exit 3",
           crash5 is None and res5.rc == 3 and [lg.get("leg") for lg in rec5.get("legs") or []] == ["raw1", "rec1", "rec2"]
           and stop5.get("leg") == "rec2" and ((stop5.get("statuses") or {}).get("nevertwice") or {}).get("402", 0) > 0
           and any(p.startswith("STOP: rec2:") for p in rec5.get("problems") or []), f"{crash5} {stop5}")
-    (res5.record_path.parent / AB.OWNER_FILE).write_text(json.dumps({"owner": "test"}), encoding="utf-8")
+    (res5.record_path.parent / AB.OWNER_FILE).write_text(json.dumps({**WORD, "who": "the test, as the owner"}), encoding="utf-8")
     spacing0, SC.REASK_SPACING_S = SC.REASK_SPACING_S, 0.01
     try:
         res6, crash6, rec6, _o6, _e6 = run(pay_read_on=("rec2",))
