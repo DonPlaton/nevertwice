@@ -19,3 +19,31 @@ for word. FREEZE-V3 (A10) pins revision 1 and this file together, by the sha256 
 - **§13, trap closure, the new line:**
 
 | T31 graphiti's FalkorDB client | §2.2 | `[falkordb]`; the client and its driver imported and version-checked at install |
+
+## A2 - B-OLM-VIS: the Ollama leg's refusals are a P0h counter
+
+- **Trap:** none new; the boundary rule P0h (§2.3, §2.6.7, §10 P0 h).
+- **Date:** 2026-09-28.
+- **Ruling:** the auditor's Q-OLMENC-1 and B-OLM-VIS (2026-09-28, 15:37) and Q-VIS-1 O-a (2026-09-28, 16:05).
+- **Reason:** the proxy's Ollama leg refuses a product's call only where the call is unsafe; a refused call changes what
+  the product does, so it is counted and the row is not clean - before, the refusal was a line in ollama.jsonl that no
+  check read.
+- **§2.3, the boundary line, amended** (revision 1's line with `ollama_refused` added to the set, and one sentence
+  after it):
+
+  - **boundary (m5, P0h):** {canary_hits, owner_marker_hits, egress_hits, fs_hits, ollama_refused}, each 0. Also
+    published: ancestor_canary_hits, and egress_attempts (the catcher's refused requests, by host). ollama_refused
+    counts the arm-run's Ollama-leg records whose error is a refusal (refused:path, refused:encoded-target); a record
+    with no <run>.<unit> prefix counts in each of the arm's runs; absent is not measured, never 0.
+
+- **§2.6.7 Proxy boundary, the new bullet:**
+
+  - the Ollama leg forwards only Ollama's generation, embed and read-only listing paths - the generation and embed
+    paths are the pacer's own lists - compared exactly after /u/<run>.<unit>. A target with "%" or a query is refused
+    (400) before routing, any other path (403), the model store among them; each refusal is a line in ollama.jsonl,
+    written before the answer, and counted as ollama_refused.
+
+- **§10 P0 h), the boundary counter line, amended:**
+
+  - any boundary counter > 0: canary_hits, owner_marker_hits, egress_hits or fs_hits (in A9, or in block 1 of the
+    stand); ollama_refused > 0 in any arm-run.
