@@ -205,7 +205,12 @@ _src = [f for f in _tracked if f not in T.CLOSURE_EXCLUDED_FILES and T.MODEL_CAL
 #: runner builds the URL and calls nothing itself, and a generation call from a cloud arm through that leg is the
 #: proxy's fallback_local. Missed by the changer again: e153e61 was reported before this census ran on it (found at
 #: 250ce92 by running the census suites ahead of the lock).
-CENSUS_30 = {
+#: A8 C5a-2b (2026-09-28): + `research/v3/probe_upstream.py` and `tests/research/_test_v3_probe_upstream.py` = 32 - the
+#: A8 probes' loopback fakes (the auditor's Q-C5-3): the fake DeepSeek SERVES /chat/completions as the proxy's test
+#: upstream, the fake Ollama answers /api/generate as a TRAP (recorded, 403), and the suite posts to them only on
+#: 127.0.0.1 - nothing reaches a real endpoint. Caught this time by running this census on the candidate before it was
+#: reported.
+CENSUS_32 = {
     "nevertwice/_engine_config.py", "nevertwice/consolidate_memory.py", "research/_ollama_symmetry_probe.py",
     "research/embed_universal/gen_corpus.py", "research/embed_universal/gen_pairs.py", "research/frontier_eval.py",
     "research/gen_code_sessions.py", "research/invariants_lab/measure_coldstart.py",
@@ -218,10 +223,11 @@ CENSUS_30 = {
     "tests/research/_test_v3_arm_amem.py", "tests/research/_test_v3_bm25_floor.py", "tests/research/_test_v3_http_count.py",
     "tests/research/_test_v3_runner_nevertwice.py",
     "research/v3/sched_ctl.py", "tests/research/_test_v3_sched_ctl.py",   # TB4.11a A3: the unload call (keep_alive 0)
-    "research/v3/arms/runner_nevertwice.py"}                                 # R-EMBED-PATH: the leg's OLLAMA_URL path
-check("thirty tracked sources name a generation endpoint - exactly these, so the rule has a population",
-      set(_src) == CENSUS_30 and len(CENSUS_30) == 30,
-      f"added {sorted(set(_src) - CENSUS_30)}, gone {sorted(CENSUS_30 - set(_src))}")
+    "research/v3/arms/runner_nevertwice.py",                                 # R-EMBED-PATH: the leg's OLLAMA_URL path
+    "research/v3/probe_upstream.py", "tests/research/_test_v3_probe_upstream.py"}   # A8 C5a-2b: the probes' fakes
+check("thirty-two tracked sources name a generation endpoint - exactly these, so the rule has a population",
+      set(_src) == CENSUS_32 and len(CENSUS_32) == 32,
+      f"added {sorted(set(_src) - CENSUS_32)}, gone {sorted(CENSUS_32 - set(_src))}")
 check("and the generators it could not see before are among them",
       {"research/gen_code_sessions.py", "research/frontier_eval.py",
        "research/token_ab.py"} <= set(_src))

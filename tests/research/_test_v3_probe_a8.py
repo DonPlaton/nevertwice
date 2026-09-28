@@ -18,6 +18,7 @@ written here: a source tree, the proxy's call lines, the adapter's counters, an 
 """
 from __future__ import annotations
 
+import atexit
 import hashlib
 import importlib.util
 import json
@@ -56,6 +57,18 @@ def check(name: str, cond: bool, detail: str = "") -> None:
 
 
 TMP = Path(tempfile.mkdtemp(prefix="nvt3_probe_a8_"))
+
+
+def _cleanup() -> None:
+    """At the end and at exit, whatever raised: the link under lroot first, by its own entry (a junction's target is
+    never walked), then the tree - a crashed run leaves nothing behind."""
+    link = TMP / "lroot" / "link"
+    if os.path.lexists(link):
+        (os.unlink if os.path.islink(link) else os.rmdir)(link)
+    shutil.rmtree(TMP, ignore_errors=True)
+
+
+atexit.register(_cleanup)
 SRC = TMP / "site"
 (SRC / "mem0" / "llms").mkdir(parents=True)
 DEEPSEEK = (b"class DeepSeekLLM:\r\n"
@@ -425,11 +438,28 @@ check("every declared mem0 source fact names a relative file and a pattern, fixe
 ik = S.fact_in(sc, P.M0_SOURCE["m0_item_key"][2], name="m0_item_key")
 check("the item's text key, read where the texts are taken", ik.get("value") == "text" and ik.get("line") == 19, str(ik))
 
+(M2 / "mem0/memory/broken.py").write_bytes(b"class Memory:\n    def add(self:\n        pass\n")
+check("Q2 (the auditor): a source that does not parse is blocked:source-unparsable:<field>, never a raise",
+      S.scope(M2, "mem0/memory/broken.py", "Memory.add", name="m0_b").get("blocked") == "blocked:source-unparsable:m0_b")
+(M2 / "mem0/memory/loops.py").write_bytes(
+    b"class Memory:\n    def _add_to_vector_store(self, facts):\n        while facts:\n"
+    b"            self.llm.generate_response(messages=facts.pop(), response_format={\"type\": \"json_object\"})\n"
+    b"\n    def comp(self, facts):\n"
+    b"        return [self.llm.generate_response(messages=f, response_format={\"type\": \"json_object\"}) for f in facts]\n")
+for label, fn, want_line in (("a while", "_add_to_vector_store", 4), ("a list comprehension", "comp", 7)):
+    ws = S.llm_sites(S.scope(M2, "mem0/memory/loops.py", f"Memory.{fn}", name="m0_add_path"), P.M0_SOURCE["m0_llm_sites"][2])
+    r = S.m0_calls_per_add(ws, one, run="r1", unit="u1", adds=1)
+    check(f"Q12/Q13 (the auditor): an LLM site inside {label} is in a loop, so the calls per add are "
+          f"blocked:source-unbounded (C6's bound)", ws.get("value") == [{"line": want_line, "in_loop": True,
+                                                                          "response_format": {"type": "json_object"}}]
+          and r.get("blocked") == "blocked:source-unbounded:m0_calls_per_add", str(ws.get("value")))
+(M2 / "mem0/memory/nested.py").write_bytes(
+    b"def factory():\n    class Memory:\n        def add(self):\n            pass\n    return Memory\n"
+    b"\nclass Memory:\n    def add(self):\n        pass\n")
+ns = S.scope(M2, "mem0/memory/nested.py", "Memory.add", name="m0_n")
+check("Q5 (the auditor): only the module's own top-level class is taken - a class of the same name nested in a "
+      "function is not", ns.get("first_line") == 8 and "blocked" not in ns, str({k: ns.get(k) for k in ("first_line", "blocked")}))
 check("C4A-8 / C5A-8: no verdict raised on any row - every failure came back as a field", RAISED == [], str(RAISED))
-if os.path.islink(LINK):
-    os.unlink(LINK)
-elif LINK.exists():
-    os.rmdir(LINK)                                   # a junction: its own entry only, never the directory it names
-shutil.rmtree(TMP, ignore_errors=True)
+_cleanup()
 print(f"\nv3 probe a8: {PASSED} passed, {FAILED} failed")
 sys.exit(1 if FAILED else 0)
