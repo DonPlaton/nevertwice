@@ -13,6 +13,11 @@ under the launch contract that reads ids and question types only.
   ({6K, 32K}, {64K}, {262K}) fix that order; FC-SH and FC-MH are separate lists (separate budgets).
 * A list record holds ids only (never data, §3.1 T30), the seed, the rule, the python version and the sha256 of the
   canonical ids.
+* Declared for the lists after S1 (A7, the auditor's Q-A7-1..6), before any is built: UNIT_RULE (ids as the file types
+  them, mixed types refuse), S6_RULE (one row per source, both hop lists or neither), S9_RULE with s9_order (S1's
+  order over the original longmemeval_s, only when the id sets are equal), s3_coverage (S3 has no list: the oracle
+  file must hold S1[:480]), check_disjoint (a stand's units and its smoke's share no id, by the data) and
+  LIST_STANDS, the pin, unit, file(s), seed and rule of each.
 """
 from __future__ import annotations
 
@@ -131,12 +136,15 @@ def nested_order(items: Iterable[tuple[str, str]], *, seed: int = SEED, check_pu
 
 
 def unit_order(stand: str, ids: Iterable) -> list:
-    """S4, S5, S7: the stand's own seeded permutation of its sorted unit ids."""
+    """S4, S5, S7 (UNIT_RULE): the stand's own seeded permutation of its sorted unit ids, typed as the file types them."""
     if stand not in UNIT_SEEDS:
         raise SubsampleRefused(f"{stand} has no unit seed; S6 is ordered by tier, S1/S2 by the nested order")
     ids = list(ids)
     if len(set(ids)) != len(ids):
         raise SubsampleRefused(f"{stand}: a unit id repeats")
+    types = sorted({type(x).__name__ for x in ids})
+    if len(types) > 1:                                  # Q-A7-1: never a str() or any other re-typing
+        raise SubsampleRefused(f"{stand}: unit ids of mixed types {types} - the order is declared for one type")
     out = sorted(ids, key=_sort_key)
     random.Random(UNIT_SEEDS[stand]).shuffle(out)
     return out
@@ -146,11 +154,68 @@ def s6_order(sources: Iterable[str], hop: str) -> list[str]:
     """S6 (Q-T5-4): the FC rows of one hop ("sh" or "mh") by length tier ascending; every tier present once."""
     if hop not in ("sh", "mh"):
         raise SubsampleRefused(f"hop {hop!r} is sh or mh")
+    sources = list(sources)
+    dup = sorted({s for s in sources if sources.count(s) > 1})
+    if dup:                                             # Q-A7-4: one row per source - a duplicate is never overwritten
+        raise SubsampleRefused(f"S6: a source repeats: {dup}")
     have = [s for s in sources if s.startswith(f"factconsolidation_{hop}_")]
     want = [f"factconsolidation_{hop}_{t}" for t in S6_TIERS]
     if sorted(have) != sorted(want):
         raise SubsampleRefused(f"FC-{hop.upper()} rows {sorted(have)} are not the four tiers {want}")
     return want
+
+
+def s9_order(s1_ids: Sequence[str], file_ids: Iterable[str]) -> list[str]:
+    """S9 (Q-A7-2, S9_RULE): S1's nested order applied to the original longmemeval_s - only when the file's question
+    ids are exactly S1's (no repeat, none missing, none extra); any difference refuses by name."""
+    file_ids = list(file_ids)
+    if len(set(file_ids)) != len(file_ids):
+        raise SubsampleRefused("S9: a question id repeats in the file")
+    missing, extra = sorted(set(s1_ids) - set(file_ids)), sorted(set(file_ids) - set(s1_ids))
+    if missing or extra:
+        raise SubsampleRefused(f"S9: the file's ids are not S1's - {len(missing)} missing (e.g. {missing[:3]}), "
+                               f"{len(extra)} extra (e.g. {extra[:3]})")
+    return list(s1_ids)
+
+
+def s3_coverage(s1_ids: Sequence[str], oracle_ids: Iterable[str], *, prefix: int = 480) -> dict:
+    """S3 (Q-A7-3): the oracle file must hold every id of S1[:prefix] - a missing one refuses by name before any run;
+    ids the oracle has beyond them are named, never silent. {"covered": n, "extra": [...]}."""
+    oracle = set(oracle_ids)
+    want = list(s1_ids)[:prefix]
+    missing = [q for q in want if q not in oracle]
+    if missing:
+        raise SubsampleRefused(f"S3: the oracle file lacks {len(missing)} of S1's first {prefix} ids (e.g. {missing[:3]})")
+    return {"covered": len(want), "extra": sorted(oracle - set(want))}
+
+
+def check_disjoint(stand: str, ids: Iterable, smoke_ids: Iterable) -> None:
+    """Q-A7-5: the stand's units and its smoke units share no id, by the data - different pins are not enough."""
+    both = sorted(set(ids) & set(smoke_ids), key=_sort_key)
+    if both:
+        raise SubsampleRefused(f"{stand}: the smoke's units share ids with the stand's: {both[:5]}")
+
+
+UNIT_RULE = ("the unit ids as the file types them (ids of mixed types refuse; never re-typed), sorted by (type name, "
+             "value), then one random.Random(SEED + i).shuffle - S4 i = 4, S5 i = 5, S7 i = 7 (A7 Q-A7-1)")
+S6_RULE = ("the FC rows of one hop, one row per metadata.source (a repeat refuses), by length tier ascending "
+           "(6k, 32k, 64k, 262k), no permutation; FC-SH and FC-MH separate lists, written only when both are built "
+           "(A7 Q-T5-4, Q-A7-4, Q-A7-6)")
+S9_RULE = ("S1's nested order (lists/S1.json) applied to the original longmemeval_s, only when the file's question ids "
+           "equal S1's exactly (A7 Q-A7-2); positions 201-480 are in S9 by rev1 §8.5's declared exception")
+#: The lists A7 builds besides S1 (lists_build.py): stand -> the pin it reads, its unit, its file(s), seed and rule.
+LIST_STANDS = {
+    "S3": {"pin": "lme_oracle_cleaned", "unit": "question_id", "files": (), "seed": None,
+           "rule": "no list of its own: S1[:480] read over the oracle file, which must hold every one (s3_coverage)"},
+    "S4": {"pin": "locomo10", "unit": "sample_id", "files": ("S4.json",), "seed": UNIT_SEEDS["S4"], "rule": UNIT_RULE},
+    "S5": {"pin": "beam_128k", "unit": "conversation_id", "files": ("S5.json",), "seed": UNIT_SEEDS["S5"],
+           "rule": UNIT_RULE, "smoke_pin": "beam_500k"},
+    "S6": {"pin": "mab_conflict_resolution", "unit": "metadata.source", "files": ("S6-SH.json", "S6-MH.json"),
+           "seed": None, "rule": S6_RULE},
+    "S7": {"pin": "ama_swe", "unit": "episode_id (domain SOFTWARE)", "files": ("S7.json",), "seed": UNIT_SEEDS["S7"],
+           "rule": UNIT_RULE},
+    "S9": {"pin": "longmemeval_s", "unit": "question_id", "files": ("S9.json",), "seed": None, "rule": S9_RULE},
+}
 
 
 def list_record(stand: str, ids: Sequence, *, seed: int | None, rule: str) -> dict:

@@ -131,6 +131,37 @@ check("S6: FC-SH by length tier ascending, no permutation", S.s6_order(src, "sh"
 check("S6: FC-MH is its own list, same tier order", S.s6_order(src, "mh")[0] == "factconsolidation_mh_6k")
 check("S6: a missing tier is refused", refused(lambda: S.s6_order(src[:-1], "sh"), "four tiers"))
 
+print("\n- A7's declarations before any list after S1 is built (Q-A7-1..6) -")
+ints = [2, 10, 9, 1, 30, 3, 20]
+exp_int = sorted(ints)                                  # 1, 2, 3, 9, 10, 20, 30 - as ints, never as text
+random.Random(S.SEED + 5).shuffle(exp_int)
+exp_txt = sorted(ints, key=str)                         # what a str() re-typing would sort: 1, 10, 2, 20, 3, 30, 9
+random.Random(S.SEED + 5).shuffle(exp_txt)
+check("Q-A7-1: unit ids keep the file's type - ints sort as ints before the seeded shuffle (not as text), and mixed "
+      "types refuse by name", S.unit_order("S5", ints) == exp_int and exp_int != exp_txt
+      and refused(lambda: S.unit_order("S5", [1, "2"]), "mixed types"), str(S.unit_order("S5", ints)))
+s1 = [f"q{i:03d}" for i in range(500)][::-1]
+check("Q-A7-2: S9 takes S1's order when the file's ids are exactly S1's; a missing, an extra or a repeated id refuses",
+      S.s9_order(s1, sorted(s1)) == s1 and refused(lambda: S.s9_order(s1, sorted(s1)[1:]), "1 missing")
+      and refused(lambda: S.s9_order(s1, [*s1, "zzz"]), "1 extra") and refused(lambda: S.s9_order(s1, [*s1, s1[0]]), "repeats"))
+cov = S.s3_coverage(s1, [*s1[:480], "extra1"])
+check("Q-A7-3: S3's oracle file must hold S1's first 480 ids (a missing one refuses); ids beyond them are named",
+      cov == {"covered": 480, "extra": ["extra1"]} and refused(lambda: S.s3_coverage(s1, s1[1:480]), "lacks 1"))
+check("Q-A7-4: S6 - a repeated source refuses by name (never a dict overwrite)",
+      refused(lambda: S.s6_order([*src, src[0]], "sh"), "a source repeats"))
+check("Q-A7-5: a stand's units and its smoke's share no id - checked on the data",
+      S.check_disjoint("S5", [1, 2], [3]) is None and refused(lambda: S.check_disjoint("S5", [1, 2], [2, 3]), "share ids"))
+check("the declared table: S3-S7 and S9 - their pins, files and seeds (S4 +4, S5 +5, S7 +7; S3, S6, S9 none)",
+      {k: (v["pin"], v["files"], v["seed"]) for k, v in S.LIST_STANDS.items()} == {
+          "S3": ("lme_oracle_cleaned", (), None), "S4": ("locomo10", ("S4.json",), S.SEED + 4),
+          "S5": ("beam_128k", ("S5.json",), S.SEED + 5), "S6": ("mab_conflict_resolution", ("S6-SH.json", "S6-MH.json"), None),
+          "S7": ("ama_swe", ("S7.json",), S.SEED + 7), "S9": ("longmemeval_s", ("S9.json",), None)}
+      and S.LIST_STANDS["S5"]["smoke_pin"] == "beam_500k")
+check("the rules say what they do: UNIT_RULE the sort key, the seeds and the type rule; S6_RULE one row per source and "
+      "both lists or neither; S9_RULE the equal id sets", "(type name, value)" in S.UNIT_RULE and "mixed types" in S.UNIT_RULE
+      and "SEED + i" in S.UNIT_RULE and "a repeat refuses" in S.S6_RULE and "only when both are built" in S.S6_RULE
+      and "equal S1's exactly" in S.S9_RULE)
+
 print("\n- the list record -")
 rec = S.list_record("S1", order, seed=S.SEED, rule=S.RULE)
 canon = json.dumps(order, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
