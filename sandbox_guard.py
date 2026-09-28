@@ -542,8 +542,22 @@ def _rmtree_writable(path: Path) -> list[str]:
     return left
 
 
+def _strictly_in_temp(path) -> bool:
+    """B-RMAX-GUARD: ``path``, resolved, lies inside tempfile.gettempdir() - never the temp dir
+    itself, never outside it, by an 8.3 name, a link or a '..' alike (both sides realpath'd)."""
+    t = os.path.normcase(os.path.realpath(tempfile.gettempdir()))
+    p = os.path.normcase(os.path.realpath(path))
+    return p != t and p.startswith(t.rstrip("\\/") + os.sep)
+
+
 def _remove_dir(path: Path, what: str) -> None:
-    """``path`` goes whole; what cannot go is named on stderr in one line, never raised."""
+    """``path`` goes whole; what cannot go is named on stderr in one line, never raised. B-RMAX-GUARD:
+    only the sandbox store or a path strictly inside the temp dir - anything else is refused by name
+    and nothing is removed."""
+    if path != _STORE and not _strictly_in_temp(path):
+        print(f"sandbox_guard: refused to remove {what} {path}: not inside the temp dir "
+              f"{tempfile.gettempdir()} - nothing removed (B-RMAX-GUARD)", file=sys.stderr)
+        return
     if not os.path.lexists(path):
         return
     try:
@@ -559,8 +573,12 @@ def remove_at_exit(path) -> Path:
     """B-TMP-LEAK: a throwaway directory a test fixture made (tests/_sandbox.make_sandbox) goes at
     exit the way the sandbox store does - whole, ReadOnly cleared, a remainder named on stderr.
     The fixture made one per call with mkdtemp and never removed it: 6572 b3_ vaults, 94 GB, sat in
-    %TEMP% by 2026-09-28 and filled the disk."""
+    %TEMP% by 2026-09-28 and filled the disk. B-RMAX-GUARD: a deferred rmtree takes only a path
+    strictly inside the temp dir - anything else is a ValueError here, before it is registered."""
     p = Path(path)
+    if not _strictly_in_temp(p):
+        raise ValueError(f"remove_at_exit refuses {p}: not strictly inside the temp dir {tempfile.gettempdir()} "
+                         f"(B-RMAX-GUARD)")
     atexit.register(_remove_dir, p, "the throwaway directory")
     return p
 

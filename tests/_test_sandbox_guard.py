@@ -594,6 +594,54 @@ print(d, flush=True)
 '''
 
 
+def test_a_deferred_rmtree_refuses_a_path_outside_the_temp_dir() -> None:
+    """B-RMAX-GUARD (the auditor): remove_at_exit is a deferred rmtree of any path it is given, and _remove_dir the
+    rmtree itself - neither had a guard. Both must refuse a path that, resolved, is not strictly inside
+    tempfile.gettempdir(): remove_at_exit with a ValueError before anything is registered, _remove_dir with one stderr
+    line and nothing removed. The "outside" here is a sibling directory in the real temp dir, with the temp root
+    pointed at another one for the row (not the repo root: a mutant without the guard would then remove the repo at
+    exit - it may only ever reach a throwaway directory)."""
+    import atexit
+    import contextlib
+    import io
+    print("\n- a deferred rmtree refuses a path outside the temp dir (B-RMAX-GUARD) -")
+    with tempfile.TemporaryDirectory(prefix="nevertwice_rmax_") as tmp:
+        root, outside = Path(tmp) / "temp-root", Path(tmp) / "outside"
+        (root / "inside").mkdir(parents=True)
+        (outside / "keep").mkdir(parents=True)
+        real_gettempdir = tempfile.gettempdir
+        tempfile.gettempdir = lambda: str(root)
+        try:
+            n0 = atexit._ncallbacks()
+            refused = {}
+            for label, p in (("outside", outside), ("outside by '..'", root / ".." / "outside"),
+                             ("the temp dir itself", root)):
+                try:
+                    sandbox_guard.remove_at_exit(p)
+                    refused[label] = None
+                except ValueError as e:
+                    refused[label] = str(e)
+            n1 = atexit._ncallbacks()
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                sandbox_guard._remove_dir(outside, "the throwaway directory")
+            kept = (outside / "keep").is_dir()
+            inside_ok = sandbox_guard.remove_at_exit(root / "inside") == root / "inside"
+            n2 = atexit._ncallbacks()
+        finally:
+            tempfile.gettempdir = real_gettempdir
+        # what the row registered lies inside its TemporaryDirectory, gone by exit - nothing is unregistered (that
+        # would take the suite's make_sandbox registrations with it)
+        check("B-RMAX-GUARD: remove_at_exit refuses a path outside the temp dir - by name, by '..', and the temp dir "
+              "itself - with a ValueError that names it, and registers nothing",
+              all(v and "B-RMAX-GUARD" in v for v in refused.values()) and n1 == n0, f"{refused} n0={n0} n1={n1}")
+        check("B-RMAX-GUARD: _remove_dir refuses a path outside the temp dir - one stderr line, nothing removed",
+              kept and len(err.getvalue().splitlines()) == 1 and "B-RMAX-GUARD" in err.getvalue(),
+              f"kept={kept} stderr={err.getvalue()[:300]!r}")
+        check("B-RMAX-GUARD: ... and a path inside the temp dir is registered", inside_ok and n2 == n1 + 1,
+              f"inside_ok={inside_ok} n1={n1} n2={n2}")
+
+
 def test_a_fixture_sandbox_goes_with_its_process() -> None:
     """B-TMP-LEAK (the auditor): tests/_sandbox.make_sandbox made a temp vault with mkdtemp and never removed it - no
     atexit, no cleanup - and 56 suites use it: 6572 b3_ vaults alone, 94 GB, sat in %TEMP% by 2026-09-28 and filled
