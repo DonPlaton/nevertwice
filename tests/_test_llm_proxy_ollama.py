@@ -196,9 +196,10 @@ check("a generation 500 twice: sleeps of the pacer's LLM_RETRY_INTERVALS_S (15 s
       str(sleeps["run:local"]))
 check("... then the NDJSON stream reaches the client byte for byte", got == OL.sent[-1] and b'"done":true' in got)
 OL.attempts.clear()
-OL.script["/api/missing"] = [(404, b'{"error":"not found"}')]
-got = call(lp, "/api/missing")
-check("a 404 is never retried, and reaches the client as sent", OL.attempts.get("/api/missing") == 1 and got.startswith(b"HTTP/1.1 404"))
+OL.script["/api/show"] = [(404, b'{"error":"model \'missing\' not found"}')]   # an allowed path (B-OLM-ENC)
+got = call(lp, "/api/show", b'{"model":"missing"}')
+del OL.script["/api/show"]
+check("a 404 is never retried, and reaches the client as sent", OL.attempts.get("/api/show") == 1 and got.startswith(b"HTTP/1.1 404"))
 OL.script["/api/embed"] = [(400, b'{"error":"input too long"}')]
 got = call(lp, "/api/embed")
 tr = leg.transport()
@@ -316,8 +317,50 @@ refused = [r for r in _ol if r.get("unit") == "r1.pull"]
 check("B-OLM: a pull or a delete on the leg is refused (403) and never reaches Ollama - the owner's model store is not "
       "the product's, and a pull is egress no witness sees; each refusal is a line in ollama.jsonl",
       got_pull.startswith(b"HTTP/1.1 403") and got_del.startswith(b"HTTP/1.1 403") and "/api/pull" not in OL.attempts
-      and "/api/delete" not in OL.attempts and [r.get("error") for r in refused] == ["refused:model-store"] * 2,
+      and "/api/delete" not in OL.attempts and [r.get("error") for r in refused] == ["refused:path"] * 2,
       f"{got_pull[:30]!r} {OL.attempts} {refused}")
+
+print("\n- B-OLM-ENC: the leg forwards its allow-list only, exactly; an encoded or queried target is refused first -")
+OL.attempts.clear()
+leg_log: list[str] = []
+leg.log = leg_log.append
+enc = {t: call(lp, f"/u/r1.enc/{t}", b'{"model":"qwen3:8b"}') for t in ("api/%70ull", "api/%64elete", "api/embed?x=1")}
+att_enc = dict(OL.attempts)                             # what the encoded targets alone reached
+bad = {t: call(lp, f"/u/r1.path/{t}", b'{"model":"qwen3:8b"}')
+       for t in ("API/PULL", "api/pull/", "api//pull", "api/push", "API/EMBED", "api/embed/", "api//embed")}
+_ol = [json.loads(x) for x in (TMP / "run" / "ollama.jsonl").read_bytes().decode("utf-8").split("\n") if x.strip()]
+enc_rec = [r.get("error") for r in _ol if r.get("unit") == "r1.enc"]
+path_rec = [r.get("error") for r in _ol if r.get("unit") == "r1.path"]
+enc_heads = {t: g[:20] for t, g in enc.items()}
+bad_heads = {t: g[:20] for t, g in bad.items()}
+check("B-OLM-ENC: a target with a percent-escape or a query is refused (400) before routing - Ollama's router matches "
+      "the DECODED path, so /api/%70ull is its /api/pull - and never reaches Ollama; each is a line in ollama.jsonl",
+      all(g.startswith(b"HTTP/1.1 400") for g in enc.values()) and not att_enc
+      and enc_rec == ["refused:encoded-target"] * 3, f"{enc_heads} {att_enc} {enc_rec}")
+check("B-OLM-ENC: a path outside the leg's allow-list is refused (403), compared exactly and case-sensitively after "
+      "/u/<run>.<unit> - /API/PULL, /api/pull/, /api//pull, /api/push, /API/EMBED, /api/embed/, /api//embed never "
+      "reach Ollama; each is a line in ollama.jsonl", all(g.startswith(b"HTTP/1.1 403") for g in bad.values())
+      and not OL.attempts and path_rec == ["refused:path"] * 7, f"{bad_heads} {OL.attempts} {path_rec}")
+check("B-OLM-ENC: each refusal is named in the leg's log, with its path", len(leg_log) == 10
+      and all("refused" in x for x in leg_log) and any("/api/%70ull" in x for x in leg_log)
+      and any("/API/PULL" in x for x in leg_log), str(leg_log[:3]))
+leg.log = lambda m: None
+got_ok = {p: call(lp, f"/u/r1.ok{p}", b'{"model":"m"}') for p in ("/api/show", "/v1/models", "/v1/completions")}
+check("... while the safe paths still reach Ollama - /api/show, the OpenAI shim's /v1/models and /v1/completions (a "
+      "safe path refused would change the product's behaviour)", all(g.startswith(b"HTTP/1.1 200") for g in got_ok.values())
+      and all(OL.attempts.get(p) == 1 for p in got_ok), f"{ {p: g[:20] for p, g in got_ok.items()} } {OL.attempts}")
+OL.attempts.clear()
+LEG_WANT = {"/api/generate", "/api/chat", "/v1/chat/completions", "/v1/completions",      # generation
+            "/api/embed", "/api/embeddings", "/v1/embeddings",                              # embed
+            "/api/tags", "/api/show", "/api/version", "/api/ps", "/v1/models"}               # read-only listing
+through = {p: call(lp, f"/u/r1.def{p}", b'{"model":"m","input":"x","prompt":"x"}') for p in sorted(LEG_WANT)}
+check("B-OLM-ENC: one definition - the leg forwards exactly Ollama's generation and embed paths as the pacer knows them "
+      "(_LLM_PATHS, _EMBED_PATHS), the OpenAI-compatible /v1/embeddings and the read-only listing, and each reaches "
+      "Ollama", all(g.startswith(b"HTTP/1.1 200") for g in through.values())
+      and all(OL.attempts.get(p) == 1 for p in through) and leg.paths == LEG_WANT
+      and set(pacer._LLM_PATHS) | set(pacer._EMBED_PATHS) <= leg.paths,
+      f"{ {p: g[:20] for p, g in through.items()} } missing {sorted(LEG_WANT - leg.paths)} extra "
+      f"{sorted(leg.paths - LEG_WANT)}")
 
 print("\n- TB7 embed_at_cap (Q-A7-7 O-a): each input counted by the pinned tokenizer, prompt_eval_count beside it -")
 AC = _load("v3_accounting_for_oll", ROOT / "research" / "v3" / "accounting.py")

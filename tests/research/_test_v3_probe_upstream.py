@@ -229,7 +229,7 @@ check("M21 (Q-C5-3): the embed went through the /u/ leg - the proxy's Ollama rec
 check("a trap reached through the leg is 403 at the client - refused by the leg itself (B-OLM: no pull reaches "
       "Ollama), so the fake's trap list is unchanged, and the refusal is in the proxy's Ollama record",
       ok(lambda: sp == 403 and len(ol.traps) == 2 and any(r.get("path") == "/api/pull"
-                                                          and r.get("error") == "refused:model-store" for r in emb)),
+                                                          and r.get("error") == "refused:path" for r in emb)),
       f"{sp} {ol.traps} {[r for r in emb if r.get('path') == '/api/pull']}")
 check("the fake upstream saw the proxy's sentinel key, never the arm's token", ok(lambda: all(
       (r.get("authorization") or "") == "Bearer nvt3-probe-KEYSENTINEL-0000" for r in ds2.requests) and len(ds2.requests) == 2),

@@ -784,21 +784,24 @@ class TeeParser:
 
 OLLAMA_HOST, OLLAMA_PORT = "127.0.0.1", 11434          # the local server; never the key, never another host
 PACER_PATH = Path(__file__).resolve().parent / "_ollama_pacer.py"
-#: B-OLM: the endpoints that change the owner's model store - a pull or push is also egress no witness sees (Ollama is
-#: outside every arm's tree), a delete removes the owner's models. A product's leg never reaches them (403).
-OLLAMA_MODEL_STORE = ("/api/pull", "/api/push", "/api/delete", "/api/create", "/api/copy", "/api/blobs")
-
-
-def _ollama_mutating(path: str) -> bool:
-    p = path.split("?", 1)[0].rstrip("/").lower()
-    return any(p == e or p.startswith(e + "/") for e in OLLAMA_MODEL_STORE)
+#: B-OLM-ENC (the auditor's rulings): the only paths a product's leg forwards, compared exactly and case-sensitively on
+#: the path after /u/<run>.<unit>. The leg refuses only what is dangerous - the model store (B-OLM: a pull or push is
+#: egress no witness sees, a delete removes the owner's models), and any other path (403); a safe path it refused
+#: would change the product's behaviour, so every generation, embed and read-only listing endpoint Ollama serves is on
+#: the list. A deny-list read on the raw target let /api/%70ull through - Ollama's router matches the DECODED path - so
+#: a target with any "%" or a query is refused (400) before this list is read. One definition: the generation and embed
+#: paths are the pacer's own _LLM_PATHS and _EMBED_PATHS (OllamaLeg.paths reads them from the leg's pacer copy - a
+#: cloud arm's generation call is fallback_local, TB7/R-EMBED-PATH, P0(b)), plus the OpenAI-compatible embed path
+#: (B-OAEMB) and the read-only listing below.
+OLLAMA_OPENAI_EMBED = "/v1/embeddings"
+OLLAMA_LEG_LISTING = frozenset({"/api/tags", "/api/show", "/api/version", "/api/ps", "/v1/models"})
 
 
 def _openai_embed(path: str) -> bool:
     """B-OAEMB: Ollama's OpenAI-compatible embeddings endpoint - zep-graphiti's OpenAIEmbedder posts to <leg>/v1 +
     /embeddings. The pacer's own embed paths are the native two, so without this its calls were no embed calls at all:
     no TB7 stats, no failed embed outcome for P0a, and R-EMBED-PATH's 'none recorded' refusal for the arm."""
-    return path.split("?", 1)[0].rstrip("/").endswith("/v1/embeddings")
+    return path.split("?", 1)[0].rstrip("/").endswith(OLLAMA_OPENAI_EMBED)
 
 
 def load_pacer_copy(arm: str, mode: str = "pace"):
@@ -846,13 +849,17 @@ class OllamaLeg:
     """One arm's Ollama port (§4.4): the request goes byte for byte to 127.0.0.1:11434 inside the arm's own pacer copy
     - paced in pace mode, retried only as the pacer retries (port exhaustion; a generation-path 5xx twice, 15 s then
     30 s; a 4xx never), in observe mode neither - and the answer comes back byte for byte, streamed. A generation
-    call from a cloud arm is counted as fallback_local (§4.5 zero tolerance)."""
+    call from a cloud arm is counted as fallback_local (§4.5 zero tolerance). Only the leg's paths are forwarded; a
+    target with "%" or a query is refused before routing (B-OLM-ENC)."""
 
     def __init__(self, arm: str, *, mode: str, cloud_arm: bool, upstream: tuple[str, int], log: Callable[[str], None],
                  run_dir: Path, connect: Callable[[tuple[str, int]], socket.socket] | None = None,
                  embed_count: Callable[[str], int] | None = None, embed_cap: int | None = None):
         self.arm, self.cloud_arm, self.upstream, self.log, self.run_dir = arm, cloud_arm, upstream, log, run_dir
         self.pacer = load_pacer_copy(arm, mode)
+        #: B-OLM-ENC: the paths this leg forwards - the pacer's generation and embed paths, one definition
+        self.paths = (frozenset(self.pacer._LLM_PATHS) | frozenset(self.pacer._EMBED_PATHS)
+                      | {OLLAMA_OPENAI_EMBED} | OLLAMA_LEG_LISTING)
         self.connect = connect or (lambda hp: socket.create_connection(hp, timeout=600))
         self.fallback_local = 0
         self.calls = 0
@@ -900,6 +907,18 @@ class OllamaLeg:
         return {"embed_inputs": len(counts), "embed_tokens": sum(counts), "embed_at_cap": at_cap,
                 "prompt_eval_count": pec}
 
+    def _refuse_path(self, cs: socket.socket, code: int, reason: str, body: bytes, *, unit: str | None, path: str,
+                     error: str, headers: list[tuple[str, str]], buffered: int, stage: dict) -> None:
+        """A target the leg does not forward (B-OLM-ENC): refused, named in the leg's log and a line in ollama.jsonl -
+        never silence. Nothing reaches Ollama. The record is written before the answer: a client that has its 400 or
+        403 finds the line already there."""
+        t_ref = _iso(time.time())
+        _append_jsonl(self.run_dir / "ollama.jsonl",
+                      {"arm": self.arm, "unit": unit, "path": path, "is_embed": False, "is_llm": False,
+                       "status": None, "error": error, "fallback_local": False, "t0": t_ref, "t1": t_ref, **stage})
+        self.log(f"ollama leg refused {path[:64]!r}: {error}")
+        _refuse(cs, code, reason, body, headers=headers, buffered=buffered)
+
     def serve(self, cs: socket.socket, stage: dict) -> None:
         buf = bytearray()
         head = _read_head(cs, buf)
@@ -916,18 +935,18 @@ class OllamaLeg:
             return
         m = _UNIT.match(target)
         unit, path = (m.group(1), m.group(2)) if m else (None, target)
+        if "%" in target or "?" in target:              # B-OLM-ENC: before routing - Ollama decodes what we compare
+            self._refuse_path(cs, 400, "Bad Request", b"the leg forwards no encoded or queried target", unit=unit,
+                              path=path, error="refused:encoded-target", headers=headers, buffered=len(buf),
+                              stage=stage)
+            return
         if ".." in path or not path.startswith("/"):
             _refuse(cs, 404, "Not Found", headers=headers, buffered=len(buf))
             return
-        if _ollama_mutating(path):                       # B-OLM: the owner's models are never pulled, pushed,
-            self.log(f"ollama leg refused a model-store call: {path.split('?', 1)[0][:64]}")   # created or deleted
-            _refuse(cs, 403, "Forbidden", b"the leg forwards no call that changes Ollama's model store",
-                    headers=headers, buffered=len(buf))
-            t_ref = _iso(time.time())
-            _append_jsonl(self.run_dir / "ollama.jsonl",
-                          {"arm": self.arm, "unit": unit, "path": path, "is_embed": False, "is_llm": False,
-                           "status": None, "error": "refused:model-store", "fallback_local": False, "t0": t_ref,
-                           "t1": t_ref, **stage})
+        if path not in self.paths:                       # B-OLM, B-OLM-ENC: the allow-list, exactly
+            self._refuse_path(cs, 403, "Forbidden", b"the leg forwards the embed, generation and listing paths only",
+                              unit=unit, path=path, error="refused:path", headers=headers, buffered=len(buf),
+                              stage=stage)
             return
         length = _content_length(headers)
         if length is None:                               # B-FRAME: no plain decimal length - refused, never a crash
