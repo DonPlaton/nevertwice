@@ -283,6 +283,19 @@ check("probe.json names the ops', the script's and STATUS's sha256s, the expecte
          and rec["embed_pin"]["path"] == str(C.runs_root / "_d1tag" / "d1" / "record.json") and rec["embed_pin"]["tag"] == TAG
          and rec["installed_sets"] == {"install": "a" * 64, "model": "b" * 64} and rec["witness_scope"] == P.WITNESS_SCOPE),
       str({k: rec.get(k) for k in ("expected_model", "ceiling_s", "installed_sets")}))
+_bf = json.loads((C.runs_root / "_a8" / "r1" / "mem0" / "probe.json").read_text(encoding="utf-8")) if not err else {}
+check("Q-C6-5 / F-C6-4: probe.json carries the bound facts read from the probed venv and the reasons against a bound - "
+      "this world's venv has no prompts.py, so there are reasons, and the probe still passes: a bound that cannot be made "
+      "is writer_bound's refusal, never the probe's verdict",
+      ok(lambda: set(_bf["bound_facts"]) >= set(P.M0_BOUND_SOURCE) | set(P.M0_HELPER_SHAPES) | {"m0_adapter"}
+         and rec["bound_blocked"] == P.bound_blocked(rec["bound_facts"])
+         and sorted(_bf["bound_blocked"]) == sorted(rec["bound_blocked"])
+         and "m0_system_prompt: blocked:source-missing:m0_system_prompt" in _bf["bound_blocked"]
+         and _bf["bound_facts"]["m0_adapter"].get("blocked") is None and _bf["outcome"] == "pass"),
+      str({"keys missing": sorted((set(P.M0_BOUND_SOURCE) | set(P.M0_HELPER_SHAPES) | {"m0_adapter"})
+                                  - set(_bf.get("bound_facts") or {})),
+           "recomputed": rec.get("bound_blocked") == P.bound_blocked(rec.get("bound_facts") or {}),
+           "outcome": _bf.get("outcome")})[:600])
 _st = C.runs_root / "_a8" / "r1" / "STATUS"
 lines = _st.read_text(encoding="utf-8").splitlines() if _st.is_file() else []
 

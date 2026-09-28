@@ -597,49 +597,245 @@ check("m0_nlp is information: the imports listed, never failing the probe", ok(l
 print("\n- C6 C1: the source facts of mem0's writer bound, declared before any read of 2.2.0 -")
 M3 = TMP / "site_bound"
 SYS_PROMPT = "You extract memories. \u00e9" * 3
+#: F-C6-4: the prompt helpers, parse_messages, parse_vision_messages and DeepSeekLLM.generate_response are mem0 2.0.19's
+#: own (Apache-2.0), reformatted - other quotes, docstrings and comments the shape drops - so the declared shapes match
+PRO_SRC = r'''ADDITIVE_EXTRACTION_PROMPT = """{SYS}"""
+
+AGENT_CONTEXT_SUFFIX = """agent suffix"""
+
+PAST_MESSAGE_TRUNCATION_LIMIT = 300
+
+
+def _truncate_content(text, limit=PAST_MESSAGE_TRUNCATION_LIMIT):
+    """Truncate text to limit characters - a docstring the shape drops."""
+    if len(text) <= limit:
+        return text
+    return text[:limit] + "..."  # a comment the shape drops
+
+
+def _format_summary(summary):
+    if isinstance(summary, dict):
+        return summary.get("summary", "")
+    return summary or ""
+
+
+def _format_conversation_history(messages):
+    if not messages:
+        return ""
+    result = ""
+    for msg in messages:
+        role = msg.get("role", "")
+        content = msg.get("message") or msg.get("content", "")
+        if role and content:
+            result += f"{role}: {_truncate_content(content)}\n"
+    return result
+
+
+def _serialize_memories(memories):
+    return json.dumps(memories or [], ensure_ascii=False)
+
+
+def _format_new_messages(new_messages):
+    if isinstance(new_messages, str):
+        return new_messages
+    return json.dumps(new_messages or [], ensure_ascii=False)
+
+
+def _resolve_dates(current_date=None, observation_date=None):
+    if current_date is None:
+        current_date = datetime.now(timezone.utc).date().isoformat()
+    if observation_date is None:
+        observation_date = current_date
+    return current_date, observation_date
+
+
+def generate_additive_extraction_prompt(
+    summary=None,
+    recently_extracted_memories=None,
+    existing_memories=None,
+    new_messages=None,
+    *,
+    last_k_messages=None,
+    current_date=None,
+    timestamp=None,
+    custom_instructions=None,
+    use_input_language=False,
+):
+    current_date, observation_date = _resolve_dates(current_date, timestamp)
+    sections = []
+    sections.append(f"## Last k Messages\n{_format_conversation_history(last_k_messages)}")
+    sections.append(f"## Existing Memories\n{_serialize_memories(existing_memories)}")
+    sections.append(f"## New Messages\n{_format_new_messages(new_messages)}")
+    if custom_instructions:
+        sections.append(f"## Custom Instructions\n{custom_instructions}")
+    if use_input_language:
+        sections.append("## Language\nkeep it")
+    sections.append("# Output:")
+    return "\n\n".join(sections)
+'''
+MAI_SRC = r'''class Memory:
+    def __init__(self, config=None):
+        self.config = config
+        self.custom_instructions = self.config.custom_instructions
+
+    def add(
+        self,
+        messages,
+        *,
+        user_id: Optional[str] = None,
+        agent_id: Optional[str] = None,
+        timestamp: Optional[Any] = None,
+        infer: bool = True,
+        memory_type: Optional[str] = None,
+        prompt: Optional[str] = None,
+    ):
+        if isinstance(messages, str):
+            messages = [{"role": "user", "content": messages}]
+        elif isinstance(messages, dict):
+            messages = [messages]
+        if self.config.llm.config.get("enable_vision"):
+            messages = parse_vision_messages(messages, self.llm, self.config.llm.config.get("vision_details"))
+        else:
+            messages = parse_vision_messages(messages)
+        vector_store_result = self._add_to_vector_store(messages, processed_metadata, effective_filters, infer, prompt=prompt)
+        return vector_store_result
+
+    def _add_to_vector_store(self, messages, metadata, filters, infer, prompt=None):
+        last_messages = self.db.get_last_messages(session_scope, limit=10)
+        parsed_messages = parse_messages(messages)
+        existing_results = self.vector_store.search(
+            query=parsed_messages,
+            vectors=query_embedding,
+            top_k=10,
+            filters=search_filters,
+        )
+        existing_memories = []
+        for idx, mem in enumerate(existing_results):
+            existing_memories.append({"id": str(idx), "text": mem.payload.get("data", "")})
+        system_prompt = ADDITIVE_EXTRACTION_PROMPT
+        if is_agent_scoped:
+            system_prompt += AGENT_CONTEXT_SUFFIX
+        custom_instr = prompt or self.custom_instructions
+        user_prompt = generate_additive_extraction_prompt(
+            existing_memories=existing_memories,
+            new_messages=parsed_messages,
+            last_k_messages=last_messages,
+            custom_instructions=custom_instr,
+        )
+        response = self.llm.generate_response(
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            response_format={"type": "json_object"},
+        )
+        entity = self.vector_store.search(query=q, top_k=1)
+'''
+UTL_SRC = r'''def parse_messages(messages):
+    """Parse the messages - a docstring the shape drops."""
+    response = ""
+    for msg in messages:
+        role = msg.get("role")
+        content = msg.get("content")
+        if content is None:
+            continue
+        if role == "system":
+            response += f"system: {content}\n"
+        elif role == "user":
+            response += f"user: {content}\n"
+        elif role == "assistant":
+            response += f"assistant: {content}\n"
+    return response
+
+
+def parse_vision_messages(messages, llm=None, vision_details="auto"):
+    returned_messages = []
+    for msg in messages:
+        role = msg.get("role")
+        content = msg.get("content")
+        if role == "system":
+            returned_messages.append(msg)
+            continue
+        if content is None:
+            continue
+        if isinstance(content, list):
+            if llm is None:
+                text_parts = [part["text"] for part in msg["content"] if isinstance(part, dict) and part.get("type") == "text"]
+                if not text_parts:
+                    continue
+                returned_messages.append({"role": role, "content": " ".join(text_parts)})
+            else:
+                description = get_image_description(msg, llm, vision_details)
+                returned_messages.append({"role": role, "content": description})
+        elif isinstance(content, dict) and content.get("type") == "image_url":
+            if llm is None:
+                continue
+            image_url_obj = content.get("image_url")
+            image_url = image_url_obj.get("url") if isinstance(image_url_obj, dict) else None
+            if not image_url:
+                raise ValueError("image_url content part is missing image_url.url")
+            try:
+                description = get_image_description(image_url, llm, vision_details)
+                returned_messages.append({"role": role, "content": description})
+            except Exception as e:
+                raise Exception(f"Error while downloading {image_url}.") from e
+        else:
+            returned_messages.append(msg)
+    return returned_messages
+'''
+DSK_SRC = r'''class DeepSeekLLM(LLMBase):
+    def __init__(self, config=None):
+        self.client = OpenAI(base_url=base_url, timeout=t)
+
+    def generate_response(
+        self,
+        messages: List[Dict[str, str]],
+        response_format=None,
+        tools: Optional[List[Dict]] = None,
+        tool_choice: str = "auto",
+        **kwargs,
+    ):
+        """Generate a response - a docstring the shape drops."""
+        params = self._get_supported_params(messages=messages, **kwargs)
+        params.update(
+            {
+                "model": self.config.model,
+                "messages": messages,
+            }
+        )
+
+        if response_format:
+            params["response_format"] = response_format
+        if tools:
+            params["tools"] = tools
+            params["tool_choice"] = tool_choice
+
+        response = self.client.chat.completions.create(**params)
+        return self._parse_response(response, tools)
+'''
+CFG_SRC = r'''class MemoryConfig(BaseModel):
+    version: str = Field(
+        description="The version of the API",
+        default="v1.1",
+    )
+    custom_instructions: Optional[str] = Field(
+        description="Custom instructions for fact extraction",
+        default=None,
+    )
+'''
 FILES3 = {
     "openai/_constants.py": b"import httpx\n\nDEFAULT_TIMEOUT = 600\nDEFAULT_MAX_RETRIES = 2\n",
     "openai/_client.py": (b"class OpenAI(SyncAPIClient):\n    def __init__(\n        self,\n        *,\n"
                           b"        max_retries: int = DEFAULT_MAX_RETRIES,\n    ):\n        pass\n\n\n"
                           b"class AsyncOpenAI(AsyncAPIClient):\n    def __init__(\n        self,\n        *,\n"
                           b"        max_retries: int = DEFAULT_MAX_RETRIES,\n    ):\n        pass\n"),
-    "mem0/llms/deepseek.py": (b"class DeepSeekLLM(LLMBase):\n    def __init__(self, config=None):\n"
-                              b"        self.client = OpenAI(base_url=base_url, timeout=t)\n"),
+    "mem0/llms/deepseek.py": DSK_SRC.encode("utf-8"),
     "mem0/configs/llms/deepseek.py": b"class C:\n    def __init__(\n        self,\n        max_tokens: int = 2000,\n    ):\n        pass\n",
     "mem0/llms/base.py": b"class LLMBase:\n    def _p(self):\n            params[\"max_tokens\"] = self.config.max_tokens\n",
-    "mem0/configs/prompts.py": (
-        b'ADDITIVE_EXTRACTION_PROMPT = """' + SYS_PROMPT.encode("utf-8") + b'"""\n\n'
-        b'AGENT_CONTEXT_SUFFIX = """agent suffix"""\n\n'
-        b"PAST_MESSAGE_TRUNCATION_LIMIT = 300\n\n\n"
-        b"def _format_conversation_history(messages):\n    result = \"\"\n    for msg in messages:\n"
-        b"        result += f\"{role}: {_truncate_content(content)}\\n\"\n    return result\n\n\n"
-        b"def _serialize_memories(memories):\n    return json.dumps(memories or [], ensure_ascii=False)\n\n\n"
-        b"def generate_additive_extraction_prompt(existing_memories=None, new_messages=None, *, last_k_messages=None,\n"
-        b"                                      custom_instructions=None, use_input_language=False):\n"
-        b"    sections = []\n"
-        b"    sections.append(f\"## Last k Messages\\n{_format_conversation_history(last_k_messages)}\")\n"
-        b"    sections.append(f\"## Existing Memories\\n{_serialize_memories(existing_memories)}\")\n"
-        b"    sections.append(f\"## New Messages\\n{_format_new_messages(new_messages)}\")\n"
-        b"    if custom_instructions:\n        sections.append(f\"## Custom Instructions\\n{custom_instructions}\")\n"
-        b"    if use_input_language:\n        sections.append(\"## Language\\nkeep it\")\n"
-        b"    sections.append(\"# Output:\")\n    return \"\\n\\n\".join(sections)\n"),
-    "mem0/memory/main.py": (
-        b"class Memory:\n    def _add_to_vector_store(self, messages, metadata, filters, infer, prompt=None):\n"
-        b"        last_messages = self.db.get_last_messages(session_scope, limit=10)\n"
-        b"        existing_results = self.vector_store.search(\n            query=parsed_messages,\n"
-        b"            vectors=query_embedding,\n            top_k=10,\n            filters=search_filters,\n        )\n"
-        b"        for idx, mem in enumerate(existing_results):\n"
-        b"            existing_memories.append({\"id\": str(idx), \"text\": mem.payload.get(\"data\", \"\")})\n"
-        b"        system_prompt = ADDITIVE_EXTRACTION_PROMPT\n"
-        b"        user_prompt = generate_additive_extraction_prompt(\n            existing_memories=existing_memories,\n"
-        b"            new_messages=parsed_messages,\n            last_k_messages=last_messages,\n"
-        b"            custom_instructions=custom_instr,\n        )\n"
-        b"        entity = self.vector_store.search(query=q, top_k=1)\n"),
-    "mem0/memory/utils.py": (b"def parse_messages(messages):\n    response = \"\"\n    for msg in messages:\n"
-                             b"        if role == \"system\":\n            response += f\"system: {content}\\n\"\n"
-                             b"        elif role == \"user\":\n            response += f\"user: {content}\\n\"\n"
-                             b"        elif role == \"assistant\":\n            response += f\"assistant: {content}\\n\"\n"
-                             b"    return response\n"),
+    "mem0/configs/prompts.py": PRO_SRC.replace("{SYS}", SYS_PROMPT).encode("utf-8"),
+    "mem0/configs/base.py": CFG_SRC.encode("utf-8"),
+    "mem0/memory/main.py": MAI_SRC.encode("utf-8"),
+    "mem0/memory/utils.py": UTL_SRC.encode("utf-8"),
 }
 for rel, data in FILES3.items():
     (M3 / rel).parent.mkdir(parents=True, exist_ok=True)
@@ -780,6 +976,214 @@ finally:
 LN_OUT = 1 + next(i for i, x in enumerate(PRO.split(b"\n")) if b'sections.append("# Output:")' in x)
 check("C6C1-1: the blocked user prompt names each other use of sections by its file line",
       ok(lambda: upx["uses"] == [f"line {LN_OUT}: sections.extend"]), str(upx)[:300])
+
+print("\n- F-C6-4: the chain from the adapter's message to the two prompt strings, declared from 2.0.19 -")
+UTL, DSK, CFG = FILES3["mem0/memory/utils.py"], FILES3["mem0/llms/deepseek.py"], FILES3["mem0/configs/base.py"]
+NEW_F = set()
+for _name in ("M0_HELPER_SHAPES", "M0_WRITES", "M0_DEFAULTS", "M0_CALLS", "M0_CONFIG_DEFAULTS"):
+    NEW_F |= set(getattr(P, _name, {}))
+NEW_F.add("m0_adapter")
+#: mem0 2.0.19's helper shapes (scratch record c2a_2019.json), written out a second time: the code's constant must equal it
+SHAPES_2019 = {
+    "m0_fn_summary": ("mem0/configs/prompts.py", "_format_summary",
+                      "eca1bb27e66bcf6112f3263398760ce7b84257e93a04356d23bc7f219a9a6b88"),
+    "m0_fn_truncate": ("mem0/configs/prompts.py", "_truncate_content",
+                       "5a1733903f942c44b858e38a5008b5380abba74334aadd3811ff8cee698d1bf6"),
+    "m0_fn_history": ("mem0/configs/prompts.py", "_format_conversation_history",
+                      "b13d2cd83d9ab62dead7df6b72ad5adec25d89612594e33ec8b34f0f07964edb"),
+    "m0_fn_memories": ("mem0/configs/prompts.py", "_serialize_memories",
+                       "d40626a070252d9c84826b6d66e0190bf66320784516ef59eab08a5db8f4d8d4"),
+    "m0_fn_new_messages": ("mem0/configs/prompts.py", "_format_new_messages",
+                           "59409fdf8f46337d1320e3131fc5707df513129b81d138f061192881d4781d45"),
+    "m0_fn_dates": ("mem0/configs/prompts.py", "_resolve_dates",
+                    "9b8b45dcccaee8147f13a376f335beeac05c395867f4830808c6a688081fa689"),
+    "m0_fn_parse": ("mem0/memory/utils.py", "parse_messages",
+                    "0fae0b7c2fe4ac52861739453e12c572b7f2698c8d1a1f813755cd44fad30990"),
+    "m0_fn_vision": ("mem0/memory/utils.py", "parse_vision_messages",
+                     "145e95c39edaf28f208ff42522fe87f68fcb27b2b8f03dcb4355915602752e33"),
+    "m0_fn_generate": ("mem0/llms/deepseek.py", "DeepSeekLLM.generate_response",
+                       "c0488b092afc3aa86e05f7be9eba05d3147378ed014e34ab7503bd6bd325ea12")}
+check("F-C6-4: the declared shapes written out - nine helpers by file, qualified name and the sha256 of their "
+      "normalized source (ast.unparse, the docstring dropped) under Python 3.14",
+      ok(lambda: P.M0_HELPER_SHAPES == SHAPES_2019 and P.M0_SHAPE_PYTHON == (3, 14)))
+check("F-C6-4: the declared writes, defaults, calls' arguments and config default, written out, all relative paths",
+      ok(lambda: set(P.M0_WRITES) == {"m0_builder_writes", "m0_add_path_writes", "m0_add_writes", "m0_custom_writes"}
+         and set(P.M0_DEFAULTS) == {"m0_prompt_defaults", "m0_add_defaults"}
+         and set(P.M0_CALLS) == {"m0_prompt_args", "m0_llm_args", "m0_add_call"}
+         and set(P.M0_CONFIG_DEFAULTS) == {"m0_custom_default"}
+         and P.M0_DEFAULTS["m0_prompt_defaults"][3] == {"summary": "None", "recently_extracted_memories": "None",
+                                                         "current_date": "None", "timestamp": "None",
+                                                         "use_input_language": "False"}
+         and P.M0_DEFAULTS["m0_add_defaults"][3] == {"prompt": "None", "timestamp": "None", "agent_id": "None",
+                                                      "memory_type": "None"}
+         and P.M0_CALLS["m0_add_call"][3] == {"args": ["messages", "processed_metadata", "effective_filters", "infer"],
+                                               "keywords": {"prompt": "prompt"}}
+         and P.M0_CONFIG_DEFAULTS["m0_custom_default"][3] == "None"
+         and all(not Path(v[0]).is_absolute() for d in (P.M0_HELPER_SHAPES, P.M0_WRITES, P.M0_DEFAULTS, P.M0_CALLS,
+                                                           P.M0_CONFIG_DEFAULTS) for v in d.values())))
+check("F-C6-4: every new fact read from the tree (2.0.19's own helpers, reformatted) - nineteen facts and the adapter's, "
+      "none blocked, and still no reason against the bound",
+      ok(lambda: len(NEW_F) == 20 and all(isinstance(BF.get(k), dict) and BF[k].get("blocked") is None
+                                          and BF[k].get("value") is not None for k in NEW_F)
+         and S.bound_blocked(BF) == []), str({k: (BF.get(k) or {}).get("blocked") for k in sorted(NEW_F)})[:600])
+check("F-C6-4: a fact's value - a shape's sha256 and length, the writes by name, the defaults, the calls' arguments, "
+      "the config's default, the adapter's keys",
+      ok(lambda: BF["m0_fn_truncate"]["value"] == {"sha256": SHAPES_2019["m0_fn_truncate"][2], "chars": 144}
+         and BF["m0_add_path_writes"]["value"]["existing_memories"] == [
+             "existing_memories = []", "existing_memories.append({'id': str(idx), 'text': mem.payload.get('data', '')})"]
+         and BF["m0_builder_writes"]["value"] == {
+             "current_date": ["current_date, observation_date = _resolve_dates(current_date, timestamp)"],
+             "observation_date": ["current_date, observation_date = _resolve_dates(current_date, timestamp)"]}
+         and BF["m0_prompt_defaults"]["value"]["use_input_language"] == "False"
+         and BF["m0_llm_args"]["value"]["keywords"]["messages"]
+         == "[{'role': 'system', 'content': system_prompt}, {'role': 'user', 'content': user_prompt}]"
+         and BF["m0_custom_default"]["value"] == "None"
+         and BF["m0_adapter"]["value"]["config_keys"] == ["embedder", "history_db_path", "llm", "vector_store"]
+         and BF["m0_adapter"]["value"]["add_keywords"] == [["infer", "user_id"], ["infer", "metadata", "user_id"]]
+         and all(BF[k].get("source") for k in NEW_F)), str({k: BF.get(k) for k in ("m0_fn_truncate", "m0_adapter")})[:600])
+got_q = bound_with("mem0/configs/prompts.py", PRO.replace(b'    return summary or ""', b"    return summary or ''  # same"))
+check("F-C6-4: other quotes and a comment keep a helper's shape - no reason against the bound", ok(lambda: got_q == []),
+      str(got_q)[:300])
+_py = getattr(P, "M0_SHAPE_PYTHON", None)
+P.M0_SHAPE_PYTHON = (3, 13)
+try:
+    bf_py = S.mem0_bound_facts(M3)
+finally:
+    P.M0_SHAPE_PYTHON = _py
+check("F-C6-4: a shape normalized under another Python minor is blocked:normalizer-changed, never compared",
+      ok(lambda: bf_py["m0_fn_summary"].get("blocked") == "blocked:normalizer-changed:m0_fn_summary"
+         and bf_py["m0_fn_summary"].get("value") is None), str(bf_py.get("m0_fn_summary"))[:300])
+(M3 / "mem0/configs/prompts.py").write_bytes(PRO.replace(b'.date().isoformat()', b'.isoformat()'))
+try:
+    bf_ch = S.mem0_bound_facts(M3)
+finally:
+    (M3 / "mem0/configs/prompts.py").write_bytes(PRO)
+check("F-C6-4: a changed shape carries its normalized text, so the change can be read",
+      ok(lambda: bf_ch["m0_fn_dates"]["blocked"] == "blocked:source-changed:m0_fn_dates"
+         and "current_date = datetime.now(timezone.utc).isoformat()" in bf_ch["m0_fn_dates"]["text"]),
+      str(bf_ch.get("m0_fn_dates"))[:300])
+ADP = (ROOT / "research" / "v3" / "arms" / "arm_mem0.py").read_text(encoding="utf-8")
+
+
+def adapter_with(text):
+    f = TMP / "arm_mem0_variant.py"
+    f.write_text(text, encoding="utf-8")
+    return S.bound_blocked(S.mem0_bound_facts(M3, adapter=f))
+
+
+for label, rel, data, want in (
+        ("F-C6-4: a summary helper with a default text", "mem0/configs/prompts.py",
+         PRO.replace(b'    return summary or ""', b'    return summary or "none"'), "blocked:source-changed:m0_fn_summary"),
+        ("F-C6-4: no truncation in _truncate_content", "mem0/configs/prompts.py",
+         PRO.replace(b'    return text[:limit] + "..."', b"    return text"), "blocked:source-changed:m0_fn_truncate"),
+        ("F-C6-4: the history taking more than the content", "mem0/configs/prompts.py",
+         PRO.replace(b'msg.get("content", "")\n', b'msg.get("content", "") + msg.get("extra", "")\n'),
+         "blocked:source-changed:m0_fn_history"),
+        ("F-C6-4: memories serialized with escapes", "mem0/configs/prompts.py",
+         PRO.replace(b"return json.dumps(memories or [], ensure_ascii=False)", b"return json.dumps(memories or [], ensure_ascii=True)"),
+         "blocked:source-changed:m0_fn_memories"),
+        ("F-C6-4: new messages serialized even as a string", "mem0/configs/prompts.py",
+         PRO.replace(b"    if isinstance(new_messages, str):\n        return new_messages\n", b""),
+         "blocked:source-changed:m0_fn_new_messages"),
+        ("F-C6-4: dates as full date-times", "mem0/configs/prompts.py",
+         PRO.replace(b".date().isoformat()", b".isoformat()"), "blocked:source-changed:m0_fn_dates"),
+        ("F-C6-4: parse_messages adding a line", "mem0/memory/utils.py",
+         UTL.replace(b"    return response\n", b'    response += "names: all"\n    return response\n'),
+         "blocked:source-changed:m0_fn_parse"),
+        ("F-C6-4: parse_vision_messages rewriting a text message", "mem0/memory/utils.py",
+         UTL.replace(b"            returned_messages.append(msg)\n    return", b'            returned_messages.append({"role": role, '
+                     b'"content": "[text] " + content})\n    return'), "blocked:source-changed:m0_fn_vision"),
+        ("F-C6-4: generate_response adding messages", "mem0/llms/deepseek.py",
+         DSK.replace(b'                "messages": messages,', b'                "messages": messages + extra,'),
+         "blocked:source-changed:m0_fn_generate"),
+        ("F-C6-4: a method whose text does not dedent to a parse (a string at column 0)", "mem0/llms/deepseek.py",
+         DSK.replace(b"        response = self.client.chat.completions.create(**params)\n",
+                     b'        note = """\nat column 0\n"""\n        response = self.client.chat.completions.create(**params)\n'),
+         "blocked:source-unparsable:m0_fn_generate"),
+        ("F-C6-4: a helper defined twice", "mem0/configs/prompts.py",
+         PRO + b"\n\ndef _format_summary(summary):\n    return ''\n", "blocked:source-ambiguous:m0_fn_summary"),
+        ("F-C6-4: the builder rebinding a parameter", "mem0/configs/prompts.py",
+         PRO.replace(b"    sections = []\n", b"    summary = summary or 'none'\n    sections = []\n"),
+         "blocked:source-changed:m0_builder_writes"),
+        ("F-C6-4: the add path extending the parsed messages", "mem0/memory/main.py",
+         MAI.replace(b"        parsed_messages = parse_messages(messages)\n",
+                     b"        parsed_messages = parse_messages(messages)\n        parsed_messages += context\n"),
+         "blocked:source-changed:m0_add_path_writes"),
+        ("F-C6-4: the add path adding memories another way", "mem0/memory/main.py",
+         MAI.replace(b"        system_prompt = ADDITIVE_EXTRACTION_PROMPT\n",
+                     b"        existing_memories.extend(recent)\n        system_prompt = ADDITIVE_EXTRACTION_PROMPT\n"),
+         "blocked:source-changed:m0_add_path_writes"),
+        ("F-C6-4: the user prompt extended after the builder", "mem0/memory/main.py",
+         MAI.replace(b"        response = self.llm.generate_response(",
+                     b"        user_prompt += extra\n        response = self.llm.generate_response("),
+         "blocked:source-changed:m0_add_path_writes"),
+        ("F-C6-4: add() rewriting the messages", "mem0/memory/main.py",
+         MAI.replace(b"        vector_store_result = self._add_to_vector_store(",
+                     b"        messages = messages + history\n        vector_store_result = self._add_to_vector_store("),
+         "blocked:source-changed:m0_add_writes"),
+        ("F-C6-4: custom instructions set outside the config", "mem0/memory/main.py",
+         MAI.replace(b"        self.config = config\n", b"        self.config = config\n        self.custom_instructions = 'be brief'\n"),
+         "blocked:source-changed:m0_custom_writes"),
+        ("F-C6-4: a builder default that is not None", "mem0/configs/prompts.py",
+         PRO.replace(b"    summary=None,\n", b"    summary='s',\n"), "blocked:source-changed:m0_prompt_defaults"),
+        ("F-C6-4: a new builder parameter", "mem0/configs/prompts.py",
+         PRO.replace(b"    use_input_language=False,\n", b"    use_input_language=False,\n    extra_context=None,\n"),
+         "blocked:source-changed:m0_prompt_defaults"),
+        ("F-C6-4: a builder taking **kwargs", "mem0/configs/prompts.py",
+         PRO.replace(b"    use_input_language=False,\n):", b"    use_input_language=False,\n    **kwargs,\n):"),
+         "blocked:source-changed:m0_prompt_defaults"),
+        ("F-C6-4: a keyword-only builder parameter without a default", "mem0/configs/prompts.py",
+         PRO.replace(b"    timestamp=None,\n", b"    timestamp,\n"), "blocked:source-changed:m0_prompt_defaults"),
+        ("F-C6-4: a positional builder parameter without a default", "mem0/configs/prompts.py",
+         PRO.replace(b"    summary=None,\n", b"    summary,\n"), "blocked:source-changed:m0_prompt_defaults"),
+        ("F-C6-4: add()'s prompt default", "mem0/memory/main.py",
+         MAI.replace(b"        prompt: Optional[str] = None,\n", b"        prompt: Optional[str] = 'be brief',\n"),
+         "blocked:source-changed:m0_add_defaults"),
+        ("F-C6-4: add() without a prompt parameter", "mem0/memory/main.py",
+         MAI.replace(b"        prompt: Optional[str] = None,\n", b""), "blocked:source-changed:m0_add_defaults"),
+        ("F-C6-4: the builder given the raw messages", "mem0/memory/main.py",
+         MAI.replace(b"            new_messages=parsed_messages,\n", b"            new_messages=messages,\n"),
+         "blocked:source-changed:m0_prompt_args"),
+        ("F-C6-4: the LLM sent a third message", "mem0/memory/main.py",
+         MAI.replace(b'                {"role": "user", "content": user_prompt},\n',
+                     b'                {"role": "user", "content": user_prompt},\n                {"role": "user", "content": parsed_messages},\n'),
+         "blocked:source-changed:m0_llm_args"),
+        ("F-C6-4: add() passing another prompt", "mem0/memory/main.py",
+         MAI.replace(b"infer, prompt=prompt)", b"infer, prompt=prompt or self.default_prompt)"),
+         "blocked:source-changed:m0_add_call"),
+        ("F-C6-4: two LLM calls on the add path", "mem0/memory/main.py",
+         MAI + b"        again = self.llm.generate_response(messages=[])\n", "blocked:source-ambiguous:m0_llm_args"),
+        ("F-C6-4: the config's custom instructions with a default text", "mem0/configs/base.py",
+         CFG.replace(b"        default=None,\n", b"        default='be brief',\n"), "blocked:source-changed:m0_custom_default"),
+        ("F-C6-4: the config's custom instructions from a factory", "mem0/configs/base.py",
+         CFG.replace(b"        default=None,\n", b"        default_factory=lambda: 'x',\n"), "blocked:source-changed:m0_custom_default"),
+        ("F-C6-4: no custom instructions in the config", "mem0/configs/base.py",
+         CFG.split(b"    custom_instructions")[0], "blocked:source-missing:m0_custom_default"),
+        ("F-C6-4: two custom instructions fields in the config", "mem0/configs/base.py",
+         CFG + b"    custom_instructions: Optional[str] = None\n", "blocked:source-ambiguous:m0_custom_default"),
+        ("F-C6-4: a config that does not parse", "mem0/configs/base.py", CFG + b"def (:\n",
+         "blocked:source-unparsable:m0_custom_default")):
+    got = bound_with(rel, data)
+    check(f"C6: {label} makes no bound - named ({want})", ok(lambda: any(want in x for x in got)), str(got)[:300])
+for label, text, want in (
+        ("the adapter's config with custom instructions",
+         ADP.replace('"history_db_path": str(store / "history.db")}',
+                     '"history_db_path": str(store / "history.db"), "custom_instructions": "be brief"}'),
+         "blocked:source-changed:m0_adapter"),
+        ("the adapter's DeepSeek config with vision",
+         ADP.replace('"deepseek_base_url": proxy_base(spec)}', '"deepseek_base_url": proxy_base(spec), "enable_vision": True}'),
+         "blocked:source-changed:m0_adapter"),
+        ("the adapter passing a prompt to add()",
+         ADP.replace("user_id=self.unit, infer=True)", "user_id=self.unit, infer=True, prompt=\"be brief\")"),
+         "blocked:source-changed:m0_adapter"),
+        ("the adapter passing **kwargs to add()",
+         ADP.replace("user_id=self.unit, infer=True)", "user_id=self.unit, infer=True, **extra)"),
+         "blocked:source-changed:m0_adapter"),
+        ("the adapter writing through another call than add()", ADP.replace("self.mem.add(", "self.mem.put("),
+         "blocked:source-changed:m0_adapter")):
+    got = adapter_with(text)
+    check(f"F-C6-4 (Q-C6-1): {label} makes no bound - named ({want})", ok(lambda: text != ADP and any(want in x for x in got)),
+          str(got)[:300])
 check("C4A-8 / C5A-8: no verdict raised on any row - every failure came back as a field", RAISED == [], str(RAISED))
 _cleanup()
 print(f"\nv3 probe a8: {PASSED} passed, {FAILED} failed")

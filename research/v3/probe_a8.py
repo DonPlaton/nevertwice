@@ -28,6 +28,10 @@ This part (C5a) holds the verdicts; they read records, never a product:
   system prompt's bytes (literal_bytes), the user prompt's sections (prompt_parts: constant bytes, fields declared in
   M0_PROMPT_FIELDS), the prompt call's keywords, the last-k window and its truncation, the top_k window and a memory's
   shape, the message frames; ``mem0_bound_facts`` reads them, ``bound_blocked`` names every reason they make no bound;
+  F-C6-4 closes the chain from the adapter's message to the two prompt strings: the small helpers held whole
+  (M0_HELPER_SHAPES), the add path, add() and the builder by their writes, defaults and calls' arguments (M0_WRITES,
+  M0_DEFAULTS, M0_CALLS), the config's custom instructions (M0_CONFIG_DEFAULTS) and the adapter's side (M0_ADAPTER);
+  the probe record carries them all (bound_facts, bound_blocked);
 * ``verdict``: "pass" only when every field is ok, there is no problem, every boundary check is complete with 0/0 and
   no catcher line belongs to the arm; else the first blocked:<reason> - the fields in their declared order, then the
   problems - else "fail". The proxy's own spawn is unwitnessed by design (launch.spawn_proxy): 0/0 covers the product
@@ -128,6 +132,95 @@ M0_PROMPT_FIELDS = frozenset({"_format_summary(summary)", "_format_conversation_
                               "custom_instructions"})
 #: the keywords the add path may pass to the prompt builder (Q-C6-1: custom instructions are the config's, None here)
 M0_PROMPT_CALL = frozenset({"existing_memories", "new_messages", "last_k_messages", "custom_instructions"})
+#: F-C6-4 (the auditor accepted it, 2026-09-28): the chain from the adapter's message to the two prompt strings, declared
+#: from 2.0.19 before any read of 2.2.0 (scratch record c2a_2019.json). What is small is held whole: a helper's shape is
+#: the sha256 of its ast.unparse with the docstring dropped - quotes, comments and layout do not count, any other change
+#: does. What is long (the add path, add(), the prompt builder) is held by its writes, its defaults and its calls'
+#: arguments. ast.unparse's output differs between Python minors: under another minor than M0_SHAPE_PYTHON a shape is
+#: blocked:normalizer-changed, never compared.
+M0_SHAPE_PYTHON = (3, 14)
+M0_HELPER_SHAPES = {
+    "m0_fn_summary": ("mem0/configs/prompts.py", "_format_summary",
+                      "eca1bb27e66bcf6112f3263398760ce7b84257e93a04356d23bc7f219a9a6b88"),
+    "m0_fn_truncate": ("mem0/configs/prompts.py", "_truncate_content",
+                       "5a1733903f942c44b858e38a5008b5380abba74334aadd3811ff8cee698d1bf6"),
+    "m0_fn_history": ("mem0/configs/prompts.py", "_format_conversation_history",
+                      "b13d2cd83d9ab62dead7df6b72ad5adec25d89612594e33ec8b34f0f07964edb"),
+    "m0_fn_memories": ("mem0/configs/prompts.py", "_serialize_memories",
+                       "d40626a070252d9c84826b6d66e0190bf66320784516ef59eab08a5db8f4d8d4"),
+    "m0_fn_new_messages": ("mem0/configs/prompts.py", "_format_new_messages",
+                           "59409fdf8f46337d1320e3131fc5707df513129b81d138f061192881d4781d45"),
+    "m0_fn_dates": ("mem0/configs/prompts.py", "_resolve_dates",
+                    "9b8b45dcccaee8147f13a376f335beeac05c395867f4830808c6a688081fa689"),
+    "m0_fn_parse": ("mem0/memory/utils.py", "parse_messages",
+                    "0fae0b7c2fe4ac52861739453e12c572b7f2698c8d1a1f813755cd44fad30990"),
+    "m0_fn_vision": ("mem0/memory/utils.py", "parse_vision_messages",
+                     "145e95c39edaf28f208ff42522fe87f68fcb27b2b8f03dcb4355915602752e33"),
+    "m0_fn_generate": ("mem0/llms/deepseek.py", "DeepSeekLLM.generate_response",
+                       "c0488b092afc3aa86e05f7be9eba05d3147378ed014e34ab7503bd6bd325ea12")}
+_DATES = "current_date, observation_date = _resolve_dates(current_date, timestamp)"
+#: the names a scope may write, and every write of them in 2.0.19 (ast.unparse of the statement, its first line; any
+#: method called on the name counts as a write) - sorted. One more write, or another one, is blocked:source-changed.
+#: A qualified name "class X" is the whole module-level class.
+M0_WRITES = {
+    "m0_builder_writes": ("mem0/configs/prompts.py", "generate_additive_extraction_prompt",
+                          ("summary", "recently_extracted_memories", "existing_memories", "new_messages",
+                           "last_k_messages", "current_date", "timestamp", "custom_instructions", "use_input_language",
+                           "observation_date"),
+                          {"current_date": [_DATES], "observation_date": [_DATES]}),
+    "m0_add_path_writes": ("mem0/memory/main.py", "Memory._add_to_vector_store",
+                           ("messages", "prompt", "parsed_messages", "last_messages", "existing_results",
+                            "existing_memories", "system_prompt", "custom_instr", "user_prompt"),
+                           {"last_messages": ["last_messages = self.db.get_last_messages(session_scope, limit=10)"],
+                            "parsed_messages": ["parsed_messages = parse_messages(messages)"],
+                            "existing_results": ["existing_results = self.vector_store.search(query=parsed_messages, "
+                                                 "vectors=query_embedding, top_k=10, filters=search_filters)"],
+                            "existing_memories": sorted(["existing_memories = []", "existing_memories.append({'id': "
+                                                         "str(idx), 'text': mem.payload.get('data', '')})"]),
+                            "system_prompt": sorted(["system_prompt = ADDITIVE_EXTRACTION_PROMPT",
+                                                     "system_prompt += AGENT_CONTEXT_SUFFIX"]),
+                            "custom_instr": ["custom_instr = prompt or self.custom_instructions"],
+                            "user_prompt": ["user_prompt = generate_additive_extraction_prompt(existing_memories="
+                                            "existing_memories, new_messages=parsed_messages, last_k_messages="
+                                            "last_messages, custom_instructions=custom_instr)"]}),
+    "m0_add_writes": ("mem0/memory/main.py", "Memory.add", ("messages", "prompt"),
+                      {"messages": sorted(["messages = [{'role': 'user', 'content': messages}]", "messages = [messages]",
+                                           "messages = parse_vision_messages(messages)",
+                                           "messages = parse_vision_messages(messages, self.llm, "
+                                           "self.config.llm.config.get('vision_details'))"])}),
+    "m0_custom_writes": ("mem0/memory/main.py", "class Memory", ("self.custom_instructions",),
+                         {"self.custom_instructions": ["self.custom_instructions = self.config.custom_instructions"]}),
+}
+#: the defaults of the parameters nobody passes: the builder's - None names every parameter but the add path's own
+#: (M0_PROMPT_CALL) - and add()'s that decide what reaches the prompt (a prompt= replaces the custom instructions, a
+#: timestamp is refused, an agent id adds the agent suffix, a memory type takes another path)
+M0_DEFAULTS = {
+    "m0_prompt_defaults": ("mem0/configs/prompts.py", "generate_additive_extraction_prompt", None,
+                           {"summary": "None", "recently_extracted_memories": "None", "current_date": "None",
+                            "timestamp": "None", "use_input_language": "False"}),
+    "m0_add_defaults": ("mem0/memory/main.py", "Memory.add", ("prompt", "timestamp", "agent_id", "memory_type"),
+                        {"prompt": "None", "timestamp": "None", "agent_id": "None", "memory_type": "None"}),
+}
+#: the one call of each, its positional arguments and its keywords as ast.unparse writes them
+M0_CALLS = {
+    "m0_prompt_args": ("mem0/memory/main.py", "Memory._add_to_vector_store", "generate_additive_extraction_prompt",
+                       {"args": [], "keywords": {"existing_memories": "existing_memories", "new_messages": "parsed_messages",
+                                                 "last_k_messages": "last_messages", "custom_instructions": "custom_instr"}}),
+    "m0_llm_args": ("mem0/memory/main.py", "Memory._add_to_vector_store", "self.llm.generate_response",
+                    {"args": [], "keywords": {"messages": "[{'role': 'system', 'content': system_prompt}, "
+                                                          "{'role': 'user', 'content': user_prompt}]",
+                                              "response_format": "{'type': 'json_object'}"}}),
+    "m0_add_call": ("mem0/memory/main.py", "Memory.add", "self._add_to_vector_store",
+                    {"args": ["messages", "processed_metadata", "effective_filters", "infer"],
+                     "keywords": {"prompt": "prompt"}}),
+}
+#: a config field's default: the custom instructions, None unless the adapter sets them (Q-C6-1)
+M0_CONFIG_DEFAULTS = {"m0_custom_default": ("mem0/configs/base.py", "MemoryConfig", "custom_instructions", "None")}
+#: the adapter's side (Q-C6-1): mem0_config's keys, its DeepSeek llm config's keys, and the keywords every
+#: ``self.mem.add(...)`` may pass - custom instructions, vision or a prompt= would put text in the prompt the bound does
+#: not count
+M0_ADAPTER = {"config_keys": ["embedder", "history_db_path", "llm", "vector_store"],
+              "llm_config_keys": ["deepseek_base_url", "model"], "add_keywords": ["infer", "metadata", "user_id"]}
 M0_NLP_VARS = ("m0_nlp_full_var", "m0_nlp_lemma_var", "m0_nlp_failed_full_var", "m0_nlp_failed_lemma_var")
 #: the adapter's state key -> the source fact naming it
 M0_NLP_NAMES = {"full": "m0_nlp_full_var", "lemma": "m0_nlp_lemma_var", "failed_full": "m0_nlp_failed_full_var",
@@ -399,8 +492,198 @@ def prompt_parts(sc: Mapping, *, field: str) -> dict:
     return {"value": {"parts": parts, "separator": joins[0].func.value.value}, "source": sc["source"]}
 
 
-def mem0_bound_facts(site: Path) -> dict:
-    """C6: every declared M0_BOUND_SOURCE fact, read from the installed mem0 and openai SDK as data."""
+def class_scope(root: Path, rel: str, cls: str, *, name: str) -> dict:
+    """The source of exactly one module-level class, read as data and parsed, never imported - scope()'s shape."""
+    path = _source_path(root, rel, name)
+    if not path.is_file():
+        return {"value": None, "file": rel, "blocked": f"blocked:source-missing:{name}"}
+    data = path.read_bytes()
+    text = data.decode("utf-8", "replace")
+    try:
+        tree = ast.parse(text)
+    except SyntaxError:
+        return {"value": None, "file": rel, "blocked": f"blocked:source-unparsable:{name}"}
+    hits = [n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == cls]
+    if len(hits) != 1:
+        return {"value": None, "file": rel, "blocked": f"blocked:source-{'missing' if not hits else 'ambiguous'}:{name}"}
+    node = hits[0]
+    sha = hashlib.sha256(data).hexdigest()
+    return {"value": cls, "file": rel, "first_line": node.lineno,
+            "text": "".join(text.splitlines(keepends=True)[node.lineno - 1:node.end_lineno]), "sha256": sha,
+            "source": f"{rel}:{node.lineno}@sha256:{sha}"}
+
+
+def _scope_tree(sc: Mapping, field: str) -> tuple[ast.AST | None, dict | None]:
+    """A scope's parsed text, or the record that says why there is none."""
+    if sc.get("blocked"):
+        return None, {"value": None, "blocked": sc["blocked"]}
+    try:
+        return ast.parse(textwrap.dedent(sc["text"])), None
+    except SyntaxError:
+        return None, {"value": None, "blocked": f"blocked:source-unparsable:{field}"}
+
+
+def fn_shape(sc: Mapping, declared: str, *, field: str) -> dict:
+    """F-C6-4: a helper held whole - the sha256 of its ast.unparse with the docstring dropped, against the declared one.
+    Any change but quotes, comments and layout is blocked:source-changed, with the normalized text so it can be read;
+    under another Python minor than M0_SHAPE_PYTHON it is blocked:normalizer-changed, never compared."""
+    tree, why = _scope_tree(sc, field)
+    if why:
+        return why
+    if tuple(sys.version_info[:2]) != tuple(M0_SHAPE_PYTHON):
+        return {"value": None, "python": list(sys.version_info[:2]), "blocked": f"blocked:normalizer-changed:{field}"}
+    node = tree.body[0]
+    body = node.body
+    if body and isinstance(body[0], ast.Expr) and isinstance(body[0].value, ast.Constant) and isinstance(body[0].value.value, str):
+        node.body = body[1:] or [ast.Pass()]
+    text = ast.unparse(node)
+    sha = hashlib.sha256(text.encode("utf-8")).hexdigest()
+    if sha != declared:
+        return {"value": None, "sha256": sha, "text": text, "source": sc["source"], "blocked": f"blocked:source-changed:{field}"}
+    return {"value": {"sha256": sha, "chars": len(text)}, "source": sc["source"]}
+
+
+def writes_in(sc: Mapping, names: Iterable[str], declared: Mapping[str, list], *, field: str) -> dict:
+    """F-C6-4: every write of the watched names in the scope - an assignment, an augmented or annotated one, a loop, with
+    or walrus target, a del, an index or attribute under the name, or any method called on it - as the first line of its
+    ast.unparse, sorted by name. Anything but the declared writes is blocked:source-changed, with the writes read."""
+    tree, why = _scope_tree(sc, field)
+    if why:
+        return why
+    watched = set(names)
+    out: dict[str, list[str]] = {}
+    for n in ast.walk(tree):
+        if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute) and ast.unparse(n.func.value) in watched:
+            out.setdefault(ast.unparse(n.func.value), []).append(ast.unparse(n).split("\n")[0])
+            continue
+        if isinstance(n, ast.Assign):
+            tg = n.targets
+        elif isinstance(n, (ast.AugAssign, ast.AnnAssign, ast.For, ast.AsyncFor, ast.NamedExpr, ast.comprehension)):
+            tg = [n.target]
+        elif isinstance(n, (ast.With, ast.AsyncWith)):
+            tg = [x.optional_vars for x in n.items if x.optional_vars is not None]
+        elif isinstance(n, ast.Delete):
+            tg = n.targets
+        else:
+            continue
+        hit = {ast.unparse(x) for t in tg for x in ast.walk(t) if isinstance(x, (ast.Name, ast.Attribute))
+               and ast.unparse(x) in watched}
+        for h in hit:
+            out.setdefault(h, []).append(ast.unparse(n).split("\n")[0])
+    value = {k: sorted(v) for k, v in sorted(out.items())}
+    if value != {k: sorted(v) for k, v in declared.items()}:
+        return {"value": None, "writes": value, "source": sc.get("source"), "blocked": f"blocked:source-changed:{field}"}
+    return {"value": value, "source": sc["source"]}
+
+
+def param_defaults(sc: Mapping, names: Sequence[str] | None, declared: Mapping[str, Any], *, field: str) -> dict:
+    """F-C6-4: the defaults of the parameters nobody passes, as ast.unparse writes them (None: no default; "<absent>":
+    no such parameter). ``names`` None is every parameter but self and the add path's own keywords (M0_PROMPT_CALL), so
+    a new one shows. *args or **kwargs, or anything but the declared defaults, is blocked:source-changed."""
+    tree, why = _scope_tree(sc, field)
+    if why:
+        return why
+    a = tree.body[0].args
+    if a.vararg is not None or a.kwarg is not None:
+        return {"value": None, "star": [x.arg for x in (a.vararg, a.kwarg) if x is not None], "source": sc.get("source"),
+                "blocked": f"blocked:source-changed:{field}"}
+    pos = a.posonlyargs + a.args
+    got: dict[str, Any] = {x.arg: None for x in pos + a.kwonlyargs}
+    for x, v in zip(pos[len(pos) - len(a.defaults):], a.defaults):
+        got[x.arg] = ast.unparse(v)
+    for x, v in zip(a.kwonlyargs, a.kw_defaults):
+        got[x.arg] = ast.unparse(v) if v is not None else None
+    keep = [k for k in got if k != "self" and k not in M0_PROMPT_CALL] if names is None else list(names)
+    value = {k: got.get(k, "<absent>") for k in keep}
+    if value != dict(declared):
+        return {"value": None, "defaults": value, "source": sc.get("source"), "blocked": f"blocked:source-changed:{field}"}
+    return {"value": value, "source": sc["source"]}
+
+
+def call_args(sc: Mapping, dotted: str, declared: Mapping[str, Any], *, field: str) -> dict:
+    """F-C6-4: the one call of ``dotted`` in the scope - its positional arguments and its keywords (** for a double-star
+    one), as ast.unparse writes them. None is blocked:source-missing, two are ambiguous, anything but the declared
+    arguments is blocked:source-changed."""
+    tree, why = _scope_tree(sc, field)
+    if why:
+        return why
+    calls = [n for n in ast.walk(tree) if isinstance(n, ast.Call) and ast.unparse(n.func) == dotted]
+    if len(calls) != 1:
+        return {"value": None, "blocked": f"blocked:source-{'missing' if not calls else 'ambiguous'}:{field}"}
+    c = calls[0]
+    value = {"args": [ast.unparse(x) for x in c.args],
+             "keywords": {(k.arg if k.arg is not None else "**"): ast.unparse(k.value) for k in c.keywords}}
+    if value != dict(declared):
+        return {"value": None, "call": value, "source": sc.get("source"), "blocked": f"blocked:source-changed:{field}"}
+    return {"value": value, "line": sc["first_line"] + c.lineno - 1, "source": sc["source"]}
+
+
+def config_default(root: Path, rel: str, cls: str, attr: str, declared: str, *, field: str) -> dict:
+    """F-C6-4: a config field's default - exactly one ``attr`` in the module-level class, its value or its Field(...)'s
+    default= as ast.unparse writes it. A default_factory, no default or another one is blocked:source-changed."""
+    sc = class_scope(root, rel, cls, name=field)
+    tree, why = _scope_tree(sc, field)
+    if why:
+        return why
+    hits = [n for n in tree.body[0].body if isinstance(n, (ast.AnnAssign, ast.Assign))
+            and any(isinstance(t, ast.Name) and t.id == attr for t in (n.targets if isinstance(n, ast.Assign) else [n.target]))]
+    if len(hits) != 1:
+        return {"value": None, "blocked": f"blocked:source-{'missing' if not hits else 'ambiguous'}:{field}"}
+    v = hits[0].value
+    if isinstance(v, ast.Call):
+        kw = [k for k in v.keywords if k.arg == "default"]
+        found = ast.unparse(kw[0].value) if len(kw) == 1 and not v.args else f"<{ast.unparse(v)}>"
+    else:
+        found = ast.unparse(v) if v is not None else "<no value>"
+    line = sc["first_line"] + hits[0].lineno - 1
+    if found != declared:
+        return {"value": None, "found": found, "line": line, "source": sc["source"], "blocked": f"blocked:source-changed:{field}"}
+    return {"value": found, "line": line, "source": sc["source"]}
+
+
+def adapter_facts(path: Path, *, field: str = "m0_adapter") -> dict:
+    """Q-C6-1 / F-C6-4: the adapter's side of the bound, from its source by the AST - mem0_config's returned keys, its
+    DeepSeek llm config's keys and every ``self.mem.add(...)`` call's keywords (source order). Anything but M0_ADAPTER's
+    keys, or a keyword outside its list (** included), is blocked:source-changed."""
+    path = Path(path)
+    try:
+        data = path.read_bytes()
+    except OSError:
+        return {"value": None, "blocked": f"blocked:source-missing:{field}"}
+    try:
+        tree = ast.parse(data.decode("utf-8", "replace"))
+    except SyntaxError:
+        return {"value": None, "blocked": f"blocked:source-unparsable:{field}"}
+    sha = hashlib.sha256(data).hexdigest()
+    source = f"{path.name}@sha256:{sha}"
+    fns = [n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "mem0_config"]
+    if len(fns) != 1:
+        return {"value": None, "source": source, "blocked": f"blocked:source-{'missing' if not fns else 'ambiguous'}:{field}"}
+
+    def keys(d: ast.Dict) -> list:
+        return sorted(k.value if isinstance(k, ast.Constant) else f"<{ast.unparse(k) if k else '**'}>" for k in d.keys)
+
+    rets = [n.value for n in ast.walk(fns[0]) if isinstance(n, ast.Return)]
+    llm = [d for d in ast.walk(fns[0]) if isinstance(d, ast.Dict) and any(
+        isinstance(k, ast.Constant) and k.value == "provider" and isinstance(v, ast.Constant) and v.value == "deepseek"
+        for k, v in zip(d.keys, d.values))]
+    cfg = [v for d in llm for k, v in zip(d.keys, d.values) if isinstance(k, ast.Constant) and k.value == "config"]
+    adds = sorted((n for n in ast.walk(tree) if isinstance(n, ast.Call) and ast.unparse(n.func) == "self.mem.add"),
+                  key=lambda n: (n.lineno, n.col_offset))
+    found = {"config_keys": keys(rets[0]) if len(rets) == 1 and isinstance(rets[0], ast.Dict) else None,
+             "llm_config_keys": keys(cfg[0]) if len(cfg) == 1 and isinstance(cfg[0], ast.Dict) else None,
+             "add_keywords": [sorted(k.arg if k.arg is not None else "**" for k in c.keywords) for c in adds]}
+    ok = (found["config_keys"] == M0_ADAPTER["config_keys"] and found["llm_config_keys"] == M0_ADAPTER["llm_config_keys"]
+          and bool(adds) and all(set(kw) <= set(M0_ADAPTER["add_keywords"]) for kw in found["add_keywords"]))
+    if not ok:
+        return {"value": None, "found": found, "source": source, "blocked": f"blocked:source-changed:{field}"}
+    return {"value": found, "source": source}
+
+
+def mem0_bound_facts(site: Path, *, adapter: Path | None = None) -> dict:
+    """C6: every declared M0_BOUND_SOURCE fact, and F-C6-4's - the helper shapes, the writes, the defaults, the calls'
+    arguments, the config default - read from the installed mem0 and openai SDK as data; and the adapter's side
+    (``adapter``: arms/arm_mem0.py beside this file)."""
     B = M0_BOUND_SOURCE
     out: dict = {}
     for k in ("m0_max_retries", "m0_max_tokens", "m0_max_tokens_sent", "m0_trunc_limit"):
@@ -424,6 +707,19 @@ def mem0_bound_facts(site: Path) -> dict:
     sc = scope(site, rel, qual, name="m0_message_frame")
     out["m0_message_frame"] = ({"value": None, "blocked": sc["blocked"]} if sc.get("blocked") else
                                {"value": sorted(set(re.findall(pattern, sc["text"]))), "source": sc["source"]})
+    for k, (rel, qual, sha) in M0_HELPER_SHAPES.items():
+        out[k] = fn_shape(scope(site, rel, qual, name=k), sha, field=k)
+    for k, (rel, qual, names, declared) in M0_WRITES.items():
+        sc = (class_scope(site, rel, qual[len("class "):], name=k) if qual.startswith("class ")
+              else scope(site, rel, qual, name=k))
+        out[k] = writes_in(sc, names, declared, field=k)
+    for k, (rel, qual, names, declared) in M0_DEFAULTS.items():
+        out[k] = param_defaults(scope(site, rel, qual, name=k), names, declared, field=k)
+    for k, (rel, qual, dotted, declared) in M0_CALLS.items():
+        out[k] = call_args(scope(site, rel, qual, name=k), dotted, declared, field=k)
+    for k, (rel, cls, attr, declared) in M0_CONFIG_DEFAULTS.items():
+        out[k] = config_default(site, rel, cls, attr, declared, field=k)
+    out["m0_adapter"] = adapter_facts(Path(adapter) if adapter is not None else HERE / "arms" / "arm_mem0.py")
     return out
 
 
@@ -846,6 +1142,8 @@ def run_mem0_probe(c: Any, L: Any, *, run: str, install_run: str, model_run: str
     if site is None:
         return done({"m0_pin": pin_field}, [f"blocked:not-installed - {venv} has no site-packages"], [], 0)
     facts = mem0_source_facts(site)
+    bound = mem0_bound_facts(site)                         # Q-C6-5: writer_bound reads them from this record
+    record["bound_facts"], record["bound_blocked"] = bound, bound_blocked(bound)
     script = mem0_script(facts)
     if isinstance(script, dict):
         return done({"m0_pin": pin_field}, [f"{script['blocked']} - the fake's answer has no source shape"], [], 0)
