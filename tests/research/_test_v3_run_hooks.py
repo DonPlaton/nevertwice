@@ -234,11 +234,13 @@ try:
     subprocess.run([GIT, "-C", str(repo2), "-c", "commit.gpgsign=false", "commit", "-q", "-am", "moved"], check=True,
                    env=genv, capture_output=True)
     v2, e2m = attempt(h.tree_check)
+    v2b, e2bm = attempt(h.tree_check)                      # a third check of the same stand: still its FIRST HEAD
     check("B-HEAD-MOVE: with no FREEZE anchor the stand's later tree checks compare with its FIRST HEAD - a commit made "
-          "during the stand is dirty at STAND END, never read as clean against the new HEAD",
-          e1m is None and e2m is None and v1["clean"] is True and v2["clean"] is False
-          and v2["anchor_source"] == "stand-start-head" and any("is not the anchor" in p for p in v2["problems"]),
-          f"{e1m!r} {e2m!r} {v1 and v1.get('problems')} {v2 and v2.get('problems')}")
+          "during the stand is dirty at STAND END (and at every check after it), never read as clean against the new "
+          "HEAD", e1m is None and e2m is None and e2bm is None and v1["clean"] is True and v2["clean"] is False
+          and v2b["clean"] is False and v2["anchor_source"] == v2b["anchor_source"] == "stand-start-head"
+          and any("is not the anchor" in p for p in v2["problems"]),
+          f"{e1m!r} {e2m!r} {v1 and v1.get('problems')} {v2 and v2.get('problems')} {v2b and v2b.get('problems')}")
     h.bind(s, sp)                                          # the next stand these hooks serve
     v3, e3m = attempt(h.tree_check)
     check("B-HEAD-MOVE: bind() starts a new stand - its first tree check anchors on the HEAD it finds, never on the "

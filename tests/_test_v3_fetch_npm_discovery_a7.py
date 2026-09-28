@@ -212,6 +212,7 @@ try:
             self.rec = rec
 
         def run_child_window(self, c, L, **kw) -> dict:
+            self.kw = kw
             return self.rec
 
     class _StubC:
@@ -229,6 +230,20 @@ try:
         got = D.run_discovery(_StubC(root), L, _StubF(rec), run="d9", python=Path(sys.executable), via_port=1,
                               parent_env={})
         check(f"{label} is a named problem", any(want in x for x in got.get("problems") or []), str(got.get("problems")))
+    floors = {}
+    for given in (None, 5 << 30):
+        root = TMP / "stub" / f"floor{given}"
+        (root / "_fetch" / D.WINDOW / "d9").mkdir(parents=True)
+        sf = _StubF({"run": "d9", "jobs": [], "problems": [], "hosts": [HOST], "catcher": []})
+        try:
+            D.run_discovery(_StubC(root), L, sf, run="d9", python=Path(sys.executable), via_port=1, parent_env={},
+                            need_bytes=given)
+            floors[given] = getattr(sf, "kw", {}).get("need_bytes")
+        except Exception as e:  # noqa: BLE001 - the row FAILs by name
+            floors[given] = f"{type(e).__name__}: {e}"
+    check("B-NPMFLOOR: run_discovery hands the window the floor it is given (main's, the manifest's), and 3x the two "
+          "documents' caps only when none is", floors == {None: 3 * (D.DOC_MAX + D.SEARCH_MAX), 5 << 30: 5 << 30},
+          str(floors))
 
     print("\n- main(): the manifest's disk floor, an ASCII print -")
     import contextlib  # noqa: E402,PLC0415

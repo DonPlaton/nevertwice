@@ -177,10 +177,13 @@ try:
     (ud[3] / "meta" / "models" / mdir / "tree.json").write_text(json.dumps([{"type": "file", "path": "config.json",
                                                                             "size": 1, "oid": "c" * 40}]))
     ud[0].mkdir(parents=True)
-    idx = F.d3_report({"jobs": [{"index": i, "unit": str(u), "summary": []} for i, u in ud.items()]})
+    try:                                                   # an exception FAILs the row by name, not the suite
+        idx = F.d3_report({"jobs": [{"index": i, "unit": str(u), "summary": []} for i, u in ud.items()]})
+    except Exception as e:  # noqa: BLE001
+        idx = {"model": {"error": f"{type(e).__name__}: {e}"}}
     check("B-D3IDX: phase c skipped (no repository resolved) - the model's tree phase d fetched is still in the report: "
-          "a result is read by its job index, never by its list position", idx["model"]["revision"] == "b" * 40
-          and [f["path"] for f in idx["model"]["files"]] == ["config.json"], json.dumps(idx["model"]))
+          "a result is read by its job index, never by its list position", idx["model"].get("revision") == "b" * 40
+          and [f["path"] for f in idx["model"].get("files") or []] == ["config.json"], json.dumps(idx["model"]))
     u2 = {i: TMP / "d2idx" / f"j{i}" for i in (0, 2)}                    # phase 1 did not run
     m0 = u2[0] / "gh" / F._safe(F.MEM0)
     m0.mkdir(parents=True)
@@ -188,10 +191,13 @@ try:
     (u2[2] / "gh" / F._safe(F.MEM0)).mkdir(parents=True)
     (u2[2] / "gh" / F._safe(F.MEM0) / "tree_parent.json").write_text(json.dumps(
         {"tree": [{"path": "evaluation/run.py", "type": "blob"}]}))
-    rep2 = F.d2_report({"jobs": [{"index": i, "unit": str(u), "summary": []} for i, u in u2.items()]})
+    try:
+        rep2 = F.d2_report({"jobs": [{"index": i, "unit": str(u), "summary": []} for i, u in u2.items()]})
+    except Exception as e:  # noqa: BLE001 - the row FAILs by name
+        rep2 = {"mem0": {"error": f"{type(e).__name__}: {e}"}}
     check("B-D3IDX (d2_report): phase 1 skipped - the parent tree phase 2 fetched still pins mem0's evaluation commit: "
-          "read by job index, never by list position", rep2["mem0"]["pinned_commit"] == "e" * 40
-          and rep2["mem0"]["evaluation_files"] == ["evaluation/run.py"], json.dumps(rep2["mem0"]))
+          "read by job index, never by list position", rep2["mem0"].get("pinned_commit") == "e" * 40
+          and rep2["mem0"].get("evaluation_files") == ["evaluation/run.py"], json.dumps(rep2["mem0"]))
     print("\n- main(): plan d3 only in window a7-discovery, on the plan's hosts - refused before any spawn -")
     import contextlib  # noqa: E402,PLC0415
     import io  # noqa: E402,PLC0415
