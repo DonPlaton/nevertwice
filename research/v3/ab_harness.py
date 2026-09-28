@@ -445,7 +445,8 @@ def run_ab(cfg: Any, *, stand: str, arm_names: Sequence[str], deps: Any, thinkin
                 sp, _pst = PL.stand_plan(stand_id, units, launchers, standplan=SC.StandPlan, read_req=SC.ReadReq,
                                          runs=(leg,), campaign_seed=cfg.campaign_seed, unit_tokens=ut, medians={},
                                          answer=answer, embed_tag=cfg.embed_tag, dated=True, points=lambda a: ("B",),
-                                         k_at=PT.K_AT, smaps=su["smaps"], truncate=deps.truncate, bodies_dir=h.run_dir)
+                                         k_at=PT.K_AT, smaps={u: m for u, m in su["smaps"].items() if u in unit_ids},
+                                         truncate=deps.truncate, bodies_dir=h.run_dir)   # B-ABSMAP: the A/B's units only
                 hooks.bind(sched, sp)
                 hooks.gate = RV.WallCapGate(StopGate(h.control, base_counters),
                                             deadline=deps.monotonic() + RV.SMOKE_WALL_CAP_H * 3600,
