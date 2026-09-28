@@ -29,7 +29,9 @@ rev1 §2.2, as the auditor's Q-46-3 and Q-46-6 read it:
 The spec: arm, stage, stand, run, unit, unit_dir, port (the proxy port; None for mem0-store), embed_tag, ollama_url,
 dated (does the stand carry dates), record_path. Counters: the HTTP counter (_http_count, installed inside the pacer),
 the pacer's Ollama transport, the writes and their results, and for mem0 its LLM client's logical calls and tokens
-(LLMUsage on llm.client.chat.completions.create, Q-AB-1; a mem0 without that client is refused; mem0-store: None).
+(LLMUsage on llm.client.chat.completions.create, Q-AB-1; a mem0 without that client is refused; mem0-store: None), and
+spaCy's state as mem0 left it (nlp_state: B-NLP NLP-3b, the auditor's PASSIVE check - read at every counters request,
+never loaded: mem0.utils.spacy_models' four names by exactly NLP_NAMES and the model's distribution by its metadata).
 """
 from __future__ import annotations
 
@@ -98,6 +100,45 @@ def mem0_config(spec: Mapping[str, Any]) -> dict:
             "vector_store": {"provider": "qdrant", "config": {"collection_name": "nvt3", "path": str(store / "qdrant"),
                                                               "embedding_model_dims": EMBED_DIMS, "on_disk": True}},
             "history_db_path": str(store / "history.db")}
+
+
+#: B-NLP NLP-3b (the auditor's passive check, Q-NLP-2): the names read from mem0's spacy_models after the adds. probe_a8's
+#: M0_SOURCE facts must find exactly these in the pinned source (m0_nlp_active checks the two agree).
+NLP_NAMES = {"module": "mem0.utils.spacy_models", "full": "_nlp_full", "lemma": "_nlp_lemma",
+             "failed_full": "_load_failed_full", "failed_lemma": "_load_failed_lemma", "model": "en_core_web_sm"}
+_MISSING = object()
+
+
+def _installed(name: str) -> bool | None:
+    """The model's distribution, by its metadata only (spacy.util.is_package's own test, without importing spaCy)."""
+    import importlib.metadata as md  # noqa: PLC0415 - read at the counters request only
+    try:
+        md.distribution(name)
+        return True
+    except md.PackageNotFoundError:
+        return False
+    except Exception:  # noqa: BLE001 - an unreadable metadata is unknown, never True
+        return None
+
+
+def nlp_state(modules: Mapping | None = None, installed=None) -> dict:
+    """spaCy's state as mem0 left it - READ, never loaded (the auditor: a load here would move spaCy's cost out of the
+    measured add): whether spacy_models was imported, its four names by exactly NLP_NAMES (a name the module does not
+    have is None, never a default; a failed flag that is not a bool is None), and the model installed or not."""
+    modules = sys.modules if modules is None else modules
+    mod = modules.get(NLP_NAMES["module"])
+
+    def get(key: str) -> Any:
+        return getattr(mod, NLP_NAMES[key], _MISSING) if mod is not None else _MISSING
+    full, lemma = get("full"), get("lemma")
+    out: dict = {"names": {k: v for k, v in NLP_NAMES.items() if k != "module"}, "module": mod is not None,
+                 "nlp_full": None if full is _MISSING else full is not None,
+                 "nlp_lemma": None if lemma is _MISSING else lemma is not None}
+    for key in ("failed_full", "failed_lemma"):
+        v = get(key)
+        out[key] = v if isinstance(v, bool) else None
+    out["is_package"] = (installed or _installed)(NLP_NAMES["model"])
+    return out
 
 
 class LLMUsage:
@@ -299,7 +340,8 @@ class Handler:
         self.pacer.attach(transport)
         return {"http": snap, "llm_calls": HC.total(snap, "proxy:chat") + HC.total(snap, "ollama:generate"),
                 "llm_usage": self.usage.snapshot() if self.usage is not None else None,
-                "writes": dict(self.writes), **self.reads, "ollama_transport": transport.get("ollama_transport")}
+                "writes": dict(self.writes), **self.reads, "ollama_transport": transport.get("ollama_transport"),
+                "nlp": nlp_state()}
 
 
 class RefusedHandler:

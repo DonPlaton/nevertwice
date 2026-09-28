@@ -319,6 +319,10 @@ try:
     check("counters: two LLM calls through the proxy, counted inside the pacer",
           cn.get("llm_calls") == 2 and ((cn.get("http") or {}).get("counts") or {}).get("proxy:chat", {}).get(
               "attempts") == 2, str(cn)[:300])
+    check("B-NLP NLP-3b: the live counters carry spaCy's state, read - the fake mem0 has no spacy_models, so the module "
+          "is not imported and every state is unknown (probe_a8 turns that into blocked:nlp-off, never a pass)",
+          (cn.get("nlp") or {}).get("module") is False and (cn.get("nlp") or {}).get("nlp_full") is None
+          and (cn.get("nlp") or {}).get("names", {}).get("model") == "en_core_web_sm", str(cn.get("nlp")))
     check("no pull request ever reached Ollama", not OLLAMA.paths("/api/pull"))
     c.close()
 
