@@ -79,6 +79,20 @@
    "base": "py-base-312",
    "specs": ["mem0ai==2.2.0"],
    "max_redirects": 0
+  },
+  "a8-docker-letta": {
+   "hosts": ["registry-1.docker.io", "auth.docker.io", "production.cloudflare.docker.com"],
+   "image": "A8 C4 (the auditor's Q-C4-1..5): the Letta server image by digest - the newest release ^v?X.Y.Z$ by the numbers, its linux/amd64 manifest, config and layers checked on the disk, loaded offline from an OCI layout; no pull, no login, no setting",
+   "repo": "letta/letta",
+   "cdn_hosts": ["production.cloudflare.docker.com"],
+   "max_redirects": 1
+  },
+  "a8-docker-falkordb": {
+   "hosts": ["registry-1.docker.io", "auth.docker.io", "production.cloudflare.docker.com"],
+   "image": "A8 C4 (the auditor's Q-C4-1..5): the FalkorDB image for zep-graphiti, by the same rules",
+   "repo": "falkordb/falkordb",
+   "cdn_hosts": ["production.cloudflare.docker.com"],
+   "max_redirects": 1
   }
  },
  "disk": {"volume": "D:", "floor_gb": 100, "multiple_of_window_total": 3, "stop_single_file_gb": 10}

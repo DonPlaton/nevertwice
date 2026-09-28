@@ -6,7 +6,8 @@ a loopback tunnel hop to a local TLS server with a throwaway certificate (no net
 * Q-C4-1: every page of the tags list; the newest release is the largest ^v?X.Y.Z$ by the numbers (a pre-release,
   "latest", "nightly" never count); X.Y.Z and vX.Y.Z of one version must name the same index, else refused by name;
   the index's ONE linux/amd64 manifest without a variant (none or two refused, attempt 2 named as Q-A8-4's); C4A-6: a
-  plain image manifest is taken when its config says linux/amd64 - checked before any layer, index_digest None;
+  plain image manifest is taken when its config says linux/amd64 without a variant (C4A-7: amd64 has microarchitecture
+  levels) - checked before any layer, index_digest None; C4A-8: oci_job never raises - a raise FAILs its row by name;
   C4A-5: the digest behind "latest" is read right after the tags, information only, a non-200 there never fatal;
 * Q-C4-2: the token asked for exactly repository:<repo>:pull, sent only to the registry, recorded as <redacted> -
   never to the CDN host;
@@ -77,9 +78,10 @@ def sha(b: bytes) -> str:
     return "sha256:" + hashlib.sha256(b).hexdigest()
 
 
-def conf(os_="linux", arch="amd64"):
+def conf(os_="linux", arch="amd64", variant=None):
     return json.dumps({"architecture": arch, "os": os_, "config": {"Env": ["A=1"]},
-                       "rootfs": {"type": "layers", "diff_ids": ["sha256:" + "d" * 64]}}).encode()
+                       "rootfs": {"type": "layers", "diff_ids": ["sha256:" + "d" * 64]},
+                       **({"variant": variant} if variant else {})}).encode()
 
 
 CFG = conf()
@@ -176,11 +178,20 @@ JOB = {"kind": "oci", "repo": REPO, "registry": REG, "auth": AUTH, "service": "r
 TMP = Path(tempfile.mkdtemp(prefix="nvt3_fetch_oci_"))
 
 
+RAISED: list = []
+
+
 def run(tag, job=None, **knobs):
+    """C4A-8: oci_job promises never to raise - a raise is recorded against its row (whose ok is then None, so the row
+    FAILs by name) and against the census row at the end, never a crash of the whole suite."""
     cwd = TMP / tag
     cwd.mkdir()
     reg = Registry(**knobs)
-    out = FC.oci_job(copy.deepcopy(job or JOB), send=reg.send, cwd=cwd)
+    try:
+        out = FC.oci_job(copy.deepcopy(job or JOB), send=reg.send, cwd=cwd)
+    except Exception as e:  # noqa: BLE001 - the promise under test
+        RAISED.append(f"{tag}: {type(e).__name__}: {e}")
+        out = {"ok": None, "error": f"RAISED {type(e).__name__}: {e}"}
     return out, reg, cwd
 
 
@@ -251,6 +262,11 @@ o, r, cw = run("single_arm", tag_body=ARMMAN, blobs={sha(conf(arch="arm64")): co
 check("C4A-6: a plain manifest whose config is linux/arm64 is refused by name (attempt 2 named) - and no layer was asked "
       "for (the config is checked before any layer)", o.get("ok") is False and "linux/arm64" in (o.get("error") or "")
       and "attempt 2 is Q-A8-4's" in (o.get("error") or "")
+      and not any(c["path"].endswith(sha(L1)) or c["path"].endswith(sha(L2)) for c in r.calls), str(o.get("error")))
+V3CFG = conf(variant="v3")
+o, r, cw = run("single_v3", tag_body=manifest(V3CFG), blobs={sha(V3CFG): V3CFG})
+check("C4A-7: a plain manifest whose config is linux/amd64 with variant v3 (a microarchitecture level) is refused by "
+      "name - and no layer was asked for", o.get("ok") is False and "linux/amd64/v3" in (o.get("error") or "")
       and not any(c["path"].endswith(sha(L1)) or c["path"].endswith(sha(L2)) for c in r.calls), str(o.get("error")))
 o, r, cw = run("neither", tag_body=json.dumps({"schemaVersion": 2, "mediaType": "application/vnd.in-toto+json"}).encode())
 check("C4A-6: a tag that names neither an index nor an image manifest is refused by name",
@@ -377,6 +393,7 @@ else:
           and got2[2] == b"" and not (wd / "nf.bin").exists(), f"{got} {got2}")
     srv.close(), hop.close()
 
+check("C4A-8: oci_job raised on no row - every failure came back as ok False with an error", RAISED == [], str(RAISED))
 shutil.rmtree(TMP, ignore_errors=True)
 print(f"\nv3 fetch oci: {PASSED} passed, {FAILED} failed")
 sys.exit(1 if FAILED else 0)
