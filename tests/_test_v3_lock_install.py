@@ -305,10 +305,60 @@ check("B-NLP (the auditor's method rule): every VENVS spec is its PREREG §2.2 r
           == [(LI.PREREG_22[v]["dist"], LI.PREREG_22[v]["extras"], LI.PREREG_22[v]["version"])]
           and LI.PREREG_22[v]["base"] == LI.VENVS[v]["base"] for v in LI.VENVS),
       str(LI.PREREG_22))
-_PRE = (ROOT / "research" / "v3" / "PREREG-V3-rev1.md").read_text(encoding="utf-8")
-check("... and each quoted row is the tracked PREREG's own §2.2 line, word for word (its extras included)",
-      all(_PRE.count(LI.PREREG_22[v]["row"]) == 1 and f"with `[{LI.PREREG_22[v]['extras'][0]}]`" in LI.PREREG_22[v]["row"]
-          for v in LI.PREREG_22), str([v["row"][:60] for v in LI.PREREG_22.values()]))
+REV1, AMD = "research/v3/PREREG-V3-rev1.md", "research/v3/PREREG-V3-AMENDMENTS.md"
+_SRC = {s: (ROOT / s).read_text(encoding="utf-8") if (ROOT / s).is_file() else "" for s in (REV1, AMD)}
+check("... and each quoted row is its named source's own §2.2 line, word for word (its extras included) - revision 1, "
+      "or the amendments file beside it (Q-C5e-3)",
+      all(LI.PREREG_22[v].get("source") in _SRC and _SRC[LI.PREREG_22[v]["source"]].count(LI.PREREG_22[v]["row"]) == 1
+          and all(f"with `[{x}]`" in LI.PREREG_22[v]["row"] for x in LI.PREREG_22[v]["extras"]) for v in LI.PREREG_22),
+      str([(v.get("source"), v["row"][:60]) for v in LI.PREREG_22.values()]))
+check("C5e (Q-C5e-1 = O-a, Q-C5e-2 = O-a): graphiti_v3 = graphiti-core[falkordb] 0.30.2 (T31: its FalkorDB driver's "
+      "client, imported with the driver), langmem_v3 = langmem 0.0.30 with langgraph pinned by the lock and checked, "
+      "cognee_v3 = cognee 1.6.1 - each on py-base-312",
+      {v: LI.VENVS.get(v) for v in ("graphiti_v3", "langmem_v3", "cognee_v3")} == {
+          "graphiti_v3": {"base": "py-base-312", "specs": ["graphiti-core[falkordb]==0.30.2"],
+                          "imports": ["graphiti_core", "falkordb", "graphiti_core.driver.falkordb_driver"],
+                          "dists": ["graphiti-core", "falkordb"]},
+          "langmem_v3": {"base": "py-base-312", "specs": ["langmem==0.0.30"], "imports": ["langmem", "langgraph"],
+                         "dists": ["langmem", "langgraph"]},
+          "cognee_v3": {"base": "py-base-312", "specs": ["cognee==1.6.1"], "imports": ["cognee"], "dists": ["cognee"]}},
+      str({v: LI.VENVS.get(v) for v in ("graphiti_v3", "langmem_v3", "cognee_v3")})[:400])
+_rev1_g = next((ln for ln in _SRC[REV1].splitlines() if ln.startswith("| zep-graphiti | product |")), "")
+_ins = "with `[falkordb]` (T31); "
+_amd_g = (LI.PREREG_22.get("graphiti_v3") or {}).get("row", "")
+check("Q-C5e-3: graphiti's quote is the amendments file's row, and that row is revision 1's plus exactly the inserted "
+      "text - nothing else of the row drifts in by the amendment; revision 1 still holds its own row, unchanged",
+      LI.PREREG_22.get("graphiti_v3", {}).get("source") == AMD and _amd_g.count(_ins) == 1
+      and _amd_g.replace(_ins, "", 1) == _rev1_g and _SRC[REV1].count(_rev1_g) == 1 and _ins not in _SRC[REV1]
+      and all(LI.PREREG_22[v]["source"] == REV1 for v in LI.PREREG_22 if v != "graphiti_v3"), _amd_g[:200])
+check("Q-C5e-3: the amendment carries its id, trap, date, ruling, reason and its trap-closure line",
+      all(s in _SRC[AMD] for s in ("## A1 - T31", "**Date:** 2026-09-28", "Q-C5e-2 (2026-09-28, 11:13)",
+                                   "the client its FalkorDB driver imports (arm_graphiti.py:162)",
+                                   "| T31 graphiti's FalkorDB client | §2.2 |")))
+FNC = getattr(LI, "FREEZE_NEWER_CHECK", {})
+check("Q-C5e-1: the freeze check of every product pin, declared as data now - at FREEZE-V3 a metadata read (no install) "
+      "of the newest stable; a newer one is an E5 line and a question to the auditor, never a silent move",
+      set(FNC.get("pins", {})) == set(LI.VENVS)
+      and all(FNC["pins"][v]["dist"] == LI.spec_parts(LI.VENVS[v]["specs"][0])[0]
+              and FNC["pins"][v]["version"] == LI.spec_parts(LI.VENVS[v]["specs"][0])[2] for v in LI.VENVS)
+      and FNC["pins"]["mem0_v3"]["read"] == "2026-09-23" and FNC["pins"]["graphiti_v3"]["read"] == "2026-09-26"
+      and "no install" in FNC.get("rule", "") and "never a silent move" in FNC.get("rule", "")
+      and 'pinned X (read D1); newest at freeze Y' in FNC.get("rule", ""), str(FNC)[:400])
+import ast  # noqa: E402
+_offs = []
+for _f in sorted((ROOT / "research" / "v3").rglob("*.py")):
+    for _n in ast.walk(ast.parse(_f.read_text(encoding="utf-8"))):
+        if isinstance(_n, ast.keyword) and _n.arg == "hf_offline" and not (
+                (isinstance(_n.value, ast.Constant) and _n.value.value is True)
+                or (_f.name == "scheduler.py" and ast.unparse(_n.value) == "spec.hf_offline")):   # forwards the default
+            _offs.append(f"{_f.name}:{_n.value.lineno}")
+_SCH = (ROOT / "research" / "v3" / "scheduler.py").read_text(encoding="utf-8")
+check("C5e HF-offline: every arm spawn runs with HF_HUB_OFFLINE and TRANSFORMERS_OFFLINE - the scheduler's spec defaults "
+      "to it, build_env sets both, and no caller in research/v3 passes hf_offline anything but True (graphiti, langmem "
+      "and cognee included: none downloads a model at run time)",
+      _offs == [] and "    hf_offline: bool = True\n" in _SCH
+      and all(s in (ROOT / "research" / "v3" / "launch.py").read_text(encoding="utf-8")
+              for s in ('env["HF_HUB_OFFLINE"] = env["TRANSFORMERS_OFFLINE"] = "1"',)), str(_offs))
 
 MANW = json.loads((ROOT / "research" / "v3" / "fetch_manifest.json").read_text(encoding="utf-8"))["windows"]
 mw = {k[len(LI.WINDOW_PREFIX):]: v for k, v in MANW.items() if k.startswith(LI.WINDOW_PREFIX)}

@@ -65,13 +65,46 @@ _HEX64 = re.compile(r"[0-9a-f]{64}")
 #: distributions whose installed version must be the locked one. A venv is added here, with its pin, before its window.
 #: B-NLP (the auditor, 07:19): mem0 WITH its [nlp] extra (T22) - spacy is imported and version-checked, so an install
 #: that silently dropped the extra fails by name.
+#: C5e (the auditor's Q-C5e-1 = O-a, 11:13): graphiti, langmem and cognee pinned as their rows read them, as mem0 is;
+#: Q-A8-4 applies only if a version does not install. Q-C5e-2 = O-a (T31): graphiti WITH its [falkordb] extra - the
+#: client its FalkorDB driver imports - so falkordb and the driver are imported and falkordb version-checked. langgraph
+#: has no spec of its own: langmem's resolution pins it, the lock records it and the import check reads its version.
 VENVS = {"mem0_v3": {"base": "py-base-312", "specs": ["mem0ai[nlp]==2.2.0"], "imports": ["mem0", "spacy"],
-                     "dists": ["mem0ai", "spacy"]}}
-#: PREREG-V3 rev1 §2.2's row of each venv, quoted (the auditor's method rule, B-NLP): its distribution, extras, version
-#: and base - a suite row checks every VENVS spec against it.
+                     "dists": ["mem0ai", "spacy"]},
+         "graphiti_v3": {"base": "py-base-312", "specs": ["graphiti-core[falkordb]==0.30.2"],
+                         "imports": ["graphiti_core", "falkordb", "graphiti_core.driver.falkordb_driver"],
+                         "dists": ["graphiti-core", "falkordb"]},
+         "langmem_v3": {"base": "py-base-312", "specs": ["langmem==0.0.30"], "imports": ["langmem", "langgraph"],
+                        "dists": ["langmem", "langgraph"]},
+         "cognee_v3": {"base": "py-base-312", "specs": ["cognee==1.6.1"], "imports": ["cognee"], "dists": ["cognee"]}}
+#: PREREG-V3 §2.2's row of each venv, quoted word for word from its named source (the auditor's method rule, B-NLP;
+#: Q-C5e-3: revision 1 is frozen, an amended row lives in the amendments file beside it): its distribution, extras,
+#: version and base - a suite row checks every VENVS spec against it.
+_REV1, _AMENDMENTS = "research/v3/PREREG-V3-rev1.md", "research/v3/PREREG-V3-AMENDMENTS.md"
 PREREG_22 = {"mem0_v3": {"row": "| mem0 | product | mem0ai, latest stable at freeze, with `[nlp]` (T22); 2.2.0 on "
                                 "2026-09-23 | 3.12, fresh venv mem0_v3 |",
-                         "dist": "mem0ai", "extras": ["nlp"], "version": "2.2.0", "base": "py-base-312"}}
+                         "source": _REV1, "dist": "mem0ai", "extras": ["nlp"], "version": "2.2.0", "base": "py-base-312"},
+             "graphiti_v3": {"row": "| zep-graphiti | product | graphiti-core, latest stable at freeze (0.30.2 read "
+                                    "2026-09-26); with `[falkordb]` (T31); FalkorDB image by digest | 3.12, fresh venv "
+                                    "graphiti_v3 | vendor-recommended:https://github.com/getzep/graphiti | to install, to "
+                                    "adapt |",
+                             "source": _AMENDMENTS, "dist": "graphiti-core", "extras": ["falkordb"], "version": "0.30.2",
+                             "base": "py-base-312"},
+             "langmem_v3": {"row": "| langmem | product | langmem, latest stable (0.0.30); langgraph pinned | 3.12, fresh "
+                                   "venv langmem_v3 |",
+                            "source": _REV1, "dist": "langmem", "extras": [], "version": "0.0.30", "base": "py-base-312"},
+             "cognee_v3": {"row": "| cognee | product | cognee, latest stable (1.6.1) | 3.12, fresh venv cognee_v3 |",
+                           "source": _REV1, "dist": "cognee", "extras": [], "version": "1.6.1", "base": "py-base-312"}}
+#: Q-C5e-1 (the auditor, 11:13): the freeze check of every product pin, declared now as data - "read" is the date the
+#: row read the version (revision 1's own date, 2026-09-26, where the row names none).
+FREEZE_NEWER_CHECK = {
+    "rule": ("at FREEZE-V3 (A10), a metadata read of each product pin's index entry - no install - records the newest "
+             "stable version; if it is newer than the pin: an E5 line \"pinned X (read D1); newest at freeze Y\" and a "
+             "question to the auditor before the campaign - never a silent move"),
+    "pins": {"mem0_v3": {"dist": "mem0ai", "version": "2.2.0", "read": "2026-09-23"},
+             "graphiti_v3": {"dist": "graphiti-core", "version": "0.30.2", "read": "2026-09-26"},
+             "langmem_v3": {"dist": "langmem", "version": "0.0.30", "read": "2026-09-26"},
+             "cognee_v3": {"dist": "cognee", "version": "1.6.1", "read": "2026-09-26"}}}
 _SPEC = re.compile(r"([A-Za-z0-9][A-Za-z0-9._-]*)(?:\[([A-Za-z0-9._-]+(?:\s*,\s*[A-Za-z0-9._-]+)*)\])?==([A-Za-z0-9.+!-]+)")
 
 

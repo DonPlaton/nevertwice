@@ -697,6 +697,10 @@
    "governance": "exempt",
    "reason": "the v3 campaign's pre-registration, fixed before its first number and committed byte-identical to the sha the auditor cleared: its numbers are configuration, thresholds, sizes and budgets, not measurements, and the few v2 figures it uses as design inputs are cited by artifact path and sha256."
   },
+  "research/v3/PREREG-V3-AMENDMENTS.md": {
+   "governance": "exempt",
+   "reason": "the amendments beside the frozen PREREG-V3 revision 1 (the auditor's Q-C5e-3): each one a ruling's configuration text - a trap number, a date, a pinned version and an extra - not a measurement; FREEZE-V3 pins it with revision 1 by sha256."
+  },
   "research/QA_ACCURACY.md": {
    "governance": "backlog",
    "budget": 85,

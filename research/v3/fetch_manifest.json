@@ -80,6 +80,30 @@
    "specs": ["mem0ai[nlp]==2.2.0"],
    "max_redirects": 0
   },
+  "a8-pypi-graphiti_v3": {
+   "hosts": ["pypi.org", "files.pythonhosted.org"],
+   "install": "A8 C5e (the auditor's Q-C5e-1/2 O-a): lock_install as for mem0_v3 - graphiti-core[falkordb] as its row reads it, with T31's extra (PREREG-V3-AMENDMENTS.md A1)",
+   "venv": "graphiti_v3",
+   "base": "py-base-312",
+   "specs": ["graphiti-core[falkordb]==0.30.2"],
+   "max_redirects": 0
+  },
+  "a8-pypi-langmem_v3": {
+   "hosts": ["pypi.org", "files.pythonhosted.org"],
+   "install": "A8 C5e (the auditor's Q-C5e-1 O-a): lock_install as for mem0_v3 - langmem as its row reads it; langgraph pinned by the lock",
+   "venv": "langmem_v3",
+   "base": "py-base-312",
+   "specs": ["langmem==0.0.30"],
+   "max_redirects": 0
+  },
+  "a8-pypi-cognee_v3": {
+   "hosts": ["pypi.org", "files.pythonhosted.org"],
+   "install": "A8 C5e (the auditor's Q-C5e-1 O-a): lock_install as for mem0_v3 - cognee as its row reads it",
+   "venv": "cognee_v3",
+   "base": "py-base-312",
+   "specs": ["cognee==1.6.1"],
+   "max_redirects": 0
+  },
   "a8-docker-letta": {
    "hosts": ["registry-1.docker.io", "auth.docker.io", "production.cloudflare.docker.com"],
    "image": "A8 C4 (the auditor's Q-C4-1..5): the Letta server image by digest - the newest release ^v?X.Y.Z$ by the numbers, its linux/amd64 manifest, config and layers checked on the disk, loaded offline from an OCI layout; no pull, no login, no setting",
