@@ -1411,6 +1411,84 @@ try:
           "row - a finished read is never re-marked as the one the unit ended in", e36 is None
           and q36.get("aborted") == "ceiling" and [r.get("qid") for r in q36.get("reads") or []] == ["c2-q1", "c2-q2"]
           and not any(r.get("cut") for r in q36.get("reads") or []), f"{e36!r} {q36}")
+
+    print("\n- Q2: a halt raises into B-OPEN - STAND END halt=<kind>, ABORT reason=<kind>, the unit's clock unstarted -")
+
+    class Halt(Exception):
+        """run_v3_gate.GateHalted's shape: the scheduler reads its ``halt``."""
+
+        def __init__(self, kind):
+            super().__init__(f"the incident gate halted ({kind})")
+            self.halt = kind
+
+    class HaltGate:
+        """Admits ``admit`` asks, then halts - opening INCIDENT START kind=<kind> as GateDriver does for a provider's
+        stop (none for harness-error) - and raises on every later ask."""
+
+        def __init__(self, kind, admit):
+            self.kind, self.admit, self.asked, self.st, self.opened = kind, admit, 0, None, False
+
+        def admits_new_unit(self):
+            self.asked += 1
+            if self.asked <= self.admit:
+                return True
+            if self.kind != "harness-error" and not self.opened:
+                self.st.incident(f"q2-{self.kind}", "START", arms=["a1"], kind=self.kind)
+                self.opened = True
+            raise Halt(self.kind)
+
+    got_q2 = {}
+    for kind, admit, sfile, stand_ in (("402", 0, "STATUS40", "SQ2"), ("harness-error", 2, "STATUS41", "SQ3")):
+        hg = HaltGate(kind, admit)
+        s_q, sp_q, _jq, _evq, _gq, st_q = stand_world("smoke", gate=hg, stand=stand_, sfile=sfile)
+        hg.st = st_q
+        _rq, e_q = attempt(lambda s_q=s_q, sp_q=sp_q: s_q.run_stand(
+            sp_q, [SC.BlockPlan(block="b01", units=("w1",)), SC.BlockPlan(block="b02", units=("w2",))], judges=(),
+            order=1))
+        text_q = (TMP / sfile).read_text(encoding="utf-8") if (TMP / sfile).exists() else ""
+        got_q2[kind] = {"error": type(e_q).__name__, "halt": getattr(e_q, "halt", None),
+                        "aborts": [x.split(" reason=")[1].split()[0] for x in text_q.splitlines() if " ABORT " in x],
+                        "stand_end": [x for x in text_q.splitlines() if f" STAND {stand_} END " in x],
+                        "replay": SL.self_check(TMP / sfile)}
+    g402, ghe = got_q2["402"], got_q2["harness-error"]
+    check("Q2 (F15): a 402 halt at the block's first unit raises into B-OPEN - the halt itself propagates (an unstarted "
+          "unit's clock is no TypeError), the arm-run's ABORT says reason=402 (B-ABORT-REASON: the provider's stop, "
+          "never our failure), STAND END says halt=402, and the STATUS replays clean",
+          g402["error"] == "Halt" and g402["halt"] == "402" and g402["aborts"] == ["402"]
+          and len(g402["stand_end"]) == 1 and " halt=402 " in g402["stand_end"][0] and g402["replay"] == [], str(g402))
+    check("Q2 (F15): a gate gone blind between blocks (harness-error at block 2's unit) - its arm-run ABORT "
+          "reason=harness-error, STAND END halt=harness-error with no INCIDENT line, the STATUS replays clean",
+          ghe["error"] == "Halt" and ghe["aborts"] == ["harness-error"] and len(ghe["stand_end"]) == 1
+          and " halt=harness-error " in ghe["stand_end"][0] and ghe["replay"] == [], str(ghe))
+
+    class LateHaltGate:
+        """Admits every ask; at the stand's last ask a 402 has come (INCIDENT START kind=402, halted) - no unit asks
+        after it, so only halt_kind() tells the scheduler."""
+
+        def __init__(self, last):
+            self.last, self.asked, self.st, self.halted = last, 0, None, None
+
+        def admits_new_unit(self):
+            self.asked += 1
+            if self.asked == self.last:
+                self.st.incident("q2-late", "START", arms=["a1"], kind="402")
+                self.halted = "402"
+            return True
+
+        def halt_kind(self):
+            return self.halted
+
+    lh = LateHaltGate(last=4)                              # w1 write, w1 questions, w2 write, w2 questions
+    s_l, sp_l, _jl, _evl, _gl, st_l = stand_world("smoke", gate=lh, stand="SQ4", sfile="STATUS42")
+    lh.st = st_l
+    _rl, e_l = attempt(lambda: s_l.run_stand(sp_l, [SC.BlockPlan(block="b01", units=("w1",)),
+                                                    SC.BlockPlan(block="b02", units=("w2",))], judges=(), order=1))
+    text_l = (TMP / "STATUS42").read_text(encoding="utf-8") if (TMP / "STATUS42").exists() else ""
+    ends_l = [x for x in text_l.splitlines() if " STAND SQ4 END " in x]
+    check("Q2: a 402 that comes after the stand's last unit asked the gate still names itself - the normal STAND END "
+          "says halt=402 (read from the gate's halt_kind, never raised), and the STATUS replays clean",
+          e_l is None and lh.asked == 4 and len(ends_l) == 1 and " halt=402 " in ends_l[0]
+          and SL.self_check(TMP / "STATUS42") == [], f"{e_l!r} asked {lh.asked} {ends_l} {SL.self_check(TMP / 'STATUS42')}")
 finally:
     shutil.rmtree(TMP, ignore_errors=True)
 

@@ -584,6 +584,11 @@ class WallCapGate:
             raise CLIError(f"the stand's wall ceiling of {self.cap_h} h is reached - no new unit starts (D5)")
         return self.inner.admits_new_unit() if self.inner is not None else True
 
+    def halt_kind(self) -> str | None:
+        """Q2: the incident gate's halt (never the wall ceiling - that is no halt)."""
+        f = getattr(self.inner, "halt_kind", None)
+        return f() if callable(f) else None
+
     def __getattr__(self, name: str) -> Any:                     # the incident gate's other methods, as they are
         return getattr(self.inner, name)
 
@@ -745,7 +750,10 @@ def run_smoke(cfg: RunConfig, *, stand: str, arm_names: Sequence[str], runs: Seq
               "preflight_forecast_usd": fc["usd_total"], "preflight_ok": pf["ok"], "proxy_stop": pstop,
               "wall_cap_h": SMOKE_WALL_CAP_H, "gate": type(getattr(hooks, "gate", None)).__name__,
               "wall_cap_tripped": bool(getattr(getattr(hooks, "gate", None), "tripped", False)),
+              "halt": gd.halted if gd is not None else None,          # Q2: the gate's halt by kind - never the wall cap
               "canary_hashes": dict(wiring["canaries"].hashes())}
+    if record["halt"] is not None:
+        problems.insert(0, f"HALT: the incident gate halted ({record['halt']}) - the stand stopped (§4.5)")
     log = AC.load_proxy(h.run_dir)
     boundary = {f"{a}/{r}": AC.proxy_boundary_inputs(log.calls, log.catcher, arm=a, run=r, ollama=log.ollama)
                 for a in arms for r in runs}

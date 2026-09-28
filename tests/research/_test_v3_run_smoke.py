@@ -21,6 +21,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -132,7 +133,15 @@ BAL = json.dumps({"is_available": True, "balance_infos": [{"currency": "USD", "t
 
 
 class Upstream(ST.FakeUpstream):
+    pay_writer = False                                    # Q2: the balance gone - every call but the model probe is 402
+
     def _serve(self, c, path):
+        if (self.pay_writer and path.split(b"?", 1)[0].endswith(b"/chat/completions")
+                and not re.search(rb'"max_tokens":\s*1[,}]', self.requests[-1])):
+            err = b'{"error":{"message":"Insufficient Balance"}}'
+            self._send(c, b"HTTP/1.1 402 Payment Required\r\nContent-Type: application/json\r\nContent-Length: "
+                       + str(len(err)).encode() + b"\r\n\r\n" + err)
+            return True
         if path.split(b"?", 1)[0].endswith(b"/chat/completions"):
             body = V1
         elif path.startswith(b"/user/balance"):
@@ -375,6 +384,31 @@ try:
     check("B-SMOKE-FLAGS: a canary is one event - the P0h line says it is the same as the arm's canary flags, and no "
           "separate canary flag problem is added", len(p0h_lines) == 1 and "counted once" in p0h_lines[0]
           and not any(p.startswith("problem: flag: canary") for p in err1), str(err1[:5]))
+
+    print("\n- Q2: a 402 on the arm's calls halts the incident gate - STAND END and run.json name it -")
+    out4: list = []
+    err4: list = []
+    before4 = {p.name for p in C.runs_root.glob("S4-smoke-*")}
+    up.pay_writer = True
+    try:
+        rc4 = RV.run_smoke(CFG, stand="S4", arm_names=["bm25-floor", "nevertwice"], runs=["r1"],
+                           deps=deps_for(up, leak=set(), out=out4, err=err4))
+        crash4 = None
+    except Exception as e:  # noqa: BLE001
+        rc4, crash4 = None, f"{type(e).__name__}: {e}"
+    finally:
+        up.pay_writer = False
+    new4 = sorted({p.name for p in C.runs_root.glob("S4-smoke-*")} - before4)
+    sd4s = sorted((C.runs_root / new4[-1] / "_smoke").glob("attempt-*")) if new4 else []
+    run4 = json.loads((sd4s[-1] / "run.json").read_text(encoding="utf-8")) if sd4s else {}
+    status4 = (TMP / "STATUS").read_text(encoding="utf-8") if (TMP / "STATUS").exists() else ""
+    end4 = [x for x in status4.splitlines() if new4 and f" STAND {new4[-1]} END " in x]
+    check("Q2 (F15): a 402 on the arm's calls halts the gate - STAND END says halt=402, run.json says halt=402 and not "
+          "the wall cap, the problems say the halt first, the exit code is not 0, and the STATUS replays clean",
+          crash4 is None and rc4 not in (0, None) and run4.get("halt") == "402" and run4.get("wall_cap_tripped") is False
+          and len(end4) == 1 and " halt=402 " in end4[0]
+          and any("HALT: the incident gate halted (402)" in p_ for p_ in err4) and SL.self_check(TMP / "STATUS") == [],
+          f"{crash4} {rc4} {new4} halt={run4.get('halt')} {end4} {err4[:3]} {SL.self_check(TMP / 'STATUS')[:2]}")
 finally:
     up.close()
     shutil.rmtree(TMP, ignore_errors=True)

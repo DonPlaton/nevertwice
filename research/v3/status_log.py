@@ -60,13 +60,16 @@ _SIGNAL = re.compile(r"(SIG[A-Z0-9]+|\d+)\Z")
 #: The keys of each event, in the order they are written.
 KEYS = {
     "CAMPAIGN-START": ("anchor", "prereg", "freeze"), "CAMPAIGN-END": (),
-    "STAND-START": ("order", "model", "changelog"), "STAND-END": ("model", "changelog"),
+    "STAND-START": ("order", "model", "changelog"), "STAND-END": ("model", "changelog", "halt"),
     "BLOCK-START": ("units", "arm_order", "seed"), "BLOCK-END": (),
     "START": ("pid", "tag"), "END": ("rc", "wall", "units", "out", "aborted"), "ABORT": ("reason",),
     "UNIT-ABORT": ("reason", "rc", "signal"), "RERUN": ("arms", "cause", "incident"),
     "INCIDENT-START": ("arms", "kind"), "INCIDENT-END": ("arms", "kind"), "SET-ASIDE": (),
 }
-OPTIONAL = {("END", "aborted"), ("UNIT-ABORT", "rc"), ("UNIT-ABORT", "signal")}
+OPTIONAL = {("END", "aborted"), ("UNIT-ABORT", "rc"), ("UNIT-ABORT", "signal"), ("STAND-END", "halt")}
+#: Q2 (O-b2): what STAND END halt= may name - the provider's stops (§4.5) and our gate going blind (R-GATE-P).
+HALT_KINDS = ("401", "402", "403", "harness-error")
+PROVIDER_HALTS = ("401", "402", "403")
 
 
 def seeded_order(arms: Sequence[str], seed: int) -> list[str]:
@@ -228,6 +231,17 @@ class _State:
                 raise StatusRefused(f"stand {ev.ident} is not open")
             if ev.ident in self.open_block:
                 raise StatusRefused(f"STAND END of {ev.ident} with an open block {self.open_block[ev.ident]}")
+            halt = kv.get("halt")
+            if halt is not None and halt not in HALT_KINDS:
+                raise StatusRefused(f"STAND END halt={halt!r} is not one of {HALT_KINDS} (Q2)")
+            held = {i["kind"] for i in self.incidents.values()
+                    if i["open"] and ev.ident in i["stands"] and i["kind"] in PROVIDER_HALTS}
+            if halt in PROVIDER_HALTS and halt not in held:
+                raise StatusRefused(f"STAND END of {ev.ident} halt={halt} names no open INCIDENT kind={halt} of the "
+                                    f"stand (Q2)")
+            if halt not in PROVIDER_HALTS and held:
+                raise StatusRefused(f"STAND END of {ev.ident} with an open {sorted(held)} incident and "
+                                    f"{'halt=' + halt if halt else 'no halt='} - a provider's stop names itself (Q2)")
             commits.append(lambda: self.stands.__setitem__(ev.ident, "closed"))
         elif k == "BLOCK-START":
             stand, _b = _id(ev.ident, 2, "<stand>/<block>")
@@ -351,8 +365,10 @@ class _State:
             if kv["kind"] not in INCIDENT_KINDS:
                 raise StatusRefused(f"kind={kv['kind']!r} is not one of {INCIDENT_KINDS}")
             _list("arms", kv["arms"].split(","))
+            stands_open = {s for s, st in self.stands.items() if st == "open"}   # Q2: the stands it can halt
             commits.append(lambda: self.incidents.__setitem__(ev.ident, {"open": True, "arms": kv["arms"],
-                                                                          "kind": kv["kind"]}))
+                                                                          "kind": kv["kind"],
+                                                                          "stands": stands_open}))
         elif k == "INCIDENT-END":
             inc = self.incidents.get(ev.ident)
             if not inc or not inc["open"]:
@@ -452,11 +468,15 @@ class StatusLog:
     def campaign_end(self) -> None:
         self._emit(Ev("CAMPAIGN-END"))
 
-    def stand(self, stand: str, state: str, *, model: str, changelog: str, order: int | None = None) -> None:
+    def stand(self, stand: str, state: str, *, model: str, changelog: str, order: int | None = None,
+              halt: str | None = None) -> None:
         if state == "START":
             self._emit(Ev("STAND-START", stand, {"order": str(order), "model": model, "changelog": changelog}))
         elif state == "END":
-            self._emit(Ev("STAND-END", stand, {"model": model, "changelog": changelog}))
+            kv = {"model": model, "changelog": changelog}
+            if halt is not None:                             # Q2 (O-b2): the gate's halt, named on STAND END
+                kv["halt"] = halt
+            self._emit(Ev("STAND-END", stand, kv))
         else:
             raise StatusRefused(f"STAND state {state!r} is START or END")
 

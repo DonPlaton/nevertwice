@@ -370,5 +370,56 @@ with tempfile.TemporaryDirectory(prefix="v3status_clk_") as td:
     check("a clock that does not advance past the last line is refused, never nudged",
           refused(lambda: log.stand("SQ", "START", model="m", changelog="2026-09-10", order=2), "clock"))
 
+print("\n- Q2 (O-b2): STAND END halt=<kind> -")
+with tempfile.TemporaryDirectory(prefix="v3status_halt_") as td:
+    def stand_with(name: str, *incidents: tuple[str, str], open_: bool = True):
+        lg = SL.StatusLog(Path(td) / name, now=Clock(), local_tz=MSK)
+        lg.stand("SH", "START", model="m", changelog="2026-09-10", order=1)
+        for iid, kind in incidents:
+            lg.incident(iid, "START", arms=["a1"], kind=kind)
+            if not open_:
+                lg.incident(iid, "END", arms=["a1"], kind=kind)
+        return lg
+
+    def ok(fn) -> object:
+        """True when ``fn`` ran; the exception by name otherwise - the row that reads it FAILs, not the suite."""
+        try:
+            fn()
+            return True
+        except Exception as e:  # noqa: BLE001
+            return f"{type(e).__name__}: {e}"
+
+    r1 = ok(lambda: stand_with("H1", ("i1", "402")).stand("SH", "END", model="unread", changelog="unread", halt="402"))
+    check("Q2: STAND END halt=402 with the stand's open INCIDENT kind=402 is written, and the file replays clean",
+          r1 is True
+          and " STAND SH END model=unread changelog=unread halt=402 " in (Path(td) / "H1").read_text(encoding="utf-8")
+          and SL.self_check(Path(td) / "H1") == [], f"{r1} {SL.self_check(Path(td) / 'H1')}")
+    check("Q2: halt=402 with no open INCIDENT kind=402 of the stand is refused",
+          refused(lambda: stand_with("H2").stand("SH", "END", model="m", changelog="c", halt="402"), "names no open"))
+    check("Q2: a STAND END with the stand's open 402 incident and no halt= is refused - a provider's stop names itself",
+          refused(lambda: stand_with("H3", ("i3", "402")).stand("SH", "END", model="m", changelog="c"), "no halt="))
+    r4 = ok(lambda: stand_with("H4").stand("SH", "END", model="unread", changelog="unread", halt="harness-error"))
+    check("Q2: halt=harness-error needs no incident (our gate went blind)",
+          r4 is True and SL.self_check(Path(td) / "H4") == [], str(r4))
+    check("Q2: halt=harness-error beside an open 403 incident is refused - the 403 is the stop",
+          refused(lambda: stand_with("H5", ("i5", "403")).stand("SH", "END", model="m", changelog="c",
+                                                               halt="harness-error"), "halt=harness-error"))
+    check("Q2: halt with any other value is refused",
+          refused(lambda: stand_with("H6", ("i6", "5xx")).stand("SH", "END", model="m", changelog="c", halt="5xx"),
+                  "is not one of"))
+    r7 = ok(lambda: stand_with("H7", ("i7", "5xx")).stand("SH", "END", model="m", changelog="c"))
+    check("Q2: a 5xx incident still open when the stand ends is no halt - STAND END without halt= is written",
+          r7 is True and SL.self_check(Path(td) / "H7") == [], str(r7))
+
+    def later_stand() -> None:
+        lg8 = stand_with("H8", ("i8", "402"))
+        lg8.stand("SH", "END", model="unread", changelog="unread", halt="402")
+        lg8.stand("SJ", "START", model="m", changelog="2026-09-10", order=2)
+        lg8.stand("SJ", "END", model="m", changelog="c")
+
+    r8 = ok(later_stand)
+    check("Q2: a 402 that halted an earlier stand (a halt has no END) does not hold a later stand's STAND END",
+          r8 is True and SL.self_check(Path(td) / "H8") == [], f"{r8} {SL.self_check(Path(td) / 'H8')}")
+
 print(f"\nv3 status log: {PASSED} passed, {FAILED} failed, {SKIPPED} skipped")
 sys.exit(1 if FAILED else 0)

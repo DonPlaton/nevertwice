@@ -332,6 +332,18 @@ try:
           "its other methods); at the deadline admits_new_unit raises the ceiling by name and the gate is tripped",
           before == (False, True) and inner_yes.started and "wall ceiling of 6.0 h" in after and g_yes.tripped
           and not g_no.tripped and inner_yes.asked == 1, f"{before} {after}")
+
+    class InnerHalted(Inner):
+        def halt_kind(self):
+            return "402"
+
+    g_h = RV.WallCapGate(InnerHalted(True), deadline=200.0, monotonic=lambda: 100.0, cap_h=RV.SMOKE_WALL_CAP_H)
+    try:
+        hk = (g_h.halt_kind(), g_yes.halt_kind())
+    except Exception as e:  # noqa: BLE001 - the row FAILs by name
+        hk = f"{type(e).__name__}: {e}"
+    check("Q2: WallCapGate.halt_kind is its incident gate's (402), None for a gate without one - and the tripped wall "
+          "ceiling is no halt", hk == ("402", None), str(hk))
     print("\n- the forecast (Q-A6-2): an upper bound, not pilot medians -")
     fc_out = RV.forecast_arms({"bm25-floor": None, "nevertwice": "deepseek-flash"},
                               {"nevertwice": {"u1": ["a" * 100, "é" * 20000, "x" * 60000]}}, {("u1", "q0"): "p" * 50},

@@ -1402,6 +1402,11 @@ class ProbeGate:
     def admits_new_unit(self) -> bool:
         return bool(self.stop.admits_new_unit()) and bool(self.driver.admits_new_unit())
 
+    def halt_kind(self) -> str | None:
+        """Q2: the driver's halt (StopGate's stop is the A/B's own record, never a STATUS incident)."""
+        f = getattr(self.driver, "halt_kind", None)
+        return f() if callable(f) else None
+
 
 def _mod(name: str, rel: str) -> Any:
     mod = sys.modules.get(name)

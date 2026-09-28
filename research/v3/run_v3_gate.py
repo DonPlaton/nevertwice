@@ -15,7 +15,10 @@ sends the probe and the canary, writes the INCIDENT lines, and halts (rev1 §4.5
 * halts: a 401, 402 or 403 from upstream opens INCIDENT START kind=<status> for its arm and halts - no new unit starts
   again in this process (a 402 waits for the owner, §4.5); a halt has no END. The halt is read before the call's time:
   a halting call whose time does not read still halts (R-GATE-T) - and before the scheduler's own records are skipped,
-  and on the probe's and the canary's own answers (B-HALT-SCHED).
+  and on the probe's and the canary's own answers (B-HALT-SCHED). Q2 (the auditor's F15): a halted driver's
+  admits_new_unit RAISES GateHalted(kind) - a halt is no wait (a False only spun the scheduler's _await_gate for good),
+  so the scheduler's B-OPEN path closes the block and the stand, and the run record names the halt; an open incident
+  still only refuses (False) until it ends.
 * an incident (Q-12-9 O-a): when the gate opens one, INCIDENT START names the arms in its window and a kind - the most
   frequent failure class there (5xx, 429, timeout for no status or an incomplete answer), a tie going to the earlier
   class in status_log.INCIDENT_KINDS; its END repeats them (STATUS refuses anything else). The mix never hides: the
@@ -55,6 +58,16 @@ def _load(name: str, path: Path):
 
 class GateError(ValueError):
     """A gate driver the rules do not allow; nothing was started."""
+
+
+class GateHalted(GateError):
+    """Q2: the gate halted - a 401, 402 or 403 (the owner's, §4.5) or harness-error (R-GATE-P: it cannot see); ``kind``
+    names which. Raised by GateDriver.admits_new_unit: no new unit starts, and the stand stops by the B-OPEN path."""
+
+    def __init__(self, kind: str) -> None:
+        super().__init__(f"the incident gate halted ({kind}) - no new unit starts, the stand stops (§4.5)")
+        self.kind = kind
+        self.halt = kind                 # what the scheduler's B-OPEN path reads (STAND END halt=, ABORT reason=)
 
 
 def _incidents():
@@ -111,7 +124,14 @@ class GateDriver:
 
     # ── the gate the scheduler reads ───────────────────────────────────────────────────────────────────────────
     def admits_new_unit(self) -> bool:
-        return self.halted is None and self.gate.admits_new_unit()
+        if self.halted is not None:                      # Q2: a halt raises - it is no wait
+            raise GateHalted(self.halted)
+        return self.gate.admits_new_unit()
+
+    def halt_kind(self) -> str | None:
+        """Q2: the halt's kind, or None - read without raising, so a halt that came after the stand's last unit asked
+        still names itself on the stand's STAND END."""
+        return self.halted
 
     # ── one poll ───────────────────────────────────────────────────────────────────────────────────────────────
     def _blind(self, problem: str) -> None:

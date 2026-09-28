@@ -947,11 +947,33 @@ def _end_rc(sp: StandPlan, bp: BlockPlan, a: str, r: str, wrecs: Mapping, qrecs:
     return next((x for x in rcs if x != 0), 0)
 
 
+def _gate_halt(sched: "Scheduler") -> str | None:
+    """Q2: the incident gate's halt read without raising (its halt_kind), None without a gate or a halt - a halt
+    that came after the stand's last unit asked the gate still names itself on the normal STAND END."""
+    gate = getattr(sched.hooks, "gate", None) if sched.hooks is not None else None
+    f = getattr(gate, "halt_kind", None)
+    return f() if callable(f) else None
+
+
+def _halt_of(e: BaseException | None) -> str | None:
+    """Q2: the gate's halt an error carries (run_v3_gate.GateHalted.halt: 401, 402, 403 or harness-error), looked for
+    through its causes - None for any other error."""
+    seen: set = set()
+    while e is not None and id(e) not in seen:
+        seen.add(id(e))
+        h = getattr(e, "halt", None)
+        if isinstance(h, str) and h:
+            return h
+        e = e.__cause__ or e.__context__
+    return None
+
+
 def _close_block(sched: "Scheduler", e: BaseException, *, stand: str, block: str, ids: Mapping, ended: set,
                  wrecs: Mapping, opened: bool, check_id: str) -> None:
     """B-OPEN: a block that failed after its check began closes what it opened - its live children killed, every START
-    without an END closed by ABORT reason=harness-error, the proxy stage reset, BLOCK END, the check ended - and the
-    error goes on. A step that fails is named beside the error (a SchedulerError from it), never swallowed."""
+    without an END closed by ABORT reason=harness-error (B-ABORT-REASON: on a halt, reason=<the halt's kind> - a 402 is
+    the provider's, never our failure), the proxy stage reset, BLOCK END, the check ended - and the error goes on. A
+    step that fails is named beside the error (a SchedulerError from it), never swallowed."""
     problems: list[str] = []
 
     def step(what: str, fn: Callable[[], Any]) -> None:
@@ -962,9 +984,10 @@ def _close_block(sched: "Scheduler", e: BaseException, *, stand: str, block: str
 
     for recs in wrecs.values():
         step("killing the live writers", lambda recs=recs: _kill_live(recs.values()))
+    reason = _halt_of(e) or "harness-error"          # B-ABORT-REASON
     for k, ident in ids.items():
         if k not in ended:
-            step(f"ABORT {ident}", lambda ident=ident: sched.status.abort(ident, reason="harness-error"))
+            step(f"ABORT {ident}", lambda ident=ident: sched.status.abort(ident, reason=reason))
     if sched.proxy_ctl is not None:
         step("the proxy stage reset", lambda: sched.proxy_ctl.stage(None, None))
     if opened:
@@ -1064,7 +1087,7 @@ def _run_stand(sched: "Scheduler", sp: StandPlan, blocks: Sequence[BlockPlan], *
         raise
     cl_end = _changelog(out["end_read"])
     try:
-        sched.status.stand(sp.stand, "END", model=model_end, changelog=cl_end or UNREAD)
+        sched.status.stand(sp.stand, "END", model=model_end, changelog=cl_end or UNREAD, halt=_gate_halt(sched))
     except BaseException as e:           # B-OPEN: a refused STAND END (a change log with a space, say) still closes it
         _close_stand(sched, e, sp.stand)
         raise
@@ -1107,9 +1130,10 @@ def _changelog(read: Any) -> str | None:
 
 def _close_stand(sched: "Scheduler", e: BaseException, stand: str) -> None:
     """B-OPEN at the stand: a stand that failed after STAND START writes STAND END - its model and change log unread,
-    nothing probed on the way out - and the error goes on; a STAND END that cannot be written is named beside it."""
+    nothing probed on the way out, and halt=<kind> when the gate halted it (Q2, O-b2) - and the error goes on; a STAND
+    END that cannot be written is named beside it."""
     try:
-        sched.status.stand(stand, "END", model=UNREAD, changelog=UNREAD)
+        sched.status.stand(stand, "END", model=UNREAD, changelog=UNREAD, halt=_halt_of(e))
     except Exception as x:  # noqa: BLE001 - named below
         msg = f"{stand}: {type(e).__name__}: {e} - and STAND END could not be written: {type(x).__name__}: {x}"
         if isinstance(e, Exception):

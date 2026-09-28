@@ -115,6 +115,17 @@ class World:
         return [x for x in self.status_path.read_text(encoding="utf-8").splitlines() if f" INCIDENT " in x and kind in x]
 
 
+def admits(d) -> object:
+    """Q2: the driver's answer - True or False while it admits or waits, "halted:<kind>" when it raises GateHalted (a halt
+    is no wait), any other exception by name (the row that reads it FAILs)."""
+    try:
+        return d.admits_new_unit()
+    except G.GateHalted as e:
+        return f"halted:{e.kind}"
+    except Exception as e:  # noqa: BLE001
+        return f"{type(e).__name__}: {e}"
+
+
 def kv(line: str, key: str) -> str | None:
     for tok in line.split():
         if tok.startswith(key + "="):
@@ -186,7 +197,15 @@ try:
     starts = w.lines(" START ")
     check("GT-halt-402: a 402 opens INCIDENT START kind=402 for its arm and halts - no new unit, the gate itself closed",
           len(starts) == 1 and kv(starts[0], "kind") == "402" and kv(starts[0], "arms") == "a2"
-          and w.d.halted == "402" and w.d.admits_new_unit() is False and w.d.gate.admits_new_unit() is True, str(starts))
+          and w.d.halted == "402" and admits(w.d) == "halted:402" and w.d.gate.admits_new_unit() is True, str(starts))
+    try:
+        w.d.admits_new_unit()
+        q2 = "no raise"
+    except Exception as e:  # noqa: BLE001 - read below
+        q2 = e
+    check("Q2 (F15): a halted driver's admits_new_unit RAISES GateHalted naming its kind - a halt is no wait: returning "
+          "False spun the scheduler's _await_gate for good; the raise takes the B-OPEN path",
+          isinstance(q2, G.GateHalted) and q2.kind == q2.halt == "402" and "402" in str(q2), repr(q2))
 
     w = World("mix")
     w.write(*[rec("a1", T0 + i, status=500) for i in range(3)], *[rec("a2", T0 + 3 + i, status=429) for i in range(2)])
@@ -272,7 +291,7 @@ try:
     check("GT-problem: a line that is not JSON, and one that is not an object, are named problems; the next record "
           "is still read", len(w.d.problems) == 2 and len(w.d.gate.failures) == 1, str(w.d.problems))
     check("R-GATE-P: a record the gate cannot read leaves it blind - halted harness-error, no new unit",
-          w.d.halted == "harness-error" and w.d.admits_new_unit() is False, str(w.d.halted))
+          w.d.halted == "harness-error" and admits(w.d) == "halted:harness-error", str(w.d.halted))
     w = World("notime")
     w.write({"arm": "a1", "status": 500, "complete": True})
     w.poll()
@@ -310,14 +329,14 @@ try:
     w.now[0] = T0 + 6
     w.d.start()
     time.sleep(0.5)
-    in_loop = (w.d.halted, w.d.admits_new_unit())           # before stop(): the LOOP's own handling
+    in_loop = (w.d.halted, admits(w.d))                     # before stop(): the LOOP's own handling
     try:
         w.d.stop()
         stop_raised = None
     except Exception as e:  # noqa: BLE001 - a raise past stop() is this row's FAIL, by name
         stop_raised = repr(e)
     check("GT-crash: a poll that crashes in the loop (the probe's transport) is named and halts harness-error at once - "
-          "no new unit while the stand runs", in_loop == ("harness-error", False)
+          "no new unit while the stand runs", in_loop == ("harness-error", "halted:harness-error")
           and any("poll failed" in p for p in w.d.problems), f"{in_loop} {w.d.problems}")
     check("GT-crash: ... and stop()'s last poll crashing too is named, never raised past it",
           stop_raised is None and w.d.halted == "harness-error" and any("last poll failed" in p for p in w.d.problems),
@@ -335,7 +354,7 @@ try:
     kinds = [kv(x, "kind") for x in w.lines(" START ")]
     check("B-HALT-SCHED: a 402 answered to the incident's canary halts (INCIDENT START kind=402) - while the incident "
           "holds every unit the canary is the only call, and as a failed canary the 402 kept the incident open for good",
-          w.d.halted == "402" and kinds == ["5xx", "402"] and w.d.admits_new_unit() is False and not w.errors,
+          w.d.halted == "402" and kinds == ["5xx", "402"] and admits(w.d) == "halted:402" and not w.errors,
           f"{w.d.halted} {kinds} {w.errors}")
     w = World("sched402")
     w.write(rec("scheduler", T0, status=402))
@@ -405,6 +424,39 @@ try:
           "START for the same event, and the incident still ENDs", len(w.lines(" START ")) == 1
           and len(w.lines(" END ")) == 1 and w.d.halted == "harness-error"
           and any("could not be written" in p for p in w.d.problems), f"{w.lines(' START ')} {w.d.problems}")
+
+    print("\n- Q2: every halt source after STAND START - its INCIDENT START (a provider's stop) and GateHalted by kind -")
+    seen_q2 = {}
+    for arm_ in ("a1", "scheduler"):
+        for st_ in (401, 402, 403):
+            w = World(f"q2{arm_}{st_}")
+            w.write(rec(arm_, T0, status=st_))
+            w.poll()
+            seen_q2[(arm_, str(st_))] = ([kv(x, "kind") for x in w.lines(" START ")], [x for x in w.lines(" END ")],
+                                         admits(w.d))
+    w = World("q2probe", probes=[{"status": 402, "complete": False}])
+    w.write(*[rec("a1", T0 + i, status=500) for i in range(5)])
+    w.now[0] = T0 + 6
+    w.poll()                                               # one arm's 5 failures: the probe is due - and answered 402
+    seen_q2[("probe", "402")] = ([kv(x, "kind") for x in w.lines(" START ")], w.lines(" END "), admits(w.d))
+    w = World("q2blind")
+    with open(w.calls, "ab") as f_:
+        f_.write(b"not json\n")
+    w.poll()
+    seen_q2[("blind", "harness-error")] = ([kv(x, "kind") for x in w.lines(" START ")], w.lines(" END "), admits(w.d))
+    want_q2 = {**{(a_, k_): ([k_], [], f"halted:{k_}") for a_ in ("a1", "scheduler") for k_ in ("401", "402", "403")},
+               ("probe", "402"): (["402"], [], "halted:402"), ("blind", "harness-error"): ([], [], "halted:harness-error")}
+    check("Q2: every halt source - a 401, 402 or 403 in an arm's record or the scheduler port's, a 402 answered to the "
+          "probe - opens INCIDENT START kind=<k> with no END and raises GateHalted(<k>); a gate gone blind raises "
+          "GateHalted(harness-error) with no INCIDENT line (STAND END halt= names it)", seen_q2 == want_q2,
+          str({k_: v_ for k_, v_ in seen_q2.items() if want_q2.get(k_) != v_}))
+    w = World("q2hk")
+    hk0 = w.d.halt_kind()
+    w.write(rec("a1", T0, status=403))
+    w.poll()
+    check("Q2: halt_kind() reads the halt without raising - None before it, 403 after (the scheduler's normal STAND END "
+          "asks it when no unit is left to ask admits_new_unit)", hk0 is None and w.d.halt_kind() == "403",
+          f"{hk0} {w.d.halt_kind()}")
 finally:
     shutil.rmtree(TMP, ignore_errors=True)
 

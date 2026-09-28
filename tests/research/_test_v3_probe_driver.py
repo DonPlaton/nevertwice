@@ -449,6 +449,31 @@ try:
 except RuntimeError as e:
     stopped = str(e)
 check("StopGate refusing (it raises) stops, whatever the driver says", "D-AB-8" in stopped, stopped)
+GT = _load("v3_run_v3_gate_drv_t", ROOT / "research" / "v3" / "run_v3_gate.py")
+INC = _load("v3_incidents_drv_t", ROOT / "research" / "v3" / "incidents.py")
+SLG = _load("v3_status_log_drv_t", ROOT / "research" / "v3" / "status_log.py")
+_q2dir = Path(tempfile.mkdtemp(prefix="nvt3_q2_"))
+halted = {}
+for kind in ("402", "harness-error"):
+    drv = GT.GateDriver(INC.IncidentGate(), calls_path=_q2dir / "calls.jsonl", status=SLG.StatusLog(_q2dir / "STATUS"),
+                        send_probe=lambda: {}, id_prefix="q2", expected_models=["deepseek-v4-flash"])
+    drv.halted = kind                                   # the driver halted: a 402, or blind (R-GATE-P)
+    try:
+        P.ProbeGate(G1(True), drv).admits_new_unit()
+        halted[kind] = "admitted or waited"
+    except GT.GateHalted as e:
+        halted[kind] = e.kind
+    except Exception as e:  # noqa: BLE001 - the row FAILs by name
+        halted[kind] = f"{type(e).__name__}: {e}"
+shutil.rmtree(_q2dir, ignore_errors=True)
+check("Q2 (F15): a halted GateDriver behind ProbeGate raises GateHalted by kind (402, harness-error) - the probe's "
+      "unit never starts, and never waits", halted == {"402": "402", "harness-error": "harness-error"}, str(halted))
+try:
+    pg_hk = (P.ProbeGate(G1(True), drv).halt_kind(), P.ProbeGate(G1(True), G1(True)).halt_kind())
+except Exception as e:  # noqa: BLE001 - the row FAILs by name
+    pg_hk = f"{type(e).__name__}: {e}"
+check("Q2: ProbeGate.halt_kind is its driver's (harness-error here), None for a driver without one - StopGate's "
+      "stop is the A/B's own record", pg_hk == ("harness-error", None), str(pg_hk))
 check("no row's condition raised", RAISED == [], str(RAISED))
 print(f"\nv3 probe driver: {PASSED} passed, {FAILED} failed")
 sys.exit(1 if FAILED else 0)
