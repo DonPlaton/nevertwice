@@ -1400,6 +1400,13 @@ check("C5f record_cc_offered: one match writes launch's _OFFERED for D7 under th
          and LA._OFFERED_ATTEMPT1 == {"e" * 64: "blocked:attempt-2:cc_offered"}), str((rec_off, rec_bad))[:300])
 LA._OFFERED.clear()
 LA._OFFERED_ATTEMPT1.clear()
+rec_empty = S.record_cc_offered(LA, {"value": []}, "f" * 64)
+check("C5f record_cc_offered (the auditor's F4): an empty, unblocked result records no empty tool list - it is "
+      "blocked:no-tools:cc_offered, an attempt-1 failure for that binary, so attempt 2 can open",
+      ok(lambda: rec_empty == {"recorded": False, "blocked": "blocked:no-tools:cc_offered", "attempt1_failed_for": "f" * 64}
+         and LA._OFFERED == {} and LA._OFFERED_ATTEMPT1 == {"f" * 64: "blocked:no-tools:cc_offered"}), str(rec_empty)[:300])
+LA._OFFERED.clear()
+LA._OFFERED_ATTEMPT1.clear()
 SPL = TMP / "spawns_c5f.jsonl"
 disc = {"spawn_id": "s1", "refused": False, "claude_code": {"sha256": "b" * 64, "config": {
     "first": False, "mode": "discovery", "entries": [{"name": "projects", "kind": "dir", "size": 5, "sha256": "c" * 64},
