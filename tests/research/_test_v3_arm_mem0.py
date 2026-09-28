@@ -117,7 +117,8 @@ class Server:
                     return self._send({"embeddings": [vec(t) for t in (inp if isinstance(inp, list) else [inp])]})
                 if self.path.endswith("/chat/completions"):
                     return self._send({"choices": [{"message": {"role": "assistant", "content": "{}"},
-                                                    "finish_reason": "stop"}]})
+                                                    "finish_reason": "stop"}],
+                                       "usage": {"prompt_tokens": 40, "completion_tokens": 4}})
                 self._send({"status": "success"})
 
         self.http = ThreadingHTTPServer(("127.0.0.1", 0), H)
@@ -214,8 +215,8 @@ try:
         elif isinstance(n, ast.ImportFrom) and n.module:
             mods.add(n.module.split(".")[0])
     check("arm_mem0 imports the standard library, base, _http_count, _ollama_pacer and mem0 - nothing of the repo",
-          mods <= {"__future__", "json", "os", "re", "sys", "time", "urllib", "pathlib", "typing", "base",
-                   "_http_count", "_ollama_pacer", "mem0"}, str(sorted(mods)))
+          mods <= {"__future__", "json", "os", "re", "sys", "threading", "time", "urllib", "pathlib", "typing",
+                   "base", "_http_count", "_ollama_pacer", "mem0"}, str(sorted(mods)))
 
     print("\n- a mem0-store hit without an item index (in-process, on a fake product) -")
     sys.path.insert(0, str(ARMS_DIR))
@@ -289,6 +290,28 @@ try:
     check("a dated stand's write without its date is refused by name",
           raises(lambda: c.request("write", item={"item_id": "u1:2", "session_id": "0", "role": "user",
                                                   "speaker": "C", "text": "t"}), B.ArmError, "carries its date"))
+    cu = safely(lambda: c.request("counters"), {})
+    usage = cu.get("llm_usage") or {}
+    check("Q-AB-1: mem0's own LLM client is counted in the child - calls, and prompt and completion tokens read from "
+          "response.usage (the upstream says 40 and 4 per call)",
+          usage == {"calls": 2, "failed": 0, "no_usage": 0, "prompt_tokens": 80, "completion_tokens": 8}, str(usage))
+    check("Q-AB-1: ... one logical call per HTTP call here - the counter and the HTTP door agree",
+          usage.get("calls") == ((cu.get("http") or {}).get("counts") or {}).get("proxy:chat", {}).get("attempts"),
+          str(cu.get("http"))[:200])
+    calls = logged("llm_call")
+    check("Q-AB-1 (1): the counter hands mem0 the SDK's own response object and passes the request it was given, "
+          "unchanged", len(calls) == 2 and all(x.get("same_response") and x.get("same_params") for x in calls),
+          str(calls))
+    raised = safely(lambda: c.request("write", item={"item_id": "u1:3", "session_id": "0", "role": "user",
+                                                     "speaker": "C", "text": "NVT3-RAISE-LLM please"},
+                                      date="2023-05-20T10:02:00"), {})
+    cu = safely(lambda: c.request("counters"), {})
+    usage = cu.get("llm_usage") or {}
+    rl = logged("llm_raised")
+    check("Q-AB-1 (2): an SDK exception reaches mem0 as it was raised, and the failed call is counted",
+          rl and rl[-1].get("same") is True and rl[-1].get("type") == "_FakeAPIError"
+          and usage.get("calls") == 3 and usage.get("failed") == 1 and usage.get("prompt_tokens") == 80
+          and raised.get("results") == 0, f"{rl[-1:]} {usage} {raised}")
     e = safely(lambda: c.request("end_write"), {})
     check("end_write: the footprint counts the unit's memories, and the store is sealed",
           (e.get("footprint") or {}).get("retrievable") == 2 and (U1 / B.SEAL_NAME).is_file(), str(e)[:200])
@@ -346,6 +369,8 @@ try:
     cs = safely(lambda: c.request("counters"), {})
     check("mem0-store: no LLM call at all (llm_calls 0 by the counter, none at the proxy)",
           cs.get("llm_calls") == 0 and len(PROXY.paths("/chat/completions")) == chats_before, str(cs)[:200])
+    check("Q-AB-1: mem0-store wraps no LLM client - its llm_usage is None, never a zero that looks measured",
+          "llm_usage" in cs and cs["llm_usage"] is None, str(cs.get("llm_usage")))
     scfg = (logged("from_config") or [{}])[-1].get("config") or {}
     check("mem0-store: its LLM is an Ollama model on a closed loopback port (never called)",
           scfg.get("llm") == {"provider": "ollama", "config": {"model": "nvt3-no-llm",
@@ -390,6 +415,12 @@ try:
                       env=child_env(extra={"NVT3_FAKE_PULL_ALWAYS": "1"}))
     check("a product that pulls anyway while it is built is refused by name (the counter saw the pull)",
           "pull request" in msg, msg[:200])
+    U5 = TMP / "runs" / "s1" / "r1" / "mem0" / "u5"
+    U5.mkdir(parents=True)
+    msg = hello_error("x8", spec_for("x8", "mem0", "write", U5, unit="u5"),
+                      env=child_env(extra={"NVT3_FAKE_NO_CLIENT": "1"}))
+    check("Q-AB-1: a mem0 whose LLM has no OpenAI client (chat.completions.create) is refused by name - the K87 "
+          "check-2 source would be missing", "K87 check-2 source" in msg, msg[:200])
     src = ADAPTER.read_text(encoding="utf-8")
     check("the counter is installed before the pacer, so it sits inside it (Q-46-4)",
           0 < src.index("HC.install(") < src.index("P.install("))

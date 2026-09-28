@@ -3,7 +3,9 @@
 It records the keyword arguments of every call (to the JSONL file NVT3_FAKE_LOG names) and talks HTTP the way the real
 product does, so the adapter's counter, pacer and preflight are exercised: at build its Ollama embedder LISTS the models
 and PULLS a missing one (mem0/embeddings/ollama.py in 2.0.19), an add with infer=True calls the configured DeepSeek base
-URL's /chat/completions with the key mem0 reads from DEEPSEEK_API_KEY, and every text is embedded through
+URL's /chat/completions with the key mem0 reads from DEEPSEEK_API_KEY - through Memory.llm.client.chat.completions.create,
+the path of mem0's DeepSeekLLM and its openai.OpenAI (2.0.19: llms/deepseek.py:41, 108), whose response carries the
+upstream's usage (Q-AB-1: the adapter counts there) - and every text is embedded through
 <ollama_base_url>/api/embed. add(timestamp=...) raises ValueError, as mem0 OSS does. Memories persist as JSON under the
 vector store's path, so a new read-stage process sees them (Q25).
 """
@@ -15,6 +17,7 @@ import os
 import urllib.request
 import uuid
 from pathlib import Path
+from types import SimpleNamespace
 
 __version__ = "0.0.0-fake"
 _UNSET = object()      # a keyword the caller did not pass is logged as "<default>", so "explicit" is testable
@@ -36,11 +39,44 @@ def _post(url: str, obj, bearer: str | None = None) -> dict:
         return json.loads(r.read() or b"{}")
 
 
+class _FakeAPIError(RuntimeError):
+    """What the fake SDK raises for a message carrying NVT3-RAISE-LLM (the adapter's counter must hand it on as is)."""
+
+
+class _Completions:
+    """DeepSeekLLM.client.chat.completions - an openai.OpenAI in the real product (mem0/llms/deepseek.py): create()
+    posts to <base_url>/chat/completions with the key and returns an SDK-like object carrying the upstream's usage.
+    It keeps what it received and what it returned, so the product can check the adapter's counter changed neither."""
+
+    def __init__(self, base_url: str, key: str | None) -> None:
+        self.base_url, self.key = base_url, key
+        self.last_params = self.last_response = self.last_error = None
+
+    def create(self, **params):
+        self.last_params = params
+        if any("NVT3-RAISE-LLM" in str(m.get("content")) for m in params.get("messages") or []):
+            self.last_error = _FakeAPIError("the fake SDK refused this request")
+            raise self.last_error
+        data = _post(self.base_url.rstrip("/") + "/chat/completions", params, bearer=self.key)
+        u = data.get("usage")
+        usage = (SimpleNamespace(prompt_tokens=u.get("prompt_tokens"), completion_tokens=u.get("completion_tokens"))
+                 if isinstance(u, dict) else None)
+        msg = data["choices"][0]["message"]
+        self.last_response = SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(**msg))], usage=usage)
+        return self.last_response
+
+
 class Memory:
     def __init__(self, config: dict) -> None:
         self.config = config
         self._emb = config["embedder"]["config"]
         self._llm = config["llm"]
+        cfg = self._llm["config"]
+        if self._llm["provider"] == "deepseek" and not os.environ.get("NVT3_FAKE_NO_CLIENT"):
+            comp = _Completions(cfg["deepseek_base_url"], os.environ.get("DEEPSEEK_API_KEY"))
+            self.llm = SimpleNamespace(config=cfg, client=SimpleNamespace(chat=SimpleNamespace(completions=comp)))
+        else:
+            self.llm = SimpleNamespace(config=cfg)            # the Ollama LLM: no OpenAI client
         self._path = Path(config["vector_store"]["config"]["path"]) / "fake_memories.json"
         self._path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -70,11 +106,17 @@ class Memory:
             raise ValueError("Platform-only temporal parameter: timestamp is not supported in OSS")
         msgs = [{"role": "user", "content": messages}] if isinstance(messages, str) else list(messages)
         if infer:
-            cfg = self._llm["config"]
-            base = cfg.get("deepseek_base_url") or cfg.get("ollama_base_url")
-            _post(base.rstrip("/") + "/chat/completions",
-                  {"model": cfg["model"], "messages": [{"role": "system", "content": "extract facts"}, *msgs]},
-                  bearer=os.environ.get("DEEPSEEK_API_KEY"))
+            comp = self.llm.client.chat.completions
+            params = {"model": self._llm["config"]["model"],
+                      "messages": [{"role": "system", "content": "extract facts"}, *msgs]}
+            try:
+                resp = comp.create(**params)
+            except Exception as e:  # noqa: BLE001 - mem0 logs a failed extraction and stores nothing
+                _log("llm_raised", type=type(e).__name__, same=e is comp.last_error)
+                return {"results": []}
+            got = comp.last_params or {}
+            _log("llm_call", same_response=resp is comp.last_response,
+                 same_params=set(got) == set(params) and all(got[k] is params[k] for k in params))
         store = self._load()
         results = []
         for m in msgs:

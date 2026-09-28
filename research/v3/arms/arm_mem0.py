@@ -28,7 +28,8 @@ rev1 §2.2, as the auditor's Q-46-3 and Q-46-6 read it:
 
 The spec: arm, stage, stand, run, unit, unit_dir, port (the proxy port; None for mem0-store), embed_tag, ollama_url,
 dated (does the stand carry dates), record_path. Counters: the HTTP counter (_http_count, installed inside the pacer),
-the pacer's Ollama transport, the writes and their results.
+the pacer's Ollama transport, the writes and their results, and for mem0 its LLM client's logical calls and tokens
+(LLMUsage on llm.client.chat.completions.create, Q-AB-1; a mem0 without that client is refused; mem0-store: None).
 """
 from __future__ import annotations
 
@@ -36,6 +37,7 @@ import json
 import os
 import re
 import sys
+import threading
 import time
 import urllib.request
 from pathlib import Path
@@ -96,6 +98,44 @@ def mem0_config(spec: Mapping[str, Any]) -> dict:
             "vector_store": {"provider": "qdrant", "config": {"collection_name": "nvt3", "path": str(store / "qdrant"),
                                                               "embedding_model_dims": EMBED_DIMS, "on_disk": True}},
             "history_db_path": str(store / "history.db")}
+
+
+class LLMUsage:
+    """Q-AB-1 (the auditor's O-a): mem0's own LLM client counted in the child - the logical calls and the tokens its
+    SDK response reports (response.usage), the same in every leg of the §4.6 A/B, and mem0's K87 check-2 source
+    (branch (b)). The counter calls the SDK's create with exactly the arguments it was given, hands back the SDK's own
+    response object, and re-raises an SDK exception as it was - a failed call is counted too."""
+
+    def __init__(self) -> None:
+        self.calls = self.failed = self.no_usage = self.prompt_tokens = self.completion_tokens = 0
+        self._lock = threading.Lock()
+
+    def wrap(self, completions: Any) -> None:
+        inner = completions.create
+
+        def create(*args, **kwargs):
+            with self._lock:
+                self.calls += 1
+            try:
+                resp = inner(*args, **kwargs)
+            except BaseException:
+                with self._lock:
+                    self.failed += 1
+                raise
+            u = getattr(resp, "usage", None)
+            with self._lock:
+                if u is None:
+                    self.no_usage += 1
+                else:
+                    self.prompt_tokens += int(getattr(u, "prompt_tokens", 0) or 0)
+                    self.completion_tokens += int(getattr(u, "completion_tokens", 0) or 0)
+            return resp
+        completions.create = create
+
+    def snapshot(self) -> dict:
+        with self._lock:
+            return {"calls": self.calls, "failed": self.failed, "no_usage": self.no_usage,
+                    "prompt_tokens": self.prompt_tokens, "completion_tokens": self.completion_tokens}
 
 
 def _tag_present(tags: Mapping[str, Any], tag: str) -> bool:
@@ -162,15 +202,25 @@ def bind(spec: Mapping[str, Any], env: Mapping[str, str]) -> tuple[Any, dict]:
     pulls = HC.total(HC.snapshot(), "ollama:pull")
     if pulls:
         raise Refused(f"the product sent {pulls} pull request(s) to Ollama while it was built")
+    usage = None
+    if arm == "mem0":
+        completions = getattr(getattr(getattr(getattr(mem, "llm", None), "client", None), "chat", None),
+                              "completions", None)
+        if not callable(getattr(completions, "create", None)):
+            raise Refused("mem0's LLM has no OpenAI client (llm.client.chat.completions.create) - the K87 check-2 "
+                          "source (Q-AB-1) would be missing")
+        usage = LLMUsage()
+        usage.wrap(completions)
+    rec["llm_usage"] = "mem0.llm.client.chat.completions.create, response.usage" if usage else None
     rec["env_names"] = sorted(env)
     rec["python"] = sys.version.split()[0]
-    return {"mem": mem, "pacer": P}, rec
+    return {"mem": mem, "pacer": P, "usage": usage}, rec
 
 
 class Handler:
     def __init__(self, spec: Mapping[str, Any], ns: Mapping[str, Any], rec: Mapping[str, Any]) -> None:
         self.spec, self.rec = spec, rec
-        self.mem, self.pacer = ns["mem"], ns["pacer"]
+        self.mem, self.pacer, self.usage = ns["mem"], ns["pacer"], ns.get("usage")
         self.arm, self.stage, self.unit = spec["arm"], spec["stage"], spec["unit"]
         self.store = Path(spec["unit_dir"]) / "store"
         self.item_shas: dict[int, str] = {}
@@ -248,6 +298,7 @@ class Handler:
         transport: dict = {}
         self.pacer.attach(transport)
         return {"http": snap, "llm_calls": HC.total(snap, "proxy:chat") + HC.total(snap, "ollama:generate"),
+                "llm_usage": self.usage.snapshot() if self.usage is not None else None,
                 "writes": dict(self.writes), **self.reads, "ollama_transport": transport.get("ollama_transport")}
 
 
