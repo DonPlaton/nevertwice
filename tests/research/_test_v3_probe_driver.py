@@ -87,7 +87,7 @@ NLP_ON = {"names": {"full": "_nlp_full", "lemma": "_nlp_lemma", "failed_full": "
           "nlp_lemma": True, "failed_full": False, "failed_lemma": False, "is_package": True}
 
 
-def world(tag, *, install=True, model=True, d1=True, spm=SPM, main=MAIN):
+def world(tag, *, install=True, model=True, d1=True, spm=SPM, main=MAIN, d1_record=None):
     base = TMP / tag
     c = L.Contract(polygon_root=base / "polygon", runs_root=base / "polygon" / "runs" / "v3", repo_root=ROOT,
                    owner_home=base / "owner", secrets_dir=base / "secrets", quarantine_root=base / "q",
@@ -116,7 +116,8 @@ def world(tag, *, install=True, model=True, d1=True, spm=SPM, main=MAIN):
     if d1:
         d = runs / "_d1tag" / "d1"
         d.mkdir(parents=True)
-        (d / "record.json").write_text(json.dumps({"problems": [], "tag": {"name": TAG, "digest": DIG}}), encoding="utf-8")
+        (d / "record.json").write_text(json.dumps(d1_record if d1_record is not None else
+                                                  {"problems": [], "tag": {"name": TAG, "digest": DIG}}), encoding="utf-8")
     return c, venv
 
 
@@ -147,8 +148,10 @@ class World:
     """The injected edges: the proxy's start and stop, the scheduler, the launcher, the witnesses, the post."""
 
     def __init__(self, *, model="deepseek-flash", aborted=None, failed_op=False, raise_in_turn=False, pstop_rc=0,
-                 trap=False, temperature=0.1, counters=None, stops=None, interrupt=False):
-        self.interrupt = interrupt
+                 trap=False, temperature=0.1, counters=None, stops=None, interrupt=False, unserved=False,
+                 timeless=False, catcher=False, dirty_check=False, bad_record=False):
+        self.interrupt, self.unserved, self.timeless, self.catcher = interrupt, unserved, timeless, catcher
+        self.dirty_check, self.bad_record = dirty_check, bad_record
         self.model, self.aborted, self.failed_op, self.raise_in_turn = model, aborted, failed_op, raise_in_turn
         self.pstop_rc, self.trap, self.temperature, self.stops = pstop_rc, trap, temperature, stops
         self.counters = counters
@@ -181,9 +184,10 @@ class World:
             def begin_check(self, cid):
                 log.append(("begin", cid))
 
-            def end_check(self, cid):
+            def end_check(self, cid, world_=self):
                 log.append(("end", cid))
-                return {"complete": True, "native": {"hits": 0, "loopback_hits": 0}, "fs": {"fs_hits": 0}}
+                return {"complete": True, "native": {"hits": 0, "loopback_hits": 0},
+                        "fs": {"fs_hits": 1 if world_.dirty_check else 0}}
         return W()
 
     def make_scheduler(self, *a, **k):
@@ -211,9 +215,23 @@ class World:
                           "refused": None, "usage": {"prompt": 1000 + i, "completion": 10 + i},
                           "temperature": world_.temperature, "thinking_sent": None, "response_format": "json_object",
                           "tools_offered": []} for i in range(3)]
+                if world_.timeless:
+                    for ln in lines:
+                        ln.pop("t0"), ln.pop("t1")
                 with open(Path(world_.h.run_dir) / "calls.jsonl", "a", encoding="utf-8") as f:
                     for ln in lines:
                         f.write(json.dumps(ln) + "\n")
+                    if world_.bad_record:
+                        f.write("{not json\n")
+                if world_.catcher:
+                    with open(Path(world_.h.run_dir) / "catcher.jsonl", "a", encoding="utf-8") as f:
+                        f.write(json.dumps({"arm": "harness-catcher", "host": "github.com", "port": 443}) + "\n")
+                if world_.unserved:
+                    port = world_.started["config"]["ollama"]["upstream"][1]
+                    cn = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
+                    cn.request("GET", "/api/version", body=b"", headers={"Content-Type": "application/json"})
+                    cn.getresponse().read()
+                    cn.close()
                 if world_.trap:
                     port = world_.started["config"]["ollama"]["upstream"][1]
                     cn = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
@@ -372,6 +390,30 @@ except P.ProbeError as e:
     used = str(e)
 check("a probe record is written once - a second run of the label is refused before anything starts",
       "written once" in used and wd2.started is None, f"{used} started={wd2.started is not None}")
+
+print("\n- the auditor's D2, D8, D13, D24, D26, D27 -")
+for tag, d1rec in (("d1_problem", {"problems": ["e3: a model removed"], "tag": {"name": TAG, "digest": DIG}}),
+                   ("d1_nodigest", {"problems": [], "tag": {"name": TAG}}), ("d1_noname", {"problems": [], "tag": {"digest": DIG}})):
+    rec, C, VENV, WD, err = run(tag, d1_record=d1rec)
+    check(f"D2: a D1 record {tag.split('_', 1)[1]} is blocked:no-embed-pin, with nothing started",
+          ok(lambda: rec["outcome"] == "blocked:no-embed-pin" and WD.started is None), f"{err!r} {rec.get('outcome')}")
+rec, C, VENV, WD, err = run("unserved", World(unserved=True))
+check("D8: a path the fake Ollama does not serve, when asked, is a named problem",
+      ok(lambda: any("saw an unserved path" in p and "/api/version" in p for p in rec["problems"])), str(rec.get("problems")))
+rec, C, VENV, WD, err = run("timeless", World(timeless=True))
+check("D13: the gate's own problem (a call it cannot time) comes into the probe's problems as gate: ...",
+      ok(lambda: any(p.startswith("gate: ") and "no readable time" in p for p in rec["problems"])), str(rec.get("problems")))
+rec, C, VENV, WD, err = run("catcher", World(catcher=True))
+check("D24: a catcher line of the probe's proxy reaches m0_nlp_active (a run-time download) and is the outcome",
+      ok(lambda: rec["fields"]["m0_nlp_active"].get("blocked") == "blocked:nlp-off" and rec["outcome"] == "blocked:nlp-off"),
+      f"{rec.get('outcome')} {rec.get('fields', {}).get('m0_nlp_active')}")
+rec, C, VENV, WD, err = run("dirty_check", World(dirty_check=True))
+check("D26: what the turn's boundary check says reaches the verdict - a watched-set change is a problem naming the check",
+      ok(lambda: rec["outcome"] == "fail" and any("the probe check counted 1 change" in r for r in rec["reasons"])),
+      str(rec.get("reasons")))
+rec, C, VENV, WD, err = run("bad_record", World(bad_record=True))
+check("D27: a proxy record that cannot be read is a named problem (proxy record: ...)",
+      ok(lambda: any(p.startswith("proxy record: ") for p in rec["problems"])), str(rec.get("problems")))
 
 print("\n- ProbeGate alone -")
 
