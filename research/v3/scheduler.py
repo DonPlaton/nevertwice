@@ -47,7 +47,8 @@ the turn with no child alive. B-RC at the close: a bye that times out or breaks 
 POSIX death by signal (returncode -N) is signal=, never rc=. A refused STAND END still closes the stand (B-OPEN), and
 a judge failure after STAND END carries the stand's result as partial. B-CUT: a read the unit ended in (its ceiling, a
 crash) keeps its row - qid, t0, t1 at the abort, cut: true - so R9's read windows cover it. B-PREFLIGHT: a scored
-stand's hooks without a balance preflight are refused before STAND START.
+stand's hooks without a balance preflight are refused before STAND START. B-JPART: a judge failure of any kind (the
+unload's ControlError, a judge's own error) is a SchedulerError carrying that partial, its cause kept.
 """
 from __future__ import annotations
 
@@ -1087,10 +1088,14 @@ def _run_stand(sched: "Scheduler", sp: StandPlan, blocks: Sequence[BlockPlan], *
                     if left:
                         raise SchedulerError(f"after judge {j.name} the GPU still holds {left} (§5.6)")
                 out["judged"].append(j.name)
-        except SchedulerError as err:    # after STAND END, as B-CL and B-TE: what the stand measured rides on it
-            if err.partial is None:
-                err.partial = out
-            raise
+        except Exception as err:         # after STAND END, as B-CL and B-TE: what the stand measured rides on it
+            if isinstance(err, SchedulerError):
+                if err.partial is None:
+                    err.partial = out
+                raise
+            wrapped = SchedulerError(f"{sp.stand}: a judge failed after STAND END - {type(err).__name__}: {err}")
+            wrapped.partial = out        # B-JPART: sched_ctl's ControlError (B-OLA's unload) or a judge's own error
+            raise wrapped from err
     return out
 
 

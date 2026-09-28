@@ -1332,6 +1332,33 @@ try:
     check("a judge's failure after STAND END (the GPU still holds a model) carries what the stand measured, as B-CL "
           "and B-TE do", isinstance(e33, SC.SchedulerError) and "still holds" in str(e33)
           and part33.get("stand") == "SJ2" and len(part33.get("blocks") or []) == 1, f"{e33!r} {sorted(part33)}")
+
+    class ControlError(RuntimeError):                      # sched_ctl.ControlError's shape: a RuntimeError, no partial
+        pass
+
+    def unload_refuses(*a, **k):
+        raise ControlError("qwen3:32b is still resident 30 s after its unload (§5.6)")
+
+    for tag_, stand_, why in (("unload", "SJ3", "the judge's unload refused after UNLOAD_WAIT_S, B-OLA's path"),
+                              ("run", "SJ4", "the judge's own run raised")):
+        s_j, sp_j, _jj, ev_j, gpu_j, st_j = stand_world("scored", stand=stand_, sfile=f"STATUS_{stand_}")
+        st_j.campaign_start(anchor="c" * 40, prereg="d" * 64, freeze="e" * 64)
+
+        class RaisingJudge(Judge):
+            def run(self, tag_=tag_):
+                if tag_ == "run":
+                    raise ValueError("the judge's verdict file does not parse")
+                super().run()
+                self.gpu.unload = unload_refuses           # the scheduler's unload of THIS judge's model refuses
+
+        rj = RaisingJudge("J8", "qwen3:32b", gpu_j, ev_j, TMP / f"STATUS_{stand_}", stand_)
+        _rj, e_j = attempt(lambda s_j=s_j, sp_j=sp_j, rj=rj: s_j.run_stand(
+            sp_j, [SC.BlockPlan(block="b01", units=("w1",))], judges=[rj], order=10))
+        part_j = getattr(e_j, "partial", None) or {}
+        check(f"B-JPART: a judge failure that is no SchedulerError ({why}) still carries what the stand measured - a "
+              f"SchedulerError with the partial, its cause kept", isinstance(e_j, SC.SchedulerError)
+              and part_j.get("stand") == stand_ and len(part_j.get("blocks") or []) == 1
+              and isinstance(e_j.__cause__, (ControlError, ValueError)), f"{e_j!r} {sorted(part_j)}")
     s34, sp34, judges34, _ev34, _gpu34, st34 = stand_world("scored", stand="SPF", sfile="STATUS34")
     st34.campaign_start(anchor="c" * 40, prereg="d" * 64, freeze="e" * 64)
     s34.hooks.preflight = None                              # hooks without a balance preflight
