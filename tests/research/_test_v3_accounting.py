@@ -810,6 +810,40 @@ check("TB7: cloud_bypass - the arm's catcher records whose host is a provider ho
       and AC.PROVIDER_HOSTS == ("api.deepseek.com", "api.openai.com", "api.anthropic.com"),
       f"{AC.cloud_bypass(cat_, arm='mem0')} {AC.cloud_bypass(cat_, arm='letta')}")
 
+print("\n- TB7 embed_inputs (Q-A7-7), at accounting's own level -")
+emb = [{"arm": "mem0", "is_embed": True, "status": 200, "embed_inputs": 2, "embed_tokens": 11, "embed_at_cap": 1,
+        "prompt_eval_count": 11},
+       {"arm": "mem0", "is_embed": True, "status": 200, "embed_inputs": 1, "embed_tokens": 5, "embed_at_cap": 0,
+        "prompt_eval_count": 7},
+       {"arm": "mem0", "is_embed": True, "status": 400, "embed_inputs": 9, "embed_tokens": 900, "embed_at_cap": 9,
+        "prompt_eval_count": None},
+       {"arm": "mem0", "is_embed": False, "is_llm": True, "status": 200},
+       {"arm": "letta", "is_embed": True, "status": 200, "embed_inputs": 1, "embed_tokens": 3, "embed_at_cap": 0,
+        "prompt_eval_count": 3}]
+try:
+    e_mem0 = AC.embed_inputs(emb, arm="mem0")
+except Exception as e:  # noqa: BLE001 - the row FAILs by name
+    e_mem0 = f"{type(e).__name__}: {e}"
+check("TBd/TBe: embed_inputs counts only the arm's answered (200) embed calls - a 400 embed, a generation call and "
+      "another arm's call are not in it - and counts the call whose token sum (5) is not Ollama's prompt_eval_count "
+      "(7) as mismatched, never adjusting it", e_mem0 == {"embed_at_cap": 1, "calls": 2, "inputs": 3, "tokens": 16,
+                                                         "prompt_eval_count": 18, "mismatched_calls": 1}, str(e_mem0))
+
+try:
+    AC.embed_inputs(emb, arm="chroma-store", expected=True)
+    exp_none = "accepted"
+except AC.AccountingError as e:
+    exp_none = str(e)
+except Exception as e:  # noqa: BLE001
+    exp_none = f"not refused by name: {type(e).__name__}: {e}"
+try:
+    plain = (AC.embed_inputs(emb, arm="chroma-store")["calls"], AC.embed_inputs(emb, arm="letta", expected=True)["calls"])
+except Exception as e:  # noqa: BLE001 - the row FAILs by name
+    plain = f"{type(e).__name__}: {e}"
+check("R-EMBED-PATH: an arm that embeds through Ollama (expected) with no answered embed call on its leg refuses - "
+      "unmeasured, never 0; without the expectation it is simply 0 calls; an arm with calls passes either way",
+      "unmeasured" in exp_none and plain == (0, 1), f"{exp_none} | {plain}")
+
 print("\n- M-DUP: nothing here builds or judges -")
 gone = [n for n in ("cloud_transport", "m5_cloud_problems", "boundary", "boundary_problems", "ollama_transport",
                     "P1_BANDS", "ZERO_TOLERANCE", "p1", "yield_", "caches", "reconciliation") if hasattr(AC, n)]
