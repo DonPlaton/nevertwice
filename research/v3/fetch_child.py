@@ -33,6 +33,15 @@ and only to a declared CDN host over https on 443 without userinfo, which never 
 is never recorded; the digest behind "latest" read right after the tags (C4A-5), information only - a non-200 there is
 recorded, never fatal. Files land under <cwd>/oci/blobs/sha256/.
 
+B-NLP NLP-2 adds {"kind": "gh_model", "model", "spacy", "repo", "raw_host", "api_host", "web_host", "compat_path",
+"cdn_hosts", "hosts", "max_meta_bytes", "max_asset_bytes"} (gh_model_job, the auditor's rule of 07:19 and Q-NLP-1): the
+model's version is the newest X.Y.Z that explosion/spacy-models' compatibility.json lists under the LOCKED spaCy's
+major.minor (the list's first entry recorded beside it); the release by its tag <model>-<version> must hold exactly one
+asset <model>-<version>-py3-none-any.whl at github.com's own download path, its "digest" the sha256 the stream is
+checked against (none: TLS-only trust, recorded as a declared limit); github.com answers the file or redirects it once,
+to a declared CDN host over https on 443 with no userinfo and no Authorization; the CDN host is recorded, the signed
+query never. The file lands under <cwd>/model/<name>.
+
     <py314>\\python.exe research\\v3\\fetch_child.py   (the job on stdin)
 """
 from __future__ import annotations
@@ -457,6 +466,106 @@ def oci_job(job: dict, *, send, cwd: Path) -> dict:
         return out
 
 
+_MODEL = re.compile(r"[A-Za-z0-9_]{1,64}")
+_XYZ = re.compile(r"(\d+)\.(\d+)\.(\d+)")
+_GH_REPO = re.compile(r"[A-Za-z0-9_.-]{1,100}/[A-Za-z0-9_.-]{1,100}")
+
+
+def gh_model_job(job: dict, *, send, cwd: Path) -> dict:
+    """B-NLP NLP-2: one spaCy model wheel from its GitHub release - see the module docstring's gh_model part. Returns its
+    summary; never raises for a refusal or a network error; a signed URL's query is never recorded."""
+    out: dict = {"id": f"gh_model:{job.get('model')}", "kind": "gh_model", "ok": False, "error": None, "requests": []}
+    try:
+        model, spacy_v, repo = job["model"], str(job["spacy"]), job["repo"]
+        raw, api, web = job["raw_host"], job["api_host"], job["web_host"]
+        if not _MODEL.fullmatch(str(model)):
+            raise Refused(f"{model!r} is not a model name")
+        if not _GH_REPO.fullmatch(str(repo)):
+            raise Refused(f"{repo!r} is not a GitHub repository name")
+        m = _XYZ.fullmatch(spacy_v)
+        if not m:
+            raise Refused(f"the locked spaCy {spacy_v!r} is not an X.Y.Z version")
+        cdn = frozenset(job.get("cdn_hosts") or ())
+        if set(job.get("hosts") or ()) != {raw, api, web, *cdn}:
+            raise Refused("the job's hosts are not exactly its declared hosts (raw, api, github.com and the CDN hosts)")
+        meta_max, asset_max = int(job["max_meta_bytes"]), int(job["max_asset_bytes"])
+
+        def call(method, host, path, headers, *, max_bytes=meta_max, save_to=None):
+            st, h, body, sha, n = send(method, host, path, dict(headers), max_bytes=max_bytes, save_to=save_to)
+            out["requests"].append({"method": method, "host": host, "status": st,
+                                    "path": path.split("?", 1)[0] if host in cdn else path})
+            return st, h, body, sha, n
+
+        # 1. the version: compatibility.json under the locked spaCy's major.minor (spacy.cli.download's own key)
+        minor = f"{m.group(1)}.{m.group(2)}"
+        st, _, body, _, _ = call("GET", raw, job["compat_path"], {})
+        if st != 200:
+            raise Refused(f"compatibility.json answered {st}")
+        table = (json.loads(body).get("spacy") or {})
+        if minor not in table:
+            raise Refused(f"compatibility.json lists no spaCy {minor}")
+        listed = list((table[minor] or {}).get(model) or [])
+        if not listed:
+            raise Refused(f"compatibility.json lists no {model} for spaCy {minor}")
+        xyz = [v for v in listed if isinstance(v, str) and _XYZ.fullmatch(v)]
+        if not xyz:
+            raise Refused(f"compatibility.json lists no X.Y.Z version of {model} for spaCy {minor}")
+        version = max(xyz, key=lambda v: tuple(int(x) for x in v.split(".")))
+        out["compat"] = {"spacy_minor": minor, "listed": listed, "first": listed[0], "newest": version}
+        # 2. the release by its tag: exactly one wheel asset, at github.com's own download path
+        tag = f"{model}-{version}"
+        name = f"{tag}-py3-none-any.whl"
+        st, _, body, _, _ = call("GET", api, f"/repos/{repo}/releases/tags/{tag}",
+                                 {"Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"})
+        if st != 200:
+            raise Refused(f"the release API answered {st} for {tag}")
+        rel = json.loads(body)
+        assets = [a for a in rel.get("assets") or [] if a.get("name") == name]
+        if len(assets) != 1:
+            raise Refused(f"the release {tag} holds {len(assets)} assets named {name}, not one")
+        a = assets[0]
+        want_path = f"/{repo}/releases/download/{tag}/{name}"
+        u = urllib.parse.urlsplit(str(a.get("browser_download_url") or ""))
+        if (u.scheme, u.hostname, u.port, u.path, u.query, u.username) != ("https", web, None, want_path, "", None):
+            raise Refused(f"the asset's URL is not github.com's own download path {want_path}")
+        size, digest = a.get("size"), a.get("digest")
+        if not (isinstance(size, int) and not isinstance(size, bool) and 0 < size <= asset_max):
+            raise Refused(f"the asset declares a size {size!r} outside 1..max_asset_bytes")
+        if digest is not None and not _DIGEST.fullmatch(str(digest)):
+            raise Refused(f"the asset's digest {str(digest)[:80]!r} is not sha256:<64 hex>")
+        out.update(version=version, release={"id": rel.get("id"), "tag": tag}, tls_only=digest is None,
+                   asset={"name": name, "size": size, "digest": digest, "path": want_path})
+        # 3. the file: github.com answers it or redirects it once, to a declared CDN host, with no Authorization
+        dest = cwd / "model" / name
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        st, h, _, sha, n = call("GET", web, want_path, {}, max_bytes=asset_max, save_to=dest)
+        out["cdn_host"] = None
+        if st in _REDIRECTS:
+            t = urllib.parse.urlsplit(urllib.parse.urljoin(f"https://{web}{want_path}", h.get("location") or ""))
+            if t.scheme != "https" or t.hostname not in cdn or t.port not in (None, 443) or t.username or t.password:
+                out["refused_redirect_host"] = t.hostname
+                why = ("an undeclared host" if t.hostname not in cdn else "not https" if t.scheme != "https" else
+                       f"port {t.port}" if t.port not in (None, 443) else "userinfo")
+                raise Refused(f"the asset redirects to {t.hostname!r} - {why} (Q-NLP-1); not followed")
+            out["cdn_host"] = t.hostname
+            st, h, _, sha, n = call("GET", t.hostname, (t.path or "/") + (f"?{t.query}" if t.query else ""), {},
+                                    max_bytes=asset_max, save_to=dest)
+            if st in _REDIRECTS:
+                raise Refused("the asset redirects a second time - one redirect only (Q-NLP-1)")
+        elif st != 200:
+            raise Refused(f"github.com answered {st} for the asset")
+        if st != 200:
+            raise Refused(f"the CDN answered {st} for the asset")
+        if (digest is not None and f"sha256:{sha}" != digest) or n != size:
+            dest.unlink(missing_ok=True)
+            raise Refused(f"the file is not the digest's bytes or the asset's size ({n} != {size})")
+        out.update(ok=True, file={"sha256": sha, "bytes": n, "path": f"model/{name}"})
+        return out
+    except (Refused, OSError, ssl.SSLError, http.client.HTTPException, ValueError, KeyError, TypeError, AttributeError) as e:
+        out["error"] = f"{type(e).__name__}: {str(e)[:300]}"
+        return out
+
+
 def main() -> int:
     job = json.loads(sys.stdin.readline() or "{}")
     cwd = Path.cwd()
@@ -464,6 +573,8 @@ def main() -> int:
         port = catcher_port()
         if job.get("kind") == "oci":                     # A8 C4: one image, by the auditor's Q-C4-1..3
             results = [oci_job(job, send=tunnel_send(port), cwd=cwd)]
+        elif job.get("kind") == "gh_model":              # B-NLP NLP-2: one spaCy model, by the auditor's rule
+            results = [gh_model_job(job, send=tunnel_send(port), cwd=cwd)]
         else:
             results = run_job(job, cwd=cwd, port=port)
     except Refused as e:

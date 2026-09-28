@@ -464,7 +464,12 @@ print("\n- NLP-3 (the auditor's passive check): spaCy's state as mem0 left it, r
 (M2 / "mem0/utils").mkdir(parents=True, exist_ok=True)
 SPM = (b"import threading\n\n_nlp_full = None\n_nlp_lemma = None\n_load_failed_full = False\n_load_failed_lemma = False\n"
        b"_lock = threading.Lock()\n\n\ndef _ensure_model_available():\n    import spacy\n"
-       b"    if not spacy.util.is_package(\"en_core_web_sm\"):\n        download(\"en_core_web_sm\")\n")
+       b"    if not spacy.util.is_package(\"en_core_web_sm\"):\n        download(\"en_core_web_sm\")\n\n\n"
+       b"def get_nlp_full():\n    global _nlp_full, _load_failed_full\n    if _load_failed_full:\n        return None\n"
+       b"    if _nlp_full is not None:\n        return _nlp_full\n    _nlp_full = spacy.load(\"en_core_web_sm\")\n"
+       b"    return _nlp_full\n\n\ndef get_nlp_lemma():\n    global _nlp_lemma, _load_failed_lemma\n"
+       b"    if _nlp_lemma is not None:\n        return _nlp_lemma\n    return None\n\n\n"
+       b"def _other():\n    return spacy.util.is_package(\"xx_ent_wiki_sm\")\n")
 (M2 / "mem0/utils/spacy_models.py").write_bytes(SPM)
 NF = S.nlp_facts(M2)
 check("the module's state names and the model the product checks for are source facts, each one match",
@@ -480,7 +485,8 @@ ON = {"names": NAMES, "module": True, "nlp_full": True, "nlp_lemma": True, "fail
 r = S.m0_nlp_active(ON, NF, catcher_lines=0)
 check("both models loaded after the adds, no failed flag, the model installed, no catcher line: active",
       r["ok"] is True and r["value"] == {"model": "en_core_web_sm", "nlp_full": True, "nlp_lemma": True}, str(r))
-for label, patch, want in (("the model not installed", {"is_package": False}, "is_package"),
+for label, patch, want in (("NA6 (the auditor): the full model's load unknown", {"nlp_full": None}, "nlp_full"),
+                           ("the model not installed", {"is_package": False}, "is_package"),
                            ("the model's install unknown", {"is_package": None}, "is_package"),
                            ("a failed full load", {"failed_full": True}, "failed_full"),
                            ("a failed lemma load", {"failed_lemma": True}, "failed_lemma"),
@@ -497,6 +503,17 @@ check("a catcher line of the unit (a run-time model download) is blocked:nlp-off
 r = S.m0_nlp_active({**ON, "names": {**NAMES, "full": "_nlp"}}, NF, catcher_lines=0)
 check("the adapter must read exactly the names the pinned source defines - another name is blocked:nlp-off",
       r.get("blocked") == "blocked:nlp-off" and "_nlp" in r["rule_failed"], str(r))
+r = S.m0_nlp_active({**ON, "names": {**NAMES, "model": "en_core_web_md"}}, NF, catcher_lines=0)
+check("NA13 (the auditor): the adapter reporting another model than the source's is blocked:nlp-off, naming both",
+      r.get("blocked") == "blocked:nlp-off" and "en_core_web_md" in r["rule_failed"] and "en_core_web_sm" in r["rule_failed"],
+      str(r))
+check("NA11/NA12 (the auditor): in the module's real shape (global lines, uses, a second is_package outside the "
+      "function) each state name is still one module-level line and the model is read inside _ensure_model_available",
+      NF["m0_nlp_full_var"].get("line") == 3 and NF["m0_nlp_model"].get("line") == 12
+      and S.fact(M2, "mem0/utils/spacy_models.py", r'spacy\.util\.is_package\("([\w.-]+)"\)', name="m0_x").get("blocked")
+      == "blocked:source-ambiguous:m0_x"
+      and S.fact(M2, "mem0/utils/spacy_models.py", r"(_nlp_full)", name="m0_y").get("blocked") == "blocked:source-ambiguous:m0_y",
+      str({k: (v or {}).get("line") for k, v in NF.items()}))
 r = S.m0_nlp_active(None, NF, catcher_lines=0)
 check("no state from the adapter is blocked:nlp-off by that name, never a pass", r.get("blocked") == "blocked:nlp-off"
       and "no nlp state" in (r.get("rule_failed") or ""), str(r))
