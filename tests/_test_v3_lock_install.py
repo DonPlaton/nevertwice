@@ -228,6 +228,17 @@ check("LI-1 (the auditor): the venv's own python must be the declared base's ver
       "the locked version - each mismatch named; an unreadable probe is a problem, never a pass",
       ok_v == [] and any("3.14.4" in p and "3.12.10" in p for p in bad_py) and any("mem0ai" in p and "2.1.0" in p for p in bad_d)
       and bad_shape != [], f"{ok_v} | {bad_py} | {bad_d} | {bad_shape}")
+def _cv(got):
+    try:
+        return cv(got, lk2, ["mem0ai"], "3.12.10") if cv else []
+    except Exception as e:  # noqa: BLE001 - a crash FAILs the row by name
+        return [f"crash: {type(e).__name__}: {e}"]
+
+
+no_dists, list_dists = _cv({"python": "3.12.10"}), _cv({"python": "3.12.10", "dists": ["x"]})
+check("LN6 (the auditor): an answer without dists, or with dists that are not a mapping, is one named problem each - "
+      "never a crash, never a pass", len(no_dists) == 1 and len(list_dists) == 1
+      and all("not {python, dists}" in x[0] for x in (no_dists, list_dists)), f"{no_dists} | {list_dists}")
 check("... and takes plain names only", "not a plain name" in refusal(lambda: LI.version_probe(["os; import x"], ["a"])))
 check("the declared venvs: mem0_v3 = mem0ai 2.2.0 (PREREG §2.2) on the declared base py-base-312 (LI-1), its import and "
       "distribution", LI.VENVS.get("mem0_v3") == {"base": "py-base-312", "specs": ["mem0ai==2.2.0"], "imports": ["mem0"],
@@ -277,6 +288,14 @@ r2 = refusal(lambda: LI.run_lock_install(C, Lspy, Fake, venv=TMP / "polygon" / "
 r3 = refusal(lambda: LI.run_lock_install(C, Lspy, Fake, venv=TMP / "polygon" / "fresh_v3", venv_name="mem0_v3", run="l1", **kw))
 check("an undeclared venv, an existing venv and a used run label are refused by name, before any spawn",
       "declares no specs" in r1 and "already exists" in r2 and "used before" in r3 and spawned == [], f"{r1} | {r2} | {r3}")
+
+nb = refusal(lambda: LI.run_lock_install(C, Lspy, Fake, venv=TMP / "polygon" / "nb_v3", venv_name="nb_v3", run="l7",
+                                         specs=["x==1"], imports=["x"], dists=["x"], **kw))
+b9 = refusal(lambda: LI.run_lock_install(C, Lspy, Fake, venv=TMP / "polygon" / "nb_v3", venv_name="nb_v3", run="l8",
+                                         specs=["x==1"], imports=["x"], dists=["x"], base="py-base-999", **kw))
+check("LN3 (the auditor): a venv that declares no base, or names an undeclared one, is refused by name (LI-1) before any "
+      "directory is made", all("declares no base" in r and "LI-1" in r for r in (nb, b9))
+      and not (C.runs_root / "_install" / "a8-pypi-nb_v3").exists() and spawned == [], f"{nb} | {b9}")
 
 shutil.rmtree(TMP, ignore_errors=True)
 print(f"\nv3 lock install: {PASSED} passed, {FAILED} failed")
