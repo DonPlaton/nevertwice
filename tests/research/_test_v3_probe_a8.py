@@ -1250,6 +1250,25 @@ calls_bad = S.letta_calls(bad_src)
 check("C5b letta_calls: a call table entry that is not a literal is blocked:source-changed, never evaluated",
       ok(lambda: isinstance(calls_bad, dict) and calls_bad.get("blocked") == "blocked:source-changed:lt_calls"
          and "context" in (calls_bad.get("entries") or [])), str(calls_bad)[:300])
+for label, text, want in (
+        ("L8: a call entry with **extra", 'C("GET", "/v1/agents/{agent_id}/context",', 'C("GET", "/v1/agents/{agent_id}/context", **extra,'),
+        ("L9: a second CALLS assignment", "\n#: Q-47-8b:", '\nCALLS = {"x": C("GET", "/v1/x")}\n#: Q-47-8b:')):
+    f_l = TMP / "arm_letta_owed.py"
+    src_l = (ROOT / "research" / "v3" / "arms" / "arm_letta.py").read_text(encoding="utf-8")
+    f_l.write_text(src_l.replace(text, want, 1), encoding="utf-8")
+    got_l = S.letta_calls(f_l)
+    exp_l = "blocked:source-changed:lt_calls" if label.startswith("L8") else "blocked:source-ambiguous:lt_calls"
+    check(f"C5b letta_calls (the auditor's {label}) is {exp_l}" + (", the entry named" if label.startswith("L8") else ""),
+          ok(lambda: src_l.count(text) >= 1 and got_l.get("blocked") == exp_l
+             and (not label.startswith("L8") or got_l.get("entries") == ["context"])), str(got_l)[:300])
+LDOC_E = copy.deepcopy(LDOC)
+LDOC_E["info"]["description"] = "Letta - mémoire, 记忆"
+LRAW_E = json.dumps(LDOC_E, indent=1).encode("utf-8")
+L_E = hashlib.sha256(json.dumps(LDOC_E, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")).hexdigest()
+check("C5b lt_pin (the auditor's RS2): a document with non-ASCII text - the pin, the adapter's own document_sha256 and an "
+      "independent canonical sha (ensure_ascii=False) are the same bytes' hash",
+      ok(lambda: S.lt_pin(LRAW_E)["value"]["sha256"] == P._rest_module().document_sha256(LRAW_E) == L_E
+         and L_E != hashlib.sha256(json.dumps(LDOC_E, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()))
 conf = S.lt_conformance(LDOC, LCALLS)
 LDOC3 = copy.deepcopy(LDOC)
 del LDOC3["paths"]["/v1/agents/{agent_id}/context"]
@@ -1297,6 +1316,10 @@ check("C5b lt_recall_route: exactly one route gives its path, its methods and it
          and rr_post["value"] == {"path": "/v1/agents/messages/search", "methods": ["post"], "mode": "vector"}
          and rr_nomode["value"] == {"path": "/v1/agents/{agent_id}/recall-memory/search", "methods": ["get"], "mode": None}
          and all(x["ok"] is True for x in (rr1, rr_post, rr_nomode))), str((rr1, rr_post, rr_nomode))[:500])
+rr_near = S.lt_recall_route(with_paths(**{"/v1/agents/{agent_id}/messages/search/extra": R_GET,
+                                          "/x/v1/agents/{agent_id}/messages/search": R_GET}))
+check("C5b lt_recall_route (the auditor's L4): the pattern is anchored at both ends - a path that only contains a recall "
+      "route is none", ok(lambda: rr_near["ok"] is True and rr_near["value"] is None), str(rr_near)[:300])
 check("C5b lt_recall_route: two routes under the pattern are blocked:ambiguous-route, both named - never the first",
       ok(lambda: rr2.get("blocked") == "blocked:ambiguous-route"
          and rr2.get("paths") == ["/v1/agents/messages/search", "/v1/agents/{agent_id}/messages/search"]), str(rr2)[:300])

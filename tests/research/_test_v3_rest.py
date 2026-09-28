@@ -336,6 +336,12 @@ try:
           "no whitespace) - key order and layout do not move it, and a body that is not JSON is refused by name",
           json.loads(raw) == DOC and doc_shas == (canon, canon) and canon != hashlib.sha256(raw).hexdigest()
           and not_json is not None and "not JSON" in not_json, str((doc_shas, not_json)))
+    nona = {"info": {"description": "mémoire 记忆"}, "a": [1, {"b": "é"}]}
+    nona_raw = json.dumps(nona, indent=2, ensure_ascii=True).encode("utf-8")
+    check("document_sha256 hashes non-ASCII text as UTF-8, never as \\u escapes (ensure_ascii=False, the A8 pin's own "
+          "form) - whatever escaping the server used",
+          R.document_sha256(nona_raw) == hashlib.sha256(json.dumps(
+              nona, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")).hexdigest())
     pin = canon
     ok = R.verify_server(rest, pin, CALLS)
     check("verify_server passes the pinned document that carries every declared call",
