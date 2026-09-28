@@ -100,6 +100,9 @@ class H:
             send(json.dumps({"model": "deepseek-flash", "messages": msg,
                              "tools": [{"type": "function", "function": {"name": "Bash"}}]}).encode())  # tool_violation
             send(b'{"model": "deepseek-flash", ')                                                 # unparsable
+        if spec["stage"] == "write" and spec.get("touch_watched"):   # Q3: a product that writes where it may not
+            with open(os.path.join(spec["watched_dir"], "touched-" + spec["unit"] + ".txt"), "w") as f:
+                f.write("x")
 
     def hello(self):
         return {"protocol": B.PROTOCOL, "arm": spec["arm"], "stage": spec["stage"], "pid": os.getpid()}
@@ -230,13 +233,13 @@ def stop_proxy(h):
     return {"rc": 0 if not left else 1, "killed": False, "shutdown_error": None}
 
 
-def make_launcher_factory(leak: set, misbehave: set = frozenset()):
+def make_launcher_factory(leak: set, misbehave: set = frozenset(), touch: set = frozenset()):
     def make(arm, ar, *, stand_id, proxy, unit_block, unit_chars):
         writes = ar.llm_transport == "cloud:deepseek"
 
         def spec_for(stage, *, stand, run, unit, dirs, write_dirs):
             return {"arm": arm, "stage": stage, "run": run, "unit": unit, "leak": arm in leak,
-                    "misbehave": arm in misbehave,
+                    "misbehave": arm in misbehave, "touch_watched": arm in touch, "watched_dir": str(TMP / "watched"),
                     "write_dir": str(write_dirs.cwd) if write_dirs is not None else None}
 
         def declared_for(stage, *, stand, run, unit, dirs, write_dirs):
@@ -248,7 +251,7 @@ def make_launcher_factory(leak: set, misbehave: set = frozenset()):
     return make
 
 
-def deps_for(up, *, leak: set, out: list, err: list, misbehave: set = frozenset()):
+def deps_for(up, *, leak: set, out: list, err: list, misbehave: set = frozenset(), touch: set = frozenset()):
     return RV.SmokeDeps(
         contract=C, L=L, native=L.NativeEgressWitness(sampler=Quiet(), tick_s=60, jobs=None),
         fs=L.FsWitness([L.WatchSpec("watched", TMP / "watched")]), clock=SC.SystemClock(), ollama_ctl=None,
@@ -259,7 +262,8 @@ def deps_for(up, *, leak: set, out: list, err: list, misbehave: set = frozenset(
         truncate=lambda text: SimpleNamespace(text=text, truncated=False), templates=(TEMPLATE, TEMPLATE5),
         locomo_question=lambda q, cat: q,
         decl=lambda py, *, arm: {"python": str(py), "arm": arm, "version": "test"},
-        make_launcher=make_launcher_factory(leak, misbehave), start_proxy=start_proxy, stop_proxy=stop_proxy, post=P.post,
+        make_launcher=make_launcher_factory(leak, misbehave, touch), start_proxy=start_proxy, stop_proxy=stop_proxy,
+        post=P.post,
         proxy_route={"test_upstream": {"host": "127.0.0.1", "port": up.port, "tls": False}},
         now_utc=lambda: "2026-09-28T00:00:00Z", lists_dir=LISTS, s1_sha256=S1["ids_sha256"],
         out=out.append, err=err.append)
@@ -360,6 +364,17 @@ try:
     starts = [x for x in status_text.splitlines() if " STAND S4-smoke-2 START " in x]
     check("SMK-second: the second smoke is S4-smoke-2 at order 2, and a clean one exits 0",
           crash2 is None and rc2 == 0 and len(starts) == 1 and " order=2" in starts[0], f"{crash2} {rc2} {err2[:4]}")
+    sd2s = sorted((C.runs_root / "S4-smoke-2" / "_smoke").glob("attempt-*"))
+    run2 = json.loads((sd2s[-1] / "run.json").read_text(encoding="utf-8")) if sd2s else {}
+    b2 = run2.get("boundary") or {}
+    wc2 = run2.get("witness_checks") or []
+    check("Q3: run.json of a clean smoke - each arm-run's egress_attempts reads 'unmeasured: one harness catcher "
+          "(Q-12-1)' (never {}), the harness catcher's refusals are beside it, and every block's witness check is "
+          "recorded, complete and clean", bool(b2) and all(v.get("egress_attempts") == RV.EGRESS_UNMEASURED
+                                                             for v in b2.values())
+          and isinstance(run2.get("egress_attempts_harness"), dict) and len(wc2) >= 1
+          and all(isinstance(w, dict) and w.get("complete") is True for w in wc2)
+          and all(RV.witness_problems(w) == [] for w in wc2), f"{b2} {run2.get('egress_attempts_harness')} {wc2[:1]}")
 
     print("\n- B-SMOKE-FLAGS: the proxy's zero-tolerance flags are the smoke's problems -")
     out3: list = []
@@ -409,6 +424,26 @@ try:
           and len(end4) == 1 and " halt=402 " in end4[0]
           and any("HALT: the incident gate halted (402)" in p_ for p_ in err4) and SL.self_check(TMP / "STATUS") == [],
           f"{crash4} {rc4} {new4} halt={run4.get('halt')} {end4} {err4[:3]} {SL.self_check(TMP / 'STATUS')[:2]}")
+
+    print("\n- Q3: a dirty witness check fails the smoke by name -")
+    out5: list = []
+    err5: list = []
+    before5 = {p.name for p in C.runs_root.glob("S4-smoke-*")}
+    try:
+        rc5 = RV.run_smoke(CFG, stand="S4", arm_names=["bm25-floor", "nevertwice"], runs=["r1"],
+                           deps=deps_for(up, leak=set(), out=out5, err=err5, touch={"nevertwice"}))
+        crash5 = None
+    except Exception as e:  # noqa: BLE001
+        rc5, crash5 = None, f"{type(e).__name__}: {e}"
+    new5 = sorted({p.name for p in C.runs_root.glob("S4-smoke-*")} - before5)
+    sd5s = sorted((C.runs_root / new5[-1] / "_smoke").glob("attempt-*")) if new5 else []
+    run5 = json.loads((sd5s[-1] / "run.json").read_text(encoding="utf-8")) if sd5s else {}
+    fs5 = [p_ for p_ in err5 if p_.startswith("problem: witness: ") and " fs hits=" in p_ and "(P0h)" in p_]
+    check("Q3: a product that writes into a watched place makes the block's fs witness dirty - the smoke fails by name "
+          "(witness: <check>: fs hits=N (P0h) ['watched']), and run.json keeps the check", crash5 is None and rc5 == 1
+          and len(fs5) >= 1 and "['watched']" in fs5[0]
+          and any((w.get("fs") or {}).get("fs_hits") for w in run5.get("witness_checks") or []),
+          f"{crash5} {rc5} {err5[:4]} {[(w.get('check_id'), w.get('fs')) for w in run5.get('witness_checks') or []][:2]}")
 finally:
     up.close()
     shutil.rmtree(TMP, ignore_errors=True)

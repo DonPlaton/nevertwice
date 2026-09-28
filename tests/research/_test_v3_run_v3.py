@@ -344,6 +344,54 @@ try:
         hk = f"{type(e).__name__}: {e}"
     check("Q2: WallCapGate.halt_kind is its incident gate's (402), None for a gate without one - and the tripped wall "
           "ceiling is no halt", hk == ("402", None), str(hk))
+
+    print("\n- Q3: the smoke's verdict - its witnesses, the stand's partial, one harness catcher -")
+    ok_check = {"check_id": "S4-smoke-9.b01", "complete": True, "native": {"hits": 0, "complete": True},
+                "containers": [], "fs": {"fs_hits": 0, "changed_labels": []}}
+    try:
+        wp = {"clean": RV.witness_problems(ok_check),
+              "incomplete": RV.witness_problems({**ok_check, "complete": False}),
+              "native": RV.witness_problems({**ok_check, "native": {"hits": 1, "complete": True}}),
+              "container": RV.witness_problems({**ok_check, "containers": [{"hits": 3, "complete": True}]}),
+              "fs": RV.witness_problems({**ok_check, "fs": {"fs_hits": 2, "changed_labels": ["watched"]}}),
+              "none": RV.witness_problems(None)}
+    except Exception as e:  # noqa: BLE001 - the row FAILs by name
+        wp = {"error": f"{type(e).__name__}: {e}"}
+    check("Q3: the witness checks are the smoke's verdict - a clean check says nothing; an incomplete one is not measured "
+          "(never 0); a native, a container egress and an fs hit are P0h by name; a block with no check record is named",
+          wp.get("clean") == [] and len(wp.get("incomplete") or []) == 2
+          and all("incomplete" in x for x in wp.get("incomplete") or [])
+          and wp.get("native") == ["witness: S4-smoke-9.b01: egress hits=1 (P0h)"]
+          and wp.get("container") == ["witness: S4-smoke-9.b01: egress hits=3 (P0h)"]
+          and wp.get("fs") == ["witness: S4-smoke-9.b01: fs hits=2 (P0h) ['watched']"]
+          and len(wp.get("none") or []) == 1 and "no check record" in wp["none"][0], str(wp))
+
+    class Partial(Exception):
+        partial = {"stand": "S4-smoke-9", "blocks": [{}]}
+
+    class Resulting(Exception):
+        result = {"stand": "not the scheduler's"}
+
+    try:
+        sr = (RV.stand_result(Partial("x"), None), RV.stand_result(Resulting("y"), None),
+              RV.stand_result(Partial("z"), {"stand": "kept"}))
+    except Exception as e:  # noqa: BLE001
+        sr = f"{type(e).__name__}: {e}"
+    check("Q3: a failed stand's result is the scheduler's partial - never a result attribute the scheduler does not set; "
+          "a result already in hand stays", sr == ({"stand": "S4-smoke-9", "blocks": [{}]}, None, {"stand": "kept"}),
+          str(sr))
+    try:
+        bp = RV.boundary_problems({"a1/r1": {"canary_hits": 0, "owner_marker_hits": 0, "ollama_refused": 2},
+                                   "a2/r1": {"canary_hits": 1, "owner_marker_hits": 0, "ollama_refused": 0}},
+                                  {"a2": {"canary": 1}, "a3": {"tool_violation": 2}}, ["r1"])
+    except Exception as e:  # noqa: BLE001
+        bp = [f"{type(e).__name__}: {e}"]
+    check("Q3, B-OLM-VIS: the smoke's boundary problems - the leg's refusals are P0h by name, a canary is one event with "
+          "its flag, any other flag stands alone", any("a1/r1 ollama_refused=2" in x for x in bp)
+          and sum("canary" in x for x in bp) == 1 and any(x.startswith("flag: tool_violation a3 x2") for x in bp)
+          and len(bp) == 3, str(bp))
+    check("Q3: an arm's own egress count in a smoke reads 'unmeasured: one harness catcher (Q-12-1)' - never {} (every "
+          "child speaks to the harness's one catcher)", RV.EGRESS_UNMEASURED == "unmeasured: one harness catcher (Q-12-1)")
     print("\n- the forecast (Q-A6-2): an upper bound, not pilot medians -")
     fc_out = RV.forecast_arms({"bm25-floor": None, "nevertwice": "deepseek-flash"},
                               {"nevertwice": {"u1": ["a" * 100, "é" * 20000, "x" * 60000]}}, {("u1", "q0"): "p" * 50},

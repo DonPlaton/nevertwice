@@ -597,6 +597,56 @@ class WallCapGate:
 
 #: B-SMOKE-FLAGS: the proxy's flag kinds that are also P0h counts (accounting.proxy_boundary_inputs) - one event each.
 P0H_FLAGS = {"canary": "canary_hits", "owner_marker": "owner_marker_hits"}
+#: Q3 (Q-12-1 O-b): every smoke child speaks to ONE catcher, the harness's - an arm's own egress count would read 0
+#: for an arm that was caught, so it is said as not measured; the harness catcher's refusals are recorded beside it.
+EGRESS_UNMEASURED = "unmeasured: one harness catcher (Q-12-1)"
+
+
+def stand_result(e: BaseException, res: Any) -> Any:
+    """Q3: what a failed stand had measured - the scheduler's ``partial`` (B-CL, B-TE, B-JPART), never an attribute it
+    does not set."""
+    return getattr(e, "partial", None) if res is None else res
+
+
+def witness_problems(check: Any) -> list[str]:
+    """Q3 (the auditor): a block's witness check (launch.Witnesses.end_check) in the smoke's verdict, by name - an
+    incomplete witness is a boundary not measured (never 0); a native or container egress hit and an fs hit are P0h.
+    The witnesses are accounting.witness_inputs' - one definition with the artifact's boundary block."""
+    if not isinstance(check, Mapping):
+        return ["witness: a block has no check record - its boundary is not measured (never 0)"]
+    cid = check.get("check_id")
+    out = []
+    for w in load("accounting.py", smoke=True).witness_inputs(check):
+        if w["complete"] is not True:
+            out.append(f"witness: {cid}: the {w['kind']} witness is incomplete - not measured, never 0")
+        elif w["hits"]:
+            labels = (check.get("fs") or {}).get("changed_labels") if w["kind"] == "fs" else None
+            out.append(f"witness: {cid}: {w['kind']} hits={w['hits']} (P0h)" + (f" {labels}" if labels else ""))
+    return out
+
+
+def boundary_problems(boundary: Mapping[str, Mapping[str, Any]], flags: Mapping[str, Mapping[str, int]],
+                      runs: Sequence[str]) -> list[str]:
+    """The smoke's boundary problems: each arm-run's P0h counts from the proxy (a canary or an owner marker is ONE event
+    with its flag - said once, B-SMOKE-FLAGS), every other zero-tolerance flag by kind and arm, and the Ollama leg's
+    refusals (B-OLM-VIS: the stand changed the product's behaviour)."""
+    problems = []
+    for k, b in boundary.items():
+        hit = {f: b[f] for f in P0H_FLAGS.values() if b.get(f)}
+        if hit:
+            arm = k.split("/", 1)[0]
+            same = {kind: flags[arm][kind] for kind in P0H_FLAGS if flags.get(arm, {}).get(kind)}
+            problems.append(f"P0h: {k} {hit} - a planted canary or an owner marker reached the proxy"
+                            + (f" (the same events as {arm}'s flags {same} - counted once)" if same else ""))
+        if b.get("ollama_refused"):
+            problems.append(f"P0h: {k} ollama_refused={b['ollama_refused']} - the Ollama leg refused the product's "
+                            f"call (B-OLM-VIS)")
+    for a, kinds in sorted(flags.items()):
+        for kind, cnt in sorted(kinds.items()):
+            if kind in P0H_FLAGS and any((boundary.get(f"{a}/{r}") or {}).get(P0H_FLAGS[kind]) for r in runs):
+                continue                                             # said in the P0h line above
+            problems.append(f"flag: {kind} {a} x{cnt}" + (" - with no P0h count" if kind in P0H_FLAGS else ""))
+    return problems
 
 
 def cl100k_max_token_bytes(bpe_file: str | os.PathLike) -> int:
@@ -737,7 +787,7 @@ def run_smoke(cfg: RunConfig, *, stand: str, arm_names: Sequence[str], runs: Seq
         res = sched.run_stand(sp, blocks, judges=(), order=n)
     except Exception as e:  # noqa: BLE001 - the stand's failure is named; the gate and the proxy still stop below
         problems.append(f"the stand did not complete: {type(e).__name__}: {e}")
-        res = getattr(e, "result", None) if res is None else res
+        res = stand_result(e, res)                    # Q3: the scheduler's partial
     finally:
         if gd is not None:
             gd.stop()
@@ -757,7 +807,14 @@ def run_smoke(cfg: RunConfig, *, stand: str, arm_names: Sequence[str], runs: Seq
     log = AC.load_proxy(h.run_dir)
     boundary = {f"{a}/{r}": AC.proxy_boundary_inputs(log.calls, log.catcher, arm=a, run=r, ollama=log.ollama)
                 for a in arms for r in runs}
+    for b in boundary.values():                     # Q3: one harness catcher - an arm's own count is not measured
+        b["egress_attempts"] = EGRESS_UNMEASURED
     record["boundary"] = boundary
+    harness_attempts: dict[str, int] = {}
+    for rec_c in log.catcher:
+        if rec_c.get("arm") == P.HARNESS_CATCHER and not rec_c.get("tunnelled"):
+            harness_attempts[str(rec_c.get("host"))] = harness_attempts.get(str(rec_c.get("host")), 0) + 1
+    record["egress_attempts_harness"] = dict(sorted(harness_attempts.items()))
     # B-SMOKE-FLAGS (the auditor): every zero-tolerance flag the proxy wrote is a problem by kind and arm - a canary or
     # an owner marker is ONE event with its P0h count (said once, in the P0h line); any other kind stands alone
     flags: dict[str, dict[str, int]] = {}
@@ -765,18 +822,7 @@ def run_smoke(cfg: RunConfig, *, stand: str, arm_names: Sequence[str], runs: Seq
         per = flags.setdefault(str(fl.get("arm")), {})
         per[str(fl.get("kind"))] = per.get(str(fl.get("kind")), 0) + 1
     record["flags"] = flags
-    for k, b in boundary.items():
-        hit = {f: b[f] for f in P0H_FLAGS.values() if b.get(f)}
-        if hit:
-            arm = k.split("/", 1)[0]
-            same = {kind: flags[arm][kind] for kind in P0H_FLAGS if flags.get(arm, {}).get(kind)}
-            problems.append(f"P0h: {k} {hit} - a planted canary or an owner marker reached the proxy"
-                            + (f" (the same events as {arm}'s flags {same} - counted once)" if same else ""))
-    for a, kinds in sorted(flags.items()):
-        for kind, cnt in sorted(kinds.items()):
-            if kind in P0H_FLAGS and any((boundary.get(f"{a}/{r}") or {}).get(P0H_FLAGS[kind]) for r in runs):
-                continue                                             # said in the P0h line above
-            problems.append(f"flag: {kind} {a} x{cnt}" + (" - with no P0h count" if kind in P0H_FLAGS else ""))
+    problems += boundary_problems(boundary, flags, runs)
     if res is not None and answer is not None and "blocks" in res:
         try:
             summ = SM.summarize(res, log, stand=stand_id, key_question=answer.key_question,
@@ -788,6 +834,9 @@ def run_smoke(cfg: RunConfig, *, stand: str, arm_names: Sequence[str], runs: Seq
             problems += [f"smoke: {p}" for p in SM.iter_problems(summ)]     # its failures by name (the exit code's)
         except Exception as e:  # noqa: BLE001 - named; the record below still says what the stand did
             problems.append(f"no smoke summary: {type(e).__name__}: {e}")
+    checks = [b.get("check") for b in (res or {}).get("blocks") or []] if isinstance(res, Mapping) else []
+    record["witness_checks"] = checks                # Q3: the witnesses are the smoke's verdict too
+    problems += [p for ch in checks for p in witness_problems(ch)]
     problems += [f"STATUS: {p}" for p in SL.self_check(Path(deps.status_path))]
     record["problems"] = problems
     with open(smoke_dir / "run.json", "xb") as f:
