@@ -214,9 +214,10 @@ try:
             mods |= {a.name.split(".")[0] for a in n.names}
         elif isinstance(n, ast.ImportFrom) and n.module:
             mods.add(n.module.split(".")[0])
-    check("arm_mem0 imports the standard library, base, _http_count, _ollama_pacer and mem0 - nothing of the repo",
-          mods <= {"__future__", "json", "os", "re", "sys", "threading", "time", "urllib", "pathlib", "typing",
-                   "base", "_http_count", "_ollama_pacer", "mem0"}, str(sorted(mods)))
+    check("arm_mem0 imports the standard library, base, _http_count, _ollama_pacer and mem0 - nothing of the repo "
+          "(importlib: NLP-3b's installed-version read, B-MEM0-IMP)",
+          mods <= {"__future__", "importlib", "json", "os", "re", "sys", "threading", "time", "urllib", "pathlib",
+                   "typing", "base", "_http_count", "_ollama_pacer", "mem0"}, str(sorted(mods)))
 
     print("\n- a mem0-store hit without an item index (in-process, on a fake product) -")
     sys.path.insert(0, str(ARMS_DIR))
