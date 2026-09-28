@@ -117,6 +117,18 @@ try:
           all(loaded[a].pinned_model == "deepseek-flash" for a in ("mem0", CC, "scheduler"))
           and loaded["mem0"].reader_model == "deepseek-flash" and loaded[CC].reader_model == ""
           if not err else False, str({a: (c.pinned_model, c.reader_model) for a, c in loaded.items()}))
+    tok = {"path": str(TMP / "tokenizer.json"), "sha256": "0123456789fedcba" * 4}
+    tcfg = RP.build_config(ARMS, run_dir=TMP / "x", embed_tokenizer=tok)
+    ncfg = RP.build_config({"bm25-floor": ARMS["bm25-floor"]}, run_dir=TMP / "x", embed_tokenizer=tok)
+    (TMP / "cfgcheck" / "t.json").write_text(json.dumps({**tcfg, "run_dir": str(TMP / "cfgcheck")}), encoding="utf-8")
+    try:
+        tok_loaded = P.ProxyConfig.load(TMP / "cfgcheck" / "t.json", sec, test_upstream_ok=True).embed_tokenizer
+    except (ValueError, KeyError) as e:
+        tok_loaded = repr(e)
+    check("TB7: the pinned bge-m3 tokenizer goes into the config as ollama.embed_tokenizer {path, sha256} when an arm "
+          "has an Ollama leg (none without one), and the proxy's config loader reads it back",
+          tcfg.get("ollama") == {"embed_tokenizer": tok} and "ollama" not in ncfg and "ollama" not in cfg
+          and tok_loaded == (tok["path"], tok["sha256"]), f"{tcfg.get('ollama')} {ncfg.get('ollama')} {tok_loaded}")
     j3cfg = RP.build_config(ARMS, run_dir=TMP / "x", j3=True)
     check("PX-pins: J3 only when asked, pinned to deepseek-v4-pro", "j3" not in cfg
           and j3cfg.get("j3") == {"pinned_model": "deepseek-v4-pro"}, str(j3cfg.get("j3")))

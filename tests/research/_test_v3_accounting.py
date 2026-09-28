@@ -799,6 +799,17 @@ check("Q-A5-1: load_bodies reads bodies/<arm>/<run>.<unit>.jsonl, one record per
       "named problem", len(recs_b) == 2 and probs_b and "no LF" in probs_b[0], f"{len(recs_b)} {probs_b}")
 shutil.rmtree(BD, ignore_errors=True)
 
+print("\n- TB7 cloud_bypass (Q-12-6, Q-A7-8) -")
+cat_ = [{"arm": "mem0", "host": "api.deepseek.com", "tunnelled": False}, {"arm": "mem0", "host": "API.OpenAI.com"},
+        {"arm": "mem0", "host": "api.anthropic.com"}, {"arm": "mem0", "host": "huggingface.co"},
+        {"arm": "mem0", "host": "deepseek.com"}, {"arm": "letta", "host": "api.deepseek.com"}]
+check("TB7: cloud_bypass - the arm's catcher records whose host is a provider host (DeepSeek, and the OpenAI and "
+      "Anthropic SDK defaults, any case); another host, a near name or another arm's record is not one",
+      AC.cloud_bypass(cat_, arm="mem0") == 3 and AC.cloud_bypass(cat_, arm="letta") == 1
+      and AC.cloud_bypass(cat_, arm="nevertwice") == 0
+      and AC.PROVIDER_HOSTS == ("api.deepseek.com", "api.openai.com", "api.anthropic.com"),
+      f"{AC.cloud_bypass(cat_, arm='mem0')} {AC.cloud_bypass(cat_, arm='letta')}")
+
 print("\n- M-DUP: nothing here builds or judges -")
 gone = [n for n in ("cloud_transport", "m5_cloud_problems", "boundary", "boundary_problems", "ollama_transport",
                     "P1_BANDS", "ZERO_TOLERANCE", "p1", "yield_", "caches", "reconciliation") if hasattr(AC, n)]

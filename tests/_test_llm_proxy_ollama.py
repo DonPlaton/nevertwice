@@ -18,6 +18,7 @@ No network: a fake Ollama on a loopback port; the pacer's sleeps are a fake cloc
 """
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
 import re
@@ -274,6 +275,79 @@ check("Q-A5-1: a generation call on the leg in the write stage leaves its parsed
       and not any("embedded text" in s or "question stage" in s for b_ in _bl for s in b_["strings"]), str(_bl)[:300])
 idle = P.OllamaLeg("idle", mode="pace", cloud_arm=False, upstream=("127.0.0.1", OL.port), log=lambda m: None, run_dir=TMP)
 check("an idle leg reports calls: 0 (never an absent record)", idle.transport().get("calls") == 0, str(idle.transport()))
+
+print("\n- TB7 embed_at_cap (Q-A7-7 O-a): each input counted by the pinned tokenizer, prompt_eval_count beside it -")
+AC = _load("v3_accounting_for_oll", ROOT / "research" / "v3" / "accounting.py")
+px.stage = {"block": None, "stage": None}
+leg.embed_count, leg.embed_cap = (lambda text: len(text.split()) + 2), 5      # a fake count: words + 2 specials
+OL.script["/api/embed"] = [(200, b'{"model":"m","embeddings":[[0.1],[0.2]],"prompt_eval_count":11}'),
+                           (200, b'{"model":"m","embeddings":[[0.1]],"prompt_eval_count":12}')]
+call(lp, "/u/r1.tb7/api/embed", b'{"model":"m","input":["one two","one two three four five"]}')
+call(lp, "/u/r1.tb7/api/embed", b'{"model":"m","input":"one two three"}')
+call(cp, "/u/r1.tb7/api/embed", b'{"model":"m","input":"no tokenizer on this leg"}')
+olog = [json.loads(x) for x in (TMP / "run" / "ollama.jsonl").read_bytes().decode("utf-8").split("\n") if x.strip()]
+tb7 = [r for r in olog if r.get("unit") == "r1.tb7" and r["arm"] == "local"]
+check("TB7: per embed call the inputs, their tokens (content + specials), the inputs at or over the cap and Ollama's "
+      "prompt_eval_count - two inputs of 4 and 7 tokens at cap 5: one at the cap",
+      [(r.get("embed_inputs"), r.get("embed_tokens"), r.get("embed_at_cap"), r.get("prompt_eval_count")) for r in tb7]
+      == [(2, 11, 1, 11), (1, 5, 1, 12)], str([(r.get("embed_inputs"), r.get("embed_tokens"), r.get("embed_at_cap"),
+                                                 r.get("prompt_eval_count")) for r in tb7]))
+both = [r for r in olog if r.get("unit") == "r1.tb7"]            # both arms' records: the arm is the function's to pick
+try:
+    ei = AC.embed_inputs(both, arm="local")
+except Exception as e:  # noqa: BLE001 - the row FAILs by name
+    ei = f"{type(e).__name__}: {e}"
+check("TB7: accounting sums the arm's calls - embed_at_cap 2 - and counts the call whose token sum is not Ollama's "
+      "prompt_eval_count (5 against 12), never adjusting it", ei == {"embed_at_cap": 2, "calls": 2, "inputs": 3,
+                                                                    "tokens": 16, "prompt_eval_count": 23,
+                                                                    "mismatched_calls": 1}, str(ei))
+check("TB7: the leg's transport carries embed_at_cap (2); a leg without a tokenizer says None, never 0",
+      leg.transport().get("embed_at_cap") == 2 and px.legs["cloud"].transport().get("embed_at_cap") is None,
+      f"{leg.transport().get('embed_at_cap')} {px.legs['cloud'].transport().get('embed_at_cap')}")
+cloud_rec = [r for r in olog if r.get("unit") == "r1.tb7" and r["arm"] == "cloud"]
+try:
+    AC.embed_inputs(both, arm="cloud")
+    un = "accepted"
+except Exception as e:  # noqa: BLE001 - only accounting's named refusal passes the row
+    un = str(e) if isinstance(e, AC.AccountingError) else f"not refused by name: {type(e).__name__}: {e}"
+check("TB7: an embed call recorded without the leg's count refuses in accounting - an unmeasured cap is never 0",
+      cloud_rec and cloud_rec[0].get("embed_at_cap") is None and "no measured" in un, un)
+try:
+    from tokenizers import Tokenizer, models, pre_tokenizers, processors  # noqa: E402
+    vocab = {"<s>": 0, "</s>": 1, "[UNK]": 2, "one": 3, "two": 4, "three": 5}
+    tk = Tokenizer(models.WordLevel(vocab, unk_token="[UNK]"))
+    tk.pre_tokenizer = pre_tokenizers.Whitespace()
+    tk.post_processor = processors.TemplateProcessing(single="<s> $A </s>", special_tokens=[("<s>", 0), ("</s>", 1)])
+    tjson = TMP / "tokenizer.json"
+    tk.save(str(tjson))
+    tsha = hashlib.sha256(tjson.read_bytes()).hexdigest()
+    have_tok = True
+except ImportError:
+    have_tok = False
+    print("       SKIP TB7 tokenizer rows: the tokenizers package is not here - not passed")
+if have_tok:
+    cfg_t = P.ProxyConfig(arms=[P.ArmConfig(arm="local", token="t-local", ollama_leg=True, cloud_arm=False)],
+                          run_dir=TMP / "run_tok", upstream_host="127.0.0.1", upstream_port=1, upstream_tls=False,
+                          control_token="ctl", ollama_upstream=("127.0.0.1", OL.port),
+                          embed_tokenizer=(str(tjson), tsha))
+    pxt = P.Proxy(cfg_t, P.read_key(TMP / "deepseek.env"), log=lambda m: None)
+    rec_t = json.loads((TMP / "run_tok" / "embed_tokenizer.json").read_text(encoding="utf-8"))
+    import importlib.metadata  # noqa: E402
+    check("TB7: the proxy loads the pinned tokenizer.json (sha verified) - an input counted as tokens.Truncator counts "
+          "it, content + 2 specials, cap 2048 - and records the tokenizers version and its RECORD's sha256",
+          pxt.legs["local"].embed_count("one two three") == 5 and pxt.legs["local"].embed_cap == 2048
+          and rec_t["tokenizers"] == importlib.metadata.version("tokenizers") and rec_t["sha256"] == tsha
+          and len(rec_t["record_sha256"]) == 64 and rec_t["cap"] == 2048 and rec_t["specials"] == 2, str(rec_t))
+    try:
+        P.Proxy(P.ProxyConfig(arms=[P.ArmConfig(arm="local", token="t-local", ollama_leg=True, cloud_arm=False)],
+                              run_dir=TMP / "run_tok2", upstream_host="127.0.0.1", upstream_port=1, upstream_tls=False,
+                              control_token="ctl", embed_tokenizer=(str(tjson), "0" * 64)),
+                P.read_key(TMP / "deepseek.env"), log=lambda m: None)
+        wrong = "started"
+    except ValueError as e:
+        wrong = str(e)
+    check("TB7: a tokenizer.json off its sha stops the proxy - no leg counts with another tokenizer",
+          "not the pinned" in wrong, wrong)
 
 px.stop()
 pxo.stop()

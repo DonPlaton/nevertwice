@@ -182,6 +182,7 @@ class ProxyConfig:
     via_port: int | None = None             # R4: the owner's loopback HTTP proxy, as a CONNECT hop (host 127.0.0.1)
     ollama_mode: str = "pace"               # pace | observe (the pacer's own VALID_MODES)
     ollama_upstream: tuple = ("127.0.0.1", 11434)
+    embed_tokenizer: tuple | None = None    # TB7 (Q-A7-7): (path, sha256) of the pinned bge-m3 tokenizer.json
 
     def __post_init__(self):
         if self.upstream_tls and (self.upstream_host != UPSTREAM_HOST or self.upstream_port != UPSTREAM_PORT):
@@ -240,6 +241,10 @@ class ProxyConfig:
         oll = raw.get("ollama") or {}
         if oll.get("upstream") is not None and not test_upstream_ok:
             raise ValueError("the config file cannot change the Ollama upstream")
+        et = oll.get("embed_tokenizer")
+        if et is not None and not (isinstance(et, dict) and set(et) == {"path", "sha256"}
+                                   and isinstance(et["path"], str) and re.fullmatch(r"[0-9a-f]{64}", str(et["sha256"]))):
+            raise ValueError("ollama.embed_tokenizer is {path, sha256} of the pinned bge-m3 tokenizer.json (TB7)")
         for role in ("j3", "scheduler"):                  # single-port roles, always recorded
             if raw.get(role):
                 arms.append(ArmConfig(arm=role, mode="record", token=tokens.get(role, ""),
@@ -251,7 +256,8 @@ class ProxyConfig:
                    scan_roots=tuple(Path(p) for p in raw.get("scan_roots") or ()),
                    via_port=via["port"] if via is not None else None,
                    ollama_mode=oll.get("mode", "pace"),
-                   ollama_upstream=tuple(oll.get("upstream") or ("127.0.0.1", 11434)))
+                   ollama_upstream=tuple(oll.get("upstream") or ("127.0.0.1", 11434)),
+                   embed_tokenizer=(et["path"], et["sha256"]) if et is not None else None)
 
 
 def load_catch_config(path: str | os.PathLike, secrets: dict) -> ProxyConfig:
@@ -791,20 +797,54 @@ class OllamaLeg:
     call from a cloud arm is counted as fallback_local (§4.5 zero tolerance)."""
 
     def __init__(self, arm: str, *, mode: str, cloud_arm: bool, upstream: tuple[str, int], log: Callable[[str], None],
-                 run_dir: Path, connect: Callable[[tuple[str, int]], socket.socket] | None = None):
+                 run_dir: Path, connect: Callable[[tuple[str, int]], socket.socket] | None = None,
+                 embed_count: Callable[[str], int] | None = None, embed_cap: int | None = None):
         self.arm, self.cloud_arm, self.upstream, self.log, self.run_dir = arm, cloud_arm, upstream, log, run_dir
         self.pacer = load_pacer_copy(arm, mode)
         self.connect = connect or (lambda hp: socket.create_connection(hp, timeout=600))
         self.fallback_local = 0
         self.calls = 0
+        #: TB7 (Q-A7-7 O-a): an input's bge-m3 tokens (content + specials) and the cap; None - not measured
+        self.embed_count, self.embed_cap = embed_count, embed_cap
+        self.embed_at_cap = 0
 
     def transport(self) -> dict:
-        """The pacer's own ``ollama_transport`` record for this arm - written even with no traffic (calls: 0)."""
+        """The pacer's own ``ollama_transport`` record for this arm - written even with no traffic (calls: 0) - with
+        fallback_local and embed_at_cap (None when the leg has no tokenizer: an unmeasured cap is never 0)."""
         out: dict = {}
         self.pacer.attach(out)
         rec = out.get("ollama_transport") or {"calls": 0}
         rec["fallback_local"] = self.fallback_local
+        rec["embed_at_cap"] = self.embed_at_cap if self.embed_count is not None else None
         return rec
+
+    def embed_stats(self, body: bytes, response: bytes) -> dict:
+        """TB7: one answered /api/embed call - its inputs, their tokens by the pinned tokenizer, how many are at the cap,
+        and Ollama's own prompt_eval_count beside them (compared, never adjusted)."""
+        if self.embed_count is None:
+            return {"embed_inputs": None, "embed_tokens": None, "embed_at_cap": None, "prompt_eval_count": None}
+        try:
+            obj = json.loads(body or b"{}")
+            raw = obj.get("input") if "input" in obj else obj.get("prompt")
+            inputs = [raw] if isinstance(raw, str) else list(raw or [])
+            counts = [self.embed_count(x) for x in inputs if isinstance(x, str)]
+            if len(counts) != len(inputs):
+                raise ValueError("an input that is not text")
+        except (ValueError, TypeError, AttributeError) as e:
+            self.log(f"embed_stats: the request could not be counted ({type(e).__name__})")
+            return {"embed_inputs": None, "embed_tokens": None, "embed_at_cap": None, "prompt_eval_count": None}
+        pec = None
+        try:
+            head_end = response.index(b"\r\n\r\n") + 4
+            answer = json.loads(_dechunk(response[head_end:], response[:head_end]) or b"{}")
+            v = answer.get("prompt_eval_count")
+            pec = v if isinstance(v, int) and not isinstance(v, bool) else None
+        except (ValueError, TypeError, AttributeError):
+            pec = None
+        at_cap = sum(1 for n in counts if n >= self.embed_cap)
+        self.embed_at_cap += at_cap
+        return {"embed_inputs": len(counts), "embed_tokens": sum(counts), "embed_at_cap": at_cap,
+                "prompt_eval_count": pec}
 
     def serve(self, cs: socket.socket, stage: dict) -> None:
         buf = bytearray()
@@ -868,6 +908,7 @@ class OllamaLeg:
                 raise
 
         status, error = None, None
+        embed: dict = {}
         try:
             up, first = self.pacer._run_paced(call, host_key=self.upstream, is_embed=is_embed, is_llm=is_llm)
         except LegHTTPError as e:
@@ -881,6 +922,7 @@ class OllamaLeg:
             self.log(f"ollama leg failed: {type(e).__name__}")
             _send_local(cs, 502, "Bad Gateway", b"ollama unreachable")
         else:
+            answer = bytearray(first) if is_embed else None      # TB7: the embed answer, for prompt_eval_count
             try:
                 framer = ResponseFramer(method)
                 framer.feed(first)
@@ -893,17 +935,21 @@ class OllamaLeg:
                         break
                     cs.sendall(chunk)                        # NDJSON streams through as it arrives
                     framer.feed(chunk)
+                    if answer is not None:
+                        answer += chunk
             except OSError:
                 error = "client_or_upstream_closed"
             finally:
                 up.close()
+            if is_embed and status == 200 and error is None and framer.done:
+                embed = self.embed_stats(body, bytes(answer))
             if is_llm and stage.get("stage") == "write" and status == 200 and error is None and framer.done:
                 capture_body(self.run_dir, arm=self.arm, unit=unit, t0=t0, request_key=None, via="ollama",  # C-1
                              body=body, status=200)
         _append_jsonl(self.run_dir / "ollama.jsonl",
                       {"arm": self.arm, "unit": unit, "path": path, "is_embed": is_embed, "is_llm": is_llm,
                        "status": status, "error": error, "fallback_local": bool(is_llm and self.cloud_arm),
-                       "t0": _iso(t0), "t1": _iso(time.time()), **stage})
+                       "t0": _iso(t0), "t1": _iso(time.time()), **stage, **embed})
 
 
 BODIES_DIR = "bodies"
@@ -1055,9 +1101,37 @@ class Proxy:
         self.scan_refused = 0
         self._lock = threading.Lock()
         self.flags = self._load_flags()
+        count = cap = None
+        if config.embed_tokenizer is not None and any(a.ollama_leg for a in config.arms):
+            count, cap = self._embed_tokenizer(config)
         self.legs = {a.arm: OllamaLeg(a.arm, mode=config.ollama_mode, cloud_arm=a.cloud_arm,
-                                      upstream=tuple(config.ollama_upstream), log=self.log, run_dir=config.run_dir)
+                                      upstream=tuple(config.ollama_upstream), log=self.log, run_dir=config.run_dir,
+                                      embed_count=count, embed_cap=cap)
                      for a in config.arms if a.ollama_leg}
+
+    @staticmethod
+    def _embed_tokenizer(config: ProxyConfig) -> tuple[Callable[[str], int], int]:
+        """TB7 (Q-A7-7): the pinned bge-m3 tokenizer.json through research/v3/tokens.py (its sha verified there) - the
+        count of an input as tokens.Truncator counts it (content + specials) and the cap; the tokenizers version and
+        the sha256 of its RECORD go to <run_dir>/embed_tokenizer.json. A tokenizer that cannot load stops the proxy."""
+        import importlib.metadata  # noqa: PLC0415
+        import importlib.util  # noqa: PLC0415
+        TK = sys.modules.get("v3_tokens_for_proxy")
+        if TK is None:                                   # registered first: its dataclasses look their module up
+            spec = importlib.util.spec_from_file_location("v3_tokens_for_proxy", Path(__file__).resolve().parent / "v3"
+                                                          / "tokens.py")
+            TK = importlib.util.module_from_spec(spec)
+            sys.modules["v3_tokens_for_proxy"] = TK
+            spec.loader.exec_module(TK)
+        path, sha = config.embed_tokenizer
+        spans = TK.bge_m3_spans(Path(path), expected_sha256=sha)
+        dist = importlib.metadata.distribution("tokenizers")
+        record = (dist.read_text("RECORD") or "").encode("utf-8")
+        config.run_dir.mkdir(parents=True, exist_ok=True)
+        (config.run_dir / "embed_tokenizer.json").write_bytes(json.dumps(
+            {"path": path, "sha256": sha, "tokenizers": dist.version, "record_sha256": hashlib.sha256(record).hexdigest(),
+             "cap": TK.CAP, "specials": TK.SPECIALS}, sort_keys=True).encode("utf-8"))
+        return (lambda text: len(spans(text)) + TK.SPECIALS), TK.CAP
 
     # lifecycle ---------------------------------------------------------------------------------------------
     def start(self) -> dict:

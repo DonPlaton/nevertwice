@@ -337,6 +337,45 @@ def proxy_boundary_inputs(calls: Iterable[Mapping[str, Any]], catcher: Iterable[
     return {**sums, "egress_attempts": dict(sorted(refused.items()))}
 
 
+#: TB7, the auditor's Q-12-6 and Q-A7-8: the provider's host (its /anthropic endpoint is on it too) and the SDK
+#: defaults a product that ignores its base_url goes to - a catcher record with one of them is a cloud bypass.
+PROVIDER_HOSTS = ("api.deepseek.com", "api.openai.com", "api.anthropic.com")
+
+
+def cloud_bypass(catcher: Iterable[Mapping[str, Any]], *, arm: str) -> int:
+    """TB7 (P0b): the arm's catcher records whose host is a provider host - the product went to the provider past its
+    base_url. The same record is an egress attempt (P0h): an artifact carries both counters, a total counts it once.
+    By arm, as proxy_boundary_inputs: a catcher record carries no run."""
+    return sum(1 for c in catcher if c.get("arm") == arm and str(c.get("host") or "").lower() in PROVIDER_HOSTS)
+
+
+def embed_inputs(ollama: Iterable[Mapping[str, Any]], *, arm: str) -> dict:
+    """TB7 (§5.1, the auditor's Q-A7-7 O-a): the arm's /api/embed calls the proxy's Ollama leg answered 200, with its
+    count of each input's bge-m3 tokens (the pinned tokenizer.json, content + specials, as tokens.Truncator counts):
+    {embed_at_cap: inputs at or over the cap, calls, inputs, tokens, prompt_eval_count, mismatched_calls} - a call whose
+    token sum differs from Ollama's prompt_eval_count is counted, never adjusted (a systematic difference is the
+    pilot's finding). A call recorded without the leg's count refuses by name - an unmeasured cap is never 0."""
+    out = {"embed_at_cap": 0, "calls": 0, "inputs": 0, "tokens": 0, "prompt_eval_count": 0, "mismatched_calls": 0}
+    for r in ollama:
+        if r.get("arm") != arm or not r.get("is_embed") or r.get("status") != 200:
+            continue
+        for f in ("embed_at_cap", "embed_inputs", "embed_tokens"):
+            v = r.get(f)
+            if not isinstance(v, int) or isinstance(v, bool) or v < 0:
+                raise AccountingError(f"an embed call of {arm} carries no measured {f} ({v!r}) - the proxy's Ollama "
+                                      f"leg had no tokenizer; never read as 0")
+        out["calls"] += 1
+        out["embed_at_cap"] += r["embed_at_cap"]
+        out["inputs"] += r["embed_inputs"]
+        out["tokens"] += r["embed_tokens"]
+        pec = r.get("prompt_eval_count")
+        if isinstance(pec, int) and not isinstance(pec, bool):
+            out["prompt_eval_count"] += pec
+        if pec != r["embed_tokens"]:
+            out["mismatched_calls"] += 1
+    return out
+
+
 def witness_inputs(check: Mapping[str, Any]) -> list[dict]:
     """A launch check record (Witnesses.end_check) as artifact.boundary_block()'s witnesses: one egress witness per
     egress record (the native one, then each container's), one fs witness. Each is complete only if the check is; the

@@ -444,6 +444,7 @@ class SmokeDeps:
     now_utc: Callable[[], str]
     lists_dir: Path | None = None
     s1_sha256: str = S1_IDS_SHA256
+    embed_tokenizer: Mapping[str, str] | None = None     # TB7: {path, sha256} of the pinned bge-m3 tokenizer.json
     out: Callable[[str], None] = print
     err: Callable[[str], None] = field(default=lambda s: sys.stderr.write(s + "\n"))
 
@@ -502,7 +503,8 @@ def run_smoke(cfg: RunConfig, *, stand: str, arm_names: Sequence[str], runs: Seq
     smoke_dir = Path(c.runs_root) / stand_id / "_smoke" / attempt
     pcfg = P.build_config({a: {"llm": ar.llm, "llm_transport": ar.llm_transport,
                                "embeds_via_ollama": ar.embeds_via_ollama, "reader": True} for a, ar in arms.items()},
-                          run_dir=Path(c.runs_root) / stand_id / "_proxy" / attempt, **dict(deps.proxy_route))
+                          run_dir=Path(c.runs_root) / stand_id / "_proxy" / attempt, **dict(deps.proxy_route),
+                          embed_tokenizer=deps.embed_tokenizer)
     secrets = P.build_secrets(list(arms), roles=("scheduler",), canaries=wiring["proxy"])
     h = deps.start_proxy(c, python=cfg.proxy_python, key_file=cfg.key_file, config=pcfg, secrets=secrets,
                          unit=L.make_unit_dirs(c, stand_id, "_harness", "proxy", attempt), parent_env=env,
@@ -658,6 +660,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         make_launcher=plan_launcher_factory(cfg, c),
         start_proxy=lambda c_, **kw: P.start(c_, spawn=L.spawn_proxy, **kw), stop_proxy=P.stop, post=P.post,
         proxy_route={"via_port": L.network_via_port(c)},
+        embed_tokenizer={"path": str(bge), "sha256": CP.PINS["bge_m3_tokenizer_json"]["sha256"]},
         now_utc=lambda: dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
     return run_smoke(cfg, stand=args.stand, arm_names=[a for a in args.arms.split(",") if a],
                      runs=[r for r in args.runs.split(",") if r], deps=deps)

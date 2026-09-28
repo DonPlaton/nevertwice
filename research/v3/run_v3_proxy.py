@@ -82,7 +82,8 @@ def _ctl():
 
 def build_config(arms: Mapping[str, Mapping[str, Any]], *, run_dir: str | os.PathLike, thinking_branch: str = "unset",
                  via_port: int | None = None, catcher: str = HARNESS_CATCHER, j3: bool = False,
-                 test_upstream: Mapping[str, Any] | None = None) -> dict:
+                 test_upstream: Mapping[str, Any] | None = None,
+                 embed_tokenizer: Mapping[str, str] | None = None) -> dict:
     """The proxy's config file (see the module docstring). ``arms``: name -> its arm_decl's llm, llm_transport and
     embeds_via_ollama (required), and options - reader (bool: the arm reads, so it gets a reader port),
     thinking_route (documented or fallback)."""
@@ -129,6 +130,9 @@ def build_config(arms: Mapping[str, Mapping[str, Any]], *, run_dir: str | os.Pat
         cfg["via"] = {"host": LOOPBACK, "port": int(via_port)}
     if test_upstream is not None:
         cfg["upstream"] = dict(test_upstream)              # the proxy itself accepts it only with a test key (X2)
+    if embed_tokenizer is not None and any(a.get("ollama_leg") for a in out_arms):
+        cfg["ollama"] = {"embed_tokenizer": {"path": str(embed_tokenizer["path"]),
+                                             "sha256": str(embed_tokenizer["sha256"])}}   # TB7: embed_at_cap
     return cfg
 
 
