@@ -508,6 +508,9 @@ class UnitRecord:
     aborted: str | None = None             # None | "ceiling" | "crash" (D2)
     error: str | None = None
     end_write_utc: str | None = None       # R9: when end_write returned - a write-port call after it is background
+    #: B-WCTR: the write child's counters, asked right after end_write (a service request: no write op, and after the
+    #: end_write stamp); a memory-store arm's question stage then counts on in the same process (cumulative).
+    counters: Any = None
     client: Any = None                     # a memory-store arm's live client, kept for its read stage (Q25(4))
     dirs: Any = None
 
@@ -574,10 +577,12 @@ def _kill_live(recs: Any) -> None:
 
 def _write_unit(sched: "Scheduler", launcher: Any, *, stand: str, run: str, unit: str, ops: Sequence[Mapping],
                 ceiling: float, status_id: str) -> UnitRecord:
-    """One unit's write stage under its ceiling (D1: the unit's own active time). A ceiling kills the child's tree and
-    writes UNIT-ABORT reason=ceiling; a child that dies or breaks the protocol is UNIT-ABORT reason=crash with its own
-    exit code or the signal of our kill (D2, _unit_failed); a product's ok:false on one write is that operation's
-    error, and the unit goes on. Anything else kills the child and goes on up (B-OPEN)."""
+    """One unit's write stage under its ceiling (D1: the unit's own active time); after end_write (and its stamp) the
+    child's counters are asked for and kept (B-WCTR) - a child that does not answer is the unit's error. A ceiling
+    kills the child's tree and writes UNIT-ABORT reason=ceiling; a child that dies or breaks the protocol is
+    UNIT-ABORT reason=crash with its own exit code or the signal of our kill (D2, _unit_failed); a product's ok:false
+    on one write is that operation's error, and the unit goes on. Anything else kills the child and goes on up
+    (B-OPEN)."""
     B = _arm_base()
     rec = UnitRecord(arm=launcher.name, run=run, unit=unit)
     who = f"{stand}/{run}/{launcher.name}/{unit}"
@@ -614,6 +619,7 @@ def _write_unit(sched: "Scheduler", launcher: Any, *, stand: str, run: str, unit
         end = client.request("end_write", timeout=budget("end_write"))
         rec.footprint, rec.seal = end.get("footprint"), end.get("seal")
         rec.end_write_utc = sched.clock.utc().isoformat()
+        rec.counters = client.request("counters", timeout=budget("counters"))     # B-WCTR: no reply is an ArmError
         if launcher.store_persistence == "memory":
             rec.client = client                                       # Q25(4): the store lives in this process
         else:
@@ -740,6 +746,7 @@ def _question_unit(sched: "Scheduler", launcher: Any, sp: StandPlan, *, run: str
                 paused[0] += REASK_SPACING_S
 
     client = wrec.client
+    out["counters_include_write"] = client is not None       # B-WCTR: the memory-store arm's one process counts on
     try:
         sched._await_gate()
         if client is None:
@@ -917,7 +924,8 @@ def _close_block(sched: "Scheduler", e: BaseException, *, stand: str, block: str
 
 def _unit_payload(w: UnitRecord) -> dict:
     return {"spawn_id": w.spawn_id, "pid": w.pid, "ops": w.ops, "footprint": w.footprint, "seal": w.seal, "rc": w.rc,
-            "signal": w.signal, "active_s": w.active_s, "aborted": w.aborted, "end_write_utc": w.end_write_utc}
+            "signal": w.signal, "active_s": w.active_s, "aborted": w.aborted, "end_write_utc": w.end_write_utc,
+            "counters": w.counters}
 
 
 def _artifact():

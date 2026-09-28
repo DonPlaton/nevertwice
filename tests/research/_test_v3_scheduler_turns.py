@@ -10,6 +10,9 @@ auditor's Q25, D1, D2):
 * T21 crash: a unit whose child dies mid-write is UNIT-ABORT reason=crash with its exit code (D2);
 * the unit record: spawn id, pid, each write's op id and times, footprint, exit code, active seconds; a memory-store
   arm keeps its live client for the read stage (Q25(4));
+* B-WCTR: the write child's counters, asked after end_write and its stamp (never a write op), are in the unit record
+  and the run record; a child that does not answer is UNIT-ABORT by name; a memory-store arm's question counters are
+  marked as including the write snapshot, a disk arm's as not;
 * FIX-SCHED (the auditor's B-RC, B-OPEN, B-CL, B-TE): a unit's exit code is only ever the child's own - a kill of ours
   is signal=SIGKILL, a code that never came is a SchedulerError, a refused spawn is no unit at all; a block or a stand
   that fails after its START closes every line it opened (ABORT reason=harness-error, BLOCK END, STAND END), resets
@@ -196,7 +199,9 @@ class H:
         return {"qid": qid, "items": self.items[:k], "marker": self.marker}
 
     def counters(self):
-        return {}
+        if knobs.get("counters_fail"):
+            raise RuntimeError("the product's counter is gone")
+        return {"stage": spec["stage"], "items": len(self.items), "pid": os.getpid(), "t": time.time()}
 
 
 sys.exit(B.main_with(H))
@@ -291,6 +296,13 @@ try:
           r11.spawn_id and r11.pid and [o["op_id"] for o in r11.ops] == ["u1-i0", "u1-i1"]
           and all(o["ok"] and o["t0"] <= o["t1"] for o in r11.ops) and r11.footprint == 2 and r11.rc == 0
           and r11.active_s > 0 and r11.aborted is None, str(r11))
+    c11 = r11.counters if isinstance(r11.counters, dict) else {}
+    check("B-WCTR: the write stage asks its child for counters after end_write, and the unit record carries them",
+          (c11.get("stage"), c11.get("items"), c11.get("pid")) == ("write", 2, r11.pid), str(r11.counters))
+    check("B-WCTR (1): the counters request is a service request - no write op of the unit, and end_write_utc is the "
+          "moment end_write returned, before counters was asked (R9 background_writes cannot see it)",
+          [o["op_id"] for o in r11.ops] == ["u1-i0", "u1-i1"] and isinstance(c11.get("t"), float)
+          and dt.datetime.fromisoformat(r11.end_write_utc).timestamp() <= c11["t"], f"{r11.end_write_utc} {c11}")
     for a in order:
         for r in ("r1", "r2"):
             status.end(ids[(a, r)], rc=0, wall_s=1.0, units=2, out=f"runs/{a}.{r}.json")
@@ -324,12 +336,29 @@ try:
         (TMP / "STATUS").read_text(encoding="utf-8").splitlines()[-1])
     status.block_end("SX", "b02")
 
+    print("\n- B-WCTR (2): a write child that does not answer counters -")
+    order_c, seed_c = SC.arm_order(["a1"], campaign_seed=7, stand="SX", block="b02c")
+    status.block_start("SX", "b02c", units=["u7", "u8"], arm_order=order_c, seed=seed_c)
+    sc_id = status.start("SX", "b02c", "r1", "a1", pid=os.getpid(), tag="smoke")
+    rcw = sched.write_turn(launcher("a1", expect=1, knobs={("r1", "u8"): {"counters_fail": True}}), stand="SX",
+                           runs=["r1"], units=["u7", "u8"], ops_for=OPS, ceilings={"u7": 60.0, "u8": 60.0},
+                           status_ids={"r1": sc_id})
+    u7, u8 = rcw[("r1", "u7")], rcw[("r1", "u8")]
+    ua8 = [x for x in (TMP / "STATUS").read_text(encoding="utf-8").splitlines() if " UNIT-ABORT SX/b02c/r1/a1/u8 " in x]
+    check("B-WCTR (2): no counters from a write child is the unit's error by name - UNIT-ABORT, never a None that "
+          "passes", u8.aborted == "crash" and "counters" in (u8.error or "") and u8.counters is None and len(ua8) == 1
+          and u7.aborted is None and (u7.counters or {}).get("items") == 2, f"{u8.error} {u8.aborted} {ua8}")
+    status.end(sc_id, rc=0, wall_s=1.0, units=2, out="runs/a1.b02c.json")
+    status.block_end("SX", "b02c")
+
     print("\n- Q25(4): a memory-store arm keeps its process -")
     order3, seed3 = SC.arm_order(["am"], campaign_seed=7, stand="SX", block="b03")
     status.block_start("SX", "b03", units=["u6"], arm_order=order3, seed=seed3)
     sm = status.start("SX", "b03", "r1", "am", pid=os.getpid(), tag="smoke")
     rm = sched.write_turn(launcher("am", expect=1, store="memory"), stand="SX", runs=["r1"], units=["u6"], ops_for=OPS,
                           ceilings={"u6": 60.0}, status_ids={"r1": sm})[("r1", "u6")]
+    check("B-WCTR: a memory-store arm's write stage records its counters too (the snapshot at end_write)",
+          (rm.counters or {}).get("stage") == "write" and (rm.counters or {}).get("items") == 1, str(rm.counters))
     check("the memory-store unit's client is kept, its child still alive and answering",
           rm.client is not None and rm.client.child.process.poll() is None
           and rm.client.request("read", timeout=10, qid="q", query="x")["items"][0]["item_id"] == "u6-i0")
@@ -459,6 +488,12 @@ try:
     check("T18: the memory-store arm reads from the process that wrote (the same pid), and spawns no read process",
           all(q3[k]["pid"] == res1["write"]["a3"][k].pid and q3[k]["spawn_id"] is None for k in q3) and len(q3) == 4,
           str({k: (q3[k]["pid"], res1["write"]["a3"][k].pid) for k in q3}))
+    q1 = res1["questions"].get("a1", {})
+    check("B-WCTR: a memory-store arm's question counters come from the process that wrote, marked as including the "
+          "write snapshot; a disk arm's come from its own read process, marked as not",
+          q3 and q1 and all(v.get("counters_include_write") is True for v in q3.values())
+          and all(v.get("counters_include_write") is False for v in q1.values()),
+          str({k: v.get("counters_include_write") for k, v in list(q3.items())[:2] + list(q1.items())[:2]}))
     check("the GPU holds the embedder alone at the block (the other model unloaded, never the embedder)",
           ("unload", "qwen3:8b") in EV and ("unload", "nvt3-bge-m3-d1:latest") not in EV)
     rj = C.runs_root / "_launch" / "records.jsonl"
@@ -472,6 +507,10 @@ try:
           "START..END (Q2)", set(one["units"]) and all(v["write"]["footprint"] == 2 and v["write"]["end_write_utc"]
                                                         for v in one["units"].values())
           and one.get("measured_at", {}).get("commit") == "c" * 40, str(one)[:300])
+    check("B-WCTR: the run record carries each unit's write-stage counters",
+          set(one["units"]) and all((v["write"].get("counters") or {}).get("stage") == "write"
+                                    for v in one["units"].values()), str([v["write"].get("counters")
+                                                                          for v in one["units"].values()])[:200])
     plans = [json.loads((C.runs_root / r["path"]).read_text(encoding="utf-8")) for r in recs]
     check("the A5 condition: each run record carries the plan's own record of ITS arm-run and block (record_extra) "
           "under 'plan'", plans and all(p_.get("plan") == {"arm": p_["arm"], "run": p_["run"], "units": sorted(p_["units"])}
