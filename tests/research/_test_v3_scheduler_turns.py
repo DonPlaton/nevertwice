@@ -96,13 +96,16 @@ with open(os.path.join(shared, "base_sha", str(os.getpid())), "w") as _f:
 
 
 class _MuteBye:
-    """knobs mute_bye: the answer to bye never comes - the child hangs at its close (B-RC at the close)."""
+    """knobs mute_bye: the answer to bye never comes - the child hangs at its close (B-RC at the close); bad_bye: the
+    answer to bye is a line that is no protocol, and the child then exits 0 by itself."""
 
     def __init__(self, f):
         self.f = f
 
     def write(self, b):
         if b'"op":"bye"' in b:
+            if knobs.get("bad_bye"):
+                return self.f.write(b"this is no protocol line\n")
             time.sleep(60)
         return self.f.write(b)
 
@@ -113,7 +116,7 @@ class _MuteBye:
 def _claim_and_keep():
     fin, fout = _claim()
     STREAMS["out"] = fout
-    return fin, (_MuteBye(fout) if knobs.get("mute_bye") else fout)
+    return fin, (_MuteBye(fout) if knobs.get("mute_bye") or knobs.get("bad_bye") else fout)
 
 
 B.claim_stdio = _claim_and_keep              # main_with looks the name up in base's globals
@@ -1284,7 +1287,7 @@ try:
                        parent_env=dict(os.environ), catcher_url="http://127.0.0.1:47001")
     st29.stand("SBY", "START", model="m", changelog="2026-09-10", order=1)
     o29, sd29 = SC.arm_order(["a1"], campaign_seed=7, stand="SBY", block="b01")
-    st29.block_start("SBY", "b01", units=["m1", "s1"], arm_order=o29, seed=sd29)
+    st29.block_start("SBY", "b01", units=["m1", "s1", "b1"], arm_order=o29, seed=sd29)
     sid29 = st29.start("SBY", "b01", "r1", "a1", pid=os.getpid(), tag="smoke")
     r29, e29 = attempt(lambda: s29.write_turn(launcher("a1", expect=1, knobs={("r1", "m1"): {"mute_bye": True}}),
                                                stand="SBY", runs=["r1"], units=["m1"], ops_for=OPS,
@@ -1304,7 +1307,16 @@ try:
           and s29r.signal == "SIGSEGV"
           and any(" UNIT-ABORT SBY/b01/r1/a1/s1 reason=crash signal=SIGSEGV " in x for x in aborts(TMP / "STATUS29")),
           f"{e29s!r} {s29r} {aborts(TMP / 'STATUS29')}")
-    st29.end(sid29, rc=0, wall_s=1.0, units=2, out="runs/sby.json")
+    r29b, e29b = attempt(lambda: s29.write_turn(launcher("a1", expect=1, knobs={("r1", "b1"): {"bad_bye": True}}),
+                                                 stand="SBY", runs=["r1"], units=["b1"], ops_for=OPS,
+                                                 ceilings={"b1": 30.0}, status_ids={"r1": sid29}))
+    b29 = (r29b or {}).get(("r1", "b1"))
+    check("B-RC (bye): a bye answered with a line that is no protocol is the unit's crash, killed by us (signal=SIGKILL) "
+          "- never a clean rc 0 from a child that broke the protocol at its close and then exited by itself",
+          e29b is None and b29 is not None and b29.aborted == "crash" and b29.rc is None and b29.signal == "SIGKILL"
+          and any(" UNIT-ABORT SBY/b01/r1/a1/b1 reason=crash signal=SIGKILL " in x for x in aborts(TMP / "STATUS29")),
+          f"{e29b!r} {b29}")
+    st29.end(sid29, rc=0, wall_s=1.0, units=3, out="runs/sby.json")
     st29.block_end("SBY", "b01")
     st29.stand("SBY", "END", model="m", changelog="2026-09-10")
     e31, _l31, _st31 = block_world("STATUS31", {"a1": launcher("a1", expect=1, knobs={("r1", "y1"): {"bad_hello": True}})},
@@ -1384,6 +1396,21 @@ try:
           "windows cover a product call made during it (it is no background write)", e35 is None
           and q35.get("aborted") == "ceiling" and len(cut35) == 1 and cut35[0]["qid"] == "c1-q1"
           and bool(cut35[0].get("t0")) and bool(cut35[0].get("t1")), f"{e35!r} {q35}")
+    st36 = SL.StatusLog(TMP / "STATUS36", local_tz=dt.timezone.utc)
+    s36 = SC.Scheduler(C, PC12(), st36, L, Clock(), None, tag="smoke", witnesses=W12(), parent_env=dict(os.environ),
+                       catcher_url="http://127.0.0.1:47001")
+    fl36 = FakeLauncher("a1", scripts={("read", "r1", "c2"): {"close_timeout": True}})
+    sp36 = SC.StandPlan(stand="SCU", runs=("r1",), launchers={"a1": fl36}, campaign_seed=7, unit_tokens={"c2": 1000},
+                        medians={}, write_ops=lambda a, r, u: OPS(r, u),
+                        read_plan=lambda a, u: [SC.ReadReq(qid=f"{u}-q1", query="x"), SC.ReadReq(qid=f"{u}-q2", query="y")],
+                        answer=lambda *a_: {"sha256": "8" * 64}, embed_tag=None, commit="c" * 40, dirty=False)
+    st36.stand("SCU", "START", model="m", changelog="2026-09-10", order=1)
+    res36, e36 = attempt(lambda: s36.run_block(sp36, SC.BlockPlan(block="b01", units=("c2",))))
+    q36 = ((res36 or {}).get("questions") or {}).get("a1", {}).get(("r1", "c2")) or {}
+    check("B-CUT: a unit that ends after its reads completed (its close timed out) keeps its two read rows and no cut "
+          "row - a finished read is never re-marked as the one the unit ended in", e36 is None
+          and q36.get("aborted") == "ceiling" and [r.get("qid") for r in q36.get("reads") or []] == ["c2-q1", "c2-q2"]
+          and not any(r.get("cut") for r in q36.get("reads") or []), f"{e36!r} {q36}")
 finally:
     shutil.rmtree(TMP, ignore_errors=True)
 
