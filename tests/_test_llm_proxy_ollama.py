@@ -491,6 +491,17 @@ except Exception as e:  # noqa: BLE001 - CaptureRefused by name, anything else F
     cap = f"refused:{e.kind}" if type(e).__name__ == "CaptureRefused" else f"{type(e).__name__}: {e}"
 check("Q4: capture_body scans a body before it writes it - a canary is refused by name (CaptureRefused) and no record "
       "is written", cap == "refused:canary" and not (TMP / "run_scan" / "bodies" / "local" / "r1.cb.jsonl").exists(), cap)
+try:
+    P.capture_body(TMP / "run_scan", arm="local", unit="r1.cn", t0=0.0, request_key=None, via="ollama",
+                   body=b'{"messages":[{"role":"user","content":"clean"}]}', status=200, scan=None)
+    capn = "written or skipped quietly"
+except ValueError as e:
+    capn = "ValueError: scan" if "scan" in str(e) else f"ValueError: {e}"
+except Exception as e:  # noqa: BLE001 - the row FAILs by name
+    capn = f"{type(e).__name__}: {e}"
+check("Q4: capture_body without the proxy's scan refuses by name (ValueError) - a body is never written unscanned, "
+      "and never skipped quietly (a leg built without a scan passes scan=None)",
+      capn == "ValueError: scan" and not (TMP / "run_scan" / "bodies" / "local" / "r1.cn.jsonl").exists(), capn)
 
 px.stop()
 pxo.stop()
