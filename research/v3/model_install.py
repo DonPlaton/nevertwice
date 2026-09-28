@@ -13,8 +13,14 @@ egress the catcher would stop) and never runs with spaCy off (§3.4).
 3. After the window, offline: the file re-read from the disk against the job's sha256 and the asset's size (and the
    digest when there is one); pip ``--require-hashes --no-deps --no-index --find-links <the model's directory>`` with a
    one-line requirement ``<model>==<version> --hash=sha256:<sha>`` and lock_install's declared offline environment;
-   then, isolated, spacy.util.is_package(<model>) and importlib.metadata's version of it. Each is a contract step with
-   its own boundary check (install_v3_data._step).
+   then, BEFORE any interpreter starts in the venv (C-NLP2b-1, lock_install's own rule: a .pth in a wheel runs at every
+   start), the model's installed set is hashed and the site checks run over the lock's distributions and the model
+   against the venv's own top level; only then, isolated, spacy.util.is_package(<model>) and importlib.metadata's
+   version of it. Each is a contract step with its own boundary check (install_v3_data._step).
+
+R-NLP-SET (the auditor): once the model is in, the mem0_v3 install record's installed_set_sha256 no longer describes
+the venv alone - whatever verifies the venv later (the arm's bind, FREEZE-V3) takes the pair: the install record and
+this record's model_installed_set_sha256.
 
 The record: <runs>/_install/a8-spacy-model/<run>/model_record.json.
 
@@ -156,6 +162,15 @@ def run_model_install(c, L, F, *, run: str, install_run: str, venv: Path, via_po
     record["problems"] += IV.check_problems("pip", record["install_check"])
     if rc != 0:
         record["problems"].append(f"pip's offline install of the model failed (exit {rc})")
+    if record["problems"]:
+        return _write(base, record)
+    # C-NLP2b-1: the installed set and the site checks come BEFORE any interpreter starts in the venv
+    try:
+        record["model_installed_set_sha256"], record["model_installed_files"] = IV.installed_set(site, [model])
+    except IV.InstallRefused as e:
+        record["problems"].append(f"the model's installed set: {e}")
+    names = [str(e.get("name")) for e in irec.get("lock") or []] + [model]
+    record["problems"] += IV.site_problems(site, names, list(irec.get("venv_top_level") or []))
     if record["problems"]:
         return _write(base, record)
     rc, out, _, chk = step([os.fspath(venv_py), "-I", "-B", "-c", CHECK_CODE, model], "check", None)

@@ -84,6 +84,22 @@ SPM = (b"_nlp_full = None\n_nlp_lemma = None\n_load_failed_full = False\n_load_f
        b"        download(\"en_core_web_sm\")\n")
 
 
+def _b64(d: bytes) -> str:
+    import base64  # noqa: PLC0415
+    return base64.urlsafe_b64encode(d).decode().rstrip("=")
+
+
+def dist(site: Path, name: str, version: str, files: dict) -> None:
+    """A distribution on the site: its files and its dist-info with a hashed RECORD (pip's own shape)."""
+    di = f"{name}-{version}.dist-info"
+    rows = []
+    for rel, data in {**files, f"{di}/METADATA": f"Name: {name}\nVersion: {version}\n".encode()}.items():
+        (site / rel).parent.mkdir(parents=True, exist_ok=True)
+        (site / rel).write_bytes(data)
+        rows.append(f"{rel},sha256={_b64(hashlib.sha256(data).digest())},{len(data)}")
+    (site / di / "RECORD").write_text("\n".join(rows + [f"{di}/RECORD,,"]) + "\n", encoding="utf-8")
+
+
 def contract(tag):
     base = TMP / tag
     return L.Contract(polygon_root=base / "polygon", runs_root=base / "polygon" / "runs" / "v3", repo_root=ROOT,
@@ -98,10 +114,10 @@ def world(tag, *, record="ok", spm=SPM):
     site = venv / "Lib" / "site-packages"
     (site / "mem0" / "utils").mkdir(parents=True)
     if spm is not None:
-        (site / "mem0" / "utils" / "spacy_models.py").write_bytes(spm)
+        dist(site, "mem0ai", "2.2.0", {"mem0/__init__.py": b"", "mem0/utils/spacy_models.py": spm})
     rec_dir = c.runs_root / "_install" / "a8-pypi-mem0_v3" / "i1"
     rec_dir.mkdir(parents=True)
-    rec = {"problems": [], "pip": {"args": ["--use-deprecated=legacy-certs"]},
+    rec = {"problems": [], "pip": {"args": ["--use-deprecated=legacy-certs"]}, "venv_top_level": [],
            "lock": [{"name": "mem0ai", "version": "2.2.0"}, {"name": "spacy", "version": SPACY}]}
     if record == "problem":
         rec["problems"] = ["pip's offline install failed (exit 1)"]
@@ -136,22 +152,30 @@ class FakeWindow:
 class Steps:
     """The offline steps: (argv, arm, declared) -> (rc, stdout, stderr, check)."""
 
-    def __init__(self, *, pip_rc=0, answer=None, dirty=()):
+    def __init__(self, *, pip_rc=0, answer=None, dirty=(), site=None, pth=False, nodist=False, check_rc=0, partial=False):
         self.calls: list = []
-        self.pip_rc, self.dirty = pip_rc, set(dirty)
+        self.pip_rc, self.dirty, self.site, self.pth, self.nodist, self.check_rc = pip_rc, set(dirty), site, pth, nodist, check_rc
+        self.partial = partial
         self.answer = answer if answer is not None else {"is_package": True, "version": V}
 
     def __call__(self, argv, arm, declared):
         self.calls.append({"argv": list(argv), "arm": arm, "declared": dict(declared or {})})
         chk = {**CLEAN, "native": {"hits": 1, "loopback_hits": 0}} if arm in self.dirty else CLEAN
         if arm == "pip":
+            if self.site is not None and (self.pip_rc == 0 or self.partial) and not self.nodist:
+                files = {f"{MODEL}/__init__.py": b"__version__ = '3.8.10'\n"}
+                if self.pth:
+                    files["nvt3_evil.pth"] = b"import os\n"
+                dist(self.site, MODEL, V, files)
             return self.pip_rc, b"Successfully installed", b"", chk
-        return 0, (json.dumps(self.answer) + "\n").encode(), b"", chk
+        return self.check_rc, (json.dumps(self.answer) + "\n").encode(), b"", chk
 
 
 def run(tag, *, window=None, steps=None, record="ok", spm=SPM, run_label="m1"):
     c, venv = world(tag, record=record, spm=spm)
     w, st = window or FakeWindow(), steps or Steps()
+    if st.site is None:
+        st.site = venv / "Lib" / "site-packages"
     try:
         rec = MI.run_model_install(c, L, w, run=run_label, install_run="i1", venv=venv, via_port=1, parent_env={},
                                    python=Path("py.exe"), step=st)
@@ -163,6 +187,7 @@ def run(tag, *, window=None, steps=None, record="ok", spm=SPM, run_label="m1"):
 
 print("- a whole model install -")
 rec, C, VENV, W, ST, err = run("ok")
+rec_ok, st_ok = rec, ST
 check("the install has no problem", ok(lambda: err is None and rec["problems"] == []), f"{err!r} {rec.get('problems')}")
 check("before the window: spaCy's locked version, the model's name from the installed mem0's own source (file:line)",
       ok(lambda: rec["spacy"] == SPACY and rec["model"] == MODEL
@@ -221,6 +246,25 @@ NODIG = {"ok": True, "kind": "gh_model", "model": MODEL, "version": V, "tls_only
 rec, C, VENV, W, ST, err = run("tamper_nodigest", window=FakeWindow(summary=NODIG, tamper=True))
 check("with no digest (TLS-only), a same-size file changed after the window is still caught by the job's own sha256",
       ok(lambda: any("not the job's sha256" in p for p in rec["problems"]) and not ST.calls), str(rec.get("problems")))
+check("C-NLP2b-1 (the auditor): the model's installed set is hashed, and the site checks pass, BEFORE any interpreter "
+      "starts in the venv", ok(lambda: len(rec_ok["model_installed_set_sha256"]) == 64 and rec_ok["model_installed_files"] == 2   # its module and its METADATA; RECORD itself is never in the set
+                               and [c["arm"] for c in st_ok.calls] == ["pip", "check"]),
+      str({k: rec_ok.get(k) for k in ("model_installed_set_sha256", "model_installed_files")}))
+rec, C, VENV, W, ST, err = run("pth", steps=Steps(pth=True))
+check("C-NLP2b-1: a wheel that adds a .pth is a site problem by name, and no interpreter starts (no check step)",
+      ok(lambda: any("nvt3_evil.pth" in p and "interpreter start" in p for p in rec["problems"])
+         and [c["arm"] for c in ST.calls] == ["pip"]), str(rec.get("problems")))
+rec, C, VENV, W, ST, err = run("nodist", steps=Steps(nodist=True))
+check("pip claiming success with no model dist-info on the site is a problem by name, and no interpreter starts",
+      ok(lambda: any("the model's installed set" in p for p in rec["problems"]) and [c["arm"] for c in ST.calls] == ["pip"]),
+      str(rec.get("problems")))
+rec, C, VENV, W, ST, err = run("check_exit", steps=Steps(check_rc=1))
+check("MIl (the auditor): a check that prints a valid answer and then exits 1 is a problem naming the exit",
+      ok(lambda: any("the model check failed (exit 1)" in p for p in rec["problems"])), str(rec.get("problems")))
+rec, C, VENV, W, ST, err = run("pip_partial", steps=Steps(pip_rc=1, partial=True))
+check("pip failing after it wrote the model's files is still a stop: no site check can make a failed install pass, and "
+      "no interpreter starts", ok(lambda: any("pip's offline install of the model failed" in p for p in rec["problems"])
+                                  and [c["arm"] for c in ST.calls] == ["pip"]), str(rec.get("problems")))
 rec, C, VENV, W, ST, err = run("pip_fail", steps=Steps(pip_rc=1))
 check("pip's failure is a problem by name, and no check runs",
       ok(lambda: any("pip's offline install of the model failed" in p for p in rec["problems"])
