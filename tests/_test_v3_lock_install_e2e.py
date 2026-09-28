@@ -11,6 +11,9 @@ files.pythonhosted.org behind a fake hop and a local TLS server with a throwaway
 * E3 (attempt 1): a distribution that ships only an sdist fails pip's wheels-only resolution by name - nothing is
   downloaded and nothing installed;
 * E4: a wheel whose bytes are not the index's sha256 is refused while it streams - nothing installed.
+* B-NLP: with real pip, a spec's extra brings its distribution (the lock records the extra, the install and the
+  imports pass), and a package that does not provide the extra is refused at the lock by name, before any wheel
+  is downloaded;
 
     python tests/_test_v3_lock_install_e2e.py
 """
@@ -19,7 +22,6 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import io
-import json
 import os
 import shutil
 import sys
@@ -77,6 +79,22 @@ def wheel(name: str, version: str, requires: tuple = ()) -> tuple[str, bytes]:
         f"Requires-Dist: {r}\n" for r in requires)
     files = {f"{name}/__init__.py": f'__version__ = "{version}"\n'.encode(), f"{di}/METADATA": meta.encode(),
              f"{di}/WHEEL": b"Wheel-Version: 1.0\nGenerator: nvt3-test\nRoot-Is-Purelib: true\nTag: py3-none-any\n"}
+    files[f"{di}/RECORD"] = ("".join(f"{p},sha256={_b64(hashlib.sha256(b).digest())},{len(b)}\n" for p, b in files.items())
+                             + f"{di}/RECORD,,\n").encode()
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as z:
+        for p, b in files.items():
+            z.writestr(p, b)
+    return fn, buf.getvalue()
+
+
+def _provides(whl: tuple[str, bytes], extra: str) -> tuple[str, bytes]:
+    """The same wheel, its METADATA declaring Provides-Extra (and its RECORD rehashed)."""
+    fn, data = whl
+    src = zipfile.ZipFile(io.BytesIO(data))
+    files = {n: src.read(n) for n in src.namelist() if not n.endswith("/RECORD")}
+    di = next(n.split("/")[0] for n in files if n.endswith("/METADATA"))
+    files[f"{di}/METADATA"] = files[f"{di}/METADATA"].replace(b"License: MIT\n", f"License: MIT\nProvides-Extra: {extra}\n".encode())
     files[f"{di}/RECORD"] = ("".join(f"{p},sha256={_b64(hashlib.sha256(b).digest())},{len(b)}\n" for p, b in files.items())
                              + f"{di}/RECORD,,\n").encode()
     buf = io.BytesIO()
@@ -221,6 +239,20 @@ check("E2b (the auditor): pip runs on the venv's own interpreter (never the harn
 
 print("\n- E3: attempt 1 takes wheels only -")
 sd = ("nvt3c-1.0.0.tar.gz", b"not a wheel")
+print("\n- B-NLP: a spec's extra with real pip -")
+X = wheel("nvt3x", "1.0.0", ('nvt3e; extra == "nlp"',))
+XE = wheel("nvt3e", "1.0.0")
+recx, _, _ = install("extra", index({"nvt3x": [_provides(X, "nlp")], "nvt3e": [XE]}), ["nvt3x[nlp]==1.0.0"],
+                     ["nvt3x", "nvt3e"], ["nvt3x", "nvt3e"])
+check("B-NLP: nvt3x[nlp] brings its extra's distribution - the lock records the extra and holds nvt3e, the install "
+      "and the imports pass", recx.get("problems") == []
+      and [(e["name"], e.get("requested_extras")) for e in recx.get("lock") or []] == [("nvt3e", []), ("nvt3x", ["nlp"])],
+      str({k: recx.get(k) for k in ("problems", "lock")})[:400])
+recn, _, _ = install("noextra", index({"nvt3x": [X], "nvt3e": [XE]}), ["nvt3x[nlp]==1.0.0"], ["nvt3x", "nvt3e"],
+                     ["nvt3x", "nvt3e"])
+check("B-NLP: a package that does not provide the extra is refused at the lock, by name - before any wheel is "
+      "downloaded or installed", any("lacks the declared distribution(s) ['nvt3e']" in p for p in recn.get("problems") or [])
+      and recn.get("install_rc") is None, str(recn.get("problems"))[:300])
 rec3, C3, _ = install("sdist", index({"nvt3c": [sd]}), ["nvt3c==1.0.0"], ["nvt3c"], ["nvt3c"])
 check("E3: a distribution that ships only an sdist fails pip's wheels-only resolution by name; nothing is downloaded "
       "or installed", any("pip's resolution failed (attempt 1, wheels only)" in p for p in rec3.get("problems") or [])

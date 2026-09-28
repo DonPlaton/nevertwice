@@ -12,6 +12,10 @@
 * the offline install: --require-hashes --no-deps --no-index --find-links <the wheels> -r <the lock>, no index URL;
 * the import probe takes plain names only; the declared venvs (mem0_v3 = mem0ai 2.2.0, PREREG §2.2);
 * run_lock_install refuses before any spawn: an undeclared venv, an existing venv, a used run label.
+* B-NLP (the auditor, 07:19): mem0_v3 is mem0ai[nlp]==2.2.0 with spacy imported and version-checked; every VENVS spec is
+  its PREREG §2.2 row (quoted, and found word for word in the tracked PREREG); a spec is an exact pin; the window's
+  lock is lock_step's - the spec requested at its version with its extras, every declared distribution in the lock
+  (a missing one refused before any download); check_versions never passes None against None;
 * the seam (B-C4B-CWD, the auditor): install_v3_data._step with the offline pip's declared env hands a stub spawn
   that runs launch's REAL check_cwd, assert_env and assert_argv - no reason.
 
@@ -96,6 +100,54 @@ check("one entry per distribution, sorted, the name normalised, the index's sha2
            "License :: OSI Approved :: Apache Software License")], str(lock))
 
 
+print("\n- B-NLP: the spec's extras carried into the lock -")
+check("a spec is an exact pin: its normalised name, its extras sorted and normalised, its version",
+      LI.spec_parts("mem0ai[nlp]==2.2.0") == ("mem0ai", ["nlp"], "2.2.0")
+      and LI.spec_parts("Qdrant_Client[B_x, a]==1.15.1") == ("qdrant-client", ["a", "b-x"], "1.15.1")
+      and LI.spec_parts("spacy==3.8.7") == ("spacy", [], "3.8.7"), str(LI.spec_parts("mem0ai[nlp]==2.2.0")))
+for sp in ("mem0ai>=2.2.0", "mem0ai", "mem0ai[nlp]", "mem0ai==2.2.0; python_version<'4'", "mem0ai[]==2.2.0"):
+    check(f"a spec that is not an exact pin is refused by name: {sp!r}", "not an exact pin" in refusal(lambda: LI.spec_parts(sp)))
+REP_NLP = copy.deepcopy(REPORT)
+REP_NLP["install"][0]["requested_extras"] = ["NLP"]
+try:
+    lk = LI.lock_step(REP_NLP, ["mem0ai[nlp]==2.2.0"])
+except Exception as e:  # noqa: BLE001 - a refusal FAILs the row by name
+    lk = [{"name": f"refused: {e}"}]
+check("the lock records each requested distribution's extras as pip took them (normalised)",
+      [(e["name"], e.get("requested_extras")) for e in lk] == [("mem0ai", ["nlp"]), ("qdrant-client", [])], str(lk))
+check("the lock's lines and sha256 stay name==version --hash (the extras are the report's, not the install's)",
+      LI.lock_lines(lk)[0] == f"mem0ai==2.2.0 --hash=sha256:{H1}", str(LI.lock_lines(lk)[:1]))
+check("B-NLP: a report that took mem0ai WITHOUT the extra the spec asks is refused by name - pip dropped [nlp]",
+      "without its extra(s) ['nlp']" in refusal(lambda: LI.lock_step(copy.deepcopy(REPORT), ["mem0ai[nlp]==2.2.0"])))
+nreq = copy.deepcopy(REP_NLP)
+nreq["install"][0]["requested"] = False
+check("a spec's distribution the report does not mark requested is refused by name",
+      "does not install mem0ai[nlp]==2.2.0 as requested" in refusal(lambda: LI.lock_step(nreq, ["mem0ai[nlp]==2.2.0"])))
+check("a spec whose version the report does not install is refused by name",
+      "does not install mem0ai[nlp]==2.2.1 as requested" in refusal(lambda: LI.lock_step(REP_NLP, ["mem0ai[nlp]==2.2.1"])))
+check("a spec with no extra passes on a report without requested_extras",
+      refusal(lambda: LI.lock_step(copy.deepcopy(REPORT), ["mem0ai==2.2.0"])) == "accepted")
+check("B-NLP: a declared distribution the lock lacks is refused by name before any download - pip lists an extra the "
+      "package does not provide as requested, so only the missing distribution shows it",
+      "lacks the declared distribution(s) ['spacy']" in refusal(lambda: LI.lock_step(REP_NLP, ["mem0ai[nlp]==2.2.0"],
+                                                                                        dists=["mem0ai", "spacy"])))
+check("... and every declared distribution in the lock passes", refusal(lambda: LI.lock_step(
+      REP_NLP, ["mem0ai[nlp]==2.2.0"], dists=["mem0ai", "Qdrant_Client"])) == "accepted")
+cvn = LI.check_versions({"python": "3.12.10", "dists": {"mem0ai": "2.2.0", "spacy": None}},
+                        [{"name": "mem0ai", "version": "2.2.0"}], ["mem0ai", "spacy"], "3.12.10")
+check("B-NLP: check_versions names a declared distribution that is not in the lock - None against None is no pass",
+      cvn == ["the declared distribution spacy is not in the lock"], str(cvn))
+import ast as _ast  # noqa: E402
+_tree = _ast.parse((ROOT / "research" / "v3" / "lock_install.py").read_text(encoding="utf-8"))
+_run = next(n for n in _tree.body if isinstance(n, _ast.FunctionDef) and n.name == "run_lock_install")
+_called = [c.func.id for c in _ast.walk(_run) if isinstance(c, _ast.Call) and isinstance(c.func, _ast.Name)]
+_kw = [k.arg for c in _ast.walk(_run) if isinstance(c, _ast.Call) and isinstance(c.func, _ast.Name)
+       and c.func.id == "lock_step" for k in c.keywords]
+check("B-NLP: the window's lock is lock_step's, with the venv's declared distributions - run_lock_install never calls "
+      "lock_from_report itself (the real-pip case is _test_v3_lock_install_e2e's, under the lock)",
+      _called.count("lock_step") == 1 and "lock_from_report" not in _called and "dists" in _kw, str(_called))
+
+
 def bad(path, value):
     r = copy.deepcopy(REPORT)
     tgt = r
@@ -114,7 +166,7 @@ cases = [
     ("a direct URL requirement", bad(("install", 0, "is_direct"), True), "direct URL"),
     ("a yanked file", bad(("install", 0, "is_yanked"), True), "yanked"),
     ("a VCS or local source (no archive_info)", bad(("install", 0, "download_info", "archive_info"), KeyError), "not an archive"),
-    ("a file over plain http", bad(("install", 0, "download_info", "url"), f"http://files.pythonhosted.org/x/mem0ai-2.2.0-py3-none-any.whl"), "is not https://files.pythonhosted.org"),
+    ("a file over plain http", bad(("install", 0, "download_info", "url"), "http://files.pythonhosted.org/x/mem0ai-2.2.0-py3-none-any.whl"), "is not https://files.pythonhosted.org"),
     ("a file on another host", bad(("install", 0, "download_info", "url"), "https://evil.example/mem0ai-2.2.0-py3-none-any.whl"), "is not https://files.pythonhosted.org"),
     ("a file with a query", bad(("install", 0, "download_info", "url"), f"{F}/mem0ai-2.2.0-py3-none-any.whl?x=1"), "is not https://files.pythonhosted.org"),
     ("a file on another port (LM6)", bad(("install", 0, "download_info", "url"), "https://files.pythonhosted.org:8443/packages/mem0ai-2.2.0-py3-none-any.whl"), "is not https://files.pythonhosted.org"),
@@ -242,9 +294,21 @@ check("LN6 (the auditor): an answer without dists, or with dists that are not a 
       "never a crash, never a pass", len(no_dists) == 1 and len(list_dists) == 1
       and all("not {python, dists}" in x[0] for x in (no_dists, list_dists)), f"{no_dists} | {list_dists}")
 check("... and takes plain names only", "not a plain name" in refusal(lambda: LI.version_probe(["os; import x"], ["a"])))
-check("the declared venvs: mem0_v3 = mem0ai 2.2.0 (PREREG §2.2) on the declared base py-base-312 (LI-1), its import and "
-      "distribution", LI.VENVS.get("mem0_v3") == {"base": "py-base-312", "specs": ["mem0ai==2.2.0"], "imports": ["mem0"],
-                                                  "dists": ["mem0ai"]}, str(LI.VENVS))
+check("the declared venvs: mem0_v3 = mem0ai[nlp] 2.2.0 (PREREG §2.2, T22 - B-NLP) on the declared base py-base-312 "
+      "(LI-1); its imports and distributions prove the extra landed (mem0 and spacy)",
+      LI.VENVS.get("mem0_v3") == {"base": "py-base-312", "specs": ["mem0ai[nlp]==2.2.0"], "imports": ["mem0", "spacy"],
+                                  "dists": ["mem0ai", "spacy"]}, str(LI.VENVS))
+check("B-NLP (the auditor's method rule): every VENVS spec is its PREREG §2.2 row - the distribution, its extras and "
+      "its version, quoted in PREREG_22 - and every venv has that row",
+      set(LI.PREREG_22) == set(LI.VENVS) and all(
+          [LI.spec_parts(x) for x in LI.VENVS[v]["specs"]]
+          == [(LI.PREREG_22[v]["dist"], LI.PREREG_22[v]["extras"], LI.PREREG_22[v]["version"])]
+          and LI.PREREG_22[v]["base"] == LI.VENVS[v]["base"] for v in LI.VENVS),
+      str(LI.PREREG_22))
+_PRE = (ROOT / "research" / "v3" / "PREREG-V3-rev1.md").read_text(encoding="utf-8")
+check("... and each quoted row is the tracked PREREG's own §2.2 line, word for word (its extras included)",
+      all(_PRE.count(LI.PREREG_22[v]["row"]) == 1 and f"with `[{LI.PREREG_22[v]['extras'][0]}]`" in LI.PREREG_22[v]["row"]
+          for v in LI.PREREG_22), str([v["row"][:60] for v in LI.PREREG_22.values()]))
 
 MANW = json.loads((ROOT / "research" / "v3" / "fetch_manifest.json").read_text(encoding="utf-8"))["windows"]
 mw = {k[len(LI.WINDOW_PREFIX):]: v for k, v in MANW.items() if k.startswith(LI.WINDOW_PREFIX)}

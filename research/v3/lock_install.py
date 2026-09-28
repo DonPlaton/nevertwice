@@ -11,7 +11,9 @@ resolver decides the tree, and nothing else about the install is left to it:
 2. ONE declared window ``a8-pypi-<venv>``, hosts exactly pypi.org and files.pythonhosted.org, through the catcher:
    a) pip, as a child: ``install --dry-run --ignore-installed --only-binary=:all: --report report.json <specs>`` -
       attempt 1 takes wheels only;
-   b) the harness turns the report into the lock (lock_from_report): one line per distribution, ``name==version
+   b) the harness turns the report into the lock (lock_step): every spec is an exact pin found in the report - its
+      distribution requested, at its version, with every extra the spec asks among those pip took (B-NLP: a dropped
+      [nlp] is refused by name); one line per distribution, ``name==version
       --hash=sha256:<the index's sha256>``; a direct URL, a VCS or local source, a yanked file, a host other than
       files.pythonhosted.org, a missing or malformed sha256, a repeated name, and any file that is not a wheel are
       refused by name (a distribution that ships only an sdist is attempt 2's: built alone, with a backend pinned by
@@ -61,7 +63,16 @@ _FILE = re.compile(r"[A-Za-z0-9._+-]{1,200}")
 _HEX64 = re.compile(r"[0-9a-f]{64}")
 #: The product venvs of §2.2 this module installs - each its pinned specs, the imports that must work, and the
 #: distributions whose installed version must be the locked one. A venv is added here, with its pin, before its window.
-VENVS = {"mem0_v3": {"base": "py-base-312", "specs": ["mem0ai==2.2.0"], "imports": ["mem0"], "dists": ["mem0ai"]}}
+#: B-NLP (the auditor, 07:19): mem0 WITH its [nlp] extra (T22) - spacy is imported and version-checked, so an install
+#: that silently dropped the extra fails by name.
+VENVS = {"mem0_v3": {"base": "py-base-312", "specs": ["mem0ai[nlp]==2.2.0"], "imports": ["mem0", "spacy"],
+                     "dists": ["mem0ai", "spacy"]}}
+#: PREREG-V3 rev1 §2.2's row of each venv, quoted (the auditor's method rule, B-NLP): its distribution, extras, version
+#: and base - a suite row checks every VENVS spec against it.
+PREREG_22 = {"mem0_v3": {"row": "| mem0 | product | mem0ai, latest stable at freeze, with `[nlp]` (T22); 2.2.0 on "
+                                "2026-09-23 | 3.12, fresh venv mem0_v3 |",
+                         "dist": "mem0ai", "extras": ["nlp"], "version": "2.2.0", "base": "py-base-312"}}
+_SPEC = re.compile(r"([A-Za-z0-9][A-Za-z0-9._-]*)(?:\[([A-Za-z0-9._-]+(?:\s*,\s*[A-Za-z0-9._-]+)*)\])?==([A-Za-z0-9.+!-]+)")
 
 
 class LockRefused(RuntimeError):
@@ -123,6 +134,43 @@ def _licence(md: dict) -> str | None:
     return "; ".join(cls) or None
 
 
+def _norm_extra(x: str) -> str:
+    return re.sub(r"[-_.]+", "-", str(x)).lower()
+
+
+def spec_parts(spec: str) -> tuple[str, list[str], str]:
+    """(normalised name, extras sorted and normalised, version) of an exact pin ``name[extra,...]==version`` - any other
+    spec is refused by name: a venv's pin is exact (§2.2)."""
+    m = _SPEC.fullmatch(str(spec).strip())
+    if not m:
+        raise LockRefused(f"the spec {spec!r} is not an exact pin name[extras]==version")
+    extras = sorted({_norm_extra(x.strip()) for x in (m.group(2) or "").split(",") if x.strip()})
+    return norm_name(m.group(1)), extras, m.group(3)
+
+
+def lock_step(report: dict, specs: list[str], *, dists: list[str] | tuple = (), files_host: str = FILES_HOST) -> list[dict]:
+    """B-NLP: the lock from pip's report, and every spec found in it - its distribution requested, at its version, with
+    every extra the spec asks among the extras pip took; and every declared distribution in the lock (an extra the
+    package does not provide is only a warning to pip, and its report still lists the extra as requested - the
+    distributions it should have brought are what shows it). Refused by name, before any wheel is downloaded."""
+    lock = lock_from_report(report, files_host=files_host)
+    by = {e["name"]: e for e in lock}
+    for spec in specs:
+        name, extras, version = spec_parts(spec)
+        e = by.get(name)
+        if e is None or not e["requested"] or e["version"] != version:
+            raise LockRefused(f"the report does not install {spec} as requested")
+        missing = sorted(set(extras) - set(e["requested_extras"]))
+        if missing:
+            raise LockRefused(f"the report took {name} without its extra(s) {missing} - pip dropped what the spec asks "
+                              f"(B-NLP)")
+    absent = sorted(d for d in dists if norm_name(d) not in by)
+    if absent:
+        raise LockRefused(f"the lock lacks the declared distribution(s) {absent} - the specs' extras brought nothing "
+                          f"(B-NLP)")
+    return lock
+
+
 def lock_from_report(report: dict, *, files_host: str = FILES_HOST) -> list[dict]:
     """pip's installation report (format "1") as the lock: one entry per distribution, sorted by name - see step 2b."""
     if not isinstance(report, dict) or report.get("version") != "1":
@@ -164,7 +212,8 @@ def lock_from_report(report: dict, *, files_host: str = FILES_HOST) -> list[dict
             raise LockRefused(f"{who}: the report names {n} twice")
         seen.add(n)
         out.append({"name": n, "version": version, "filename": fn, "url": di["url"], "sha256": sha,
-                    "requested": bool(it.get("requested")), "licence": _licence(md)})
+                    "requested": bool(it.get("requested")), "licence": _licence(md),
+                    "requested_extras": sorted({_norm_extra(x) for x in (it.get("requested_extras") or [])})})
     return sorted(out, key=lambda e: e["name"])
 
 
@@ -231,7 +280,9 @@ def check_versions(got, lock: list[dict], dists: list[str], base_version: str) -
         problems.append(f"the venv's python is {got.get('python')}, not the declared base's {base_version} (LI-1)")
     want = {d: next((e["version"] for e in lock if e["name"] == norm_name(d)), None) for d in dists}
     for d, v in sorted(want.items()):
-        if got["dists"].get(d) != v:
+        if v is None:                               # B-NLP: None against None is never a pass
+            problems.append(f"the declared distribution {d} is not in the lock")
+        elif got["dists"].get(d) != v:
             problems.append(f"the installed {d} is {got['dists'].get(d)}, not the locked {v}")
     return problems
 
@@ -314,7 +365,7 @@ def run_lock_install(c, L, F, *, python: Path, venv: Path, venv_name: str, run: 
             return None
         try:
             report = json.loads((Path(results[0]["unit"]) / REPORT).read_bytes())
-            lock.extend(lock_from_report(report, files_host=files_host))
+            lock.extend(lock_step(report, specs, dists=dists, files_host=files_host))
         except (OSError, ValueError) as e:
             refused.append(f"pip's report could not be read: {type(e).__name__}")
             return None
