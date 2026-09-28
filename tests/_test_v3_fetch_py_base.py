@@ -206,6 +206,12 @@ else:
           "and its own target directory", F.BASES.get("py-base-314") == {"version": "3.14.4", "dest": "py314", "newest_of": None}
           and F.BASES.get("py-base-312") == {"version": "3.12.10", "dest": "py312", "newest_of": "3.12"}, str(F.BASES))
 
+MANW = json.loads((ROOT / "research" / "v3" / "fetch_manifest.json").read_text(encoding="utf-8"))["windows"]
+mb = MANW.get("py-base-312") or {}
+check("C3a: the manifest declares py-base-312 as the code does - api.nuget.org only, its version and its target, no "
+      "redirect", mb.get("hosts") == [F.NUGET_HOST] and mb.get("version") == F.BASES["py-base-312"]["version"]
+      and mb.get("dest") == F.BASES["py-base-312"]["dest"] and mb.get("max_redirects") == 0, str(mb))
+
 print("\n- unpacking tools/ -")
 dest = TMP / "py314"
 files = F.unpack_tools(PKG, dest)

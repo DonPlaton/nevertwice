@@ -196,7 +196,8 @@ check("the window hosts are the declared exact names",
           "a3-github": ["raw.githubusercontent.com"],
           "a3-tiktoken": ["openaipublic.blob.core.windows.net"], "a3-git": ["github.com"],
           "a3-pyarrow": ["files.pythonhosted.org", "pypi.org"], "a7-npm": ["registry.npmjs.org"],
-          "a7-npm-d": ["registry.npmjs.org"], "a7-discovery": ["api.github.com", "huggingface.co"]})
+          "a7-npm-d": ["registry.npmjs.org"], "a7-discovery": ["api.github.com", "huggingface.co"],
+          "py-base-312": ["api.nuget.org"], "a8-pypi-mem0_v3": ["files.pythonhosted.org", "pypi.org"]})
 check("a3-hf's hosts come from the discovery record d1; discovery follows no redirect",
       MAN["windows"]["a3-hf"]["hosts_from_record"] == CP.DISCOVERY_D1 and MAN["windows"]["a3-discovery"]["max_redirects"] == 0)
 

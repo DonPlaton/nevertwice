@@ -64,6 +64,21 @@
    "hosts": ["api.github.com", "huggingface.co"],
    "purpose": "metadata only (.loop/A7-PLAN-2026-09-27.md phase 1, plan d3): supermemoryai/supermemory, topoteretes/cognee and getzep/zep-papers - repository, head, recursive tree, and for the first two tags and releases; sentence-transformers/all-MiniLM-L6-v2 - revision and tree; no link followed",
    "max_redirects": 1
+  },
+  "py-base-312": {
+   "hosts": ["api.nuget.org"],
+   "purpose": "A8 C1 (the auditor's Q-A8-2): CPython 3.12.10 from NuGet's python package into the polygon's py312 - the base of the product venvs PREREG-V3 2.2 pins to 3.12; NuGet's flat index is read first and the declared version must be the newest stable 3.12.x",
+   "version": "3.12.10",
+   "dest": "py312",
+   "max_redirects": 0
+  },
+  "a8-pypi-mem0_v3": {
+   "hosts": ["pypi.org", "files.pythonhosted.org"],
+   "install": "A8 C2 (the auditor's Q-A8-1 O-a): lock_install - pip's own dry-run report (wheels only, attempt 1) into a hashed lock, the wheels fetched against the index's sha256, then pip offline --require-hashes --no-deps --no-index from the lock",
+   "venv": "mem0_v3",
+   "base": "py-base-312",
+   "specs": ["mem0ai==2.2.0"],
+   "max_redirects": 0
   }
  },
  "disk": {"volume": "D:", "floor_gb": 100, "multiple_of_window_total": 3, "stop_single_file_gb": 10}

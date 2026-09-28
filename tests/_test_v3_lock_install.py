@@ -244,6 +244,14 @@ check("the declared venvs: mem0_v3 = mem0ai 2.2.0 (PREREG §2.2) on the declared
       "distribution", LI.VENVS.get("mem0_v3") == {"base": "py-base-312", "specs": ["mem0ai==2.2.0"], "imports": ["mem0"],
                                                   "dists": ["mem0ai"]}, str(LI.VENVS))
 
+MANW = json.loads((ROOT / "research" / "v3" / "fetch_manifest.json").read_text(encoding="utf-8"))["windows"]
+mw = {k[len(LI.WINDOW_PREFIX):]: v for k, v in MANW.items() if k.startswith(LI.WINDOW_PREFIX)}
+check("C3a: every declared venv has its a8-pypi window in the manifest - exactly the two index hosts, its base, its specs, "
+      "no redirect - and the manifest declares no a8-pypi window the code does not",
+      set(mw) == set(LI.VENVS) and all(sorted(mw[v]["hosts"]) == sorted(LI.HOSTS) and mw[v]["base"] == LI.VENVS[v]["base"]
+                                       and mw[v]["specs"] == LI.VENVS[v]["specs"] and mw[v]["max_redirects"] == 0
+                                       and mw[v]["venv"] == v for v in mw), str(mw)[:300])
+
 print("\n- refusals before any spawn -")
 C = L.Contract(polygon_root=TMP / "polygon", runs_root=TMP / "polygon" / "runs" / "v3", repo_root=ROOT,
                owner_home=TMP / "owner", secrets_dir=TMP / "secrets", quarantine_root=TMP / "q", conservation_root=TMP / "cv")
