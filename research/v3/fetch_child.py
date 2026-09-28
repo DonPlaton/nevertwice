@@ -23,6 +23,14 @@ A job: {"hosts": [exact host names], "max_redirects": 0|1, "requests": [
   the peer certificate's issuer (O, CN; R-A3-7: the catcher relays ciphertext, so only the child can see it), ok,
   error - is written to fetch_summary.json in the working directory and printed as one line. No body is printed.
 
+A8 C4 adds one more job kind, {"kind": "oci", "repo", "registry", "auth", "service", "cdn_hosts", "hosts", "platform",
+"max_meta_bytes", "max_blob_bytes"} (oci_job, the auditor's Q-C4-1..3): an anonymous pull token for exactly
+repository:<repo>:pull, held in memory only and sent only to the registry; every page of the tags list; the newest
+release ^v?X.Y.Z$ by the numbers, all its tags resolving to one index; that index's one linux/amd64 manifest; the
+config and each layer by digest, each checked on the disk against its digest and size, a blob redirect followed once
+and only to a declared CDN host, which never gets the token, and whose signed query is never recorded; the digest
+behind "latest" recorded as information only. Files land under <cwd>/oci/blobs/sha256/.
+
     <py314>\\python.exe research\\v3\\fetch_child.py   (the job on stdin)
 """
 from __future__ import annotations
@@ -207,12 +215,234 @@ def run_job(job: dict, *, cwd: Path, port: int, ctx: ssl.SSLContext | None = Non
     return out
 
 
+# ── A8 C4: an OCI registry job (the auditor's Q-C4-1..3) ──────────────────────────────────────────────────────
+
+OCI_INDEX = ("application/vnd.oci.image.index.v1+json", "application/vnd.docker.distribution.manifest.list.v2+json")
+OCI_MANIFEST = ("application/vnd.oci.image.manifest.v1+json", "application/vnd.docker.distribution.manifest.v2+json")
+_RELEASE = re.compile(r"v?(\d+)\.(\d+)\.(\d+)")
+_DIGEST = re.compile(r"sha256:[0-9a-f]{64}")
+_REPO = re.compile(r"[a-z0-9]+(?:[._-][a-z0-9]+)*(?:/[a-z0-9]+(?:[._-][a-z0-9]+)*)+")
+_REDIRECTS = (301, 302, 303, 307, 308)
+MAX_TAG_PAGES = 100
+
+
+def release_tags(tags) -> tuple[tuple, list[str]] | None:
+    """Q-C4-1: the newest release - the largest (X, Y, Z) of the tags that are ^v?X.Y.Z$ (digits only: no pre-release,
+    no "latest"), by the numbers, never by push date - and every tag that names it (X.Y.Z and vX.Y.Z)."""
+    by: dict = {}
+    for t in tags:
+        m = _RELEASE.fullmatch(str(t))
+        if m:
+            by.setdefault(tuple(int(x) for x in m.groups()), []).append(str(t))
+    if not by:
+        return None
+    key = max(by)
+    return key, sorted(by[key])
+
+
+def _next_link(value: str | None, registry: str, repo: str) -> str | None:
+    """The tags list's next page (RFC 5988 Link, rel="next"), kept on the registry and the same list, or None."""
+    if not value:
+        return None
+    for part in value.split(","):
+        m = re.match(r'\s*<([^>]*)>\s*;\s*rel="?next"?\s*$', part)
+        if m:
+            u = urllib.parse.urlsplit(urllib.parse.urljoin(f"https://{registry}/", m.group(1)))
+            if u.hostname != registry or u.path != f"/v2/{repo}/tags/list":
+                raise Refused(f"the tags list's next page leaves the registry's list: {u.hostname!r}{u.path!r}")
+            return u.path + (f"?{u.query}" if u.query else "")
+    return None
+
+
+def tunnel_send(port: int, ctx: ssl.SSLContext | None = None, timeout: float = 300.0):
+    """The wire of an OCI job: one request through the catcher's tunnel, TLS verified end to end. A redirect, a HEAD or
+    a non-200 answer comes back with no body; a 200 body is streamed to ``save_to`` (via .partial) or kept in memory,
+    never past ``max_bytes``, identity encoding only. Returns (status, lower-case headers, body, sha256 hex, bytes)."""
+    ctx = ctx or ssl.create_default_context()
+
+    def send(method: str, host: str, path: str, headers: dict, *, max_bytes: int, save_to: Path | None = None):
+        conn = _open(host, port, ctx, timeout)
+        try:
+            conn.request(method, path, headers={"User-Agent": "nvt3-fetch/1", "Accept-Encoding": "identity", **headers})
+            r = conn.getresponse()
+            hdrs = {k.lower(): v for k, v in r.getheaders()}
+            if method == "HEAD" or r.status != 200:
+                r.read(65536)
+                return r.status, hdrs, b"", None, 0
+            if (hdrs.get("content-encoding") or "identity").lower() != "identity":
+                raise Refused("an encoded body")
+            length = hdrs.get("content-length")
+            if length is not None and int(length) > max_bytes:
+                raise Refused("the body is larger than max_bytes")
+            h, total, keep = hashlib.sha256(), 0, []
+            part = save_to.with_name(save_to.name + ".partial") if save_to is not None else None
+            f = open(part, "wb") if part is not None else None
+            try:
+                while True:
+                    data = r.read(CHUNK)
+                    if not data:
+                        break
+                    total += len(data)
+                    if total > max_bytes:
+                        raise Refused("the body is larger than max_bytes")
+                    h.update(data)
+                    if f is not None:
+                        f.write(data)
+                    else:
+                        keep.append(data)
+            except BaseException:
+                if f is not None:
+                    f.close()
+                    part.unlink(missing_ok=True)
+                raise
+            if f is not None:
+                f.close()
+                os.replace(part, save_to)
+            return 200, hdrs, b"".join(keep), h.hexdigest(), total
+        finally:
+            conn.close()
+    return send
+
+
+def _blob(call, *, registry: str, repo: str, digest: str, size, authz: dict, cdn: frozenset, dest: Path, blob_max: int,
+          out: dict) -> None:
+    """One blob by digest: the registry answers it or redirects it once, to a declared CDN host only, which gets no
+    Authorization (Q-C4-2, Q-C4-3); the file on the disk must be the digest's bytes and the manifest's size."""
+    if not _DIGEST.fullmatch(str(digest)):
+        raise Refused(f"a blob digest {str(digest)[:80]!r} is not sha256:<64 hex>")
+    if not (isinstance(size, int) and not isinstance(size, bool) and 0 <= size <= blob_max):
+        raise Refused(f"the blob {digest[:19]} declares a size {size!r} outside 0..max_blob_bytes")
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    st, h, _, sha, n = call("GET", registry, f"/v2/{repo}/blobs/{digest}", authz, max_bytes=blob_max, save_to=dest)
+    if st in _REDIRECTS:
+        target = urllib.parse.urljoin(f"https://{registry}/v2/{repo}/blobs/{digest}", h.get("location") or "")
+        u = urllib.parse.urlsplit(target)
+        if u.scheme != "https" or u.hostname not in cdn or u.port not in (None, 443) or u.username or u.password:
+            out["refused_redirect_host"] = u.hostname
+            raise Refused(f"the blob {digest[:19]} redirects to an undeclared host {u.hostname!r} (Q-C4-3) - not followed")
+        st, h, _, sha, n = call("GET", u.hostname, (u.path or "/") + (f"?{u.query}" if u.query else ""), {},
+                                max_bytes=blob_max, save_to=dest)      # exactly one redirect, no Authorization
+        if st in _REDIRECTS:
+            raise Refused(f"the blob {digest[:19]} redirects a second time - one redirect only (Q-C4-3)")
+    if st != 200:
+        raise Refused(f"the blob {digest[:19]} answered {st}")
+    if f"sha256:{sha}" != digest or n != size:
+        dest.unlink(missing_ok=True)
+        raise Refused(f"the blob {digest[:19]} on the disk is not its digest's bytes or its size ({n} != {size})")
+
+
+def oci_job(job: dict, *, send, cwd: Path) -> dict:
+    """A8 C4: one image by the auditor's rules - see the module docstring's OCI part. Returns its summary; never raises
+    for a refusal or a network error. The token never leaves memory; a signed URL's query is never recorded."""
+    out: dict = {"id": f"oci:{job.get('repo')}", "kind": "oci", "ok": False, "error": None, "requests": [], "token": None}
+    try:
+        repo, registry, auth, service = job["repo"], job["registry"], job["auth"], job["service"]
+        if not _REPO.fullmatch(str(repo)):
+            raise Refused(f"{repo!r} is not a repository name")
+        cdn = frozenset(job.get("cdn_hosts") or ())
+        if set(job.get("hosts") or ()) != {registry, auth, *cdn}:
+            raise Refused("the job's hosts are not exactly its registry, its token service and its declared CDN hosts")
+        plat = job.get("platform") or {"os": "linux", "architecture": "amd64"}
+        meta_max, blob_max = int(job["max_meta_bytes"]), int(job["max_blob_bytes"])
+
+        def call(method, host, path, headers, *, max_bytes=meta_max, save_to=None):
+            st, h, body, sha, n = send(method, host, path, dict(headers), max_bytes=max_bytes, save_to=save_to)
+            out["requests"].append({"method": method, "host": host, "status": st,
+                                    "path": path.split("?", 1)[0] if host in cdn else path})
+            if st == 429:
+                out["rate_limited"] = True
+                raise Refused("rate-limited: status 429")
+            return st, h, body, sha, n
+
+        scope = f"repository:{repo}:pull"
+        st, _, body, _, _ = call("GET", auth, f"/token?service={urllib.parse.quote(service)}&scope={urllib.parse.quote(scope)}", {})
+        if st != 200:
+            raise Refused(f"the token service answered {st}")
+        tok = json.loads(body)
+        token = tok.get("token") or tok.get("access_token")
+        if not isinstance(token, str) or not token:
+            raise Refused("the token service gave no token")
+        out["token"] = {"value": "<redacted>", "scope": scope, "expires_in": tok.get("expires_in")}
+        authz = {"Authorization": f"Bearer {token}"}
+        tags: list = []
+        path, pages = f"/v2/{repo}/tags/list?n=1000", 0
+        while path:
+            pages += 1
+            if pages > MAX_TAG_PAGES:
+                raise Refused(f"more than {MAX_TAG_PAGES} pages of tags")
+            st, h, body, _, _ = call("GET", registry, path, authz)
+            if st != 200:
+                raise Refused(f"the tags list answered {st}")
+            tags += json.loads(body).get("tags") or []
+            path = _next_link(h.get("link"), registry, repo)
+        out["tags_seen"], out["tag_pages"] = len(tags), pages
+        pick = release_tags(tags)
+        if pick is None:
+            raise Refused("no tag is a release ^v?X.Y.Z$")
+        key, variants = pick
+        accept = {"Accept": ", ".join(OCI_INDEX + OCI_MANIFEST)}
+        got: dict = {}
+        for t in variants:
+            st, h, body, _, _ = call("GET", registry, f"/v2/{repo}/manifests/{t}", {**authz, **accept})
+            if st != 200:
+                raise Refused(f"the manifest of {t} answered {st}")
+            d = "sha256:" + hashlib.sha256(body).hexdigest()
+            if h.get("docker-content-digest") and h["docker-content-digest"] != d:
+                raise Refused(f"the registry's digest of {t} is not its bytes' digest")
+            got[t] = (d, body, h.get("content-type"))
+        if len({d for d, _b, _c in got.values()}) != 1:
+            raise Refused(f"the tags {variants} of one version resolve to different indexes "
+                          f"{ {t: v[0][:19] for t, v in got.items()} } - refused (Q-C4-1)")
+        index_digest, index_body, ctype = got[variants[0]]
+        index = json.loads(index_body)
+        if (index.get("mediaType") or ctype) not in OCI_INDEX:
+            raise Refused(f"{variants[0]} names no image index ({index.get('mediaType') or ctype}) - attempt 2 is Q-A8-4's")
+        cands = [m for m in index.get("manifests") or []
+                 if (m.get("platform") or {}).get("os") == plat["os"]
+                 and (m.get("platform") or {}).get("architecture") == plat["architecture"]
+                 and not (m.get("platform") or {}).get("variant")]
+        if len(cands) != 1:
+            raise Refused(f"the index of {variants[0]} holds {len(cands)} {plat['os']}/{plat['architecture']} manifests, "
+                          f"not one - attempt 2 is Q-A8-4's (the newest installable release), never picked by hand")
+        mdig = cands[0].get("digest")
+        if not _DIGEST.fullmatch(str(mdig)):
+            raise Refused("the platform manifest's digest is not sha256:<64 hex>")
+        st, h, mbody, _, _ = call("GET", registry, f"/v2/{repo}/manifests/{mdig}", {**authz, "Accept": ", ".join(OCI_MANIFEST)})
+        if st != 200 or "sha256:" + hashlib.sha256(mbody).hexdigest() != mdig:
+            raise Refused("the platform manifest is not its digest's bytes")
+        man = json.loads(mbody)
+        mtype = man.get("mediaType") or h.get("content-type")
+        if mtype not in OCI_MANIFEST:
+            raise Refused(f"the platform manifest is a {mtype}, not an image manifest")
+        oci = cwd / "oci"
+        blobs = oci / "blobs" / "sha256"
+        blobs.mkdir(parents=True, exist_ok=True)
+        (blobs / mdig.split(":", 1)[1]).write_bytes(mbody)
+        cfg, layers = man["config"], list(man["layers"])
+        for b in [cfg, *layers]:
+            _blob(call, registry=registry, repo=repo, digest=b.get("digest"), size=b.get("size"), authz=authz, cdn=cdn,
+                  dest=blobs / str(b.get("digest")).split(":", 1)[-1], blob_max=blob_max, out=out)
+        st, _h, lbody, _, _ = call("GET", registry, f"/v2/{repo}/manifests/latest", {**authz, **accept})
+        out.update(ok=True, repo=repo, version=".".join(str(x) for x in key), tag=variants[0], tag_variants=variants,
+                   index_digest=index_digest, manifest_digest=mdig, manifest_media_type=mtype,
+                   manifest_bytes=len(mbody), config={"digest": cfg["digest"], "size": cfg["size"]},
+                   layers=[{"digest": x["digest"], "size": x["size"], "mediaType": x.get("mediaType")} for x in layers],
+                   latest_digest=("sha256:" + hashlib.sha256(lbody).hexdigest()) if st == 200 else None)
+        return out
+    except (Refused, OSError, ssl.SSLError, http.client.HTTPException, ValueError, KeyError, TypeError) as e:
+        out["error"] = f"{type(e).__name__}: {str(e)[:300]}"
+        return out
+
+
 def main() -> int:
     job = json.loads(sys.stdin.readline() or "{}")
     cwd = Path.cwd()
     try:
         port = catcher_port()
-        results = run_job(job, cwd=cwd, port=port)
+        if job.get("kind") == "oci":                     # A8 C4: one image, by the auditor's Q-C4-1..3
+            results = [oci_job(job, send=tunnel_send(port), cwd=cwd)]
+        else:
+            results = run_job(job, cwd=cwd, port=port)
     except Refused as e:
         results = [{"id": None, "ok": False, "error": f"Refused: {e}"}]
     data = json.dumps(results, sort_keys=True).encode("utf-8")
