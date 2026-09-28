@@ -373,6 +373,30 @@ try:
     check("WC-cap: the smoke's wall ceiling is Q26's 6 h; with one unit ceiling (scheduler.DEBUG_CEILING_S) the worst "
           "case is 12 h", RV.SMOKE_WALL_CAP_H == 6.0 and RV.SMOKE_WALL_CAP_H + SCH.DEBUG_CEILING_S / 3600 == 12.0)
 
+    print("\n- part 2b's seams: what only main() names -")
+    import ast  # noqa: E402
+    SRC = (ROOT / "research" / "v3" / "run_v3.py").read_text(encoding="utf-8")
+    TREE = ast.parse(SRC)
+    fns = {n.name: n for n in TREE.body if isinstance(n, ast.FunctionDef)}
+
+    outside_main = [n for n in TREE.body if not (isinstance(n, ast.FunctionDef) and n.name == "main")]
+    loop_outside = [ast.unparse(x)[:60] for n in outside_main for x in ast.walk(n)
+                    if isinstance(x, ast.Constant) and isinstance(x.value, str) and x.value in (".loop", "campaign-v3-log")]
+    env_outside = [ast.unparse(x)[:60] for n in outside_main for x in ast.walk(n)
+                   if isinstance(x, ast.Attribute) and ast.unparse(x) == "os.environ"]
+    check("CLI-status-injected, CLI-environ-injected: the STATUS path (.loop/campaign-v3-log) and os.environ are named "
+          "in main() alone - run_smoke takes both from its deps, so a test never reaches the owner's STATUS or env",
+          "main" in fns and loop_outside == [] and env_outside == []
+          and any(isinstance(x, ast.Constant) and x.value == ".loop" for x in ast.walk(fns["main"]))
+          and "os.environ" in ast.unparse(fns["main"]),
+          f"{loop_outside} {env_outside}")
+    reads_key = [ast.unparse(x)[:80] for x in ast.walk(TREE) if isinstance(x, ast.Call)
+                 and (ast.unparse(x.func) in ("open", "read_key") or ast.unparse(x.func).endswith((".read_text",
+                                                                                                  ".read_bytes", ".open")))
+                 and "key_file" in ast.unparse(x)]
+    check("CLI-key-by-path: nothing in run_v3 opens or reads the key file - it is handed to the proxy by path",
+          reads_key == [] and "key_file=cfg.key_file" in ast.unparse(fns["run_smoke"]), str(reads_key))
+
     print("\n- the command line -")
     base = ["stand", "--arms", "bm25-floor", "--runs", "r1", "--config", str(cf)]
     check("CLI-scored-refused: --tag scored waits for A9, refused by name",

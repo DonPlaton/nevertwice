@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""PREREG-V3 TB4.12 A6: research/v3/run_v3.py - the campaign CLI. So far: the smoke's pieces that need no child and
-no model (the run itself, run_smoke, is part 2b).
+"""PREREG-V3 TB4.12 A6: research/v3/run_v3.py - the campaign CLI: the smoke, end to end (the scored path waits for
+A9).
 
 * load(): the modules a smoke may load - score_v3.py and fafr_probe.py never (rev1 §9.4: "--smoke has no scorer");
 * next_smoke_id(): the next "<stand>-smoke-<n>" from the STATUS file's STAND START lines (Q-12-7: order = n);
@@ -23,7 +23,14 @@ no model (the run itself, run_smoke, is part 2b).
   estimate that is not a bound (the reader's context at the bytes per cl100k token measured on the smoke's own text);
   hours are not forecast;
 * WallCapGate, SMOKE_WALL_CAP_H (Q26): past the stand's 6 h wall ceiling no new unit starts;
-* main(): `stand --tag scored` is refused by name until A9; the smoke path is part 2b.
+* run_smoke() (part 2b): the units, the forecast, the preflight, one Canaries object, the proxy, the hooks and the
+  incident gate under the wall ceiling, the scheduler's stand, the gate and then the proxy stopped, the SMOKE_FIELDS
+  lines and <runs>/<stand id>/_smoke/<attempt>/{summary,run}.json with each arm-run's P0h counters; an attempt's
+  directories are named by its preflight line (B-ATTEMPT: an attempt that fails before STAND START leaves the id
+  unspent). SmokeDeps carries everything it reaches outside this module;
+* main(): `stand --tag scored` is refused by name until A9; `stand --stand S4 --smoke` builds the real SmokeDeps (the
+  contract, the witnesses, the pinned tokenizers and templates, the run config's arms, the proxy through the declared
+  hop, .loop/campaign-v3-log/STATUS) and runs the smoke.
 """
 from __future__ import annotations
 
@@ -261,7 +268,7 @@ def preflight(c: Any, L: Any, arms: Mapping[str, ArmRun], *, stand_id: str, conf
     if not rec["ok"]:
         raise CLIError(f"{stand_id}: the preflight refused {sorted(rec['refused'])} - {rec['refused']} "
                        f"(recorded in {'/'.join(PREFLIGHT_LOG)} and {one.name}; no STAND START)")
-    return rec
+    return {**rec, "position": pos}                          # the attempt's line in the chain: its directories' name
 
 
 # ── the smoke's forecast (Q-A6-2, R-S4-COST): an upper bound, not pilot medians ────────────────────────────────
@@ -394,6 +401,196 @@ class WallCapGate:
         return getattr(self.inner, name)
 
 
+# ── part 2b: the smoke run ─────────────────────────────────────────────────────────────────────────────────────
+
+def cl100k_max_token_bytes(bpe_file: str | os.PathLike) -> int:
+    """The longest token of the pinned cl100k vocabulary in bytes - the bound's B (FORECAST_FORMULA)."""
+    import base64  # noqa: PLC0415
+    return max(len(base64.b64decode(line.split()[0])) for line in Path(bpe_file).read_bytes().splitlines()
+               if line.strip())
+
+
+@dataclass
+class SmokeDeps:
+    """Everything run_smoke reaches outside this module - main() builds the real ones; a test hands in its own (a tmp
+    contract, witnesses over a tmp tree, an in-process proxy, fake arms). ``L`` is the ONE launch module instance every
+    part is given (launch's fresh-directory record is per instance, the planner's O3)."""
+    contract: Any
+    L: Any
+    native: Any
+    fs: Any
+    clock: Any
+    ollama_ctl: Any
+    monotonic: Callable[[], float]
+    environ: Mapping[str, str]
+    status_path: Path
+    lme_records: Callable[[], Iterable[Mapping[str, Any]]]
+    cl100k: tuple                                  # (count, cut) - tokens.cl100k_pair over the pinned file
+    cl100k_source: str                             # its pin's sha256, for the estimate's record
+    max_token_bytes: int
+    truncate: Callable[[str], Any] | None          # §5.1's bge-m3 cut for the item arms
+    templates: tuple                               # (S4, S4-cat5)
+    locomo_question: Callable[..., str]
+    decl: Callable[..., dict]                      # run_v3_plan.python_decl
+    make_launcher: Callable[..., Any]              # (arm, ArmRun, *, stand_id, proxy, unit_block, unit_chars) -> launcher
+    start_proxy: Callable[..., Any]                # run_v3_proxy.start's signature
+    stop_proxy: Callable[[Any], Mapping[str, Any]]
+    post: Callable[..., tuple]
+    proxy_route: Mapping[str, Any]                 # {"via_port": n} (the declared hop) or a test's {"test_upstream": ...}
+    now_utc: Callable[[], str]
+    lists_dir: Path | None = None
+    s1_sha256: str = S1_IDS_SHA256
+    out: Callable[[str], None] = print
+    err: Callable[[str], None] = field(default=lambda s: sys.stderr.write(s + "\n"))
+
+
+def run_smoke(cfg: RunConfig, *, stand: str, arm_names: Sequence[str], runs: Sequence[str], deps: SmokeDeps) -> int:
+    """One smoke stand end to end (rev1 §9.4, Q-12-7): the units, the forecast, the preflight, one Canaries object for
+    the homes, the scheduler and the proxy, the proxy, the hooks and the incident gate under the stand's wall ceiling,
+    the scheduler's stand, then the gate and the proxy stopped (in that order: the gate's last poll may probe), the
+    summary printed as SMOKE_FIELDS lines and written under <runs>/<stand id>/_smoke/ (summary.json, and run.json with
+    each arm-run's P0h counters and every problem). 0 only when the stand completed, no failure counter
+    (run_v3_smoke.iter_problems) and no P0h counter is above 0, the proxy stopped by itself and STATUS self-checks
+    clean; every problem goes to stderr by name."""
+    c, L = deps.contract, deps.L
+    if stand not in SMOKE_STANDS:
+        raise CLIError(f"a smoke of {stand} is not possible yet - only {SMOKE_STANDS} (templates.PENDING, §5.6)")
+    unknown = sorted(set(arm_names) - set(cfg.arms))
+    if unknown or not arm_names:
+        raise CLIError(f"arms {unknown or list(arm_names)} are not in the run config's arms {sorted(cfg.arms)}")
+    arms = {a: cfg.arms[a] for a in arm_names}
+    SC, PL, P = load("scheduler.py", smoke=True), load("run_v3_plan.py", smoke=True), load("run_v3_proxy.py", smoke=True)
+    H, G, IN = load("run_v3_hooks.py", smoke=True), load("run_v3_gate.py", smoke=True), load("incidents.py", smoke=True)
+    SL, AC, SM = load("status_log.py", smoke=True), load("accounting.py", smoke=True), load("run_v3_smoke.py", smoke=True)
+    TP, PT = load("templates.py", smoke=True), load("points.py", smoke=True)
+    PL.check_ids(runs, ())
+    stand_id, n = next_smoke_id(deps.status_path, stand)
+
+    # the units, their tokens and questions (part 1)
+    order = s1_order(deps.lists_dir, expected_sha256=deps.s1_sha256)
+    su = s4_smoke_units(deps.lme_records(), order, stand_id=stand_id)
+    units = su["units"]
+    count, cut = deps.cl100k
+    ut = unit_tokens(units, count)
+    t4, t4c5 = deps.templates
+    questions = questions_for(units, template=t4, template_abstain=t4c5, locomo_question=deps.locomo_question)
+
+    # the forecast (Q-A6-2, Q-A6-3) and the preflight (Q-A6-1): before STAND START and before any spawn
+    session_texts = {u.unit_id: [PL.session_text(s) for s in u.sessions] for u in units}
+    measured = bytes_per_cl100k_token([t for v in session_texts.values() for t in v], count)
+    measured["source"] = (f"cl100k {deps.cl100k_source[:12]} over the {sum(len(v) for v in session_texts.values())} "
+                          f"session texts of {stand_id}'s {len(units)} units, before the run")
+    prompts = {k: TP.render(t, {"context": "", "question": q}) for k, (t, q) in questions.items()}
+    fc = forecast({a: ar.llm for a, ar in arms.items()}, session_texts, prompts, runs=len(runs),
+                  max_token_bytes=deps.max_token_bytes, measured=measured)
+    pf = preflight(c, L, arms, stand_id=stand_id, config_sha256=cfg.sha256, decl=deps.decl, now=deps.now_utc,
+                   forecast=fc)
+    # an attempt that fails before STAND START leaves the smoke id unspent (Q-A6-1): the next attempt takes the same
+    # id, so the attempt's own directories are named by its preflight line - never "not fresh"
+    attempt = f"attempt-{pf['position']:05d}"
+
+    # the boundary: one Canaries object (the auditor's condition), the witnesses, the proxy
+    env = dict(deps.environ)
+    wiring = boundary_canaries(L, c, env)
+    W = L.Witnesses(c, native=deps.native, fs=deps.fs, canaries=wiring["canaries"])
+    smoke_dir = Path(c.runs_root) / stand_id / "_smoke" / attempt
+    pcfg = P.build_config({a: {"llm": ar.llm, "llm_transport": ar.llm_transport,
+                               "embeds_via_ollama": ar.embeds_via_ollama, "reader": True} for a, ar in arms.items()},
+                          run_dir=Path(c.runs_root) / stand_id / "_proxy" / attempt, **dict(deps.proxy_route))
+    secrets = P.build_secrets(list(arms), roles=("scheduler",), canaries=wiring["proxy"])
+    h = deps.start_proxy(c, python=cfg.proxy_python, key_file=cfg.key_file, config=pcfg, secrets=secrets,
+                         unit=L.make_unit_dirs(c, stand_id, "_harness", "proxy", attempt), parent_env=env,
+                         witnesses=W)
+    problems: list[str] = []
+    gd = hooks = answer = None
+    res = None
+    try:
+        status = SL.StatusLog(Path(deps.status_path))
+        hooks = H.Hooks(repo=c.repo_root, git=cfg.git, proxy=h, projected_cost=fc["usd_total"], currency="USD")
+        sched = SC.Scheduler(c, h.control, status, L, deps.clock, deps.ollama_ctl, tag="smoke", witnesses=W,
+                             parent_env=env, catcher_url=P.catcher_url(h), hooks=hooks,
+                             canaries=wiring["scheduler"]["canaries"],
+                             home_canaries=wiring["scheduler"]["home_canaries"])
+        blocks = PL.blocks_for(stand_id, [u.unit_id for u in units], block_plan=SC.BlockPlan)
+        unit_block = {u: bp.block for bp in blocks for u in bp.units}
+        launchers = {a: deps.make_launcher(a, ar, stand_id=stand_id, proxy=h, unit_block=unit_block,
+                                           unit_chars={u.unit_id: u.chars for u in units}) for a, ar in arms.items()}
+        answer = PL.Answerer(stand_id, questions=questions,
+                             reader=lambda arm, run, unit: (h.ports["arms"][arm]["reader"],
+                                                            f"/u/{run}.{unit}/v1/chat/completions", h.tokens[arm]),
+                             post=deps.post, count=count, cut=cut, answers_root=c.runs_root,
+                             reaskable=SC.ReaskableError)
+        sp, _pst = PL.stand_plan(stand_id, units, launchers, standplan=SC.StandPlan, read_req=SC.ReadReq, runs=runs,
+                                 campaign_seed=cfg.campaign_seed, unit_tokens=ut, medians={}, answer=answer,
+                                 embed_tag=cfg.embed_tag, dated=True, points=lambda a: ("B",), k_at=PT.K_AT,
+                                 smaps=su["smaps"], truncate=deps.truncate, bodies_dir=h.run_dir)
+        hooks.bind(sched, sp)
+        model = hooks.model_probe()                    # the gate's expected model (the planner's O1 (a): one 1-token call)
+        smoke_dir.mkdir(parents=True, exist_ok=True)
+        gd = G.GateDriver(IN.IncidentGate(), calls_path=h.run_dir / "calls.jsonl", status=status,
+                          send_probe=probe(deps.post, h.ports["scheduler"], h.tokens["scheduler"]),
+                          id_prefix=f"{stand_id}-inc", expected_models=[model],
+                          record=lambda rec: L._append_jsonl(smoke_dir / "incidents.jsonl", rec))
+        hooks.gate = WallCapGate(gd, deadline=deps.monotonic() + SMOKE_WALL_CAP_H * 3600, monotonic=deps.monotonic,
+                                 cap_h=SMOKE_WALL_CAP_H)
+        gd.start()
+        res = sched.run_stand(sp, blocks, judges=(), order=n)
+    except Exception as e:  # noqa: BLE001 - the stand's failure is named; the gate and the proxy still stop below
+        problems.append(f"the stand did not complete: {type(e).__name__}: {e}")
+        res = getattr(e, "result", None) if res is None else res
+    finally:
+        if gd is not None:
+            gd.stop()
+            problems += [f"gate: {p}" for p in gd.problems]
+        pstop = dict(deps.stop_proxy(h))
+    if pstop.get("killed") or pstop.get("rc") not in (0,):
+        problems.append(f"the proxy did not stop by itself: {pstop}")
+    smoke_dir.mkdir(parents=True, exist_ok=True)
+    record = {"stand": stand_id, "order": n, "attempt": attempt, "arms": sorted(arms), "runs": list(runs), "config_sha256": cfg.sha256,
+              "preflight_forecast_usd": fc["usd_total"], "preflight_ok": pf["ok"], "proxy_stop": pstop,
+              "wall_cap_h": SMOKE_WALL_CAP_H, "gate": type(getattr(hooks, "gate", None)).__name__,
+              "wall_cap_tripped": bool(getattr(getattr(hooks, "gate", None), "tripped", False)),
+              "canary_hashes": dict(wiring["canaries"].hashes())}
+    log = AC.load_proxy(h.run_dir)
+    boundary = {f"{a}/{r}": AC.proxy_boundary_inputs(log.calls, log.catcher, arm=a, run=r) for a in arms for r in runs}
+    record["boundary"] = boundary
+    for k, b in boundary.items():
+        hit = {f: b[f] for f in ("canary_hits", "owner_marker_hits") if b.get(f)}
+        if hit:
+            problems.append(f"P0h: {k} {hit} - a planted canary or an owner marker reached the proxy")
+    if res is not None and answer is not None and "blocks" in res:
+        try:
+            summ = SM.summarize(res, log, stand=stand_id, key_question=answer.key_question,
+                                item_texts=su["item_texts"], run_dir=h.run_dir,
+                                no_writer=[a for a, ar in arms.items() if ar.llm is None])
+            for line in SM.render(summ).splitlines():
+                deps.out(line)
+            SM.write(summ, smoke_dir / "summary.json")
+            problems += [f"smoke: {p}" for p in SM.iter_problems(summ)]     # its failures by name (the exit code's)
+        except Exception as e:  # noqa: BLE001 - named; the record below still says what the stand did
+            problems.append(f"no smoke summary: {type(e).__name__}: {e}")
+    problems += [f"STATUS: {p}" for p in SL.self_check(Path(deps.status_path))]
+    record["problems"] = problems
+    with open(smoke_dir / "run.json", "xb") as f:
+        f.write(json.dumps(record, ensure_ascii=False, indent=1, sort_keys=True).encode("utf-8"))
+    for p in problems:
+        deps.err(f"problem: {p}")
+    return 0 if not problems else 1
+
+
+def plan_launcher_factory(cfg: RunConfig, c: Any) -> Callable[..., Any]:
+    """main()'s make_launcher: run_v3_plan.PlanLauncher per arm, one CodeStager for the stand."""
+    PL, SC = load("run_v3_plan.py", smoke=True), load("scheduler.py", smoke=True)
+    stager = PL.CodeStager(c.runs_root)
+
+    def make(arm: str, ar: ArmRun, *, stand_id: str, proxy: Any, unit_block: Mapping[str, str],
+             unit_chars: Mapping[str, int]) -> Any:
+        return PL.PlanLauncher(arm, stand=stand_id, python=ar.python, proxy=proxy, stager=stager,
+                               unit_block=unit_block, embed_tag=cfg.embed_tag, dated=True, unit_chars=unit_chars,
+                               ollama_url=cfg.ollama_url, extra=ar.extra).launcher(SC.ChildArmLauncher)
+    return make
+
+
 # ── the command line ───────────────────────────────────────────────────────────────────────────────────────────
 
 def parser() -> argparse.ArgumentParser:
@@ -416,7 +613,33 @@ def main(argv: Sequence[str] | None = None) -> int:
         raise CLIError("--tag scored waits for A9 (the judges, the change log, the assembly) - refused")
     if args.stand not in SMOKE_STANDS:
         raise CLIError(f"a smoke of {args.stand} is not possible yet - only {SMOKE_STANDS} (templates.PENDING, §5.6)")
-    raise CLIError("the smoke run is part 2 of A6 - not in this commit")
+    import datetime as dt  # noqa: PLC0415
+    import time  # noqa: PLC0415
+    L, SC, PL = load("launch.py", smoke=True), load("scheduler.py", smoke=True), load("run_v3_plan.py", smoke=True)
+    P, LD, CP = load("run_v3_proxy.py", smoke=True), load("loaders.py", smoke=True), load("corpus_pin_v3.py", smoke=True)
+    TK, TP = load("tokens.py", smoke=True), load("templates.py", smoke=True)
+    c = L.Contract.default()
+    cfg = load_run_config(args.config, secrets_dir=c.secrets_dir)
+    pins, hub = Path(c.runs_root) / "_pins", Path(c.hf_home or Path(c.polygon_root) / "hf_cache") / "hub"
+    bpe = CP.location("tiktoken_cl100k_base", hf_hub=hub, pins_root=pins)
+    bpe_sha = CP.PINS["tiktoken_cl100k_base"]["sha256"]
+    bge = CP.location("bge_m3_tokenizer_json", hf_hub=hub, pins_root=pins)
+    deps = SmokeDeps(
+        contract=c, L=L, native=L.NativeEgressWitness(), fs=L.FsWitness(L.watched_set(c)), clock=SC.SystemClock(),
+        ollama_ctl=load("sched_ctl.py", smoke=True).OllamaCtl(), monotonic=time.monotonic, environ=os.environ,
+        status_path=Path(c.repo_root) / ".loop" / "campaign-v3-log" / "STATUS",       # PREREG-V3 rev1: the STATUS file
+        lme_records=lambda: LD.read_pinned("lme_s_cleaned", hf_hub=hub, pins_root=pins),
+        cl100k=TK.cl100k_pair(bpe, expected_sha256=bpe_sha), cl100k_source=bpe_sha,
+        max_token_bytes=cl100k_max_token_bytes(bpe),
+        truncate=TK.Truncator(TK.bge_m3_spans(bge, expected_sha256=CP.PINS["bge_m3_tokenizer_json"]["sha256"])).cut,
+        templates=(TP.stand_template("S4", pins_root=pins), TP.stand_template("S4-cat5", pins_root=pins)),
+        locomo_question=lambda q, cat: TP.locomo_question(q, cat, pins_root=pins), decl=PL.python_decl,
+        make_launcher=plan_launcher_factory(cfg, c),
+        start_proxy=lambda c_, **kw: P.start(c_, spawn=L.spawn_proxy, **kw), stop_proxy=P.stop, post=P.post,
+        proxy_route={"via_port": L.network_via_port(c)},
+        now_utc=lambda: dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
+    return run_smoke(cfg, stand=args.stand, arm_names=[a for a in args.arms.split(",") if a],
+                     runs=[r for r in args.runs.split(",") if r], deps=deps)
 
 
 if __name__ == "__main__":
