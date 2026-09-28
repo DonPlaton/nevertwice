@@ -67,6 +67,19 @@ def check(name: str, condition: bool, detail: str = "") -> None:
 
 # ── helpers ───────────────────────────────────────────────────────────
 
+def isolation_detail(store) -> str:
+    """R-SBX-LOAD (the auditor): "this process is isolated" went red once under load (the e4ca968 battery) and never
+    alone - what the row saw then: the store, None or not, whether it exists, the guard's mode, the pinned HOME, and
+    how many directories with the store's own mkdtemp prefix the temp dir held at that moment, its own among them or
+    not (a suite's store is _env_guard's nevertwice_test_home_*, not isolate()'s default nevertwice-sandbox-*)."""
+    tmp = Path(tempfile.gettempdir())
+    prefix = Path(store).name[:-8] if store is not None else "nevertwice"    # mkdtemp: prefix + 8 random characters
+    peers = {p.name for p in tmp.glob(f"{prefix}*")}
+    return (f"store={store} is_none={store is None} exists={store is not None and Path(store).exists()} "
+            f"mode={sandbox_guard.mode()} NEVERTWICE_HOME={os.environ.get('NEVERTWICE_HOME')} tempdir={tmp} "
+            f"peers({prefix}*)={len(peers)} own_listed={store is not None and Path(store).name in peers}")
+
+
 def fingerprint(root: Path) -> dict:
     """Every file under `root`, by relative path, with its SHA-256. Byte-level, so a
     rewritten-but-identical file passes and a single changed counter does not."""
@@ -141,7 +154,12 @@ def test_the_policy_lives_in_exactly_one_module() -> None:
 def test_the_assertion_fires_on_each_escape_route() -> None:
     print("\n- the pin is checked, not trusted -")
     store = sandbox_guard.store()
-    check("this process is isolated", store is not None and store.exists())
+    check("this process is isolated", store is not None and store.exists(), isolation_detail(store))
+    detail = isolation_detail(store)
+    check("R-SBX-LOAD: the isolation row's detail names the store, None or not, exists, the mode, and how many "
+          "directories share the store's prefix in the temp dir - its own among them (the glob looks where the store "
+          "is, by its own prefix)", store is not None
+          and all(f in detail for f in ("is_none=False", "exists=True", "mode=sandbox", "own_listed=True")), detail)
     if store is None:
         return
 
@@ -381,7 +399,7 @@ def test_the_baked_path_check_runs_when_there_is_something_to_check() -> None:
     done - runs it. Measured here as the gap it closes, then as the escape it catches."""
     print("\n- the third check has something to check by the time it runs -")
     store = sandbox_guard.store()
-    check("this process is isolated", store is not None)
+    check("this process is isolated", store is not None, isolation_detail(store))
     if store is None:
         return
     real = sandbox_guard._REAL_STORES
