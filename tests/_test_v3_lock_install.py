@@ -80,7 +80,12 @@ REPORT = {"version": "1", "pip_version": "25.2", "install": [
                   "classifier": ["Programming Language :: Python", "License :: OSI Approved :: Apache Software License"]}}]}
 
 print("- the lock from pip's report -")
-lock = LI.lock_from_report(copy.deepcopy(REPORT))
+try:
+    lock = LI.lock_from_report(copy.deepcopy(REPORT))
+except Exception as e:  # noqa: BLE001 - LM27: a refusal here FAILs the row below by name, never crashes the suite
+    lock = [{"name": f"refused: {type(e).__name__}: {e}", "version": "", "filename": "", "sha256": "", "requested": None,
+             "licence": None, "url": ""}, {"name": "", "version": "", "filename": "", "sha256": "", "requested": None,
+                                           "licence": None, "url": ""}]
 check("one entry per distribution, sorted, the name normalised, the index's sha256 (hashes or hash), the wheel, "
       "requested, the licence as METADATA gives it",
       [(e["name"], e["version"], e["filename"], e["sha256"], e["requested"], e["licence"]) for e in lock]
@@ -110,6 +115,9 @@ cases = [
     ("a file over plain http", bad(("install", 0, "download_info", "url"), f"http://files.pythonhosted.org/x/mem0ai-2.2.0-py3-none-any.whl"), "is not https://files.pythonhosted.org"),
     ("a file on another host", bad(("install", 0, "download_info", "url"), "https://evil.example/mem0ai-2.2.0-py3-none-any.whl"), "is not https://files.pythonhosted.org"),
     ("a file with a query", bad(("install", 0, "download_info", "url"), f"{F}/mem0ai-2.2.0-py3-none-any.whl?x=1"), "is not https://files.pythonhosted.org"),
+    ("a file on another port (LM6)", bad(("install", 0, "download_info", "url"), "https://files.pythonhosted.org:8443/packages/mem0ai-2.2.0-py3-none-any.whl"), "is not https://files.pythonhosted.org"),
+    ("a file URL with userinfo (LM7)", bad(("install", 0, "download_info", "url"), "https://user@files.pythonhosted.org/packages/mem0ai-2.2.0-py3-none-any.whl"), "is not https://files.pythonhosted.org"),
+    ("a sha256 with trailing garbage (LM11)", bad(("install", 0, "download_info", "archive_info"), {"hashes": {"sha256": "a" * 64 + "zz"}}), "no sha256"),
     ("an unsafe file name", bad(("install", 0, "download_info", "url"), f"{F}/..%2f..%2fevil.whl"), "unsafe file name"),
     ("an sdist - attempt 2's, named", bad(("install", 1, "download_info", "url"), f"{F}/qdrant_client-1.15.1.tar.gz"), "attempt 2"),
     ("no sha256 from the index", bad(("install", 1, "download_info", "archive_info"), {"hash": "md5=00"}), "no sha256"),
@@ -124,9 +132,20 @@ cases.append(("a name the report gives twice (normalised)", dup, "twice"))
 for label, rep, want in cases:
     got = refusal(lambda rep=rep: LI.lock_from_report(rep))
     check(f"refused by name: {label}", want in got, got)
+SDIST = next(rep for label, rep, _w in cases if label.startswith("an sdist"))
 check("the sdist refusal names the distribution and says attempt 1 takes wheels only",
-      "qdrant_client-1.15.1.tar.gz" in refusal(lambda: LI.lock_from_report(cases[9][1]))
-      and "wheels only" in refusal(lambda: LI.lock_from_report(cases[9][1])))
+      "qdrant_client-1.15.1.tar.gz" in refusal(lambda: LI.lock_from_report(SDIST))
+      and "wheels only" in refusal(lambda: LI.lock_from_report(SDIST)))
+
+rev = copy.deepcopy(REPORT)
+rev["install"].reverse()
+try:
+    lock_rev = LI.lock_from_report(rev)
+except Exception as e:  # noqa: BLE001
+    lock_rev = [f"{type(e).__name__}: {e}"]
+check("LM14: the lock is sorted by name whatever the report's order, and its sha256 does not depend on that order",
+      [e["name"] for e in lock_rev] == ["mem0ai", "qdrant-client"] and LI.lock_sha256(lock_rev) == LI.lock_sha256(lock),
+      str([e.get("name") if isinstance(e, dict) else e for e in lock_rev]))
 
 print("\n- the lock's lines and the window's jobs -")
 lines = LI.lock_lines(lock)
@@ -179,12 +198,40 @@ check("the offline install: the lock's hashes, no dependency of pip's choosing, 
       {"--require-hashes", "--no-deps", "--no-index", "--only-binary=:all:"} <= set(ia)
       and ia[ia.index("--find-links") + 1] == str(wd) and ia[-2:] == ["-r", str(TMP / "lock.txt")]
       and not any("index-url" in a or a.startswith("http") for a in ia), str(ia))
+check("LM26: the offline install runs pip isolated - argv[1] is -I", ia[1] == "-I", str(ia[:3]))
+oe = LI.offline_env(SimpleNamespace(polygon_root=TMP / "polygon")) if hasattr(LI, "offline_env") else {}
+check("LI-2 (the auditor): the offline pip gets the resolver's declared env - no config file (os.devnull skips the global, "
+      "user and site files; --isolated would not), the cache in the polygon, no input - and no index at all",
+      oe == {"PIP_CACHE_DIR": str(TMP / "polygon" / "pip_cache"), "PIP_CONFIG_FILE": os.devnull, "PIP_NO_INPUT": "1"}
+      and {k: v for k, v in rj["env"].items() if k != "PIP_INDEX_URL"} == oe, str(oe))
 code = LI.version_probe(["json"], ["pip"])
-check("the import probe imports the declared modules and prints each requested distribution's version as JSON",
-      code.startswith("import json; ") and "version(d) for d in ['pip']" in code, code)
+import contextlib as _cl  # noqa: E402
+import io as _io  # noqa: E402
+import platform as _pf  # noqa: E402
+_buf = _io.StringIO()
+try:
+    with _cl.redirect_stdout(_buf):
+        exec(compile(LI.version_probe(["json"], ["pip"]), "<probe>", "exec"), {})
+    probed = json.loads(_buf.getvalue().strip().splitlines()[-1])
+except Exception as e:  # noqa: BLE001
+    probed = {"error": f"{type(e).__name__}: {e}"}
+check("the import probe imports the declared modules and prints the venv's own python version and each requested "
+      "distribution's version as JSON", probed.get("python") == _pf.python_version()
+      and isinstance((probed.get("dists") or {}).get("pip"), str), str(probed))
+cv = getattr(LI, "check_versions", None)
+lk2 = [{"name": "mem0ai", "version": "2.2.0"}, {"name": "qdrant-client", "version": "1.15.1"}]
+ok_v = cv({"python": "3.12.10", "dists": {"mem0ai": "2.2.0"}}, lk2, ["mem0ai"], "3.12.10") if cv else ["no check_versions"]
+bad_py = cv({"python": "3.14.4", "dists": {"mem0ai": "2.2.0"}}, lk2, ["mem0ai"], "3.12.10") if cv else []
+bad_d = cv({"python": "3.12.10", "dists": {"mem0ai": "2.1.0"}}, lk2, ["mem0ai"], "3.12.10") if cv else []
+bad_shape = cv(None, lk2, ["mem0ai"], "3.12.10") if cv else []
+check("LI-1 (the auditor): the venv's own python must be the declared base's version, and each requested distribution "
+      "the locked version - each mismatch named; an unreadable probe is a problem, never a pass",
+      ok_v == [] and any("3.14.4" in p and "3.12.10" in p for p in bad_py) and any("mem0ai" in p and "2.1.0" in p for p in bad_d)
+      and bad_shape != [], f"{ok_v} | {bad_py} | {bad_d} | {bad_shape}")
 check("... and takes plain names only", "not a plain name" in refusal(lambda: LI.version_probe(["os; import x"], ["a"])))
-check("the declared venvs: mem0_v3 = mem0ai 2.2.0 (PREREG §2.2), its import and distribution",
-      LI.VENVS.get("mem0_v3") == {"specs": ["mem0ai==2.2.0"], "imports": ["mem0"], "dists": ["mem0ai"]}, str(LI.VENVS))
+check("the declared venvs: mem0_v3 = mem0ai 2.2.0 (PREREG §2.2) on the declared base py-base-312 (LI-1), its import and "
+      "distribution", LI.VENVS.get("mem0_v3") == {"base": "py-base-312", "specs": ["mem0ai==2.2.0"], "imports": ["mem0"],
+                                                  "dists": ["mem0ai"]}, str(LI.VENVS))
 
 print("\n- refusals before any spawn -")
 C = L.Contract(polygon_root=TMP / "polygon", runs_root=TMP / "polygon" / "runs" / "v3", repo_root=ROOT,
@@ -194,6 +241,35 @@ spawned: list = []
 Lspy = SimpleNamespace(**{k: getattr(L, k) for k in dir(L) if not k.startswith("__")})
 Lspy.spawn = lambda *a, **k: spawned.append(a) or (_ for _ in ()).throw(AssertionError("a spawn"))
 kw = dict(python=TMP / "py312" / "python.exe", via_port=1, parent_env={}, need_bytes=0, volume=TMP)
+(TMP / "polygon" / "py312").mkdir(parents=True, exist_ok=True)
+(TMP / "polygon" / "py312" / "python.exe").write_bytes(b"MZ")
+(TMP / "elsewhere").mkdir(exist_ok=True)
+(TMP / "elsewhere" / "python.exe").write_bytes(b"MZ")
+r0 = refusal(lambda: LI.run_lock_install(C, Lspy, Fake, venv=TMP / "polygon" / "fresh0_v3", venv_name="mem0_v3", run="l0",
+                                         **{**kw, "python": TMP / "elsewhere" / "python.exe"}))
+(TMP / "polygon" / "fresh1_v3").mkdir(parents=True)
+r0b = refusal(lambda: LI.run_lock_install(C, Lspy, Fake, venv=TMP / "polygon" / "fresh1_v3", venv_name="mem0_v3", run="l0",
+                                          **{**kw, "python": TMP / "polygon" / "py312" / "python.exe"}))
+check("LI-1 (the auditor): an interpreter that is not the declared base's (polygon/py312/python.exe for py-base-312) is "
+      "refused by name before any spawn; the base's own passes that check (and meets the next refusal)",
+      "is not the declared base" in r0 and "py-base-312" in r0 and "already exists" in r0b and spawned == [], f"{r0} | {r0b}")
+CJ = L.Contract(polygon_root=TMP / "pj", runs_root=TMP / "pj" / "runs" / "v3", repo_root=ROOT, owner_home=TMP / "owner",
+                secrets_dir=TMP / "secrets", quarantine_root=TMP / "q", conservation_root=TMP / "cv")
+(TMP / "realbase").mkdir()
+(TMP / "realbase" / "python.exe").write_bytes(b"MZ")
+(TMP / "pj").mkdir()
+if os.name == "nt":
+    import _winapi  # noqa: E402
+    _winapi.CreateJunction(str(TMP / "realbase"), str(TMP / "pj" / "py312"))
+else:
+    os.symlink(TMP / "realbase", TMP / "pj" / "py312", target_is_directory=True)
+(TMP / "pj" / "taken_v3").mkdir()
+rj_ = refusal(lambda: LI.run_lock_install(CJ, Lspy, Fake, venv=TMP / "pj" / "taken_v3", venv_name="mem0_v3", run="l0",
+                                          **{**kw, "python": TMP / "realbase" / "python.exe"}))
+os.rmdir(TMP / "pj" / "py312") if os.name == "nt" else (TMP / "pj" / "py312").unlink()
+check("LI-1: the base is compared by realpath - the real path of a base the polygon reaches through a junction passes "
+      "(and meets the next refusal)", "already exists" in rj_ and spawned == [], rj_)
+kw["python"] = TMP / "polygon" / "py312" / "python.exe"
 r1 = refusal(lambda: LI.run_lock_install(C, Lspy, Fake, venv=TMP / "polygon" / "nope", venv_name="nope_v3", run="l1", **kw))
 (TMP / "polygon" / "mem0_v3").mkdir(parents=True)
 r2 = refusal(lambda: LI.run_lock_install(C, Lspy, Fake, venv=TMP / "polygon" / "mem0_v3", venv_name="mem0_v3", run="l1", **kw))

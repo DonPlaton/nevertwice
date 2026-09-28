@@ -974,6 +974,20 @@ check("HOP-2 (the auditor's O-a): Proxy.counters_snapshot() copies every contain
 pc2 = json.loads(call(pports["control"], "/counters", {}, token="ctl-token").partition(b"\r\n\r\n")[2] or b"{}")
 check("HOP-2: /counters answers with that snapshot", pc2.get("mem0", {}).get("upstream_statuses")
       == dict(pp.counters["mem0"].upstream_statuses), str(pc2.get("mem0", {}).get("upstream_statuses")))
+got_snap: list = []
+with pp._lock:                                         # HOP-5: the snapshot waits for the lock the writers hold
+    th = threading.Thread(target=lambda: got_snap.append(pp.counters_snapshot()), daemon=True)
+    th.start()
+    th.join(0.2)
+    waited = th.is_alive() and not got_snap
+th.join(5)
+check("HOP-5 (the auditor): counters_snapshot takes the proxy's lock - it waits while the lock is held, and returns once "
+      "it is released", waited and len(got_snap) == 1, f"waited={waited} got={len(got_snap)}")
+SENTINEL = {"sentinel-arm": {"requests": 424242}}
+pp.counters_snapshot = lambda: SENTINEL
+pc3 = json.loads(call(pports["control"], "/counters", {}, token="ctl-token").partition(b"\r\n\r\n")[2] or b"{}")
+del pp.counters_snapshot
+check("HOP-6 (the auditor): /counters answers exactly what counters_snapshot() returns", pc3 == SENTINEL, str(pc3)[:200])
 pp.stop()
 pu.close()
 

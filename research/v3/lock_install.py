@@ -4,8 +4,10 @@
 install_v3_data's one-level rule refuses extras and markers, so it cannot install mem0ai or cognee; here pip's own
 resolver decides the tree, and nothing else about the install is left to it:
 
-1. the venv is created fresh from the declared base (py312 for §2.2's product venvs) - an offline contract spawn under
-   its own boundary check; pip's version and its certifi bundle are recorded (install_v3_data.pip_facts);
+1. the venv is created fresh from its DECLARED base (VENVS[venv]["base"], a fetch_py_base window - py-base-312 for §2.2's
+   product venvs): the interpreter given must be that base's polygon/<dest>/python.exe by realpath, or nothing starts
+   (the auditor's LI-1) - an offline contract spawn under its own boundary check; pip's version and its certifi bundle
+   are recorded (install_v3_data.pip_facts);
 2. ONE declared window ``a8-pypi-<venv>``, hosts exactly pypi.org and files.pythonhosted.org, through the catcher:
    a) pip, as a child: ``install --dry-run --ignore-installed --only-binary=:all: --report report.json <specs>`` -
       attempt 1 takes wheels only;
@@ -22,8 +24,11 @@ resolver decides the tree, and nothing else about the install is left to it:
 4. the installed set (install_v3_data.installed_set over every locked distribution) and the site checks (its
    site_problems: nothing on the site that no locked distribution installed, no new .pth or *customize*, every
    hashed RECORD row matching the disk) come BEFORE any interpreter starts in the venv; then, isolated and without
-   bytecode, the declared imports and importlib.metadata's version of every requested distribution, which must be the
-   locked one.
+   bytecode, the declared imports, the venv's own python version (it must be the base's declared version, LI-1) and
+   importlib.metadata's version of every requested distribution, which must be the locked one (check_versions).
+Both pip children get the same declared environment (offline_env: PIP_CONFIG_FILE = os.devnull - pip then reads no
+global, user or site file, which --isolated would not skip - the cache in the polygon, no input; the resolver adds the
+index URL) - the auditor's LI-2.
 
 The record (<runs>/_install/a8-pypi-<venv>/<run>/install_record.json): the specs, pip's facts, the lock and its
 sha256, each distribution's licence as its METADATA gives it, the wheels' verification, pip's output tails, every
@@ -56,7 +61,7 @@ _FILE = re.compile(r"[A-Za-z0-9._+-]{1,200}")
 _HEX64 = re.compile(r"[0-9a-f]{64}")
 #: The product venvs of §2.2 this module installs - each its pinned specs, the imports that must work, and the
 #: distributions whose installed version must be the locked one. A venv is added here, with its pin, before its window.
-VENVS = {"mem0_v3": {"specs": ["mem0ai==2.2.0"], "imports": ["mem0"], "dists": ["mem0ai"]}}
+VENVS = {"mem0_v3": {"base": "py-base-312", "specs": ["mem0ai==2.2.0"], "imports": ["mem0"], "dists": ["mem0ai"]}}
 
 
 class LockRefused(RuntimeError):
@@ -73,6 +78,26 @@ def _iv():
     return mod
 
 
+def _fpb():
+    mod = sys.modules.get("v3_fetch_py_base_for_lock")
+    if mod is None:
+        spec = importlib.util.spec_from_file_location("v3_fetch_py_base_for_lock", HERE / "fetch_py_base.py")
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules["v3_fetch_py_base_for_lock"] = mod
+        spec.loader.exec_module(mod)
+    return mod
+
+
+def base_python(c, base: str, bases: dict) -> Path:
+    """The declared base's interpreter: polygon/<its dest>/python.exe (fetch_py_base.BASES)."""
+    return c.polygon_root / bases[base]["dest"] / "python.exe"
+
+
+def offline_env(c) -> dict:
+    """The declared environment of every pip child (LI-2): no config file at all, the cache in the polygon, no input."""
+    return {"PIP_CACHE_DIR": os.fspath(c.polygon_root / "pip_cache"), "PIP_CONFIG_FILE": os.devnull, "PIP_NO_INPUT": "1"}
+
+
 def norm_name(name: str) -> str:
     return re.sub(r"[-_.]+", "-", str(name)).lower()
 
@@ -85,7 +110,7 @@ def resolve_job(venv_py: Path, pip_args: list[str], specs: list[str], *, index_h
             "argv": ["-I", "-B", "-m", "pip", "install", *pip_args, "--dry-run", "--ignore-installed",
                      "--only-binary=:all:", "--report", REPORT, "--no-input", "--disable-pip-version-check", *specs],
             "env": {"PIP_CACHE_DIR": os.fspath(pip_cache), "PIP_CONFIG_FILE": os.devnull,
-                    "PIP_INDEX_URL": f"https://{index_host}/simple", "PIP_NO_INPUT": "1"}}
+                    "PIP_INDEX_URL": f"https://{index_host}/simple", "PIP_NO_INPUT": "1"}}   # offline_env + the index
 
 
 def _licence(md: dict) -> str | None:
@@ -185,13 +210,30 @@ def install_argv(venv_py: Path, pip_args: list[str], lock_path: Path, wheel_dir:
 
 
 def version_probe(imports: list[str], dists: list[str]) -> str:
-    """The import check's code: the declared imports, then each requested distribution's installed version as JSON."""
+    """The import check's code: the declared imports, then as JSON the venv's own python version and each requested
+    distribution's installed version: {"python": x.y.z, "dists": {name: version}}."""
     for x in [*imports, *dists]:
         if not re.fullmatch(r"[A-Za-z0-9_.-]{1,100}", x):
             raise LockRefused(f"an import or distribution name {x!r} is not a plain name")
     imp = "".join(f"import {m}; " for m in imports)
-    return (f"{imp}import json; from importlib.metadata import version; "
-            f"print(json.dumps({{d: version(d) for d in {sorted(dists)!r}}}, sort_keys=True))")
+    return (f"{imp}import json, platform; from importlib.metadata import version; "
+            f"print(json.dumps({{\"python\": platform.python_version(), "
+            f"\"dists\": {{d: version(d) for d in {sorted(dists)!r}}}}}, sort_keys=True))")
+
+
+def check_versions(got, lock: list[dict], dists: list[str], base_version: str) -> list[str]:
+    """The probe's answer against the declarations: the venv's python is the base's version (LI-1), each requested
+    distribution the locked version; an answer of another shape is a problem, never a pass."""
+    if not (isinstance(got, dict) and isinstance(got.get("dists"), dict)):
+        return [f"the import probe's answer is not {{python, dists}}: {str(got)[:120]}"]
+    problems = []
+    if got.get("python") != base_version:
+        problems.append(f"the venv's python is {got.get('python')}, not the declared base's {base_version} (LI-1)")
+    want = {d: next((e["version"] for e in lock if e["name"] == norm_name(d)), None) for d in dists}
+    for d, v in sorted(want.items()):
+        if got["dists"].get(d) != v:
+            problems.append(f"the installed {d} is {got['dists'].get(d)}, not the locked {v}")
+    return problems
 
 
 # ── the whole install ─────────────────────────────────────────────────────────────────────────────────────────
@@ -205,15 +247,23 @@ def _write(base: Path, record: dict) -> dict:
 
 def run_lock_install(c, L, F, *, python: Path, venv: Path, venv_name: str, run: str, via_port: int, parent_env,
                      specs: list[str] | None = None, imports: list[str] | None = None, dists: list[str] | None = None,
-                     native=None, fs=None, child_env_extra: dict | None = None, index_host: str = INDEX_HOST,
-                     files_host: str = FILES_HOST, need_bytes: int = DISK_FLOOR, volume: Path | None = None) -> dict:
+                     base: str | None = None, bases: dict | None = None, native=None, fs=None,
+                     child_env_extra: dict | None = None, index_host: str = INDEX_HOST, files_host: str = FILES_HOST,
+                     need_bytes: int = DISK_FLOOR, volume: Path | None = None) -> dict:
     """The whole install (see the module docstring). ``F`` is research/v3/fetch_a3 (its window mechanism);
-    ``child_env_extra``, the hosts and a lower floor are for tests only."""
+    ``child_env_extra``, the hosts, ``bases`` (a test world's base) and a lower floor are for tests only."""
     IV = _iv()
     declared = VENVS.get(venv_name) or {}
     specs, imports, dists = specs or declared.get("specs"), imports or declared.get("imports"), dists or declared.get("dists")
     if not specs or imports is None or not dists:
         raise LockRefused(f"{venv_name!r} declares no specs, imports and distributions (VENVS)")
+    bases = bases if bases is not None else _fpb().BASES
+    base = base or declared.get("base")
+    if base not in bases:
+        raise LockRefused(f"{venv_name!r} declares no base among {sorted(bases)} (LI-1)")
+    want_py = base_python(c, base, bases)
+    if os.path.normcase(os.path.realpath(python)) != os.path.normcase(os.path.realpath(want_py)):
+        raise LockRefused(f"{python} is not the declared base {base}'s interpreter {want_py} (LI-1) - no venv is made")
     window = WINDOW_PREFIX + venv_name
     if venv.exists():
         raise LockRefused("the venv already exists: an install window creates it fresh")
@@ -221,13 +271,15 @@ def run_lock_install(c, L, F, *, python: Path, venv: Path, venv_name: str, run: 
     ok, free = F.disk_floor_ok(volume, need_bytes)
     if not ok:
         raise LockRefused(f"the free space ({free >> 30} GB) is under the floor ({need_bytes >> 30} GB)")
-    base = c.runs_root / "_install" / window / run
-    if base.exists():
+    base_dir = c.runs_root / "_install" / window / run
+    if base_dir.exists():
         raise LockRefused("this install run label was used before")
-    base.mkdir(parents=True)
+    base_dir.mkdir(parents=True)
     stand = f"_install.{window}"
     record: dict = {"window": window, "run": run, "venv": str(venv), "base_python": str(python), "specs": list(specs),
-                    "imports": list(imports), "dists": list(dists), "attempt": 1, "problems": []}
+                    "base": {"window": base, "version": bases[base]["version"], "python": str(want_py)},
+                    "imports": list(imports), "dists": list(dists), "attempt": 1, "offline_env": offline_env(c),
+                    "problems": []}
     # 1. the venv, offline
     rc, _, err, chk0 = IV._step(c, L, stand=stand, run=run, arm="venv",
                                 argv=[os.fspath(python), "-I", "-B", "-m", "venv", os.fspath(venv)],
@@ -246,7 +298,7 @@ def run_lock_install(c, L, F, *, python: Path, venv: Path, venv_name: str, run: 
         site0 = next((s for s in venv.rglob("site-packages") if s.is_dir()), None)
         record["venv_top_level"] = IV.top_level(site0) if site0 is not None else []
     if record["problems"]:
-        return _write(base, record)
+        return _write(base_dir, record)
     venv_py = IV.venv_python(venv)
     lock: list[dict] = []
     refused: list[str] = []
@@ -284,19 +336,19 @@ def run_lock_install(c, L, F, *, python: Path, venv: Path, venv_name: str, run: 
     record["lock_sha256"] = lock_sha256(lock) if lock else None
     record["licences"] = {e["name"]: e["licence"] for e in lock}
     if record["problems"]:
-        return _write(base, record)
+        return _write(base_dir, record)
     # 3. the wheels from the disk, then pip offline
     wheel_dir = Path(rec["jobs"][1]["unit"]) / "wheels"
     record["wheel_problems"] = verify_wheels(wheel_dir, lock)
     record["problems"] += record["wheel_problems"]
     if record["problems"]:
-        return _write(base, record)
-    lock_path = base / "lock.txt"
+        return _write(base_dir, record)
+    lock_path = base_dir / "lock.txt"
     lock_path.write_bytes(("\n".join(record["lock_lines"]) + "\n").encode("utf-8"))
     record["install_argv"] = install_argv(venv_py, record["pip"]["args"], lock_path, wheel_dir)
     rc, out, err, chk1 = IV._step(c, L, stand=stand, run=run, arm="pip", argv=record["install_argv"],
                                   path_dirs=[venv_py.parent], parent_env=parent_env, native=native, fs=fs,
-                                  check_id=f"install-{window}-{run}-pip")
+                                  check_id=f"install-{window}-{run}-pip", declared=offline_env(c))
     record["install_rc"], record["install_check"] = rc, IV.check_summary(chk1)
     record["install_stdout_tail"] = out.decode("utf-8", "replace")[-600:]
     record["problems"] += IV.check_problems("install", record["install_check"])
@@ -304,12 +356,12 @@ def run_lock_install(c, L, F, *, python: Path, venv: Path, venv_name: str, run: 
         record["problems"].append(f"pip's offline install failed (exit {rc}): "
                                   + err.decode("utf-8", "replace")[-240:].replace("\n", " "))
     if record["problems"]:
-        return _write(base, record)
+        return _write(base_dir, record)
     # 4. the installed set and the site, before any interpreter starts in the venv; then the imports
     site = next((p for p in venv.rglob("site-packages") if p.is_dir()), None)
     if site is None:
         record["problems"].append("the venv has no site-packages")
-        return _write(base, record)
+        return _write(base_dir, record)
     names = [e["name"] for e in lock]
     try:
         record["installed_set_sha256"], record["installed_files"] = IV.installed_set(site, names)
@@ -318,7 +370,7 @@ def run_lock_install(c, L, F, *, python: Path, venv: Path, venv_name: str, run: 
     record["problems"] += IV.site_problems(site, names, record["venv_top_level"])
     if record["problems"]:
         record["import_skipped"] = "the installed site has problems; no interpreter was started in the venv"
-        return _write(base, record)
+        return _write(base_dir, record)
     rc, out, _, chk2 = IV._step(c, L, stand=stand, run=run, arm="check",
                                 argv=[os.fspath(venv_py), "-I", "-B", "-c", version_probe(imports, dists)],
                                 path_dirs=[venv_py.parent], parent_env=parent_env, native=native, fs=fs,
@@ -327,16 +379,15 @@ def run_lock_install(c, L, F, *, python: Path, venv: Path, venv_name: str, run: 
     record["problems"] += IV.check_problems("import", record["import_check"])
     if rc != 0:
         record["problems"].append(f"the declared imports fail in the venv (exit {rc})")
-        return _write(base, record)
+        return _write(base_dir, record)
     try:
         got = json.loads(out.decode("utf-8", "replace").strip().splitlines()[-1])
     except (ValueError, IndexError):
         got = None
     record["import_versions"] = got
-    want = {d: next((e["version"] for e in lock if e["name"] == norm_name(d)), None) for d in dists}
-    if got != want:
-        record["problems"].append(f"the installed versions {got} are not the locked {want}")
-    return _write(base, record)
+    record["venv_python_version"] = got.get("python") if isinstance(got, dict) else None
+    record["problems"] += check_versions(got, lock, dists, bases[base]["version"])
+    return _write(base_dir, record)
 
 
 def _load(name: str, path: Path):
@@ -351,11 +402,13 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="A8: a product venv from a hashed lock (Q-A8-1 O-a)")
     ap.add_argument("--venv", required=True, choices=sorted(VENVS))
     ap.add_argument("--run", required=True)
-    ap.add_argument("--python", required=True, type=Path, help="the declared base's python.exe (py312 for §2.2)")
+    ap.add_argument("--python", type=Path, default=None,
+                    help="the declared base's python.exe (default: polygon/<the venv's base>/python.exe)")
     args = ap.parse_args(argv)
     L = _load("v3_launch", HERE / "launch.py")
     F = _load("v3_fetch_a3", HERE / "fetch_a3.py")
     c = L.Contract.default()
+    args.python = args.python or base_python(c, VENVS[args.venv]["base"], _fpb().BASES)
     port = L.network_via_port(c)
     if port is None:
         print("no declared hop: <runs>\\_config\\network.json is missing", file=sys.stderr)

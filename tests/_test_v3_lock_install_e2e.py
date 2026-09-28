@@ -24,6 +24,7 @@ import os
 import shutil
 import sys
 import tempfile
+import platform
 import zipfile
 from pathlib import Path
 
@@ -139,8 +140,19 @@ def install(tag, routes, specs, imports, dists, parent_env=None):
     srv = TF.TlsHttpServer(made[0], made[1], routes)
     hop = TF.TunnelHop(srv.port)
     c, base = contract(tag)
+    # LI-1: the declared base is polygon/py312/python.exe - here a junction to this interpreter's directory, its version
+    # this interpreter's (the test world's base; the real one is fetch_py_base's py-base-312)
+    c.polygon_root.mkdir(parents=True, exist_ok=True)
+    if os.name == "nt":
+        import _winapi
+        _winapi.CreateJunction(str(Path(sys.executable).parent), str(c.polygon_root / "py312"))
+    else:
+        os.symlink(Path(sys.executable).parent, c.polygon_root / "py312", target_is_directory=True)
     try:
-        rec = LI.run_lock_install(c, L, F, python=Path(sys.executable), venv=c.polygon_root / "t_v3", venv_name="t_v3",
+        rec = LI.run_lock_install(c, L, F, python=c.polygon_root / "py312" / Path(sys.executable).name,
+                                  venv=c.polygon_root / "t_v3", venv_name="t_v3", base="py-base-312",
+                                  bases={"py-base-312": {"version": platform.python_version(), "dest": "py312",
+                                                         "newest_of": None}},
                                   run="l1", via_port=hop.port, parent_env=parent_env or os.environ, specs=specs,
                                   imports=imports,
                                   dists=dists, native=L.NativeEgressWitness(sampler=AnySampler(), tick_s=60, jobs=None),
@@ -152,6 +164,9 @@ def install(tag, routes, specs, imports, dists, parent_env=None):
     finally:
         hop.close()
         srv.close()
+        link = c.polygon_root / "py312"
+        if link.exists():
+            os.rmdir(link) if os.name == "nt" else link.unlink()      # the junction only, never its target
     return rec, c, base
 
 
@@ -171,10 +186,11 @@ check("E1: pip's own resolver picked the tree - nvt3a 1.0.0 and its dependency n
       == [("nvt3a", "1.0.0", sha[A[0]], True), ("nvt3b", "0.2.0", sha[B2[0]], False)]
       and rec.get("lock_sha256") == LI.lock_sha256(rec["lock"]), str(rec.get("lock")))
 check("E1: the licences as METADATA gives them", rec.get("licences") == {"nvt3a": "MIT", "nvt3b": "MIT"}, str(rec.get("licences")))
-check("E1: the wheels were checked from the disk, pip installed offline, the imports give the locked versions",
-      rec.get("wheel_problems") == [] and rec.get("install_rc") == 0
-      and rec.get("import_versions") == {"nvt3a": "1.0.0", "nvt3b": "0.2.0"}, str({k: rec.get(k) for k in
-                                                                                   ("wheel_problems", "install_rc", "import_versions")}))
+check("E1: the wheels were checked from the disk, pip installed offline, the imports give the locked versions and the "
+      "venv's python is the base's", rec.get("wheel_problems") == [] and rec.get("install_rc") == 0
+      and (rec.get("import_versions") or {}).get("dists") == {"nvt3a": "1.0.0", "nvt3b": "0.2.0"}
+      and rec.get("venv_python_version") == platform.python_version(),
+      str({k: rec.get(k) for k in ("wheel_problems", "install_rc", "import_versions", "venv_python_version")}))
 check("E1: the installed set is hashed; the venv, the install and the import each ran under a clean check of its own",
       len(rec.get("installed_set_sha256") or "") == 64 and rec.get("installed_files", 0) >= 4
       and rec.get("venv_check") == rec.get("install_check") == rec.get("import_check") == CLEAN,
@@ -198,7 +214,8 @@ check("E2b (the auditor): pip runs on the venv's own interpreter (never the harn
       and all(os.path.normcase(os.path.realpath((s.get("binary") or {}).get("path", ""))) ==
               os.path.normcase(os.path.realpath(venv_py)) for s in pip_children)
       and (rec.get("install_argv") or [None, None])[1] == "-I"
-      and not any(n in POISON for n in offline[0]["env_names"]) if offline else False,
+      and not any(n in POISON for n in offline[0]["env_names"] if n != "PIP_CONFIG_FILE")
+      and {"PIP_CONFIG_FILE", "PIP_CACHE_DIR", "PIP_NO_INPUT"} <= set(offline[0]["env_names"]) if offline else False,
       str([((s.get("binary") or {}).get("path"), [n for n in s.get("env_names", []) if n.startswith("PIP_")])
            for s in pip_children])[:400])
 

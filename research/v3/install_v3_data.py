@@ -342,10 +342,11 @@ def check_problems(step: str, summary: dict) -> list[str]:
 
 
 def _step(c, L, *, stand: str, run: str, arm: str, argv: list[str], path_dirs: list[Path], parent_env, native, fs,
-          check_id: str) -> tuple[int | None, bytes, bytes, dict]:
-    """One offline contract spawn (no proxy variables) under its own boundary check."""
+          check_id: str, declared: dict | None = None) -> tuple[int | None, bytes, bytes, dict]:
+    """One offline contract spawn (no proxy variables) under its own boundary check; ``declared`` is the step's own
+    declared environment (lock_install's offline pip: its config file, cache and no-input - the auditor's LI-2)."""
     unit = L.make_unit_dirs(c, stand, run, arm, arm[0] + "1")
-    env = L.build_env(c, parent_env=parent_env, unit=unit, path_dirs=path_dirs, declared={}, catcher_url="",
+    env = L.build_env(c, parent_env=parent_env, unit=unit, path_dirs=path_dirs, declared=dict(declared or {}), catcher_url="",
                       proxies=False)
     W = L.Witnesses(c, native=native if native is not None else L.NativeEgressWitness(),
                     fs=fs if fs is not None else L.FsWitness(L.watched_set(c)))
