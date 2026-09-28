@@ -349,19 +349,28 @@ try:
           and fc_out["price"]["output"] == {"off_peak": 0.6, "peak": 1.2}
           and fc_out["hours"].startswith("not forecast") and "6.0 h" in fc_out["hours"], fc_out["hours"])
     meas = RV.bytes_per_cl100k_token(["abcde" * 10, "é" * 5], lambda s: len(s.encode("utf-8")) // 5)
-    fc_est = RV.forecast({"bm25-floor": None, "nevertwice": "deepseek-flash"},
-                         {"u1": ["a" * 100, "é" * 20000, "x" * 60000]}, {("u1", "q0"): "p" * 50},
-                         runs=2, max_token_bytes=128, measured={**meas, "source": "test texts"})
+    try:
+        fc_est = RV.forecast({"bm25-floor": None, "nevertwice": "deepseek-flash"},
+                             {"u1": ["a" * 100, "é" * 20000, "x" * 60000]}, {("u1", "q0"): "p" * 50},
+                             runs=2, max_token_bytes=128, measured={**meas, "source": "test texts"})
+    except Exception as e:  # noqa: BLE001 - the row below FAILs by name
+        print(f"  (forecast with an estimate raised {type(e).__name__}: {e})")
+        fc_est = {"per_arm": None, "usd_total": None}
     est = fc_est.get("estimate") or {}
-    check("FC-estimate (Q-A6-3): beside the bound, an estimate labelled 'estimate, not a bound' - the reader's context "
-          "at the measured bytes per cl100k token (60 bytes / 12 tokens = 5.0, its source recorded); the bound itself "
-          "unchanged", meas == {"ratio": 5.0, "bytes": 60, "tokens": 12} and est.get("note") == "estimate, not a bound"
+    check("FC-estimate (Q-A6-3, [A-EST-1]): beside the bound, an estimate labelled 'estimate, not a bound' - the "
+          "reader's context at the measured bytes per cl100k token (60 bytes / 12 tokens = 5.0, its source recorded); the "
+          "writer at 1 request per op, its in-bytes per op over the arm's measured ratio (the session texts here: "
+          "2 x 127,100 / 5.0 = 50,840) and 200 output tokens per op; the bound itself unchanged",
+          meas == {"ratio": 5.0, "bytes": 60, "tokens": 12} and est.get("note") == "estimate, not a bound"
           and est.get("bytes_per_cl100k_token") == 5.0 and est.get("measured") == {"bytes": 60, "tokens": 12,
                                                                                    "source": "test texts"}
           and est.get("per_arm", {}).get("bm25-floor", {}).get("reader_in_tokens") == 142248
-          and est.get("per_arm", {}).get("nevertwice", {}).get("usd") == 0.3648 and est.get("usd_total") == 0.4124
+          and {k: est.get("per_arm", {}).get("nevertwice", {}).get(k) for k in ("writer_requests", "writer_in_tokens",
+                                                                                "writer_out_tokens", "usd")}
+          == {"writer_requests": 6, "writer_in_tokens": 50840, "writer_out_tokens": 1200, "usd": 0.0643}
+          and est.get("usd_total") == 0.1119 and est.get("out_tokens_per_op") == 200
           and fc_est["per_arm"] == fc_out["per_arm"] and fc_est["usd_total"] == 2.4788 and fc_out["estimate"] is None,
-          json.dumps(est)[:300])
+          json.dumps(est)[:400])
     check("FC-ratio-refuse: no cl100k token in the texts - no ratio is guessed",
           "no ratio is guessed" in err(lambda: RV.bytes_per_cl100k_token(["", ""], lambda s: 0)))
     check("FC-refuse: a writer without a bound in WRITER_BOUNDS, or a writer on another model, stops the forecast - "
@@ -369,6 +378,168 @@ try:
                                                                                 max_token_bytes=128))
           and "the price does not apply" in err(lambda: RV.forecast({"nevertwice": "gpt-4o"}, {}, {}, runs=1,
                                                                     max_token_bytes=128)))
+
+    print("\n- C2 (C6, Q-C6-4..7, [A-M0-1], [A-EST-1]): each writer arm's ops, mem0's bound from its probe, one estimate -")
+    import ast  # noqa: E402 - the adapter's write, read as data
+    PL = RV.load("run_v3_plan.py", smoke=True)
+    AM = _load("v3_arm_mem0_for_run_v3_t", ROOT / "research" / "v3" / "arms" / "arm_mem0.py")
+    PA = RV.load("probe_a8.py", smoke=True)
+    C2_RAISED: list = []
+
+    def c2ok(fn) -> bool:
+        try:
+            return bool(fn())
+        except Exception as e:  # noqa: BLE001 - the row reads it
+            C2_RAISED.append(f"{type(e).__name__}: {e}")
+            return False
+
+    def c2val(fn, default=None):
+        try:
+            return fn()
+        except Exception as e:  # noqa: BLE001 - the rows that read it FAIL by name
+            C2_RAISED.append(f"{type(e).__name__}: {e}")
+            return default
+
+    def raises(fn, exc) -> bool:
+        try:
+            fn()
+        except exc:
+            return True
+        return False
+
+    U = sm["units"]
+    ot_nv = c2val(lambda: RV.op_texts_for("nevertwice", U, dated=True, smaps=sm["smaps"]), {})
+    ot_m0 = c2val(lambda: RV.op_texts_for("mem0", U, dated=True, smaps=sm["smaps"]), {})
+    ops_m0 = c2val(lambda: PL.write_ops(PL.ARMS["mem0"], U[0], dated=True, smap=sm["smaps"][U[0].unit_id]), [])
+    check("C2 FC-ops (Q-C6-4): each writer arm's op texts, per unit, are the scheduler's own write ops - one text per op: "
+          "nevertwice a session's text, mem0 one message framed as its adapter frames it",
+          c2ok(lambda: set(ot_nv) == set(want_ids) == set(ot_m0)
+               and all(len(ot_nv[u.unit_id]) == len(PL.write_ops(PL.ARMS["nevertwice"], u, dated=True,
+                                                                 smap=sm["smaps"][u.unit_id]))
+                       and len(ot_m0[u.unit_id]) == len(PL.write_ops(PL.ARMS["mem0"], u, dated=True,
+                                                                     smap=sm["smaps"][u.unit_id])) for u in U)
+               and ot_nv[want_ids[0]] == [PL.session_text(s) for s in U[0].sessions]
+               and len(ot_m0[want_ids[0]]) == 3 and ops_m0[0]["date"][:10] == "2023-05-20"
+               and ot_m0[want_ids[0]][0] == "Conversation from 2023-05-20:\nuser: hello 19"
+               and ot_m0[want_ids[0]][2] == "Conversation from 2023-05-21:\nuser: more 19"),
+          str({k: (v or {}).get(want_ids[0]) for k, v in (("nevertwice", ot_nv), ("mem0", ot_m0))})[:400])
+    frame_items = [({"item_id": "i1", "role": "user", "speaker": "Ana", "text": "héllo ☕"}, "2023-05-20T02:21:00", True),
+                   ({"item_id": "i2", "role": "assistant", "speaker": "assistant", "text": "x"}, None, False)]
+    check("C2 FC-frame (F-C6-1): mem0's op text is its adapter's own content(), byte for byte - dated and undated, "
+          "non-ASCII too - so the bytes priced are the bytes the adapter sends and reports by text_sha256",
+          c2ok(lambda: all(RV.op_text("mem0", {"item": it, "date": d}, dated=dd) == AM.content(it, d, dd)
+                           for it, d, dd in frame_items)
+               and all(RV.op_text("mem0", op, dated=True) == AM.content(op["item"], op["date"], True) for op in ops_m0)
+               and AM.content(*frame_items[0]) == "Conversation from 2023-05-20:\nAna: héllo ☕"
+               and AM.content(*frame_items[1]) == "assistant: x"))
+    AMT = ast.parse((ROOT / "research" / "v3" / "arms" / "arm_mem0.py").read_text(encoding="utf-8"))
+    _writes = [n for n in ast.walk(AMT) if isinstance(n, ast.FunctionDef) and n.name == "write"]
+    _texts = [ast.unparse(n) for w in _writes for n in ast.walk(w) if isinstance(n, ast.Assign)
+              and any(isinstance(t, ast.Name) and t.id == "text" for t in n.targets)]
+    _adds = [ast.unparse(n) for w in _writes for n in ast.walk(w) if isinstance(n, ast.Call)
+             and ast.unparse(n.func) == "self.mem.add" and "infer=True" in ast.unparse(n)]
+    check("C2 FC-frame: the adapter's write hands mem0's add content()'s text and no other - the text priced is the text "
+          "sent", _texts == ["text = content(item, date, self.spec['dated'])"]
+          and _adds == ["self.mem.add([{'role': item['role'], 'content': text}], user_id=self.unit, infer=True)"],
+          str((_texts, _adds))[:300])
+    check("C2 FC-frame: a dated op without its date is refused on both sides - never framed without its header",
+          "date" in err(lambda: RV.op_text("mem0", {"item": frame_items[0][0], "date": None}, dated=True))
+          and c2ok(lambda: raises(lambda: AM.content(frame_items[0][0], None, True), ValueError)))
+    check("C2 FC-op-text-refuse: an arm with no declared writer op text is refused - its writer is not priced by a guess",
+          "no writer op text" in err(lambda: RV.op_text("letta", {"item": {"item_id": "s1"}, "date": None}, dated=False)))
+    BFK = sorted(set(PA.M0_BOUND_SOURCE) | set(PA.M0_HELPER_SHAPES) | set(PA.M0_WRITES) | set(PA.M0_DEFAULTS)
+                 | set(PA.M0_CALLS) | set(PA.M0_CONFIG_DEFAULTS) | {"m0_adapter"})
+    bf = {k: {"value": "x", "source": "s"} for k in BFK}
+    bf.update({"m0_max_retries": {"value": "2"}, "m0_max_tokens": {"value": "2000"}, "m0_system_prompt": {"value": 1000},
+               "m0_agent_suffix": {"value": 100}, "m0_last_k": {"value": "10"}, "m0_top_k": {"value": "10"},
+               "m0_trunc_limit": {"value": "300"}, "m0_message_frame": {"value": ["assistant", "system", "user"]},
+               "m0_user_prompt": {"value": {"parts": [{"const_bytes": 20, "fields": ["observation_date"], "conditional": False},
+                                                      {"const_bytes": 30, "fields": [], "conditional": True}],
+                                            "separator": "\n\n"}},
+               "m0_client_ctor": {"value": [{"line": 3, "keywords": ["base_url"], "starstar": False}]},
+               "m0_client_override": {"value": []}, "m0_prompt_call": {"value": sorted(PA.M0_PROMPT_CALL)}})
+    REC = {"outcome": "pass", "bound_facts": bf, "bound_blocked": [],
+           "fields": {"m0_calls_per_add": {"ok": True, "value": {"bound_per_add": 1, "adds": 3, "answered": 3}}}}
+    wb = c2val(lambda: RV.writer_bound(REC), {})
+    check("C2 FC-mem0-bound (Q-C6-5, Q-C6-6, [A-M0-1]): mem0's per-op bound from its probe record - R = 1 site x (1 + 2 "
+          "SDK retries) = 3, O = 2,000, F = 1,000 + 100 + (20 + 30) + 1 separator of 2 + 2 ISO days of 10 + '[]' = 1,174, "
+          "last-k = 10 x (9 + 2 + 4 x 300 + 3 + 1) = 12,150, the memories at M = 1 KiB = 2 + 10 x (23 + 1,024) + 9 x 2 = "
+          "10,490, the new message's frame 9 + 2 + 1 = 12: 23,826 fixed bytes per op, no cap on the op's own bytes",
+          c2ok(lambda: RV.M0_DEFAULT_M == 1024 and wb == {"requests_per_op": 3, "out_tokens": 2000, "fixed_in_bytes": 23826,
+                                                          "transcript_chars": None, "m_bytes": 1024,
+                                                          "terms": {"F": 1174, "last_k": 12150, "memories": 10490,
+                                                                    "frame": 12, "sites": 1}}), str(wb)[:400])
+    check("C2 FC-mem0-bound: M is an argument - 2 KiB makes the memories' term 2 + 10 x (23 + 2,048) + 18 = 20,730",
+          c2ok(lambda: RV.writer_bound(REC, m_bytes=2048)["terms"]["memories"] == 20730))
+
+    def rec_with(**kw):
+        return {**REC, **kw}
+
+    bf_blk = {**bf, "m0_top_k": {"value": None, "blocked": "blocked:source-changed:m0_top_k"}}
+    bf_miss = {k: v for k, v in bf.items() if k != "m0_fn_dates"}
+    refusals = {"a failed probe": err(lambda: RV.writer_bound(rec_with(outcome="fail"))),
+                "reasons in the record": err(lambda: RV.writer_bound(rec_with(bound_blocked=["m0_top_k: blocked"]))),
+                "a blocked fact the record did not list": err(lambda: RV.writer_bound(rec_with(bound_facts=bf_blk))),
+                "a declared fact missing": err(lambda: RV.writer_bound(rec_with(bound_facts=bf_miss))),
+                "no site count": err(lambda: RV.writer_bound(rec_with(fields={}))),
+                "no record": err(lambda: RV.writer_bound(None))}
+    check("C2 FC-mem0-refuse (Q-C6-5): no bound without a passed probe, with a reason in the record or found again in its "
+          "facts, with a declared fact missing, or without the probe's site count - each refused by name",
+          "outcome" in refusals["a failed probe"] and "m0_top_k" in refusals["reasons in the record"]
+          and "m0_top_k" in refusals["a blocked fact the record did not list"]
+          and "m0_fn_dates" in refusals["a declared fact missing"] and "m0_calls_per_add" in refusals["no site count"]
+          and all(v != "accepted" and not v.startswith("not refused") for v in refusals.values()), str(refusals)[:600])
+    fa_nv = c2val(lambda: RV.forecast_arms({"bm25-floor": None, "nevertwice": "deepseek-flash"},
+                                           {"nevertwice": {"u1": ["a" * 100, "é" * 20000, "x" * 60000]}},
+                                           {("u1", "q0"): "p" * 50}, runs=2, max_token_bytes=128, bounds=RV.WRITER_BOUNDS), {})
+    check("C2 FC-arms: the per-arm forecast with nevertwice's op texts and WRITER_BOUNDS gives FC-bound's numbers",
+          c2ok(lambda: fa_nv["per_arm"] == fc_out["per_arm"] and fa_nv["usd_total"] == 2.4788
+               and fa_nv["ops_per_run"] == {"nevertwice": 3}), str(fa_nv.get("per_arm"))[:300])
+    fa_m0 = c2val(lambda: RV.forecast_arms({"mem0": "deepseek-flash"}, {"mem0": {"u1": ["ab", "é"]}},
+                                           {("u1", "q0"): "p" * 50}, runs=1, max_token_bytes=128, bounds={"mem0": wb}), {})
+    check("C2 FC-arms: mem0's writer at its probe's bound - 2 ops x 3 requests, in 3 x (23,826 + 2) twice = 142,968, out "
+          "6 x 2,000; its reader as every arm's; priced at the peak rates: $0.5977",
+          c2ok(lambda: {k: fa_m0["per_arm"]["mem0"][k] for k in ("writer_requests", "writer_in_tokens", "writer_out_tokens",
+                                                                   "reader_in_tokens", "reader_out_tokens", "usd")}
+               == {"writer_requests": 6, "writer_in_tokens": 142968, "writer_out_tokens": 12000,
+                   "reader_in_tokens": 1793124, "reader_out_tokens": 2048, "usd": 0.5977}
+               and fa_m0["writer_bounds"]["mem0"] == wb), str(fa_m0.get("per_arm"))[:400])
+    m_nv = {"ratio": 4.0, "bytes": 8, "tokens": 2, "source": "t"}
+    m_m0 = {"ratio": 2.0, "bytes": 4, "tokens": 2, "source": "t"}
+    fa_e = c2val(lambda: RV.forecast_arms({"nevertwice": "deepseek-flash", "mem0": "deepseek-flash"},
+                                          {"nevertwice": {"u1": ["a" * 100]}, "mem0": {"u1": ["ab", "é"]}},
+                                          {("u1", "q0"): "p" * 50}, runs=1, max_token_bytes=128,
+                                          bounds={"nevertwice": RV.WRITER_BOUNDS["nevertwice"], "mem0": wb},
+                                          measured={**meas, "source": "t"}, measured_ops={"nevertwice": m_nv, "mem0": m_m0}),
+                 {})
+    ee = fa_e.get("estimate") or {}
+    check("C2 FC-est-one-method ([A-EST-1]): every writer arm's estimate comes from the same function with the same "
+          "pre-pilot output constant (200 tokens per op) - only its bound and its own measured ratio differ",
+          c2ok(lambda: RV.PRE_PILOT_OUT_TOKENS == 200 and ee["out_tokens_per_op"] == 200
+               and all({k: ee["per_arm"][a][k] for k in ("writer_requests", "writer_in_tokens", "writer_out_tokens")}
+                       == RV.writer_estimate(b, t, ratio=r, out_tokens=RV.PRE_PILOT_OUT_TOKENS, runs=1)
+                       for a, b, t, r in (("nevertwice", RV.WRITER_BOUNDS["nevertwice"], ["a" * 100], 4.0),
+                                          ("mem0", wb, ["ab", "é"], 2.0)))
+               and ee["writer_ratios"] == {"nevertwice": 4.0, "mem0": 2.0}
+               and RV.writer_estimate(wb, ["ab", "é"], ratio=2.0, out_tokens=200, runs=1)
+               == {"writer_requests": 2, "writer_in_tokens": 23828, "writer_out_tokens": 400}), str(ee)[:500])
+    check("C2 FC-est-refuse: an estimate without a writer arm's own measured ratio is refused by name - no ratio is borrowed",
+          "['mem0'] - no ratio is borrowed" in err(lambda: RV.forecast_arms({"mem0": "deepseek-flash"}, {"mem0": {"u1": ["ab"]}}, {}, runs=1,
+                                                  max_token_bytes=128, bounds={"mem0": wb},
+                                                  measured={**meas, "source": "t"}, measured_ops={})))
+    check("C2 FC-refuse: a writer arm without a bound, or without op texts, stops the per-arm forecast; the session form "
+          "takes no message arm - each by name",
+          "no upper bound" in err(lambda: RV.forecast_arms({"mem0": "deepseek-flash"}, {"mem0": {"u1": ["ab"]}}, {}, runs=1,
+                                                           max_token_bytes=128, bounds={}))
+          and "no op texts" in err(lambda: RV.forecast_arms({"mem0": "deepseek-flash"}, {}, {}, runs=1, max_token_bytes=128,
+                                                            bounds={"mem0": wb}))
+          and "messages" in err(lambda: RV.forecast({"mem0": "deepseek-flash"}, {"u1": ["ab"]}, {}, runs=1,
+                                                    max_token_bytes=128)))
+    check("C2 FORECAST_FORMULA: states mem0's per-op bound from its probe with M at 1 KiB [A-M0-1], and one estimate "
+          "method for every writer arm, once [A-EST-1]",
+          c2ok(lambda: "[A-M0-1]" in RV.FORECAST_FORMULA and RV.FORECAST_FORMULA.count("[A-EST-1]") == 1
+               and "mem0" in RV.FORECAST_FORMULA))
+    check("C2: no row's condition raised", C2_RAISED == [], str(C2_RAISED)[:400])
     SCH = RV.load("scheduler.py", smoke=True)
     check("WC-cap: the smoke's wall ceiling is Q26's 6 h; with one unit ceiling (scheduler.DEBUG_CEILING_S) the worst "
           "case is 12 h", RV.SMOKE_WALL_CAP_H == 6.0 and RV.SMOKE_WALL_CAP_H + SCH.DEBUG_CEILING_S / 3600 == 12.0)

@@ -19,9 +19,12 @@ A9).
   proxy's body scan (the auditor's condition: a planted value the proxy does not scan for would make P0h read 0);
 * preflight() (Q-A6-1 O-a): every arm's interpreter declared before STAND START, each attempt chained in
   <runs>/_launch/preflight.jsonl and written whole, with the forecast; a refusal is exit 2, STATUS untouched;
-* forecast() (Q-A6-2, Q-A6-3): the guaranteed upper bound (FORECAST_FORMULA, deepseek-flash's price as data) and an
-  estimate that is not a bound (the reader's context at the bytes per cl100k token measured on the smoke's own text);
-  hours are not forecast;
+* forecast_arms() (Q-A6-2, Q-A6-3, C2): per arm, the guaranteed upper bound (FORECAST_FORMULA, deepseek-flash's
+  price as data) - each writer arm at its bound over its own op texts (op_texts_for: the scheduler's write ops,
+  op_text: the bytes its writer is given), nevertwice's from WRITER_BOUNDS, mem0's from its probe record
+  (writer_bound, M at 1 KiB [A-M0-1]) - and beside it an estimate that is not a bound, one method for every writer
+  arm (writer_estimate, [A-EST-1]); forecast() is the session form its callers use until C3/C4; hours are not
+  forecast;
 * WallCapGate, SMOKE_WALL_CAP_H (Q26): past the stand's 6 h wall ceiling no new unit starts;
 * run_smoke() (part 2b): the units, the forecast, the preflight, one Canaries object, the proxy, the hooks and the
   incident gate under the wall ceiling, the scheduler's stand, the gate and then the proxy stopped, the SMOKE_FIELDS
@@ -295,14 +298,32 @@ WRITER_BOUNDS = {"nevertwice": {"requests_per_op": 3, "out_tokens": 4096, "fixed
 #: max_tokens 1,024 each; its context at most 7,000 cl100k tokens.
 READER_REQUESTS, READER_OUT, READER_CONTEXT_CL100K = 2, 1024, 7000
 
+#: C6 [A-M0-1] (the auditor, 2026-09-28): M in mem0's bound - 1 KiB of serialized text per existing memory, until the
+#: pilot records every memory's bytes (then 1.5 x the observed max, before the campaign; a memory over 1 KiB is named
+#: in A9)
+M0_DEFAULT_M = 1024
+#: date.isoformat() is YYYY-MM-DD: each of the two dates in mem0's user prompt (probe_a8's m0_fn_dates holds that code)
+ISO_DAY_BYTES = 10
+#: [A-EST-1] (the auditor, 2026-09-28): the estimate's output tokens per writer op - the same for every writer arm until
+#: the pilot measures each arm's own mean
+PRE_PILOT_OUT_TOKENS = 200
+
 FORECAST_FORMULA = (
     "tokens(text) <= utf8_bytes(text) [A1: DeepSeek's tokenizer is byte-level BPE]; "
-    "writer per session op: requests <= R, in <= R * (F + min(utf8_bytes(session), 4 * C)), out <= R * O "
-    "[WRITER_BOUNDS: R, F, C, O]; "
+    "writer per op: requests <= R, in <= R * (F + op_bytes), out <= R * O [the arm's bound: R, F, O]; "
+    "nevertwice (WRITER_BOUNDS): an op is a session, op_bytes = min(utf8_bytes(session), 4 * C) [C: its transcript "
+    "cap]; mem0 (writer_bound, from its probe record's bound facts): an op is one message as its adapter frames it, "
+    "op_bytes = utf8_bytes(op), R = the add path's LLM sites x (1 + the SDK's retries), O = its max_tokens, F = the "
+    "system prompt + the agent suffix + the user prompt's section constants and separators + 2 ISO days of 10 bytes + "
+    "'[]' + last_k x (role + 2 + 4 x the truncation + 4) + [2 + top_k x (item + M) + 2 x (top_k - 1)] + role + 3, "
+    "M = serialized bytes per existing memory, 1 KiB [A-M0-1]; "
     "reader per question: requests <= 2, in <= 2 * (utf8_bytes(prompt without context) + 7000 * B) + 1024, "
     "out <= 2 * 1024 [B: the longest pinned cl100k token in bytes; A2: the re-ask carries the first reply, "
     "<= 1024 tokens]; "
-    "per arm: x runs; usd = in * input_cache_miss.peak + out * output.peak, per 1M tokens")
+    "per arm: x runs; usd = in * input_cache_miss.peak + out * output.peak, per 1M tokens; "
+    "the estimate, not a bound, one method for every writer arm [A-EST-1]: 1 request per op, in = the bound's bytes "
+    "per op / the arm's measured bytes per cl100k token over its own op texts, out = 200 tokens per op until the pilot "
+    "(then each arm's measured mean); the reader's context at the measured bytes per cl100k token")
 
 
 def bytes_per_cl100k_token(texts: Iterable[str], count: Callable[[str], int]) -> dict:
@@ -317,63 +338,189 @@ def bytes_per_cl100k_token(texts: Iterable[str], count: Callable[[str], int]) ->
     return {"ratio": b / t, "bytes": b, "tokens": t}
 
 
-def _per_arm(writers: Mapping[str, str | None], session_texts: Mapping[str, Sequence[str]],
-             prompts: Mapping[tuple[str, str], str], *, runs: int, context_bytes: float,
-             price: Mapping[str, Any]) -> tuple[dict, float]:
-    n_ops = sum(len(v) for v in session_texts.values())
+def op_text(arm: str, op: Mapping[str, Any], *, dated: bool) -> str:
+    """Q-C6-4: the text one write op puts before its arm's writer LLM - a session arm's session text as it is; mem0's
+    message as its adapter frames it (arms/arm_mem0.content: "<speaker>: <text>", after the §5.3 header on a dated stand;
+    F-C6-1). Any other arm has no declared writer op text: refused, never priced by a guess."""
+    PL = load("run_v3_plan.py", smoke=True)
+    spec = PL.ARMS.get(arm)
+    if spec is not None and spec.granularity == "session":
+        return op["item"]["text"]
+    if arm == "mem0":
+        item = op["item"]
+        text = f"{item['speaker']}: {item['text']}"
+        if dated:
+            if not op.get("date"):
+                raise CLIError(f"mem0 op {item.get('item_id')!r} on a dated stand carries no date - no header, no text")
+            text = f"Conversation from {op['date'][:10]}:\n{text}"
+        return text
+    raise CLIError(f"arm {arm}: no writer op text declared (C6) - its writer is not priced by a guess")
+
+
+def op_texts_for(arm: str, units: Sequence[Any], *, dated: bool, smaps: Mapping[str, Mapping[str, str]] | None = None,
+                 truncate: Callable[[str], Any] | None = None) -> dict:
+    """Q-C6-4: {unit: [one text per write op]} - the scheduler's own ops (run_v3_plan.write_ops, as stand_plan hands
+    them to it), each through op_text."""
+    PL = load("run_v3_plan.py", smoke=True)
+    if arm not in PL.ARMS:
+        raise CLIError(f"arm {arm} has no plan - no op texts")
+    smaps = dict(smaps or {})
+    return {u.unit_id: [op_text(arm, op, dated=dated) for op in PL.write_ops(PL.ARMS[arm], u, dated=dated,
+                                                                              smap=smaps.get(u.unit_id), truncate=truncate)]
+            for u in units}
+
+
+def writer_bound(probe_record: Mapping[str, Any] | None, *, m_bytes: int = M0_DEFAULT_M) -> dict:
+    """Q-C6-5, Q-C6-6: mem0's per-op writer bound from its probe record (<runs>/_a8/<run>/mem0/probe.json) - refused
+    unless the probe passed, the record names no reason against a bound, its bound facts give none when read again
+    (probe_a8.bound_blocked), every declared fact is there and the probe counted the add path's LLM sites. The formula is
+    FORECAST_FORMULA's mem0 line; ``m_bytes`` is M [A-M0-1]."""
+    if not isinstance(probe_record, Mapping):
+        raise CLIError("no mem0 probe record - no bound, no forecast (Q-C6-5)")
+    if probe_record.get("outcome") != "pass":
+        raise CLIError(f"the mem0 probe's outcome is {probe_record.get('outcome')!r}, not pass - no bound (Q-C6-5)")
+    if probe_record.get("bound_blocked"):
+        raise CLIError(f"the mem0 probe record names reasons against a bound: {probe_record['bound_blocked']}")
+    PA = load("probe_a8.py", smoke=True)
+    bf = probe_record.get("bound_facts") or {}
+    declared = (set(PA.M0_BOUND_SOURCE) | set(PA.M0_HELPER_SHAPES) | set(PA.M0_WRITES) | set(PA.M0_DEFAULTS)
+                | set(PA.M0_CALLS) | set(PA.M0_CONFIG_DEFAULTS) | {"m0_adapter"})
+    missing = sorted(declared - set(bf))
+    if missing:
+        raise CLIError(f"the mem0 probe record lacks the bound facts {missing} - no bound")
+    again = PA.bound_blocked(bf)
+    if again:
+        raise CLIError(f"the mem0 probe record's bound facts give reasons against a bound: {again}")
+    per_add = ((probe_record.get("fields") or {}).get("m0_calls_per_add") or {}).get("value")
+    sites = per_add.get("bound_per_add") if isinstance(per_add, Mapping) else None
+    if not isinstance(sites, int) or isinstance(sites, bool) or sites < 1:
+        raise CLIError("the mem0 probe record has no m0_calls_per_add site count - no R, no bound")
+    v = {k: f.get("value") for k, f in bf.items() if isinstance(f, Mapping)}
+    R = sites * (1 + int(v["m0_max_retries"]))
+    role = max(len(r.encode("utf-8")) for r in v["m0_message_frame"])
+    parts, sep = v["m0_user_prompt"]["parts"], v["m0_user_prompt"]["separator"]
+    last_k, top_k, trunc = int(v["m0_last_k"]), int(v["m0_top_k"]), int(v["m0_trunc_limit"])
+    F = (int(v["m0_system_prompt"]) + int(v["m0_agent_suffix"]) + sum(p["const_bytes"] for p in parts)
+         + len(sep.encode("utf-8")) * (len(parts) - 1) + 2 * ISO_DAY_BYTES + len(b"[]"))
+    L = last_k * (role + len(b": ") + 4 * trunc + len(b"...") + len(b"\n"))
+    item = len(json.dumps({"id": str(top_k - 1), "text": ""}, ensure_ascii=False).encode("utf-8"))
+    mem = len(b"[]") + top_k * (item + m_bytes) + (top_k - 1) * len(b", ")
+    frame = role + len(b": ") + len(b"\n")
+    return {"requests_per_op": R, "out_tokens": int(v["m0_max_tokens"]), "fixed_in_bytes": F + L + mem + frame,
+            "transcript_chars": None, "m_bytes": m_bytes,
+            "terms": {"F": F, "last_k": L, "memories": mem, "frame": frame, "sites": sites}}
+
+
+def _op_in_bytes(bound: Mapping[str, Any], text: str) -> int:
+    """One op's input bytes under its arm's bound: F + the op's bytes, capped at 4 x C when the arm has a cap."""
+    n, cap = len(text.encode("utf-8")), bound.get("transcript_chars")
+    return bound["fixed_in_bytes"] + (min(n, 4 * cap) if cap is not None else n)
+
+
+def writer_estimate(bound: Mapping[str, Any], texts: Sequence[str], *, ratio: float, out_tokens: int, runs: int) -> dict:
+    """[A-EST-1]: one writer arm's estimate, the same function for every writer arm - 1 request per op, the bound's
+    bytes per op over the arm's measured bytes per cl100k token, ``out_tokens`` per op. Not a bound."""
+    return {"writer_requests": runs * len(texts),
+            "writer_in_tokens": round(runs * sum(_op_in_bytes(bound, t) for t in texts) / ratio),
+            "writer_out_tokens": runs * len(texts) * out_tokens}
+
+
+def _per_arm(writers: Mapping[str, str | None], texts: Mapping[str, Sequence[str]], prompts: Mapping[tuple[str, str], str],
+             bounds: Mapping[str, Mapping[str, Any]], *, runs: int, context_bytes: float, price: Mapping[str, Any],
+             ratios: Mapping[str, float] | None = None) -> tuple[dict, float]:
+    """Each arm's requests, tokens and dollars: its writer at its bound (``ratios`` None) or at [A-EST-1]'s estimate
+    (``ratios``: each writer arm's measured bytes per token), its reader as every arm's."""
     per_arm: dict = {}
     total = 0.0
     for arm in sorted(writers):
-        w = WRITER_BOUNDS.get(arm) if writers[arm] is not None else None
-        wr = w["requests_per_op"] * n_ops if w else 0
-        w_in = sum(w["requests_per_op"] * (w["fixed_in_bytes"] + min(len(t.encode("utf-8")), 4 * w["transcript_chars"]))
-                   for v in session_texts.values() for t in v) if w else 0
-        w_out = wr * w["out_tokens"] if w else 0
+        w = bounds[arm] if writers[arm] is not None else None
+        t = texts.get(arm, [])
+        if w is None:
+            wr = {"writer_requests": 0, "writer_in_tokens": 0, "writer_out_tokens": 0}
+        elif ratios is None:
+            wr = {"writer_requests": runs * w["requests_per_op"] * len(t),
+                  "writer_in_tokens": runs * sum(w["requests_per_op"] * _op_in_bytes(w, x) for x in t),
+                  "writer_out_tokens": runs * w["requests_per_op"] * len(t) * w["out_tokens"]}
+        else:
+            wr = writer_estimate(w, t, ratio=ratios[arm], out_tokens=PRE_PILOT_OUT_TOKENS, runs=runs)
         rr = READER_REQUESTS * len(prompts)
         r_in = sum(READER_REQUESTS * (len(p.encode("utf-8")) + context_bytes) + READER_OUT for p in prompts.values())
         r_out = rr * READER_OUT
-        tin, tout = runs * (w_in + r_in), runs * (w_out + r_out)
+        tin, tout = wr["writer_in_tokens"] + runs * r_in, wr["writer_out_tokens"] + runs * r_out
         usd = (tin * price["input_cache_miss"]["peak"] + tout * price["output"]["peak"]) / price["per_tokens"]
-        per_arm[arm] = {"writer_requests": runs * wr, "writer_in_tokens": runs * w_in, "writer_out_tokens": runs * w_out,
-                        "reader_requests": runs * rr, "reader_in_tokens": round(runs * r_in),
+        per_arm[arm] = {**wr, "reader_requests": runs * rr, "reader_in_tokens": round(runs * r_in),
                         "reader_out_tokens": runs * r_out, "usd": round(usd, 4)}
         total += usd
     return per_arm, total
 
 
-def forecast(writers: Mapping[str, str | None], session_texts: Mapping[str, Sequence[str]],
-             prompts: Mapping[tuple[str, str], str], *, runs: int, max_token_bytes: int,
-             measured: Mapping[str, Any] | None = None, price: Mapping[str, Any] = DEEPSEEK_FLASH_PRICE) -> dict:
-    """The smoke's forecast - written into the preflight record before the first spawn. Two numbers (Q-A6-3): the
-    guaranteed upper bound (FORECAST_FORMULA; R-BAL takes it) and, when ``measured`` is given
-    (bytes_per_cl100k_token over the smoke's own session text, with its "source"), an estimate that is NOT a bound: the
-    same formula with the reader's context at the measured bytes per cl100k token instead of the longest token's.
-    ``writers``: arm -> its writer LLM (None: no writer); ``session_texts``: unit -> its sessions' text as the writer
-    gets it; ``prompts``: (unit, qid) -> the reader prompt with an empty context. Hours are not forecast (Q-A6-2): the
-    stand's wall ceiling bounds them. An arm whose writer has no bound, or another model, refuses."""
+def forecast_arms(writers: Mapping[str, str | None], op_texts: Mapping[str, Mapping[str, Sequence[str]]],
+                  prompts: Mapping[tuple[str, str], str], *, runs: int, max_token_bytes: int,
+                  bounds: Mapping[str, Mapping[str, Any]], measured: Mapping[str, Any] | None = None,
+                  measured_ops: Mapping[str, Mapping[str, Any]] | None = None,
+                  price: Mapping[str, Any] = DEEPSEEK_FLASH_PRICE) -> dict:
+    """C2 (Q-C6-4, Q-C6-5): the forecast per arm, pure - written into the preflight record before the first spawn. Two
+    numbers (Q-A6-3): the guaranteed upper bound (FORECAST_FORMULA; R-BAL takes it) and, when ``measured`` is given (the
+    reader's bytes per cl100k token, with its "source") and ``measured_ops`` (each writer arm's, over its own op texts),
+    [A-EST-1]'s estimate - NOT a bound. ``writers``: arm -> its writer LLM (None: no writer); ``op_texts``: writer arm ->
+    unit -> its op texts (op_texts_for); ``bounds``: writer arm -> its bound (WRITER_BOUNDS, writer_bound); ``prompts``:
+    (unit, qid) -> the reader prompt with an empty context. Hours are not forecast (Q-A6-2): the stand's wall ceiling
+    bounds them. A writer arm without a bound or op texts, or on another model, refuses."""
     for arm, llm in writers.items():
         if llm is not None and llm != price["model"]:
             raise CLIError(f"arm {arm}: its writer is {llm!r}, not {price['model']} - the price does not apply")
-        if llm is not None and arm not in WRITER_BOUNDS:
-            raise CLIError(f"arm {arm}: no upper bound for its writer's calls in WRITER_BOUNDS - no forecast, no smoke")
-    n_ops = sum(len(v) for v in session_texts.values())
-    per_arm, total = _per_arm(writers, session_texts, prompts, runs=runs,
+        if llm is not None and arm not in bounds:
+            raise CLIError(f"arm {arm}: no upper bound for its writer's calls - no forecast, no smoke")
+        if llm is not None and arm not in op_texts:
+            raise CLIError(f"arm {arm}: no op texts for its writer - no forecast, no smoke")
+    texts = {a: [t for v in op_texts[a].values() for t in v] for a in writers if writers[a] is not None}
+    per_arm, total = _per_arm(writers, texts, prompts, bounds, runs=runs,
                               context_bytes=READER_CONTEXT_CL100K * max_token_bytes, price=price)
     estimate = None
     if measured is not None:
-        est_arm, est_total = _per_arm(writers, session_texts, prompts, runs=runs,
-                                      context_bytes=READER_CONTEXT_CL100K * measured["ratio"], price=price)
-        estimate = {"note": "estimate, not a bound", "bytes_per_cl100k_token": measured["ratio"],
+        mo = dict(measured_ops or {})
+        lacking = sorted(a for a in texts if a not in mo)
+        if lacking:
+            raise CLIError(f"no measured bytes per cl100k token over the op texts of {lacking} - no ratio is borrowed "
+                           "([A-EST-1])")
+        ratios = {a: mo[a]["ratio"] for a in sorted(texts)}
+        est_arm, est_total = _per_arm(writers, texts, prompts, bounds, runs=runs,
+                                      context_bytes=READER_CONTEXT_CL100K * measured["ratio"], price=price, ratios=ratios)
+        estimate = {"note": "estimate, not a bound", "method": "[A-EST-1]", "bytes_per_cl100k_token": measured["ratio"],
                     "measured": {k: measured[k] for k in ("bytes", "tokens", "source") if k in measured},
-                    "per_arm": est_arm, "usd_total": round(est_total, 4)}
+                    "writer_ratios": ratios,
+                    "writer_measured": {a: {k: mo[a][k] for k in ("bytes", "tokens", "source") if k in mo[a]}
+                                        for a in sorted(texts)},
+                    "out_tokens_per_op": PRE_PILOT_OUT_TOKENS, "per_arm": est_arm, "usd_total": round(est_total, 4)}
     return {"note": "upper bound, not pilot medians", "formula": FORECAST_FORMULA, "runs": runs,
-            "session_ops_per_run": n_ops, "questions_per_run": len(prompts), "max_token_bytes": max_token_bytes,
-            "writer_bounds": {a: WRITER_BOUNDS[a] for a in sorted(writers) if writers[a] is not None},
+            "ops_per_run": {a: len(texts[a]) for a in sorted(texts)}, "questions_per_run": len(prompts),
+            "max_token_bytes": max_token_bytes, "writer_bounds": {a: dict(bounds[a]) for a in sorted(texts)},
             "price": dict(price), "per_arm": per_arm, "usd_total": round(total, 4), "estimate": estimate,
             "scheduler": "1 model probe (1 output token) before the stand; the gate's 1-token probes are counted after "
                          "the run - not bounded in advance",
             "hours": f"not forecast (Q-A6-2); the stand's wall ceiling is {SMOKE_WALL_CAP_H} h, the worst case "
                      f"{SMOKE_WALL_CAP_H} h plus one unit ceiling"}
+
+
+def forecast(writers: Mapping[str, str | None], session_texts: Mapping[str, Sequence[str]],
+             prompts: Mapping[tuple[str, str], str], *, runs: int, max_token_bytes: int,
+             measured: Mapping[str, Any] | None = None, price: Mapping[str, Any] = DEEPSEEK_FLASH_PRICE) -> dict:
+    """The session form (run_smoke's and the A/B harness's until C3/C4 hand them per-arm op texts): every writer arm's
+    op is a session (``session_texts``: unit -> its sessions' text), its bound is WRITER_BOUNDS', and ``measured`` is
+    both the reader's ratio and the writer's (its op texts are those sessions). A writer arm whose ops are not
+    sessions (mem0: messages) has no bound here - forecast_arms with its op texts and its probe's bound."""
+    PL = load("run_v3_plan.py", smoke=True)
+    for arm, llm in writers.items():
+        spec = PL.ARMS.get(arm)
+        if llm is not None and (arm not in WRITER_BOUNDS or spec is None or spec.granularity != "session"):
+            kind = f"its ops are {spec.granularity} ops (messages, not sessions)" if spec is not None else "it has no plan"
+            raise CLIError(f"arm {arm}: no upper bound for its writer's calls in WRITER_BOUNDS - {kind}: forecast_arms "
+                           "with its op texts and its bound - no forecast, no smoke")
+    ops = {a: dict(session_texts) for a in writers if writers[a] is not None}
+    out = forecast_arms(writers, ops, prompts, runs=runs, max_token_bytes=max_token_bytes, bounds=WRITER_BOUNDS,
+                        measured=measured, measured_ops={a: measured for a in ops} if measured is not None else None,
+                        price=price)
+    return {**out, "session_ops_per_run": sum(len(v) for v in session_texts.values())}
 
 
 #: Q-A6-2 / Q26: the smoke stand's wall ceiling - the declared debug ceiling of the pilot and the smoke, 6 h. A unit

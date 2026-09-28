@@ -88,6 +88,17 @@ def proxy_base(spec: Mapping[str, Any]) -> str:
     return f"http://127.0.0.1:{spec['port']}/u/{spec['run']}.{spec['unit']}/v1"
 
 
+def content(item: Mapping[str, Any], date: str | None, dated: bool) -> str:
+    """The text mem0 is given for one message: "<speaker>: <text>", after the §5.3 header "Conversation from
+    <YYYY-MM-DD>:" on a dated stand. run_v3.op_text prices exactly these bytes (F-C6-1)."""
+    text = f"{item['speaker']}: {item['text']}"
+    if dated:
+        if not date:
+            raise ValueError("a dated stand's write carries its date (§5.3 header)")
+        text = f"Conversation from {date[:10]}:\n{text}"
+    return text
+
+
 def mem0_config(spec: Mapping[str, Any]) -> dict:
     """The product's config: no temperature, no key, no thinking field - only what rev1 §2.2 declares."""
     store = Path(spec["unit_dir"]) / "store"
@@ -284,13 +295,9 @@ class Handler:
         if self.arm == "mem0":
             if item["role"] not in ("user", "assistant"):
                 raise ValueError(f"a mem0 message is from user or assistant, got {item['role']!r}")
-            content = f"{item['speaker']}: {item['text']}"
-            if self.spec["dated"]:
-                if not date:
-                    raise ValueError("a dated stand's write carries its date (§5.3 header)")
-                content = f"Conversation from {date[:10]}:\n{content}"
-            given = {"text_sha256": B.text_sha256(content)}
-            res = self.mem.add([{"role": item["role"], "content": content}], user_id=self.unit, infer=True)
+            text = content(item, date, self.spec["dated"])
+            given = {"text_sha256": B.text_sha256(text)}
+            res = self.mem.add([{"role": item["role"], "content": text}], user_id=self.unit, infer=True)
         else:
             idx = item["index"]
             if not isinstance(idx, int) or isinstance(idx, bool) or idx < 0 or idx in self.item_shas:
