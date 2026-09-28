@@ -12,6 +12,13 @@ This part (C5a) holds the verdicts; they read records, never a product:
   lines: calls, prompt and completion tokens, no failed and no unreported call - zero against zero is unmeasured, never
   a pass), the temperature and the thinking field as the pinned source sends them, the response format and no tool
   offered, the OSS timestamp refusal found in the source (else blocked by name, never a silent switch of the route);
+* C5a-2a: mem0's source facts are DECLARED in M0_SOURCE before any read of the pinned 2.2.0 (written from 2.0.19, the
+  auditor's O-a): a fact is read in a whole file or within one function (``scope``: exactly one class and one def by
+  the qualified name, parsed, never imported); the add path's LLM call sites come from the AST (``llm_sites``: each
+  one's line, whether it sits in a loop, its response_format as written); one distinct format is the format, several
+  are a set each line must belong to (C5A-10); ``m0_calls_per_add`` bounds the answered lines by the sites x the adds
+  (a site in a loop: blocked:source-unbounded); a thinking field mentioned in the DeepSeek LLM is
+  blocked:source-changed - its meaning goes to the auditor;
 * ``verdict``: "pass" only when every field is ok, there is no problem, every boundary check is complete with 0/0 and
   no catcher line belongs to the arm; else the first blocked:<reason> - the fields in their declared order, then the
   problems - else "fail". The proxy's own spawn is unwitnessed by design (launch.spawn_proxy): 0/0 covers the product
@@ -19,10 +26,12 @@ This part (C5a) holds the verdicts; they read records, never a product:
 """
 from __future__ import annotations
 
+import ast
 import hashlib
 import json
 import os
 import re
+import textwrap
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
@@ -30,6 +39,27 @@ from typing import Any, Iterable, Mapping, Sequence
 M0_USAGE_SOURCE = "mem0.llm.client.chat.completions.create, response.usage"
 M0_PIN = ("mem0ai", "2.2.0")
 M0_NO_CLIENT = "mem0's LLM has no OpenAI client"
+#: C5a-2a (the auditor's O-a, 07:0x): mem0's source facts, declared in code BEFORE any read of the pinned 2.2.0 - written
+#: from mem0 2.0.19 (the polygon's mem0_eval venv, read as data). On 2.2.0 anything but one match is blocked by name and
+#: goes to the auditor; a new pattern is an erratum with his ruling and one E5 line, never an edit after seeing 2.2.0.
+#: field: (file, pattern) - a whole-file fact; or (file, qualified name, pattern) - a fact within that function.
+M0_SOURCE = {
+    # the DeepSeek provider config's own default (the adapter sets none: §3, the product's defaults)
+    "m0_temperature": ("mem0/configs/llms/deepseek.py", r"^\s+temperature: float = ([0-9.]+),\s*$"),
+    # any mention of a thinking field in the DeepSeek LLM: none - the route is none; any - its meaning to the auditor
+    "m0_thinking": ("mem0/llms/deepseek.py", r"\bthinking\b"),
+    # the OSS refusal of a caller's timestamp in the SYNC Memory.add (the async twin is another class)
+    "m0_timestamp": ("mem0/memory/main.py", "Memory.add",
+                     r'if timestamp is not None:\s*\n\s*raise ValueError\(get_temporal_feature_error_message\("sync", "add", "timestamp"\)\)'),
+    # every LLM call site on the add path, by the AST (called, or handed to a pool)
+    "m0_llm_sites": ("mem0/memory/main.py", "Memory._add_to_vector_store", "self.llm.generate_response"),
+    # the answer's shape the fake upstream must give (R-C5-4): the list's key, and each item's text key
+    "m0_content_key": ("mem0/memory/main.py", "Memory._add_to_vector_store",
+                       r'json\.loads\(response, strict=False\)\.get\("(\w+)", \[\]\)'),
+    "m0_item_key": ("mem0/memory/main.py", "Memory._add_to_vector_store", r'mem_texts = \[m\.get\("(\w+)", ""\)'),
+    # Q-A8-8: the spaCy-backed utilities main.py imports at module level - every one, for the auditor
+    "m0_nlp": ("mem0/memory/main.py", r"^from mem0\.utils\.(entity_extraction|lemmatization|spacy_models) import"),
+}
 WITNESS_SCOPE = ("the boundary checks cover the product child's tree only; the probe proxy's own spawn is unwitnessed "
                  "by design (launch.spawn_proxy) - R-C5-9")
 
@@ -48,9 +78,7 @@ def _field(value: Any, *, rule: str, ok: bool, source: str | None = None, failed
 
 # ── source facts ─────────────────────────────────────────────────────────────────────────────────────────────
 
-def fact(root: Path, rel: str, pattern: str, *, name: str, group: int = 1) -> dict:
-    """Exactly one match of ``pattern`` (declared before the read) in ``root``/``rel``, read as data. ``rel`` must be
-    a relative path that stays under ``root``."""
+def _source_path(root: Path, rel: str, name: str) -> Path:
     if os.path.isabs(rel) or Path(rel).drive or ".." in Path(rel).parts:
         raise ProbeError(f"{name}: the source path {rel!r} is not a relative path under the root")
     path = Path(root) / rel
@@ -59,6 +87,13 @@ def fact(root: Path, rel: str, pattern: str, *, name: str, group: int = 1) -> di
             raise ProbeError(f"{name}: the source path {rel!r} resolves outside the root")
     except ValueError:
         raise ProbeError(f"{name}: the source path {rel!r} is on another drive than the root") from None
+    return path
+
+
+def fact(root: Path, rel: str, pattern: str, *, name: str, group: int = 1) -> dict:
+    """Exactly one match of ``pattern`` (declared before the read) in ``root``/``rel``, read as data. ``rel`` must be
+    a relative path that stays under ``root``."""
+    path = _source_path(root, rel, name)
     if not path.is_file():
         return {"value": None, "file": rel, "blocked": f"blocked:source-missing:{name}"}
     data = path.read_bytes()
@@ -72,6 +107,132 @@ def fact(root: Path, rel: str, pattern: str, *, name: str, group: int = 1) -> di
     sha = hashlib.sha256(data).hexdigest()
     return {"value": found[0].group(group), "file": rel, "line": lines[0], "sha256": sha,
             "source": f"{rel}:{lines[0]}@sha256:{sha}"}
+
+
+def all_in(root: Path, rel: str, pattern: str, *, name: str) -> dict:
+    """Every match of ``pattern`` in the file (a set fact - it may be empty), each with its line."""
+    path = _source_path(root, rel, name)
+    if not path.is_file():
+        return {"value": None, "file": rel, "blocked": f"blocked:source-missing:{name}"}
+    data = path.read_bytes()
+    text = data.decode("utf-8", "replace")
+    sha = hashlib.sha256(data).hexdigest()
+    found = [{"value": m.group(1) if m.re.groups else m.group(0), "line": text.count("\n", 0, m.start()) + 1}
+             for m in re.finditer(pattern, text, re.MULTILINE)]
+    return {"value": found, "file": rel, "sha256": sha, "source": f"{rel}@sha256:{sha}"}
+
+
+def scope(root: Path, rel: str, qualname: str, *, name: str) -> dict:
+    """The source of exactly one function, by its qualified name ("Class.method" or "function"), read as data and
+    parsed, never imported: {text, first_line, file, sha256, source}."""
+    path = _source_path(root, rel, name)
+    if not path.is_file():
+        return {"value": None, "file": rel, "blocked": f"blocked:source-missing:{name}"}
+    data = path.read_bytes()
+    text = data.decode("utf-8", "replace")
+    try:
+        tree = ast.parse(text)
+    except SyntaxError:
+        return {"value": None, "file": rel, "blocked": f"blocked:source-unparsable:{name}"}
+    *outer, fn = qualname.split(".")
+    body = tree.body
+    for cls in outer:
+        classes = [n for n in body if isinstance(n, ast.ClassDef) and n.name == cls]
+        if len(classes) != 1:
+            return {"value": None, "file": rel, "blocked": f"blocked:source-{'missing' if not classes else 'ambiguous'}:{name}"}
+        body = classes[0].body
+    defs = [n for n in body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and n.name == fn]
+    if len(defs) != 1:
+        return {"value": None, "file": rel, "blocked": f"blocked:source-{'missing' if not defs else 'ambiguous'}:{name}"}
+    node = defs[0]
+    lines = text.splitlines(keepends=True)
+    sha = hashlib.sha256(data).hexdigest()
+    return {"value": qualname, "file": rel, "first_line": node.lineno, "text": "".join(lines[node.lineno - 1:node.end_lineno]),
+            "sha256": sha, "source": f"{rel}:{node.lineno}@sha256:{sha}"}
+
+
+def fact_in(sc: Mapping, pattern: str, *, name: str, group: int = 1) -> dict:
+    """Exactly one match of ``pattern`` within a function's scope, its line counted in the file."""
+    if sc.get("blocked"):
+        return {"value": None, "file": sc.get("file"), "blocked": sc["blocked"]}
+    found = list(re.finditer(pattern, sc["text"], re.MULTILINE))
+    lines = [sc["first_line"] + sc["text"].count("\n", 0, m.start()) for m in found]
+    if not found:
+        return {"value": None, "file": sc["file"], "blocked": f"blocked:source-missing:{name}"}
+    if len(found) > 1:
+        return {"value": None, "file": sc["file"], "lines": lines, "blocked": f"blocked:source-ambiguous:{name}"}
+    m = found[0]
+    return {"value": m.group(group) if m.re.groups >= group else m.group(0), "file": sc["file"], "line": lines[0],
+            "sha256": sc["sha256"], "source": f"{sc['file']}:{lines[0]}@sha256:{sc['sha256']}"}
+
+
+def _dotted(node: ast.AST) -> str | None:
+    parts = []
+    while isinstance(node, ast.Attribute):
+        parts.append(node.attr)
+        node = node.value
+    if isinstance(node, ast.Name):
+        return ".".join([node.id, *reversed(parts)])
+    return None
+
+
+_LOOPS = (ast.For, ast.AsyncFor, ast.While, ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)
+
+
+def llm_sites(sc: Mapping, dotted: str) -> dict:
+    """Every call site of ``dotted`` in the scope, by the AST: the call itself, or a call that hands it on (a pool, a
+    thread); each with its line in the file, whether it sits in a loop, and its response_format as written (a literal,
+    None when absent, "unparsable" otherwise)."""
+    if sc.get("blocked"):
+        return {"value": None, "file": sc.get("file"), "blocked": sc["blocked"]}
+    tree = ast.parse(textwrap.dedent(sc["text"]))
+    out = []
+
+    def walk(node: ast.AST, in_loop: bool) -> None:
+        if isinstance(node, ast.Call) and (_dotted(node.func) == dotted or any(_dotted(a) == dotted for a in node.args)):
+            kw = next((k.value for k in node.keywords if k.arg == "response_format"), None)
+            if kw is None:
+                fmt = None
+            else:
+                try:
+                    fmt = ast.literal_eval(kw)
+                except ValueError:
+                    fmt = "unparsable"
+            out.append({"line": sc["first_line"] + node.lineno - 1, "in_loop": in_loop, "response_format": fmt})
+        for child in ast.iter_child_nodes(node):
+            walk(child, in_loop or isinstance(node, _LOOPS))
+    walk(tree, False)
+    if not out:
+        return {"value": None, "file": sc["file"], "blocked": "blocked:source-missing:m0_llm_sites"}
+    return {"value": out, "file": sc["file"], "sha256": sc["sha256"], "source": sc["source"]}
+
+
+def formats(sites: Mapping) -> dict:
+    """C5A-10 (the auditor, declared before any line): one distinct response_format across the sites is the single
+    format; several are a set, each line's format must be one of them, with the sites listed."""
+    if sites.get("blocked"):
+        return {"value": None, "blocked": sites["blocked"]}
+    fmts = [x["response_format"] for x in sites["value"]]
+    if "unparsable" in fmts:
+        return {"value": None, "source": sites.get("source"), "blocked": "blocked:source-unparsable:m0_format_tools"}
+    kinds = sorted({f.get("type") if isinstance(f, dict) else f for f in fmts}, key=str)
+    at = [x["line"] for x in sites["value"]]
+    if len(kinds) == 1:
+        return {"value": kinds[0], "source": sites.get("source"), "sites": at}
+    return {"value": None, "formats": kinds, "source": sites.get("source"), "sites": at}
+
+
+def thinking_fact(root: Path) -> dict | None:
+    """The pinned DeepSeek LLM's thinking field: None when it mentions none (the route is none); a mention is
+    blocked:source-changed:m0_thinking - its meaning goes to the auditor, never guessed; no file is blocked too."""
+    rel, pattern = M0_SOURCE["m0_thinking"]
+    found = all_in(root, rel, pattern, name="m0_thinking")
+    if found.get("blocked"):
+        return found
+    if not found["value"]:
+        return None
+    return {"value": None, "file": rel, "lines": [x["line"] for x in found["value"]], "source": found["source"],
+            "blocked": "blocked:source-changed:m0_thinking"}
 
 
 # ── the proxy's lines ────────────────────────────────────────────────────────────────────────────────────────
@@ -180,17 +341,39 @@ def m0_thinking(src: Mapping | None, calls: Iterable[Mapping], *, run: str, unit
 
 
 def m0_format_tools(src: Mapping, calls: Iterable[Mapping], *, run: str, unit: str) -> dict:
-    """Every line asks the response format the pinned source sets and offers no tool."""
-    rule = "every v1 line of the unit asks the pinned source's response_format and offers no tool"
+    """Every line asks the response format the pinned source sets (C5A-10: one of the sites' formats when they
+    differ) and offers no tool."""
+    rule = "every v1 line of the unit asks the pinned source's response_format (one of its sites') and offers no tool"
     want, blocked = _source_value(src, "m0_format_tools", rule)
     if blocked:
         return blocked
+    allowed = list(src["formats"]) if "formats" in src else [want]
+    want = want if "formats" not in src else list(src["formats"])
     lines = mine(calls, arm="mem0", run=run, unit=unit)
     if not lines:
         return _field(want, rule=rule, ok=False, source=src.get("source"), failed="unmeasured: no line")
-    bad = sorted({f"response_format {c.get('response_format')!r}" for c in lines if c.get("response_format") != want})
+    bad = sorted({f"response_format {c.get('response_format')!r}" for c in lines if c.get("response_format") not in allowed})
     bad += sorted({f"tools_offered {t}" for c in lines for t in (c.get("tools_offered") or [])})
     return _field(want, rule=rule, ok=not bad, source=src.get("source"), failed="; ".join(bad))
+
+
+def m0_calls_per_add(sites: Mapping, calls: Iterable[Mapping], *, run: str, unit: str, adds: int) -> dict:
+    """The answered lines of the unit are at most the add path's LLM call sites x the adds (C6's requests_per_op); a
+    site in a loop has no static bound - blocked:source-unbounded, never a guess."""
+    rule = "answered v1 lines of the unit <= the add path's LLM call sites x the adds; at least one"
+    if sites.get("blocked"):
+        return _field(None, rule=rule, ok=False, source=sites.get("source"), failed=sites["blocked"], blocked=sites["blocked"])
+    if any(x["in_loop"] for x in sites["value"]):
+        why = "blocked:source-unbounded:m0_calls_per_add"
+        return _field(None, rule=rule, ok=False, source=sites.get("source"), failed=why, blocked=why)
+    bound = len(sites["value"])
+    answered = len(_answered(mine(calls, arm="mem0", run=run, unit=unit)))
+    value = {"bound_per_add": bound, "adds": adds, "answered": answered}
+    if not answered:
+        return _field(value, rule=rule, ok=False, source=sites.get("source"), failed="unmeasured: no answered line")
+    over = answered > bound * adds
+    return _field(value, rule=rule, ok=not over, source=sites.get("source"),
+                  failed=f"{answered} answered lines over the bound {bound} x {adds} adds" if over else "")
 
 
 def m0_timestamp(src: Mapping) -> dict:

@@ -75,11 +75,9 @@ class _Safe:
     closing row names it, and the suite never crashes. The rows that expect a refusal call P directly."""
 
     def __getattr__(self, name):
-        fn = getattr(P, name)
-
         def call(*a, **k):
             try:
-                return fn(*a, **k)
+                return getattr(P, name)(*a, **k)
             except Exception as e:  # noqa: BLE001 - the promise under test
                 msg = f"RAISED {type(e).__name__}: {e}"
                 RAISED.append(f"{name}: {msg}")
@@ -284,6 +282,148 @@ P.write_probe(dest, {"arm": "mem0", "outcome": "pass"})
 check("probe.json is written", json.loads(dest.read_text(encoding="utf-8"))["outcome"] == "pass")
 check("probe.json is written once - a second write is refused", refused(lambda: P.write_probe(dest, {"x": 1})).startswith("refused")
       and json.loads(dest.read_text(encoding="utf-8"))["outcome"] == "pass")
+
+print("\n- C5a-2a: mem0's source facts, declared before any read of 2.2.0 (the auditor's O-a) -")
+M2 = TMP / "site22"
+for d in ("mem0/configs/llms", "mem0/llms", "mem0/memory"):
+    (M2 / d).mkdir(parents=True)
+(M2 / "mem0/configs/llms/deepseek.py").write_bytes(
+    b"class DeepSeekConfig:\n    def __init__(\n        self,\n        model=None,\n        temperature: float = 0.3,\n"
+    b"        max_tokens: int = 2000,\n    ):\n        pass\n")
+(M2 / "mem0/llms/deepseek.py").write_bytes(b"class DeepSeekLLM:\n    def generate_response(self, messages, response_format=None):\n"
+                                           b"        return self.client.chat.completions.create(**params)\n")
+MAIN = (b"from mem0.utils.entity_extraction import extract_entities\n"
+        b"from mem0.utils.lemmatization import lemmatize_for_bm25\n"
+        b"\n"
+        b"class Memory:\n"
+        b"    def add(self, messages, timestamp=None):\n"
+        b"        if timestamp is not None:\n"
+        b"            raise ValueError(get_temporal_feature_error_message(\"sync\", \"add\", \"timestamp\"))\n"
+        b"        return self._add_to_vector_store(messages)\n"
+        b"\n"
+        b"    def _add_to_vector_store(self, messages, infer=True):\n"
+        b"        response = self.llm.generate_response(\n"
+        b"            messages=[{\"role\": \"system\", \"content\": \"x\"}],\n"
+        b"            response_format={\"type\": \"json_object\"},\n"
+        b"        )\n"
+        b"        try:\n"
+        b"            items = json.loads(response, strict=False).get(\"memory\", [])\n"
+        b"        except ValueError:\n"
+        b"            items = json.loads(extract_json(response), strict=False).get(\"memory\", [])\n"
+        b"        mem_texts = [m.get(\"text\", \"\") for m in items if m.get(\"text\")]\n"
+        b"        return mem_texts\n"
+        b"\n"
+        b"class AsyncMemory:\n"
+        b"    async def add(self, messages, timestamp=None):\n"
+        b"        if timestamp is not None:\n"
+        b"            raise ValueError(await get_temporal_feature_error_message_async(\"async\", \"add\", \"timestamp\"))\n"
+        b"\n"
+        b"    async def _add_to_vector_store(self, messages, infer=True):\n"
+        b"        response = await asyncio.to_thread(self.llm.generate_response, messages=messages)\n"
+        b"        items = json.loads(response, strict=False).get(\"memory\", [])\n")
+(M2 / "mem0/memory/main.py").write_bytes(MAIN)
+sc = S.scope(M2, "mem0/memory/main.py", "Memory._add_to_vector_store", name="m0_add_path")
+check("a function scope is exactly one class and one def by its qualified name - the async twin is another class",
+      sc.get("first_line") == 10 and "blocked" not in sc and sc.get("sha256") == hashlib.sha256(MAIN).hexdigest()
+      and sc.get("source") == f"mem0/memory/main.py:10@sha256:{hashlib.sha256(MAIN).hexdigest()}", str({k: sc.get(k) for k in ("first_line", "blocked")}))
+check("a class or def that is not there is blocked:source-missing:<field>",
+      S.scope(M2, "mem0/memory/main.py", "Memory._add_nowhere", name="m0_x").get("blocked") == "blocked:source-missing:m0_x"
+      and S.scope(M2, "mem0/memory/main.py", "Mem.add", name="m0_y").get("blocked") == "blocked:source-missing:m0_y")
+(M2 / "mem0/memory/dup.py").write_bytes(b"class Memory:\n    def add(self):\n        pass\n\n    def add(self):\n        pass\n")
+check("two defs of one name in the class are blocked:source-ambiguous:<field>",
+      S.scope(M2, "mem0/memory/dup.py", "Memory.add", name="m0_z").get("blocked") == "blocked:source-ambiguous:m0_z")
+ts = S.fact_in(S.scope(M2, "mem0/memory/main.py", "Memory.add", name="m0_timestamp"), P.M0_SOURCE["m0_timestamp"][2],
+               name="m0_timestamp")
+check("a fact within a scope: exactly one match there, its line counted in the file (the sync refusal, not the async)",
+      ts.get("line") == 6 and "blocked" not in ts, str(ts))
+ck = S.fact_in(sc, P.M0_SOURCE["m0_content_key"][2], name="m0_content_key")
+check("the answer's key read where the answer is parsed: 'memory', on its own line", ck.get("value") == "memory"
+      and ck.get("line") == 16, str(ck))
+(M2 / "mem0/memory/two.py").write_bytes(b"class Memory:\n    def add(self):\n        pass\n\nclass Memory:\n    def add(self):\n        pass\n")
+check("two classes of one name are blocked:source-ambiguous:<field>",
+      S.scope(M2, "mem0/memory/two.py", "Memory.add", name="m0_w").get("blocked") == "blocked:source-ambiguous:m0_w")
+asc = S.scope(M2, "mem0/memory/main.py", "AsyncMemory._add_to_vector_store", name="m0_async")
+check("an async def is a function scope too", asc.get("first_line") == 27 and "blocked" not in asc, str(asc.get("blocked")))
+hs = S.llm_sites(asc, P.M0_SOURCE["m0_llm_sites"][2])
+check("a call that hands the LLM call on (a thread, a pool) is a site; no response_format written is None",
+      hs.get("value") == [{"line": 28, "in_loop": False, "response_format": None}], str(hs))
+amb = S.fact_in(sc, r'\.get\("(\w+)", \[\]\)', name="m0_amb")
+check("two matches within a scope are blocked:source-ambiguous:<field> with their lines",
+      amb.get("blocked") == "blocked:source-ambiguous:m0_amb" and amb.get("lines") == [16, 18], str(amb))
+nos = S.llm_sites(S.scope(M2, "mem0/memory/main.py", "Memory.add", name="m0_llm_sites"), P.M0_SOURCE["m0_llm_sites"][2])
+check("a scope with no LLM call site is blocked:source-missing:m0_llm_sites", nos.get("blocked") == "blocked:source-missing:m0_llm_sites",
+      str(nos))
+bsc = S.fact_in(S.scope(M2, "mem0/memory/main.py", "Memory.nothing", name="m0_scope_q"), r"x", name="m0_q")
+check("a fact within a blocked scope carries the SCOPE's blocked reason", bsc.get("blocked") == "blocked:source-missing:m0_scope_q",
+      str(bsc))
+RAW = b"class Memory:\n    # \xff\xfe not utf-8\n    def add(self):\n        pass\n"
+(M2 / "mem0/memory/raw.py").write_bytes(RAW)
+rs = S.scope(M2, "mem0/memory/raw.py", "Memory.add", name="m0_raw")
+check("a scope's sha256 is the file's BYTES, even where they are not UTF-8", rs.get("sha256") == hashlib.sha256(RAW).hexdigest()
+      and rs.get("first_line") == 3, str({k: rs.get(k) for k in ("sha256", "first_line", "blocked")}))
+sites = S.llm_sites(sc, P.M0_SOURCE["m0_llm_sites"][2])
+check("the add path's LLM call sites by the AST: one, its line, its response_format as written, not in a loop",
+      sites.get("value") == [{"line": 11, "in_loop": False, "response_format": {"type": "json_object"}}], str(sites))
+(M2 / "mem0/memory/loop.py").write_bytes(
+    b"class Memory:\n    def _add_to_vector_store(self, facts):\n        for f in facts:\n"
+    b"            self.llm.generate_response(messages=f, response_format={\"type\": \"text\"})\n"
+    b"        self.llm.generate_response(messages=facts, response_format=fmt)\n")
+lp = S.llm_sites(S.scope(M2, "mem0/memory/loop.py", "Memory._add_to_vector_store", name="m0_add_path"),
+                 P.M0_SOURCE["m0_llm_sites"][2])
+check("a call site inside a loop is marked, and a response_format that is not a literal is 'unparsable'",
+      lp.get("value") == [{"line": 4, "in_loop": True, "response_format": {"type": "text"}},
+                          {"line": 5, "in_loop": False, "response_format": "unparsable"}], str(lp))
+SNAP1 = {"calls": 1, "failed": 0, "no_usage": 0, "prompt_tokens": 1000, "completion_tokens": 10}
+one = [line(prompt=1000, completion=10)]
+r = S.m0_calls_per_add(sites, one, run="r1", unit="u1", adds=1)
+check("calls per add: the answered lines of the unit are at most the sites x the adds", r["ok"] is True
+      and r["value"] == {"bound_per_add": 1, "adds": 1, "answered": 1}, str(r))
+r = S.m0_calls_per_add(sites, one + [line()], run="r1", unit="u1", adds=1)
+check("more answered lines than the bound fail by name", r["ok"] is False and "bound" in r["rule_failed"], str(r))
+r = S.m0_calls_per_add(sites, one + [line(unit="r1.u2"), line(arm="letta"), line(status=500, prompt=None, completion=None)],
+                       run="r1", unit="u1", adds=1)
+check("only the unit's own answered lines count against the bound", r["ok"] is True
+      and (r.get("value") or {}).get("answered") == 1, str(r))
+r = S.m0_calls_per_add(sites, [], run="r1", unit="u1", adds=1)
+check("no answered line is unmeasured", r["ok"] is False and "unmeasured" in r["rule_failed"], str(r))
+r = S.m0_calls_per_add(lp, one, run="r1", unit="u1", adds=1)
+check("a site in a loop has no static bound: blocked:source-unbounded:m0_calls_per_add",
+      r.get("blocked") == "blocked:source-unbounded:m0_calls_per_add", str(r))
+fm1 = S.formats(sites)
+check("C5A-10: one distinct response_format across the sites is the single format", fm1.get("value") == "json_object"
+      and "formats" not in fm1, str(fm1))
+two = {"value": [{"line": 3, "in_loop": False, "response_format": {"type": "json_object"}},
+                 {"line": 9, "in_loop": False, "response_format": {"type": "text"}}], "source": "x"}
+fm2 = S.formats(two)
+check("C5A-10: formats that differ across the sites become a set, the sites listed", fm2.get("value") is None
+      and fm2.get("formats") == ["json_object", "text"] and fm2.get("sites") == [3, 9], str(fm2))
+r = S.m0_format_tools(fm2, [line(), line(response_format="text")], run="r1", unit="u1")
+check("C5A-10: with a set, each line's format must be one of the sites' formats", r["ok"] is True, str(r))
+r = S.m0_format_tools(fm2, [line(response_format="xml")], run="r1", unit="u1")
+check("C5A-10: a format none of the sites declares fails", r["ok"] is False and "xml" in r["rule_failed"], str(r))
+fm3 = S.formats(lp)
+check("a site whose format is not a literal makes the format blocked:source-unparsable:m0_format_tools",
+      fm3.get("blocked") == "blocked:source-unparsable:m0_format_tools", str(fm3))
+th = S.thinking_fact(M2)
+check("no thinking field in the pinned DeepSeek LLM: the thinking route is none (None to m0_thinking)", th is None, str(th))
+(M2 / "mem0/llms/deepseek.py").write_bytes(b"class DeepSeekLLM:\n    extra_body = {\"thinking\": {\"type\": \"disabled\"}}\n")
+th = S.thinking_fact(M2)
+check("a thinking field in the pinned DeepSeek LLM is blocked:source-changed:m0_thinking - its meaning comes to the "
+      "auditor, never guessed", (th or {}).get("blocked") == "blocked:source-changed:m0_thinking", str(th))
+(M2 / "mem0/llms/deepseek.py").unlink()
+th = S.thinking_fact(M2)
+check("no DeepSeek LLM file at all is blocked:source-missing:m0_thinking, never the route none",
+      (th or {}).get("blocked") == "blocked:source-missing:m0_thinking", str(th))
+nlp = S.all_in(M2, P.M0_SOURCE["m0_nlp"][0], P.M0_SOURCE["m0_nlp"][1], name="m0_nlp")
+check("the spaCy-backed utilities main.py imports, every one with its line (Q-A8-8: facts for the auditor)",
+      nlp.get("value") == [{"value": "entity_extraction", "line": 1}, {"value": "lemmatization", "line": 2}], str(nlp))
+tf = S.fact(M2, P.M0_SOURCE["m0_temperature"][0], P.M0_SOURCE["m0_temperature"][1], name="m0_temperature")
+check("the DeepSeek config's own temperature default, one match", tf.get("value") == "0.3" and tf.get("line") == 5, str(tf))
+check("every declared mem0 source fact names a relative file and a pattern, fixed in code before any read of 2.2.0",
+      set(P.M0_SOURCE) == {"m0_temperature", "m0_thinking", "m0_timestamp", "m0_llm_sites", "m0_content_key",
+                           "m0_item_key", "m0_nlp"} and all(not Path(v[0]).is_absolute() for v in P.M0_SOURCE.values()))
+ik = S.fact_in(sc, P.M0_SOURCE["m0_item_key"][2], name="m0_item_key")
+check("the item's text key, read where the texts are taken", ik.get("value") == "text" and ik.get("line") == 19, str(ik))
 
 check("C4A-8 / C5A-8: no verdict raised on any row - every failure came back as a field", RAISED == [], str(RAISED))
 if os.path.islink(LINK):
