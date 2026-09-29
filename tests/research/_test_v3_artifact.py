@@ -101,7 +101,8 @@ MANIFEST = {"dataset_sha256": "d" * 64, "list_sha256": "e" * 64, "split": "score
 ISHA = A.sha256_of(MANIFEST)
 PACER = {"calls": 40, "bypass_calls": {"requests": 0, "aiohttp": 0},
          "failed_outcomes": {"by_status": {}, "by_exception_type": {}, "gave_up": 0},
-         "failed_outcomes_llm": {"by_status": {}, "by_exception_type": {}, "gave_up": 0}, "llm_retries": 0}
+         "failed_outcomes_llm": {"by_status": {}, "by_exception_type": {}, "gave_up": 0}, "llm_retries": 0,
+         "mode": "observe"}                      # the real attach() names its mode (B-PACER-REC)
 CLOUD = {"calls": 12, "models_seen": ["deepseek-v4-flash"], **{k: 0 for k in A.CLOUD_ZERO},
          "transport_recovered": 0, "transport_lost": 0, "upstream_errors": 0, "client_abandoned": 0,
          "product_retries": 0, "thinking_injected": 0, "fingerprints_seen": {"v1": ["fp1"], "anthropic": []},
@@ -398,6 +399,53 @@ check("P0a: needs Ollama, 0 paced calls, K61 not holding",
 check("... but 0 paced calls with K61 holding is not P0a",
       not has(flags(lambda r: r["ollama_transport"].__setitem__("calls", 0),
                     ctx=A.P0Context(**{**CTX.__dict__, "k61": {"mem0": True}})), "a"))
+
+
+def real_ot(mode: str) -> dict:
+    """B-PACER-REC: an ollama_transport block over the REAL pacer's attach() record, the pacer installed in `mode` (a
+    fresh module each time, uninstalled after) - never a hand-written mode. Its calls are the clean row's 40, so no
+    other P0a clause speaks."""
+    pc = _load(f"v3_pacer_for_artifact_{mode}", ROOT / "research" / "_ollama_pacer.py")
+    pc.install(mode)
+    try:
+        out: dict = {}
+        pc.attach(out)
+    finally:
+        pc.uninstall()
+    return A.ollama_transport({**out["ollama_transport"], "calls": 40}, embed_at_cap=0, fallback_local=0,
+                              embed_models_seen=[D1], degraded_recalls=0, direct_calls=0)
+
+
+def ot_flags(make) -> list[str]:
+    """flags() of the clean row with its ollama_transport made by `make`; a make that raises FAILs the row by name."""
+    try:
+        ot = make()
+    except Exception as e:  # noqa: BLE001 - the row that needed it names the crash
+        return [f"CRASH {e!r}"]
+    return flags(lambda r: r.__setitem__("ollama_transport", ot))
+
+
+def _detail(**over) -> dict:
+    ot = copy.deepcopy(clean["ollama_transport"])
+    ot["detail"].update(over)
+    return ot
+
+
+fl_pace, fl_obs = ot_flags(lambda: real_ot("pace")), ot_flags(lambda: real_ot("observe"))
+check("P0a (B-PACER-REC): the real pacer's record after install('pace') is flagged by name - a second layer of pacing and "
+      "retries on this arm alone, where the proxy leg is the one layer (R-EMBED-PATH)",
+      any(x.startswith("P0a:") and "ran in mode 'pace'" in x for x in fl_pace), str(fl_pace))
+check("... and after install('observe') the same record raises no flag", fl_obs == [], str(fl_obs))
+fl_nomode = ot_flags(lambda: {**_detail(), "detail": {k: v for k, v in _detail()["detail"].items() if k != "mode"}})
+fl_nodet = ot_flags(lambda: {k: v for k, v in _detail().items() if k != "detail"})
+fl_strdet = ot_flags(lambda: {**_detail(), "detail": "observe"})
+check("P0a (B-PACER-REC): a pacer record that names no mode - a detail without it, no detail, a detail that is no record - "
+      "is flagged: unmeasured, never read as observe",
+      all(any(x.startswith("P0a:") and "names no mode" in x for x in f) for f in (fl_nomode, fl_nodet, fl_strdet)),
+      f"{fl_nomode} | {fl_nodet} | {fl_strdet}")
+fl_odd, fl_null = ot_flags(lambda: _detail(mode="burst")), ot_flags(lambda: _detail(mode=None))
+check("P0a (B-PACER-REC): every mode but 'observe' is flagged - an unknown one and a null one, not only 'pace'",
+      all(any(x.startswith("P0a:") and "ran in mode" in x for x in f) for f in (fl_odd, fl_null)), f"{fl_odd} | {fl_null}")
 check("P0b: cloud_transport missing", has(flags(lambda r: r.pop("cloud_transport")), "b"))
 check("P0b: a P0(b) counter > 0", has(flags(lambda r: r["cloud_transport"].__setitem__("thinking_calls", 1)), "b"))
 check("P0b: two models seen", has(flags(lambda r: r["cloud_transport"].__setitem__("models_seen", ["a", "b"])), "b"))

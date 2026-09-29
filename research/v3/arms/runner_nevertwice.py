@@ -293,7 +293,7 @@ def bind(spec: Mapping[str, Any], env: Mapping[str, str]) -> tuple[dict, dict]:
     pacer = _load("v3_ollama_pacer", REPO / "research" / "_ollama_pacer.py")
     pacer.install("observe")                      # R-EMBED-PATH: the leg paces and retries - one layer for every arm
     pacer.set_route("127.0.0.1", spec["ollama_port"])
-    rec["pacer"] = "observe"
+    rec["pacer"] = pacer._MODE  # the installed pacer's own mode, never a copy of the intention (B-PACER-REC)
     rec["ollama_route"] = {name: declared[name] for name, _a, _p in OLLAMA_ROUTES}
     # 7. the environment as recorded - names always, values masked
     rec["nevertwice_env"] = {k: masked(k, v) for k, v in sorted(os.environ.items()) if k.startswith("NEVERTWICE_")}

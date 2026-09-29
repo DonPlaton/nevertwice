@@ -479,6 +479,9 @@ class P0Context:
     m5_pass: bool | None = None
 
 
+_NO_MODE = object()                             # p0a: the pacer record names no mode (not the same as a null mode)
+
+
 def p0a(row: Mapping, ctx: P0Context, arm: str) -> list[str]:
     ot, d = row.get("ollama_transport") or {}, row.get("arm_decl") or {}
     out = []
@@ -496,6 +499,18 @@ def p0a(row: Mapping, ctx: P0Context, arm: str) -> list[str]:
     needs = d.get("llm_transport") == "ollama" or d.get("embeds_via_ollama")
     if needs and ot.get("calls", 0) == 0 and not ctx.k61.get(arm):
         out.append("P0a: needs Ollama but counts no paced call, and K61 does not hold")
+    if ot:
+        # B-PACER-REC (A6, 29.09): one pacing layer for every arm - the proxy leg paces and retries, the arm's child
+        # only observes; a child pacer in any other mode adds pauses and retries for this arm alone. The mode is the
+        # pacer's own attach() record (detail); a record that names none is unmeasured, never read as observe.
+        det = ot.get("detail")
+        mode = det["mode"] if isinstance(det, Mapping) and "mode" in det else _NO_MODE
+        if mode is _NO_MODE:
+            out.append("P0a: the arm's pacer record names no mode - one pacing layer (the proxy leg's) is unmeasured, "
+                       "never read as observe (B-PACER-REC)")
+        elif mode != "observe":
+            out.append(f"P0a: the arm's child pacer ran in mode {mode!r}, not 'observe' - a second layer of pacing and "
+                       f"retries on this arm alone (R-EMBED-PATH, B-PACER-REC)")
     return out
 
 

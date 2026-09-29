@@ -472,7 +472,8 @@ D1 = "nvt3-bge-m3-d1:latest"
 MANIFEST = {"dataset_sha256": "d" * 64, "list_sha256": "e" * 64, "split": "scored", "prefix": 10}
 PACER = {"calls": 40, "bypass_calls": {"requests": 0, "aiohttp": 0},
          "failed_outcomes": {"by_status": {}, "by_exception_type": {}, "gave_up": 0},
-         "failed_outcomes_llm": {"by_status": {}, "by_exception_type": {}, "gave_up": 0}, "llm_retries": 0}
+         "failed_outcomes_llm": {"by_status": {}, "by_exception_type": {}, "gave_up": 0}, "llm_retries": 0,
+         "mode": "observe"}                      # the real attach() names its mode (B-PACER-REC)
 
 
 def decl(system: str) -> dict:
