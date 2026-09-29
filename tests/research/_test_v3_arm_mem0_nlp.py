@@ -91,9 +91,15 @@ st = A.nlp_state(modules={SM: SimpleNamespace(_nlp_lemma=object(), _load_failed_
 check("a name the module does not have is None (never a default), a failed flag that is not a bool is None",
       ok(lambda: st["nlp_full"] is None and st["nlp_lemma"] is True and st["failed_full"] is None
          and st["failed_lemma"] is None), str(st))
+# G4 (the auditor's gate on b60190a): "pip" is no distribution every interpreter has - the packaging step's bare venv
+# had none - so the one it has is read from this interpreter's own metadata
+import importlib.metadata as _md0  # noqa: E402
+_have = sorted({(d.metadata["Name"] or "") for d in _md0.distributions()} - {""})
+if not _have:
+    print("       SKIP the installed-check's True half: this interpreter has no distribution at all - not passed")
 check("the real installed-check reads metadata only: a distribution this interpreter has is True, one it has not is False",
-      ok(lambda: A._installed("pip") is True and A._installed("nvt3-no-such-distribution-x") is False
-         and "spacy" not in sys.modules), str(sorted(m for m in sys.modules if "spacy" in m)))
+      ok(lambda: (not _have or A._installed(_have[0]) is True) and A._installed("nvt3-no-such-distribution-x") is False
+         and "spacy" not in sys.modules), f"{_have[:3]} {sorted(m for m in sys.modules if 'spacy' in m)}")
 
 import importlib.metadata as _md  # noqa: E402
 _real_dist = _md.distribution

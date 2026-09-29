@@ -113,11 +113,18 @@ def write_jsonl(name: str, rows) -> Path:
     return p
 
 
+_WRITE_PARQUET = ("import json, sys\nimport pyarrow as pa\nimport pyarrow.parquet as pq\n"
+                  "pq.write_table(pa.Table.from_pylist(json.loads(sys.stdin.buffer.read().decode('utf-8'))), sys.argv[1])\n")
+
+
 def write_parquet(name: str, rows) -> Path:
-    import pyarrow as pa  # noqa: PLC0415
-    import pyarrow.parquet as pq  # noqa: PLC0415
+    """The fixture written by PARQ_PY - the interpreter the child reads it with. G4 (the auditor's gate on b60190a):
+    this process imported pyarrow itself, so a bare venv (the packaging step's, dev extra only) died here with "No
+    module named 'pyarrow'" although PARQ_PY - the polygon's v3_data venv - had it."""
+    import subprocess  # noqa: PLC0415
     p = DATA / name
-    pq.write_table(pa.Table.from_pylist(rows), p)
+    subprocess.run([str(PARQ_PY), "-I", "-c", _WRITE_PARQUET, str(p)], check=True, capture_output=True, timeout=120,
+                   input=json.dumps(rows, ensure_ascii=False).encode("utf-8"))
     return p
 
 

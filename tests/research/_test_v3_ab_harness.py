@@ -42,6 +42,9 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
 sys.path.insert(0, str(HERE.parent))
 import _env_guard  # noqa: F401,E402  hermetic: scrub store env before any project import
+# G4 (the auditor's gate on b60190a): the research extra; the self-check skips this suite cleanly without it - the
+# legs' units die by tree (scheduler.tree_kill_route), and with no job object here (jobs=None) psutil is the only route
+import psutil  # noqa: F401,E402
 
 
 def _load(name: str, path: Path):
