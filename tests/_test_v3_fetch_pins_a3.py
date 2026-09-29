@@ -198,7 +198,9 @@ check("the floor is the manifest's rule, read from it",
       P.FLOOR_GIB == json.loads((ROOT / "research/v3/fetch_manifest.json").read_text(encoding="utf-8"))["disk"]["floor_gb"]
       and P.MULTIPLE == 3 and P.MAX_FILE == 10 * P.GIB)
 print("\n- the plan of a window (S8, S9, dedupe, jobs, floor) -")
-HUB, PR, UR = TMP / "hub", TMP / "pins", TMP / "runs" / "_fetch.a3-hf" / "r1" / "fetch"
+#: plan_window touches no disk: its rows plan on short relative roots, never under TMP, whose length is the machine's
+#: (the auditor, 2026-09-30: an 8.3 TEMP made a real pin's path 241 characters long)
+HUB, PR, UR = Path("hub"), Path("pins"), Path("runs") / "_fetch.a3-hf" / "r1" / "fetch"
 T = {"hf_lfs": hf_lfs, "hf_small": hf_small, "hf_twin": dict(hf_lfs, role="bracket"),
      "gh_a": gh, "tk": {**pin("url", None, "https://openaipublic.blob.core.windows.net/encodings/cl100k_base.tiktoken", None,
                               role="tokenizer", window="a3-tiktoken"), "cross_check": {"sha256": "7" * 64}}}
@@ -228,7 +230,7 @@ check("S9: a URL off the window's hosts stops",
           **MANI["windows"]["a3-github"], "hosts": ["api.github.com"]}}}, hf_hub=HUB, pins_root=PR, unit_root=UR), "S9"))
 check("S7: a unit path too long for Windows stops before anything starts",
       stopped(lambda: P.plan_window("a3-hf", disc=D, pins=T, manifest=MANI, hf_hub=HUB, pins_root=PR,
-                                    unit_root=TMP / ("u" * 220)), "S7"))
+                                    unit_root=Path("u" * 240)), "S7"))
 gp = P.plan_window("a3-github", disc=D, pins=T, manifest=MANI, hf_hub=HUB, pins_root=PR, unit_root=UR)
 check("a3-github: raw.githubusercontent.com at the commit, no redirect, placed under _pins/github/<commit>",
       gp.jobs[0]["max_redirects"] == 0 and gp.jobs[0]["requests"][0]["url"].startswith("https://raw.githubusercontent.com/")
@@ -300,6 +302,14 @@ def fake_record(plan, bodies: dict, base: Path, *, hosts=None, issuer="Amazon", 
             "jobs": [{"index": 0, "rc": 0, "unit": str(unit), "summary": summary}]}
 
 
+#: The placement and end-to-end rows below write real files under TMP, so their paths carry TMP's length. Measured
+#: 2026-09-30 under the lock by logging every path plan_window checks, over the whole suite (192 paths): the longest is
+#: the temp directory plus 148 (hf_small's destination in a placement row). The precondition is named here, before any
+#: of them can stop with S7.
+TEMP_MAX = P.SAFE_PATH - 1 - 148
+check(f"the placement rows fit this machine: its temp directory ({len(tempfile.gettempdir())} characters) is at most "
+      f"{TEMP_MAX} - their longest path is the temp directory plus 148, under SAFE_PATH ({P.SAFE_PATH})",
+      len(tempfile.gettempdir()) <= TEMP_MAX, tempfile.gettempdir())
 POLY = TMP / "poly"
 HUB2, PR2 = POLY / "hf_cache" / "hub", POLY / "runs" / "_pins"
 bp = TMP / "disc_real"
@@ -871,9 +881,12 @@ write(b7 / "a7d1" / "j0" / "gh/topoteretes__cognee/repo.json", {"full_name": "to
                                                                   "license": {"spdx_id": "Apache-2.0"}})
 D7.records["a7d1"] = {"jobs": [{"index": 0, "unit": str(b7 / "a7d1" / "j0"), "job": {"requests": []}, "summary": []}]}
 D7.reports = {"cogtag": cog_report()}          # set as an attribute: on a Discovery without reports every row FAILs by name
-UR7 = TMP / "runs" / "_fetch.a7-github" / "r1" / "fetch"
+#: the auditor (2026-09-30, Win 3.10 under an 8.3 TEMP: A7-6 went red with S7 at 241 characters): plan_window touches no
+#: disk, so the real pins are planned on short relative roots - never under TMP, whose length is the machine's; the real
+#: roots' margin is its own row (A7-6b)
+HUB7, PR7, UR7 = Path("h"), Path("p"), Path("u")
 try:                                          # a missing table FAILs these rows by name, never the suite
-    p7, p7err = P.plan_window("a7-github", disc=D7, pins=P.CP.PINS_A7, manifest=REAL_MANI, hf_hub=HUB, pins_root=PR,
+    p7, p7err = P.plan_window("a7-github", disc=D7, pins=P.CP.PINS_A7, manifest=REAL_MANI, hf_hub=HUB7, pins_root=PR7,
                               unit_root=UR7), None
 except Exception as e:  # noqa: BLE001
     p7, p7err = None, f"{type(e).__name__}: {e}"
@@ -889,9 +902,35 @@ check("A7-6: a7-github's plan from PINS_A7 and the real manifest - raw.githubuse
       and all(j.get("max_redirects") == 0 for j in p7.jobs)
       and all("/github/" in str(it.dest).replace("\\", "/") for it in p7.items),
       str(p7err or sorted(want7 ^ got7)[:3]))
+#: the contract's real roots (launch.Contract.default: the polygon, its runs tree, the hub) and a run label like the
+#: window's own (g1), as Windows strings - their lengths are the window's, on any machine the suite runs on
+POLY_W = "D:\\Coding\\_nevertwice_polygon"
+RUNS_W = POLY_W + "\\runs\\v3"
+REAL_ROOTS = {PR7: RUNS_W + "\\_pins", UR7: RUNS_W + "\\_fetch.a7-github\\g1\\fetch", HUB7: POLY_W + "\\hf_cache\\hub"}
+
+
+def real_len(path: Path, root: Path) -> int:
+    """The length the path would have under the real root instead of the short one (one separator per part)."""
+    rel = Path(path).relative_to(root)
+    return len(REAL_ROOTS[root]) + sum(1 + len(part) for part in rel.parts)
+
+
+try:
+    lens7 = sorted([(real_len(it.dest, PR7), f"{'/'.join(it.names)} dest") for it in p7.items]
+                   + [(real_len(UR7 / "j00" / (it.save + ".partial"), UR7), f"{'/'.join(it.names)} .partial")
+                      for it in p7.items])
+    a76b = (lens7[-1][0] == 206 and lens7[-1][1] == "cognee_100k_summary .partial" and lens7[-1][0] < P.SAFE_PATH
+            and 'Path(r"D:\\Coding\\_nevertwice_polygon")' in (ROOT / "research" / "v3" / "launch.py").read_text(encoding="utf-8")
+            and len(lens7) == 104)
+    a76b_err = None
+except Exception as e:  # noqa: BLE001
+    lens7, a76b, a76b_err = [], False, f"{type(e).__name__}: {e}"
+check("A7-6b: on the contract's real roots and run g1, the longest of the 52 files' destinations and .partial paths is "
+      "206 characters (cognee_100k_summary's .partial) - under SAFE_PATH (240) with a margin of 34",
+      a76b is True, str(a76b_err or lens7[-3:]))
 check("A7-7: planned from A3's table instead, the window a7-github stops by name (S8): the manifest's pins are not "
-      "that table's", stopped(lambda: P.plan_window("a7-github", disc=D7, pins=P.CP.PINS, manifest=REAL_MANI, hf_hub=HUB,
-                                                    pins_root=PR, unit_root=UR7), "S8"))
+      "that table's", stopped(lambda: P.plan_window("a7-github", disc=D7, pins=P.CP.PINS, manifest=REAL_MANI, hf_hub=HUB7,
+                                                    pins_root=PR7, unit_root=UR7), "S8"))
 seen_pins: list = []
 
 
