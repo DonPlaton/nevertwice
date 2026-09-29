@@ -222,6 +222,18 @@ try:
                   and any("no integer totalResults" in p for p in (r or {}).get("problems") or []) for r, e in nt)
           and good[1] is None and (good[0] or {}).get("problems") == [] and (good[0] or {}).get("total") == 3,
           str(nt)[:600] + str(good)[:200])
+    # the auditor (2026-09-30 00:5x, not blocking): the API's error feed answers one entry whose id is
+    # http://arxiv.org/api/errors#..., which was listed with id None and no problem
+    err_feed = (b'<?xml version="1.0" encoding="UTF-8"?>\n<feed xmlns="http://www.w3.org/2005/Atom" '
+                b'xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/">\n'
+                b'  <opensearch:totalResults>1</opensearch:totalResults>\n'
+                b'  <entry><id>http://arxiv.org/api/errors#incorrect_id_format_for_zep</id><title>Error</title>'
+                b'<summary>incorrect id format for zep</summary></entry>\n</feed>\n')
+    ef = offline("err_feed", err_feed)
+    check("D6-6d: an entry with no arXiv id (the API's error feed, id .../api/errors#...) is a problem by name - "
+          "'entry 1 has no arXiv id' - and is still listed as text",
+          ef[1] is None and len((ef[0] or {}).get("entries") or []) == 1 and (ef[0] or {}).get("entries")[0]["id"] is None
+          and any("entry 1 has no arXiv id" in p for p in (ef[0] or {}).get("problems") or []), str(ef)[:400])
 
     print("\n- main(): plan d6 only in window a7-arxiv, on its declared entry - refused before any spawn -")
     import contextlib  # noqa: E402,PLC0415

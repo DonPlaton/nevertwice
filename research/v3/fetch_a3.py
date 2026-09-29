@@ -910,7 +910,8 @@ def d6_report(record: dict, decl: dict) -> dict:
     collapsed), published and updated dates, authors and abstract-page link - text for the auditor to choose from.
     An answer that declares a DOCTYPE (entities: never expanded here), does not parse, or parses but is not the API's
     Atom feed (an HTML page: the auditor, 2026-09-30) yields no entry, by name; a feed without an integer totalResults
-    is a problem by name too - a silent empty report would read as "nothing found"."""
+    is a problem by name too - a silent empty report would read as "nothing found"; so is an entry with no arXiv id (the
+    API's error feed), which is still listed."""
     import xml.etree.ElementTree as ET  # noqa: PLC0415
 
     unit = _unit_of(record["jobs"], 0)
@@ -935,8 +936,11 @@ def d6_report(record: dict, decl: dict) -> dict:
             total = int(s) if s.isascii() and s.isdigit() else None
             if total is None:
                 problems.append(f"the feed names no integer totalResults ({None if t is None else s[:40]!r})")
-            for e in root.findall("a:entry", _ATOM):
-                m = _D6_ID.search((e.findtext("a:id", default="", namespaces=_ATOM) or "").strip())
+            for i, e in enumerate(root.findall("a:entry", _ATOM), 1):
+                raw_id = (e.findtext("a:id", default="", namespaces=_ATOM) or "").strip()
+                m = _D6_ID.search(raw_id)
+                if m is None:                   # the API's error feed: an entry whose id is .../api/errors#...
+                    problems.append(f"entry {i} has no arXiv id ({raw_id[:80]!r})")
                 abs_link = next((x.get("href") for x in e.findall("a:link", _ATOM) if x.get("rel") == "alternate"), None)
                 entries.append({"id": m.group(1) if m else None, "version": int(m.group(2)) if m else None,
                                 "title": " ".join((e.findtext("a:title", default="", namespaces=_ATOM) or "").split()),
