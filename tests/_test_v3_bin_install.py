@@ -278,6 +278,21 @@ def _used(c):
 
 refused("label_used", "was used before", pre=_used)
 
+
+def _partial(c):
+    dest(c).parent.mkdir(parents=True)
+    (dest(c).parent / (BINARY + ".partial")).write_bytes(b"a copy cut short")
+
+
+# the auditor's BI1 (2026-09-30): a leftover .partial was not refused before the window - open(part, "xb") then failed
+# after the 291 MB download, with no bin_record
+rec_p, c_p, w_p, err_p = run("partial_left", pre=_partial)
+check("BI refused before the window: a leftover <binary>.partial at the destination (a copy cut short) is refused by "
+      "name, the window never runs and the leftover stays for a person to look at",
+      ok(lambda: type(err_p).__name__ == "BinRefused" and "already holds" in str(err_p) and w_p.called == 0
+         and (dest(c_p).parent / (BINARY + ".partial")).read_bytes() == b"a copy cut short"
+         and not dest(c_p).exists()), f"{err_p!r}")
+
 print("\n- problems after the window (nothing placed) -")
 
 
@@ -309,6 +324,29 @@ for _tag, _want, _bytes in (      # the vendor's own .sha256 (the record, the re
         ("sums_upper", "is not one line", f"{sha(BIN).upper()}  {BINARY}\n".encode())):
     _r, _w = sums_world(_bytes)
     problem(_tag, _want, window=_w, record=_r)
+
+# the auditor's BI5 (2026-09-30): the placed file re-read at its destination is the last check - a copy whose bytes are
+# not the fetched ones (a disk fault, say; here the rename is made to land other bytes) is a problem by name
+import os as _os  # noqa: E402
+from types import SimpleNamespace as _NS  # noqa: E402
+
+
+def _bad_replace(src, dst):
+    Path(dst).write_bytes(b"MZ not the fetched bytes")
+    Path(src).unlink()
+
+
+_saved_os = getattr(BI, "os", None) if BI is not None else None
+try:
+    if BI is not None:
+        BI.os = _NS(replace=_bad_replace, environ=_os.environ, fspath=_os.fspath)
+    rec_b, c_b, w_b, err_b = run("placed_other")
+finally:
+    if BI is not None:
+        BI.os = _saved_os
+check("BI problem by name: placed_other - the placed binary re-read at its destination is not the fetched one",
+      ok(lambda: err_b is None and any("the placed binary is not the fetched one" in p for p in rec_b["problems"])
+         and rec_b["placed_sha256"] != sha(BIN) and BI.os is _os), f"{err_b!r} {rec_b.get('problems')}")
 
 print("\n- the manifest -")
 MANW = json.loads((ROOT / "research" / "v3" / "fetch_manifest.json").read_text(encoding="utf-8"))["windows"]

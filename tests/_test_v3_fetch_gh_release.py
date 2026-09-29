@@ -277,6 +277,16 @@ for tag, knobs, want, before in cases:
     o, g, cw = run(tag, job=job, **knobs)
     check(f"GR refused by name: {tag}", ok(lambda: o.get("ok") is False and want in (o.get("error") or "")
                                            and (not before or g.calls == [])), str(o.get("error")))
+#: the auditor's GR1 (2026-09-30): `draft is not False` weakened to `is True` passed a live answer that does not SAY
+#: draft false - the key missing or null - and the same for prerelease
+for tag_, rel_ in (("draft_missing", {k: v for k, v in REL.items() if k != "draft"}), ("draft_null", {**REL, "draft": None}),
+                   ("prerelease_missing", {k: v for k, v in REL.items() if k != "prerelease"}),
+                   ("prerelease_null", {**REL, "prerelease": None})):
+    want_ = "is a draft" if tag_.startswith("draft") else "is a prerelease"
+    o, g, cw = run(tag_, release=rel_)
+    check(f"GR-12 {tag_}: a release that does not say draft false and prerelease false is refused by name, before any "
+          "file is requested", ok(lambda: o.get("ok") is False and want_ in (o.get("error") or "")
+                                  and all(c["host"] == API for c in g.calls)), str(o.get("error")))
 o, g, cw = run("tampered_file", served={BIN_NAME: BIN[:-1] + b"!"})
 check("GR-9: a refused file is not left on the disk, and nothing after it is requested",
       ok(lambda: o.get("ok") is False and "not the digest's bytes" in (o.get("error") or "")

@@ -233,6 +233,33 @@ check("F7-11: the command writes research/v3/freeze_a7.json by default and never
                                              and "freeze_a3.json" not in inspect.getsource(F7.main)
                                              and "prereg_at(" in inspect.getsource(F7.main)
                                              and "pins=CP.PINS_A7, filled=CP.FILLED_A7" in inspect.getsource(F7.main)), "")
+# the auditor's FZ7 (2026-09-30): main without its prereg_anchor line stayed green - the command itself is run here, on
+# the fixture world (its lists swapped in, the contract and the table stubbed), reading the prereg at this tree's HEAD
+from types import SimpleNamespace as _NS  # noqa: E402
+
+main_out, main_err = None, None
+if F7 is not None and R is not None:
+    _saved = (F7._load, F7.CLEARED_A7, F7.FAILED_A7)
+    try:
+        F7._load = lambda name, path: {"v3_launch": _NS(Contract=_NS(default=lambda: _NS(runs_root=R))),
+                                       "v3_corpus_pin_freeze_a7": _NS(PINS_A7=PINS7, FILLED_A7=FILLED7)}[name]
+        F7.CLEARED_A7, F7.FAILED_A7 = CL, FA
+        rc_ = F7.main(["--out", str(TMP / "freeze_a7_main.json")])
+        main_out = (rc_, json.loads((TMP / "freeze_a7_main.json").read_bytes()))
+    except Exception as e:  # noqa: BLE001
+        main_err = f"{type(e).__name__}: {e}"
+    finally:
+        F7._load, F7.CLEARED_A7, F7.FAILED_A7 = _saved
+try:
+    head_ = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, check=True).stdout.decode().strip()
+except Exception as e:  # noqa: BLE001
+    head_ = f"{type(e).__name__}"
+check("F7-13: the command's freeze_a7.json carries prereg_anchor - the 40-hex HEAD commit of the repository it was built "
+      "in - and the prereg of that commit", ok(lambda: main_err is None and main_out[0] == 0
+                                                 and main_out[1]["prereg_anchor"] == head_
+                                                 and len(head_) == 40 and all(c in "0123456789abcdef" for c in head_)
+                                                 and sorted(main_out[1]["prereg"]) == sorted(PREREG)),
+      str(main_err or (main_out or [None, {}])[1].get("prereg_anchor")))
 check("F7-12: the same records give the same bytes (sorted JSON, LF)",
       ok(lambda: F7.render(OUT) == F7.render(json.loads(F7.render(OUT))) and b"\r\n" not in F7.render(OUT)), "")
 check("no row's condition raised", RAISED == [], str(RAISED))
