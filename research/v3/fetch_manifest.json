@@ -65,6 +65,17 @@
    "purpose": "metadata only (.loop/A7-PLAN-2026-09-27.md phase 1, plan d3): supermemoryai/supermemory, topoteretes/cognee and getzep/zep-papers - repository, head, recursive tree, and for the first two tags and releases; sentence-transformers/all-MiniLM-L6-v2 - revision and tree; no link followed",
    "max_redirects": 1
   },
+  "a7-docs": {
+   "hosts": ["api.github.com"],
+   "purpose": "text and metadata only (the auditor's Q-A8-10, plan d4): supermemory's self-hosting documentation and README through the contents API at the commit of the tag server-v0.0.8 - a path the tag answers 404 for is read at the head the discovery found, and marked; the release server-v0.0.8's metadata (asset names, sizes, digests); no asset downloaded, no link followed",
+   "repo": "supermemoryai/supermemory",
+   "commit": "5d2b5855fe492a3682a1cde4a255e2db0c4db595",
+   "ref_name": "server-v0.0.8",
+   "head": "b392bc7d1b294a5b3dd2407d060ddcf229481d6f",
+   "paths": ["README.md", "apps/docs/self-hosting/overview.mdx", "apps/docs/self-hosting/quickstart.mdx", "apps/docs/self-hosting/configuration.mdx", "apps/docs/self-hosting/embeddings.mdx", "apps/docs/self-hosting/providers.mdx", "apps/docs/self-hosting/local-vs-enterprise.mdx"],
+   "release_tag": "server-v0.0.8",
+   "max_redirects": 0
+  },
   "py-base-312": {
    "hosts": ["api.nuget.org"],
    "purpose": "A8 C1 (the auditor's Q-A8-2): CPython 3.12.10 from NuGet's python package into the polygon's py312 - the base of the product venvs PREREG-V3 2.2 pins to 3.12; NuGet's flat index is read first and the declared version must be the newest stable 3.12.x",

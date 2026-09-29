@@ -270,8 +270,12 @@ print("\n- and the inventory is pinned, so new pins cannot arrive unnoticed -")
 #: 2026-09-28, PREREG-V3 A6 ls1 (0ed5f1a): +1 artifact (research/v3/lists/S1.json, the S1/S2 nested order) and +1 kind,
 #: gained - its ids_sha256, the reference the auditor verified. Diffed with this file's own walk() against d5667da:
 #: none lost (195 -> 196 artifacts, 300 -> 301 kinds over 386 values).
+#: 2026-09-29, PREREG-V3 A8 a7-docs (the auditor's Q-A8-10, plan d4): no artifact, +2 kinds, gained - the manifest's
+#: windows.a7-docs.commit (the tag server-v0.0.8's commit) and windows.a7-docs.head (the head the discovery found), both
+#: foreign (the entry names its repo, so neither is cat-filed here). Diffed with this file's own walk() against 0774ad7:
+#: none lost (196 artifacts, 301 -> 303 kinds over 388 values).
 check("the number of pinned artifacts has not moved", len(artifacts) == 196, str(len(artifacts)))
-check("and the number of pin KINDS has not moved", len(kinds) == 301,
+check("and the number of pin KINDS has not moved", len(kinds) == 303,
       f"{len(kinds)} kinds over {len(pins)} values")
 
 print(f"\n{'ALL OK' if not FAILS else f'{FAILS} FAILED'}")

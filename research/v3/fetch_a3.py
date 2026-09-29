@@ -20,11 +20,18 @@ The auditor's O1 ruling: the harness (this process, outside the contract) never 
 sends HEADs to resolve URLs to learn their redirect hosts, following none. Its record goes to the auditor, who fixes
 the CDN hosts (Q-A3-3) and the prompt/scoring repos before any data window runs.
 
+`a7-docs` (plan d4, the auditor's Q-A8-10) reads the documentation paths its manifest entry names as text through the
+contents API at a release tag's commit - a path absent there at the head, marked - and the release's asset metadata;
+each text is checked against the git blob its answer names before it is written.
+
     python research/v3/fetch_a3.py --window a3-discovery --run d1 --python D:\\Coding\\_nevertwice_polygon\\py314\\python.exe
 """
 from __future__ import annotations
 
 import argparse
+import base64
+import binascii
+import hashlib
 import json
 import os
 import re
@@ -638,6 +645,129 @@ def d3_report(record: dict) -> dict:
                                                 for e in mtree if isinstance(e, dict) and e.get("type") == "file"]}}
 
 
+# ── a7-docs plan d4 (the auditor's Q-A8-10: how the vendor ships supermemory-server 0.0.8) ─────────────────────
+
+D4_WINDOW = "a7-docs"
+D4_HOSTS = ["api.github.com"]
+D4_KEYS = frozenset({"hosts", "purpose", "repo", "commit", "ref_name", "head", "paths", "release_tag", "max_redirects"})
+D4_DOC_MAX = 4 * 1024 * 1024                  # a contents answer: the file base64-encoded inside JSON
+_D4_SEG = re.compile(r"[A-Za-z0-9_.-]+")
+_D4_TAG = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,99}")
+
+
+class D4ManifestError(ValueError):
+    """The manifest does not declare a7-docs as plan d4 reads it."""
+
+
+def d4_decl(manifest: dict) -> dict:
+    """The manifest's a7-docs entry - the window's single source: exactly D4_KEYS; api.github.com only, no redirect;
+    a repository name; the tag's commit and the head as full shas; distinct relative paths of plain segments
+    (no '..', no query, no leading '/'); a tag name. Anything else is refused by name before any spawn."""
+    w = (manifest.get("windows") or {}).get(D4_WINDOW)
+    if not isinstance(w, dict) or set(w) != D4_KEYS:
+        raise D4ManifestError(f"the manifest's {D4_WINDOW} entry must have exactly the keys {sorted(D4_KEYS)}")
+    probs = []
+    if w["hosts"] != D4_HOSTS:
+        probs.append(f"its hosts {w['hosts']} are not {D4_HOSTS}")
+    if isinstance(w["max_redirects"], bool) or w["max_redirects"] != 0:
+        probs.append("its max_redirects is not 0")
+    if not gh_name_ok(w["repo"]):
+        probs.append(f"its repo {w['repo']!r} is no repository name")
+    for k in ("commit", "head"):
+        if not (isinstance(w[k], str) and _SHA.fullmatch(w[k])):
+            probs.append(f"its {k} is not a full commit sha")
+    for k in ("ref_name", "release_tag"):
+        if not (isinstance(w[k], str) and _D4_TAG.fullmatch(w[k])):
+            probs.append(f"its {k} {w[k]!r} is no tag name")
+    paths = w["paths"]
+    if not (isinstance(paths, list) and paths and len(set(map(str, paths))) == len(paths)
+            and all(isinstance(p, str) and all(_D4_SEG.fullmatch(s) and s not in (".", "..") for s in p.split("/"))
+                    for p in paths)):
+        probs.append("its paths must be distinct relative paths of plain segments")
+    if probs:
+        raise D4ManifestError(f"the manifest's {D4_WINDOW} entry: " + "; ".join(probs))
+    return dict(w)
+
+
+def _d4_contents(decl: dict, path: str, ref: str, where: str) -> dict:
+    return {"id": f"doc:{where}:{path}", "url": f"https://api.github.com/repos/{decl['repo']}/contents/{path}?ref={ref}",
+            "save": f"{where}/{path}.json", "max_bytes": D4_DOC_MAX}
+
+
+def _job_status(results: list, job_index: int) -> dict:
+    """{request id: status} of the job at ``job_index`` (by its index, B-D3IDX), {} when it did not run."""
+    for pos, r in enumerate(results):
+        if r.get("index", pos) == job_index:
+            return {s.get("id"): s.get("status") for s in r.get("summary") or [] if isinstance(s, dict)}
+    return {}
+
+
+def d4_jobs(decl: dict) -> list:
+    """Job 1: every path at the tag's commit and the release by its tag (its assets' metadata; no asset is fetched).
+    Job 2: only the paths the tag answered 404 for, at the head - None (no job) when every path was found."""
+    first = {"hosts": D4_HOSTS, "max_redirects": 0, "requests": [
+        *(_d4_contents(decl, p, decl["commit"], "tag") for p in decl["paths"]),
+        {"id": f"release:{decl['release_tag']}", "save": "release.json", "max_bytes": META_MAX,
+         "url": f"https://api.github.com/repos/{decl['repo']}/releases/tags/{decl['release_tag']}"}]}
+
+    def at_head(results):
+        st = _job_status(results, 0)
+        missing = [p for p in decl["paths"] if st.get(f"doc:tag:{p}") == 404]
+        if not missing:
+            return None
+        return {"hosts": D4_HOSTS, "max_redirects": 0,
+                "requests": [_d4_contents(decl, p, decl["head"], "head") for p in missing]}
+    return [first, at_head]
+
+
+def git_blob_sha1(data: bytes) -> str:
+    return hashlib.sha1(b"blob %d\0" % len(data) + data).hexdigest()
+
+
+def d4_report(record: dict, decl: dict) -> tuple[dict, dict]:
+    """(the report, {"docs/<tag|head>/<path>": bytes}). Per path: where it was read (the tag, the head - marked - or
+    nowhere, each status named), its size, sha256 and the git blob sha1 its answer names, checked against the decoded
+    content; a content that is not that blob is a problem and is not returned. The release: its tag, name, date,
+    flags and per asset the name, size, digest and type - no download URL. Every value is data from the answers."""
+    jobs = record["jobs"]
+    st_tag, st_head = _job_status(jobs, 0), _job_status(jobs, 1)
+    docs, files, problems = [], {}, []
+    for p in decl["paths"]:
+        e = {"path": p, "tag_status": st_tag.get(f"doc:tag:{p}"), "head_status": st_head.get(f"doc:head:{p}")}
+        where = "tag" if e["tag_status"] == 200 else "head" if e["head_status"] == 200 else None
+        e.update(read_at=where, ref={"tag": decl["commit"], "head": decl["head"]}.get(where), marked=where == "head")
+        docs.append(e)
+        if where is None:
+            problems.append(f"{p}: not at the tag ({e['tag_status']}) nor at the head ({e['head_status']})")
+            continue
+        ans = _read_prev(jobs, 0 if where == "tag" else 1, f"{where}/{p}.json") or {}
+        body = None
+        if ans.get("type") == "file" and ans.get("encoding") == "base64" and isinstance(ans.get("content"), str):
+            try:
+                body = base64.b64decode(ans["content"])      # GitHub breaks its base64 into lines
+            except (ValueError, binascii.Error):
+                body = None
+        if body is None:
+            problems.append(f"{p}: the answer at the {where} is no base64-encoded file")
+            continue
+        e.update(size=len(body), sha256=hashlib.sha256(body).hexdigest(), blob_sha=ans.get("sha"),
+                 blob_ok=git_blob_sha1(body) == ans.get("sha") and ans.get("size") == len(body))
+        if e["blob_ok"]:
+            files[f"docs/{where}/{p}"] = body
+        else:
+            problems.append(f"{p}: the content at the {where} is not the blob its answer names ({ans.get('sha')})")
+    rel = _read_prev(jobs, 0, "release.json") or {}
+    release = {"status": st_tag.get(f"release:{decl['release_tag']}"), "tag_name": rel.get("tag_name"),
+               "name": rel.get("name"), "published_at": rel.get("published_at"), "prerelease": rel.get("prerelease"),
+               "draft": rel.get("draft"), "target_commitish": rel.get("target_commitish"),
+               "assets": [{"name": a.get("name"), "size": a.get("size"), "digest": a.get("digest"),
+                           "content_type": a.get("content_type")} for a in rel.get("assets") or [] if isinstance(a, dict)]}
+    if release["status"] != 200 or release["tag_name"] != decl["release_tag"]:
+        problems.append(f"the release {decl['release_tag']}: status {release['status']}, tag {release['tag_name']!r}")
+    return {"repo": decl["repo"], "commit": decl["commit"], "ref_name": decl["ref_name"], "head": decl["head"], "docs": docs,
+            "release": release, "problems": problems}, files
+
+
 # ── the command line ──────────────────────────────────────────────────────
 
 def _load(name: str, path: Path):
@@ -652,9 +782,10 @@ def _load(name: str, path: Path):
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="the A3 fetch windows (children under the contract)")
-    ap.add_argument("--window", required=True, choices=["a3-discovery", "a7-discovery"])
-    ap.add_argument("--plan", default="d1", choices=["d1", "d2", "d3"],
-                    help="d1: the full discovery; d2: the P1/P10 follow-up; d3: the A7 discovery (window a7-discovery)")
+    ap.add_argument("--window", required=True, choices=["a3-discovery", "a7-discovery", D4_WINDOW])
+    ap.add_argument("--plan", default="d1", choices=["d1", "d2", "d3", "d4"],
+                    help="d1: the full discovery; d2: the P1/P10 follow-up; d3: the A7 discovery (window a7-discovery); "
+                         "d4: supermemory's self-hosting documentation at the release tag (window a7-docs)")
     ap.add_argument("--run", required=True)
     ap.add_argument("--python", required=True, help="the polygon's py314 interpreter")
     args = ap.parse_args(argv)
@@ -666,16 +797,25 @@ def main(argv: list[str] | None = None) -> int:
     if via is None:
         print("no declared hop (network.json)", file=sys.stderr)
         return 2
+    for plan, window in (("d4", D4_WINDOW), ("d3", "a7-discovery")):
+        if (args.plan == plan) != (args.window == window):
+            print(f"plan {plan} runs in window {window}, and only it", file=sys.stderr)
+            return 2
+    decl = None
+    if args.plan == "d4":
+        try:
+            decl = d4_decl(manifest)
+        except D4ManifestError as e:
+            print(str(e), file=sys.stderr)
+            return 2
     win = manifest["windows"][args.window]
     floor = manifest["disk"]["floor_gb"] * GB
-    if (args.plan == "d3") != (args.window == "a7-discovery"):
-        print("plan d3 runs in window a7-discovery, and only it", file=sys.stderr)
-        return 2
     if args.plan == "d3" and sorted(win["hosts"]) != D3_HOSTS:
         print(f"the manifest's a7-discovery hosts {win['hosts']} are not the plan's {D3_HOSTS}", file=sys.stderr)
         return 2
-    hosts, jobs = {"d1": (win["hosts"], None), "d2": (D2_HOSTS, None), "d3": (D3_HOSTS, None)}[args.plan]
-    jobs = discovery_jobs(CP.PINS) if args.plan == "d1" else d2_jobs() if args.plan == "d2" else d3_jobs()
+    hosts = {"d1": win["hosts"], "d2": D2_HOSTS, "d3": D3_HOSTS, "d4": D4_HOSTS}[args.plan]
+    jobs = (discovery_jobs(CP.PINS) if args.plan == "d1" else d2_jobs() if args.plan == "d2"
+            else d3_jobs() if args.plan == "d3" else d4_jobs(decl))
     rec = run_child_window(c, L, window=args.window, hosts=hosts, jobs=jobs,
                            python=Path(args.python), via_port=via, run=args.run, parent_env=os.environ,
                            need_bytes=floor, volume=Path("D:/"))
@@ -685,6 +825,15 @@ def main(argv: list[str] | None = None) -> int:
         report = d3_report(rec)
         (c.runs_root / "_fetch" / args.window / args.run / "d3_report.json").write_bytes(
             (json.dumps(report, indent=1, sort_keys=True) + "\n").encode("utf-8"))
+        print(json.dumps(report, indent=1))
+    if args.plan == "d4":
+        report, files = d4_report(rec, decl)
+        out = c.runs_root / "_fetch" / args.window / args.run
+        for rel, data in files.items():                 # the verified texts only (their blob sha1 checked)
+            dst = out.joinpath(*rel.split("/"))
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            dst.write_bytes(data)
+        (out / "d4_report.json").write_bytes((json.dumps(report, indent=1, sort_keys=True) + "\n").encode("utf-8"))
         print(json.dumps(report, indent=1))
     print(json.dumps({"problems": rec["problems"], "check": rec["check"], "jobs": [
         {"index": j["index"], "rc": j["rc"], "requests": len(j["summary"]),
