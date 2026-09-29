@@ -24,6 +24,7 @@ the CDN hosts (Q-A3-3) and the prompt/scoring repos before any data window runs.
 contents API at a release tag's commit - a path absent there at the head, marked - and the release's asset metadata;
 each text is checked against the git blob its answer names before it is written. `a7-cognee-tag` (plan d5, the
 auditor's R2) asks which commit a tag names and, only when it is the declared one, reads that commit's tree.
+`a7-arxiv` (plan d6, the auditor's R3) asks the arXiv API one declared query and lists what it finds, as text.
 
     python research/v3/fetch_a3.py --window a3-discovery --run d1 --python D:\\Coding\\_nevertwice_polygon\\py314\\python.exe
 """
@@ -42,6 +43,7 @@ import socket
 import subprocess
 import sys
 import time
+import urllib.parse
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -857,6 +859,88 @@ def d5_report(record: dict, decl: dict) -> dict:
             "problems": problems}
 
 
+# ── a7-arxiv plan d6 (the auditor's R3: Zep's LME template from its paper - found by a query, never from memory) ──
+
+D6_WINDOW = "a7-arxiv"
+D6_HOSTS = ["export.arxiv.org"]
+D6_KEYS = frozenset({"hosts", "purpose", "search_query", "max_results", "max_redirects"})
+D6_MAX = 2 * 1024 * 1024                         # one Atom page of at most 100 entries
+_D6_QUERY = re.compile(r"[A-Za-z0-9:_ \"()+.-]{1,200}")
+_D6_ID = re.compile(r"arxiv\.org/abs/(.+?)v(\d+)$")
+_ATOM = {"a": "http://www.w3.org/2005/Atom", "os": "http://a9.com/-/spec/opensearch/1.1/"}
+
+
+class D6ManifestError(ValueError):
+    """The manifest does not declare a7-arxiv as plan d6 reads it."""
+
+
+def d6_decl(manifest: dict) -> dict:
+    """The manifest's a7-arxiv entry - the window's single source: exactly D6_KEYS; export.arxiv.org only, no redirect;
+    a search query of plain query characters (no '&', '?', '#' or '%': the query cannot smuggle a parameter); a page
+    of 1 to 100. Anything else is refused by name before any spawn."""
+    w = (manifest.get("windows") or {}).get(D6_WINDOW)
+    if not isinstance(w, dict) or set(w) != D6_KEYS:
+        raise D6ManifestError(f"the manifest's {D6_WINDOW} entry must have exactly the keys {sorted(D6_KEYS)}")
+    probs = []
+    if w["hosts"] != D6_HOSTS:
+        probs.append(f"its hosts {w['hosts']} are not {D6_HOSTS}")
+    if isinstance(w["max_redirects"], bool) or w["max_redirects"] != 0:
+        probs.append("its max_redirects is not 0")
+    if not (isinstance(w["search_query"], str) and _D6_QUERY.fullmatch(w["search_query"])):
+        probs.append(f"its search_query {w['search_query']!r} is not a plain query")
+    n = w["max_results"]
+    if isinstance(n, bool) or not isinstance(n, int) or not 1 <= n <= 100:
+        probs.append(f"its max_results {n!r} is not 1 to 100")
+    if probs:
+        raise D6ManifestError(f"the manifest's {D6_WINDOW} entry: " + "; ".join(probs))
+    return dict(w)
+
+
+def d6_jobs(decl: dict) -> list:
+    """One GET: the API's query with the declared search, one page, oldest first. No link is followed."""
+    q = urllib.parse.quote(decl["search_query"], safe=":")
+    return [{"hosts": D6_HOSTS, "max_redirects": 0, "requests": [
+        {"id": "arxiv:query", "save": "arxiv_query.xml", "max_bytes": D6_MAX,
+         "url": f"https://export.arxiv.org/api/query?search_query={q}&start=0&max_results={decl['max_results']}"
+                "&sortBy=submittedDate&sortOrder=ascending"}]}]
+
+
+def d6_report(record: dict, decl: dict) -> dict:
+    """The API's total, whether the page was full, and per entry its arXiv id and version, title (white space
+    collapsed), published and updated dates, authors and abstract-page link - text for the auditor to choose from.
+    An answer that declares a DOCTYPE (entities: never expanded here) or does not parse yields no entry, by name."""
+    import xml.etree.ElementTree as ET  # noqa: PLC0415
+
+    unit = _unit_of(record["jobs"], 0)
+    f = unit / "arxiv_query.xml" if unit is not None else None
+    raw = f.read_bytes() if f is not None and f.is_file() else None
+    problems, entries, total = [], [], None
+    if raw is None:
+        problems.append("no answer saved")
+    elif b"<!doctype" in raw.lower():
+        problems.append("the answer declares a DOCTYPE - refused, no entity is expanded")
+    else:
+        try:
+            root = ET.fromstring(raw)
+        except ET.ParseError as e:
+            problems.append(f"the answer does not parse ({e})")
+            root = None
+        if root is not None:
+            t = root.findtext("os:totalResults", namespaces=_ATOM)
+            total = int(t) if t is not None and t.strip().isdigit() else None
+            for e in root.findall("a:entry", _ATOM):
+                m = _D6_ID.search((e.findtext("a:id", default="", namespaces=_ATOM) or "").strip())
+                abs_link = next((x.get("href") for x in e.findall("a:link", _ATOM) if x.get("rel") == "alternate"), None)
+                entries.append({"id": m.group(1) if m else None, "version": int(m.group(2)) if m else None,
+                                "title": " ".join((e.findtext("a:title", default="", namespaces=_ATOM) or "").split()),
+                                "published": e.findtext("a:published", namespaces=_ATOM),
+                                "updated": e.findtext("a:updated", namespaces=_ATOM),
+                                "authors": [a.findtext("a:name", namespaces=_ATOM) for a in e.findall("a:author", _ATOM)],
+                                "abs": abs_link})
+    return {"search_query": decl["search_query"], "max_results": decl["max_results"], "total": total,
+            "page_full": len(entries) >= decl["max_results"], "entries": entries, "problems": problems}
+
+
 # ── the command line ──────────────────────────────────────────────────────
 
 def _load(name: str, path: Path):
@@ -871,11 +955,12 @@ def _load(name: str, path: Path):
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="the A3 fetch windows (children under the contract)")
-    ap.add_argument("--window", required=True, choices=["a3-discovery", "a7-discovery", D4_WINDOW, D5_WINDOW])
-    ap.add_argument("--plan", default="d1", choices=["d1", "d2", "d3", "d4", "d5"],
+    ap.add_argument("--window", required=True, choices=["a3-discovery", "a7-discovery", D4_WINDOW, D5_WINDOW, D6_WINDOW])
+    ap.add_argument("--plan", default="d1", choices=["d1", "d2", "d3", "d4", "d5", "d6"],
                     help="d1: the full discovery; d2: the P1/P10 follow-up; d3: the A7 discovery (window a7-discovery); "
                          "d4: supermemory's self-hosting documentation at the release tag (window a7-docs); "
-                         "d5: cognee's tree at the tag the pinned product carries (window a7-cognee-tag)")
+                         "d5: cognee's tree at the tag the pinned product carries (window a7-cognee-tag); "
+                         "d6: the arXiv entries a declared query finds (window a7-arxiv)")
     ap.add_argument("--run", required=True)
     ap.add_argument("--python", required=True, help="the polygon's py314 interpreter")
     args = ap.parse_args(argv)
@@ -887,15 +972,15 @@ def main(argv: list[str] | None = None) -> int:
     if via is None:
         print("no declared hop (network.json)", file=sys.stderr)
         return 2
-    for plan, window in (("d5", D5_WINDOW), ("d4", D4_WINDOW), ("d3", "a7-discovery")):
+    for plan, window in (("d6", D6_WINDOW), ("d5", D5_WINDOW), ("d4", D4_WINDOW), ("d3", "a7-discovery")):
         if (args.plan == plan) != (args.window == window):
             print(f"plan {plan} runs in window {window}, and only it", file=sys.stderr)
             return 2
     decl = None
-    if args.plan in ("d4", "d5"):
+    if args.plan in ("d4", "d5", "d6"):
         try:
-            decl = d4_decl(manifest) if args.plan == "d4" else d5_decl(manifest)
-        except (D4ManifestError, D5ManifestError) as e:
+            decl = {"d4": d4_decl, "d5": d5_decl, "d6": d6_decl}[args.plan](manifest)
+        except (D4ManifestError, D5ManifestError, D6ManifestError) as e:
             print(str(e), file=sys.stderr)
             return 2
     win = manifest["windows"][args.window]
@@ -903,9 +988,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.plan == "d3" and sorted(win["hosts"]) != D3_HOSTS:
         print(f"the manifest's a7-discovery hosts {win['hosts']} are not the plan's {D3_HOSTS}", file=sys.stderr)
         return 2
-    hosts = {"d1": win["hosts"], "d2": D2_HOSTS, "d3": D3_HOSTS, "d4": D4_HOSTS, "d5": D5_HOSTS}[args.plan]
+    hosts = {"d1": win["hosts"], "d2": D2_HOSTS, "d3": D3_HOSTS, "d4": D4_HOSTS, "d5": D5_HOSTS, "d6": D6_HOSTS}[args.plan]
     jobs = (discovery_jobs(CP.PINS) if args.plan == "d1" else d2_jobs() if args.plan == "d2"
-            else d3_jobs() if args.plan == "d3" else d4_jobs(decl) if args.plan == "d4" else d5_jobs(decl))
+            else d3_jobs() if args.plan == "d3" else {"d4": d4_jobs, "d5": d5_jobs, "d6": d6_jobs}[args.plan](decl))
     rec = run_child_window(c, L, window=args.window, hosts=hosts, jobs=jobs,
                            python=Path(args.python), via_port=via, run=args.run, parent_env=os.environ,
                            need_bytes=floor, volume=Path("D:/"))
@@ -925,9 +1010,9 @@ def main(argv: list[str] | None = None) -> int:
             dst.write_bytes(data)
         (out / "d4_report.json").write_bytes((json.dumps(report, indent=1, sort_keys=True) + "\n").encode("utf-8"))
         print(json.dumps(report, indent=1))
-    if args.plan == "d5":
-        report = d5_report(rec, decl)
-        (c.runs_root / "_fetch" / args.window / args.run / "d5_report.json").write_bytes(
+    if args.plan in ("d5", "d6"):
+        report = (d5_report if args.plan == "d5" else d6_report)(rec, decl)
+        (c.runs_root / "_fetch" / args.window / args.run / f"{args.plan}_report.json").write_bytes(
             (json.dumps(report, indent=1, sort_keys=True) + "\n").encode("utf-8"))
         print(json.dumps(report, indent=1))
     print(json.dumps({"problems": rec["problems"], "check": rec["check"], "jobs": [

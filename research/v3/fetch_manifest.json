@@ -92,6 +92,13 @@
    "pins": ["lme_readme", "mab_agent", "mab_main", "mab_init", "mab_conv", "mab_readme", "beam_answer_generation", "beam_ltm_methods", "beam_light", "beam_answer_sh", "beam_readme", "ama_harness", "ama_run", "ama_agent_prompt", "ama_extract_answer", "ama_agent_conf", "ama_readme"],
    "max_redirects": 0
   },
+  "a7-arxiv": {
+   "hosts": ["export.arxiv.org"],
+   "purpose": "metadata only (the auditor's R3, plan d6): one arXiv API query for the product's name in the title (ti:zep), one page, oldest first - the entries as text, from which the auditor chooses Zep's paper and version for its LME template; no link followed, no paper fetched",
+   "search_query": "ti:zep",
+   "max_results": 50,
+   "max_redirects": 0
+  },
   "py-base-312": {
    "hosts": ["api.nuget.org"],
    "purpose": "A8 C1 (the auditor's Q-A8-2): CPython 3.12.10 from NuGet's python package into the polygon's py312 - the base of the product venvs PREREG-V3 2.2 pins to 3.12; NuGet's flat index is read first and the declared version must be the newest stable 3.12.x",
