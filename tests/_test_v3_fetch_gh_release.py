@@ -236,10 +236,12 @@ cases = [   # (tag, knobs, the error's words, refused before any request)
     ("repo_deep", {"job": {**JOB, "repo": "a/b/c"}}, "not a GitHub repository name", True),
     ("tag_slash", {"job": {**JOB, "tag": "server/v0.0.8"}}, "not a tag name", True),
     ("tag_dots", {"job": {**JOB, "tag": ".."}}, "not a tag name", True),
+    ("tag_dots_inside", {"job": {**JOB, "tag": "server-v0..8"}}, "not a tag name", True),    # git refuses ".." in a ref
     ("commit_short", {"job": {**JOB, "commit": COMMIT[:12]}}, "not a 40-hex commit", True),
     ("exp_none", {"job": {**JOB, "assets": []}}, "expects no asset", True),
     ("exp_twice", {"job": {**JOB, "assets": [EXPECT[0], EXPECT[0]]}}, "expects an asset name twice", True),
     ("exp_name", {"job": {**JOB, "assets": exp_with(0, name="../evil.exe")}}, "not an asset name", True),
+    ("exp_name_dots_inside", {"job": {**JOB, "assets": exp_with(0, name="server..exe")}}, "not an asset name", True),
     ("exp_digest", {"job": {**JOB, "assets": exp_with(0, digest=None)}}, "not sha256:<64 hex>", True),
     ("exp_md5", {"job": {**JOB, "assets": exp_with(1, digest="md5:abc")}}, "not sha256:<64 hex>", True),
     ("exp_size", {"job": {**JOB, "assets": exp_with(0, size=(1 << 26) + 1)}}, "outside 1..max_asset_bytes", True),
