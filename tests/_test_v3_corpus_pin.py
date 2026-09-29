@@ -208,7 +208,9 @@ check("the window hosts are the declared exact names",
           "a8-docker-letta": ["auth.docker.io", "production.cloudflare.docker.com", "registry-1.docker.io"],
           "a8-docker-falkordb": ["auth.docker.io", "production.cloudflare.docker.com", "registry-1.docker.io"],
           "a8-spacy-model": ["api.github.com", "github.com", "objects.githubusercontent.com", "raw.githubusercontent.com",
-                             "release-assets.githubusercontent.com"]})
+                             "release-assets.githubusercontent.com"],
+          "a8-supermemory-bin": ["api.github.com", "github.com", "objects.githubusercontent.com",
+                                 "release-assets.githubusercontent.com"]})
 check("a3-hf's hosts come from the discovery record d1; discovery follows no redirect",
       MAN["windows"]["a3-hf"]["hosts_from_record"] == CP.DISCOVERY_D1 and MAN["windows"]["a3-discovery"]["max_redirects"] == 0)
 

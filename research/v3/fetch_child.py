@@ -43,6 +43,15 @@ checked against (none: TLS-only trust, recorded as a declared limit); github.com
 to a declared CDN host over https on 443 with no userinfo and no Authorization; the CDN host is recorded, the signed
 query never. The file lands under <cwd>/model/<name>.
 
+T32 (PREREG-V3-AMENDMENTS.md A3) adds {"kind": "gh_release", "repo", "tag", "commit", "api_host", "web_host", "cdn_hosts",
+"hosts", "assets": [{"name", "size", "digest"}], "max_meta_bytes", "max_asset_bytes"} (gh_release_job): a vendor's
+release binary whose expectation was fixed before the window (bin_install reads it from the a7-docs record) - the tag
+must still name the expected commit (commits/<tag>); the release by that tag must be that tag, not a draft, not a
+prerelease, and hold exactly one asset of each expected name at github.com's own download path with exactly the expected
+size and sha256 digest - the live answer and the record must agree, neither alone is trusted; each file then as for
+gh_model (one redirect at most, to a declared CDN host), its stream checked against the digest and the size. No other
+asset is requested. The files land under <cwd>/release/<name>.
+
     <py314>\\python.exe research\\v3\\fetch_child.py   (the job on stdin)
 """
 from __future__ import annotations
@@ -571,6 +580,127 @@ def gh_model_job(job: dict, *, send, cwd: Path) -> dict:
         return out
 
 
+_TAG = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.+-]{0,99}")
+_ASSET = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.+-]{0,199}")
+_COMMIT = re.compile(r"[0-9a-f]{40}")
+
+
+def gh_release_job(job: dict, *, send, cwd: Path) -> dict:
+    """T32: a vendor's release assets, each against the expectation the job carries - see the module docstring's
+    gh_release part. Returns its summary; never raises for a refusal or a network error; a signed URL's query is never
+    recorded."""
+    out: dict = {"id": f"gh_release:{job.get('repo')}@{job.get('tag')}", "kind": "gh_release", "ok": False, "error": None,
+                 "requests": [], "assets": []}
+    try:
+        repo, tag, commit = str(job["repo"]), str(job["tag"]), str(job["commit"])
+        api, web = job["api_host"], job["web_host"]
+        if not _GH_REPO.fullmatch(repo):
+            raise Refused(f"{repo!r} is not a GitHub repository name")
+        if not _TAG.fullmatch(tag) or ".." in tag:
+            raise Refused(f"{tag!r} is not a tag name")
+        if not _COMMIT.fullmatch(commit):
+            raise Refused(f"{commit!r} is not a 40-hex commit")
+        cdn = frozenset(job.get("cdn_hosts") or ())
+        hosts = list(job.get("hosts") or ())
+        if set(hosts) != {api, web, *cdn} or len(hosts) != len({api, web, *cdn}):
+            raise Refused("the job's hosts are not exactly its declared hosts (api, github.com and the CDN hosts)")
+        meta_max, asset_max = int(job["max_meta_bytes"]), int(job["max_asset_bytes"])
+        expect = list(job.get("assets") or ())
+        if not expect:
+            raise Refused("the job expects no asset")
+        names = [str(e.get("name")) for e in expect]
+        if len(set(names)) != len(names):
+            raise Refused("the job expects an asset name twice")
+        for e in expect:
+            name, size, digest = str(e.get("name")), e.get("size"), e.get("digest")
+            if not _ASSET.fullmatch(name) or ".." in name:
+                raise Refused(f"{name!r} is not an asset name")
+            if not _DIGEST.fullmatch(str(digest)):
+                raise Refused(f"the expected digest of {name} {str(digest)[:80]!r} is not sha256:<64 hex>")
+            if not (isinstance(size, int) and not isinstance(size, bool) and 0 < size <= asset_max):
+                raise Refused(f"the expected size of {name} {size!r} is outside 1..max_asset_bytes")
+
+        def call(method, host, path, headers, *, max_bytes=meta_max, save_to=None):
+            st, h, body, sha, n = send(method, host, path, dict(headers), max_bytes=max_bytes, save_to=save_to)
+            entry = {"method": method, "host": host, "status": st, "path": path}
+            if host in cdn:                      # a signed URL: its host and path, and its query only as a sha256
+                bare, _, query = path.partition("?")
+                entry.update(path=bare, query_sha256=hashlib.sha256(query.encode("utf-8")).hexdigest())
+            out["requests"].append(entry)
+            return st, h, body, sha, n
+
+        gh = {"Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"}
+        # 1. the tag still names the expected commit
+        st, _, body, _, _ = call("GET", api, f"/repos/{repo}/commits/{tag}", gh)
+        if st != 200:
+            raise Refused(f"the commit API answered {st} for {tag}")
+        got = json.loads(body).get("sha")
+        if got != commit:
+            raise Refused(f"the tag {tag} names commit {got}, not the expected {commit}")
+        out["commit"] = commit
+        # 2. the release by its tag: that tag, published, one asset of each expected name, exactly as expected
+        st, _, body, _, _ = call("GET", api, f"/repos/{repo}/releases/tags/{tag}", gh)
+        if st != 200:
+            raise Refused(f"the release API answered {st} for {tag}")
+        rel = json.loads(body)
+        if rel.get("tag_name") != tag:
+            raise Refused(f"the release names the tag {rel.get('tag_name')!r}, not {tag!r}")
+        if rel.get("draft") is not False:
+            raise Refused(f"the release {tag} is a draft (draft {rel.get('draft')!r})")
+        if rel.get("prerelease") is not False:
+            raise Refused(f"the release {tag} is a prerelease (prerelease {rel.get('prerelease')!r})")
+        out["release"] = {"id": rel.get("id"), "tag": tag, "draft": False, "prerelease": False,
+                          "published_at": rel.get("published_at")}
+        plan = []
+        for e in expect:
+            name = e["name"]
+            found = [a for a in rel.get("assets") or [] if a.get("name") == name]
+            if len(found) != 1:
+                raise Refused(f"the release {tag} holds {len(found)} assets named {name}, not one")
+            a = found[0]
+            want_path = f"/{repo}/releases/download/{tag}/{name}"
+            u = urllib.parse.urlsplit(str(a.get("browser_download_url") or ""))
+            if (u.scheme, u.hostname, u.port, u.path, u.query, u.username) != ("https", web, None, want_path, "", None):
+                raise Refused(f"the asset's URL is not github.com's own download path {want_path}")
+            if a.get("size") != e["size"]:
+                raise Refused(f"the release's {name} declares size {a.get('size')!r}, not the expected {e['size']}")
+            if a.get("digest") != e["digest"]:
+                raise Refused(f"the release's {name} declares digest {a.get('digest')}, not the expected {e['digest']}")
+            plan.append((name, e["size"], e["digest"], want_path))
+        # 3. each file: github.com answers it or redirects it once, to a declared CDN host, with no Authorization
+        for name, size, digest, want_path in plan:
+            dest = cwd / "release" / name
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            st, h, _, sha, n = call("GET", web, want_path, {}, max_bytes=asset_max, save_to=dest)
+            cdn_host = None
+            if st in _REDIRECTS:
+                t = urllib.parse.urlsplit(urllib.parse.urljoin(f"https://{web}{want_path}", h.get("location") or ""))
+                if t.scheme != "https" or t.hostname not in cdn or t.port not in (None, 443) or t.username or t.password:
+                    out["refused_redirect_host"] = t.hostname
+                    why = ("an undeclared host" if t.hostname not in cdn else "not https" if t.scheme != "https" else
+                           f"port {t.port}" if t.port not in (None, 443) else "userinfo")
+                    raise Refused(f"{name} redirects to {t.hostname!r} - {why}; not followed")
+                cdn_host = t.hostname
+                st, h, _, sha, n = call("GET", t.hostname, (t.path or "/") + (f"?{t.query}" if t.query else ""), {},
+                                        max_bytes=asset_max, save_to=dest)
+                if st in _REDIRECTS:
+                    raise Refused(f"{name} redirects a second time - one redirect only")
+            elif st != 200:
+                raise Refused(f"github.com answered {st} for {name}")
+            if st != 200:
+                raise Refused(f"the CDN answered {st} for {name}")
+            if f"sha256:{sha}" != digest or n != size:
+                dest.unlink(missing_ok=True)
+                raise Refused(f"{name} is not the digest's bytes or the expected size ({n} != {size})")
+            out["assets"].append({"name": name, "size": size, "digest": digest, "cdn_host": cdn_host,
+                                  "file": {"sha256": sha, "bytes": n, "path": f"release/{name}"}})
+        out["ok"] = True
+        return out
+    except (Refused, OSError, ssl.SSLError, http.client.HTTPException, ValueError, KeyError, TypeError, AttributeError) as e:
+        out["error"] = f"{type(e).__name__}: {str(e)[:300]}"
+        return out
+
+
 def main() -> int:
     job = json.loads(sys.stdin.readline() or "{}")
     cwd = Path.cwd()
@@ -580,6 +710,8 @@ def main() -> int:
             results = [oci_job(job, send=tunnel_send(port), cwd=cwd)]
         elif job.get("kind") == "gh_model":              # B-NLP NLP-2: one spaCy model, by the auditor's rule
             results = [gh_model_job(job, send=tunnel_send(port), cwd=cwd)]
+        elif job.get("kind") == "gh_release":            # T32: a vendor's release binary, by the record's expectation
+            results = [gh_release_job(job, send=tunnel_send(port), cwd=cwd)]
         else:
             results = run_job(job, cwd=cwd, port=port)
     except Refused as e:

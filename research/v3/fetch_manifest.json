@@ -159,6 +159,17 @@
    "repo": "falkordb/falkordb",
    "cdn_hosts": ["production.cloudflare.docker.com"],
    "max_redirects": 1
+  },
+  "a8-supermemory-bin": {
+   "hosts": ["api.github.com", "github.com", "objects.githubusercontent.com", "release-assets.githubusercontent.com"],
+   "install": "A8 T32 (PREREG-V3-AMENDMENTS.md A3; the auditor's Q-A8-10 and Q-SM-1..4 = O-a): supermemory-local's server - the release binary supermemory-server-windows-x64.exe and its .sha256 of the release server-v0.0.8 - each against the size and digest the a7-docs record d1 holds and the live release alike, the tag still at its commit, at most one redirect to a declared GitHub CDN host; placed in <polygon>/supermemory_v3/bin, never started by the install (bin_install)",
+   "repo": "supermemoryai/supermemory",
+   "tag": "server-v0.0.8",
+   "commit": "5d2b5855fe492a3682a1cde4a255e2db0c4db595",
+   "binary": "supermemory-server-windows-x64.exe",
+   "docs_record_sha256": "492f92b77098b80eeca7494bb3550a3988aa596873850ca1d1f269bae6a9fcd8",
+   "cdn_hosts": ["objects.githubusercontent.com", "release-assets.githubusercontent.com"],
+   "max_redirects": 1
   }
  },
  "disk": {"volume": "D:", "floor_gb": 100, "multiple_of_window_total": 3, "stop_single_file_gb": 10}

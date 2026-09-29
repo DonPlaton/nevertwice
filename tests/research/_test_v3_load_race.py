@@ -72,6 +72,7 @@ NOT_FROM_THREADS = {
     "research/v3/ab_rule.py::hop_benchmark": "ab_harness.run (main flow) and ab_rule's __main__; its fake hop's "
                                              "threads (_loop, _conn) load nothing",
     "research/v3/arms/runner_nevertwice.py::_load": "bind(), in the arm's own child process, from its protocol loop",
+    "research/v3/bin_install.py::_load": _CLI,
     "research/v3/capture_deepseek.py::_load_launch": _CLI,
     "research/v3/d1_tag.py::main": _CLI,
     "research/v3/dataset_facts.py::_load": _CLI,

@@ -277,8 +277,12 @@ print("\n- and the inventory is pinned, so new pins cannot arrive unnoticed -")
 #: 2026-09-29, PREREG-V3 A7 a7-cognee-tag (the auditor's R2, plan d5): no artifact, +1 kind, gained - the manifest's
 #: windows.a7-cognee-tag.commit (the commit cognee's tag v1.6.1 names per the discovery), foreign (its entry names the
 #: repo). Diffed with this file's own walk() against b7deaf6: none lost (196 artifacts, 303 -> 304 kinds over 389 values).
+#: 2026-09-30, PREREG-V3 A8 T32 a8-supermemory-bin (the auditor's Q-SM-1..4): no artifact, +2 kinds, gained - the
+#: manifest's windows.a8-supermemory-bin.commit (the tag server-v0.0.8's commit, foreign: its entry names the repo) and
+#: windows.a8-supermemory-bin.docs_record_sha256 (the a7-docs record d1 the auditor fixed, a file outside git). Against
+#: 486358f: none lost (196 artifacts, 304 -> 306 kinds over 391 values).
 check("the number of pinned artifacts has not moved", len(artifacts) == 196, str(len(artifacts)))
-check("and the number of pin KINDS has not moved", len(kinds) == 304,
+check("and the number of pin KINDS has not moved", len(kinds) == 306,
       f"{len(kinds)} kinds over {len(pins)} values")
 
 print(f"\n{'ALL OK' if not FAILS else f'{FAILS} FAILED'}")
