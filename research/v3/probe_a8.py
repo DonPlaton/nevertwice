@@ -230,6 +230,10 @@ M0_CALLS = {
 }
 #: a config field's default: the custom instructions, None unless the adapter sets them (Q-C6-1)
 M0_CONFIG_DEFAULTS = {"m0_custom_default": ("mem0/configs/base.py", "MemoryConfig", "custom_instructions", "None")}
+#: R-UNPARSE-WRITES (the auditor): every fact compared as ast.unparse text - the helper shapes, the writes, the
+#: defaults, the calls' arguments, the config default and the user prompt's interpolated fields - is compared only under
+#: M0_SHAPE_PYTHON (normalizer_gate); under any other minor each is blocked:normalizer-changed once its structure holds
+M0_UNPARSE_FACTS = frozenset({*M0_HELPER_SHAPES, *M0_WRITES, *M0_DEFAULTS, *M0_CALLS, *M0_CONFIG_DEFAULTS, "m0_user_prompt"})
 #: the adapter's side (Q-C6-1): mem0_config's keys, its DeepSeek llm config's keys, and the keywords every
 #: ``self.mem.add(...)`` may pass - custom instructions, vision or a prompt= would put text in the prompt the bound does
 #: not count
@@ -500,6 +504,9 @@ def prompt_parts(sc: Mapping, *, field: str) -> dict:
         return {"value": None, "uses": other, "blocked": f"blocked:source-changed:{field}"}
     if not parts or len(joins) != 1:
         return {"value": None, "blocked": f"blocked:source-{'missing' if not parts or not joins else 'ambiguous'}:{field}"}
+    gate = normalizer_gate(field)                        # R-UNPARSE-WRITES: the interpolated fields are ast.unparse text
+    if gate:
+        return gate
     unknown = sorted({f for x in parts for f in x["fields"]} - M0_PROMPT_FIELDS)
     if unknown or any(x["const_bytes"] is None for x in parts):
         return {"value": None, "fields": unknown, "blocked": f"blocked:source-changed:{field}"}
@@ -537,6 +544,17 @@ def _scope_tree(sc: Mapping, field: str) -> tuple[ast.AST | None, dict | None]:
         return None, {"value": None, "blocked": f"blocked:source-unparsable:{field}"}
 
 
+def normalizer_gate(field: str) -> dict | None:
+    """R-UNPARSE-WRITES (the auditor): a fact compared as ast.unparse text is compared only under M0_SHAPE_PYTHON - the
+    text differs between Python minors (3.10 wraps a tuple target in parentheses, so m0_builder_writes read
+    source-changed there: a false name, the source had not changed). Elsewhere: blocked:normalizer-changed, never
+    compared. Asked after a fact's structural checks (unparsable, missing, ambiguous, *args, a use of sections), which
+    hold on any minor, and before its text is compared."""
+    if tuple(sys.version_info[:2]) != tuple(M0_SHAPE_PYTHON):
+        return {"value": None, "python": list(sys.version_info[:2]), "blocked": f"blocked:normalizer-changed:{field}"}
+    return None
+
+
 def fn_shape(sc: Mapping, declared: str, *, field: str) -> dict:
     """F-C6-4: a helper held whole - the sha256 of its ast.unparse with the docstring dropped, against the declared one.
     Any change but quotes, comments and layout is blocked:source-changed, with the normalized text so it can be read;
@@ -544,8 +562,9 @@ def fn_shape(sc: Mapping, declared: str, *, field: str) -> dict:
     tree, why = _scope_tree(sc, field)
     if why:
         return why
-    if tuple(sys.version_info[:2]) != tuple(M0_SHAPE_PYTHON):
-        return {"value": None, "python": list(sys.version_info[:2]), "blocked": f"blocked:normalizer-changed:{field}"}
+    gate = normalizer_gate(field)
+    if gate:
+        return gate
     node = tree.body[0]
     body = node.body
     if body and isinstance(body[0], ast.Expr) and isinstance(body[0].value, ast.Constant) and isinstance(body[0].value.value, str):
@@ -564,6 +583,9 @@ def writes_in(sc: Mapping, names: Iterable[str], declared: Mapping[str, list], *
     tree, why = _scope_tree(sc, field)
     if why:
         return why
+    gate = normalizer_gate(field)                        # R-UNPARSE-WRITES: every write is read as ast.unparse text
+    if gate:
+        return gate
     watched = set(names)
     out: dict[str, list[str]] = {}
     for n in ast.walk(tree):
@@ -601,6 +623,9 @@ def param_defaults(sc: Mapping, names: Sequence[str] | None, declared: Mapping[s
     if a.vararg is not None or a.kwarg is not None:
         return {"value": None, "star": [x.arg for x in (a.vararg, a.kwarg) if x is not None], "source": sc.get("source"),
                 "blocked": f"blocked:source-changed:{field}"}
+    gate = normalizer_gate(field)                        # R-UNPARSE-WRITES: the defaults are ast.unparse text
+    if gate:
+        return gate
     pos = a.posonlyargs + a.args
     got: dict[str, Any] = {x.arg: None for x in pos + a.kwonlyargs}
     for x, v in zip(pos[len(pos) - len(a.defaults):], a.defaults):
@@ -624,6 +649,9 @@ def call_args(sc: Mapping, dotted: str, declared: Mapping[str, Any], *, field: s
     calls = [n for n in ast.walk(tree) if isinstance(n, ast.Call) and ast.unparse(n.func) == dotted]
     if len(calls) != 1:
         return {"value": None, "blocked": f"blocked:source-{'missing' if not calls else 'ambiguous'}:{field}"}
+    gate = normalizer_gate(field)                        # R-UNPARSE-WRITES: the arguments are ast.unparse text
+    if gate:
+        return gate
     c = calls[0]
     value = {"args": [ast.unparse(x) for x in c.args],
              "keywords": {(k.arg if k.arg is not None else "**"): ast.unparse(k.value) for k in c.keywords}}
@@ -643,6 +671,9 @@ def config_default(root: Path, rel: str, cls: str, attr: str, declared: str, *, 
             and any(isinstance(t, ast.Name) and t.id == attr for t in (n.targets if isinstance(n, ast.Assign) else [n.target]))]
     if len(hits) != 1:
         return {"value": None, "blocked": f"blocked:source-{'missing' if not hits else 'ambiguous'}:{field}"}
+    gate = normalizer_gate(field)                        # R-UNPARSE-WRITES: the default is ast.unparse text
+    if gate:
+        return gate
     v = hits[0].value
     if isinstance(v, ast.Call):
         # the declared form's keywords only (2.0.19: description=, default=) - a default_factory, an alias or a

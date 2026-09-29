@@ -846,23 +846,30 @@ val = {k: (v.get("value") if isinstance(v, dict) else None) for k, v in BF.items
 #: ast.unparse differs between minors - so under any other minor every shape is blocked:normalizer-changed by design,
 #: never compared. There the rows hold that blocked state, by name, where they would read a shape; nothing that needs
 #: the comparison passes without it.
+#: R-UNPARSE-WRITES (the auditor): the same holds for every fact compared as ast.unparse text (P.M0_UNPARSE_FACTS - the
+#: shapes, the writes, the defaults, the calls' arguments, the config default, the user prompt's fields): 3.10 wrote
+#: m0_builder_writes' tuple target in parentheses and it read source-changed, a false name.
 SHAPES_HERE = tuple(sys.version_info[:2]) == tuple(P.M0_SHAPE_PYTHON)
-SHAPE_REASONS = sorted(f"{k}: blocked:normalizer-changed:{k}" for k in P.M0_HELPER_SHAPES)
+UNPARSED = frozenset(P.M0_UNPARSE_FACTS)
+SHAPE_REASONS = sorted(f"{k}: blocked:normalizer-changed:{k}" for k in UNPARSED)
 if not SHAPES_HERE:
-    print(f"       (Python {sys.version_info[0]}.{sys.version_info[1]}, not {P.M0_SHAPE_PYTHON}: the helper shapes are "
-          f"blocked:normalizer-changed here - the rows below expect exactly that)")
+    print(f"       (Python {sys.version_info[0]}.{sys.version_info[1]}, not {P.M0_SHAPE_PYTHON}: every fact compared as "
+          f"ast.unparse text is blocked:normalizer-changed here - the rows below expect exactly that)")
 
 
 def no_bound_reason(reasons) -> bool:
-    """No reason against the bound - under another minor, exactly the helper shapes blocked:normalizer-changed."""
+    """No reason against the bound - under another minor, exactly the unparse-compared facts blocked:normalizer-changed."""
     return reasons == [] if SHAPES_HERE else sorted(reasons) == SHAPE_REASONS
 
 
-def shape_want(want: str) -> str:
-    """The reason a changed helper gives: source-changed under M0_SHAPE_PYTHON, normalizer-changed under any other."""
-    if SHAPES_HERE or not want.startswith("blocked:source-changed:m0_fn_"):
-        return want
-    return want.replace("blocked:source-changed:", "blocked:normalizer-changed:")
+def shape_want(want: str) -> tuple:
+    """The reasons a changed fact may give: exactly ``want`` under M0_SHAPE_PYTHON; under any other minor, for an
+    unparse-compared fact, ``want`` (a structural block - unparsable, missing, ambiguous, *args, a use of sections -
+    holds on any minor) or its normalizer-changed (a text change: never compared there)."""
+    f = want.rsplit(":", 1)[-1]
+    if SHAPES_HERE or f not in UNPARSED or not want.startswith("blocked:source-changed:"):
+        return (want,)
+    return (want, want.replace("blocked:source-changed:", "blocked:normalizer-changed:"))
 check("C6: every declared bound fact read from the tree - retries 2 (the SDK's), the client default, one client "
       "with no override, max_tokens 2000 and its send line, the prompts' literal bytes, the prompt call's keywords, "
       "the two windows, the truncation limit and its use, the memory shape, the message frames",
@@ -878,19 +885,23 @@ check("C6: every declared bound fact read from the tree - retries 2 (the SDK's),
 up = val.get("m0_user_prompt") if isinstance(val.get("m0_user_prompt"), dict) else {}
 check("C6: the user prompt's sections by the AST - each append's constant bytes and fields, the conditional ones "
       "marked, the separator of its join",
-      ok(lambda: up["separator"] == "\n\n" and [(x["const_bytes"], x["fields"], x["conditional"]) for x in up["parts"]] == [
+      ok(lambda: (up["separator"] == "\n\n" and [(x["const_bytes"], x["fields"], x["conditional"]) for x in up["parts"]] == [
           (len("## Last k Messages\n"), ["_format_conversation_history(last_k_messages)"], False),
           (len("## Existing Memories\n"), ["_serialize_memories(existing_memories)"], False),
           (len("## New Messages\n"), ["_format_new_messages(new_messages)"], False),
           (len("## Custom Instructions\n"), ["custom_instructions"], True),
-          (len("## Language\nkeep it"), [], True), (len("# Output:"), [], False)]), str(up)[:400])
+          (len("## Language\nkeep it"), [], True), (len("# Output:"), [], False)])
+          if SHAPES_HERE else BF["m0_user_prompt"].get("blocked") == "blocked:normalizer-changed:m0_user_prompt"),
+      str(up or BF.get("m0_user_prompt"))[:400])
 (M3 / "mem0/configs/prompts.py").write_bytes(FILES3["mem0/configs/prompts.py"].replace(b'f\"## New Messages\\n{', "f\"## Nouveaux Messages \u00e9\\n{".encode("utf-8")))
 try:
-    up17 = ((S.mem0_bound_facts(M3).get("m0_user_prompt") or {}).get("value") or {}).get("parts") or []
+    bf17 = S.mem0_bound_facts(M3).get("m0_user_prompt") or {}
+    up17 = (bf17.get("value") or {}).get("parts") or []
 finally:
     (M3 / "mem0/configs/prompts.py").write_bytes(FILES3["mem0/configs/prompts.py"])
 check("B17: an f-string section's non-ASCII constant is counted in bytes, never in characters",
-      ok(lambda: up17[2]["const_bytes"] == len("## Nouveaux Messages \u00e9\n".encode("utf-8"))), str(up17[2:3]))
+      ok(lambda: up17[2]["const_bytes"] == len("## Nouveaux Messages \u00e9\n".encode("utf-8")) if SHAPES_HERE
+         else bf17.get("blocked") == "blocked:normalizer-changed:m0_user_prompt"), str(up17[2:3] or bf17))
 check("C6: the add path's own top_k - the search that fills existing memories, not the entity search's top_k=1; a bare "
       "top_k= would be ambiguous", ok(lambda: val["m0_top_k"] == "10" and S.fact_in(S.scope(M3, "mem0/memory/main.py",
                                           "Memory._add_to_vector_store", name="t"), r"top_k=(\d+)", name="t").get("blocked")
@@ -987,8 +998,9 @@ for label, rel, data, want in (
         ("no truncation of the history lines", "mem0/configs/prompts.py",
          FILES3["mem0/configs/prompts.py"].replace(b"{_truncate_content(content)}", b"{content}"),
          "blocked:source-missing:m0_trunc_used")):
-    got = bound_with(rel, data)
-    check(f"C6: {label} makes no bound - named ({want})", ok(lambda: any(want in x for x in got)), str(got)[:300])
+    got, wants = bound_with(rel, data), shape_want(want)
+    check(f"C6: {label} makes no bound - named ({want})", ok(lambda: any(w in x for x in got for w in wants)),
+          str(got)[:300])
 (M3 / "mem0/configs/prompts.py").write_bytes(PRO.replace(b'sections.append("# Output:")', b'sections.extend(["# Output:"])'))
 try:
     upx = S.mem0_bound_facts(M3).get("m0_user_prompt") or {}
@@ -1046,26 +1058,27 @@ check("F-C6-4: every new fact read from the tree (2.0.19's own helpers, reformat
       "none blocked, and still no reason against the bound",
       ok(lambda: len(NEW_F) == 20 and all(isinstance(BF.get(k), dict) and (
           (BF[k].get("blocked") is None and BF[k].get("value") is not None)
-          if SHAPES_HERE or k not in P.M0_HELPER_SHAPES
+          if SHAPES_HERE or k not in UNPARSED
           else (BF[k].get("blocked") == f"blocked:normalizer-changed:{k}" and BF[k].get("value") is None))
           for k in NEW_F)
          and no_bound_reason(S.bound_blocked(BF))), str({k: (BF.get(k) or {}).get("blocked") for k in sorted(NEW_F)})[:600])
 check("F-C6-4: a fact's value - a shape's sha256 and length, the writes by name, the defaults, the calls' arguments, "
       "the config's default, the adapter's keys",
-      ok(lambda: (BF["m0_fn_truncate"]["value"] == {"sha256": SHAPES_2019["m0_fn_truncate"][2], "chars": 144}
-                  if SHAPES_HERE else BF["m0_fn_truncate"]["value"] is None)
-         and BF["m0_add_path_writes"]["value"]["existing_memories"] == [
-             "existing_memories = []", "existing_memories.append({'id': str(idx), 'text': mem.payload.get('data', '')})"]
-         and BF["m0_builder_writes"]["value"] == {
-             "current_date": ["current_date, observation_date = _resolve_dates(current_date, timestamp)"],
-             "observation_date": ["current_date, observation_date = _resolve_dates(current_date, timestamp)"]}
-         and BF["m0_prompt_defaults"]["value"]["use_input_language"] == "False"
-         and BF["m0_llm_args"]["value"]["keywords"]["messages"]
-         == "[{'role': 'system', 'content': system_prompt}, {'role': 'user', 'content': user_prompt}]"
-         and BF["m0_custom_default"]["value"] == "None"
+      ok(lambda: ((BF["m0_fn_truncate"]["value"] == {"sha256": SHAPES_2019["m0_fn_truncate"][2], "chars": 144}
+                   and BF["m0_add_path_writes"]["value"]["existing_memories"] == [
+                       "existing_memories = []",
+                       "existing_memories.append({'id': str(idx), 'text': mem.payload.get('data', '')})"]
+                   and BF["m0_builder_writes"]["value"] == {
+                       "current_date": ["current_date, observation_date = _resolve_dates(current_date, timestamp)"],
+                       "observation_date": ["current_date, observation_date = _resolve_dates(current_date, timestamp)"]}
+                   and BF["m0_prompt_defaults"]["value"]["use_input_language"] == "False"
+                   and BF["m0_llm_args"]["value"]["keywords"]["messages"]
+                   == "[{'role': 'system', 'content': system_prompt}, {'role': 'user', 'content': user_prompt}]"
+                   and BF["m0_custom_default"]["value"] == "None")
+                  if SHAPES_HERE else all(BF[k]["value"] is None for k in UNPARSED))
          and BF["m0_adapter"]["value"]["config_keys"] == ["embedder", "history_db_path", "llm", "vector_store"]
          and BF["m0_adapter"]["value"]["add_keywords"] == [["infer", "user_id"], ["infer", "metadata", "user_id"]]
-         and all(BF[k].get("source") for k in NEW_F if SHAPES_HERE or k not in P.M0_HELPER_SHAPES)),
+         and all(BF[k].get("source") for k in NEW_F if SHAPES_HERE or k not in UNPARSED)),
       str({k: BF.get(k) for k in ("m0_fn_truncate", "m0_adapter")})[:600])
 got_q = bound_with("mem0/configs/prompts.py", PRO.replace(b'    return summary or ""', b"    return summary or ''  # same"))
 check("F-C6-4: other quotes and a comment keep a helper's shape - no reason against the bound",
@@ -1080,6 +1093,15 @@ finally:
 check("F-C6-4: a shape normalized under another Python minor is blocked:normalizer-changed, never compared",
       ok(lambda: bf_py["m0_fn_summary"].get("blocked") == "blocked:normalizer-changed:m0_fn_summary"
          and bf_py["m0_fn_summary"].get("value") is None), str(bf_py.get("m0_fn_summary"))[:300])
+check("R-UNPARSE-WRITES (the auditor): under another Python minor m0_builder_writes - and every fact compared as "
+      "ast.unparse text, the writes, defaults, calls' arguments, config default and user prompt fields - is "
+      "blocked:normalizer-changed, never source-changed (3.10 wrote its tuple target in parentheses: a false name)",
+      ok(lambda: bf_py["m0_builder_writes"].get("blocked") == "blocked:normalizer-changed:m0_builder_writes"
+         and len(UNPARSED) == 20 and all(bf_py[k].get("blocked") == f"blocked:normalizer-changed:{k}"
+                                         and bf_py[k].get("value") is None for k in UNPARSED)
+         and all(not (v.get("blocked") or "").startswith("blocked:normalizer-changed")
+                 for k, v in bf_py.items() if k not in UNPARSED and isinstance(v, dict))),
+      str({k: (bf_py.get(k) or {}).get("blocked") for k in ("m0_builder_writes", "m0_user_prompt", "m0_llm_args")}))
 (M3 / "mem0/configs/prompts.py").write_bytes(PRO.replace(b'.date().isoformat()', b'.isoformat()'))
 try:
     bf_ch = S.mem0_bound_facts(M3)
@@ -1214,8 +1236,9 @@ for label, rel, data, want in (
          CFG + b"    custom_instructions: Optional[str] = None\n", "blocked:source-ambiguous:m0_custom_default"),
         ("F-C6-4: a config that does not parse", "mem0/configs/base.py", CFG + b"def (:\n",
          "blocked:source-unparsable:m0_custom_default")):
-    got, want = bound_with(rel, data), shape_want(want)
-    check(f"C6: {label} makes no bound - named ({want})", ok(lambda: any(want in x for x in got)), str(got)[:300])
+    got, wants = bound_with(rel, data), shape_want(want)
+    check(f"C6: {label} makes no bound - named ({want})", ok(lambda: any(w in x for x in got for w in wants)),
+          str(got)[:300])
 for label, text, want in (
         ("the adapter's config with custom instructions",
          ADP.replace('"history_db_path": str(store / "history.db")}',
