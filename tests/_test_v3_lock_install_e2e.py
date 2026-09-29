@@ -159,15 +159,22 @@ def install(tag, routes, specs, imports, dists, parent_env=None):
     hop = TF.TunnelHop(srv.port)
     c, base = contract(tag)
     # LI-1: the declared base is polygon/py312/python.exe - here a junction to this interpreter's directory, its version
-    # this interpreter's (the test world's base; the real one is fetch_py_base's py-base-312)
+    # this interpreter's (the test world's base; the real one is fetch_py_base's py-base-312). G2 (the auditor's gate):
+    # off Windows the interpreter is not named python.exe (ae1ea4e's LI-1 refused ".../py312/python" on Linux), so
+    # py312 is a directory there whose python.exe is a link to this interpreter - the name LI-1 declares, its realpath.
+    # And the base is the INSTALLATION (sys.base_prefix), never a venv's launcher: run from a venv (the auditor's bare
+    # core venvs), a junction to its Scripts made "python.exe" a launcher that looks for pyvenv.cfg beside the junction
+    # - "the venv could not be created (exit 106): No pyvenv.cfg file"
     c.polygon_root.mkdir(parents=True, exist_ok=True)
     if os.name == "nt":
         import _winapi
-        _winapi.CreateJunction(str(Path(sys.executable).parent), str(c.polygon_root / "py312"))
+        _winapi.CreateJunction(str(Path(sys.base_prefix)), str(c.polygon_root / "py312"))
     else:
-        os.symlink(Path(sys.executable).parent, c.polygon_root / "py312", target_is_directory=True)
+        (c.polygon_root / "py312").mkdir()
+        os.symlink(os.path.realpath(getattr(sys, "_base_executable", None) or sys.executable),
+                   c.polygon_root / "py312" / "python.exe")
     try:
-        rec = LI.run_lock_install(c, L, F, python=c.polygon_root / "py312" / Path(sys.executable).name,
+        rec = LI.run_lock_install(c, L, F, python=c.polygon_root / "py312" / "python.exe",
                                   venv=c.polygon_root / "t_v3", venv_name="t_v3", base="py-base-312",
                                   bases={"py-base-312": {"version": platform.python_version(), "dest": "py312",
                                                          "newest_of": None}},
@@ -183,8 +190,14 @@ def install(tag, routes, specs, imports, dists, parent_env=None):
         hop.close()
         srv.close()
         link = c.polygon_root / "py312"
-        if link.exists():
-            os.rmdir(link) if os.name == "nt" else link.unlink()      # the junction only, never its target
+        if os.name == "nt":
+            if link.exists():
+                os.rmdir(link)                                     # the junction only, never its target
+        else:
+            if (link / "python.exe").is_symlink():
+                (link / "python.exe").unlink()                     # the link only, never the interpreter
+            if link.is_dir():
+                link.rmdir()
     return rec, c, base
 
 

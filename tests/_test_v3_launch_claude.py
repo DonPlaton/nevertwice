@@ -467,12 +467,15 @@ got7 = cc7_session(u7, cfg7, st7, R7)
 check("Q-47-7 a later session whose settings.json is not byte-equal to the first session's is refused",
       any("settings.json is not byte-equal" in r for r in got7), str(got7))
 st7.write_bytes(orig7)
-import _winapi  # noqa: E402
-_winapi.CreateJunction(str(u7.memdir), str(cfg7 / "statsig"))
+if os.name == "nt":                                  # G2 (the auditor's gate): no _winapi off Windows - a symlink there
+    import _winapi  # noqa: E402
+    _winapi.CreateJunction(str(u7.memdir), str(cfg7 / "statsig"))
+else:
+    os.symlink(u7.memdir, cfg7 / "statsig", target_is_directory=True)
 got7 = cc7_session(u7, cfg7, st7, R7)
 check("Q-47-7 a link or junction inside CLAUDE_CONFIG_DIR is refused by name, even under a recorded name",
       any("a link or junction inside CLAUDE_CONFIG_DIR" in r for r in got7), str(got7))
-os.rmdir(cfg7 / "statsig")
+os.rmdir(cfg7 / "statsig") if os.name == "nt" else (cfg7 / "statsig").unlink()
 check("Q-47-7 ... and with every plant removed the unit's next session passes again", cc7_session(u7, cfg7, st7, R7) == [])
 cfg7b = u7.home / "claude_config_2"
 cfg7b.mkdir()

@@ -258,20 +258,28 @@ check("LI-2 (the auditor): the offline pip gets the resolver's declared env - no
       "user and site files; --isolated would not), the cache in the polygon, no input - and no index at all",
       oe == {"PIP_CACHE_DIR": str(TMP / "polygon" / "pip_cache"), "PIP_CONFIG_FILE": os.devnull, "PIP_NO_INPUT": "1"}
       and {k: v for k, v in rj["env"].items() if k != "PIP_INDEX_URL"} == oe, str(oe))
-code = LI.version_probe(["json"], ["pip"])
 import contextlib as _cl  # noqa: E402
 import io as _io  # noqa: E402
 import platform as _pf  # noqa: E402
+# the auditor's gate on b60190a (core, bare 3.10): "pip" is no distribution every interpreter has - a bare venv has none
+# at all - so the probe reads one this row puts on the path itself, with a version of its own
+_site = TMP / "probe_site"
+(_site / "nvt3_probe_dist-1.2.3.dist-info").mkdir(parents=True)
+(_site / "nvt3_probe_dist-1.2.3.dist-info" / "METADATA").write_text(
+    "Metadata-Version: 2.1\nName: nvt3-probe-dist\nVersion: 1.2.3\n", encoding="utf-8")
 _buf = _io.StringIO()
+sys.path.insert(0, str(_site))
 try:
     with _cl.redirect_stdout(_buf):
-        exec(compile(LI.version_probe(["json"], ["pip"]), "<probe>", "exec"), {})
+        exec(compile(LI.version_probe(["json"], ["nvt3-probe-dist"]), "<probe>", "exec"), {})
     probed = json.loads(_buf.getvalue().strip().splitlines()[-1])
 except Exception as e:  # noqa: BLE001
     probed = {"error": f"{type(e).__name__}: {e}"}
+finally:
+    sys.path.remove(str(_site))
 check("the import probe imports the declared modules and prints the venv's own python version and each requested "
       "distribution's version as JSON", probed.get("python") == _pf.python_version()
-      and isinstance((probed.get("dists") or {}).get("pip"), str), str(probed))
+      and (probed.get("dists") or {}).get("nvt3-probe-dist") == "1.2.3", str(probed))
 cv = getattr(LI, "check_versions", None)
 lk2 = [{"name": "mem0ai", "version": "2.2.0"}, {"name": "qdrant-client", "version": "1.15.1"}]
 ok_v = cv({"python": "3.12.10", "dists": {"mem0ai": "2.2.0"}}, lk2, ["mem0ai"], "3.12.10") if cv else ["no check_versions"]
