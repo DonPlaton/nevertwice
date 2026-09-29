@@ -86,6 +86,12 @@
    "files": ["cognee/eval_framework/benchmark_adapters/beam_adapter.py", "cognee/eval_framework/answer_generation/beam_router.py", "cognee/eval_framework/run_beam_eval.py"],
    "max_redirects": 0
   },
+  "a7-github": {
+   "hosts": ["raw.githubusercontent.com"],
+   "purpose": "A7 phase 2 (the auditor's fixing, 2026-09-29, and Q-A7-P2-1 O-a): the 17 prompt and harness files of research/v3/corpus_pin_v3.PINS_A7 at their discovery commits, each checked against the git blob and size of the discovery tree it comes from; the pins of the table PINS_A7, never of PINS",
+   "pins": ["lme_readme", "mab_agent", "mab_main", "mab_init", "mab_conv", "mab_readme", "beam_answer_generation", "beam_ltm_methods", "beam_light", "beam_answer_sh", "beam_readme", "ama_harness", "ama_run", "ama_agent_prompt", "ama_extract_answer", "ama_agent_conf", "ama_readme"],
+   "max_redirects": 0
+  },
   "py-base-312": {
    "hosts": ["api.nuget.org"],
    "purpose": "A8 C1 (the auditor's Q-A8-2): CPython 3.12.10 from NuGet's python package into the polygon's py312 - the base of the product venvs PREREG-V3 2.2 pins to 3.12; NuGet's flat index is read first and the declared version must be the newest stable 3.12.x",

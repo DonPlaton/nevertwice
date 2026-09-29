@@ -182,13 +182,15 @@ check("the FREEZE fragment lists every pin exactly once, in its group",
       and set(frag) == {"datasets", "tokenizers", "prompt_files", "arm_sources", "licence_evidence"}
       and "tiktoken_cl100k_base" in frag["tokenizers"] and "amem_source" in frag["arm_sources"])
 
-print("\n- the manifest agrees with the table -")
+print("\n- the manifest agrees with the tables (A3's PINS and A7's PINS_A7, as one union) -")
+A7 = getattr(CP, "PINS_A7", {})
 win_pins = {w: set(v.get("pins", ())) for w, v in MAN["windows"].items()}
-for name, p in CP.PINS.items():
+for name, p in {**CP.PINS, **A7}.items():
     if p["window"]:
         check(f"{name} is listed in exactly its window {p['window']}",
               name in win_pins.get(p["window"], set()) and sum(name in s for s in win_pins.values()) == 1)
-check("every manifest pin exists in the table", set().union(*win_pins.values()) <= set(CP.PINS))
+check("every manifest pin exists in the union of the tables (Q-A7-P2-1 (1))",
+      set().union(*win_pins.values()) <= set(CP.PINS) | set(A7), str(set().union(*win_pins.values()) - set(CP.PINS) - set(A7)))
 check("the window hosts are the declared exact names",
       {w: sorted(v["hosts"]) for w, v in MAN["windows"].items()} == {
           "a3-discovery": ["api.github.com", "huggingface.co"],
@@ -197,7 +199,7 @@ check("the window hosts are the declared exact names",
           "a3-tiktoken": ["openaipublic.blob.core.windows.net"], "a3-git": ["github.com"],
           "a3-pyarrow": ["files.pythonhosted.org", "pypi.org"], "a7-npm": ["registry.npmjs.org"],
           "a7-npm-d": ["registry.npmjs.org"], "a7-discovery": ["api.github.com", "huggingface.co"],
-          "a7-docs": ["api.github.com"], "a7-cognee-tag": ["api.github.com"],
+          "a7-docs": ["api.github.com"], "a7-cognee-tag": ["api.github.com"], "a7-github": ["raw.githubusercontent.com"],
           "py-base-312": ["api.nuget.org"], "a8-pypi-mem0_v3": ["files.pythonhosted.org", "pypi.org"],
           "a8-pypi-graphiti_v3": ["files.pythonhosted.org", "pypi.org"],
           "a8-pypi-langmem_v3": ["files.pythonhosted.org", "pypi.org"],
@@ -208,6 +210,80 @@ check("the window hosts are the declared exact names",
                              "release-assets.githubusercontent.com"]})
 check("a3-hf's hosts come from the discovery record d1; discovery follows no redirect",
       MAN["windows"]["a3-hf"]["hosts_from_record"] == CP.DISCOVERY_D1 and MAN["windows"]["a3-discovery"]["max_redirects"] == 0)
+
+print("\n- A7 phase 2 (the auditor's Q-A7-P2-1 O-a): PINS_A7, a table of its own for the window a7-github -")
+LME_R, MAB_R = "9e0b455f4ef0e2ab8f2e582289761153549043fc", "538026089d1a8a8eff05121d0db89b388f360eba"
+AMA_R, BEAM_R = "ddfd319e0be33424288c13806f1eafc63e625b59", "b2da22eac88bb0874c64665f13457eb99835774a"
+LME_G, MAB_G, BEAM_G, AMA_G = "xiaowu0162/LongMemEval", "HUST-AI-HYZ/MemoryAgentBench", "mohammadtavakoli78/BEAM", "AMA-Bench/AMA-Bench"
+BEAM_Q = "src/answer_probing_questions/"
+WANT_A7 = {                                  # the 17 the auditor fixed (2026-09-29 23:2x): name -> (repo, revision, path, role)
+    "lme_readme": (LME_G, LME_R, "README.md", "prompt"),
+    "mab_agent": (MAB_G, MAB_R, "agent.py", "prompt"), "mab_main": (MAB_G, MAB_R, "main.py", "prompt"),
+    "mab_init": (MAB_G, MAB_R, "initialization.py", "prompt"),
+    "mab_conv": (MAB_G, MAB_R, "conversation_creator.py", "prompt"), "mab_readme": (MAB_G, MAB_R, "README.md", "prompt"),
+    "beam_answer_generation": (BEAM_G, BEAM_R, BEAM_Q + "answer_generation.py", "prompt"),
+    "beam_ltm_methods": (BEAM_G, BEAM_R, BEAM_Q + "long_term_memory_methods.py", "prompt"),
+    "beam_light": (BEAM_G, BEAM_R, BEAM_Q + "light.py", "prompt"),
+    "beam_answer_sh": (BEAM_G, BEAM_R, BEAM_Q + "answer_generation.sh", "prompt"),
+    "beam_readme": (BEAM_G, BEAM_R, "README.md", "prompt"),
+    "ama_harness": (AMA_G, AMA_R, "src/agent_harness.py", "prompt"), "ama_run": (AMA_G, AMA_R, "src/run.py", "prompt"),
+    "ama_agent_prompt": (AMA_G, AMA_R, "src/method/ama_agent_core/prompt.py", "prompt"),
+    "ama_extract_answer": (AMA_G, AMA_R, "utils/extract_final_answer.py", "scoring"),
+    "ama_agent_conf": (AMA_G, AMA_R, "configs/ama_agent.yaml", "prompt"), "ama_readme": (AMA_G, AMA_R, "README.md", "prompt")}
+check("A7-1: PINS_A7 holds exactly the 17 pins the auditor fixed - each its repository, commit, path and role "
+      "(prompt; extract_final_answer scoring)", {n: (p["repo"], p["revision"], p["path"], p["role"]) for n, p in A7.items()}
+      == WANT_A7, str(sorted(set(A7) ^ set(WANT_A7))))
+check("A7-2: every A7 pin is a GitHub file of the window a7-github, unfilled until it (no sha256, no size), its revision "
+      "from a discovery record (d1 or d2) that holds its tree", bool(A7) and all(
+          p["source"] == "github" and p["window"] == "a7-github" and p["sha256"] is None and p["bytes"] is None
+          and str(p["revision_from"]).startswith(("a3-discovery d1 ", "a3-discovery d2 ")) for p in A7.values()),
+      str([n for n, p in A7.items() if p["sha256"] is not None or p["window"] != "a7-github"]))
+tf, tferr = (None, None)
+try:                                          # a missing function FAILs these rows by name, never the suite
+    tf = (CP.table_for("a7-github") is CP.PINS_A7, CP.table_for("a3-github") is CP.PINS, CP.table_for("a3-hf") is CP.PINS)
+except Exception as e:  # noqa: BLE001
+    tferr = f"{type(e).__name__}: {e}"
+check("A7-3: table_for(window) - a7-github's table is PINS_A7, the A3 windows' is PINS", tf == (True, True, True),
+      str(tferr or tf))
+pt, pterr = (None, None)
+try:
+    real = CP.pinned_twice()
+    dup_name = CP.pinned_twice((CP.PINS, {**A7, "mab_templates": copy.deepcopy(A7["lme_readme"])}))   # another file
+    dup_file = CP.pinned_twice((CP.PINS, {**A7, "mab_eval_again": {**copy.deepcopy(CP.PINS["mab_eval_data_utils"]),
+                                                                   "window": "a7-github"}}))
+    pt = (real, dup_name, dup_file)
+except Exception as e:  # noqa: BLE001
+    pterr = f"{type(e).__name__}: {e}"
+check("A7-4: pinned_twice() - none across the real tables; a name in both tables is named (even for another file), and "
+      "so is a file (repository, commit, path) pinned in both under another name (Q-A7-P2-1 (1): a file is pinned once)",
+      pt is not None and pt[0] == [] and pt[1] == ["mab_templates: in table 0 and table 1"]
+      and any("mab_eval_again" in x and "mab_eval_data_utils" in x for x in pt[2]), str(pterr or pt))
+fr, frerr = (None, None)
+try:
+    CP.check_rules(A7)
+    fr = CP.freeze_fragment(A7)
+except Exception as e:  # noqa: BLE001
+    frerr = f"{type(e).__name__}: {e}"
+mr, mrerr = (None, None)
+try:
+    ok_rc = CP.main([])
+    saved_a7 = CP.PINS_A7
+    CP.PINS_A7 = {**saved_a7, "mab_again": {**copy.deepcopy(CP.PINS["mab_eval_data_utils"]), "window": "a7-github"}}
+    try:
+        CP.main([])
+        dup_rc = "accepted"
+    except CP.PinRefused as e:
+        dup_rc = f"refused: {e}"
+    finally:
+        CP.PINS_A7 = saved_a7
+    mr = (ok_rc, dup_rc)
+except Exception as e:  # noqa: BLE001
+    mrerr = f"{type(e).__name__}: {e}"
+check("A7-4b: the table's own command refuses a file pinned twice across the tables (PinRefused, named) and passes the "
+      "real ones", mr is not None and mr[0] == 0 and mr[1].startswith("refused") and "mab_again" in mr[1], str(mrerr or mr))
+check("A7-5: the table's rules hold for PINS_A7, and its fragment files all 17 under prompt_files",
+      fr is not None and sorted(fr["prompt_files"]) == sorted(WANT_A7) and not any(fr[g] for g in fr if g != "prompt_files"),
+      str(frerr or {g: sorted(v) for g, v in (fr or {}).items()}))
 
 print("\n- the auditor's P3, P7, P8, P9 -")
 P_ = CP.PINS

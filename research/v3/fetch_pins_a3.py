@@ -698,7 +698,7 @@ def run_pin_window(c, L, F, *, window: str, run: str, python: Path, via_port: in
     refusal of the window itself (fetch_a3.WindowRefused: a used run label, the disk floor). ``need_bytes_override`` is for
     tests only (a small temp volume, as need_bytes_override); a real window keeps the plan's floor."""
     disc = disc if disc is not None else load_discovery(c.runs_root)
-    pins = pins if pins is not None else CP.PINS
+    pins = pins if pins is not None else CP.table_for(window)      # Q-A7-P2-1: a7-github's pins are PINS_A7's
     manifest = manifest if manifest is not None else MANIFEST
     hf_hub, pins_root = c.polygon_root / "hf_cache" / "hub", c.runs_root / "_pins"
     arm = (manifest["windows"][window].get("arms") or ["fetch"])[0]
@@ -805,8 +805,9 @@ TIKTOKEN_METADATA = Path(r"D:\Coding\_nevertwice_polygon\mem0_eval\.venv\Lib\sit
 
 def main(argv: list[str] | None = None) -> int:
     import argparse  # noqa: PLC0415
-    ap = argparse.ArgumentParser(description="one A3 pin window (a3-hf, a3-github, a3-tiktoken, a3-git), then place and fill")
-    ap.add_argument("--window", required=True, choices=["a3-hf", "a3-github", "a3-tiktoken", "a3-git"])
+    ap = argparse.ArgumentParser(description="one pin window (a3-hf, a3-github, a3-tiktoken, a3-git; A7's a7-github), "
+                                             "then place and fill")
+    ap.add_argument("--window", required=True, choices=["a3-hf", "a3-github", "a3-tiktoken", "a3-git", "a7-github"])
     ap.add_argument("--run", required=True)
     ap.add_argument("--python", required=True, help="the polygon's py314 interpreter")
     args = ap.parse_args(argv)

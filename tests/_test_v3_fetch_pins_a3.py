@@ -777,6 +777,95 @@ else:
     hop.close()
     srv.close()
 
+print("\n- A7 phase 2 (Q-A7-P2-1 O-a): the window a7-github plans PINS_A7's pins, never PINS' -")
+A7_BEFORE = copy.deepcopy(getattr(P.CP, "PINS_A7", {}))
+REAL_MANI = json.loads((ROOT / "research" / "v3" / "fetch_manifest.json").read_text(encoding="utf-8"))
+#: The blobs and sizes the auditor verified against the discovery trees (2026-09-29 23:2x): repo -> path -> (blob, size).
+A7_TREES = {
+    "xiaowu0162/LongMemEval": ("d1", 3, "9e0b455f4ef0e2ab8f2e582289761153549043fc", {
+        "README.md": ("3490db4f796c14903788ecb3e33f056cab438bb0", 15970)}),
+    "HUST-AI-HYZ/MemoryAgentBench": ("d1", 3, "538026089d1a8a8eff05121d0db89b388f360eba", {
+        "agent.py": ("d1eba634a8289524291e210d96ce85559c5798d3", 55655),
+        "main.py": ("7247c34fa41f8332d8f4ba5d4911cd08b11c2512", 8802),
+        "initialization.py": ("b94ba63e2295e0dbaa7abae7bcc2d0e80451e168", 14159),
+        "conversation_creator.py": ("2612def9d82f176a7f36b13b698c43a4d8ef5074", 12924),
+        "README.md": ("b09a77858a47fd50869f78052f377be91c1f7264", 6905)}),
+    "mohammadtavakoli78/BEAM": ("d2", 1, "b2da22eac88bb0874c64665f13457eb99835774a", {
+        "src/answer_probing_questions/answer_generation.py": ("02045eb88662bc4ce3e2a17c52aedfb8e0f991c7", 16548),
+        "src/answer_probing_questions/long_term_memory_methods.py": ("e1e2775ba045afc721fea6267acc01c7231031a4", 24223),
+        "src/answer_probing_questions/light.py": ("e826014cde434d51ed95cdbd6f371ee0c700c644", 22629),
+        "src/answer_probing_questions/answer_generation.sh": ("4d4edaa89f71f50a2f86702d07f5b47d54d00b92", 1853),
+        "README.md": ("4fcb69138bf9ce3566cc5f315b267f583fc76445", 14549)}),
+    "AMA-Bench/AMA-Bench": ("d2", 1, "ddfd319e0be33424288c13806f1eafc63e625b59", {
+        "src/agent_harness.py": ("37beb165ec932c61bf73fb24c185082c81531808", 10272),
+        "src/run.py": ("75dde9f669a2479458ae4f042a9a5fe8eb0556a9", 17241),
+        "src/method/ama_agent_core/prompt.py": ("905c8a424918f641986aa7e7c982dcfb74671f41", 12732),
+        "utils/extract_final_answer.py": ("43755b4a68937e943a21c524296429550154b033", 1085),
+        "configs/ama_agent.yaml": ("f4d1d901590b440ff7bf2ba3e947ac8cbcd35ca0", 893),
+        "README.md": ("c9721cd6859b103f85e74c3280e0840a13609d8f", 15131)})}
+b7 = TMP / "disc_a7"
+for rec_, n_ in (("d1", 4), ("d2", 3)):
+    for j_ in range(n_):
+        (b7 / rec_ / f"j{j_}").mkdir(parents=True, exist_ok=True)
+for repo_, (rec_, job_, rev_, files_) in A7_TREES.items():
+    saved = P.GH_TREES.get(repo_, (rec_, job_, f"gh/{P._safe(repo_)}/tree.json"))[2]
+    write(b7 / rec_ / f"j{job_}" / saved, {"sha": rev_, "truncated": False, "tree": [
+        {"path": pth, "type": "blob", "sha": blb, "size": sz} for pth, (blb, sz) in files_.items()]})
+    lrec, ljob, lrel = P.GH_REPOS.get(repo_, ("d1", 2, f"gh/{P._safe(repo_)}/repo.json"))
+    write(b7 / lrec / f"j{ljob}" / lrel, {"full_name": repo_, "license": {"spdx_id": "MIT"}})
+D7 = P.Discovery({r: {"jobs": [{"index": j, "unit": str(b7 / r / f"j{j}"), "job": {"requests": []}, "summary": []}
+                               for j in range(n)]} for r, n in (("d1", 4), ("d2", 3))})
+UR7 = TMP / "runs" / "_fetch.a7-github" / "r1" / "fetch"
+try:                                          # a missing table FAILs these rows by name, never the suite
+    p7, p7err = P.plan_window("a7-github", disc=D7, pins=P.CP.PINS_A7, manifest=REAL_MANI, hf_hub=HUB, pins_root=PR,
+                              unit_root=UR7), None
+except Exception as e:  # noqa: BLE001
+    p7, p7err = None, f"{type(e).__name__}: {e}"
+want7 = {(f"https://raw.githubusercontent.com/{repo_}/{rev_}/{pth}", blb, sz)
+         for repo_, (_r, _j, rev_, files_) in A7_TREES.items() for pth, (blb, sz) in files_.items()}
+got7 = {(it.url, it.expect.get("git_blob_sha1"), it.expect.get("size")) for it in (p7.items if p7 else [])}
+check("A7-6: a7-github's plan from PINS_A7 and the real manifest - raw.githubusercontent.com only, no redirect, the 17 "
+      "files each at its discovery commit, expected to be the tree's git blob and size, placed under _pins/github/",
+      p7err is None and p7.hosts == ["raw.githubusercontent.com"] and len(p7.items) == 17 and got7 == want7
+      and all(j.get("max_redirects") == 0 for j in p7.jobs)
+      and all("/github/" in str(it.dest).replace("\\", "/") for it in p7.items),
+      str(p7err or sorted(want7 ^ got7)[:3]))
+check("A7-7: planned from A3's table instead, the window a7-github stops by name (S8): the manifest's pins are not "
+      "that table's", stopped(lambda: P.plan_window("a7-github", disc=D7, pins=P.CP.PINS, manifest=REAL_MANI, hf_hub=HUB,
+                                                    pins_root=PR, unit_root=UR7), "S8"))
+seen_pins: list = []
+
+
+class _PlanSeen(Exception):
+    pass
+
+
+def _spy(window, *, pins, **kw):
+    seen_pins.append((window, pins))
+    raise _PlanSeen(window)
+
+
+_orig_plan = P.plan_window
+P.plan_window = _spy
+try:
+    for w_ in ("a7-github", "a3-github"):
+        try:
+            P.run_pin_window(__import__("types").SimpleNamespace(polygon_root=TMP / "poly", runs_root=TMP / "runs7"),
+                             None, None,
+                             window=w_, run="t", python=Path(sys.executable), via_port=1, parent_env={}, disc=D7,
+                             manifest=REAL_MANI)
+        except _PlanSeen:
+            pass
+        except Exception as e:  # noqa: BLE001 - the row reads what was seen
+            seen_pins.append((w_, f"{type(e).__name__}: {e}"))
+finally:
+    P.plan_window = _orig_plan
+check("A7-8: run_pin_window with no table given plans a7-github from PINS_A7 and a3-github from PINS (table_for)",
+      [(w, t is getattr(P.CP, "PINS_A7", None) if w == "a7-github" else t is P.CP.PINS) for w, t in seen_pins]
+      == [("a7-github", True), ("a3-github", True)], str([(w, type(t).__name__, str(t)[:80]) for w, t in seen_pins]))
+check("A7-9: main() takes the window a7-github", '"a7-github"' in __import__("inspect").getsource(P.main))
+check("nothing here touches the real A7 table", getattr(P.CP, "PINS_A7", {}) == A7_BEFORE)
+
 import inspect  # noqa: E402
 
 check("main() hands the children no CA file and no extra variable; a window's hosts are the manifest's only",

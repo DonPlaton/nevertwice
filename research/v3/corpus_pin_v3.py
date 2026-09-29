@@ -379,10 +379,10 @@ FILLED: dict[str, dict] = {
 # <<< FILLED
 
 
-def _apply_filled(pins: dict | None = None) -> None:
+def _apply_filled(pins: dict | None = None, filled: dict | None = None) -> None:
     """FILLED into the table through fill() itself, so its rules hold at every import: a 64-hex sha256, the licence
-    found against the declared one (P6), a pin filled once."""
-    for name, v in FILLED.items():
+    found against the declared one (P6), a pin filled once. ``filled``/``pins``: A7's block into A7's table."""
+    for name, v in (FILLED if filled is None else filled).items():
         fill(name, revision=v["revision"], sha256=v["sha256"], size=v["bytes"], licence_found=v["licence_found"], pins=pins)
         (pins or PINS)[name]["filled_from"] = v["from"]
 
@@ -390,6 +390,72 @@ def _apply_filled(pins: dict | None = None) -> None:
 #: The table as declared, before FILLED - the rule tests fill and verify copies of this one.
 PINS_DECLARED = __import__("copy").deepcopy(PINS)
 _apply_filled()
+
+# ── A7 phase 2 (the auditor's Q-A7-P2-1 O-a, 2026-09-29): the window a7-github's own table ─────────────────────
+#: research/v3/freeze_a3.json is the A3 table as filled and is never rewritten (Q-C5e-3), so A7's pins are not merged
+#: into PINS: they live here, fill through the same fill() from their own block below, and get a freeze fragment of
+#: their own after their window; FREEZE-V3 (A10) pins both fragments. Every A7 pin's tree is a3-discovery d1's or d2's
+#: (the auditor verified the 17 blobs and sizes against them); a file is pinned once across both tables (pinned_twice).
+#: Line 1557 of revision 1: one template per benchmark, the benchmark's own answer prompt - these files say what it is.
+PINS_A7: dict[str, dict] = {
+    "lme_readme": _at(_pin("prompt", ["S1", "S2", "S3"], "github", GH_LME, None, "MIT", "a7-github", 1557,
+                           note="Q-48-1: the documented generation command, the cot switch"), REV["gh_lme"], "README.md"),
+    **{f"mab_{k}": _at(_pin("prompt", ["S6", "S6L"], "github", GH_MAB, None, "MIT", "a7-github", 1557,
+                            note=f"Q-48-3, Q30: {n}"), REV["gh_mab"], path)
+       for k, path, n in (("agent", "agent.py", "where the context is inserted"), ("main", "main.py", "the driver"),
+                          ("init", "initialization.py", "the agent's setup"),
+                          ("conv", "conversation_creator.py", "how a conversation is built"),
+                          ("readme", "README.md", "the documented run"))},
+    **{f"beam_{k}": _at(_pin("prompt", ["S5"], "github", GH_BEAM, None, BEAM_LIC, "a7-github", 1557,
+                             note=f"Q-48-4: {n}"), REV_D2["gh_beam"], path, record="d2")
+       for k, path, n in (("answer_generation", "src/answer_probing_questions/answer_generation.py", "the answer prompt"),
+                          ("ltm_methods", "src/answer_probing_questions/long_term_memory_methods.py", "the memory methods"),
+                          ("light", "src/answer_probing_questions/light.py", "the LIGHT variant"),
+                          ("answer_sh", "src/answer_probing_questions/answer_generation.sh", "the documented command"),
+                          ("readme", "README.md", "the documented run"))},
+    **{f"ama_{k}": _at(_pin(role, ["S7"], "github", GH_AMA, None, "MIT", "a7-github", 1557, note=f"Q17, Q-48-5: {n}"),
+                       REV_D2["gh_ama"], path, record="d2")
+       for k, role, path, n in (("harness", "prompt", "src/agent_harness.py", "the agent harness"),
+                                ("run", "prompt", "src/run.py", "the run entry point"),
+                                ("agent_prompt", "prompt", "src/method/ama_agent_core/prompt.py", "the answer prompt"),
+                                ("extract_answer", "scoring", "utils/extract_final_answer.py", "the answer parse"),
+                                ("agent_conf", "prompt", "configs/ama_agent.yaml", "the agent's config"),
+                                ("readme", "prompt", "README.md", "the documented run"))},
+}
+#: The values the window a7-github found, written by research/v3/pins_apply.py between these markers, never by hand.
+# >>> A7 FILLED
+FILLED_A7: dict[str, dict] = {
+}
+# <<< A7 FILLED
+PINS_A7_DECLARED = __import__("copy").deepcopy(PINS_A7)
+_apply_filled(PINS_A7, FILLED_A7)
+
+
+def table_for(window: str | None) -> dict:
+    """The table that holds ``window``'s pins: A7's windows (a7-*) PINS_A7, every other window PINS."""
+    return PINS_A7 if isinstance(window, str) and window.startswith("a7-") else PINS
+
+
+def pinned_twice(tables: tuple | None = None) -> list[str]:
+    """Q-A7-P2-1 (1): a name in more than one table, or a file - (source, repository, commit, path) - of a later table
+    already pinned under another name in an earlier one; each named. [] when every file is pinned once across them."""
+    tables = tables if tables is not None else (PINS, PINS_A7)
+    out, seen_names, seen_files = [], {}, {}
+    for i, table in enumerate(tables):
+        mine = {}
+        for name, p in table.items():
+            if name in seen_names:
+                out.append(f"{name}: in table {seen_names[name]} and table {i}")
+            key = (p["source"], p["repo"], p["revision"], p["path"])
+            if key in seen_files and seen_files[key][0] != i:
+                out.append(f"{name}: its file {p['repo']}@{str(p['revision'])[:12]}:{p['path']} is table "
+                           f"{seen_files[key][0]}'s {seen_files[key][1]}")
+            mine.setdefault(key, (i, name))
+        for name in table:
+            seen_names.setdefault(name, i)
+        for key, v in mine.items():
+            seen_files.setdefault(key, v)
+    return out
 
 
 def freeze_fragment(pins: dict | None = None) -> dict:
@@ -410,8 +476,12 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--list", action="store_true")
     args = ap.parse_args(argv)
     check_rules()
+    check_rules(PINS_A7)
+    twice = pinned_twice()
+    if twice:
+        raise PinRefused("a file is pinned once across the tables: " + "; ".join(twice))
     if args.list:
-        for name, p in sorted(PINS.items()):
+        for name, p in sorted({**PINS, **PINS_A7}.items()):
             state = p["sha256"][:12] if p["sha256"] else "unpinned"
             print(f"{name:26} {p['role']:10} {','.join(p['stands']):14} {state}")
     return 0
