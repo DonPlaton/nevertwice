@@ -164,15 +164,21 @@ def install(tag, routes, specs, imports, dists, parent_env=None):
     # py312 is a directory there whose python.exe is a link to this interpreter - the name LI-1 declares, its realpath.
     # And the base is the INSTALLATION (sys.base_prefix), never a venv's launcher: run from a venv (the auditor's bare
     # core venvs), a junction to its Scripts made "python.exe" a launcher that looks for pyvenv.cfg beside the junction
-    # - "the venv could not be created (exit 106): No pyvenv.cfg file"
+    # - "the venv could not be created (exit 106): No pyvenv.cfg file". Off Windows (the auditor's re-gate, Linux 3.10):
+    # the installation's own binary is base_prefix/bin/python<M.m> (a POSIX venv before 3.11 reports _base_executable
+    # as itself), and a venv made there before 3.11 writes only home = py312 into pyvenv.cfg - launch then looks for
+    # home/<the launcher's name> ("the venv's base interpreter does not exist"), so py312 links every name it may ask
     c.polygon_root.mkdir(parents=True, exist_ok=True)
     if os.name == "nt":
         import _winapi
         _winapi.CreateJunction(str(Path(sys.base_prefix)), str(c.polygon_root / "py312"))
     else:
         (c.polygon_root / "py312").mkdir()
-        os.symlink(os.path.realpath(getattr(sys, "_base_executable", None) or sys.executable),
-                   c.polygon_root / "py312" / "python.exe")
+        mm = f"{sys.version_info[0]}.{sys.version_info[1]}"
+        own = Path(sys.base_prefix) / "bin" / f"python{mm}"
+        target = os.path.realpath(own if own.exists() else (getattr(sys, "_base_executable", None) or sys.executable))
+        for name in ("python.exe", "python", f"python{sys.version_info[0]}", f"python{mm}"):
+            os.symlink(target, c.polygon_root / "py312" / name)
     try:
         rec = LI.run_lock_install(c, L, F, python=c.polygon_root / "py312" / "python.exe",
                                   venv=c.polygon_root / "t_v3", venv_name="t_v3", base="py-base-312",
@@ -194,8 +200,9 @@ def install(tag, routes, specs, imports, dists, parent_env=None):
             if link.exists():
                 os.rmdir(link)                                     # the junction only, never its target
         else:
-            if (link / "python.exe").is_symlink():
-                (link / "python.exe").unlink()                     # the link only, never the interpreter
+            for ln in (link.iterdir() if link.is_dir() else ()):
+                if ln.is_symlink():
+                    ln.unlink()                                    # the links only, never the interpreter
             if link.is_dir():
                 link.rmdir()
     return rec, c, base
