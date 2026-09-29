@@ -76,6 +76,14 @@ ST = _load("v3_llm_proxy_selftest_smk", ROOT / "research" / "_llm_proxy_selftest
 PASSED = FAILED = 0
 
 
+def holds(fn) -> tuple[bool, str]:
+    """A row's condition that can raise: the exception fails THAT row by name (its detail), never the whole suite."""
+    try:
+        return bool(fn()), ""
+    except Exception as e:  # noqa: BLE001 - the row names it
+        return False, f"{type(e).__name__}: {e}"
+
+
 def check(name: str, cond: bool, detail: str = "") -> None:
     global PASSED, FAILED
     if cond:
@@ -349,11 +357,12 @@ try:
           f"{crash1} {rows1[:1]} {err1[:4]}")
     pfl = C.runs_root / "_launch" / "preflight.jsonl"
     pf = [json.loads(x) for x in pfl.read_text(encoding="utf-8").splitlines()] if pfl.exists() else []
+    pf_ok, pf_err = holds(lambda: len(pf) >= 2 and pf[1]["stand_candidate"] == "S4-smoke-1"
+                          and pf[1]["ok"] is True and set(pf[1]["decl"]) == {"bm25-floor", "nevertwice"}
+                          and pf[1]["forecast"]["note"] == "upper bound, not pilot medians"
+                          and (pf[1]["forecast"].get("estimate") or {}).get("note") == "estimate, not a bound")
     check("SMK-preflight: the chained preflight record names S4-smoke-1, both arms declared, the forecast in it (upper "
-          "bound and estimate) - before any spawn", len(pf) >= 2 and pf[1]["stand_candidate"] == "S4-smoke-1"
-          and pf[1]["ok"] is True and set(pf[1]["decl"]) == {"bm25-floor", "nevertwice"}
-          and pf[1]["forecast"]["note"] == "upper bound, not pilot medians"
-          and (pf[1]["forecast"].get("estimate") or {}).get("note") == "estimate, not a bound", str(pf[1:2])[:300])
+          "bound and estimate) - before any spawn", pf_ok, f"{pf_err} {str(pf[1:2])[:300]}")
     flags_f = C.runs_root / "S4-smoke-1" / "_proxy" / sd1.name / "flags.jsonl"
     flags = [json.loads(x) for x in flags_f.read_text(encoding="utf-8").splitlines()] if flags_f.exists() else []
     b_nw = (run1.get("boundary") or {}).get("nevertwice/r1") or {}
