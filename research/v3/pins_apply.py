@@ -15,6 +15,11 @@ FILLED block of research/v3/corpus_pin_v3.py, between its markers, never by hand
 * an alias (the oracle, Q-A3F-8) is only confirmed - its pinned value is already the v2 one - and never written;
 * a pin already in FILLED is refused - fill()'s own rule: a pin is filled once.
 
+A7 (Q-A7-P2-1 O-a; the auditor, 2026-09-30 00:43): a window's table is the table's own table_for(window) - an a7-*
+window's pins live in PINS_A7 and its values go into the block between "# >>> A7 FILLED" and "# <<< A7 FILLED"
+(FILLED_A7), checked against PINS_A7 exactly as A3's against PINS; one call may carry both, each block written only when
+its own markers are there exactly once, and nothing is written on any refusal.
+
     python research/v3/pins_apply.py --fill <runs>\\_fetch\\a3-hf\\h2\\pin_fill.json=<sha256> [--fill ...]
 """
 from __future__ import annotations
@@ -31,6 +36,9 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 TABLE = HERE / "corpus_pin_v3.py"
 BEGIN, END = "# >>> FILLED", "# <<< FILLED"
+A7_BEGIN, A7_END = "# >>> A7 FILLED", "# <<< A7 FILLED"
+#: table -> (its begin marker, its end marker, the block's variable)
+BLOCKS = {"PINS": (BEGIN, END, "FILLED"), "PINS_A7": (A7_BEGIN, A7_END, "FILLED_A7")}
 KEYS = ("revision", "sha256", "bytes", "licence_found", "licence_source", "from")
 
 
@@ -69,9 +77,10 @@ def read_fill(path: Path, sha256: str) -> dict:
     return data
 
 
-def plan_values(fills: list[tuple[dict, str]], table_mod) -> tuple[dict, list[str]]:
-    """({pin: value}, the aliases confirmed): every value dry-run through fill() on a copy of the table."""
-    pins = copy.deepcopy(table_mod.PINS)
+def plan_values(fills: list[tuple[dict, str]], table_mod, *, table: str = "PINS") -> tuple[dict, list[str]]:
+    """({pin: value}, the aliases confirmed): every value dry-run through fill() on a copy of ``table`` (PINS, or A7's
+    PINS_A7)."""
+    pins = copy.deepcopy(getattr(table_mod, table))
     values, aliases = {}, []
     for data, sha in fills:
         src = f"{data['window']} {data['run']} pin_fill {sha[:12]}"
@@ -98,28 +107,50 @@ def plan_values(fills: list[tuple[dict, str]], table_mod) -> tuple[dict, list[st
     return values, aliases
 
 
-def render(filled: dict) -> str:
-    lines = [BEGIN, "FILLED: dict[str, dict] = {"]
+def render(filled: dict, table: str = "PINS") -> str:
+    begin, end, var = BLOCKS[table]
+    lines = [begin, f"{var}: dict[str, dict] = {{"]
     for name in sorted(filled):
         v = filled[name]
         lines.append(f"    {json.dumps(name)}: {{" + ", ".join(f"{json.dumps(k)}: {json.dumps(v[k])}" for k in KEYS) + "},")
-    lines += ["}", END]
+    lines += ["}", end]
     return "\n".join(lines)
+
+
+def _table_of(table_mod, window: str) -> str:
+    """The name of the table that holds ``window``'s pins - the table's own table_for, never guessed here."""
+    t = table_mod.table_for(window)
+    return next(name for name in BLOCKS if getattr(table_mod, name, None) is t)
 
 
 def apply(table_path: Path, fills: list[tuple[Path, str]]) -> dict:
     """Write the FILLED block of ``table_path``; returns what was written and confirmed. Nothing is written on a refusal."""
     text = Path(table_path).read_bytes().decode("utf-8")
-    block = re.search(re.escape(BEGIN) + r"\n.*?\n" + re.escape(END), text, flags=re.S)
-    if text.count(BEGIN) != 1 or text.count(END) != 1 or block is None:
+    if text.count(BEGIN) != 1 or text.count(END) != 1:
         raise ApplyRefused("the table's FILLED markers are not there exactly once")
     table_mod = _load_table(Path(table_path))
     data = [(read_fill(p, s), s) for p, s in fills]
-    values, aliases = plan_values(data, table_mod)
-    merged = {**{k: dict(v) for k, v in table_mod.FILLED.items()}, **values}
-    new = text[:block.start()] + render(merged) + text[block.end():]
-    Path(table_path).write_bytes(new.encode("utf-8"))
-    return {"written": sorted(values), "aliases_confirmed": aliases, "filled_total": len(merged)}
+    groups: dict = {}
+    for d, s in data:
+        groups.setdefault(_table_of(table_mod, d["window"]), []).append((d, s))
+    written, aliases, total, blocks = [], [], 0, {}
+    for table in BLOCKS:                               # every block checked and planned before any is written
+        if table not in groups:
+            continue
+        begin, end, var = BLOCKS[table]
+        block = re.search(re.escape(begin) + r"\n.*?\n" + re.escape(end), text, flags=re.S)
+        if text.count(begin) != 1 or text.count(end) != 1 or block is None:
+            raise ApplyRefused(f"the table's {begin[6:]} markers are not there exactly once")
+        values, al = plan_values(groups[table], table_mod, table=table)
+        merged = {**{k: dict(v) for k, v in getattr(table_mod, var).items()}, **values}
+        blocks[table] = (block.span(), render(merged, table))
+        written += list(values)
+        aliases += al
+        total += len(merged)
+    for (start, stop), body in sorted(blocks.values(), key=lambda x: -x[0][0]):   # from the end: spans stay valid
+        text = text[:start] + body + text[stop:]
+    Path(table_path).write_bytes(text.encode("utf-8"))
+    return {"written": sorted(written), "aliases_confirmed": aliases, "filled_total": total}
 
 
 def main(argv: list[str] | None = None) -> int:

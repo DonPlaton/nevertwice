@@ -233,6 +233,110 @@ t_nomark = table_copy("nomark")
 t_nomark.write_bytes(t_nomark.read_bytes().replace(A.END.encode(), b"# gone"))
 check("a table whose markers are not there exactly once is refused", refused(lambda: A.apply(t_nomark, [GH]), "markers"))
 
+print("\n- A7 (the auditor, 2026-09-30 00:43): a7-* windows fill PINS_A7 through their own block, # >>> A7 FILLED -")
+P7 = getattr(CP, "PINS_A7_DECLARED", {})
+A7B, A7E = "# >>> A7 FILLED", "# <<< A7 FILLED"
+
+
+def whole_a7(window: str, override: dict | None = None) -> dict:
+    """Values for every pin PINS_A7 gives ``window`` (so the pin_fill covers it), ``override`` on top."""
+    out = {n: {"revision": p["revision"], "sha256": hashlib.sha256(("a7" + n).encode()).hexdigest(), "bytes": 7,
+               "licence_found": {"CC-BY-SA-4.0 (data); MIT (code)": "MIT"}.get(p["licence"], p["licence"]),
+               "licence_source": "test"} for n, p in P7.items() if p["window"] == window}
+    out.update(override or {})
+    return out
+
+
+def table_copy7(tag: str) -> Path:
+    """A table copy with BOTH blocks empty, whatever the real table holds."""
+    t = table_copy(tag)
+    text = t.read_bytes().decode("utf-8")
+    text = re.sub(re.escape(A7B) + r"\n.*?\n" + re.escape(A7E), A7B + "\nFILLED_A7: dict[str, dict] = {\n}\n" + A7E,
+                  text, count=1, flags=re.S)
+    t.write_bytes(text.encode("utf-8"))
+    return t
+
+
+def a3_block(text: str) -> str:
+    m = re.search(re.escape(A.BEGIN) + r"\n.*?\n" + re.escape(A.END), text, flags=re.S)
+    return m.group(0) if m else ""
+
+
+A7V = whole_a7("a7-github")
+G7 = fill_file("a7gh", "a7-github", "g1", A7V)
+check("PA-A7-1: the real table carries the A7 FILLED markers exactly once, and pins_apply names them",
+      real.count(A7B) == 1 and real.count(A7E) == 1 and getattr(A, "A7_BEGIN", None) == A7B and getattr(A, "A7_END", None) == A7E)
+t7 = table_copy7("a7t1")
+before7 = t7.read_bytes().decode("utf-8")
+try:
+    out7, err7 = A.apply(t7, [G7]), None
+except Exception as e:  # noqa: BLE001 - a refusal here fails the rows below by name
+    out7, err7 = None, f"{type(e).__name__}: {e}"
+after7 = t7.read_bytes().decode("utf-8")
+try:
+    M7 = _load("v3_cp_a7t1", t7)
+except Exception as e:  # noqa: BLE001
+    M7, err7 = None, f"{err7} / load: {type(e).__name__}: {e}"
+try:
+    ok7_2 = (err7 is None and M7 is not None and sorted(M7.FILLED_A7) == sorted(A7V) == list(M7.FILLED_A7)
+             and len(M7.FILLED_A7) == 52 and a3_block(after7) == a3_block(before7) and M7.FILLED == {})
+    ok7_3 = M7 is not None and all(
+        (M7.PINS_A7[n]["sha256"], M7.PINS_A7[n]["bytes"], M7.PINS_A7[n]["filled_from"])
+        == (v["sha256"], 7, f"a7-github g1 pin_fill {G7[1][:12]}") for n, v in A7V.items()) and all(
+        p["sha256"] == CP.PINS_DECLARED[n]["sha256"] for n, p in M7.PINS.items())
+except Exception as e:  # noqa: BLE001
+    ok7_2 = ok7_3 = False
+    err7 = f"{err7} / rows: {type(e).__name__}: {e}"
+check("PA-A7-2: an a7-github pin_fill is written into FILLED_A7 - all 52 pins, sorted - and the A3 block stays "
+      "byte-identical", ok7_2, str(err7))
+check("PA-A7-3: the table applies them through fill() into PINS_A7: sha256, size, where they came from; PINS untouched",
+      ok7_3, str(err7))
+t7b = table_copy7("a7t2")
+try:
+    out7b = A.apply(t7b, [G7, GH])
+    M7b = _load("v3_cp_a7t2", t7b)
+    ok7_4, err7b = (set(M7b.FILLED) == set(GH_VALUES) - {n for n, p in P_.items() if p.get("alias_of")}
+                    and set(M7b.FILLED_A7) == set(A7V)
+                    and out7b["written"] == sorted(set(M7b.FILLED) | set(M7b.FILLED_A7))), None
+except Exception as e:  # noqa: BLE001
+    ok7_4, err7b = False, f"{type(e).__name__}: {e}"
+check("PA-A7-4: one call with an A3 and an A7 pin_fill writes each into its own block", ok7_4, str(err7b))
+cases7 = (
+    ("PA-A7-5: a partial a7-github pin_fill (3 of its 52)", [fill_file("a7part", "a7-github", "g2",
+                                                                       {k: A7V[k] for k in list(A7V)[:3]})], "(3 of 52)"),
+    ("PA-A7-7: a cognee licence the table refuses (MIT found, Apache-2.0 declared - P6)",
+     [fill_file("a7lic", "a7-github", "g4", whole_a7("a7-github", {"cognee_run_beam_eval": {
+         **A7V.get("cognee_run_beam_eval", {}), "licence_found": "MIT"}}))], "PinRefused"))
+for label, fills, words in cases7:
+    t = table_copy7(label.split(":")[0])
+    b = t.read_bytes()
+    check(f"{label}: refused, the table byte-identical", refused(lambda t=t, f=fills: A.apply(t, f), words) and t.read_bytes() == b)
+b7 = t7.read_bytes()
+check("PA-A7-9: an A7 pin already filled is refused - a pin is filled once", err7 is None
+      and refused(lambda: A.apply(t7, [G7]), "filled once") and t7.read_bytes() == b7)
+t7x = table_copy7("a7twice")
+t7x.write_bytes(t7x.read_bytes() + ("\n" + A7B + "\nFILLED_A7: dict[str, dict] = {\n}\n" + A7E + "\n").encode())
+b7x = t7x.read_bytes()
+check("PA-A7-10: a table with the A7 markers twice is refused for an A7 pin_fill, its bytes unchanged",
+      refused(lambda: A.apply(t7x, [G7]), "A7 FILLED markers") and t7x.read_bytes() == b7x)
+t11 = table_copy7("a7seq")
+try:
+    A.apply(t11, [TK])
+    A.apply(t11, [GH])
+    gh11 = t11.read_bytes().decode("utf-8")
+    M11 = _load("v3_cp_a7seq", t11)
+    A.apply(t11, [G7])
+    end11 = t11.read_bytes().decode("utf-8")
+    M11b = _load("v3_cp_a7seq2", t11)
+    ok11 = set(M11.FILLED) == {"tiktoken_cl100k_base"} | set(GH_VALUES) and M11.FILLED_A7 == {}
+    ok12 = (a3_block(end11) == a3_block(gh11) != "" and M11b.FILLED == M11.FILLED and set(M11b.FILLED_A7) == set(A7V))
+    err11 = None
+except Exception as e:  # noqa: BLE001
+    ok11 = ok12 = False
+    err11 = f"{type(e).__name__}: {e}"
+check("PA-A7-11: applies one after another keep what the block already holds (tiktoken, then a3-github)", ok11, str(err11))
+check("PA-A7-12: an A7 apply after them leaves FILLED as it was and fills FILLED_A7", ok12, str(err11))
+
 print("\n- a hand edit cannot pass -")
 t_hand = table_copy("hand")
 txt = t_hand.read_bytes().decode("utf-8").replace(
