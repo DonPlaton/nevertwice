@@ -21,6 +21,10 @@ fake arm children under a temporary launch contract (this suite spawns children)
   - stops the A/B by name, exit 3, no later leg; the next A/B is refused until an owner.json with the owner's word
   (who, when, a go-on decision - without them, or with the owner's stop, the hold stays); the exit code takes no
   allowance (a wall-only failure is 1);
+* W3 (Q-JK-8, the auditor's O-b): the scheduler's clock here is JournalClock - utc and monotonic real plus a virtual
+  offset that a sleep advances instead of sleeping - so a mutant that sends the reader to W3's re-asks costs seconds,
+  not 2 x 300 s a leg; a reader answer failed on one leg's unit is paused exactly [300, 300] and then lost by name,
+  and the same path runs once on the REAL clock (the spacing scaled to 1 s, the real SystemClock.sleep slept);
 * in process: unit_metrics over mem0's LLMUsage and our engine's llm_stats, a memory-store arm's cumulative question
   counters, an aborted unit or a stage without counters refused, an arm without a source refused; next_ab_id.
 
@@ -393,17 +397,76 @@ def make_launcher_factory(generate_on=(), pay_on=(), pay_read_on=()):
     return make
 
 
+JOURNAL: list = []                  # ("sleep", s[, real seconds slept]) and ("ask", "<run>.<unit>") in call order
+FAIL_READER = {"on": None}          # "<run>.<unit>" whose reader answer the W3 rows fail with a 503
+
+
+class JournalClock(SC.SystemClock):
+    """Q-JK-8 (O-b): the scheduler's clock - utc and monotonic the real ones plus a virtual offset; a sleep does not
+    sleep but moves the offset (both move together, so a unit's active time stays its real one: scheduler.py
+    active_s = monotonic - start - paused) and is journaled. With .real set it sleeps for real and journals the
+    seconds it took. run() starts every A/B at offset 0 with an empty journal."""
+
+    def __init__(self) -> None:
+        self.offset, self.real = 0.0, False
+
+    def sleep(self, s: float) -> None:
+        if self.real:
+            t0 = __import__("time").monotonic()
+            SC.SystemClock.sleep(s)
+            JOURNAL.append(("sleep", float(s), __import__("time").monotonic() - t0))
+            return
+        self.offset += float(s)
+        JOURNAL.append(("sleep", float(s)))
+
+    def monotonic(self) -> float:
+        return SC.SystemClock.monotonic() + self.offset
+
+    def utc(self):
+        return SC.SystemClock.utc() + __import__("datetime").timedelta(seconds=self.offset)
+
+
+CLOCK = JournalClock()
+
+
+def reader_post(port, path, body, token, *, timeout: float = 60.0):
+    """run_v3_proxy.post for the Answerer; the W3 rows make one <run>.<unit>'s answer fail with 503 - each ask of it
+    journaled, so the pauses between the asks can be read off the journal."""
+    ru = path.split("/")[2] if path.startswith("/u/") else ""
+    if FAIL_READER["on"] is not None and ru == FAIL_READER["on"]:
+        JOURNAL.append(("ask", ru))
+        return 503, {"error": "the W3 row's 503"}
+    return P.post(port, path, body, token, timeout=timeout)
+
+
+def w3_pauses(ru: str) -> tuple[list, float]:
+    """(the pauses between the journaled asks of ru's answer - each the sum of the sleeps between two asks, the
+    slept seconds outside them): a sleep before the first ask or after the last is none of W3's."""
+    pauses, cur, stray = [], None, 0.0
+    for e in JOURNAL:
+        if e[0] == "ask" and e[1] == ru:
+            if cur is not None:
+                pauses.append(cur)
+            cur = 0.0
+        elif e[0] == "sleep":
+            if cur is None:
+                stray += e[1]
+            else:
+                cur += e[1]
+    return pauses, stray + (cur or 0.0)
+
+
 def deps_for(up, *, out: list, err: list, generate_on=(), pay_on=(), pay_read_on=()):
     return RV.SmokeDeps(
         contract=C, L=L, native=L.NativeEgressWitness(sampler=Quiet(), tick_s=60, jobs=None),
-        fs=L.FsWitness([L.WatchSpec("watched", TMP / "watched")]), clock=SC.SystemClock(), ollama_ctl=None,
+        fs=L.FsWitness([L.WatchSpec("watched", TMP / "watched")]), clock=CLOCK, ollama_ctl=None,
         monotonic=__import__("time").monotonic, environ=dict(os.environ), status_path=TMP / "STATUS",
         lme_records=lambda: [lme_rec(i) for i in range(500)], cl100k=(lambda s: max(1, len(s) // 4),
                                                                       lambda s, n: s[:max(0, 4 * n)]),
         cl100k_source="t" * 64, max_token_bytes=128,
         truncate=lambda text: SimpleNamespace(text=text, truncated=False), templates=(TEMPLATE, TEMPLATE5),
         locomo_question=lambda q, cat: q, decl=lambda py, *, arm: {"python": str(py), "arm": arm, "version": "test"},
-        make_launcher=make_launcher_factory(generate_on, pay_on, pay_read_on), start_proxy=start_proxy, stop_proxy=stop_proxy, post=P.post,
+        make_launcher=make_launcher_factory(generate_on, pay_on, pay_read_on), start_proxy=start_proxy, stop_proxy=stop_proxy, post=reader_post,
         proxy_route={"test_upstream": {"host": "127.0.0.1", "port": up.port, "tls": False}},
         now_utc=lambda: __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(),
         lists_dir=LISTS, s1_sha256=S1["ids_sha256"], out=out.append, err=err.append)
@@ -419,6 +482,8 @@ WALL_ONLY = "out of tolerance - recording run"
 
 def run(**kw) -> tuple:
     out, err = [], []
+    JOURNAL.clear()
+    CLOCK.offset = 0.0
     SEEN.mkdir(exist_ok=True)
     for f in SEEN.iterdir():
         f.unlink()
@@ -442,6 +507,7 @@ try:
         raise SystemExit
     print("\n- T1, T3, T4, T6, Q-AB-7: a clean A/B with the declared thinking fallback -")
     res1, crash1, rec1, out1, err1 = run(thinking_branch="b", thinking_routes={"nevertwice": "fallback"})
+    sleeps1 = [e for e in JOURNAL if e[0] == "sleep"]
     legs = rec1.get("legs") or []
     probs = rec1.get("problems") or []
     wall_noise = bool(probs) and all(WALL_ONLY in p and "wall_s" in p for p in probs)
@@ -457,6 +523,8 @@ try:
           f"{crash1} {[lg.get('leg') for lg in legs]} {probs[:3]} {err1[:3]}")
     if wall_noise:
         print(f"       note: the wall-time tolerance was exceeded by timing noise: {probs}")
+    check("Q-JK-8 (a): the clean A/B slept nowhere on the scheduler's clock - its only sleep sites, the gate wait and "
+          "W3's pause, are idle here, so the virtual clock spins no loop", sleeps1 == [], f"{len(sleeps1)} {sleeps1[:3]}")
     starts = [x for x in status_text.splitlines() if " START " in x and "/nevertwice " in x and "S4-ab-1-" in x]
     check("T1: every arm-run START is tag=debug, and STATUS passes the writer's own replay",
           len(starts) == 4 and all(" tag=debug " in x + " " for x in starts) and SL.self_check(TMP / "STATUS") == [],
@@ -589,6 +657,52 @@ try:
     check("D-AB-4: the thinking field injected on the recording legs only is refused by name",
           any(p.startswith("nevertwice: the declared thinking field was injected on legs ['rec1', 'rec2'] only")
               for p in p3), str(p3))
+
+    def unrecovered(rec: dict) -> dict:
+        return {(lg.get("leg"), u): x.get("reads_unrecovered") for lg in rec.get("legs") or []
+                for u, x in ((lg.get("metrics") or {}).get("nevertwice") or {}).items()}
+
+    def raw1_record(rec: dict) -> str:
+        p_ = C.runs_root / f"{rec.get('ab')}-raw1" / "_records" / "b01" / "raw1.nevertwice.json"
+        return p_.read_text(encoding="utf-8") if rec.get("ab") and p_.exists() else ""
+
+    print("\n- W3 (Q-JK-8): the reader's answer fails on one leg's unit - two pauses, then the question is lost by name -")
+    ru = f"raw1.{want_units[0]}"
+    FAIL_READER["on"] = ru
+    t0w = __import__("time").monotonic()
+    try:
+        res_w, crash_w, rec_w, _ow, _ew = run(thinking_branch="b", thinking_routes={"nevertwice": "fallback"})
+    finally:
+        FAIL_READER["on"] = None
+    wall_w = __import__("time").monotonic() - t0w
+    pauses_w, stray_w = w3_pauses(ru)
+    asks_w = sum(1 for e in JOURNAL if e[0] == "ask")
+    unrec_w, text_w = unrecovered(rec_w), raw1_record(rec_w)
+    check("W3 (Q-JK-8): a reader answer that fails (503) on raw1's first unit is asked 3 times, paused exactly [300, 300] "
+          "seconds between the asks (at most 2 re-asks, 5 min apart), then lost by name - reads_unrecovered 1 on that "
+          "unit of that leg alone, the unit record names the reader's error",
+          crash_w is None and asks_w == 3 and pauses_w == [300.0, 300.0] and stray_w == 0.0
+          and unrec_w.get(("raw1", want_units[0])) == 1 and sum(v or 0 for v in unrec_w.values()) == 1
+          and f"reader: nevertwice/raw1/{want_units[0]}/" in text_w and "status 503" in text_w,
+          f"{crash_w} asks={asks_w} pauses={pauses_w} stray={stray_w} unrec={unrec_w} record={bool(text_w)}")
+    check("Q-JK-8 (a): the virtual clock took the 600 s of pauses without the wall - this A/B's real time stays under "
+          "one 300 s pause (a busy wait or a real sleep would not)", wall_w < 240, f"{wall_w:.1f} s")
+
+    print("\n- W3 on the REAL clock: the same re-ask path, the spacing scaled to 1 s, SystemClock.sleep slept -")
+    spacing = SC.REASK_SPACING_S
+    FAIL_READER["on"], CLOCK.real, SC.REASK_SPACING_S = ru, True, 1.0
+    try:
+        res_r, crash_r, rec_r, _or, _er = run(thinking_branch="b", thinking_routes={"nevertwice": "fallback"})
+    finally:
+        FAIL_READER["on"], CLOCK.real, SC.REASK_SPACING_S = None, False, spacing
+    pauses_r, stray_r = w3_pauses(ru)
+    slept_r = sum(e[2] for e in JOURNAL if e[0] == "sleep" and len(e) == 3)
+    unrec_r = unrecovered(rec_r)
+    check("W3 on the real clock (a stub never removes the last coverage): the scheduler's re-ask pauses go through the "
+          "real SystemClock.sleep - [1, 1] with the spacing scaled to 1 s, at least 1.9 s really slept, the question "
+          "lost by name", crash_r is None and pauses_r == [1.0, 1.0] and stray_r == 0.0 and slept_r >= 1.9
+          and unrec_r.get(("raw1", want_units[0])) == 1 and sum(v or 0 for v in unrec_r.values()) == 1,
+          f"{crash_r} pauses={pauses_r} stray={stray_r} slept={slept_r:.2f} unrec={unrec_r}")
 
     print("\n- D-AB-8: a 401/402/403 on any leg stops the A/B, which waits for the owner -")
     res4, crash4, rec4, _o4, _e4 = run(pay_on=("raw1",))
