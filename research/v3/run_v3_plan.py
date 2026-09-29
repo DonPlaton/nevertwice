@@ -106,13 +106,25 @@ class PlanError(ValueError):
     """A plan the preregistration does not allow, or an input the plan cannot read; nothing was scheduled."""
 
 
+_LOAD_LOCK = threading.RLock()     # B-LOAD-RACE: the scheduler's pools call the Answerer and PlanLauncher at once
+
+
 def _load(name: str, path: Path):
-    mod = sys.modules.get(name)
-    if mod is None:
-        spec = importlib.util.spec_from_file_location(name, path)
-        mod = importlib.util.module_from_spec(spec)
-        sys.modules[name] = mod
-        spec.loader.exec_module(mod)
+    """``path`` as module ``name``, loaded once. B-LOAD-RACE: the module is in sys.modules before its exec ends (its
+    own lookups need it), so the lookup and the load are one step under _LOAD_LOCK - a second thread never gets a
+    half-made module (R-SMOKE-ATTR: "module 'v3_llm_proxy_for_plan' has no attribute 'request_key'") - and a failed
+    exec takes the key out again."""
+    with _LOAD_LOCK:
+        mod = sys.modules.get(name)
+        if mod is None:
+            spec = importlib.util.spec_from_file_location(name, path)
+            mod = importlib.util.module_from_spec(spec)
+            sys.modules[name] = mod
+            try:
+                spec.loader.exec_module(mod)
+            except BaseException:
+                sys.modules.pop(name, None)
+                raise
     return mod
 
 

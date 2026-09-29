@@ -123,15 +123,31 @@ class SystemClock:
         return _time.monotonic()
 
 
+_LOAD_LOCK = threading.RLock()     # B-LOAD-RACE: the write and question pools load arms/base.py at once
+
+
+def _load(name: str, path: Path):
+    """``path`` as module ``name``, loaded once. B-LOAD-RACE: the module is in sys.modules before its exec ends, so
+    the lookup and the load are one step under _LOAD_LOCK - a second pool thread never gets a half-made module - and a
+    failed exec takes the key out again. _arm_base is the loader the pools reach; _status_log and _artifact (the main
+    thread's) share it for the file's uniformity."""
+    with _LOAD_LOCK:
+        mod = sys.modules.get(name)
+        if mod is None:
+            spec = importlib.util.spec_from_file_location(name, path)
+            mod = importlib.util.module_from_spec(spec)
+            sys.modules[name] = mod
+            try:
+                spec.loader.exec_module(mod)
+            except BaseException:
+                sys.modules.pop(name, None)
+                raise
+    return mod
+
+
 def _status_log():
     """research/v3/status_log.py, loaded once from this directory (the D4 order is its seeded_order)."""
-    mod = sys.modules.get("v3_status_log_for_scheduler")
-    if mod is None:
-        spec = importlib.util.spec_from_file_location("v3_status_log_for_scheduler", HERE / "status_log.py")
-        mod = importlib.util.module_from_spec(spec)
-        sys.modules["v3_status_log_for_scheduler"] = mod
-        spec.loader.exec_module(mod)
-    return mod
+    return _load("v3_status_log_for_scheduler", HERE / "status_log.py")
 
 
 def _real(v) -> bool:
@@ -418,14 +434,8 @@ class Scheduler:
 # ── A5: the write turn ─────────────────────────────────────────────────────────────────────────────────────────
 
 def _arm_base():
-    """research/v3/arms/base.py - the protocol's harness side (ArmClient and its errors)."""
-    mod = sys.modules.get("v3_arm_base_for_scheduler")
-    if mod is None:
-        spec = importlib.util.spec_from_file_location("v3_arm_base_for_scheduler", HERE / "arms" / "base.py")
-        mod = importlib.util.module_from_spec(spec)
-        sys.modules["v3_arm_base_for_scheduler"] = mod
-        spec.loader.exec_module(mod)
-    return mod
+    """research/v3/arms/base.py - the protocol's harness side (ArmClient and its errors); the pools' loader."""
+    return _load("v3_arm_base_for_scheduler", HERE / "arms" / "base.py")
 
 
 class UnitClient:
@@ -1040,13 +1050,7 @@ def _unit_payload(w: UnitRecord) -> dict:
 
 
 def _artifact():
-    mod = sys.modules.get("v3_artifact_for_scheduler")
-    if mod is None:
-        spec = importlib.util.spec_from_file_location("v3_artifact_for_scheduler", HERE / "artifact.py")
-        mod = importlib.util.module_from_spec(spec)
-        sys.modules["v3_artifact_for_scheduler"] = mod
-        spec.loader.exec_module(mod)
-    return mod
+    return _load("v3_artifact_for_scheduler", HERE / "artifact.py")
 
 
 def _full_name(model: str) -> str:
