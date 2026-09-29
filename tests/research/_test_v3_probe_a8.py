@@ -842,6 +842,27 @@ for rel, data in FILES3.items():
     (M3 / rel).write_bytes(data)
 BF = S.mem0_bound_facts(M3)
 val = {k: (v.get("value") if isinstance(v, dict) else None) for k, v in BF.items()} if isinstance(BF, dict) else {}
+#: G3 (the auditor's gate on b60190a, Linux 3.12): a helper's shape is compared only under M0_SHAPE_PYTHON (3.14) -
+#: ast.unparse differs between minors - so under any other minor every shape is blocked:normalizer-changed by design,
+#: never compared. There the rows hold that blocked state, by name, where they would read a shape; nothing that needs
+#: the comparison passes without it.
+SHAPES_HERE = tuple(sys.version_info[:2]) == tuple(P.M0_SHAPE_PYTHON)
+SHAPE_REASONS = sorted(f"{k}: blocked:normalizer-changed:{k}" for k in P.M0_HELPER_SHAPES)
+if not SHAPES_HERE:
+    print(f"       (Python {sys.version_info[0]}.{sys.version_info[1]}, not {P.M0_SHAPE_PYTHON}: the helper shapes are "
+          f"blocked:normalizer-changed here - the rows below expect exactly that)")
+
+
+def no_bound_reason(reasons) -> bool:
+    """No reason against the bound - under another minor, exactly the helper shapes blocked:normalizer-changed."""
+    return reasons == [] if SHAPES_HERE else sorted(reasons) == SHAPE_REASONS
+
+
+def shape_want(want: str) -> str:
+    """The reason a changed helper gives: source-changed under M0_SHAPE_PYTHON, normalizer-changed under any other."""
+    if SHAPES_HERE or not want.startswith("blocked:source-changed:m0_fn_"):
+        return want
+    return want.replace("blocked:source-changed:", "blocked:normalizer-changed:")
 check("C6: every declared bound fact read from the tree - retries 2 (the SDK's), the client default, one client "
       "with no override, max_tokens 2000 and its send line, the prompts' literal bytes, the prompt call's keywords, "
       "the two windows, the truncation limit and its use, the memory shape, the message frames",
@@ -853,7 +874,7 @@ check("C6: every declared bound fact read from the tree - retries 2 (the SDK's),
          and val["m0_prompt_call"] == sorted(P.M0_PROMPT_CALL) and val["m0_last_k"] == "10" and val["m0_top_k"] == "10"
          and val["m0_trunc_limit"] == "300" and BF["m0_trunc_used"].get("line") and BF["m0_memory_item"].get("line")
          and val["m0_memory_dump"] == "False" and val["m0_message_frame"] == ["assistant", "system", "user"]
-         and S.bound_blocked(BF) == []), str(val)[:600])
+         and no_bound_reason(S.bound_blocked(BF))), str(val)[:600])
 up = val.get("m0_user_prompt") if isinstance(val.get("m0_user_prompt"), dict) else {}
 check("C6: the user prompt's sections by the AST - each append's constant bytes and fields, the conditional ones "
       "marked, the separator of its join",
@@ -1023,12 +1044,16 @@ check("F-C6-4: the declared writes, defaults, calls' arguments and config defaul
                                                            P.M0_CONFIG_DEFAULTS) for v in d.values())))
 check("F-C6-4: every new fact read from the tree (2.0.19's own helpers, reformatted) - nineteen facts and the adapter's, "
       "none blocked, and still no reason against the bound",
-      ok(lambda: len(NEW_F) == 20 and all(isinstance(BF.get(k), dict) and BF[k].get("blocked") is None
-                                          and BF[k].get("value") is not None for k in NEW_F)
-         and S.bound_blocked(BF) == []), str({k: (BF.get(k) or {}).get("blocked") for k in sorted(NEW_F)})[:600])
+      ok(lambda: len(NEW_F) == 20 and all(isinstance(BF.get(k), dict) and (
+          (BF[k].get("blocked") is None and BF[k].get("value") is not None)
+          if SHAPES_HERE or k not in P.M0_HELPER_SHAPES
+          else (BF[k].get("blocked") == f"blocked:normalizer-changed:{k}" and BF[k].get("value") is None))
+          for k in NEW_F)
+         and no_bound_reason(S.bound_blocked(BF))), str({k: (BF.get(k) or {}).get("blocked") for k in sorted(NEW_F)})[:600])
 check("F-C6-4: a fact's value - a shape's sha256 and length, the writes by name, the defaults, the calls' arguments, "
       "the config's default, the adapter's keys",
-      ok(lambda: BF["m0_fn_truncate"]["value"] == {"sha256": SHAPES_2019["m0_fn_truncate"][2], "chars": 144}
+      ok(lambda: (BF["m0_fn_truncate"]["value"] == {"sha256": SHAPES_2019["m0_fn_truncate"][2], "chars": 144}
+                  if SHAPES_HERE else BF["m0_fn_truncate"]["value"] is None)
          and BF["m0_add_path_writes"]["value"]["existing_memories"] == [
              "existing_memories = []", "existing_memories.append({'id': str(idx), 'text': mem.payload.get('data', '')})"]
          and BF["m0_builder_writes"]["value"] == {
@@ -1040,12 +1065,14 @@ check("F-C6-4: a fact's value - a shape's sha256 and length, the writes by name,
          and BF["m0_custom_default"]["value"] == "None"
          and BF["m0_adapter"]["value"]["config_keys"] == ["embedder", "history_db_path", "llm", "vector_store"]
          and BF["m0_adapter"]["value"]["add_keywords"] == [["infer", "user_id"], ["infer", "metadata", "user_id"]]
-         and all(BF[k].get("source") for k in NEW_F)), str({k: BF.get(k) for k in ("m0_fn_truncate", "m0_adapter")})[:600])
+         and all(BF[k].get("source") for k in NEW_F if SHAPES_HERE or k not in P.M0_HELPER_SHAPES)),
+      str({k: BF.get(k) for k in ("m0_fn_truncate", "m0_adapter")})[:600])
 got_q = bound_with("mem0/configs/prompts.py", PRO.replace(b'    return summary or ""', b"    return summary or ''  # same"))
-check("F-C6-4: other quotes and a comment keep a helper's shape - no reason against the bound", ok(lambda: got_q == []),
+check("F-C6-4: other quotes and a comment keep a helper's shape - no reason against the bound",
+      ok(lambda: no_bound_reason(got_q)),
       str(got_q)[:300])
 _py = getattr(P, "M0_SHAPE_PYTHON", None)
-P.M0_SHAPE_PYTHON = (3, 13)
+P.M0_SHAPE_PYTHON = (3, 0)                         # a minor no interpreter here runs (3.13 was CI's own on one leg)
 try:
     bf_py = S.mem0_bound_facts(M3)
 finally:
@@ -1059,8 +1086,9 @@ try:
 finally:
     (M3 / "mem0/configs/prompts.py").write_bytes(PRO)
 check("F-C6-4: a changed shape carries its normalized text, so the change can be read",
-      ok(lambda: bf_ch["m0_fn_dates"]["blocked"] == "blocked:source-changed:m0_fn_dates"
-         and "current_date = datetime.now(timezone.utc).isoformat()" in bf_ch["m0_fn_dates"]["text"]),
+      ok(lambda: (bf_ch["m0_fn_dates"]["blocked"] == "blocked:source-changed:m0_fn_dates"
+                  and "current_date = datetime.now(timezone.utc).isoformat()" in bf_ch["m0_fn_dates"]["text"])
+         if SHAPES_HERE else bf_ch["m0_fn_dates"]["blocked"] == "blocked:normalizer-changed:m0_fn_dates"),
       str(bf_ch.get("m0_fn_dates"))[:300])
 ADP = (ROOT / "research" / "v3" / "arms" / "arm_mem0.py").read_text(encoding="utf-8")
 
@@ -1186,7 +1214,7 @@ for label, rel, data, want in (
          CFG + b"    custom_instructions: Optional[str] = None\n", "blocked:source-ambiguous:m0_custom_default"),
         ("F-C6-4: a config that does not parse", "mem0/configs/base.py", CFG + b"def (:\n",
          "blocked:source-unparsable:m0_custom_default")):
-    got = bound_with(rel, data)
+    got, want = bound_with(rel, data), shape_want(want)
     check(f"C6: {label} makes no bound - named ({want})", ok(lambda: any(want in x for x in got)), str(got)[:300])
 for label, text, want in (
         ("the adapter's config with custom instructions",
