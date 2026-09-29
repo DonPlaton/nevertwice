@@ -346,6 +346,44 @@ if link(C.runs_root / "s3" / "r" / "arm", TMP / "owner_home"):
         check("B3 a unit path with a junction to the owner's home is refused",
               any("link or junction" in r for r in e.reasons), str(e.reasons))
     check("B3 no unit directory was created behind the junction", not (TMP / "owner_home" / "u").exists())
+# B-PY310-JUNCTION (the auditor's gate on b60190a): a second _is_link (d69000b) calling os.path.isjunction - Python
+# 3.12's - shadowed the first, so every path check died with AttributeError on 3.10 (17 suites, Windows and Linux)
+import ast as _ast  # noqa: E402
+_defs: dict = {}
+_mods = [*sorted((ROOT / "research").rglob("*.py")), *sorted((ROOT / "nevertwice").rglob("*.py")),
+         *sorted(ROOT.glob("*.py"))]                  # the auditor: research/ and the root modules (sandbox_guard ...)
+for _p in _mods:
+    for _n in _ast.parse(_p.read_text(encoding="utf-8")).body:
+        if isinstance(_n, (_ast.FunctionDef, _ast.AsyncFunctionDef, _ast.ClassDef)):
+            _defs.setdefault((_p.relative_to(ROOT).as_posix(), _n.name), []).append(_n.lineno)
+_twice = {k: v for k, v in _defs.items() if len(v) > 1}
+check("B-PY310-JUNCTION: no module in research/, nevertwice/ or the root defines a top-level name twice - a later def "
+      "silently replaces the earlier one for every caller in the module (launch._is_link did)",
+      not _twice and any(k[0] == "sandbox_guard.py" for k in _defs), f"{len(_mods)} modules; twice: {_twice}")
+_isj = getattr(os.path, "isjunction", None)
+if _isj is not None:
+    del os.path.isjunction                       # Python 3.10's os.path, which has no isjunction
+try:
+    (C.runs_root / "s4" / "r").mkdir(parents=True)
+    if link(C.runs_root / "s4" / "r" / "arm", TMP / "owner_home"):
+        try:
+            seen = L._is_link(C.runs_root / "s4" / "r" / "arm")
+            chain = L._link_in_chain(C.runs_root, C.runs_root / "s4" / "r" / "arm" / "u")
+        except Exception as e:  # noqa: BLE001 - the row FAILs by name
+            seen = chain = f"{type(e).__name__}: {e}"
+        try:
+            L.make_unit_dirs(C, "s4", "r", "arm", "u")
+            refused = "made"
+        except L.ContractViolation as e:
+            refused = "refused" if any("link or junction" in r for r in e.reasons) else f"refused: {e.reasons}"
+        except Exception as e:  # noqa: BLE001 - the row FAILs by name
+            refused = f"{type(e).__name__}: {e}"
+        check("B-PY310-JUNCTION: without os.path.isjunction (Python 3.10) a real junction (a symlink off Windows) is "
+              "still a link to launch - _is_link and _link_in_chain see it, make_unit_dirs refuses it by name",
+              seen is True and chain is True and refused == "refused", f"is_link={seen} chain={chain} {refused}")
+finally:
+    if _isj is not None:
+        os.path.isjunction = _isj
 # B4: scoped exceptions
 pp = violations({"PYTHONPATH": str(ROOT), "NVT3_STORE": str(ROOT / "stores")}, env_exception={"PYTHONPATH": [ROOT]})
 check("B4 the repository lifted for PYTHONPATH does not lift it for another variable",

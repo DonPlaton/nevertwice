@@ -1911,10 +1911,6 @@ def record_config_names(binary_sha256: str, names: Sequence[str]) -> None:
     _CONFIG_NAMES["sha256"], _CONFIG_NAMES["names"] = binary_sha256, frozenset(names)
 
 
-def _is_link(p: Path) -> bool:
-    return os.path.islink(p) or os.path.isjunction(p)
-
-
 def _config_entry(path: Path) -> dict:
     """Q-C5-6: one top-level entry of CLAUDE_CONFIG_DIR as discovery records it - name, kind, size and sha256 (a
     directory's over "<relative path>\\0<sha256>\\n" of its files, sorted, links never followed)."""
