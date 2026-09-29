@@ -29,7 +29,7 @@ import re
 import sys
 import time
 import urllib.parse
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -54,6 +54,12 @@ MAX_FILE = MANIFEST["disk"]["stop_single_file_gb"] * GIB
 SAFE_PATH = 240
 #: The two discovery records the auditor received; nothing is read from any other.
 DISCOVERY_SHAS = {"d1": CP.DISCOVERY_D1, "d2": CP.DISCOVERY_D2}
+#: A7's two records (the auditor's fixing of cognee's pins, 2026-09-30): the tag report a7-cognee-tag d1 (the tree at the
+#: tag v1.6.1's commit, the files selected from it) and a7-discovery d1's record (cognee's repository and licence). Each
+#: is read only when its sha256 is the pinned one; with none on the disk the A3 windows plan as before.
+A7_SHAS = {"a7d1": CP.A7_DISCOVERY_D1, "cogtag": CP.COGNEE_TAG_D1}
+A7_FILES = {"a7d1": ("a7-discovery", "d1", "record.json"), "cogtag": ("a7-cognee-tag", "d1", "d5_report.json")}
+COGNEE_FROM = f"a7-cognee-tag d1 {CP.COGNEE_TAG_D1[:12]}"
 _SHA40 = re.compile(r"[0-9a-f]{40}")
 
 #: Where each GitHub repository's tree at its pinned commit was saved, when not d1's phase 4 (the auditor's B3:
@@ -62,7 +68,8 @@ GH_TREES = {"mem0ai/mem0": ("d2", 2, "gh/mem0ai__mem0/tree_parent.json"),
             "AMA-Bench/AMA-Bench": ("d2", 1, "gh/AMA-Bench__AMA-Hub/tree.json"),
             "mohammadtavakoli78/BEAM": ("d2", 1, "gh/mohammadtavakoli78__BEAM/tree.json")}
 GH_REPOS = {"AMA-Bench/AMA-Bench": ("d2", 0, "gh/AMA-Bench__AMA-Hub/repo.json"),
-            "mohammadtavakoli78/BEAM": ("d2", 0, "gh/mohammadtavakoli78__BEAM/repo.json")}
+            "mohammadtavakoli78/BEAM": ("d2", 0, "gh/mohammadtavakoli78__BEAM/repo.json"),
+            CP.GH_COGNEE: ("a7d1", 0, "gh/topoteretes__cognee/repo.json")}
 
 
 class Stop(Exception):
@@ -80,6 +87,7 @@ def _safe(repo: str) -> str:
 @dataclass
 class Discovery:
     records: dict
+    reports: dict = field(default_factory=dict)     # A7's window reports by name (cogtag: a7-cognee-tag d1's)
 
     def unit(self, rec: str, job: int) -> Path:
         return Path(self.records[rec]["jobs"][job]["unit"])
@@ -95,9 +103,11 @@ class Discovery:
         return None
 
 
-def load_discovery(runs_root: Path, *, shas: dict | None = None) -> Discovery:
-    """The discovery records under ``runs_root``, each refused unless its sha256 is the pinned one (S1)."""
-    records = {}
+def load_discovery(runs_root: Path, *, shas: dict | None = None, a7: dict | None = None) -> Discovery:
+    """The discovery records under ``runs_root``, each refused unless its sha256 is the pinned one (S1); A7's records
+    (``a7``, by default A7_SHAS) too when they are on the disk - one that is not stays unread, and a pin that needs it
+    stops by name when its expectation is asked."""
+    records, reports = {}, {}
     for name, want in (shas or DISCOVERY_SHAS).items():
         f = Path(runs_root) / "_fetch" / "a3-discovery" / name / "record.json"
         if not f.is_file():
@@ -107,7 +117,17 @@ def load_discovery(runs_root: Path, *, shas: dict | None = None) -> Discovery:
         if got != want:
             raise Stop("S1", f"a3-discovery {name}", f"sha256 {got[:12]}... is not the pinned {want[:12]}...")
         records[name] = json.loads(raw)
-    return Discovery(records)
+    for name, want in (A7_SHAS if a7 is None else a7).items():
+        window, run, fname = A7_FILES[name]
+        f = Path(runs_root) / "_fetch" / window / run / fname
+        if not f.is_file():
+            continue
+        raw = f.read_bytes()
+        got = hashlib.sha256(raw).hexdigest()
+        if got != want:
+            raise Stop("S1", f"{window} {run}", f"sha256 {got[:12]}... is not the pinned {want[:12]}...")
+        (reports if name == "cogtag" else records)[name] = json.loads(raw)
+    return Discovery(records, reports)
 
 
 def _kind(pin: dict) -> str:
@@ -127,8 +147,40 @@ def _subject(pin: dict) -> str:
     return f"{pin['repo']}@{str(pin['revision'])[:12]}:{pin['path']}"
 
 
+def tag_expectation(disc: Discovery, pin: dict) -> dict:
+    """A cognee pin's {git_blob_sha1, size}: the entry for its path among the files a7-cognee-tag d1 selected from the
+    tree at the tag's commit - the record the pin names, the pinned tag, matched, at the pin's commit, the tree whole."""
+    subj = _subject(pin)
+    if pin.get("revision_from") != COGNEE_FROM:
+        raise Stop("S1", "a7-cognee-tag d1", f"{subj} names {pin.get('revision_from')!r}, not the pinned {COGNEE_FROM!r}")
+    rep = (getattr(disc, "reports", None) or {}).get("cogtag")
+    if rep is None:
+        raise Stop("S1", "a7-cognee-tag d1", f"the record is missing - {subj} has no tree")
+    if rep.get("repo") != pin["repo"]:
+        raise Stop("S2", subj, f"the tag record is {rep.get('repo')!r}'s, not the pin's repository")
+    if rep.get("problems"):
+        raise Stop("S2", subj, f"the tag record has problems: {str(rep['problems'])[:200]}")
+    if (rep.get("tag") != CP.COGNEE_TAG or rep.get("tag_matches") is not True or rep.get("commit") != pin["revision"]
+            or rep.get("tag_commit") != pin["revision"]):
+        raise Stop("S4", subj, f"the tag record's {rep.get('tag')!r} names {str(rep.get('commit'))[:12]} (matched "
+                               f"{rep.get('tag_matches')!r}), not the pin's commit at {CP.COGNEE_TAG}")
+    if rep.get("tree_truncated") is not False:
+        raise Stop("S3", subj, "the tag record's tree is truncated (or not said to be whole)")
+    entries = [e for e in rep.get("selected") or [] if isinstance(e, dict) and e.get("path") == pin["path"]]
+    if len(entries) != 1:
+        raise Stop("S2", subj, f"the file is selected {len(entries)} times in the tag record, not once")
+    e = entries[0]
+    if not (isinstance(e.get("blob"), str) and _SHA40.fullmatch(e["blob"]) and isinstance(e.get("size"), int)
+            and not isinstance(e.get("size"), bool)):
+        raise Stop("S2", subj, "the tag record's entry is not a git blob and a size")
+    return {"git_blob_sha1": e["blob"], "size": e["size"]}
+
+
 def expectation(disc: Discovery, pin: dict) -> dict:
-    """What the file must be: {sha256, size} for an HF LFS file, {git_blob_sha1, size} for any other."""
+    """What the file must be: {sha256, size} for an HF LFS file, {git_blob_sha1, size} for any other; a cognee pin's
+    from A7's tag record (tag_expectation)."""
+    if str(pin.get("revision_from") or "").startswith("a7-cognee-tag "):
+        return tag_expectation(disc, pin)
     rec, job, rel = tree_source(pin)
     subj = _subject(pin)
     tree = disc.read(rec, job, rel)

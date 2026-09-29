@@ -70,12 +70,20 @@ REV = {"lme": "98d7416c24c778c2fee6e6f3006e7a073259d48f", "beam": "3205395e897e7
 DISCOVERY_D2 = "f793c59a6ec980a94255a8abe0530a3c72d3c782d213df30375adabbd8a360d4"
 REV_D2 = {"gh_mem0": "b3ede5b7c0ac0e847b03786a603c107ac943b3ee", "gh_ama": "ddfd319e0be33424288c13806f1eafc63e625b59",
           "gh_beam": "b2da22eac88bb0874c64665f13457eb99835774a"}
+#: A7's records (the auditor's fixing): cognee's tag v1.6.1 - the pinned cognee==1.6.1 - and the tree at its commit,
+#: from which its BEAM harness files were selected (a7-cognee-tag d1, d5_report.json); cognee's repository and its
+#: licence (a7-discovery d1, record.json).
+COGNEE_TAG, COGNEE_TAG_D1 = "v1.6.1", "1b5d58bfb9f484249ba0ac32f14c673c0db27f140a0f07825426ae34934e6620"
+A7_DISCOVERY_D1 = "1689534abb103971d502774dfd2a4566d6947c3efaeda552dbe3704b72ed037e"
+REV_A7 = {"gh_cognee": "eb90d03740755f5252b8b12cce91fd09970f2d81"}
+_RECORDS = {"d1": ("a3-discovery d1", DISCOVERY_D1), "d2": ("a3-discovery d2", DISCOVERY_D2),
+            "cognee-tag": ("a7-cognee-tag d1", COGNEE_TAG_D1)}
 
 
 def _at(pin: dict, revision: str, path: str | None = None, *, record: str = "d1") -> dict:
-    """A pin whose revision (and path) a discovery record declares (d1 or d2)."""
-    rec_sha = DISCOVERY_D1 if record == "d1" else DISCOVERY_D2
-    pin.update(revision=revision, revision_from=f"a3-discovery {record} {rec_sha[:12]}")
+    """A pin whose revision (and path) a discovery record declares (d1, d2, or A7's cognee-tag)."""
+    label, rec_sha = _RECORDS[record]
+    pin.update(revision=revision, revision_from=f"{label} {rec_sha[:12]}")
     if path is not None:
         pin["path"] = path
     return pin
@@ -85,6 +93,7 @@ LME = "xiaowu0162/longmemeval-cleaned"
 BEAM, MABD, AMAD, BGE = "Mohammadta/BEAM", "ai-hyz/MemoryAgentBench", "AMA-bench/AMA-bench", "BAAI/bge-m3"
 GH_LME, GH_LOCOMO, GH_MAB = "xiaowu0162/LongMemEval", "snap-research/locomo", "HUST-AI-HYZ/MemoryAgentBench"
 GH_MEM0, GH_AMA, GH_BEAM = "mem0ai/mem0", "AMA-Bench/AMA-Bench", "mohammadtavakoli78/BEAM"
+GH_COGNEE = "topoteretes/cognee"
 BEAM_LIC = "CC-BY-SA-4.0 (data); MIT (code)"
 PINS: dict[str, dict] = {
     # ── evaluation and bracket data (§3.1, lines 814-823) ──
@@ -394,8 +403,9 @@ _apply_filled()
 # ── A7 phase 2 (the auditor's Q-A7-P2-1 O-a, 2026-09-29): the window a7-github's own table ─────────────────────
 #: research/v3/freeze_a3.json is the A3 table as filled and is never rewritten (Q-C5e-3), so A7's pins are not merged
 #: into PINS: they live here, fill through the same fill() from their own block below, and get a freeze fragment of
-#: their own after their window; FREEZE-V3 (A10) pins both fragments. Every A7 pin's tree is a3-discovery d1's or d2's
-#: (the auditor verified the 17 blobs and sizes against them); a file is pinned once across both tables (pinned_twice).
+#: their own after their window; FREEZE-V3 (A10) pins both fragments. Phase 2's 17 pins have their trees in a3-discovery
+#: d1 or d2 (the auditor verified the blobs and sizes against them), cognee's 35 in a7-cognee-tag d1 (the tree at the tag
+#: v1.6.1's commit); a file is pinned once across both tables (pinned_twice).
 #: Line 1557 of revision 1: one template per benchmark, the benchmark's own answer prompt - these files say what it is.
 PINS_A7: dict[str, dict] = {
     "lme_readme": _at(_pin("prompt", ["S1", "S2", "S3"], "github", GH_LME, None, "MIT", "a7-github", 1557,
@@ -421,6 +431,48 @@ PINS_A7: dict[str, dict] = {
                                 ("extract_answer", "scoring", "utils/extract_final_answer.py", "the answer parse"),
                                 ("agent_conf", "prompt", "configs/ama_agent.yaml", "the agent's config"),
                                 ("readme", "prompt", "README.md", "the documented run"))},
+    # cognee's own BEAM harness at the tag v1.6.1 (Q-46b-6; the auditor's choice 2026-09-30 00:43: 35 of the 48 files
+    # a7-cognee-tag d1 selected; the nine raw *.json.gz runs - the two summaries cover them - and the four empty
+    # __init__.py are not pinned). The two cross-run summaries are the vendor's own numbers: E5 checks our cognee arm
+    # against them, so a trimmed competitor shows (§3.4). Row 230 of revision 1: the vendor-recommended configuration.
+    **{f"cognee_{k}": _at(_pin(role, ["S5"], "github", GH_COGNEE, None, "Apache-2.0", "a7-github", 230,
+                               note=f"Q-46b-6: {n}"), REV_A7["gh_cognee"], "cognee/eval_framework/" + path,
+                          record="cognee-tag")
+       for k, role, path, n in (
+           ("run_beam_eval", "arm-source", "run_beam_eval.py", "the vendor's BEAM entry point"),
+           ("beam_adapter", "arm-source", "benchmark_adapters/beam_adapter.py", "the benchmark adapter"),
+           ("beam_router", "arm-source", "answer_generation/beam_router.py", "the answer router"),
+           ("local_ingest", "arm-source", "beam/local_ingest.py", "the ingestion"),
+           ("session_io", "arm-source", "beam/session_io.py", "the session reader"),
+           ("preprocess", "arm-source", "beam/preprocessing/preprocess.py", "the preprocessing"),
+           ("conversation_preprocessing", "arm-source", "beam/preprocessing/conversation_preprocessing.py",
+            "the conversation preprocessing"),
+           ("compression", "arm-source", "beam/preprocessing/compression.py", "the turn compression"),
+           ("loaders", "arm-source", "beam/preprocessing/loaders.py", "the loaders"),
+           ("eval_adapter", "arm-source", "beam/eval/beam_eval_adapter.py", "the evaluation adapter"),
+           ("eval_registry", "arm-source", "beam/eval/registry.py", "the evaluation registry"),
+           ("run_sweep", "arm-source", "beam/eval/run_sweep.py", "the sweep driver"),
+           ("sweep", "arm-source", "beam/eval/sweep.py", "the sweep"),
+           ("report", "arm-source", "beam/REPORT.md", "the vendor's report"),
+           ("artifacts_readme", "arm-source", "beam/report_artifacts/README.md", "the artefacts' index"),
+           ("100k_summary", "arm-source", "beam/report_artifacts/100k_fixed/hybrid_completion_20_20_qa_v1_cross_run_summary.json",
+            "the vendor's own 100K numbers"),
+           ("10m_summary", "arm-source", "beam/report_artifacts/10m_routed/routed_by_question_type_cross_run_summary.json",
+            "the vendor's own 10M numbers"),
+           *((f"qa_{s}", "prompt", f"beam/report_artifacts/qa_prompts/{s}.txt", f"the {s} answer prompt")
+             for s in ("abstention", "contradiction_resolution", "default", "event_ordering", "information_extraction",
+                       "instruction_following", "knowledge_update", "multi_session_reasoning", "preference_following",
+                       "summarization", "temporal_reasoning")),
+           ("turn_compression_prompt", "prompt", "beam/preprocessing/prompts/beam_turn_compression_prompt.txt",
+            "the turn compression prompt"),
+           ("100k_config", "prompt", "beam/report_artifacts/100k_fixed/beam_hybrid_completion_20_20_qa_v1_config.json",
+            "the vendor-recommended 100K config"),
+           ("10m_routing_configs", "prompt", "beam/report_artifacts/10m_routed/beam_qa_v1_hybrid_routing_configs.json",
+            "the vendor-recommended 10M routing configs"),
+           ("10m_routing", "prompt", "beam/report_artifacts/10m_routed/routing.json", "the vendor's routing"),
+           ("beam_rubric", "scoring", "beam/eval/metrics/beam_rubric.py", "the vendor's rubric"),
+           ("kendall_tau", "scoring", "beam/eval/metrics/kendall_tau.py", "the vendor's event-ordering metric"),
+           ("aggregate_cross_run", "scoring", "beam/eval/aggregate_cross_run.py", "the vendor's aggregation"))},
 }
 #: The values the window a7-github found, written by research/v3/pins_apply.py between these markers, never by hand.
 # >>> A7 FILLED

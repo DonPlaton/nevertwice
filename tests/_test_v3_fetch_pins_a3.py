@@ -803,6 +803,58 @@ A7_TREES = {
         "utils/extract_final_answer.py": ("43755b4a68937e943a21c524296429550154b033", 1085),
         "configs/ama_agent.yaml": ("f4d1d901590b440ff7bf2ba3e947ac8cbcd35ca0", 893),
         "README.md": ("c9721cd6859b103f85e74c3280e0840a13609d8f", 15131)})}
+#: The cognee files the auditor chose (2026-09-30 00:43) with the blobs and sizes a7-cognee-tag d1 selected at the tag
+#: v1.6.1's commit (d5_report.json 1b5d58bf...6620) - under cognee/eval_framework/.
+COG_R = "eb90d03740755f5252b8b12cce91fd09970f2d81"
+COG_FILES = {
+    "answer_generation/beam_router.py": ("dcdaed6087af1c80866fdfcb6ef6ab0185cc6157", 8008),
+    "beam/REPORT.md": ("a8a3f890b188355bb20ae5e666215609eeadcf1b", 25233),
+    "beam/eval/aggregate_cross_run.py": ("c98bf501efcff396eb5cf48d226708d73b9676da", 5914),
+    "beam/eval/beam_eval_adapter.py": ("17906ed750746183961f215483cedca4f051aaa1", 4172),
+    "beam/eval/metrics/beam_rubric.py": ("cfc623625159e1331e103bdaa93a229ab513a667", 9470),
+    "beam/eval/metrics/kendall_tau.py": ("150c2f7e5917478bc42249c9a09f70ad3e87778f", 9143),
+    "beam/eval/registry.py": ("3106798406fb117f9d4315ea28d2a553cb17911e", 3956),
+    "beam/eval/run_sweep.py": ("1955bab9f003589b2d061e675290287d091a3d76", 16453),
+    "beam/eval/sweep.py": ("9fb8f0ef16bd4359b57e729d6f5b0a4f89a21f93", 8239),
+    "beam/local_ingest.py": ("d63e46286717eecd2ebb67286949d07699e7b8f6", 21615),
+    "beam/preprocessing/compression.py": ("0837480e9093678e20f1b22f903ff748d0fb82de", 20013),
+    "beam/preprocessing/conversation_preprocessing.py": ("2eff500295de7eed2885493c7059f0daf16e9f03", 30642),
+    "beam/preprocessing/loaders.py": ("4772cd620a842007ca663136c003b33f16c4eb1c", 3173),
+    "beam/preprocessing/preprocess.py": ("f25aa1d260d9e46fdbc814dd48202869400187f7", 40478),
+    "beam/preprocessing/prompts/beam_turn_compression_prompt.txt": ("63776534186ea0c7ee38633faaef29f90518e5fd", 2390),
+    "beam/report_artifacts/100k_fixed/beam_hybrid_completion_20_20_qa_v1_config.json": ("71f15e3001490ae3bbe26f784e99554b3dab309b", 1439),
+    "beam/report_artifacts/100k_fixed/hybrid_completion_20_20_qa_v1_cross_run_summary.json": ("ee3421adb3d6894609dd195ef99b170183620e66", 2942),
+    "beam/report_artifacts/10m_routed/beam_qa_v1_hybrid_routing_configs.json": ("3db0b9af2b7be3c6521d119cfe95bf461ee32191", 9390),
+    "beam/report_artifacts/10m_routed/routed_by_question_type_cross_run_summary.json": ("ee73ee433f6073a8d90f15917f40739610e47f9b", 3057),
+    "beam/report_artifacts/10m_routed/routing.json": ("081623b2004359b728ecbab491dde895cd5bed26", 817),
+    "beam/report_artifacts/README.md": ("bbd090f071ad1dddc2435a3c96769cde51c7a860", 400),
+    "beam/report_artifacts/qa_prompts/abstention.txt": ("59fbfeef181e8bf15d39ec67843edac40ea1bf71", 356),
+    "beam/report_artifacts/qa_prompts/contradiction_resolution.txt": ("56a9a7da55ed2c55264ca38d84d4b6d87d7ffd9c", 389),
+    "beam/report_artifacts/qa_prompts/default.txt": ("6a63c6084c10e46d5a88459eab6a84f7a3ee1026", 104),
+    "beam/report_artifacts/qa_prompts/event_ordering.txt": ("c7a687be7bef3289763cbd73c49759d2b17d6f0f", 361),
+    "beam/report_artifacts/qa_prompts/information_extraction.txt": ("51e322cfcd9d2cdaa42570da6efddce4f8480134", 305),
+    "beam/report_artifacts/qa_prompts/instruction_following.txt": ("f41a54695a9772fec011078dd7cdbdf7685cda84", 411),
+    "beam/report_artifacts/qa_prompts/knowledge_update.txt": ("711d096d5de77a3f5901e11eafe1d91402db2f3d", 367),
+    "beam/report_artifacts/qa_prompts/multi_session_reasoning.txt": ("40f7df196646df667551d6bbc548595b4e66dbbc", 365),
+    "beam/report_artifacts/qa_prompts/preference_following.txt": ("be7a818a59396ff1c009cc94b387f67a5221b5fa", 334),
+    "beam/report_artifacts/qa_prompts/summarization.txt": ("5743d8f06596d694abac1e3e415f41b5239ddc81", 345),
+    "beam/report_artifacts/qa_prompts/temporal_reasoning.txt": ("f78caaf0346f3fe668e32c3b28b6523cc6997ce7", 264),
+    "beam/session_io.py": ("097b9033ec53c8f634f2be7c091c05d930792b59", 3000),
+    "benchmark_adapters/beam_adapter.py": ("a0b1f3081ec93c0553e88d5ccf16588cfd90fb5e", 9111),
+    "run_beam_eval.py": ("10109a622626f2f14a834b8675bd3753b58d02dd", 2704),
+}
+
+
+def cog_report(**over) -> dict:
+    """The a7-cognee-tag d1 report's shape (fetch_a3 plan d5): the 35 files plus two it selected that are not pinned."""
+    selected = [{"path": "cognee/eval_framework/" + k, "blob": b, "size": z} for k, (b, z) in COG_FILES.items()]
+    selected += [{"path": "cognee/eval_framework/beam/__init__.py", "blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391", "size": 0},
+                 {"path": "cognee/eval_framework/beam/report_artifacts/10m_routed/x_run0.json.gz", "blob": "1" * 40, "size": 9}]
+    rep = {"repo": "topoteretes/cognee", "tag": "v1.6.1", "tag_commit": COG_R, "commit": COG_R, "tag_matches": True,
+           "tree_entries": 4660, "tree_truncated": False, "selected": selected, "missing_files": [], "problems": []}
+    rep.update(over)
+    return rep
+
 b7 = TMP / "disc_a7"
 for rec_, n_ in (("d1", 4), ("d2", 3)):
     for j_ in range(n_):
@@ -815,6 +867,10 @@ for repo_, (rec_, job_, rev_, files_) in A7_TREES.items():
     write(b7 / lrec / f"j{ljob}" / lrel, {"full_name": repo_, "license": {"spdx_id": "MIT"}})
 D7 = P.Discovery({r: {"jobs": [{"index": j, "unit": str(b7 / r / f"j{j}"), "job": {"requests": []}, "summary": []}
                                for j in range(n)]} for r, n in (("d1", 4), ("d2", 3))})
+write(b7 / "a7d1" / "j0" / "gh/topoteretes__cognee/repo.json", {"full_name": "topoteretes/cognee",
+                                                                  "license": {"spdx_id": "Apache-2.0"}})
+D7.records["a7d1"] = {"jobs": [{"index": 0, "unit": str(b7 / "a7d1" / "j0"), "job": {"requests": []}, "summary": []}]}
+D7.reports = {"cogtag": cog_report()}          # set as an attribute: on a Discovery without reports every row FAILs by name
 UR7 = TMP / "runs" / "_fetch.a7-github" / "r1" / "fetch"
 try:                                          # a missing table FAILs these rows by name, never the suite
     p7, p7err = P.plan_window("a7-github", disc=D7, pins=P.CP.PINS_A7, manifest=REAL_MANI, hf_hub=HUB, pins_root=PR,
@@ -823,10 +879,13 @@ except Exception as e:  # noqa: BLE001
     p7, p7err = None, f"{type(e).__name__}: {e}"
 want7 = {(f"https://raw.githubusercontent.com/{repo_}/{rev_}/{pth}", blb, sz)
          for repo_, (_r, _j, rev_, files_) in A7_TREES.items() for pth, (blb, sz) in files_.items()}
+want7 |= {(f"https://raw.githubusercontent.com/topoteretes/cognee/{COG_R}/cognee/eval_framework/{k}", b, z)
+          for k, (b, z) in COG_FILES.items()}
 got7 = {(it.url, it.expect.get("git_blob_sha1"), it.expect.get("size")) for it in (p7.items if p7 else [])}
-check("A7-6: a7-github's plan from PINS_A7 and the real manifest - raw.githubusercontent.com only, no redirect, the 17 "
-      "files each at its discovery commit, expected to be the tree's git blob and size, placed under _pins/github/",
-      p7err is None and p7.hosts == ["raw.githubusercontent.com"] and len(p7.items) == 17 and got7 == want7
+check("A7-6: a7-github's plan from PINS_A7 and the real manifest - raw.githubusercontent.com only, no redirect, the 52 "
+      "files each at its discovery commit (cognee's at the tag v1.6.1's), expected to be the tree's git blob and size, "
+      "placed under _pins/github/",
+      p7err is None and p7.hosts == ["raw.githubusercontent.com"] and len(p7.items) == 52 and got7 == want7
       and all(j.get("max_redirects") == 0 for j in p7.jobs)
       and all("/github/" in str(it.dest).replace("\\", "/") for it in p7.items),
       str(p7err or sorted(want7 ^ got7)[:3]))
@@ -864,6 +923,84 @@ check("A7-8: run_pin_window with no table given plans a7-github from PINS_A7 and
       [(w, t is getattr(P.CP, "PINS_A7", None) if w == "a7-github" else t is P.CP.PINS) for w, t in seen_pins]
       == [("a7-github", True), ("a3-github", True)], str([(w, type(t).__name__, str(t)[:80]) for w, t in seen_pins]))
 check("A7-9: main() takes the window a7-github", '"a7-github"' in __import__("inspect").getsource(P.main))
+
+print("\n- the cognee pins (the auditor, 2026-09-30 00:43): a7-cognee-tag d1 holds their tree, a7-discovery d1 their licence -")
+
+
+def _try(fn):
+    """(value, None) or (None, the exception named) - a raise FAILs its own row, never the suite."""
+    try:
+        return fn(), None
+    except Exception as e:  # noqa: BLE001
+        return None, f"{type(e).__name__}: {e}"
+
+
+def a7_records(base: Path, *, report=None) -> dict:
+    """a7-cognee-tag d1's report and a7-discovery d1's record (cognee's repo.json in its job 0) under ``base``."""
+    r = base / "_fetch" / "a7-cognee-tag" / "d1" / "d5_report.json"
+    write(r, (json.dumps(report if report is not None else cog_report(), indent=1) + "\n").encode("utf-8"))
+    u = base / "a7disc_unit"
+    write(u / "gh/topoteretes__cognee/repo.json", {"full_name": "topoteretes/cognee", "license": {"spdx_id": "Apache-2.0"}})
+    f = base / "_fetch" / "a7-discovery" / "d1" / "record.json"
+    write(f, (json.dumps({"jobs": [{"index": 0, "unit": str(u), "job": {"requests": []}, "summary": []}]}) + "\n").encode())
+    return {"a7d1": hashlib.sha256(f.read_bytes()).hexdigest(), "cogtag": hashlib.sha256(r.read_bytes()).hexdigest()}
+
+
+bc = TMP / "disc_cog"
+CSH = fake_discovery(bc)
+A7SH = a7_records(bc)
+DC, dcerr = _try(lambda: P.load_discovery(bc, shas=CSH, a7=A7SH))
+COG_NAMES = sorted(n for n, p_ in getattr(P.CP, "PINS_A7", {}).items() if p_["repo"] == "topoteretes/cognee")
+a710, a710err = _try(lambda: dcerr is None and DC.reports["cogtag"]["commit"] == COG_R and "a7d1" in DC.records
+                    and getattr(P, "A7_SHAS", None) == {
+                        "a7d1": "1689534abb103971d502774dfd2a4566d6947c3efaeda552dbe3704b72ed037e",
+                        "cogtag": "1b5d58bfb9f484249ba0ac32f14c673c0db27f140a0f07825426ae34934e6620"}
+                    == {"a7d1": getattr(P.CP, "A7_DISCOVERY_D1", None), "cogtag": getattr(P.CP, "COGNEE_TAG_D1", None)})
+check("A7-10: the cognee tag report and the a7-discovery record load when their sha256 are the pinned ones; the real "
+      "tool pins exactly the auditor's two (d5_report.json 1b5d58bf...6620, record.json 1689534a...037e)",
+      a710 is True, str(dcerr or a710err))
+bn7 = TMP / "disc_cog_none"
+CSN = fake_discovery(bn7)
+DN7, dn7err = _try(lambda: P.load_discovery(bn7, shas=CSN, a7=A7SH))
+check("A7-11: S1 - a cognee tag report one byte off is refused by name; with no A7 record on the disk the A3 records "
+      "still load, and a cognee pin's expectation stops by name (S1)",
+      stopped(lambda: P.load_discovery(bc, shas=CSH, a7={**A7SH, "cogtag": "0" * 64}), "S1", "a7-cognee-tag d1")
+      and dn7err is None and bool(COG_NAMES)
+      and stopped(lambda: P.expectation(DN7, P.CP.PINS_A7[COG_NAMES[0]]), "S1", "a7-cognee-tag d1"), str(dn7err))
+ex7, ex7err = _try(lambda: {n: P.expectation(DC, P.CP.PINS_A7[n]) for n in COG_NAMES})
+lic7, lic7err = _try(lambda: {P.licence_found(DC, P.CP.PINS_A7[n]) for n in COG_NAMES})
+a712, a712err = _try(lambda: ex7err is None and len(COG_NAMES) == 35 and ex7 == {
+    n: {"git_blob_sha1": COG_FILES[P.CP.PINS_A7[n]["path"][len("cognee/eval_framework/"):]][0],
+        "size": COG_FILES[P.CP.PINS_A7[n]["path"][len("cognee/eval_framework/"):]][1]} for n in COG_NAMES}
+    and lic7 == {("Apache-2.0", "a7d1 repo topoteretes/cognee")})
+check("A7-12: each of the 35 cognee pins is expected to be the tag report's git blob and size for its path; the licence "
+      "found is cognee's repository's (Apache-2.0, from a7-discovery d1)",
+      a712 is True, str(ex7err or lic7err or a712err or lic7))
+_one = COG_FILES["run_beam_eval.py"]
+_gone = [x for x in cog_report()["selected"] if not x["path"].endswith("/run_beam_eval.py")]
+_twice = cog_report()["selected"] + [{"path": "cognee/eval_framework/run_beam_eval.py", "blob": _one[0], "size": _one[1]}]
+cog_stops = [("another commit", {"commit": "f" * 40}, "S4"), ("the tag not matched", {"tag_matches": False}, "S4"),
+             ("another tag", {"tag": "v1.6.2"}, "S4"), ("a truncated tree", {"tree_truncated": True}, "S3"),
+             ("truncation unknown", {"tree_truncated": None}, "S3"), ("another repository", {"repo": "someone/cognee"}, "S2"),
+             ("the report's problems", {"problems": ["a tree call answered 500"]}, "S2"),
+             ("the file not selected", {"selected": _gone}, "S2"), ("the file twice", {"selected": _twice}, "S2"),
+             ("the tag's own commit another", {"tag_commit": "f" * 40}, "S4"),
+             ("an entry without a blob", {"selected": _gone + [{"path": "cognee/eval_framework/run_beam_eval.py",
+                                                              "blob": "not-a-sha", "size": _one[1]}]}, "S2"),
+             ("an entry with a size that is no number", {"selected": _gone + [{"path": "cognee/eval_framework/run_beam_eval.py",
+                                                                              "blob": _one[0], "size": "2704"}]}, "S2")]
+seen7 = {}
+for label, over, code in cog_stops:
+    Dx = P.Discovery(dict(DC.records)) if dcerr is None else None
+    if Dx is not None:
+        Dx.reports = {"cogtag": cog_report(**over)}
+    seen7[label] = Dx is not None and bool(COG_NAMES) and stopped(
+        lambda Dx=Dx: P.expectation(Dx, P.CP.PINS_A7["cognee_run_beam_eval"]), code)
+check("A7-13: a cognee pin stops by name when its tag report is not the pin's - " + ", ".join(seen7),
+      all(seen7.values()), str([k for k, v in seen7.items() if not v]))
+wrong_from = dict(getattr(P.CP, "PINS_A7", {}).get("cognee_run_beam_eval") or {}, revision_from="a7-cognee-tag d1 000000000000")
+check("A7-14: a cognee pin whose revision_from names another tag record (not 1b5d58bfb9f4) stops by name (S1)",
+      dcerr is None and bool(COG_NAMES) and stopped(lambda: P.expectation(DC, wrong_from), "S1", "a7-cognee-tag d1"))
 check("nothing here touches the real A7 table", getattr(P.CP, "PINS_A7", {}) == A7_BEFORE)
 
 import inspect  # noqa: E402

@@ -231,14 +231,64 @@ WANT_A7 = {                                  # the 17 the auditor fixed (2026-09
     "ama_agent_prompt": (AMA_G, AMA_R, "src/method/ama_agent_core/prompt.py", "prompt"),
     "ama_extract_answer": (AMA_G, AMA_R, "utils/extract_final_answer.py", "scoring"),
     "ama_agent_conf": (AMA_G, AMA_R, "configs/ama_agent.yaml", "prompt"), "ama_readme": (AMA_G, AMA_R, "README.md", "prompt")}
-check("A7-1: PINS_A7 holds exactly the 17 pins the auditor fixed - each its repository, commit, path and role "
-      "(prompt; extract_final_answer scoring)", {n: (p["repo"], p["revision"], p["path"], p["role"]) for n, p in A7.items()}
-      == WANT_A7, str(sorted(set(A7) ^ set(WANT_A7))))
+#: the auditor's cognee pins (2026-09-30 00:43): 35 of the 48 files a7-cognee-tag d1 selected, at the tag v1.6.1's
+#: commit - 17 arm-source (the vendor's BEAM harness and its own two summaries), 15 prompt (the answer prompts and the
+#: vendor-recommended configs), 3 scoring; the nine raw *.json.gz runs and the four empty __init__.py are not pinned
+COG_G, COG_R, COG_P = "topoteretes/cognee", "eb90d03740755f5252b8b12cce91fd09970f2d81", "cognee/eval_framework/"
+COG_ARTS, COG_PRE = "beam/report_artifacts/", "beam/preprocessing/"
+COGNEE = {
+    "cognee_run_beam_eval": ("run_beam_eval.py", "arm-source"),
+    "cognee_beam_adapter": ("benchmark_adapters/beam_adapter.py", "arm-source"),
+    "cognee_beam_router": ("answer_generation/beam_router.py", "arm-source"),
+    "cognee_local_ingest": ("beam/local_ingest.py", "arm-source"),
+    "cognee_session_io": ("beam/session_io.py", "arm-source"),
+    "cognee_preprocess": (COG_PRE + "preprocess.py", "arm-source"),
+    "cognee_conversation_preprocessing": (COG_PRE + "conversation_preprocessing.py", "arm-source"),
+    "cognee_compression": (COG_PRE + "compression.py", "arm-source"),
+    "cognee_loaders": (COG_PRE + "loaders.py", "arm-source"),
+    "cognee_eval_adapter": ("beam/eval/beam_eval_adapter.py", "arm-source"),
+    "cognee_eval_registry": ("beam/eval/registry.py", "arm-source"),
+    "cognee_run_sweep": ("beam/eval/run_sweep.py", "arm-source"),
+    "cognee_sweep": ("beam/eval/sweep.py", "arm-source"),
+    "cognee_report": ("beam/REPORT.md", "arm-source"),
+    "cognee_artifacts_readme": (COG_ARTS + "README.md", "arm-source"),
+    "cognee_100k_summary": (COG_ARTS + "100k_fixed/hybrid_completion_20_20_qa_v1_cross_run_summary.json", "arm-source"),
+    "cognee_10m_summary": (COG_ARTS + "10m_routed/routed_by_question_type_cross_run_summary.json", "arm-source"),
+    **{f"cognee_qa_{s}": (COG_ARTS + f"qa_prompts/{s}.txt", "prompt")
+       for s in ("abstention", "contradiction_resolution", "default", "event_ordering", "information_extraction",
+                 "instruction_following", "knowledge_update", "multi_session_reasoning", "preference_following",
+                 "summarization", "temporal_reasoning")},
+    "cognee_turn_compression_prompt": (COG_PRE + "prompts/beam_turn_compression_prompt.txt", "prompt"),
+    "cognee_100k_config": (COG_ARTS + "100k_fixed/beam_hybrid_completion_20_20_qa_v1_config.json", "prompt"),
+    "cognee_10m_routing_configs": (COG_ARTS + "10m_routed/beam_qa_v1_hybrid_routing_configs.json", "prompt"),
+    "cognee_10m_routing": (COG_ARTS + "10m_routed/routing.json", "prompt"),
+    "cognee_beam_rubric": ("beam/eval/metrics/beam_rubric.py", "scoring"),
+    "cognee_kendall_tau": ("beam/eval/metrics/kendall_tau.py", "scoring"),
+    "cognee_aggregate_cross_run": ("beam/eval/aggregate_cross_run.py", "scoring")}
+WANT_A7.update({n: (COG_G, COG_R, COG_P + path, role) for n, (path, role) in COGNEE.items()})
+check("A7-1: PINS_A7 holds exactly the 52 pins the auditor fixed - the 17 of phase 2 and the 35 cognee files - each its "
+      "repository, commit, path and role", {n: (p["repo"], p["revision"], p["path"], p["role"]) for n, p in A7.items()}
+      == WANT_A7 and len(WANT_A7) == 52 and len(COGNEE) == 35
+      and [sum(r == x for _p, r in COGNEE.values()) for x in ("arm-source", "prompt", "scoring")] == [17, 15, 3],
+      str(sorted(set(A7) ^ set(WANT_A7))))
+COG_FROM = "a7-cognee-tag d1 1b5d58bfb9f4"
 check("A7-2: every A7 pin is a GitHub file of the window a7-github, unfilled until it (no sha256, no size), its revision "
-      "from a discovery record (d1 or d2) that holds its tree", bool(A7) and all(
+      "from a discovery record that holds its tree - phase 2's from a3-discovery d1 or d2, cognee's from a7-cognee-tag d1",
+      bool(A7) and all(
           p["source"] == "github" and p["window"] == "a7-github" and p["sha256"] is None and p["bytes"] is None
-          and str(p["revision_from"]).startswith(("a3-discovery d1 ", "a3-discovery d2 ")) for p in A7.values()),
-      str([n for n, p in A7.items() if p["sha256"] is not None or p["window"] != "a7-github"]))
+          and (str(p["revision_from"]) == COG_FROM if n in COGNEE
+               else str(p["revision_from"]).startswith(("a3-discovery d1 ", "a3-discovery d2 "))) for n, p in A7.items())
+      and {n for n, p in A7.items() if p["revision_from"] == COG_FROM} == set(COGNEE),
+      str([(n, p["revision_from"]) for n, p in A7.items() if p["sha256"] is not None or p["window"] != "a7-github"
+           or (n in COGNEE) != (p["revision_from"] == COG_FROM)]))
+check("A7-2b: the cognee pins serve BEAM (S5) only, under the licence cognee's repository states (Apache-2.0), and "
+      "their record is the auditor's a7-cognee-tag d1 (d5_report.json 1b5d58bf...6620) at the tag v1.6.1",
+      all(tuple(A7[n]["stands"]) == ("S5",) and A7[n]["licence"] == "Apache-2.0" for n in COGNEE if n in A7)
+      and all(n in A7 for n in COGNEE)
+      and getattr(CP, "COGNEE_TAG_D1", None) == "1b5d58bfb9f484249ba0ac32f14c673c0db27f140a0f07825426ae34934e6620"
+      and getattr(CP, "COGNEE_TAG", None) == "v1.6.1"
+      and getattr(CP, "A7_DISCOVERY_D1", None) == "1689534abb103971d502774dfd2a4566d6947c3efaeda552dbe3704b72ed037e",
+      str([(n, A7[n]["stands"], A7[n]["licence"]) for n in COGNEE if n in A7][:3]))
 tf, tferr = (None, None)
 try:                                          # a missing function FAILs these rows by name, never the suite
     tf = (CP.table_for("a7-github") is CP.PINS_A7, CP.table_for("a3-github") is CP.PINS, CP.table_for("a3-hf") is CP.PINS)
@@ -301,8 +351,12 @@ except Exception as e:  # noqa: BLE001
 check("A7-4c: an honest neighbour - the same source, repository and path at ANOTHER commit, in the other table - is not "
       "a file pinned twice: pinned_twice() names nothing and the table's own command passes (a commit is part of a file's "
       "identity)", nb is not None and nb == ([], 0, True), str(nberr or nb))
-check("A7-5: the table's rules hold for PINS_A7, and its fragment files all 17 under prompt_files",
-      fr is not None and sorted(fr["prompt_files"]) == sorted(WANT_A7) and not any(fr[g] for g in fr if g != "prompt_files"),
+check("A7-5: the table's rules hold for PINS_A7, and its fragment files the 35 prompt and scoring pins under "
+      "prompt_files and the 17 cognee arm-source pins under arm_sources, nothing elsewhere",
+      fr is not None and sorted(fr["prompt_files"]) == sorted(n for n, v in WANT_A7.items() if v[3] in ("prompt", "scoring"))
+      and len(fr["prompt_files"]) == 35
+      and sorted(fr["arm_sources"]) == sorted(n for n, (_p, r) in COGNEE.items() if r == "arm-source")
+      and not any(fr[g] for g in fr if g not in ("prompt_files", "arm_sources")),
       str(frerr or {g: sorted(v) for g, v in (fr or {}).items()}))
 
 print("\n- the auditor's P3, P7, P8, P9 -")
