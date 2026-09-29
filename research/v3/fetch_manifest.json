@@ -99,6 +99,14 @@
    "max_results": 50,
    "max_redirects": 0
   },
+  "a7-hf-d": {
+   "hosts": ["huggingface.co"],
+   "purpose": "metadata only (the auditor's Q-A7-P3 = O-a, plan d7): one HEAD on the resolve URL of all-MiniLM-L6-v2's model.safetensors at the revision a7-discovery d1 found - the redirect's host recorded, never followed, nothing downloaded; a7-hf then declares huggingface.co and that host",
+   "repo": "sentence-transformers/all-MiniLM-L6-v2",
+   "revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+   "path": "model.safetensors",
+   "max_redirects": 0
+  },
   "py-base-312": {
    "hosts": ["api.nuget.org"],
    "purpose": "A8 C1 (the auditor's Q-A8-2): CPython 3.12.10 from NuGet's python package into the polygon's py312 - the base of the product venvs PREREG-V3 2.2 pins to 3.12; NuGet's flat index is read first and the declared version must be the newest stable 3.12.x",

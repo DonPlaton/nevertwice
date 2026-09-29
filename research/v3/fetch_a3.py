@@ -25,6 +25,8 @@ contents API at a release tag's commit - a path absent there at the head, marked
 each text is checked against the git blob its answer names before it is written. `a7-cognee-tag` (plan d5, the
 auditor's R2) asks which commit a tag names and, only when it is the declared one, reads that commit's tree.
 `a7-arxiv` (plan d6, the auditor's R3) asks the arXiv API one declared query and lists what it finds, as text.
+`a7-hf-d` (plan d7, the auditor's Q-A7-P3 = O-a) sends one HEAD to a model file's resolve URL at its declared revision
+and records the redirect's host, following none - the host a7-hf then declares.
 
     python research/v3/fetch_a3.py --window a3-discovery --run d1 --python D:\\Coding\\_nevertwice_polygon\\py314\\python.exe
 """
@@ -952,6 +954,71 @@ def d6_report(record: dict, decl: dict) -> dict:
             "page_full": len(entries) >= decl["max_results"], "entries": entries, "problems": problems}
 
 
+# ── a7-hf-d plan d7 (the auditor's Q-A7-P3 = O-a: the CDN host of a model file, before a7-hf declares its hosts) ──
+
+D7_WINDOW = "a7-hf-d"
+D7_HOSTS = ["huggingface.co"]
+D7_KEYS = frozenset({"hosts", "purpose", "repo", "revision", "path", "max_redirects"})
+_D7_REPO = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,95}/[A-Za-z0-9][A-Za-z0-9_.-]{0,95}")
+_D7_REV = re.compile(r"[0-9a-f]{40}")
+_D7_PATH = re.compile(r"[A-Za-z0-9_][A-Za-z0-9_.-]{0,99}(/[A-Za-z0-9_][A-Za-z0-9_.-]{0,99}){0,4}")
+
+
+class D7ManifestError(ValueError):
+    """The manifest does not declare a7-hf-d as plan d7 reads it."""
+
+
+def d7_decl(manifest: dict) -> dict:
+    """The manifest's a7-hf-d entry - the window's single source: exactly D7_KEYS; huggingface.co only, no redirect; a
+    repository owner/name, a 40-hex revision and one relative file path, none of them climbing. Anything else is refused
+    by name before any spawn."""
+    w = (manifest.get("windows") or {}).get(D7_WINDOW)
+    if not isinstance(w, dict) or set(w) != D7_KEYS:
+        raise D7ManifestError(f"the manifest's {D7_WINDOW} entry must have exactly the keys {sorted(D7_KEYS)}")
+    probs = []
+    if w["hosts"] != D7_HOSTS:
+        probs.append(f"its hosts {w['hosts']} are not {D7_HOSTS}")
+    if isinstance(w["max_redirects"], bool) or w["max_redirects"] != 0:
+        probs.append("its max_redirects is not 0")
+    if not (isinstance(w["repo"], str) and _D7_REPO.fullmatch(w["repo"]) and ".." not in w["repo"]):
+        probs.append(f"its repo {w['repo']!r} is not owner/name")
+    if not (isinstance(w["revision"], str) and _D7_REV.fullmatch(w["revision"])):
+        probs.append(f"its revision {w['revision']!r} is not a 40-hex commit")
+    if not (isinstance(w["path"], str) and _D7_PATH.fullmatch(w["path"]) and ".." not in w["path"]):
+        probs.append(f"its path {w['path']!r} is not one relative file path")
+    if probs:
+        raise D7ManifestError(f"the manifest's {D7_WINDOW} entry: " + "; ".join(probs))
+    return dict(w)
+
+
+def d7_jobs(decl: dict) -> list:
+    """One HEAD on the file's resolve URL at the revision: fetch_child reports a redirect's host and never follows it."""
+    path = urllib.parse.quote(decl["path"], safe="/")
+    return [{"hosts": D7_HOSTS, "max_redirects": 0, "requests": [
+        {"id": f"head:model:{decl['repo']}:{decl['path']}", "method": "HEAD", "save": None, "max_bytes": 65536,
+         "url": f"https://huggingface.co/{decl['repo']}/resolve/{decl['revision']}/{path}"}]}]
+
+
+def d7_report(record: dict, decl: dict) -> dict:
+    """The HEAD's status and the redirect's host - None when huggingface.co answers the file itself (no problem, said
+    so); a failed HEAD, no answer, or a redirect with no host is a problem by name."""
+    job = next((j for j in record.get("jobs") or [] if j.get("index", 0) == 0), None)
+    summ = ((job or {}).get("summary") or [None])[0]
+    out = {"repo": decl["repo"], "revision": decl["revision"], "path": decl["path"], "status": None,
+           "redirect_host": None, "final_host": None, "note": None, "problems": []}
+    if not isinstance(summ, dict):
+        out["problems"].append("no answer: the job left no request summary")
+        return out
+    out.update(status=summ.get("status"), redirect_host=summ.get("redirect_host"), final_host=summ.get("final_host"))
+    if not summ.get("ok"):
+        out["problems"].append(f"the HEAD failed: {summ.get('error')}")
+    elif summ.get("status") == 200:
+        out["note"] = "served by huggingface.co itself - no redirect host"
+    elif summ.get("status") in (301, 302, 303, 307, 308) and not summ.get("redirect_host"):
+        out["problems"].append(f"a {summ.get('status')} with no redirect host to record")
+    return out
+
+
 # ── the command line ──────────────────────────────────────────────────────
 
 def _load(name: str, path: Path):
@@ -966,12 +1033,14 @@ def _load(name: str, path: Path):
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="the A3 fetch windows (children under the contract)")
-    ap.add_argument("--window", required=True, choices=["a3-discovery", "a7-discovery", D4_WINDOW, D5_WINDOW, D6_WINDOW])
-    ap.add_argument("--plan", default="d1", choices=["d1", "d2", "d3", "d4", "d5", "d6"],
+    ap.add_argument("--window", required=True, choices=["a3-discovery", "a7-discovery", D4_WINDOW, D5_WINDOW, D6_WINDOW,
+                                                          D7_WINDOW])
+    ap.add_argument("--plan", default="d1", choices=["d1", "d2", "d3", "d4", "d5", "d6", "d7"],
                     help="d1: the full discovery; d2: the P1/P10 follow-up; d3: the A7 discovery (window a7-discovery); "
                          "d4: supermemory's self-hosting documentation at the release tag (window a7-docs); "
                          "d5: cognee's tree at the tag the pinned product carries (window a7-cognee-tag); "
-                         "d6: the arXiv entries a declared query finds (window a7-arxiv)")
+                         "d6: the arXiv entries a declared query finds (window a7-arxiv); "
+                         "d7: a model file's CDN host, one HEAD (window a7-hf-d)")
     ap.add_argument("--run", required=True)
     ap.add_argument("--python", required=True, help="the polygon's py314 interpreter")
     args = ap.parse_args(argv)
@@ -983,15 +1052,15 @@ def main(argv: list[str] | None = None) -> int:
     if via is None:
         print("no declared hop (network.json)", file=sys.stderr)
         return 2
-    for plan, window in (("d6", D6_WINDOW), ("d5", D5_WINDOW), ("d4", D4_WINDOW), ("d3", "a7-discovery")):
+    for plan, window in (("d7", D7_WINDOW), ("d6", D6_WINDOW), ("d5", D5_WINDOW), ("d4", D4_WINDOW), ("d3", "a7-discovery")):
         if (args.plan == plan) != (args.window == window):
             print(f"plan {plan} runs in window {window}, and only it", file=sys.stderr)
             return 2
     decl = None
-    if args.plan in ("d4", "d5", "d6"):
+    if args.plan in ("d4", "d5", "d6", "d7"):
         try:
-            decl = {"d4": d4_decl, "d5": d5_decl, "d6": d6_decl}[args.plan](manifest)
-        except (D4ManifestError, D5ManifestError, D6ManifestError) as e:
+            decl = {"d4": d4_decl, "d5": d5_decl, "d6": d6_decl, "d7": d7_decl}[args.plan](manifest)
+        except (D4ManifestError, D5ManifestError, D6ManifestError, D7ManifestError) as e:
             print(str(e), file=sys.stderr)
             return 2
     win = manifest["windows"][args.window]
@@ -999,9 +1068,10 @@ def main(argv: list[str] | None = None) -> int:
     if args.plan == "d3" and sorted(win["hosts"]) != D3_HOSTS:
         print(f"the manifest's a7-discovery hosts {win['hosts']} are not the plan's {D3_HOSTS}", file=sys.stderr)
         return 2
-    hosts = {"d1": win["hosts"], "d2": D2_HOSTS, "d3": D3_HOSTS, "d4": D4_HOSTS, "d5": D5_HOSTS, "d6": D6_HOSTS}[args.plan]
+    hosts = {"d1": win["hosts"], "d2": D2_HOSTS, "d3": D3_HOSTS, "d4": D4_HOSTS, "d5": D5_HOSTS, "d6": D6_HOSTS,
+             "d7": D7_HOSTS}[args.plan]
     jobs = (discovery_jobs(CP.PINS) if args.plan == "d1" else d2_jobs() if args.plan == "d2"
-            else d3_jobs() if args.plan == "d3" else {"d4": d4_jobs, "d5": d5_jobs, "d6": d6_jobs}[args.plan](decl))
+            else d3_jobs() if args.plan == "d3" else {"d4": d4_jobs, "d5": d5_jobs, "d6": d6_jobs, "d7": d7_jobs}[args.plan](decl))
     rec = run_child_window(c, L, window=args.window, hosts=hosts, jobs=jobs,
                            python=Path(args.python), via_port=via, run=args.run, parent_env=os.environ,
                            need_bytes=floor, volume=Path("D:/"))
@@ -1021,8 +1091,8 @@ def main(argv: list[str] | None = None) -> int:
             dst.write_bytes(data)
         (out / "d4_report.json").write_bytes((json.dumps(report, indent=1, sort_keys=True) + "\n").encode("utf-8"))
         print(json.dumps(report, indent=1))
-    if args.plan in ("d5", "d6"):
-        report = (d5_report if args.plan == "d5" else d6_report)(rec, decl)
+    if args.plan in ("d5", "d6", "d7"):
+        report = {"d5": d5_report, "d6": d6_report, "d7": d7_report}[args.plan](rec, decl)
         (c.runs_root / "_fetch" / args.window / args.run / f"{args.plan}_report.json").write_bytes(
             (json.dumps(report, indent=1, sort_keys=True) + "\n").encode("utf-8"))
         print(json.dumps(report, indent=1))
