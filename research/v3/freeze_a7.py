@@ -1,0 +1,127 @@
+#!/usr/bin/env python3
+"""PREREG-V3 A7 (the auditor's Q-F7 = O-a, 2026-09-30): research/v3/freeze_a7.json, the A7 fragment of FREEZE-V3.
+
+A thin wrapper over freeze_a3.build (Q-A7-P2-1 O-a: freeze_a3.json is the A3 table as filled and is never rewritten), with
+A7's own lists and table:
+* windows: the A7 runs the auditor cleared himself (m6 --window PASS), each record file by its sha256 - a record that is
+  missing or whose bytes moved stops the build, nothing is written; a cleared record WITH problems stops it unless its
+  entry carries the ruling note, the problems verbatim and the excluded request (a7-npm-d d1: npm's 404 by construction);
+* failed_runs: the A7 runs that were not cleared, by sha256 and a one-line reason;
+* issuers: every TLS issuer the records name is public (R-A3-7), every contacted host has one;
+* pins: PINS_A7 as filled (FILLED_A7) - every pin filled, or the build stops ("A7 is not complete");
+* prereg: the sha256 of every research/v3/PREREG-V3*.md tracked at the anchor commit, by its git blob - revision 1 and
+  the amendments at least - and the anchor itself; never the working copy.
+A window after these (a7-github, a7-arxiv, a8-supermemory-bin, a7-hf-d, a7-hf) joins CLEARED_A7 only as a line written
+after the auditor's m6/m5/secret_scan of its run - never in advance. The output is sorted JSON with LF line ends.
+
+    python research/v3/freeze_a7.py --out research/v3/freeze_a7.json
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import importlib.util
+import json
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+REPO = HERE.parent.parent
+PREREG_NEEDED = ("research/v3/PREREG-V3-rev1.md", "research/v3/PREREG-V3-AMENDMENTS.md")
+
+#: The A7 runs the auditor cleared (2026-09-30 01:3x, m6 --window with --manifest-rev b322514: PASS on each).
+CLEARED_A7 = [
+    {"window": "a7-discovery", "run": "d1", "kind": "discovery", "files": {
+        "_fetch/a7-discovery/d1/record.json": "1689534abb103971d502774dfd2a4566d6947c3efaeda552dbe3704b72ed037e",
+        "_fetch/a7-discovery/d1/d3_report.json": "dff73cfea405f3963f32880abd1ced9c14d1da7dec1888778e517244bee6eca9"}},
+    {"window": "a7-docs", "run": "d1", "kind": "report", "files": {
+        "_fetch/a7-docs/d1/record.json": "22cf0b04276ae8f7b5aa66a62e644bc589cdaec4cc2f74ea061a4032606dfffa",
+        "_fetch/a7-docs/d1/d4_report.json": "492f92b77098b80eeca7494bb3550a3988aa596873850ca1d1f269bae6a9fcd8"}},
+    {"window": "a7-cognee-tag", "run": "d1", "kind": "report", "files": {
+        "_fetch/a7-cognee-tag/d1/record.json": "136e0bf762df91ded98b80a53e282c89cb1424035933d4df8c458675001fd721",
+        "_fetch/a7-cognee-tag/d1/d5_report.json": "1b5d58bfb9f484249ba0ac32f14c673c0db27f140a0f07825426ae34934e6620"}},
+    {"window": "a7-npm-d", "run": "d1", "kind": "discovery", "files": {
+        "_fetch/a7-npm-d/d1/record.json": "8aeed9ecfc3b86edc80573d2b552dd7d08f197d10e6231f8b010ef7c6b1e9ce2",
+        "_fetch/a7-npm-d/d1/discovery.json": "8e3ef3ff8c6f73673ce6e6e7ba26cdd0fda5865ca75824433aab0f75af9af434"},
+     "note": "2 problems, both npm's 404 for the package document of supermemory-server - the discovery's finding by "
+             "construction (the auditor's m6 note): the package is not on npm, and revision 1's channel was wrong "
+             "(erratum A3, T32); the registry search in the same job is what the window read",
+     "problems_verbatim": ["job 0: the fetch child exited with 3",
+                           "job 0 request npm:package-document: Refused: status 404"],
+     "excluded": [{"job": 0, "requests": ["npm:package-document"]}]},
+]
+#: The A7 runs that were NOT cleared - kept by sha256 with the reason, never used.
+FAILED_A7 = [
+    {"window": "a7-npm", "run": "g1", "files": {
+        "_fetch/a7-npm/g1/record.json": "fb4212e565e4233c86ef4432ec48a3e09d2bd031f6ffc84a875cc46e2ff84f8d"},
+     "reason": "supermemory-server is not on npm (the registry answered 404): revision 1's channel was wrong - erratum A3 "
+               "(T32), the vendor's release binary instead"},
+]
+
+
+def _load(name: str, path: Path):
+    spec = importlib.util.spec_from_file_location(name, path)
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[name] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+F3 = _load("v3_freeze_a3_for_a7", HERE / "freeze_a3.py")
+FreezeRefused = F3.FreezeRefused
+render = F3.render
+
+
+def prereg_at(repo: Path, rev: str) -> dict:
+    """{"anchor": <the commit>, "files": {path: sha256}} for every research/v3/PREREG-V3*.md tracked at ``rev``, each
+    read as its git blob - never the working copy."""
+    def git(*a) -> bytes:
+        return subprocess.run(["git", "-C", str(repo), *a], capture_output=True, check=True).stdout
+    anchor = git("rev-parse", "--verify", f"{rev}^{{commit}}").decode().strip()
+    names = [n for n in git("ls-tree", "--name-only", anchor, "research/v3/").decode().splitlines()
+             if re.fullmatch(r"research/v3/PREREG-V3[^/]*\.md", n)]
+    return {"anchor": anchor, "files": {n: hashlib.sha256(git("cat-file", "blob", f"{anchor}:{n}")).hexdigest()
+                                        for n in sorted(names)}}
+
+
+def build(runs_root: Path, *, pins: dict, filled: dict, prereg: dict, cleared: list | None = None,
+          failed: list | None = None, unrecorded: dict | None = None) -> dict:
+    """The A7 fragment from the cleared records (each by sha256); raises FreezeRefused before anything is written."""
+    for need in PREREG_NEEDED:
+        if not re.fullmatch(r"[0-9a-f]{64}", str(prereg.get(need))):
+            raise FreezeRefused(f"the prereg section has no sha256 for {need}")
+    try:
+        out = F3.build(runs_root, pins=pins, filled=filled, cleared=CLEARED_A7 if cleared is None else cleared,
+                       failed=FAILED_A7 if failed is None else failed, unrecorded={} if unrecorded is None else unrecorded)
+    except FreezeRefused as e:
+        if "not filled - A3 is not complete" in str(e):
+            raise FreezeRefused(str(e).replace("A3 is not complete", "A7 is not complete (after its windows only)")) from None
+        raise
+    out.pop("prereg_rev1", None)                   # A3's own line; A7's prereg is the anchor's blobs
+    out["prereg"] = dict(sorted(prereg.items()))
+    return out
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(description="the A7 fragment of FREEZE-V3 (Q-F7)")
+    ap.add_argument("--out", default=str(HERE / "freeze_a7.json"))
+    args = ap.parse_args(argv)
+    L = _load("v3_launch", HERE / "launch.py")
+    CP = _load("v3_corpus_pin_freeze_a7", HERE / "corpus_pin_v3.py")
+    at = prereg_at(REPO, "HEAD")
+    try:
+        freeze = build(L.Contract.default().runs_root, pins=CP.PINS_A7, filled=CP.FILLED_A7, prereg=at["files"])
+    except FreezeRefused as e:
+        print(f"refused: {e}", file=sys.stderr)
+        return 1
+    freeze["prereg_anchor"] = at["anchor"]
+    Path(args.out).write_bytes(render(freeze))
+    print(json.dumps({"windows": len(freeze["windows"]), "failed_runs": len(freeze["failed_runs"]),
+                      "pins": len(freeze["pins"]), "issuers": sorted(freeze["issuers"]), "anchor": at["anchor"]}, indent=1))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

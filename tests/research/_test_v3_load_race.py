@@ -82,6 +82,7 @@ NOT_FROM_THREADS = {
     "research/v3/fetch_pins_a3.py::_load": _CLI,
     "research/v3/fetch_py_base.py::_load_launch": _CLI,
     "research/v3/freeze_a3.py::_load": _CLI,
+    "research/v3/freeze_a7.py::_load": _CLI,
     "research/v3/image_install.py::_iv": _CLI,
     "research/v3/image_install.py::_load": _CLI,
     "research/v3/install_v3_data.py::_load": _CLI,
