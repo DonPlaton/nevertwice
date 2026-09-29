@@ -91,6 +91,11 @@ atexit.register(shutil.rmtree, TMP, True)
 POLY = TMP / "polygon"
 ARM_PY = Path(getattr(sys, "_base_executable", None) or sys.executable)
 EXC = {sys.executable: "the test interpreter", str(ARM_PY): "the fake product venv's base interpreter"}
+# B-E2E-REALEXC (CI research tier, no venv): a base interpreter reached by a symlink (setup-python's bin/python), a
+# POSIX venv's bin/python links to it, and launch compares an exception with the written AND the real path of the
+# executable (.../python3.13) - so each exception is named by its real path too; launch itself is not widened
+for _p, _why in ((sys.executable, "the test interpreter"), (ARM_PY, "the fake product venv's base interpreter")):
+    EXC.setdefault(os.path.realpath(_p), f"{_why} (its real path)")
 SYSTEM = (Path(os.environ.get("SystemRoot", r"C:\Windows")) / "System32",) if os.name == "nt" else (Path("/usr/bin"),)
 for d in ("owner_home", "watched"):
     (TMP / d).mkdir()
