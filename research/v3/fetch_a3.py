@@ -22,7 +22,8 @@ the CDN hosts (Q-A3-3) and the prompt/scoring repos before any data window runs.
 
 `a7-docs` (plan d4, the auditor's Q-A8-10) reads the documentation paths its manifest entry names as text through the
 contents API at a release tag's commit - a path absent there at the head, marked - and the release's asset metadata;
-each text is checked against the git blob its answer names before it is written.
+each text is checked against the git blob its answer names before it is written. `a7-cognee-tag` (plan d5, the
+auditor's R2) asks which commit a tag names and, only when it is the declared one, reads that commit's tree.
 
     python research/v3/fetch_a3.py --window a3-discovery --run d1 --python D:\\Coding\\_nevertwice_polygon\\py314\\python.exe
 """
@@ -768,6 +769,94 @@ def d4_report(record: dict, decl: dict) -> tuple[dict, dict]:
             "release": release, "problems": problems}, files
 
 
+# ── a7-cognee-tag plan d5 (the auditor's R2: cognee's BEAM harness at the tag the pinned product carries) ──────
+
+D5_WINDOW = "a7-cognee-tag"
+D5_HOSTS = ["api.github.com"]
+D5_KEYS = frozenset({"hosts", "purpose", "repo", "tag", "commit", "prefixes", "files", "max_redirects"})
+
+
+class D5ManifestError(ValueError):
+    """The manifest does not declare a7-cognee-tag as plan d5 reads it."""
+
+
+def _d5_path_ok(p: object, *, prefix: bool) -> bool:
+    """A relative path of plain segments; a prefix ends with '/' (so a near name outside it is never selected)."""
+    if not isinstance(p, str) or (prefix and not p.endswith("/")):
+        return False
+    segs = p[:-1].split("/") if prefix else p.split("/")
+    return all(_D4_SEG.fullmatch(s) and s not in (".", "..") for s in segs)
+
+
+def d5_decl(manifest: dict) -> dict:
+    """The manifest's a7-cognee-tag entry - the window's single source: exactly D5_KEYS; api.github.com only, no
+    redirect; a repository name, a tag name, the commit the discovery found the tag names (a full sha), and the
+    selection - prefixes ending in '/' and single files, plain relative paths, at least one. Else refused by name."""
+    w = (manifest.get("windows") or {}).get(D5_WINDOW)
+    if not isinstance(w, dict) or set(w) != D5_KEYS:
+        raise D5ManifestError(f"the manifest's {D5_WINDOW} entry must have exactly the keys {sorted(D5_KEYS)}")
+    probs = []
+    if w["hosts"] != D5_HOSTS:
+        probs.append(f"its hosts {w['hosts']} are not {D5_HOSTS}")
+    if isinstance(w["max_redirects"], bool) or w["max_redirects"] != 0:
+        probs.append("its max_redirects is not 0")
+    if not gh_name_ok(w["repo"]):
+        probs.append(f"its repo {w['repo']!r} is no repository name")
+    if not (isinstance(w["tag"], str) and _D4_TAG.fullmatch(w["tag"])):
+        probs.append(f"its tag {w['tag']!r} is no tag name")
+    if not (isinstance(w["commit"], str) and _SHA.fullmatch(w["commit"])):
+        probs.append("its commit is not a full commit sha")
+    pre, fil = w["prefixes"], w["files"]
+    if not (isinstance(pre, list) and all(_d5_path_ok(p, prefix=True) for p in pre)
+            and isinstance(fil, list) and all(_d5_path_ok(p, prefix=False) for p in fil) and (pre or fil)):
+        probs.append("its selection must be prefixes ending in '/' and single files, plain relative paths, at least one")
+    if probs:
+        raise D5ManifestError(f"the manifest's {D5_WINDOW} entry: " + "; ".join(probs))
+    return dict(w)
+
+
+def d5_jobs(decl: dict) -> list:
+    """Job 1: the commit the tag names now. Job 2: the recursive tree at the DECLARED commit - only when the tag still
+    names it (None, no job, when it moved: the declared commit is never silently replaced)."""
+    first = {"hosts": D5_HOSTS, "max_redirects": 0, "requests": [
+        {"id": f"tagcommit:{decl['tag']}", "url": f"https://api.github.com/repos/{decl['repo']}/commits/{decl['tag']}",
+         "save": "tag_commit.json", "max_bytes": META_MAX}]}
+
+    def tree(results):
+        if (_read_prev(results, 0, "tag_commit.json") or {}).get("sha") != decl["commit"]:
+            return None
+        return {"hosts": D5_HOSTS, "max_redirects": 0, "requests": [
+            {"id": f"tree:{decl['commit']}", "save": "tree.json", "max_bytes": META_MAX,
+             "url": f"https://api.github.com/repos/{decl['repo']}/git/trees/{decl['commit']}?recursive=1"}]}
+    return [first, tree]
+
+
+def d5_report(record: dict, decl: dict) -> dict:
+    """The tag's commit and whether it is the declared one; the tree's size and truncation; the selected blobs (path,
+    blob sha1, size) in path order; the declared single files the tag does not hold. A moved tag, a missing or a
+    truncated tree are problems by name. Every value is data from the answers."""
+    jobs = record["jobs"]
+    got = (_read_prev(jobs, 0, "tag_commit.json") or {}).get("sha")
+    tree = _read_prev(jobs, 1, "tree.json") or {}
+    blobs = {e["path"]: e for e in tree.get("tree") or []
+             if isinstance(e, dict) and e.get("type") == "blob" and isinstance(e.get("path"), str)}
+    matches = got == decl["commit"]
+    problems = []
+    if not matches:
+        problems.append(f"the tag {decl['tag']} names {got}, not the declared {decl['commit']} - no tree read")
+    elif not tree:
+        problems.append(f"no tree at {decl['commit']}")
+    if tree.get("truncated"):
+        problems.append(f"the tree at {decl['commit']} is truncated - a selection from part of a tree is none")
+    chosen = sorted(p for p in blobs if any(p.startswith(x) for x in decl["prefixes"]) or p in decl["files"])
+    return {"repo": decl["repo"], "tag": decl["tag"], "commit": decl["commit"], "tag_commit": got, "tag_matches": matches,
+            "tree_entries": len(tree.get("tree") or []), "tree_truncated": tree.get("truncated"),
+            "selected": [{"path": p, "blob": blobs[p].get("sha"), "size": blobs[p].get("size")} for p in chosen]
+            if matches else [],
+            "missing_files": [f for f in decl["files"] if f not in blobs] if matches else list(decl["files"]),
+            "problems": problems}
+
+
 # ── the command line ──────────────────────────────────────────────────────
 
 def _load(name: str, path: Path):
@@ -782,10 +871,11 @@ def _load(name: str, path: Path):
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="the A3 fetch windows (children under the contract)")
-    ap.add_argument("--window", required=True, choices=["a3-discovery", "a7-discovery", D4_WINDOW])
-    ap.add_argument("--plan", default="d1", choices=["d1", "d2", "d3", "d4"],
+    ap.add_argument("--window", required=True, choices=["a3-discovery", "a7-discovery", D4_WINDOW, D5_WINDOW])
+    ap.add_argument("--plan", default="d1", choices=["d1", "d2", "d3", "d4", "d5"],
                     help="d1: the full discovery; d2: the P1/P10 follow-up; d3: the A7 discovery (window a7-discovery); "
-                         "d4: supermemory's self-hosting documentation at the release tag (window a7-docs)")
+                         "d4: supermemory's self-hosting documentation at the release tag (window a7-docs); "
+                         "d5: cognee's tree at the tag the pinned product carries (window a7-cognee-tag)")
     ap.add_argument("--run", required=True)
     ap.add_argument("--python", required=True, help="the polygon's py314 interpreter")
     args = ap.parse_args(argv)
@@ -797,15 +887,15 @@ def main(argv: list[str] | None = None) -> int:
     if via is None:
         print("no declared hop (network.json)", file=sys.stderr)
         return 2
-    for plan, window in (("d4", D4_WINDOW), ("d3", "a7-discovery")):
+    for plan, window in (("d5", D5_WINDOW), ("d4", D4_WINDOW), ("d3", "a7-discovery")):
         if (args.plan == plan) != (args.window == window):
             print(f"plan {plan} runs in window {window}, and only it", file=sys.stderr)
             return 2
     decl = None
-    if args.plan == "d4":
+    if args.plan in ("d4", "d5"):
         try:
-            decl = d4_decl(manifest)
-        except D4ManifestError as e:
+            decl = d4_decl(manifest) if args.plan == "d4" else d5_decl(manifest)
+        except (D4ManifestError, D5ManifestError) as e:
             print(str(e), file=sys.stderr)
             return 2
     win = manifest["windows"][args.window]
@@ -813,9 +903,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.plan == "d3" and sorted(win["hosts"]) != D3_HOSTS:
         print(f"the manifest's a7-discovery hosts {win['hosts']} are not the plan's {D3_HOSTS}", file=sys.stderr)
         return 2
-    hosts = {"d1": win["hosts"], "d2": D2_HOSTS, "d3": D3_HOSTS, "d4": D4_HOSTS}[args.plan]
+    hosts = {"d1": win["hosts"], "d2": D2_HOSTS, "d3": D3_HOSTS, "d4": D4_HOSTS, "d5": D5_HOSTS}[args.plan]
     jobs = (discovery_jobs(CP.PINS) if args.plan == "d1" else d2_jobs() if args.plan == "d2"
-            else d3_jobs() if args.plan == "d3" else d4_jobs(decl))
+            else d3_jobs() if args.plan == "d3" else d4_jobs(decl) if args.plan == "d4" else d5_jobs(decl))
     rec = run_child_window(c, L, window=args.window, hosts=hosts, jobs=jobs,
                            python=Path(args.python), via_port=via, run=args.run, parent_env=os.environ,
                            need_bytes=floor, volume=Path("D:/"))
@@ -834,6 +924,11 @@ def main(argv: list[str] | None = None) -> int:
             dst.parent.mkdir(parents=True, exist_ok=True)
             dst.write_bytes(data)
         (out / "d4_report.json").write_bytes((json.dumps(report, indent=1, sort_keys=True) + "\n").encode("utf-8"))
+        print(json.dumps(report, indent=1))
+    if args.plan == "d5":
+        report = d5_report(rec, decl)
+        (c.runs_root / "_fetch" / args.window / args.run / "d5_report.json").write_bytes(
+            (json.dumps(report, indent=1, sort_keys=True) + "\n").encode("utf-8"))
         print(json.dumps(report, indent=1))
     print(json.dumps({"problems": rec["problems"], "check": rec["check"], "jobs": [
         {"index": j["index"], "rc": j["rc"], "requests": len(j["summary"]),

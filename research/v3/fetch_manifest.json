@@ -76,6 +76,16 @@
    "release_tag": "server-v0.0.8",
    "max_redirects": 0
   },
+  "a7-cognee-tag": {
+   "hosts": ["api.github.com"],
+   "purpose": "metadata only (the auditor's R2, plan d5): which commit cognee's tag v1.6.1 - the pinned cognee==1.6.1 - names, and only if it is the one the discovery found, the recursive tree at that commit, from which cognee's BEAM harness files are selected for the a7-github pins; no link followed, no file fetched",
+   "repo": "topoteretes/cognee",
+   "tag": "v1.6.1",
+   "commit": "eb90d03740755f5252b8b12cce91fd09970f2d81",
+   "prefixes": ["cognee/eval_framework/beam/"],
+   "files": ["cognee/eval_framework/benchmark_adapters/beam_adapter.py", "cognee/eval_framework/answer_generation/beam_router.py", "cognee/eval_framework/run_beam_eval.py"],
+   "max_redirects": 0
+  },
   "py-base-312": {
    "hosts": ["api.nuget.org"],
    "purpose": "A8 C1 (the auditor's Q-A8-2): CPython 3.12.10 from NuGet's python package into the polygon's py312 - the base of the product venvs PREREG-V3 2.2 pins to 3.12; NuGet's flat index is read first and the declared version must be the newest stable 3.12.x",

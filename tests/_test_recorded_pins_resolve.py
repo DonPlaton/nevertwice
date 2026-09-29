@@ -274,8 +274,11 @@ print("\n- and the inventory is pinned, so new pins cannot arrive unnoticed -")
 #: windows.a7-docs.commit (the tag server-v0.0.8's commit) and windows.a7-docs.head (the head the discovery found), both
 #: foreign (the entry names its repo, so neither is cat-filed here). Diffed with this file's own walk() against 0774ad7:
 #: none lost (196 artifacts, 301 -> 303 kinds over 388 values).
+#: 2026-09-29, PREREG-V3 A7 a7-cognee-tag (the auditor's R2, plan d5): no artifact, +1 kind, gained - the manifest's
+#: windows.a7-cognee-tag.commit (the commit cognee's tag v1.6.1 names per the discovery), foreign (its entry names the
+#: repo). Diffed with this file's own walk() against b7deaf6: none lost (196 artifacts, 303 -> 304 kinds over 389 values).
 check("the number of pinned artifacts has not moved", len(artifacts) == 196, str(len(artifacts)))
-check("and the number of pin KINDS has not moved", len(kinds) == 303,
+check("and the number of pin KINDS has not moved", len(kinds) == 304,
       f"{len(kinds)} kinds over {len(pins)} values")
 
 print(f"\n{'ALL OK' if not FAILS else f'{FAILS} FAILED'}")
