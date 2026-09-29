@@ -1586,6 +1586,30 @@ try:
           "says halt=402 (read from the gate's halt_kind, never raised), and the STATUS replays clean",
           e_l is None and lh.asked == 4 and len(ends_l) == 1 and " halt=402 " in ends_l[0]
           and SL.self_check(TMP / "STATUS42") == [], f"{e_l!r} asked {lh.asked} {ends_l} {SL.self_check(TMP / 'STATUS42')}")
+
+    class ResetFails:
+        """The proxy's stage reset fails while the halted block closes (a B-OPEN step): _close_block then raises a
+        SchedulerError from the halt - the halt is the error's cause, never the error itself."""
+
+        def stage(self, block, stage):
+            if block is None and stage is None:
+                raise RuntimeError("the proxy's stage reset failed")
+
+    hw = HaltGate("402", 0)
+    s_w, sp_w, _jw, _evw, _gw, st_w = stand_world("smoke", gate=hw, stand="SQ5", sfile="STATUS43")
+    hw.st = st_w
+    s_w.proxy_ctl = ResetFails()
+    _rw, e_w = attempt(lambda: s_w.run_stand(sp_w, [SC.BlockPlan(block="b01", units=("w1",))], judges=(), order=1))
+    text_w = (TMP / "STATUS43").read_text(encoding="utf-8") if (TMP / "STATUS43").exists() else ""
+    ends_w = [x for x in text_w.splitlines() if " STAND SQ5 END " in x]
+    aborts_w = [x.split(" reason=")[1].split()[0] for x in text_w.splitlines() if " ABORT " in x]
+    check("Q2 (the auditor's SQ4): a 402 halt whose block also fails to close (the proxy's stage reset raises) comes "
+          "wrapped in a SchedulerError - STAND END still says halt=402 (the halt is read through the error's causes), "
+          "the arm-run's ABORT says reason=402, and the STATUS replays clean",
+          isinstance(e_w, SC.SchedulerError) and getattr(e_w, "halt", None) is None and SC._halt_of(e_w) == "402"
+          and aborts_w == ["402"] and len(ends_w) == 1 and " halt=402 " in ends_w[0]
+          and SL.self_check(TMP / "STATUS43") == [],
+          f"{type(e_w).__name__}: {str(e_w)[:160]} aborts={aborts_w} ends={ends_w} {SL.self_check(TMP / 'STATUS43')[:2]}")
 finally:
     shutil.rmtree(TMP, ignore_errors=True)
 
