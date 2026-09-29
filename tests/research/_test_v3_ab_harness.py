@@ -181,7 +181,7 @@ check("D-AB-8: an A/B that stopped holds every later A/B until the owner's word 
       f"{h1} {[k for k, v in still.items() if not v]} freed={freed}")
 
 FAKE_ARM = r'''
-import hashlib, json, os, sys, time, urllib.request
+import hashlib, json, os, sys, time, urllib.error, urllib.request
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import base as B
 spec = json.load(open(sys.argv[1], encoding="utf-8"))
@@ -230,12 +230,18 @@ class H:
         return {"footprint": {"retrievable": len(self.items)}, "seal": {"sha256": "0" * 64}}
 
     def read(self, qid, query, k=10):
-        if spec["run"] in spec.get("pay_read_on", []):     # D-AB-8: the reader's next call finds the balance gone
+        if spec["run"] in spec.get("pay_read_on", []) and spec["unit"] == spec.get("pay_read_unit"):
+            # D-AB-8: the leg's last unit's read (every question unit asked the gate before its child started), its
+            # own call finds the balance gone - a 402 the product outlives, so the stand completes and only the
+            # proxy's counts know of it: after this no gate is asked in the leg
             body = json.dumps({"model": "deepseek-flash", "messages": [{"role": "user", "content": "recall"}]}).encode()
             req = urllib.request.Request(os.environ["NVT3_WRITE_URL"] + "-arm402", data=body, method="POST",
                                          headers={"Authorization": "Bearer " + os.environ["NVT3_WRITE_TOKEN"],
                                                   "Content-Type": "application/json"})
-            urllib.request.build_opener(urllib.request.ProxyHandler({})).open(req, timeout=20).read()
+            try:
+                urllib.request.build_opener(urllib.request.ProxyHandler({})).open(req, timeout=20).read()
+            except urllib.error.HTTPError:
+                pass
         return {"qid": qid, "items": [{"text": t, "rank": i + 1} for i, t in enumerate(self.items[:k])]}
 
     def counters(self):
@@ -258,23 +264,18 @@ BAL = json.dumps({"is_available": True, "balance_infos": [{"currency": "USD", "t
 
 
 class Upstream(ST.FakeUpstream):
-    reader_402 = False
+    arm_402 = 0                                          # D-AB-8: the late 402s the arm's own call was answered
 
     def _serve(self, c, path):
         p = path.split(b"?", 1)[0]
-        if p.endswith(b"/nvt3-writer-arm402"):
-            self.reader_402 = True
-        if self.reader_402 and p.endswith(b"/chat/completions"):
+        if p.endswith(b"/nvt3-writer-pay") or p.endswith(b"/nvt3-writer-arm402"):   # D-AB-8: the balance is gone
+            if p.endswith(b"/nvt3-writer-arm402"):
+                self.arm_402 += 1
             err = b'{"error":{"message":"Insufficient Balance"}}'
             self._send(c, b"HTTP/1.1 402 Payment Required\r\nContent-Type: application/json\r\nContent-Length: "
                        + str(len(err)).encode() + b"\r\n\r\n" + err)
             return True
-        if p.endswith(b"/nvt3-writer-pay"):             # D-AB-8: the balance is gone
-            err = b'{"error":{"message":"Insufficient Balance"}}'
-            self._send(c, b"HTTP/1.1 402 Payment Required\r\nContent-Type: application/json\r\nContent-Length: "
-                       + str(len(err)).encode() + b"\r\n\r\n" + err)
-            return True
-        if p.endswith(b"/nvt3-writer") or p.endswith(b"/nvt3-writer-arm402"):
+        if p.endswith(b"/nvt3-writer"):
             body = WRITER
         elif p.endswith(b"/chat/completions"):
             body = READER
@@ -370,11 +371,14 @@ def stop_proxy(h):
     return {"rc": 0 if not left else 1, "killed": False, "shutdown_error": None}
 
 
+LAST_AB_UNIT = "smoke-q482"                               # the A/B's third and last unit (D-AB-2: positions 481-483)
+
+
 def make_launcher_factory(generate_on=(), pay_on=(), pay_read_on=()):
     def make(arm, ar, *, stand_id, proxy, unit_block, unit_chars):
         def spec_for(stage, *, stand, run, unit, dirs, write_dirs):
             return {"arm": arm, "stage": stage, "run": run, "unit": unit, "generate_on": list(generate_on),
-                    "pay_on": list(pay_on), "pay_read_on": list(pay_read_on),
+                    "pay_on": list(pay_on), "pay_read_on": list(pay_read_on), "pay_read_unit": LAST_AB_UNIT,
                     "seen_dir": str(SEEN), "write_dir": str(write_dirs.cwd) if write_dirs is not None else None}
 
         def declared_for(stage, *, stand, run, unit, dirs, write_dirs):
@@ -608,23 +612,24 @@ try:
           and stop5.get("leg") == "rec2" and ((stop5.get("statuses") or {}).get("nevertwice") or {}).get("402", 0) > 0
           and any(p.startswith("STOP: rec2:") for p in rec5.get("problems") or []), f"{crash5} {stop5}")
     (res5.record_path.parent / AB.OWNER_FILE).write_text(json.dumps({**WORD, "who": "the test, as the owner"}), encoding="utf-8")
-    spacing0, SC.REASK_SPACING_S = SC.REASK_SPACING_S, 0.01
-    n_req6 = len(up.requests)
-    try:
-        res6, crash6, rec6, _o6, _e6 = run(pay_read_on=("rec2",))
-    finally:
-        SC.REASK_SPACING_S = spacing0
-        r402_6 = up.reader_402
-        up.reader_402 = False
+    n_req6, n402_6 = len(up.requests), up.arm_402
+    res6, crash6, rec6, _o6, _e6 = run(pay_read_on=("rec2",))
+    late6 = up.arm_402 - n402_6
     stop6 = rec6.get("stop") or {}
+    probs6 = rec6.get("problems") or []
     paths6 = [r.split(b" ", 2)[1].decode("latin-1")[-40:] for r in up.requests[n_req6:]]
-    check("D-AB-8: a 402 that comes after the last gate (the reader's, in rec2's question stage) stops the A/B after that "
-          "leg - raw2 never runs; exit 3", crash6 is None and res6.rc == 3
+    check("D-AB-8: a 402 that comes after the last gate (the arm's own call in rec2's last unit, a 402 it outlives) stops "
+          "the A/B after that leg - raw2 never runs; exit 3", crash6 is None and res6.rc == 3
           and [lg.get("leg") for lg in rec6.get("legs") or []] == ["raw1", "rec1", "rec2"] and stop6.get("leg") == "rec2"
           and ((stop6.get("statuses") or {}).get("nevertwice") or {}).get("402", 0) > 0,
           f"{crash6} {stop6} rc={getattr(res6, 'rc', None)} legs={[lg.get('leg') for lg in rec6.get('legs') or []]} "
-          f"problems={(rec6.get('problems') or [])[:3]} reader_402={r402_6} n_paths={len(paths6)} "
-          f"arm402={sum('arm402' in p for p in paths6)} tail={paths6[-6:]}")
+          f"problems={probs6[:3]} late_402={late6} n_paths={len(paths6)} tail={paths6[-6:]}")
+    check("D-AB-8 (the auditor's q5_dab8: the row on the right path): ... and nothing inside the leg stopped it - one late "
+          "402, on the last unit's own call; rec2's stand completed (no 'the stand did not complete'), so the stop is "
+          "the read after the completed leg, never a gate asked later in it",
+          late6 == 1 and not any(p.startswith("rec2: the stand did not complete") for p in probs6)
+          and any(lg.get("leg") == "rec2" and lg.get("metrics") for lg in rec6.get("legs") or []),
+          f"late_402={late6} problems={probs6[:4]}")
 finally:
     for pr in PROXIES:
         try:
