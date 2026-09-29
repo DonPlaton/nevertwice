@@ -908,7 +908,9 @@ def d6_jobs(decl: dict) -> list:
 def d6_report(record: dict, decl: dict) -> dict:
     """The API's total, whether the page was full, and per entry its arXiv id and version, title (white space
     collapsed), published and updated dates, authors and abstract-page link - text for the auditor to choose from.
-    An answer that declares a DOCTYPE (entities: never expanded here) or does not parse yields no entry, by name."""
+    An answer that declares a DOCTYPE (entities: never expanded here), does not parse, or parses but is not the API's
+    Atom feed (an HTML page: the auditor, 2026-09-30) yields no entry, by name; a feed without an integer totalResults
+    is a problem by name too - a silent empty report would read as "nothing found"."""
     import xml.etree.ElementTree as ET  # noqa: PLC0415
 
     unit = _unit_of(record["jobs"], 0)
@@ -925,9 +927,14 @@ def d6_report(record: dict, decl: dict) -> dict:
         except ET.ParseError as e:
             problems.append(f"the answer does not parse ({e})")
             root = None
-        if root is not None:
+        if root is not None and root.tag != "{%s}feed" % _ATOM["a"]:
+            problems.append(f"the answer is not an Atom feed (its root is {root.tag[:80]!r}) - no entry is read")
+        elif root is not None:
             t = root.findtext("os:totalResults", namespaces=_ATOM)
-            total = int(t) if t is not None and t.strip().isdigit() else None
+            s = (t or "").strip()
+            total = int(s) if s.isascii() and s.isdigit() else None
+            if total is None:
+                problems.append(f"the feed names no integer totalResults ({None if t is None else s[:40]!r})")
             for e in root.findall("a:entry", _ATOM):
                 m = _D6_ID.search((e.findtext("a:id", default="", namespaces=_ATOM) or "").strip())
                 abs_link = next((x.get("href") for x in e.findall("a:link", _ATOM) if x.get("rel") == "alternate"), None)

@@ -282,6 +282,25 @@ except Exception as e:  # noqa: BLE001
     mrerr = f"{type(e).__name__}: {e}"
 check("A7-4b: the table's own command refuses a file pinned twice across the tables (PinRefused, named) and passes the "
       "real ones", mr is not None and mr[0] == 0 and mr[1].startswith("refused") and "mab_again" in mr[1], str(mrerr or mr))
+nb, nberr = (None, None)
+try:                                          # the auditor (2026-09-30 00:43, AP1): the refusal is checked both ways
+    other_rev = "0123456789abcdef0123456789abcdef01234567"
+    neighbour = {**copy.deepcopy(CP.PINS["mab_eval_data_utils"]), "window": "a7-github", "revision": other_rev}
+    twice_nb = CP.pinned_twice((CP.PINS, {**A7, "mab_eval_other_commit": neighbour}))
+    saved_a7 = CP.PINS_A7
+    CP.PINS_A7 = {**saved_a7, "mab_eval_other_commit": neighbour}
+    try:
+        main_nb = CP.main([])
+    except CP.PinRefused as e:
+        main_nb = f"refused: {e}"
+    finally:
+        CP.PINS_A7 = saved_a7
+    nb = (twice_nb, main_nb, neighbour["revision"] != CP.PINS["mab_eval_data_utils"]["revision"])
+except Exception as e:  # noqa: BLE001
+    nberr = f"{type(e).__name__}: {e}"
+check("A7-4c: an honest neighbour - the same source, repository and path at ANOTHER commit, in the other table - is not "
+      "a file pinned twice: pinned_twice() names nothing and the table's own command passes (a commit is part of a file's "
+      "identity)", nb is not None and nb == ([], 0, True), str(nberr or nb))
 check("A7-5: the table's rules hold for PINS_A7, and its fragment files all 17 under prompt_files",
       fr is not None and sorted(fr["prompt_files"]) == sorted(WANT_A7) and not any(fr[g] for g in fr if g != "prompt_files"),
       str(frerr or {g: sorted(v) for g, v in (fr or {}).items()}))

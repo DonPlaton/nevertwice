@@ -196,6 +196,33 @@ try:
           and (rep3 or {}).get("entries") == [] and any("does not parse" in p for p in (rep3 or {}).get("problems") or []),
           f"{perr3} {rep3}")
 
+    def offline(tag: str, body: bytes):
+        """d6_report on a saved answer, no window: the report's reading alone."""
+        u = TMP / "offline" / tag
+        u.mkdir(parents=True)
+        (u / "arxiv_query.xml").write_bytes(body)
+        return holds(lambda: F.d6_report({"jobs": [{"index": 0, "unit": str(u)}]}, DECL))
+
+    # the auditor (2026-09-30 00:43): a parsed answer that is not the API's Atom feed was read as an empty result -
+    # entries [], problems [], total None - and Zep's row would have gone to "not measured" on a silent report
+    html = [offline("html", b"<html><body>Rate exceeded.</body></html>"), offline("html_empty", b"<html/>"),
+            offline("other_ns", b'<feed xmlns="http://example.org/not-atom"><entry/></feed>')]
+    check("D6-6b: an answer that parses but is not the API's Atom feed (an HTML page, an empty element, a feed in another "
+          "namespace) is a problem by name - no entry, no total",
+          all(e is None and (r or {}).get("entries") == [] and (r or {}).get("total") is None
+              and any("not an Atom feed" in p for p in (r or {}).get("problems") or []) for r, e in html), str(html)[:600])
+    no_total = ATOM.replace(b"  <opensearch:totalResults>3</opensearch:totalResults>\n", b"")
+    bad_total = ATOM.replace(b">3</opensearch:totalResults>", b">many</opensearch:totalResults>")
+    nt = [offline("no_total", no_total), offline("bad_total", bad_total)]
+    good = offline("good", ATOM)
+    check("D6-6c: an Atom feed with no integer totalResults (none, or not a number) is a problem by name - its entries are "
+          "still listed as text; the full feed read the same way has no problem",
+          no_total != ATOM and bad_total != ATOM
+          and all(e is None and len((r or {}).get("entries") or []) == 2 and (r or {}).get("total") is None
+                  and any("no integer totalResults" in p for p in (r or {}).get("problems") or []) for r, e in nt)
+          and good[1] is None and (good[0] or {}).get("problems") == [] and (good[0] or {}).get("total") == 3,
+          str(nt)[:600] + str(good)[:200])
+
     print("\n- main(): plan d6 only in window a7-arxiv, on its declared entry - refused before any spawn -")
     import contextlib  # noqa: E402,PLC0415
     import io  # noqa: E402,PLC0415
