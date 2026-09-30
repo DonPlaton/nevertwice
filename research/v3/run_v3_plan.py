@@ -643,7 +643,7 @@ class PlanLauncher:
             s.update(port=self._need_port("write"), embed_tag=self.embed_tag, ollama_url=leg(),
                      falkor_host=self.extra["falkor_host"], falkor_port=self.extra["falkor_port"], dated=self.dated)
             if stage == "read" and self.v_template is not None \
-                    and stand in _mod("v3_points_for_plan", "points.py").V_STANDS:
+                    and base_stand(stand) in _mod("v3_points_for_plan", "points.py").V_STANDS:
                 s["v_template"] = {"key": "zep-graphiti:V", "text": self.v_template.text,
                                    "sha256": self.v_template.sha256}
         elif ad == "arm_letta.py":
@@ -912,7 +912,7 @@ def stand_plan(stand: str, units: Sequence[Any], launchers: Mapping[str, Any], *
     for arm in sorted(launchers):
         k_of[arm] = dict(k_at)
         if "V" in tuple(points(arm)):
-            if stand not in pts_mod.V_STANDS:
+            if base_stand(stand) not in pts_mod.V_STANDS:            # B-V-STAND: S1-smoke-1 is S1's
                 raise PlanError(f"{stand}: Row V is read on {list(pts_mod.V_STANDS)} alone (rev1 :1337) - not for {arm}")
             try:
                 k_of[arm]["V"] = pts_mod.k_for("V", arm)

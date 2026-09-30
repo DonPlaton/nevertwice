@@ -643,6 +643,10 @@ try:
         pln["no_tpl"] = refused(lambda: zpl("S1").check_points(("B", "K", "V")))
         pln["tpl_ok"] = refused(lambda: z1.check_points(("B", "K", "V")))
         pln["bk_ok"] = refused(lambda: zpl("S1").check_points(("B", "K")))
+        # B-V-STAND: a stand as the driver names it - S1-smoke-1 is S1's (run_v3.next_smoke_id)
+        pln["smoke_read"] = zpl("S1-smoke-1", v_template=TZ).spec_for(
+            "read", stand="S1-smoke-1", run="rv", unit="u1", dirs=zdirs("S1-smoke-1", "u1", True),
+            write_dirs=zdirs("S1-smoke-1", "u1", False))
     except Exception as e:  # noqa: BLE001 - the rows FAIL by name
         pln["error"] = f"{type(e).__name__}: {e}"
     finally:
@@ -660,6 +664,10 @@ try:
           "not the pinned" in pln.get("other_sha", "") and "no rendered Point V" in pln.get("not_its", "")
           and "no Point V template" in pln.get("no_tpl", "") and pln.get("tpl_ok") == "accepted"
           and pln.get("bk_ok") == "accepted", str(pln)[:500])
+    check("B-V-STAND-1 (the planner's B1): zep-graphiti's read spec on a real stand id, S1-smoke-1, carries its v_template - "
+          "Row V is S1's by the base stand, never by the id as written",
+          (pln.get("smoke_read") or {}).get("v_template") == {"key": "zep-graphiti:V", "text": ZT, "sha256": ZSHA_T},
+          str(sorted(pln.get("smoke_read") or {}))[:300] + " " + str(pln.get("error", ""))[:200])
 
     print("\n- AN (§4.3a, §5.2, §8.1, Q8): the Answerer -")
     TPL = _load("v3_templates_for_plan_t", ROOT / "research" / "v3" / "templates.py")
@@ -937,6 +945,17 @@ try:
               for a in ("bm25-floor", "nevertwice-ablation", "letta", "mem0", "langmem")}}
     check("PL-V2: V off S1 is refused by name before any op (Row V is S1's alone)", "Row V is read on" in plv["S4"],
           plv["S4"])
+    try:
+        spv2, _st2 = v_plan("S1-smoke-1", {"zep-graphiti": ("B", "K", "V"), "nevertwice": ("B", "V")},
+                            ("zep-graphiti", "nevertwice"))
+        rpv2 = {a: [(r.point, r.k) for r in spv2.read_plan(a, "u1")] for a in ("zep-graphiti", "nevertwice")}
+    except Exception as e:  # noqa: BLE001 - the row FAILs by name
+        rpv2 = f"{type(e).__name__}: {e}"
+    s4v = refused(lambda: v_plan("S4-smoke-1", {"zep-graphiti": ("B", "V")}, ("zep-graphiti",)))
+    check("B-V-STAND-2 (the planner's B1): the plan reads V on S1-smoke-1 - a smoke or pilot id of S1 - at zep-graphiti's "
+          "20 and ours' 3, and still refuses V on S4-smoke-1 by name",
+          rpv2 == {"zep-graphiti": [("B", 200), ("K", 10), ("V", 20)], "nevertwice": [("B", 200), ("V", 3)]}
+          and "Row V is read on" in s4v, f"{rpv2} | {s4v}")
     check("PL-V3: V for an arm without a rev1 V row (bm25-floor, the ablation - Q5 = (a)), for letta (its page size "
           "unpinned), and for a V≡ arm (mem0 V≡B, langmem V≡K - not read again) is refused by the arm's own name",
           "no Row V" in plv["bm25-floor"] and "no Row V" in plv["nevertwice-ablation"]
