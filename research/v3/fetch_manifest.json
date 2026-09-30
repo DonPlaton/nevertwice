@@ -135,6 +135,14 @@
    "dest": "py312",
    "max_redirects": 0
   },
+  "a8-pypi-d": {
+   "hosts": ["pypi.org"],
+   "purpose": "metadata only (the auditor's Q-SCR-2 = O-a, plan d9): PyPI's JSON for the scorer venv's packages - the newest stable release of each, whether it has a wheel for cp312 on win_amd64 (torch: PyPI's own CPU wheels; no CUDA index is declared), and the dependencies sentence-transformers' newest release declares, with the newest release meeting each specifier - before the auditor's amendment names the versions and the lock resolves them; nothing installed",
+   "packages": ["sentence-transformers", "nltk", "scipy", "torch"],
+   "deps_of": "sentence-transformers",
+   "target": {"python": "cp312", "platform": "win_amd64"},
+   "max_redirects": 0
+  },
   "a8-pypi-mem0_v3": {
    "hosts": ["pypi.org", "files.pythonhosted.org"],
    "install": "A8 C2 (the auditor's Q-A8-1 O-a): lock_install - pip's own dry-run report (wheels only, attempt 1) into a hashed lock, the wheels fetched against the index's sha256, then pip offline --require-hashes --no-deps --no-index from the lock",

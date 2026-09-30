@@ -370,7 +370,14 @@ check("C5e HF-offline: every arm spawn runs with HF_HUB_OFFLINE and TRANSFORMERS
               for s in ('env["HF_HUB_OFFLINE"] = env["TRANSFORMERS_OFFLINE"] = "1"',)), str(_offs))
 
 MANW = json.loads((ROOT / "research" / "v3" / "fetch_manifest.json").read_text(encoding="utf-8"))["windows"]
-mw = {k[len(LI.WINDOW_PREFIX):]: v for k, v in MANW.items() if k.startswith(LI.WINDOW_PREFIX)}
+#: the index metadata window of plan d9 (the auditor's Q-SCR-2 = O-a) shares the prefix and installs nothing
+META_W = "a8-pypi-d"
+mw = {k[len(LI.WINDOW_PREFIX):]: v for k, v in MANW.items() if k.startswith(LI.WINDOW_PREFIX) and k != META_W}
+check("C3a-meta: the one a8-pypi window that is no venv's is plan d9's metadata window - fetch_a3's D9_WINDOW, pypi.org "
+      "only, no install, no venv", META_W in MANW and "venv" not in MANW[META_W] and "specs" not in MANW[META_W]
+      and MANW[META_W]["hosts"] == ["pypi.org"]
+      and 'D9_WINDOW = "a8-pypi-d"' in (ROOT / "research" / "v3" / "fetch_a3.py").read_text(encoding="utf-8"),
+      str(MANW.get(META_W))[:200])
 check("C3a: every declared venv has its a8-pypi window in the manifest - exactly the two index hosts, its base, its specs, "
       "no redirect - and the manifest declares no a8-pypi window the code does not",
       set(mw) == set(LI.VENVS) and all(sorted(mw[v]["hosts"]) == sorted(LI.HOSTS) and mw[v]["base"] == LI.VENVS[v]["base"]

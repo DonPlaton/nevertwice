@@ -29,6 +29,8 @@ auditor's R2) asks which commit a tag names and, only when it is the declared on
 and records the redirect's host, following none - the host a7-hf then declares. `a7-arxiv-src` (plan d8, the
 auditor's Q-D8-1..3 = O-a) reads the chosen paper's OAI-PMH arXivRaw record (licence, versions) from export.arxiv.org
 and, after a pause, its e-print of the declared version from arxiv.org, kept as sent - never decoded or unpacked.
+`a8-pypi-d` (plan d9, the auditor's Q-SCR-2 = O-a) reads PyPI's JSON metadata of the scorer venv's packages and of the
+dependencies its main package's newest release declares - versions and wheels, nothing installed.
 
     python research/v3/fetch_a3.py --window a3-discovery --run d1 --python D:\\Coding\\_nevertwice_polygon\\py314\\python.exe
 """
@@ -1232,6 +1234,277 @@ def d8_report(record: dict, decl: dict) -> dict:
     return {"arxiv_id": aid, "version": ver, "oai": oai, "eprint": ep, "problems": problems}
 
 
+# ── a8-pypi-d plan d9 (the auditor's Q-SCR-2 = O-a: the scorer venv's versions, from PyPI's own metadata) ──
+
+D9_WINDOW = "a8-pypi-d"
+D9_HOSTS = ["pypi.org"]
+D9_KEYS = frozenset({"hosts", "purpose", "packages", "deps_of", "target", "max_redirects"})
+D9_TARGET = {"python": "cp312", "platform": "win_amd64"}
+D9_MAX = 64 * 1024 * 1024                         # a package's JSON with every release's files (torch's is large)
+_D9_NAME = re.compile(r"[A-Za-z0-9](?:[A-Za-z0-9._-]{0,98}[A-Za-z0-9])?")
+_D9_STABLE = re.compile(r"(\d+(?:\.\d+)*)(?:\.post(\d+))?")
+_D9_CLAUSE = re.compile(r"(~=|===|==|!=|<=|>=|<|>)\s*([A-Za-z0-9.*+!-]+)")
+
+
+class D9ManifestError(ValueError):
+    """The manifest does not declare a8-pypi-d as plan d9 reads it."""
+
+
+def d9_norm(name: str) -> str:
+    """PEP 503's normal form - the index's own spelling, so no request is redirected for a name."""
+    return re.sub(r"[-_.]+", "-", str(name)).lower()
+
+
+def d9_decl(manifest: dict) -> dict:
+    """The manifest's a8-pypi-d entry - the window's single source: exactly D9_KEYS; pypi.org only, no redirect; 1 to 20
+    distinct package names (distinct in their normal form), deps_of one of them, the target cp312 on win_amd64.
+    Anything else is refused by name before any spawn."""
+    w = (manifest.get("windows") or {}).get(D9_WINDOW)
+    if not isinstance(w, dict) or set(w) != D9_KEYS:
+        raise D9ManifestError(f"the manifest's {D9_WINDOW} entry must have exactly the keys {sorted(D9_KEYS)}")
+    probs = []
+    if w["hosts"] != D9_HOSTS:
+        probs.append(f"its hosts {w['hosts']} are not {D9_HOSTS}")
+    if isinstance(w["max_redirects"], bool) or w["max_redirects"] != 0:
+        probs.append("its max_redirects is not 0")
+    pk = w["packages"]
+    if not (isinstance(pk, list) and 1 <= len(pk) <= 20 and all(isinstance(n, str) and _D9_NAME.fullmatch(n) for n in pk)
+            and len({d9_norm(n) for n in pk}) == len(pk)):
+        probs.append(f"its packages {pk!r} are not 1 to 20 distinct package names")
+    if not (isinstance(w["deps_of"], str) and isinstance(pk, list) and w["deps_of"] in pk):
+        probs.append(f"its deps_of {w['deps_of']!r} is not one of its packages")
+    if w["target"] != D9_TARGET:
+        probs.append(f"its target {w['target']!r} is not {D9_TARGET}")
+    if probs:
+        raise D9ManifestError(f"the manifest's {D9_WINDOW} entry: " + "; ".join(probs))
+    return dict(w)
+
+
+def _d9_url(name: str, version: str | None = None) -> str:
+    return f"https://pypi.org/pypi/{d9_norm(name)}/" + (f"{version}/" if version else "") + "json"
+
+
+def _d9_key(version: str) -> tuple | None:
+    """A stable version's order key (release numbers without trailing zeros, then the post number); None for a pre-,
+    dev or local release, or anything else - those are never "stable"."""
+    m = _D9_STABLE.fullmatch(str(version))
+    if not m:
+        return None
+    rel = [int(x) for x in m.group(1).split(".")]
+    while len(rel) > 1 and rel[-1] == 0:
+        rel.pop()
+    return tuple(rel), int(m.group(2)) if m.group(2) is not None else -1
+
+
+def _d9_satisfies(version: str, spec: str) -> bool:
+    """Whether a stable version meets a specifier's every clause (PEP 440's comparisons on stable releases, '==X.*'
+    as a prefix); a clause this cannot evaluate raises ValueError, named."""
+    k = _d9_key(version)
+    for clause in [c.strip() for c in (spec or "").split(",") if c.strip()]:
+        m = _D9_CLAUSE.fullmatch(clause)
+        if not m or m.group(1) == "===":
+            raise ValueError(f"the clause {clause!r} is not evaluated here")
+        op, v = m.group(1), m.group(2)
+        if op in ("==", "!=") and v.endswith(".*"):
+            pre = [int(x) for x in v[:-2].split(".")] if all(x.isdigit() for x in v[:-2].split(".")) else None
+            if pre is None or k is None:
+                raise ValueError(f"the clause {clause!r} is not evaluated here")
+            full = list(k[0]) + [0] * max(0, len(pre) - len(k[0]))
+            hit = full[:len(pre)] == pre
+            if hit != (op == "=="):
+                return False
+            continue
+        o = _d9_key(v)
+        if o is None or k is None:
+            raise ValueError(f"the clause {clause!r} is not evaluated here")
+        if op == "~=":
+            parts = v.split(".")
+            if len(parts) < 2:
+                raise ValueError(f"the clause {clause!r} is not evaluated here")
+            if not (k >= o and _d9_satisfies(version, "==" + ".".join(parts[:-1]) + ".*")):
+                return False
+            continue
+        ok = {"==": k == o, "!=": k != o, "<=": k <= o, ">=": k >= o, "<": k < o, ">": k > o}[op]
+        if not ok:
+            return False
+    return True
+
+
+def _d9_newest(releases: dict, spec: str = "") -> str | None:
+    """The newest stable release that has at least one file not yanked (and meets ``spec``); None when there is none."""
+    cands = [(k, v) for v, files in (releases or {}).items()
+             if (k := _d9_key(v)) is not None and any(not f.get("yanked") for f in files or [])
+             and _d9_satisfies(v, spec)]
+    return max(cands)[1] if cands else None
+
+
+def _d9_wheel(files: list) -> dict | None:
+    """The release's wheel for cp312 on win_amd64, best first: cp312-cp312-win_amd64, then cp3X-abi3-win_amd64 (X <= 12),
+    then a pure py3-none-any - never a yanked file, never an sdist; None when there is none."""
+    best = None
+    for f in files or []:
+        fn = str(f.get("filename") or "")
+        if f.get("yanked") or not fn.endswith(".whl"):
+            continue
+        parts = fn[:-4].split("-")
+        if len(parts) < 5:
+            continue
+        pys, abis, plats = parts[-3].split("."), parts[-2].split("."), parts[-1].split(".")
+        rank = None
+        if "win_amd64" in plats and "cp312" in pys and "cp312" in abis:
+            rank = 0
+        elif "win_amd64" in plats and "abi3" in abis and any(re.fullmatch(r"cp3\d+", p) and int(p[3:]) <= 12 for p in pys):
+            rank = 1
+        elif "any" in plats and "none" in abis and any(p in ("py3", "py312", "cp312") for p in pys):
+            rank = 2
+        if rank is not None and (best is None or rank < best[0]):
+            best = (rank, f)
+    if best is None:
+        return None
+    f = best[1]
+    return {"filename": f["filename"], "sha256": (f.get("digests") or {}).get("sha256"), "size": f.get("size")}
+
+
+def _d9_requires(entries) -> tuple[list, list]:
+    """(requirements, excluded): each requires_dist entry without an extra in its marker - its normal name, specifier
+    and marker as the index wrote them; one under an extra is excluded and named."""
+    deps, extras = [], []
+    for raw in entries or []:
+        req, _, marker = str(raw).partition(";")
+        m = re.fullmatch(r"\s*([A-Za-z0-9][A-Za-z0-9._-]*)\s*(?:\[[^\]]*\])?\s*\(?\s*([^()]*?)\s*\)?\s*", req)
+        item = {"name": d9_norm(m.group(1)) if m else None, "spec": m.group(2).replace(" ", "") if m else None,
+                "marker": marker.strip() or None, "raw": str(raw)}
+        (extras if re.search(r"\bextra\b", marker) else deps).append(item)
+    return deps, extras
+
+
+def d9_jobs(decl: dict) -> list:
+    """Job 0: each declared package's JSON (https://pypi.org/pypi/<normal name>/json). Job 1, only when deps_of's
+    answer names a newest stable release V: deps_of's JSON at V (its requires_dist as V declares it). Job 2: the JSON of
+    each dependency V requires (no extra) that is not declared. No redirect is followed; nothing but metadata."""
+    of = d9_norm(decl["deps_of"])
+    first = {"hosts": D9_HOSTS, "max_redirects": 0, "requests": [
+        {"id": f"pypi:{d9_norm(n)}", "save": f"pypi/{d9_norm(n)}.json", "max_bytes": D9_MAX, "url": _d9_url(n)}
+        for n in decl["packages"]]}
+
+    def newest_of(results):
+        try:
+            data = _read_prev(results, 0, f"pypi/{of}.json")
+            return _d9_newest(data.get("releases") or {}) if isinstance(data, dict) else None
+        except (ValueError, TypeError, AttributeError):
+            return None
+
+    def version_meta(results):
+        v = newest_of(results)
+        if v is None:
+            return None
+        return {"hosts": D9_HOSTS, "max_redirects": 0, "requests": [
+            {"id": f"pypi:{of}@{v}", "save": f"pypi/{of}@{v}.json", "max_bytes": D9_MAX, "url": _d9_url(of, v)}]}
+
+    def dependencies(results):
+        v = newest_of(results)
+        try:
+            data = _read_prev(results, 1, f"pypi/{of}@{v}.json") if v is not None else None
+        except ValueError:
+            data = None
+        if not isinstance(data, dict):
+            return None
+        declared = {d9_norm(n) for n in decl["packages"]}
+        deps, _extras = _d9_requires((data.get("info") or {}).get("requires_dist"))
+        names = sorted({d["name"] for d in deps if d["name"] and d["name"] not in declared})
+        if not names:
+            return None
+        return {"hosts": D9_HOSTS, "max_redirects": 0, "requests": [
+            {"id": f"pypi:{n}", "save": f"pypi/{n}.json", "max_bytes": D9_MAX, "url": _d9_url(n)} for n in names]}
+    return [first, version_meta, dependencies]
+
+
+def d9_report(record: dict, decl: dict) -> dict:
+    """Per package - declared, or a dependency of deps_of's newest stable release - its newest stable version, the
+    newest that meets deps_of's specifier for it, requires_python, and the wheel for cp312 on win_amd64 at the version
+    the lock would take (with the index's sha256 and size); deps_of's requirements as its release declares them, the
+    ones under an extra named apart. Problems by name: an answer not saved or not a JSON object (an HTML page), an index
+    that names another package, no stable release (or none meeting the specifier), a specifier not evaluated here, no
+    wheel for the target, deps_of's release metadata not read."""
+    of = d9_norm(decl["deps_of"])
+    problems: list[str] = []
+    packages: dict = {}
+    rels: dict = {}
+
+    def read(job: int, rel: str):
+        u = _unit_of(record.get("jobs") or [], job)
+        f = u / rel if u is not None else None
+        raw = f.read_bytes() if f is not None and f.is_file() else None
+        if raw is None:
+            return None, "not saved"
+        if raw.lstrip()[:1] != b"{":
+            return None, "not a JSON object (an HTML page or anything else)"
+        try:
+            d = json.loads(raw)
+        except ValueError as e:
+            return None, f"not parsed ({str(e)[:60]})"
+        return (d, None) if isinstance(d, dict) else (None, "not a JSON object")
+
+    def settle(n: str, spec: str | None) -> None:
+        e = packages[n]
+        e["spec"] = spec or None
+        try:
+            e["newest_satisfying"] = _d9_newest(rels.get(n) or {}, spec or "")
+        except ValueError as x:
+            problems.append(f"{n}: {x}")
+            e["newest_satisfying"] = None
+            return
+        take = e["newest_satisfying"]
+        if take is None:
+            if rels.get(n) is not None:
+                problems.append(f"{n}: no stable release" + (f" meets {spec}" if spec else ""))
+            return
+        files = (rels.get(n) or {}).get(take) or []
+        e["requires_python"] = next((f.get("requires_python") for f in files if f.get("requires_python")), None)
+        e["wheel"] = _d9_wheel(files)
+        if e["wheel"] is None:
+            problems.append(f"{n} {take}: no wheel for cp312 on win_amd64 ("
+                            + ", ".join(str(f.get("filename"))[:60] for f in files[:3]) + ")")
+
+    def package(name: str, job: int, role: str) -> None:
+        n = d9_norm(name)
+        packages[n] = {"name": n, "role": role, "spec": None, "newest_stable": None, "newest_satisfying": None,
+                       "requires_python": None, "wheel": None}
+        d, why = read(job, f"pypi/{n}.json")
+        if d is None:
+            problems.append(f"{n}: the index's answer was {why}")
+            return
+        info = d.get("info") or {}
+        if d9_norm(info.get("name") or "") != n:
+            problems.append(f"{n}: the index names another package ({str(info.get('name'))[:60]!r})")
+        rels[n] = d.get("releases") or {}
+        try:
+            packages[n]["newest_stable"] = _d9_newest(rels[n])
+        except ValueError:
+            packages[n]["newest_stable"] = None
+
+    for name in decl["packages"]:
+        package(name, 0, "declared")
+    v = packages[of]["newest_stable"]
+    deps_block = {"of": of, "version": v, "requires": [], "extras_excluded": []}
+    deps: list = []
+    if v is not None:
+        d, why = read(1, f"pypi/{of}@{v}.json")
+        if d is None:
+            problems.append(f"{of} {v}: its release metadata was {why}")
+        else:
+            deps, extras = _d9_requires((d.get("info") or {}).get("requires_dist"))
+            deps_block["requires"] = deps
+            deps_block["extras_excluded"] = [x["raw"] for x in extras]
+    for x in deps:
+        if x["name"] and x["name"] not in packages:
+            package(x["name"], 2, f"dependency of {of}")
+    wanted = {x["name"]: x["spec"] for x in deps if x["name"]}
+    for n in packages:
+        settle(n, wanted.get(n))
+    return {"target": D9_TARGET, "packages": packages, "deps": deps_block, "problems": problems}
+
+
 # ── the command line ──────────────────────────────────────────────────────
 
 def _load(name: str, path: Path):
@@ -1247,14 +1520,15 @@ def _load(name: str, path: Path):
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="the A3 fetch windows (children under the contract)")
     ap.add_argument("--window", required=True, choices=["a3-discovery", "a7-discovery", D4_WINDOW, D5_WINDOW, D6_WINDOW,
-                                                          D7_WINDOW, D8_WINDOW])
-    ap.add_argument("--plan", default="d1", choices=["d1", "d2", "d3", "d4", "d5", "d6", "d7", "d8"],
+                                                          D7_WINDOW, D8_WINDOW, D9_WINDOW])
+    ap.add_argument("--plan", default="d1", choices=["d1", "d2", "d3", "d4", "d5", "d6", "d7", "d8", "d9"],
                     help="d1: the full discovery; d2: the P1/P10 follow-up; d3: the A7 discovery (window a7-discovery); "
                          "d4: supermemory's self-hosting documentation at the release tag (window a7-docs); "
                          "d5: cognee's tree at the tag the pinned product carries (window a7-cognee-tag); "
                          "d6: the arXiv entries a declared query finds (window a7-arxiv); "
                          "d7: a model file's CDN host, one HEAD (window a7-hf-d); "
-                         "d8: a paper's arXivRaw record and e-print (window a7-arxiv-src)")
+                         "d8: a paper's arXivRaw record and e-print (window a7-arxiv-src); "
+                         "d9: the scorer venv's PyPI metadata (window a8-pypi-d)")
     ap.add_argument("--run", required=True)
     ap.add_argument("--python", required=True, help="the polygon's py314 interpreter")
     args = ap.parse_args(argv)
@@ -1266,15 +1540,15 @@ def main(argv: list[str] | None = None) -> int:
     if via is None:
         print("no declared hop (network.json)", file=sys.stderr)
         return 2
-    for plan, window in (("d8", D8_WINDOW), ("d7", D7_WINDOW), ("d6", D6_WINDOW), ("d5", D5_WINDOW), ("d4", D4_WINDOW), ("d3", "a7-discovery")):
+    for plan, window in (("d9", D9_WINDOW), ("d8", D8_WINDOW), ("d7", D7_WINDOW), ("d6", D6_WINDOW), ("d5", D5_WINDOW), ("d4", D4_WINDOW), ("d3", "a7-discovery")):
         if (args.plan == plan) != (args.window == window):
             print(f"plan {plan} runs in window {window}, and only it", file=sys.stderr)
             return 2
     decl = None
-    if args.plan in ("d4", "d5", "d6", "d7", "d8"):
+    if args.plan in ("d4", "d5", "d6", "d7", "d8", "d9"):
         try:
-            decl = {"d4": d4_decl, "d5": d5_decl, "d6": d6_decl, "d7": d7_decl, "d8": d8_decl}[args.plan](manifest)
-        except (D4ManifestError, D5ManifestError, D6ManifestError, D7ManifestError, D8ManifestError) as e:
+            decl = {"d4": d4_decl, "d5": d5_decl, "d6": d6_decl, "d7": d7_decl, "d8": d8_decl, "d9": d9_decl}[args.plan](manifest)
+        except (D4ManifestError, D5ManifestError, D6ManifestError, D7ManifestError, D8ManifestError, D9ManifestError) as e:
             print(str(e), file=sys.stderr)
             return 2
     win = manifest["windows"][args.window]
@@ -1283,10 +1557,10 @@ def main(argv: list[str] | None = None) -> int:
         print(f"the manifest's a7-discovery hosts {win['hosts']} are not the plan's {D3_HOSTS}", file=sys.stderr)
         return 2
     hosts = {"d1": win["hosts"], "d2": D2_HOSTS, "d3": D3_HOSTS, "d4": D4_HOSTS, "d5": D5_HOSTS, "d6": D6_HOSTS,
-             "d7": D7_HOSTS, "d8": D8_HOSTS}[args.plan]
+             "d7": D7_HOSTS, "d8": D8_HOSTS, "d9": D9_HOSTS}[args.plan]
     jobs = (discovery_jobs(CP.PINS) if args.plan == "d1" else d2_jobs() if args.plan == "d2"
             else d3_jobs() if args.plan == "d3"
-            else {"d4": d4_jobs, "d5": d5_jobs, "d6": d6_jobs, "d7": d7_jobs, "d8": d8_jobs}[args.plan](decl))
+            else {"d4": d4_jobs, "d5": d5_jobs, "d6": d6_jobs, "d7": d7_jobs, "d8": d8_jobs, "d9": d9_jobs}[args.plan](decl))
     rec = run_child_window(c, L, window=args.window, hosts=hosts, jobs=jobs,
                            python=Path(args.python), via_port=via, run=args.run, parent_env=os.environ,
                            need_bytes=floor, volume=Path("D:/"))
@@ -1306,8 +1580,8 @@ def main(argv: list[str] | None = None) -> int:
             dst.write_bytes(data)
         (out / "d4_report.json").write_bytes((json.dumps(report, indent=1, sort_keys=True) + "\n").encode("utf-8"))
         print(json.dumps(report, indent=1))
-    if args.plan in ("d5", "d6", "d7", "d8"):
-        report = {"d5": d5_report, "d6": d6_report, "d7": d7_report, "d8": d8_report}[args.plan](rec, decl)
+    if args.plan in ("d5", "d6", "d7", "d8", "d9"):
+        report = {"d5": d5_report, "d6": d6_report, "d7": d7_report, "d8": d8_report, "d9": d9_report}[args.plan](rec, decl)
         (c.runs_root / "_fetch" / args.window / args.run / f"{args.plan}_report.json").write_bytes(
             (json.dumps(report, indent=1, sort_keys=True) + "\n").encode("utf-8"))
         print(json.dumps(report, indent=1))
