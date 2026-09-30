@@ -89,17 +89,27 @@ WANT_CLEARED = {
     ("a7-cognee-tag", "d1"): {"_fetch/a7-cognee-tag/d1/record.json": "136e0bf762df91ded98b80a53e282c89cb1424035933d4df8c458675001fd721",
                               "_fetch/a7-cognee-tag/d1/d5_report.json": "1b5d58bfb9f484249ba0ac32f14c673c0db27f140a0f07825426ae34934e6620"},
     ("a7-npm-d", "d1"): {"_fetch/a7-npm-d/d1/record.json": "8aeed9ecfc3b86edc80573d2b552dd7d08f197d10e6231f8b010ef7c6b1e9ce2",
-                         "_fetch/a7-npm-d/d1/discovery.json": "8e3ef3ff8c6f73673ce6e6e7ba26cdd0fda5865ca75824433aab0f75af9af434"}}
-WANT_FAILED = {("a7-npm", "g1"): {"_fetch/a7-npm/g1/record.json": "fb4212e565e4233c86ef4432ec48a3e09d2bd031f6ffc84a875cc46e2ff84f8d"}}
+                         "_fetch/a7-npm-d/d1/discovery.json": "8e3ef3ff8c6f73673ce6e6e7ba26cdd0fda5865ca75824433aab0f75af9af434"},
+    # the auditor's clearing of a7-github g1 (2026-09-30 03:0x), a line after his checks of the run
+    ("a7-github", "g1"): {"_fetch/a7-github/g1/record.json": "e61f6d9d7f3d0878e108eb90c375750c674bf462f3d859a5ad321063a3b61334",
+                          "_fetch/a7-github/g1/place_record.json": "41a809505ec2f4bddf1ba5c6a09d729c0544dfee1a99bb18829e70a95c6ffcef",
+                          "_fetch/a7-github/g1/pin_fill.json": "acae9e52bc935a5752f384fbcc0cd26521e20c97878056d3318963f782296472"},
+    ("a7-hf-d", "d1"): {"_fetch/a7-hf-d/d1/record.json": "8a6f7663317561f82842637334e1701a3769ba498c194912d52185b10cc4ed82",
+                        "_fetch/a7-hf-d/d1/d7_report.json": "2ec9f5f251e755860f5cc6ea887766f939a8fe2d93b6d7a3ba165220c69c6ca4"}}
+WANT_FAILED = {("a7-npm", "g1"): {"_fetch/a7-npm/g1/record.json": "fb4212e565e4233c86ef4432ec48a3e09d2bd031f6ffc84a875cc46e2ff84f8d"},
+               ("a7-arxiv", "d1"): {"_fetch/a7-arxiv/d1/record.json": "854b13dd774ada2c5d94ef19ac4ba6b34685590ab293d49338c9f6eaa9ca11a6",
+                                    "_fetch/a7-arxiv/d1/d6_report.json": "e3d01b8e784ba0af38c16df0632f98204ef6f9dc4e014b37b2e937deaddc36e4"}}
 NPM_PROBLEMS = ["job 0: the fetch child exited with 3", "job 0 request npm:package-document: Refused: status 404"]
 PREREG = {"research/v3/PREREG-V3-rev1.md": "1" * 64, "research/v3/PREREG-V3-AMENDMENTS.md": "2" * 64}
 
 print("- the declared lists are the auditor's -")
-check("F7-1: CLEARED_A7 is exactly the auditor's four runs with their eight record files by sha256, and FAILED_A7 is "
+check("F7-1: CLEARED_A7 is exactly the auditor's six runs - the four of Q-F7, a7-github g1 and a7-hf-d d1 - with "
+      "their thirteen record files by sha256, and FAILED_A7 is a7-arxiv d1 (429, nothing read) and "
       "a7-npm g1 by its record's sha256 with the reason named (npm answers 404; revision 1's channel, erratum A3 T32)",
       ok(lambda: {(e["window"], e["run"]): e["files"] for e in F7.CLEARED_A7} == WANT_CLEARED
          and {(e["window"], e["run"]): e["files"] for e in F7.FAILED_A7} == WANT_FAILED
-         and "404" in F7.FAILED_A7[0]["reason"] and "T32" in F7.FAILED_A7[0]["reason"]),
+         and "404" in F7.FAILED_A7[0]["reason"] and "T32" in F7.FAILED_A7[0]["reason"]
+         and "429" in F7.FAILED_A7[1]["reason"]),
       str([(e["window"], e["run"]) for e in getattr(F7, "CLEARED_A7", [])]))
 check("F7-2: a7-npm-d d1 is cleared by its ruling note - its two problems verbatim, the one excluded request its 404",
       ok(lambda: (npm := next(e for e in F7.CLEARED_A7 if e["window"] == "a7-npm-d"))["problems_verbatim"] == NPM_PROBLEMS
@@ -124,19 +134,21 @@ def world(tag: str, *, npm_problems=NPM_PROBLEMS, gh_org="Sectigo Limited"):
            "a7-docs": {"window": "a7-docs", "run": "d1", "problems": [], "hosts": ["api.github.com"], "issuers": [gh]},
            "a7-cognee-tag": {"window": "a7-cognee-tag", "run": "d1", "problems": [], "hosts": ["api.github.com"], "issuers": [gh]},
            "a7-npm-d": {"window": "a7-npm-d", "run": "d1", "problems": list(npm_problems), "hosts": ["registry.npmjs.org"],
-                        "issuers": [["registry.npmjs.org", "Google Trust Services", "WE1"]]}}
-    reports = {"a7-discovery": ("d3_report.json", {"model": {}, "repos": {}}), "a7-docs": ("d4_report.json", {"problems": []}),
-               "a7-cognee-tag": ("d5_report.json", {"problems": []}), "a7-npm-d": ("discovery.json", {"problems": []})}
+                        "issuers": [["registry.npmjs.org", "Google Trust Services", "WE1"]]},
+           "a7-github": {"window": "a7-github", "run": "g1", "problems": [], "hosts": ["raw.githubusercontent.com"],
+                         "issuers": [["raw.githubusercontent.com", "Let's Encrypt", "YR1"]]},
+           "a7-hf-d": {"window": "a7-hf-d", "run": "d1", "problems": [], "hosts": ["huggingface.co"],
+                       "issuers": [["huggingface.co", "Amazon", "Amazon RSA 2048 M01"]]}}
     cleared = []
     for e in copy.deepcopy(F7.CLEARED_A7):
         w = e["window"]
-        name, body = reports[w]
-        e["files"] = {f"_fetch/{w}/d1/record.json": put(r, f"_fetch/{w}/d1/record.json", rec[w]),
-                      f"_fetch/{w}/d1/{name}": put(r, f"_fetch/{w}/d1/{name}", body)}
+        e["files"] = {rel: put(r, rel, rec[w] if rel.endswith("/record.json") else {"window": w, "problems": []})
+                      for rel in e["files"]}
         cleared.append(e)
     failed = copy.deepcopy(F7.FAILED_A7)
-    failed[0]["files"] = {"_fetch/a7-npm/g1/record.json": put(r, "_fetch/a7-npm/g1/record.json", {
-        "window": "a7-npm", "run": "g1", "problems": ["job 0: the fetch child exited with 3"], "hosts": ["registry.npmjs.org"]})}
+    for e in failed:
+        e["files"] = {rel: put(r, rel, {"window": e["window"], "run": e["run"],
+                                        "problems": ["job 0: the fetch child exited with 3"]}) for rel in e["files"]}
     return r, cleared, failed
 
 
@@ -165,11 +177,12 @@ except Exception as e:  # noqa: BLE001
 check("F7-3: the fragment holds the four cleared runs and the failed one, each file by sha256 with its problem count",
       ok(lambda: oerr is None and [(w["window"], w["run"]) for w in OUT["windows"]] == [(e["window"], e["run"]) for e in CL]
          and OUT["windows"][3]["problems"] == {k: (2 if k.endswith("record.json") else 0) for k in CL[3]["files"]}
-         and [(f["window"], f["run"]) for f in OUT["failed_runs"]] == [("a7-npm", "g1")]), str(oerr))
+         and [(f["window"], f["run"]) for f in OUT["failed_runs"]] == [("a7-npm", "g1"), ("a7-arxiv", "d1")]), str(oerr))
 check("F7-4: its pins are PINS_A7 as filled - all 52, each with where it came from - and its issuers the public ones the "
       "records name", ok(lambda: sorted(OUT["pins"]) == sorted(CP.PINS_A7_DECLARED) and len(OUT["pins"]) == 52
                          and all(v["filled_from"] == "a7-github g1 pin_fill 0123456789ab" for v in OUT["pins"].values())
-                         and sorted(OUT["issuers"]) == ["api.github.com", "huggingface.co", "registry.npmjs.org"]), str(oerr))
+                         and sorted(OUT["issuers"]) == ["api.github.com", "huggingface.co", "raw.githubusercontent.com",
+                                                        "registry.npmjs.org"]), str(oerr))
 check("F7-5: the prereg section is the given revision 1 and amendments sha256 at the anchor - and nothing of A3's "
       "(no models, venvs, facts, d1_tag, prereg_rev1)", ok(lambda: OUT["prereg"] == PREREG and not set(OUT) & {
           "models", "venvs", "facts", "d1_tag", "local_v2", "prereg_rev1"}), str(sorted(OUT)))
@@ -260,6 +273,17 @@ check("F7-13: the command's freeze_a7.json carries prereg_anchor - the 40-hex HE
                                                  and len(head_) == 40 and all(c in "0123456789abcdef" for c in head_)
                                                  and sorted(main_out[1]["prereg"]) == sorted(PREREG)),
       str(main_err or (main_out or [None, {}])[1].get("prereg_anchor")))
+FIX7 = ROOT / "tests" / "fixtures" / "v3_pin_fill"
+try:
+    fix7 = {p_.relative_to(FIX7).parent.as_posix(): hashlib.sha256(p_.read_bytes()).hexdigest()
+            for p_ in FIX7.rglob("pin_fill.json") if p_.relative_to(FIX7).parts[0].startswith("a7-")}
+    decl7 = {rel.split("/", 2)[1] + "/" + rel.split("/")[2]: s for e in F7.CLEARED_A7 for rel, s in e["files"].items()
+             if rel.endswith("/pin_fill.json")}
+    f714 = (fix7 == decl7 == {"a7-github/g1": "acae9e52bc935a5752f384fbcc0cd26521e20c97878056d3318963f782296472"}), None
+except Exception as e:  # noqa: BLE001
+    f714 = (False, f"{type(e).__name__}: {e}")
+check("F7-14: the A7 pin_fill shas CLEARED_A7 names are the committed evidence's (tests/fixtures/v3_pin_fill/a7-*)",
+      f714[0] is True, str(f714[1]))
 check("F7-12: the same records give the same bytes (sorted JSON, LF)",
       ok(lambda: F7.render(OUT) == F7.render(json.loads(F7.render(OUT))) and b"\r\n" not in F7.render(OUT)), "")
 check("no row's condition raised", RAISED == [], str(RAISED))

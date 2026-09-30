@@ -188,6 +188,18 @@ runs4, cl4, fl4, pre4 = tree("missing")
 (runs4 / "_inventory" / "ollama" / "o1" / "record.json").unlink()
 check("a missing cleared record stops the build", refused(
     lambda: F.build(runs4, pins=CP.PINS, cleared=cl4, failed=fl4, prereg=pre4), "no such record"))
+runs_c, cl_c, fl_c, pre_c = tree("certainly", issuer_org="Certainly")
+try:
+    fz_cert, fz_cert_err = F.build(runs_c, pins=CP.PINS, cleared=cl_c, failed=fl_c, prereg=pre_c), None
+except Exception as e:  # noqa: BLE001 - a refusal FAILs the row by name
+    fz_cert, fz_cert_err = {}, f"{type(e).__name__}: {e}"
+check("CA1: a record served by Certainly (Fastly's public CA, the auditor 2026-09-30) is taken, its issuer recorded",
+      fz_cert_err is None and any(o == "Certainly" for v in fz_cert.get("issuers", {}).values() for o, _ in v), str(fz_cert_err))
+for near in ("Certainly Ltd", "certainly"):
+    runs_n, cl_n, fl_n, pre_n = tree(f"near_{near.replace(' ', '_')}", issuer_org=near)
+    check(f"CA2: a near name is not the public CA - {near!r} stops the build by name (R-A3-7)", refused(
+        lambda r_=runs_n, c_=cl_n, f_=fl_n, p_=pre_n: F.build(r_, pins=CP.PINS, cleared=c_, failed=f_, prereg=p_),
+        f"served by {near!r}, not a public issuer"))
 runs5, cl5, fl5, pre5 = tree("issuer", issuer_org="Corp Proxy Inspection CA")
 check("a non-public issuer organisation stops the build (R-A3-7)", refused(
     lambda: F.build(runs5, pins=CP.PINS, cleared=cl5, failed=fl5, prereg=pre5), "not a public issuer"))
@@ -256,7 +268,8 @@ all_files = [(rel, sha) for e in F.CLEARED + F.FAILED for rel, sha in e["files"]
 check("every record is named once, by a 64-hex sha256", len({r for r, _ in all_files}) == len(all_files)
       and all(re.fullmatch(r"[0-9a-f]{64}", s) for _, s in all_files))
 FIX = ROOT / "tests" / "fixtures" / "v3_pin_fill"
-fix_shas = {p.relative_to(FIX).parent.as_posix(): hashlib.sha256(p.read_bytes()).hexdigest() for p in FIX.rglob("pin_fill.json")}
+fix_shas = {p.relative_to(FIX).parent.as_posix(): hashlib.sha256(p.read_bytes()).hexdigest() for p in FIX.rglob("pin_fill.json")
+            if p.relative_to(FIX).parts[0].startswith("a3-")}          # A7's evidence is freeze_a7's (its own suite)
 decl_shas = {rel.split("/", 2)[1] + "/" + rel.split("/")[2]: sha for e in F.CLEARED for rel, sha in e["files"].items()
              if rel.endswith("/pin_fill.json")}
 check("the pin_fill shas are the committed evidence's (tests/fixtures/v3_pin_fill)", decl_shas == fix_shas, str((decl_shas, fix_shas)))

@@ -142,8 +142,12 @@ for (w, r), sha in CLEARED_FILES.items():
     check(f"FD4: the fixture {w}/{r}/pin_fill.json is the cleared file, by its full sha256, of its own window run",
           hashlib.sha256(raw).hexdigest() == sha and (d["window"], d["run"]) == (w, r), hashlib.sha256(raw).hexdigest()[:12])
     evidence[f"{w} {r} pin_fill {sha[:12]}"] = (d, sha)
-check("FD4: the fixtures are exactly the four cleared files", sorted(p_.relative_to(FIX).as_posix() for p_ in FIX.rglob("*") if p_.is_file())
-      == sorted(f"{w}/{r}/pin_fill.json" for w, r in CLEARED_FILES), str(sorted(FIX.rglob("*"))))
+#: A7's cleared file (the auditor, 2026-09-30 03:0x: window a7-github g1 accepted - m6 --window, m6 --pins-rev, m5
+#: --launch-dir --set-aside, secret_scan 0)
+A7_CLEARED_FILES = {("a7-github", "g1"): "acae9e52bc935a5752f384fbcc0cd26521e20c97878056d3318963f782296472"}
+check("FD4: the fixtures are exactly the four cleared A3 files and the cleared A7 one",
+      sorted(p_.relative_to(FIX).as_posix() for p_ in FIX.rglob("*") if p_.is_file())
+      == sorted(f"{w}/{r}/pin_fill.json" for w, r in {**CLEARED_FILES, **A7_CLEARED_FILES}), str(sorted(FIX.rglob("*"))))
 KEYS_ = ("revision", "sha256", "bytes", "licence_found", "licence_source")
 drift = [n for n, v in CP.FILLED.items()
          if v["from"] not in evidence or {k: v[k] for k in KEYS_}
@@ -159,6 +163,33 @@ check("FD4: FILLED is exactly what pins_apply derives from the four files on the
       CP.FILLED == rederived, str(sorted(set(CP.FILLED) ^ set(rederived)) or [n for n in CP.FILLED if CP.FILLED[n] != rederived.get(n)]))
 check("FD4: ... and the one alias it confirms is the oracle, from a3-hf h2",
       realiases == ["lme_oracle_cleaned = v2:longmemeval_oracle (a3-hf h2 pin_fill c23ea9cd3549)"], str(realiases))
+
+print("\n- FILLED_A7 re-derived from the cleared a7-github pin_fill, committed as evidence (FD4 for A7) -")
+ev7, ev7err = {}, None
+try:
+    for (w, r), sha in A7_CLEARED_FILES.items():
+        raw7 = (FIX / w / r / "pin_fill.json").read_bytes()
+        ev7[f"{w} {r} pin_fill {sha[:12]}"] = (json.loads(raw7), sha, hashlib.sha256(raw7).hexdigest())
+except Exception as e:  # noqa: BLE001 - a missing fixture FAILs the rows below by name
+    ev7err = f"{type(e).__name__}: {e}"
+FILLED_A7 = getattr(CP, "FILLED_A7", {})
+check("FD4-A7-1: the fixture a7-github/g1/pin_fill.json is the cleared file, by its full sha256, of its own window run",
+      ev7err is None and all(got == sha and (d["window"], d["run"]) == ("a7-github", "g1") for d, sha, got in ev7.values()),
+      str(ev7err or [got[:12] for _d, _s, got in ev7.values()]))
+gh7 = sorted(n for n, p in getattr(CP, "PINS_A7_DECLARED", {}).items() if p["window"] == "a7-github")
+check("FD4-A7-2: FILLED_A7 holds values only from a7-github g1 by its pin_fill sha256 (acae9e52bc93), and every one of "
+      "the window's 52 pins is filled", sorted(FILLED_A7) == gh7 and len(gh7) == 52
+      and {v["from"] for v in FILLED_A7.values()} == {"a7-github g1 pin_fill acae9e52bc93"}
+      and all(CP.PINS_A7[n]["sha256"] is not None and CP.PINS_A7[n]["bytes"] is not None for n in gh7),
+      str((len(FILLED_A7), sorted({v.get("from") for v in FILLED_A7.values()}))))
+try:
+    _declared7 = types.SimpleNamespace(PINS_A7=CP.PINS_A7_DECLARED, fill=CP.fill, PinRefused=CP.PinRefused)
+    rederived7, realiases7 = A.plan_values([(d, sha) for d, sha, _g in ev7.values()], _declared7, table="PINS_A7")
+except Exception as e:  # noqa: BLE001
+    rederived7, realiases7 = {"refused": f"{type(e).__name__}: {e}"}, ["?"]
+check("FD4-A7-3: FILLED_A7 is exactly what pins_apply derives from that file on the declared A7 table - no alias",
+      bool(FILLED_A7) and FILLED_A7 == rederived7 and realiases7 == [],
+      str(sorted(set(FILLED_A7) ^ set(rederived7))[:3] or [n for n in FILLED_A7 if FILLED_A7[n] != rederived7.get(n)][:3]))
 
 print("\n- a clean apply -")
 t1 = table_copy("t1")

@@ -51,6 +51,15 @@ CLEARED_A7 = [
      "problems_verbatim": ["job 0: the fetch child exited with 3",
                            "job 0 request npm:package-document: Refused: status 404"],
      "excluded": [{"job": 0, "requests": ["npm:package-document"]}]},
+    # after the auditor's m6 --window, m6 --pins-rev, m5 --launch-dir --set-aside and secret_scan (2026-09-30 03:0x)
+    {"window": "a7-github", "run": "g1", "kind": "fetch", "files": {
+        "_fetch/a7-github/g1/record.json": "e61f6d9d7f3d0878e108eb90c375750c674bf462f3d859a5ad321063a3b61334",
+        "_fetch/a7-github/g1/place_record.json": "41a809505ec2f4bddf1ba5c6a09d729c0544dfee1a99bb18829e70a95c6ffcef",
+        "_fetch/a7-github/g1/pin_fill.json": "acae9e52bc935a5752f384fbcc0cd26521e20c97878056d3318963f782296472"}},
+    # a7-hf's host (the auditor's fixing, 2026-09-30 03:0x: us.aws.cdn.hf.co), after his m6/m5/secret_scan of the run
+    {"window": "a7-hf-d", "run": "d1", "kind": "report", "files": {
+        "_fetch/a7-hf-d/d1/record.json": "8a6f7663317561f82842637334e1701a3769ba498c194912d52185b10cc4ed82",
+        "_fetch/a7-hf-d/d1/d7_report.json": "2ec9f5f251e755860f5cc6ea887766f939a8fe2d93b6d7a3ba165220c69c6ca4"}},
 ]
 #: The A7 runs that were NOT cleared - kept by sha256 with the reason, never used.
 FAILED_A7 = [
@@ -58,6 +67,11 @@ FAILED_A7 = [
         "_fetch/a7-npm/g1/record.json": "fb4212e565e4233c86ef4432ec48a3e09d2bd031f6ffc84a875cc46e2ff84f8d"},
      "reason": "supermemory-server is not on npm (the registry answered 404): revision 1's channel was wrong - erratum A3 "
                "(T32), the vendor's release binary instead"},
+    {"window": "a7-arxiv", "run": "d1", "files": {
+        "_fetch/a7-arxiv/d1/record.json": "854b13dd774ada2c5d94ef19ac4ba6b34685590ab293d49338c9f6eaa9ca11a6",
+        "_fetch/a7-arxiv/d1/d6_report.json": "e3d01b8e784ba0af38c16df0632f98204ef6f9dc4e014b37b2e937deaddc36e4"},
+     "reason": "export.arxiv.org answered 429 to the one request (rate-limited, not retried): nothing was read - the "
+               "auditor's Q-ARX-1, a new run after a pause"},
 ]
 
 

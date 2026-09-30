@@ -275,15 +275,18 @@ check("A7-1: PINS_A7 holds exactly the 52 pins the auditor fixed - the 17 of pha
       and [sum(r == x for _p, r in COGNEE.values()) for x in ("arm-source", "prompt", "scoring")] == [17, 15, 3],
       str(sorted(set(A7) ^ set(WANT_A7))))
 COG_FROM = "a7-cognee-tag d1 1b5d58bfb9f4"
-check("A7-2: every A7 pin is a GitHub file of the window a7-github, unfilled until it (no sha256, no size), its revision "
-      "from a discovery record that holds its tree - phase 2's from a3-discovery d1 or d2, cognee's from a7-cognee-tag d1",
+A7_FROM = "a7-github g1 pin_fill acae9e52bc93"       # the window run the auditor cleared (2026-09-30 03:0x)
+check("A7-2: every A7 pin is a GitHub file of the window a7-github, filled from its cleared run (a7-github g1, pin_fill "
+      "acae9e52bc93: a 64-hex sha256 and a size), its revision from a discovery record that holds its tree - phase 2's "
+      "from a3-discovery d1 or d2, cognee's from a7-cognee-tag d1",
       bool(A7) and all(
-          p["source"] == "github" and p["window"] == "a7-github" and p["sha256"] is None and p["bytes"] is None
+          p["source"] == "github" and p["window"] == "a7-github" and p.get("filled_from") == A7_FROM
+          and isinstance(p["sha256"], str) and len(p["sha256"]) == 64 and isinstance(p["bytes"], int)
           and (str(p["revision_from"]) == COG_FROM if n in COGNEE
                else str(p["revision_from"]).startswith(("a3-discovery d1 ", "a3-discovery d2 "))) for n, p in A7.items())
       and {n for n, p in A7.items() if p["revision_from"] == COG_FROM} == set(COGNEE),
-      str([(n, p["revision_from"]) for n, p in A7.items() if p["sha256"] is not None or p["window"] != "a7-github"
-           or (n in COGNEE) != (p["revision_from"] == COG_FROM)]))
+      str([(n, p.get("filled_from"), p["revision_from"]) for n, p in A7.items() if p.get("filled_from") != A7_FROM
+           or p["window"] != "a7-github" or (n in COGNEE) != (p["revision_from"] == COG_FROM)][:4]))
 check("A7-2b: the cognee pins serve BEAM (S5) only, under the licence cognee's repository states (Apache-2.0), and "
       "their record is the auditor's a7-cognee-tag d1 (d5_report.json 1b5d58bf...6620) at the tag v1.6.1",
       all(tuple(A7[n]["stands"]) == ("S5",) and A7[n]["licence"] == "Apache-2.0" for n in COGNEE if n in A7)

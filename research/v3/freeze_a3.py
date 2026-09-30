@@ -97,8 +97,10 @@ FAILED = [
 #: Hosts reached with no issuer recorded, each with the reason (the i1 install record's own issuer_notes, F-P2-4).
 ISSUERS_UNRECORDED = {"files.pythonhosted.org": "reached by pip only, so no fetch child records its issuer; pip's trust "
                                                 "is its vendored certifi (--use-deprecated=legacy-certs, F-P2-4)"}
+#: "Certainly" (the auditor, 2026-09-30, from window a7-arxiv d1's record: export.arxiv.org is served through Fastly, whose
+#: CA's roots "Certainly Root R1" and "Certainly Root E1", O=Certainly, are in the Mozilla set certifi 2026.02.25 carries).
 PUBLIC_ISSUER_ORGS = frozenset({"Amazon", "Sectigo Limited", "DigiCert Inc", "Let's Encrypt", "Google Trust Services",
-                                "GlobalSign nv-sa", "Microsoft Corporation"})
+                                "GlobalSign nv-sa", "Microsoft Corporation", "Certainly"})
 
 
 class FreezeRefused(RuntimeError):
