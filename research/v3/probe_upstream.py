@@ -157,7 +157,8 @@ class _OllamaHandler(_Handler):
         except ValueError:
             obj = None
         f = self.fake
-        f.record({"method": method, "path": path, "body": obj})
+        f.record({"method": method, "path": path, "body": obj,     # C3: the names a client sent, never a value
+                  "header_names": sorted({k.lower() for k in self.headers.keys()})})
         if path in OLLAMA_TRAPS:
             with f._lock:
                 f.traps.append({"method": method, "path": path})

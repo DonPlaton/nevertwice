@@ -804,6 +804,15 @@ def _openai_embed(path: str) -> bool:
     return path.split("?", 1)[0].rstrip("/").endswith(OLLAMA_OPENAI_EMBED)
 
 
+def _auth_kind(headers: list[tuple[str, str]]) -> str:
+    """R15 (the auditor, 2026-09-30): what a client sent the Ollama leg as Authorization - "none", "bearer" or
+    "other" - for its ollama.jsonl line; never the value, and the leg never forwards the header."""
+    v = _hget(headers, "authorization")
+    if v is None:
+        return "none"
+    return "bearer" if v[:7].lower() == "bearer " else "other"
+
+
 def load_pacer_copy(arm: str, mode: str = "pace"):
     """One copy of research/_ollama_pacer.py per arm (plan O1a): its own pace schedule (the pacer's floor, per arm:
     AQ8), its own counters, the pacer's own code and constants - nothing copied. ``install()`` is never called: the
@@ -919,7 +928,8 @@ class OllamaLeg:
         t_ref = _iso(time.time())
         _append_jsonl(self.run_dir / "ollama.jsonl",
                       {"arm": self.arm, "unit": unit, "path": path, "is_embed": False, "is_llm": False,
-                       "status": None, "error": error, "fallback_local": False, "t0": t_ref, "t1": t_ref, **stage,
+                       "status": None, "error": error, "fallback_local": False, "client_auth": _auth_kind(headers),
+                       "t0": t_ref, "t1": t_ref, **stage,
                        **(extra or {})})
         self.log(f"ollama leg refused {path[:64]!r}: {error}")
         _refuse(cs, code, reason, body, headers=headers, buffered=buffered)
@@ -1056,7 +1066,8 @@ class OllamaLeg:
         _append_jsonl(self.run_dir / "ollama.jsonl",
                       {"arm": self.arm, "unit": unit, "path": path, "is_embed": is_embed, "is_llm": is_llm,
                        "status": status, "error": error, "fallback_local": bool(is_llm and self.cloud_arm),
-                       "t0": _iso(t0), "t1": _iso(time.time()), **stage, **embed, **hits})
+                       "client_auth": _auth_kind(headers), "t0": _iso(t0), "t1": _iso(time.time()), **stage, **embed,
+                       **hits})
 
 
 BODIES_DIR = "bodies"

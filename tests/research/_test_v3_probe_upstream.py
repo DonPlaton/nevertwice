@@ -186,6 +186,16 @@ stu, _, _ = req(ol.port, "POST", "/api/chat", {"model": TAG})
 check("/api/pull and /api/generate are traps: 403 and recorded; /api/chat is not served: 404, recorded apart",
       ok(lambda: stp == 403 and stg == 403 and stu == 404 and [t["path"] for t in ol.traps] == ["/api/pull", "/api/generate"]
       and [t["path"] for t in ol.unknown] == ["/api/chat"]), f"{stp} {stg} {stu} {ol.traps} {ol.unknown}")
+n_hn = len(ol.requests)
+st_k, _, _ = req(ol.port, "POST", "/api/embed", {"model": TAG, "input": "x"}, token="nvt3-probe-OLLAUTH-C3")
+st_n, _, _ = req(ol.port, "POST", "/api/embed", {"model": TAG, "input": "x"})
+hn = [r.get("header_names") for r in ol.requests[n_hn:]]
+check("LEG-AUTH-4: the fake Ollama keeps each request's header names, lowercase and sorted - authorization when a "
+      "client sent one, never its value - so a probe sees whether a product's Ollama client carried a key",
+      ok(lambda: st_k == 200 and st_n == 200 and len(hn) == 2 and all(isinstance(h, list) for h in hn)
+         and "authorization" in hn[0]
+         and "authorization" not in hn[1] and all(h == sorted(h) and h == [x.lower() for x in h] for h in hn)
+         and "OLLAUTH" not in json.dumps(ol.requests[n_hn:])), f"{st_k} {st_n} {hn}")
 ol2 = U.FakeOllama(tag="nvt3-bge-m3-d1", digest=DIG)
 st, _, _ = req(ol2.port, "POST", "/api/embed", {"input": "x"})
 check("a tag with no :latest takes exactly its own name - a request with no model is 404", ok(lambda: st == 404), str(st))

@@ -77,6 +77,7 @@ class FakeOllama:
         self.script: dict[str, list] = {}
         self.attempts: dict[str, int] = {}
         self.sent: list[bytes] = []
+        self.heads: list[bytes] = []                    # C3: each request's head as Ollama received it
         threading.Thread(target=self._loop, daemon=True).start()
 
     def close(self):
@@ -99,6 +100,7 @@ class FakeOllama:
                     return
                 buf += chunk
             head = bytes(buf[:buf.index(b"\r\n\r\n")])
+            self.heads.append(head)
             path = head.split(b" ", 2)[1].decode()
             self.attempts[path] = self.attempts.get(path, 0) + 1
             q = self.script.get(path) or [(200, EMBED_OK)]
@@ -502,6 +504,43 @@ except Exception as e:  # noqa: BLE001 - the row FAILs by name
 check("Q4: capture_body without the proxy's scan refuses by name (ValueError) - a body is never written unscanned, "
       "and never skipped quietly (a leg built without a scan passes scan=None)",
       capn == "ValueError: scan" and not (TMP / "run_scan" / "bodies" / "local" / "r1.cn.jsonl").exists(), capn)
+
+print("\n- C3 (R15): the leg records what the client sent as Authorization - never its value - and never forwards it -")
+
+
+def call_auth(port: int, path: str, auth: str | None) -> bytes:
+    body = b'{"model":"m","input":"x"}'
+    req = (f"POST {path} HTTP/1.1\r\nHost: x\r\n" + (f"Authorization: {auth}\r\n" if auth is not None else "")
+           + f"Content-Type: application/json\r\nContent-Length: {len(body)}\r\n\r\n").encode() + body
+    s_ = socket.create_connection(("127.0.0.1", port))
+    s_.sendall(req)
+    got_ = ST._read_all(s_, 5)
+    s_.close()
+    return got_
+
+
+AUTH_VALUE = "nvt3-leg-bearer-L3g4uthC3"
+OL.script["/api/embed"] = [(200, EMBED_OK)]
+OL.heads.clear()
+got_auth = {u: call_auth(lp, f"/u/r1.{u}/{p}", a) for u, p, a in (
+    ("auth1", "api/embed", f"Bearer {AUTH_VALUE}"), ("auth2", "api/embed", None),
+    ("auth3", "api/embed", "Basic dXNlcjpwYXNzQzM="), ("auth4", "api/pull", f"Bearer {AUTH_VALUE}"))}
+raw_ol = (TMP / "run" / "ollama.jsonl").read_bytes()
+auth_by = {r.get("unit"): r for r in (json.loads(x) for x in raw_ol.decode("utf-8").split("\n") if x.strip())
+           if str(r.get("unit") or "").startswith("r1.auth")}
+auth_view = {u: (g[:12], auth_by.get(f"r1.{u}", {}).get("client_auth"), auth_by.get(f"r1.{u}", {}).get("error"))
+             for u, g in got_auth.items()}
+check("LEG-AUTH-1: a bearer from the client is client_auth \"bearer\" on its served line - its value is in no line of "
+      "ollama.jsonl - and Ollama never receives an Authorization header (only content-type and accept are forwarded)",
+      got_auth["auth1"].startswith(b"HTTP/1.1 200") and auth_by.get("r1.auth1", {}).get("client_auth") == "bearer"
+      and AUTH_VALUE.encode() not in raw_ol and len(OL.heads) == 3
+      and not any(b"authorization" in h.lower() for h in OL.heads), f"{auth_view} heads={len(OL.heads)}")
+check("LEG-AUTH-2: no Authorization is client_auth \"none\"; any other scheme is \"other\" - the kind, never the value",
+      auth_by.get("r1.auth2", {}).get("client_auth") == "none"
+      and auth_by.get("r1.auth3", {}).get("client_auth") == "other" and b"dXNlcjpwYXNzQzM" not in raw_ol, str(auth_view))
+check("LEG-AUTH-3: a refused line carries client_auth too - a pull with a bearer is refused:path (403) with \"bearer\"",
+      got_auth["auth4"].startswith(b"HTTP/1.1 403") and auth_by.get("r1.auth4", {}).get("error") == "refused:path"
+      and auth_by.get("r1.auth4", {}).get("client_auth") == "bearer", str(auth_view))
 
 px.stop()
 pxo.stop()
