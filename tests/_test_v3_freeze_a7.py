@@ -439,16 +439,30 @@ WANT_A8 = {("a8-pypi-scorer_v3", "p1"): {
            ("a8-pypi-mem0_v3", "x"): {
                "_fetch/a8-pypi-mem0_v3/x/record.json": "27df502d0565b05ee7cc8b94acff726d6e1df9684cec45ea9e09b546b614291a",
                "_install/a8-pypi-mem0_v3/x/install_record.json":
-                   "80a69f12f23c4d07970d3095847a569db7fe1d802ecfe92808839fdb7bfd74ca"}}
+                   "80a69f12f23c4d07970d3095847a569db7fe1d802ecfe92808839fdb7bfd74ca"},
+           # Q-SPACY-M1 = (b) (the auditor, 2026-09-30 17:0x): the model window failed on our own site check, and the
+           # venv d2 installed cleanly was changed by it - both kept by sha256, never used
+           ("a8-spacy-model", "m1"): {
+               "_fetch/a8-spacy-model/m1/record.json": "38fb9fe934a822bcb5110acd1f395c2b0d96f5d0213a6d9680d232a1570355a3",
+               "_install/a8-spacy-model/m1/model_record.json":
+                   "02614018b5560c86c74effbaa2e91cc23cd5dd577aaa44ce4c72b2fe77a562ea"},
+           ("a8-pypi-mem0_v3", "d2"): {
+               "_install/a8-pypi-mem0_v3/d2/install_record.json":
+                   "257bbc577e05863e27a5aa7cba1416a27d40d4d08a2be4cfbc324499a6ccfe2c"}}
 fa8 = getattr(F7, "FAILED_A8", None) or []
 r8 = {(e["window"], e["run"]): e.get("reason", "") for e in fa8}
-check("F7-18: FAILED_A8 holds A8's two failed runs by sha256 - a8-pypi-scorer_v3 p1 (setuptools' distutils-precedence.pth "
-      "before Q-SC-PTH, p2 after the gate) and a8-pypi-mem0_v3 x (the test-triggered window without GO, 09:49) - never in "
+check("F7-18: FAILED_A8 holds A8's four failed runs by sha256 - a8-pypi-scorer_v3 p1 (setuptools' "
+      "distutils-precedence.pth before Q-SC-PTH, p2 after the gate), a8-pypi-mem0_v3 x (the test-triggered window without "
+      "GO, 09:49), a8-spacy-model m1 (the declared .pth taken for a site problem by model_install's own check, "
+      "Q-SPACY-M1) and a8-pypi-mem0_v3 d2's install (clean, then changed by m1; the venv in _failed, d3 anew) - never in "
       "FAILED_A7",
       ok(lambda: {(e["window"], e["run"]): e["files"] for e in fa8} == WANT_A8
          and "distutils-precedence.pth" in r8[("a8-pypi-scorer_v3", "p1")] and "Q-SC-PTH" in r8[("a8-pypi-scorer_v3", "p1")]
          and "p2" in r8[("a8-pypi-scorer_v3", "p1")]
          and "test-triggered window without GO (SP-7), 2026-09-30 09:49" in r8[("a8-pypi-mem0_v3", "x")]
+         and "Q-SPACY-M1" in r8[("a8-spacy-model", "m1")] and "pywin32.pth" in r8[("a8-spacy-model", "m1")]
+         and "a8-spacy-model m1" in r8[("a8-pypi-mem0_v3", "d2")]
+         and "polygon\\_failed\\mem0_v3_m1" in r8[("a8-pypi-mem0_v3", "d2")] and "d3" in r8[("a8-pypi-mem0_v3", "d2")]
          and not any((e["window"], e["run"]) in WANT_A8 for e in F7.FAILED_A7)), str(sorted(r8))[:300])
 try:
     FA8 = copy.deepcopy(fa8)
@@ -469,10 +483,12 @@ try:
 except Exception as e:  # noqa: BLE001 - the row FAILs by name
     st8 = f"{type(e).__name__}: {e}"
 check("F7-19: by default the fragment's failed_runs are FAILED_A7's then FAILED_A8's, each with its reason and its stage "
-      "- A8 for every a8- window (a8-supermemory-bin b1, a8-pypi-scorer_v3 p1, a8-pypi-mem0_v3 x), A7 for the rest",
+      "- A8 for every a8- window (a8-supermemory-bin b1, a8-pypi-scorer_v3 p1, a8-pypi-mem0_v3 x, a8-spacy-model m1, "
+      "a8-pypi-mem0_v3 d2), A7 for the rest",
       st8 == [("a7-npm", "g1", "A7", True), ("a7-arxiv", "d1", "A7", True), ("a8-supermemory-bin", "b1", "A8", True),
               ("a7-arxiv-src", "s1", "A7", True), ("a7-arxiv-src", "s2", "A7", True),
-              ("a8-pypi-scorer_v3", "p1", "A8", True), ("a8-pypi-mem0_v3", "x", "A8", True)], str(st8)[:500])
+              ("a8-pypi-scorer_v3", "p1", "A8", True), ("a8-pypi-mem0_v3", "x", "A8", True),
+              ("a8-spacy-model", "m1", "A8", True), ("a8-pypi-mem0_v3", "d2", "A8", True)], str(st8)[:500])
 check("no row's condition raised", RAISED == [], str(RAISED))
 shutil.rmtree(TMP, ignore_errors=True)
 print(f"\nv3 freeze a7: {PASSED} passed, {FAILED} failed")

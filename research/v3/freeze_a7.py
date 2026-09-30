@@ -146,6 +146,21 @@ FAILED_A8 = [
      "reason": "test-triggered window without GO (SP-7), 2026-09-30 09:49 - a unit row called lock_install.main() "
                "unstubbed on the old code and it opened this window; never used, the venv moved to "
                "polygon\\_failed\\mem0_v3_x, and run label x is never taken again"},
+    # Q-SPACY-M1 = (b) (the auditor, 2026-09-30 17:0x)
+    {"window": "a8-spacy-model", "run": "m1", "files": {
+        "_fetch/a8-spacy-model/m1/record.json": "38fb9fe934a822bcb5110acd1f395c2b0d96f5d0213a6d9680d232a1570355a3",
+        "_install/a8-spacy-model/m1/model_record.json":
+            "02614018b5560c86c74effbaa2e91cc23cd5dd577aaa44ce4c72b2fe77a562ea"},
+     "reason": "a false site problem of our own checker (Q-SPACY-M1): model_install took mem0_v3's declared pywin32.pth "
+               "and distutils-precedence.pth for new .pth files - it called the bare site_problems, not lock_install's "
+               "site_check with the venv's pth_allowed; the window and the model file were clean (en_core_web_sm "
+               "3.8.0), pip had installed it, the check never ran - m2 on a fresh venv after the fix"},
+    {"window": "a8-pypi-mem0_v3", "run": "d2", "files": {
+        "_install/a8-pypi-mem0_v3/d2/install_record.json":
+            "257bbc577e05863e27a5aa7cba1416a27d40d4d08a2be4cfbc324499a6ccfe2c"},
+     "reason": "installed cleanly, then its venv was changed by the failed a8-spacy-model m1 (the model's files in); "
+               "the effect of a failed run is never used - the venv moved to polygon\\_failed\\mem0_v3_m1, and the "
+               "chain runs anew: d3 --download-only, M31, --install-from d3, then m2"},
 ]
 
 
