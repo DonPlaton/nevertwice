@@ -758,7 +758,13 @@ with tempfile.TemporaryDirectory(prefix="v3acct_e2e_") as td:
                                            "predates v3 hybrid search")},
                   "keyword_search": {"calls": int(st == "read"), "not_none": int(st == "read"), "hits": 0,
                                      "positive_hits": 0, "raised": 0},
-                  "results_bm25_positive": 0, "reads_bm25_positive": 0},
+                  "results_bm25_positive": 0, "reads_bm25_positive": 0,
+                  # BC2 (Q-BM25-MOCK): the unit's bm25 copy, honest - declared, offline, refs/main the pinned commit,
+                  # the markers present, the encoder's model dir the pinned snapshot
+                  "cache": {"names": {}, "declared": True, "offline": "1", "language": "english", "stopwords": 179,
+                            "model_dir_rel": f"models--Qdrant--bm25/snapshots/{A.BM25_COMMIT}",
+                            "refs_main": {"bytes": 40, "hex40": True, "commit": A.BM25_COMMIT},
+                            "required": {"mock.file": 0, "english.txt": 1283, "tamil.txt": 0}}},
          "nlp": {"names": {}, "module": True, "nlp_full": True, "nlp_lemma": True, "failed_full": False,
                  "failed_lemma": False, "is_package": True}}
         for u in ("u0", "u1") for st in ("write", "read")]

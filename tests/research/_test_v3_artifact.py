@@ -128,6 +128,18 @@ def decl(system: str, **over) -> dict:
 
 
 M35_LINES = ("fastembed not installed", "Failed to load BM25 encoder", "predates v3 hybrid search")
+BM25_REV = "22b8d2af71a76161e18dd432d2cee0eefa66e412"
+
+
+def cache_block(**over) -> dict:
+    """The unit's bm25 cache as arm_mem0's fe_cache_state gives it (BC2, Q-BM25-MOCK): the unit copy declared and the
+    child offline, refs/main the pinned commit in 40 bytes, every file fastembed's offline check requires present (the
+    two markers 0 bytes), the encoder's model dir the pinned snapshot inside the copy."""
+    c_ = {"names": {}, "declared": True, "offline": "1", "model_dir_rel": f"models--Qdrant--bm25/snapshots/{BM25_REV}",
+          "language": "english", "stopwords": 179, "refs_main": {"bytes": 40, "hex40": True, "commit": BM25_REV},
+          "required": {"mock.file": 0, "english.txt": 1283, "tamil.txt": 0}}
+    c_.update(over)
+    return c_
 
 
 def bm25_block(stage: str, **over) -> dict:
@@ -137,7 +149,7 @@ def bm25_block(stage: str, **over) -> dict:
           "encoder": "loaded", "slot": True, "log_watched": True, "lines": {x: 0 for x in M35_LINES},
           "keyword_search": ({"calls": 3, "not_none": 3, "hits": 7, "positive_hits": 0, "raised": 0} if stage == "read"
                              else {"calls": 0, "not_none": 0, "hits": 0, "positive_hits": 0, "raised": 0}),
-          "results_bm25_positive": 0, "reads_bm25_positive": 0}
+          "results_bm25_positive": 0, "reads_bm25_positive": 0, "cache": cache_block()}
     b_.update(over)
     return b_
 
@@ -756,6 +768,84 @@ check("P0K-6: other arms and a blocked mem0 row are not P0k's: no unit counters 
       [x for x in A.p0_flags(other, CTX, "nevertwice") if x.startswith("P0k:")] == []
       and [x for x in A.p0_flags({"blocked": "blocked:install"}, CTX, "mem0") if x.startswith("P0k:")] == [],
       str(A.p0_flags(other, CTX, "nevertwice"))[:300])
+
+print("\n- BC2 (the auditor's Q-BM25-MOCK): the unit's bm25 cache - a harness fault is named the harness's (P0k M35, "
+      "\"harness: bm25 cache\"), never the product's -")
+
+
+def _try_load(name: str, path: Path):
+    try:
+        return _load(name, path), None
+    except Exception as e:  # noqa: BLE001 - a missing module FAILs its own row, never the suite
+        return None, f"{type(e).__name__}: {e}"
+
+
+CPV, e_cpv = _try_load("v3_corpus_pin_for_artifact_bc", ROOT / "research" / "v3" / "corpus_pin_v3.py")
+BCM, e_bcm = _try_load("v3_bm25_cache_for_artifact_bc", ROOT / "research" / "v3" / "bm25_cache.py")
+rev_ = getattr(CPV, "REV_A7", {}).get("hf_bm25")
+check("BC-HARNESS-0: the artifact's pinned bm25 snapshot is the pins' - BM25_COMMIT = corpus_pin_v3.REV_A7[\"hf_bm25\"] = "
+      "bm25_cache.COMMIT, and the encoder's model dir it expects is models--Qdrant--bm25/snapshots/<that commit>",
+      rev_ == BM25_REV and getattr(A, "BM25_COMMIT", None) == rev_ and getattr(BCM, "COMMIT", None) == rev_
+      and getattr(A, "BM25_MODEL_DIR", None) == f"models--Qdrant--bm25/snapshots/{rev_}",
+      str((e_cpv, e_bcm, rev_, getattr(A, "BM25_COMMIT", None), getattr(A, "BM25_MODEL_DIR", None))))
+#: what the product shows when the harness's cache fails it: the encoder failed (sticky), the warning line, and
+#: keyword_search never answering - the fault's consequences, never listed beside the harness's line
+FAILED_BY_CACHE = {"encoder": "failed", "lines": {**{x: 0 for x in M35_LINES}, "Failed to load BM25 encoder": 1},
+                   "keyword_search": {"calls": 3, "not_none": 0, "hits": 0, "positive_hits": 0, "raised": 0}}
+REQ = {"mock.file": 0, "english.txt": 1283, "tamil.txt": 0}
+H_CASES = {    # label: (the cache block, the product's consequences shown, stage, the fact the harness line names)
+    "mock.file missing": (cache_block(required={**REQ, "mock.file": None}), True, "read", "mock.file missing"),
+    "tamil.txt missing": (cache_block(required={**REQ, "tamil.txt": None}), True, "read", "tamil.txt missing"),
+    "mock.file missing at the write stage": (cache_block(required={**REQ, "mock.file": None}), True, "write",
+                                             "mock.file missing"),
+    "both markers missing": (cache_block(required={**REQ, "mock.file": None, "tamil.txt": None}), True, "read",
+                             "mock.file, tamil.txt missing"),
+    "FASTEMBED_CACHE_PATH not declared": (cache_block(declared=False, refs_main=None, required=None, model_dir_rel=None),
+                                          True, "read", "FASTEMBED_CACHE_PATH not declared"),
+    "HF_HUB_OFFLINE not set, the encoder loaded": (cache_block(offline=None), False, "read", "HF_HUB_OFFLINE is None"),
+    "refs/main with a newline (41 bytes)": (cache_block(refs_main={"bytes": 41, "hex40": False, "commit": None}), True,
+                                            "read", "refs/main is not 40 hex bytes"),
+    "refs/main naming another commit": (cache_block(refs_main={"bytes": 40, "hex40": True, "commit": "0" * 40}), True,
+                                        "read", "refs/main names '" + "0" * 40),
+    "the encoder loaded from outside the unit's copy": (cache_block(model_dir_rel="(outside the cache)"), False, "read",
+                                                        "model dir is '(outside the cache)'"),
+    "a loaded encoder whose model dir is unknown": (cache_block(model_dir_rel=None), False, "read",
+                                                    "model dir is unknown"),
+}
+h_bad = []
+for label, (cb_, failed_, stage_, word) in H_CASES.items():
+    over_ = {"cache": cb_, **(FAILED_BY_CACHE if failed_ else {})}
+    if failed_ and stage_ == "write":
+        over_["keyword_search"] = {"calls": 0, "not_none": 0, "hits": 0, "positive_hits": 0, "raised": 0}
+    got_ = k_flags(lambda r, over_=over_, stage_=stage_: uc_set(r, stage=stage_, bm25=over_))
+    want_ = f"P0k: M35: {sids[0]}/u03: {stage_}: harness: bm25 cache - "
+    if not (len(got_) == 1 and got_[0].startswith(want_) and word in got_[0]):
+        h_bad.append((label, got_))
+check("BC-HARNESS-1 (M2): each harness fault of one unit's cache is ONE line by name - \"P0k: M35: <status_id>/<unit>: "
+      "<stage>: harness: bm25 cache - <fact>\" - and the product's consequences (the encoder failed, \"Failed to load "
+      "BM25 encoder\", keyword_search silent) are not listed as the product's: " + ", ".join(H_CASES),
+      h_bad == [], str(h_bad)[:900])
+f_hc = k_flags(lambda r: [e["bm25"].pop("cache", None) for e in r["unit_counters"]
+                          if (e["status_id"], e["unit"], e["stage"]) == (sids[0], "u03", "read")])
+check("BC-HARNESS-2: a unit-stage whose bm25 block reports no cache is a harness fault by name (the copy unseen), "
+      "never a pass", len(f_hc) == 1 and f_hc[0].startswith(f"P0k: M35: {sids[0]}/u03: read: harness: bm25 cache - ")
+      and "no cache block" in f_hc[0], str(f_hc)[:400])
+f_hp = k_flags(lambda r: uc_set(r, bm25={**FAILED_BY_CACHE, "cache": cache_block(required={**REQ, "mock.file": None}),
+                                         "slot": False,
+                                         "lines": {**FAILED_BY_CACHE["lines"], "predates v3 hybrid search": 1}}))
+check("BC-HARNESS-3: the product's own faults stay the product's beside a harness fault - no bm25 slot and \"predates "
+      "v3 hybrid search\" are listed with the harness's line, the encoder's failure is not",
+      len(f_hp) == 3 and any("harness: bm25 cache - mock.file missing" in x for x in f_hp)
+      and any("slot" in x and "harness" not in x for x in f_hp)
+      and any("predates v3 hybrid search" in x and "harness" not in x for x in f_hp)
+      and not any("Failed to load BM25 encoder" in x or "encoder is" in x for x in f_hp), str(f_hp)[:600])
+f_pr = k_flags(lambda r: uc_set(r, bm25=dict(FAILED_BY_CACHE)))
+f_hm = k_flags(lambda r: uc_set(r, bm25={**FAILED_BY_CACHE, "cache": cache_block(required={**REQ, "mock.file": None})}))
+check("BC-HARNESS-4: the same failure with the unit's cache intact is the product's (the encoder failed, the warning "
+      "line, keyword_search silent - no harness line), with mock.file missing it is the harness's alone",
+      f_pr and not any("harness" in x for x in f_pr) and any("Failed to load BM25 encoder" in x for x in f_pr)
+      and any("encoder is 'failed'" in x for x in f_pr) and any("keyword_search" in x for x in f_pr)
+      and len(f_hm) == 1 and "harness: bm25 cache - mock.file missing" in f_hm[0], str((f_pr, f_hm))[:600])
 
 rctx = A.P0Context(**{**CTX.__dict__, "windows": {s: (dt.datetime(2026, 10, 1, 8, 30, tzinfo=dt.timezone.utc),
                                                      dt.datetime(2026, 10, 1, 9, 0, 1, tzinfo=dt.timezone.utc))

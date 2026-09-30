@@ -248,16 +248,79 @@ class BM25Watch:
                     "results_bm25_positive": self.results_positive, "reads_bm25_positive": self.reads_positive}
 
 
-def bm25_state(mem: Any, watch: BM25Watch) -> dict:
+#: BC2 (the auditor's Q-BM25-MOCK): the unit's copy of Qdrant/bm25 that the harness laid out before the spawn
+#: (bm25_cache.place_unit_cache), read by fastembed 0.8.1's names (read as data): SparseTextEmbedding keeps its Bm25
+#: under .model (sparse_text_embedding.py:85), Bm25 its model dir, language and stopwords (bm25.py:112-133), and
+#: the offline acceptance needs the model_file and every additional file of the description (bm25.py:48-57,
+#: common/model_management.py:466-467, :481-484); huggingface_hub reads refs/main unstripped.
+FE_NAMES = {"inner": "model", "model_dir": "_model_dir", "language": "language", "stopwords": "stopwords",
+            "module": "fastembed.sparse.bm25", "models": "supported_bm25_models", "model": "Qdrant/bm25",
+            "repo": "models--Qdrant--bm25"}
+FE_ENV = ("FASTEMBED_CACHE_PATH", "HF_HUB_OFFLINE")
+_HEX40 = re.compile(rb"[0-9a-f]{40}")
+
+
+def _size(p: Path) -> int | None:
+    try:
+        return p.stat().st_size if p.is_file() else None
+    except OSError:
+        return None
+
+
+def fe_cache_state(encoder: Any, env: Mapping[str, str], modules: Mapping | None = None) -> dict:
+    """The unit's bm25 cache as the child finds it - READ, never repaired or loaded: declared (FASTEMBED_CACHE_PATH
+    set), HF_HUB_OFFLINE's value, refs/main's bytes (40 hex, no newline, and the commit it names), the size of every
+    file fastembed's offline check requires in the snapshot refs/main names (None when missing or the snapshot is
+    unknown; None altogether while fastembed is not imported), and a loaded encoder's model dir relative to the copy
+    ("(outside the cache)" when it is not inside), its language and stopword count. The verdict is artifact.p0k's."""
+    modules = sys.modules if modules is None else modules
+    cache = env.get("FASTEMBED_CACHE_PATH") or None
+    out: dict = {"names": dict(FE_NAMES), "declared": cache is not None, "offline": env.get("HF_HUB_OFFLINE"),
+                 "refs_main": None, "required": None, "model_dir_rel": None, "language": None, "stopwords": None}
+    repo = Path(cache) / FE_NAMES["repo"] if cache is not None else None
+    commit = None
+    if repo is not None:
+        try:
+            raw = (repo / "refs" / "main").read_bytes()
+        except OSError:
+            raw = None
+        hex40 = raw is not None and _HEX40.fullmatch(raw) is not None
+        commit = raw.decode("ascii") if hex40 else None
+        out["refs_main"] = {"bytes": None if raw is None else len(raw), "hex40": hex40, "commit": commit}
+    mod = modules.get(FE_NAMES["module"])
+    desc = next((d for d in (getattr(mod, FE_NAMES["models"], None) or ())
+                 if getattr(d, "model", None) == FE_NAMES["model"]), None) if mod is not None else None
+    if desc is not None:
+        snap = repo / "snapshots" / commit if commit is not None else None
+        names = [getattr(desc, "model_file", None), *(getattr(desc, "additional_files", None) or ())]
+        out["required"] = {str(n): (_size(snap / str(n)) if snap is not None else None) for n in names}
+    inner = (getattr(encoder, FE_NAMES["inner"], _MISSING) if encoder is not None and encoder is not False
+             else _MISSING)
+    if inner is not _MISSING:
+        md = getattr(inner, FE_NAMES["model_dir"], None)
+        if md is not None and cache is not None:
+            try:
+                out["model_dir_rel"] = Path(md).resolve().relative_to(Path(cache).resolve()).as_posix()
+            except (OSError, ValueError):
+                out["model_dir_rel"] = "(outside the cache)"
+        lang = getattr(inner, FE_NAMES["language"], None)
+        out["language"] = lang if isinstance(lang, str) else None
+        sw = getattr(inner, FE_NAMES["stopwords"], None)
+        out["stopwords"] = len(sw) if isinstance(sw, (set, frozenset, list, tuple)) else None
+    return out
+
+
+def bm25_state(mem: Any, watch: BM25Watch, fe_env: Mapping[str, str] | None = None) -> dict:
     """The unit's BM25 block (M35): the store's encoder and slot READ by BM25_NAMES - an attribute the store does not
     have is unknown (never a default): encoder loaded / not-tried (None) / failed (False) / unknown; the slot the
-    store's bool or None - with the watch's counts."""
+    store's bool or None - with the watch's counts, and the unit's bm25 cache (BC2) read with the env the child
+    started with."""
     store = getattr(mem, BM25_NAMES["store"], _MISSING)
     enc = _MISSING if store is _MISSING else getattr(store, BM25_NAMES["encoder"], _MISSING)
     slot = _MISSING if store is _MISSING else getattr(store, BM25_NAMES["slot"], _MISSING)
     encoder = ("unknown" if enc is _MISSING else "not-tried" if enc is None else "failed" if enc is False else "loaded")
     return {"names": dict(BM25_NAMES), "encoder": encoder, "slot": slot if isinstance(slot, bool) else None,
-            **watch.snapshot()}
+            **watch.snapshot(), "cache": fe_cache_state(None if enc is _MISSING else enc, fe_env or {})}
 
 
 class LLMUsage:
@@ -381,13 +444,15 @@ def bind(spec: Mapping[str, Any], env: Mapping[str, str]) -> tuple[Any, dict]:
     rec["llm_usage"] = "mem0.llm.client.chat.completions.create, response.usage" if usage else None
     rec["env_names"] = sorted(env)
     rec["python"] = sys.version.split()[0]
-    return {"mem": mem, "pacer": P, "usage": usage, "bm25": bm25}, rec
+    return {"mem": mem, "pacer": P, "usage": usage, "bm25": bm25,
+            "fe_env": {n: env[n] for n in FE_ENV if n in env}}, rec    # BC2: the cache read with the start env
 
 
 class Handler:
     def __init__(self, spec: Mapping[str, Any], ns: Mapping[str, Any], rec: Mapping[str, Any]) -> None:
         self.spec, self.rec = spec, rec
         self.mem, self.pacer, self.usage, self.bm25 = ns["mem"], ns["pacer"], ns.get("usage"), ns["bm25"]
+        self.fe_env = dict(ns.get("fe_env") or {})
         self.arm, self.stage, self.unit = spec["arm"], spec["stage"], spec["unit"]
         self.store = Path(spec["unit_dir"]) / "store"
         self.item_shas: dict[int, str] = {}
@@ -464,7 +529,7 @@ class Handler:
         return {"http": snap, "llm_calls": HC.total(snap, "proxy:chat") + HC.total(snap, "ollama:generate"),
                 "llm_usage": self.usage.snapshot() if self.usage is not None else None,
                 "writes": dict(self.writes), **self.reads, "ollama_transport": transport.get("ollama_transport"),
-                "nlp": nlp_state(), "bm25": bm25_state(self.mem, self.bm25)}
+                "nlp": nlp_state(), "bm25": bm25_state(self.mem, self.bm25, self.fe_env)}
 
 
 class RefusedHandler:

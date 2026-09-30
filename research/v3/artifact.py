@@ -85,6 +85,13 @@ BLOCK_CLASSES = ("structured-output", "tool-calling", "transport")
 #: main.py:1634, and extracts its entities, :1635, one code for both).
 MEM0_ARMS = ("mem0", "mem0-store")
 M35_LINES = ("fastembed not installed", "Failed to load BM25 encoder", "predates v3 hybrid search")
+#: BC2 (the auditor's Q-BM25-MOCK): the pinned Qdrant/bm25 snapshot each unit's copy holds - corpus_pin_v3.REV_A7
+#: ["hf_bm25"] and bm25_cache.COMMIT (a row holds the three equal) - and the encoder's model dir inside the copy.
+#: With a harness fault in the copy, the encoder's failure, the "Failed to load BM25 encoder" line and keyword_search's
+#: silence are its consequences, never listed as the product's (M35_CACHE_CONSEQUENCES).
+BM25_COMMIT = "22b8d2af71a76161e18dd432d2cee0eefa66e412"
+BM25_MODEL_DIR = f"models--Qdrant--bm25/snapshots/{BM25_COMMIT}"
+M35_CACHE_CONSEQUENCES = ("Failed to load BM25 encoder",)
 M29_LOADED = {"mem0": ("nlp_full", "nlp_lemma"), "mem0-store": ("nlp_lemma",)}
 M29_READ = ("nlp_full", "nlp_lemma")
 #: What a lost operation is counted and published as (TB4.10 ruling; M1 ruling).
@@ -673,13 +680,47 @@ def p0j(row: Mapping, ctx: P0Context, arm: str) -> list[str]:
     return out
 
 
+def _m35_harness(c, encoder) -> list[str]:
+    """The harness's own faults in one unit-stage's bm25 cache (BC2, the auditor's Q-BM25-MOCK; the child's
+    fe_cache_state): no cache reported, the copy not declared, the child not offline, refs/main not exactly the 40 hex
+    of the pinned commit, a file fastembed's offline check requires missing (the markers mock.file and tamil.txt among
+    them), a loaded encoder whose model dir is not the copy's pinned snapshot or is unknown."""
+    if not isinstance(c, Mapping):
+        return ["the unit's copy was not reported (no cache block)"]
+    out = []
+    if c.get("declared") is not True:
+        out.append("FASTEMBED_CACHE_PATH not declared")
+    if c.get("offline") != "1":
+        out.append(f"HF_HUB_OFFLINE is {c.get('offline')!r}, not '1'")
+    rm = c.get("refs_main")
+    if not (isinstance(rm, Mapping) and rm.get("bytes") == 40 and rm.get("hex40") is True):
+        out.append(f"refs/main is not 40 hex bytes ({rm!r})")
+    elif rm.get("commit") != BM25_COMMIT:
+        out.append(f"refs/main names {rm.get('commit')!r}, not the pinned {BM25_COMMIT}")
+    req = c.get("required")
+    if isinstance(req, Mapping):
+        missing = sorted(str(n) for n, s in req.items() if not (_int(s) and s >= 0))
+        if missing:
+            out.append(f"{', '.join(missing)} missing")
+    md = c.get("model_dir_rel")
+    if md is not None and md != BM25_MODEL_DIR:
+        out.append(f"the encoder's model dir is {md!r}, not the copy's {BM25_MODEL_DIR}")
+    elif md is None and encoder == "loaded":
+        out.append("the loaded encoder's model dir is unknown")
+    return out
+
+
 def _m35(b, stage: str) -> list[str]:
     """A5's four BM25 conditions on one unit-stage block (the adapter's counters "bm25"): the collection's bm25 slot, the
     store's log watched and none of the three lines in it, the encoder - loaded by the end of the reads, never failed
-    at the write stage - and keyword_search not None at least once in the reads. A positive BM25 count is never judged."""
+    at the write stage - and keyword_search not None at least once in the reads. A positive BM25 count is never judged.
+    A harness fault in the unit's bm25 cache (BC2) comes first as ONE line "harness: bm25 cache - <facts>" - the
+    harness's failure, never the product's - and its consequences (the encoder, the "Failed to load BM25 encoder" line,
+    keyword_search) are then not listed; the slot, the log watch and the other two lines stay the product's."""
     if not isinstance(b, Mapping):
         return ["not measured (no bm25 block)"]
-    out = []
+    hf = _m35_harness(b.get("cache"), b.get("encoder"))
+    out = [f"harness: bm25 cache - {'; '.join(hf)}"] if hf else []
     if b.get("slot") is not True:
         out.append(f"the collection's bm25 sparse slot is {b.get('slot')!r}, not present")
     if b.get("log_watched") is not True:
@@ -688,7 +729,10 @@ def _m35(b, stage: str) -> list[str]:
     if not isinstance(lines, Mapping) or set(lines) != set(M35_LINES):
         out.append("the three warning lines were not counted")
     else:
-        out += [f"the log holds \"{x}\" ({lines[x]!r})" for x in M35_LINES if not (_int(lines[x]) and lines[x] == 0)]
+        out += [f"the log holds \"{x}\" ({lines[x]!r})" for x in M35_LINES
+                if not (_int(lines[x]) and lines[x] == 0) and not (hf and x in M35_CACHE_CONSEQUENCES)]
+    if hf:
+        return out
     enc = b.get("encoder")
     if stage == "read":
         if enc != "loaded":

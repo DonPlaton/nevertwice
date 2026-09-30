@@ -30,6 +30,7 @@ import ast
 import importlib.util
 import logging
 import sys
+import tempfile
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -206,6 +207,93 @@ check("BM-6: the encoder reads loaded / not-tried (None) / failed (False) / unkn
       and set(s_ok) >= {"keyword_search", "lines", "log_watched", "results_bm25_positive"},
       str(e_ok or (s_ok, s_nt, s_f, s_un, s_ns))[:500])
 
+print("\n- BC2 (the auditor's Q-BM25-MOCK): the unit's bm25 cache read passively by the child -")
+REV = "22b8d2af71a76161e18dd432d2cee0eefa66e412"
+FE_MOD = "fastembed.sparse.bm25"
+
+
+def fe_layout(root: Path, *, refs: bytes = REV.encode(), files=("mock.file", "english.txt", "tamil.txt")) -> Path:
+    """A unit copy as bm25_cache lays it out: refs/main, the snapshot with its files (english.txt 6 bytes, the rest 0)."""
+    repo = root / "fastembed_cache" / "models--Qdrant--bm25"
+    (repo / "refs").mkdir(parents=True)
+    (repo / "refs" / "main").write_bytes(refs)
+    snap = repo / "snapshots" / REV
+    snap.mkdir(parents=True)
+    for n in files:
+        (snap / n).write_bytes(b"a\nthe\n" if n == "english.txt" else b"")
+    return root / "fastembed_cache"
+
+
+def fe_modules() -> dict:
+    """fastembed.sparse.bm25 as imported by the product: its descriptions, Qdrant/bm25 not first."""
+    return {FE_MOD: SimpleNamespace(supported_bm25_models=[
+        SimpleNamespace(model="other/model", model_file="model.onnx", additional_files=["x.txt"]),
+        SimpleNamespace(model="Qdrant/bm25", model_file="mock.file", additional_files=["english.txt", "tamil.txt"])])}
+
+
+def fe_encoder(model_dir: Path):
+    """SparseTextEmbedding as mem0 keeps it: its Bm25 under .model (fastembed 0.8.1, read as data)."""
+    return SimpleNamespace(model=SimpleNamespace(_model_dir=Path(model_dir), cache_dir=str(model_dir),
+                                                 language="english", stopwords={"a", "the"}))
+
+
+with tempfile.TemporaryDirectory() as td_:
+    tdp = Path(td_)
+    c1 = fe_layout(tdp / "a")
+    snap1 = c1 / "models--Qdrant--bm25" / "snapshots" / REV
+    env1 = {"FASTEMBED_CACHE_PATH": str(c1), "HF_HUB_OFFLINE": "1"}
+    g1, e1 = holds(lambda: A.fe_cache_state(fe_encoder(snap1), env1, fe_modules()))
+    c2 = fe_layout(tdp / "b", refs=REV.encode() + b"\n", files=("english.txt",))
+    g2, e2 = holds(lambda: A.fe_cache_state(fe_encoder(tdp / "elsewhere" / "snap"), {"FASTEMBED_CACHE_PATH": str(c2)},
+                                            fe_modules()))
+    c5 = fe_layout(tdp / "e", files=("english.txt", "tamil.txt"))
+    g5, e5 = holds(lambda: A.fe_cache_state(None, {"FASTEMBED_CACHE_PATH": str(c5), "HF_HUB_OFFLINE": "1"},
+                                            fe_modules()))
+    g3, e3 = holds(lambda: A.fe_cache_state(None, {}, {}))
+    g4, e4 = holds(lambda: A.fe_cache_state(False, env1, fe_modules()))
+    wc, _ = watch("cache")
+    st_, e6 = holds(lambda: A.bm25_state(SimpleNamespace(vector_store=SimpleNamespace(
+        _bm25_encoder=fe_encoder(snap1), _has_bm25_slot=True)), wc, env1))
+    check("BC-FE-1: the unit's copy reads as it is - declared by FASTEMBED_CACHE_PATH, HF_HUB_OFFLINE's value, refs/main "
+          "40 bytes naming the pinned commit, every file fastembed's offline check requires (model_file and the "
+          "language files of Qdrant/bm25's own description) by size, and the loaded encoder's model dir relative to the "
+          "copy, its language and stopword count",
+          e1 is None and g1["declared"] is True and g1["offline"] == "1"
+          and g1["refs_main"] == {"bytes": 40, "hex40": True, "commit": REV}
+          and g1["required"] == {"mock.file": 0, "english.txt": 6, "tamil.txt": 0}
+          and g1["model_dir_rel"] == f"models--Qdrant--bm25/snapshots/{REV}" and g1["language"] == "english"
+          and g1["stopwords"] == 2, str(e1 or g1)[:600])
+    check("BC-FE-2: a broken copy reads broken, never repaired - refs/main with a newline is 41 bytes, not hex40, no "
+          "commit (so no snapshot: every required file unknown), HF_HUB_OFFLINE unset is None, an encoder loaded from "
+          "outside the copy is \"(outside the cache)\"; a copy without mock.file reads it None beside the files it has",
+          e2 is None and g2["declared"] is True and g2["offline"] is None
+          and g2["refs_main"] == {"bytes": 41, "hex40": False, "commit": None}
+          and g2["required"] == {"mock.file": None, "english.txt": None, "tamil.txt": None}
+          and g2["model_dir_rel"] == "(outside the cache)"
+          and e5 is None and g5["required"] == {"mock.file": None, "english.txt": 6, "tamil.txt": 0}
+          and g5["model_dir_rel"] is None, str(e2 or e5 or (g2, g5))[:600])
+    check("BC-FE-3: nothing declared and fastembed never imported read as unknown (None), never a default; an encoder "
+          "that failed (False) has no model dir",
+          e3 is None and g3["declared"] is False and g3["offline"] is None and g3["refs_main"] is None
+          and g3["required"] is None and g3["model_dir_rel"] is None and g3["stopwords"] is None
+          and e4 is None and g4["model_dir_rel"] is None and g4["required"] == {"mock.file": 0, "english.txt": 6,
+                                                                             "tamil.txt": 0},
+          str(e3 or e4 or (g3, g4))[:500])
+    check("BC-FE-4: bm25_state carries the cache under \"cache\", read from the store's own encoder and the env given",
+          e6 is None and isinstance(st_.get("cache"), dict) and st_["cache"]["declared"] is True
+          and st_["cache"]["model_dir_rel"] == f"models--Qdrant--bm25/snapshots/{REV}"
+          and st_["cache"]["refs_main"]["commit"] == REV, str(e6 or st_)[:500])
+    wh, _ = watch("handler")
+    hd_, e7 = holds(lambda: A.Handler(
+        {"arm": "mem0-store", "stage": "read", "unit": "u1", "unit_dir": str(tdp)},
+        {"mem": SimpleNamespace(vector_store=SimpleNamespace(_bm25_encoder=fe_encoder(snap1), _has_bm25_slot=True)),
+         "pacer": SimpleNamespace(attach=lambda t: None), "usage": None, "bm25": wh, "fe_env": env1}, {}))
+    cn_, e8 = holds(lambda: hd_.counters())
+    cc_ = ((cn_ or {}).get("bm25") or {}).get("cache") or {}
+    check("BC-FE-5: the handler's counters read the cache with the env the child started with (the bind's fe_env), "
+          "never the process's env at counting time", e7 is None and e8 is None and cc_.get("declared") is True
+          and cc_.get("offline") == "1" and cc_.get("refs_main", {}).get("commit") == REV, str(e7 or e8 or cc_)[:500])
+
 print("\n- the adapter wires it -")
 src = (ROOT / "research" / "v3" / "arms" / "arm_mem0.py").read_text(encoding="utf-8")
 tree = ast.parse(src)
@@ -236,6 +324,14 @@ check("BM-8: counters() answers bm25_state under \"bm25\", and read() notes each
       any(k == "bm25" and isinstance(v, ast.Call) and getattr(v.func, "id", None) == "bm25_state" for k, v in keys)
       and "read" in meth and any(name == "note_results" for _ln, name in calls_in(meth["read"])),
       str([k for k, _ in keys]))
+bind_rets = [n.value for n in ast.walk(fn["bind"]) if isinstance(n, ast.Return)] if "bind" in fn else []
+fe_vals = [v for r_ in bind_rets if isinstance(r_, ast.Tuple) and r_.elts and isinstance(r_.elts[0], ast.Dict)
+           for k, v in zip(r_.elts[0].keys, r_.elts[0].values) if isinstance(k, ast.Constant) and k.value == "fe_env"]
+check("BC-FE-6: bind hands the handler exactly FE_ENV's names from the env the child started with (FASTEMBED_CACHE_PATH, "
+      "HF_HUB_OFFLINE) under \"fe_env\"",
+      getattr(A, "FE_ENV", None) == ("FASTEMBED_CACHE_PATH", "HF_HUB_OFFLINE") and len(fe_vals) == 1
+      and "FE_ENV" in ast.unparse(fe_vals[0]) and "env" in {n.id for n in ast.walk(fe_vals[0]) if isinstance(n, ast.Name)},
+      str((getattr(A, "FE_ENV", None), [ast.unparse(v) for v in fe_vals])))
 
 print(f"\nv3 arm_mem0 bm25: {PASSED} passed, {FAILED} failed")
 sys.exit(1 if FAILED else 0)
