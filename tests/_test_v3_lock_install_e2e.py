@@ -294,6 +294,13 @@ check("E1: the installed set is hashed; the venv, the install and the import eac
 check("E1: the window tunnelled exactly the two index hosts, and its check is clean",
       sorted((rec.get("window_record") or {}).get("tunnelled_hosts") or []) == [FILES, PY]
       and ((rec.get("window_record") or {}).get("check") or {}).get("native_hits") == 0, str(rec.get("window_record")))
+wr = rec.get("window_record") or {}
+check("PI-1 (R-PIP-ISS = O-a): the window's first job is a fetch child's GET of https://pypi.org/simple/<the first "
+      "requested>/ - before pip resolves - so both index hosts have their TLS issuer recorded (pip's own connection "
+      "records none) - here the test certificate's issuer, no organisation and CN pypi.org, once per host",
+      wr.get("jobs") == ["fetch", "pip", "fetch"] and wr.get("index_probe") == f"https://{PY}/simple/nvt3a/"
+      and sorted(tuple(x) for x in wr.get("issuers") or []) == [(FILES, None, PY), (PY, None, PY)],
+      str({k: wr.get(k) for k in ("jobs", "index_probe", "issuers")}))
 spawns = F._jsonl(L.spawns_log(C)) if (L.spawns_log(C)).exists() else []
 offline = [s for s in spawns if s.get("role") == "install" and s.get("arm") == "pip"]
 check("E2: the offline install is one spawn with no proxy variable, --no-index and the lock in its argv",

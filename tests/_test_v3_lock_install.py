@@ -363,7 +363,9 @@ check("SC-1 (A4, T33): scorer_v3 is the scorer's venv on py-base-312 - exactly t
       "read (Q-SCR-5 = O-a), sentence-transformers, nltk, scipy and torch imported, all eleven version-checked",
       LI.VENVS.get("scorer_v3") == {"base": "py-base-312", "specs": SC_SPECS,
                                     "imports": ["sentence_transformers", "nltk", "scipy", "torch"],
-                                    "dists": [x.split("==")[0] for x in SC_SPECS]}, str(LI.VENVS.get("scorer_v3"))[:300])
+                                    "dists": [x.split("==")[0] for x in SC_SPECS],
+                                    "pth_allowed": [["setuptools", "distutils-precedence.pth"]]},
+      str(LI.VENVS.get("scorer_v3"))[:300])
 check("SC-2 (A4): scorer_v3's PREREG_22 row is A4's own paragraph in the amendments file, once, naming every one of its "
       "eleven pins as name==version", LI.PREREG_22.get("scorer_v3", {}).get("source") == AMD
       and _SRC[AMD].count(LI.PREREG_22.get("scorer_v3", {}).get("row", "\x00")) == 1
@@ -696,6 +698,72 @@ check("SP-8 (Q-SPLIT-1 = P-a): an install venv whose pip is not the resolver's (
       "named problem, and pip never runs in it - the lock is resolved and installed by the same pip",
       e8 is None and any("not the resolver's" in p for p in r8.get("problems") or []) and STEPS == ["venv"]
       and (C.runs_root / "_install" / "a8-pypi-mem0_v3" / "c8" / "install_record.json").is_file(), f"{e8} {r8.get('problems')} {STEPS}")
+
+print("\n- Q-SC-PTH = O-a: a .pth the venv's declaration allows by name, owner (RECORD) and sha - nothing else -")
+import base64 as _b64m  # noqa: E402
+
+
+def _rec_hash(b: bytes) -> str:
+    return "sha256=" + _b64m.urlsafe_b64encode(hashlib.sha256(b).digest()).rstrip(b"=").decode()
+
+
+PTH = b"import os; var = 'SETUPTOOLS_USE_DISTUTILS'; enabled = os.environ.get(var, 'local') == 'local'; enabled and __import__('_distutils_hack').add_shim(); \n"
+SETUP = {"name": "setuptools", "version": "84.0.0", "filename": "setuptools-84.0.0-py3-none-any.whl", "sha256": "c" * 64}
+
+
+def pth_site(tag: str, *, owner: str = "setuptools", version: str = "84.0.0", body: bytes = PTH, listed: bytes | None = None,
+             extra_pth: str | None = None) -> Path:
+    site = TMP / "pth" / tag / "site-packages"
+    di = site / f"{owner}-{version}.dist-info"
+    di.mkdir(parents=True)
+    (site / "distutils-precedence.pth").write_bytes(body)
+    (site / "_distutils_hack").mkdir()
+    (site / "_distutils_hack" / "__init__.py").write_bytes(b"# shim\n")
+    rows = [f"distutils-precedence.pth,{_rec_hash(listed if listed is not None else body)},{len(body)}",
+            f"_distutils_hack/__init__.py,{_rec_hash(b'# shim' + chr(10).encode())},7", f"{owner}-{version}.dist-info/RECORD,,"]
+    (di / "RECORD").write_text("\n".join(rows) + "\n", encoding="utf-8")
+    if extra_pth:
+        (site / extra_pth).write_bytes(b"import os\n")
+    return site
+
+
+ALLOW = [("setuptools", "distutils-precedence.pth")]
+sc = getattr(LI, "site_check", None)
+
+
+def run_sc(site, lock=(SETUP,), allowed=ALLOW):
+    if sc is None:
+        return None, "no site_check"
+    try:
+        return sc(site, list(lock), [e["name"] for e in lock], [], allowed), None
+    except Exception as e:  # noqa: BLE001
+        return None, f"{type(e).__name__}: {e}"
+
+
+g1, e1 = run_sc(pth_site("ok"))
+check("PTH-1 (Q-SC-PTH): the declared distutils-precedence.pth of setuptools at the lock's version, its bytes the sha256 "
+      "setuptools' RECORD names, is allowed - no site problem - and named in allowed_pth with the ruling",
+      e1 is None and g1[0] == [] and [(a["file"], a["dist"], a["version"], a["sha256"]) for a in g1[1]]
+      == [("distutils-precedence.pth", "setuptools", "84.0.0", hashlib.sha256(PTH).hexdigest())]
+      and "Q-SC-PTH" in g1[1][0].get("reason", ""), str(e1 or g1))
+cases = {
+    "bytes that are not its RECORD's sha256": (pth_site("changed", body=PTH + b"import evil\n", listed=PTH), "RECORD"),
+    "an owner other than the declared one": (pth_site("owner", owner="evilpkg"), "setuptools"),
+    "setuptools at a version the lock does not hold": (pth_site("version", version="80.0.0"), "setuptools"),
+    "an undeclared .pth beside it": (pth_site("other", extra_pth="evil.pth"), "evil.pth"),
+}
+for label, (site_, word) in cases.items():
+    got_, err_ = run_sc(site_)
+    check(f"PTH-2 a site problem by name, never allowed: {label}",
+          err_ is None and any(word in x and ".pth" in x for x in got_[0])
+          and (label == "an undeclared .pth beside it" or got_[1] == []), str(err_ or got_))
+g5, e5 = run_sc(pth_site("undeclared"), allowed=[])
+check("PTH-3: with no declaration the same file stays the site problem it was (every interpreter start)",
+      e5 is None and any("distutils-precedence.pth" in x and "every interpreter start" in x for x in g5[0]) and g5[1] == [],
+      str(e5 or g5))
+check("PTH-4: the declaration - scorer_v3 alone allows setuptools' distutils-precedence.pth; no product venv allows a .pth",
+      LI.VENVS["scorer_v3"].get("pth_allowed") == [["setuptools", "distutils-precedence.pth"]]
+      and all(not LI.VENVS[v].get("pth_allowed") for v in LI.VENVS if v != "scorer_v3"), str(LI.VENVS["scorer_v3"])[:200])
 
 shutil.rmtree(TMP, ignore_errors=True)
 print(f"\nv3 lock install: {PASSED} passed, {FAILED} failed")

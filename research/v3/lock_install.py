@@ -71,6 +71,10 @@ INDEX_HOST, FILES_HOST = "pypi.org", "files.pythonhosted.org"
 HOSTS = [INDEX_HOST, FILES_HOST]
 REPORT = "report.json"
 WHEEL_MAX = 512 * (1 << 20)
+INDEX_PROBE_MAX = 16 * (1 << 20)                 # R-PIP-ISS: one /simple/ page, read for its TLS issuer
+PTH_REASON = ("Q-SC-PTH (the auditor, 2026-09-30): setuptools' distutils shim, pulled by torch on 3.12 - allowed by "
+              "name, by its owner's RECORD at the lock's version and by its bytes' sha256; the scorer never imports "
+              "distutils (an E5 line)")
 DISK_FLOOR = 100 * (1 << 30)                     # the auditor's Q-A3-2 floor (fetch_manifest.json "disk")
 _FILE = re.compile(r"[A-Za-z0-9._+-]{1,200}")
 _HEX64 = re.compile(r"[0-9a-f]{64}")
@@ -92,7 +96,9 @@ VENVS = {"mem0_v3": {"base": "py-base-312", "specs": ["mem0ai[nlp]==2.2.0"], "im
          "cognee_v3": {"base": "py-base-312", "specs": ["cognee==1.6.1"], "imports": ["cognee"], "dists": ["cognee"]},
          # A4 (T33, the auditor's Q-SCR-1..5): the scorer's own venv - no arm; the eleven versions window a8-pypi-d p1
          # read, every further package the lock's to resolve and record by its wheel's sha256
-         "scorer_v3": {"base": "py-base-312",
+         # Q-SC-PTH = O-a (the auditor, 2026-09-30): torch pulls setuptools on 3.12, whose wheel ships
+         # distutils-precedence.pth (its distutils shim) - allowed by name, owner and RECORD sha (site_check)
+         "scorer_v3": {"base": "py-base-312", "pth_allowed": [["setuptools", "distutils-precedence.pth"]],
                        "specs": ["sentence-transformers==6.1.0", "nltk==3.10.3", "scipy==1.18.1",
                                  "torch==2.14.0", "transformers==5.17.0", "huggingface-hub==1.33.0",
                                  "tokenizers==0.23.2", "numpy==2.5.3", "scikit-learn==1.9.1",
@@ -422,17 +428,25 @@ def _window(c, L, F, *, venv_py: Path, pip_args: list, specs: list, dists: list,
     and checked as they stream. Returns (the lock, the wheels' directory - None when anything is wrong)."""
     lock: list[dict] = []
     refused: list[str] = []
+    # R-PIP-ISS = O-a: pip's own connection records no TLS issuer, so the window's FIRST job is a fetch child's GET of the
+    # index page of the first requested distribution - pypi.org's issuer recorded before pip resolves
+    probe_url = f"https://{index_host}/simple/{norm_name(spec_parts(specs[0])[0])}/"
+    probe = {"hosts": [index_host], "max_redirects": 0, "requests": [
+        {"id": "index:probe", "method": "GET", "url": probe_url, "save": "index_probe.html", "max_bytes": INDEX_PROBE_MAX}]}
 
     def resolve(results):
+        if not results or results[0]["rc"] != 0:
+            refused.append("the index probe failed (R-PIP-ISS: pypi.org's issuer is recorded before pip resolves)")
+            return None
         return resolve_job(venv_py, pip_args, specs, index_host=index_host, pip_cache=c.polygon_root / "pip_cache")
 
     def download(results):
-        if not results or results[0]["rc"] != 0:
+        if len(results) < 2 or results[1]["rc"] != 0:
             refused.append("pip's resolution failed (attempt 1, wheels only): "
-                           + (results[0]["stderr_tail"] if results else "no result")[-240:].replace("\n", " "))
+                           + (results[1]["stderr_tail"] if len(results) > 1 else "no result")[-240:].replace("\n", " "))
             return None
         try:
-            report = json.loads((Path(results[0]["unit"]) / REPORT).read_bytes())
+            report = json.loads((Path(results[1]["unit"]) / REPORT).read_bytes())
             lock.extend(lock_step(report, specs, dists=dists, files_host=files_host))
         except (OSError, ValueError) as e:
             refused.append(f"pip's report could not be read: {type(e).__name__}")
@@ -443,21 +457,59 @@ def _window(c, L, F, *, venv_py: Path, pip_args: list, specs: list, dists: list,
         record["pip_report_version"] = report.get("pip_version")
         return download_job(lock, files_host=files_host)
 
-    rec = F.run_child_window(c, L, window=window, hosts=[index_host, files_host], jobs=[resolve, download],
+    rec = F.run_child_window(c, L, window=window, hosts=[index_host, files_host], jobs=[probe, resolve, download],
                              python=python, via_port=via_port, run=run, parent_env=parent_env, native=native, fs=fs,
                              child_env_extra=child_env_extra, need_bytes=need_bytes, volume=volume)
     record["window_record"] = {k: rec[k] for k in ("problems", "check", "issuers")}
     record["window_record"]["tunnelled_hosts"] = sorted({x["host"] for x in rec["catcher"] if x.get("tunnelled")})
+    record["window_record"]["jobs"] = [(j.get("job") or {}).get("child") or "fetch" for j in rec["jobs"]]
+    record["window_record"]["index_probe"] = probe_url
     record["problems"] += list(rec["problems"]) + refused
     record["lock"] = lock
     record["lock_lines"] = lock_lines(lock) if lock else []
     record["lock_sha256"] = lock_sha256(lock) if lock else None
     record["licences"] = {e["name"]: e["licence"] for e in lock}
-    return lock, (None if record["problems"] else Path(rec["jobs"][1]["unit"]) / "wheels")
+    return lock, (None if record["problems"] else Path(rec["jobs"][2]["unit"]) / "wheels")
+
+
+def site_check(site: Path, lock: list[dict], names: list, baseline: list, allowed) -> tuple[list[str], list[dict]]:
+    """install_v3_data.site_problems, with the .pth files a venv's declaration allows (Q-SC-PTH = O-a): each only by its
+    name, by its owner's RECORD - the declared distribution, at the version the lock holds, lists it - and by its bytes'
+    sha256 equal to that RECORD's. Any other .pth, or one of these failing a clause, stays the problem it was.
+    Returns (the problems, the allowed files with the ruling)."""
+    IV = _iv()
+    versions = {norm_name(e["name"]): e["version"] for e in lock}
+    ok_names, records, problems = [], [], []
+    for dist, fname in allowed:
+        f = Path(site) / fname
+        if not f.is_file():
+            continue
+        v = versions.get(norm_name(dist))
+        rec = next((d / "RECORD" for d in Path(site).glob("*.dist-info")
+                    if v is not None and d.name[:-len(".dist-info")].rsplit("-", 1)[-1] == v
+                    and norm_name(d.name[:-len(".dist-info")].rsplit("-", 1)[0]) == norm_name(dist)), None)
+        row = None
+        if rec is not None and rec.is_file():
+            for line in rec.read_text(encoding="utf-8").splitlines():
+                if line.count(",") >= 2 and line.rsplit(",", 2)[0] == fname:
+                    row = line.rsplit(",", 2)[1]
+        want = IV._record_hash(row) if row else None
+        got = hashlib.sha256(f.read_bytes()).hexdigest()
+        if want is None:
+            problems.append(f"{fname}: no RECORD row of {dist} at the lock's version {v} lists it - not its declared owner's "
+                            f"(Q-SC-PTH); a .pth runs code at every interpreter start")
+        elif got != want:
+            problems.append(f"{fname}: its bytes are not the sha256 {dist} {v}'s RECORD names (Q-SC-PTH); a .pth runs "
+                            f"code at every interpreter start")
+        else:
+            ok_names.append(fname)
+            records.append({"file": fname, "dist": dist, "version": v, "sha256": got, "reason": PTH_REASON})
+    return problems + IV.site_problems(site, names, list(baseline) + ok_names), records
 
 
 def _install(c, L, IV, *, venv: Path, lock: list, wheel_dir: Path, base_dir: Path, record: dict, imports: list,
-             dists: list, base_version: str, stand: str, window: str, run: str, parent_env, native, fs) -> dict:
+             dists: list, base_version: str, stand: str, window: str, run: str, parent_env, native, fs,
+             pth_allowed=()) -> dict:
     """Steps 3 (after the wheels were checked from the disk) and 4: pip offline from the lock, then the installed set
     and the site before any interpreter starts in the venv, then the imports and the versions; install_record.json."""
     venv_py = IV.venv_python(venv)
@@ -484,7 +536,8 @@ def _install(c, L, IV, *, venv: Path, lock: list, wheel_dir: Path, base_dir: Pat
         record["installed_set_sha256"], record["installed_files"] = IV.installed_set(site, names)
     except IV.InstallRefused as e:
         record["problems"].append(f"refused: {e}")
-    record["problems"] += IV.site_problems(site, names, record["venv_top_level"])
+    site_probs, record["allowed_pth"] = site_check(site, lock, names, record["venv_top_level"], pth_allowed)
+    record["problems"] += site_probs
     if record["problems"]:
         record["import_skipped"] = "the installed site has problems; no interpreter was started in the venv"
         return _write(base_dir, record)
@@ -557,7 +610,8 @@ def run_lock_install(c, L, F, *, python: Path, venv: Path, venv_name: str, run: 
         return _write(base_dir, record)
     return _install(c, L, IV, venv=venv, lock=lock, wheel_dir=wheel_dir, base_dir=base_dir, record=record,
                     imports=imports, dists=dists, base_version=bases[base]["version"], stand=stand, window=window,
-                    run=run, parent_env=parent_env, native=native, fs=fs)
+                    run=run, parent_env=parent_env, native=native, fs=fs,
+                    pth_allowed=(VENVS.get(venv_name) or {}).get("pth_allowed") or ())
 
 
 def run_lock_download(c, L, F, *, python: Path, venv_name: str, run: str, via_port: int, parent_env,
@@ -676,7 +730,8 @@ def run_lock_install_from(c, L, *, python: Path, venv: Path, venv_name: str, run
         return _write(base_dir, record)
     return _install(c, L, IV, venv=venv, lock=lock, wheel_dir=wheel_dir, base_dir=base_dir, record=record,
                     imports=imports, dists=dists, base_version=bases[base]["version"], stand=stand, window=window,
-                    run=run, parent_env=parent_env, native=native, fs=fs)
+                    run=run, parent_env=parent_env, native=native, fs=fs,
+                    pth_allowed=(VENVS.get(venv_name) or {}).get("pth_allowed") or ())
 
 
 def _load(name: str, path: Path):
