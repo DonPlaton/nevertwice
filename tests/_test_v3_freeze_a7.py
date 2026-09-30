@@ -106,7 +106,11 @@ WANT_CLEARED = {
                       "_fetch/a7-hf/h1/place_record.json": "3aa4ab44d4d9d1e37249b57052f3405edafd1e8679ef3784010c10d81175ff48",
                       "_fetch/a7-hf/h1/pin_fill.json": "449a89fca362ab4aa85d6408236cb8ba37ab56e04c2a6ddfeea75f59e8094afe"},
     # the auditor's clearing of W2 py-base-312 p1 (2026-09-30 06:4x): the product venvs' base
-    ("py-base-312", "p1"): {"_tools/py-base-312/py-base-312.json": "52d4aeae4c3701b098ed1dacbc5ba04c0181c13a06abf580d5442b0772846862"}}
+    ("py-base-312", "p1"): {"_tools/py-base-312/py-base-312.json": "52d4aeae4c3701b098ed1dacbc5ba04c0181c13a06abf580d5442b0772846862"},
+    # the auditor's clearing of a7-github-2 g1 (2026-09-30 07:5x): LME's run_generation.sh and AMA's method code
+    ("a7-github-2", "g1"): {"_fetch/a7-github-2/g1/record.json": "ad6ff8fb61bc456db6c30c5d1aef03382580cdfc792f3565beaf2a288ebd4272",
+                            "_fetch/a7-github-2/g1/place_record.json": "aedefc7e632e9a46101287b47ad0f82629e184047db0a4a88cb8d55c64be9f9c",
+                            "_fetch/a7-github-2/g1/pin_fill.json": "fa5375b6678530c023ec875bed830accd447e6e132abf5aec167207e6b3a28b7"}}
 WANT_FAILED = {("a7-npm", "g1"): {"_fetch/a7-npm/g1/record.json": "fb4212e565e4233c86ef4432ec48a3e09d2bd031f6ffc84a875cc46e2ff84f8d"},
                ("a7-arxiv", "d1"): {"_fetch/a7-arxiv/d1/record.json": "854b13dd774ada2c5d94ef19ac4ba6b34685590ab293d49338c9f6eaa9ca11a6",
                                     "_fetch/a7-arxiv/d1/d6_report.json": "e3d01b8e784ba0af38c16df0632f98204ef6f9dc4e014b37b2e937deaddc36e4"},
@@ -119,8 +123,9 @@ NPM_PROBLEMS = ["job 0: the fetch child exited with 3", "job 0 request npm:packa
 PREREG = {"research/v3/PREREG-V3-rev1.md": "1" * 64, "research/v3/PREREG-V3-AMENDMENTS.md": "2" * 64}
 
 print("- the declared lists are the auditor's -")
-check("F7-1: CLEARED_A7 is exactly the auditor's ten runs - the four of Q-F7, a7-github g1, a7-hf-d d1, a7-arxiv d2, "
-      "a8-supermemory-bin b2, a7-hf h1 and py-base-312 p1 - with their twenty-one record files by sha256, and FAILED_A7 is "
+check("F7-1: CLEARED_A7 is exactly the auditor's eleven runs - the four of Q-F7, a7-github g1, a7-hf-d d1, a7-arxiv d2, "
+      "a8-supermemory-bin b2, a7-hf h1, py-base-312 p1 and a7-github-2 g1 - with their twenty-four record files by sha256, "
+      "and FAILED_A7 is "
       "a7-npm g1 (npm answers 404; revision 1's channel, erratum A3 T32), a7-arxiv d1 (429, nothing read), "
       "a8-supermemory-bin b1 (R-GHR-ISS, superseded by b2) and a7-arxiv-src s1 (301 to oaipmh.arxiv.org, the e-print not "
       "asked for), each by its records' sha256 with the reason named",
@@ -189,6 +194,10 @@ def world(tag: str, *, npm_problems=NPM_PROBLEMS, gh_org="Sectigo Limited"):
                        "issuers": [["huggingface.co", "Amazon", "Amazon RSA 2048 M01"]]},
            "a7-arxiv": {"window": "a7-arxiv", "run": "d2", "problems": [], "hosts": ["export.arxiv.org"],
                         "issuers": [["export.arxiv.org", "Certainly", "Certainly Intermediate R1"]]},
+           "a7-github-2": {"window": "a7-github-2", "run": "g1", "problems": [], "hosts": ["raw.githubusercontent.com"],
+                           "catcher": [{"host": "raw.githubusercontent.com", "port": 443, "tunnelled": True, "refused": False,
+                                        "hop_status": 200}],
+                           "issuers": [["raw.githubusercontent.com", "Let's Encrypt", "YR1"]]},
            "a7-hf": {"window": "a7-hf", "run": "h1", "problems": [], "hosts": ["huggingface.co", "us.aws.cdn.hf.co"],
                      "catcher": [{"host": h, "port": 443, "tunnelled": True, "refused": False, "hop_status": 200}
                                  for h in ("huggingface.co", "us.aws.cdn.hf.co")],
@@ -385,7 +394,8 @@ try:
     decl7 = {rel.split("/", 2)[1] + "/" + rel.split("/")[2]: s for e in F7.CLEARED_A7 for rel, s in e["files"].items()
              if rel.endswith("/pin_fill.json")}
     f714 = (fix7 == decl7 == {"a7-github/g1": "acae9e52bc935a5752f384fbcc0cd26521e20c97878056d3318963f782296472",
-                              "a7-hf/h1": "449a89fca362ab4aa85d6408236cb8ba37ab56e04c2a6ddfeea75f59e8094afe"}), None
+                              "a7-hf/h1": "449a89fca362ab4aa85d6408236cb8ba37ab56e04c2a6ddfeea75f59e8094afe",
+                              "a7-github-2/g1": "fa5375b6678530c023ec875bed830accd447e6e132abf5aec167207e6b3a28b7"}), None
 except Exception as e:  # noqa: BLE001
     f714 = (False, f"{type(e).__name__}: {e}")
 check("F7-14: the A7 pin_fill shas CLEARED_A7 names are the committed evidence's (tests/fixtures/v3_pin_fill/a7-*)",

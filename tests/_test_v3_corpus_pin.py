@@ -337,11 +337,13 @@ check("A7-2: every GitHub pin of A7 is a file of the window a7-github, filled fr
       and {n for n, p in A7.items() if p["revision_from"] == MINI_FROM} == set(MINILM),
       str([(n, p["source"], p["window"], p.get("filled_from"), p["revision_from"]) for n, p in A7.items()
            if (n in MINILM) != (p["window"] == "a7-hf") or (n in COGNEE) != (p["revision_from"] == COG_FROM)][:4]))
-check("A7-2d: a7-github-2's 12 pins are GitHub files of that window, unfilled until it, each at its discovery commit - "
-      "LME's run_generation.sh from a3-discovery d1 for S1-S3, AMA's method code from a3-discovery d2 for S7 - under MIT",
+check("A7-2d: a7-github-2's 12 pins are GitHub files of that window, filled from its cleared run (a7-github-2 g1, "
+      "pin_fill fa5375b66785: a 64-hex sha256 and a size), each at its discovery commit - LME's run_generation.sh from "
+      "a3-discovery d1 for S1-S3, AMA's method code from a3-discovery d2 for S7 - under MIT",
       bool(A7) and all(n in A7 for n in GH2) and all(
-          (p["source"], p["window"], p["sha256"], p["bytes"], p["licence"], p["role"]) == ("github", "a7-github-2", None, None,
-                                                                                         "MIT", "prompt")
+          (p["source"], p["window"], p.get("filled_from"), p["licence"], p["role"])
+          == ("github", "a7-github-2", "a7-github-2 g1 pin_fill fa5375b66785", "MIT", "prompt")
+          and isinstance(p["sha256"], str) and len(p["sha256"]) == 64 and isinstance(p["bytes"], int)
           and str(p["revision_from"]).startswith("a3-discovery d1 " if n == "lme_run_generation_sh" else "a3-discovery d2 ")
           and tuple(p["stands"]) == (("S1", "S2", "S3") if n == "lme_run_generation_sh" else ("S7",))
           for n, p in A7.items() if n in GH2)

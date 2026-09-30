@@ -78,6 +78,11 @@ CLEARED_A7 = [
         "_fetch/a7-hf/h1/record.json": "970344e56358bcb3c137d2f8c5c7ab9aa855c792f434d9ef31d7c33adbfcdbd7",
         "_fetch/a7-hf/h1/place_record.json": "3aa4ab44d4d9d1e37249b57052f3405edafd1e8679ef3784010c10d81175ff48",
         "_fetch/a7-hf/h1/pin_fill.json": "449a89fca362ab4aa85d6408236cb8ba37ab56e04c2a6ddfeea75f59e8094afe"}},
+    # LME's run_generation.sh and AMA's method code (Q-TPL-1 = O-b, Q-TPL-4), after the auditor's m6/m5/secret_scan (07:5x)
+    {"window": "a7-github-2", "run": "g1", "kind": "fetch", "files": {
+        "_fetch/a7-github-2/g1/record.json": "ad6ff8fb61bc456db6c30c5d1aef03382580cdfc792f3565beaf2a288ebd4272",
+        "_fetch/a7-github-2/g1/place_record.json": "aedefc7e632e9a46101287b47ad0f82629e184047db0a4a88cb8d55c64be9f9c",
+        "_fetch/a7-github-2/g1/pin_fill.json": "fa5375b6678530c023ec875bed830accd447e6e132abf5aec167207e6b3a28b7"}},
     # W2: the product venvs' base, CPython 3.12.10 from NuGet (the auditor's clearing, 2026-09-30 06:4x: the nupkg's
     # sha256 and sha512, python.exe, 3.12.10 the newest 3.12, m5 PASS, secret_scan 0)
     {"window": "py-base-312", "run": "p1", "kind": "base", "files": {
