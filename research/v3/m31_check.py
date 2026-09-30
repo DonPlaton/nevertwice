@@ -12,7 +12,8 @@ installed, run or unpacked; the result, m31.json, is written beside the download
   in the zip; every wheel checked against the lock's sha256 again first - a moved one refuses);
 * part 3 - the product's modules the adapter imports and those its config selects through the product's factories
   (M31_FACTORIES, declared before the download: a class or key the wheel does not have is a problem by name, fixed
-  through a gate), then their closure inside the product's wheel (relative imports resolved, parent packages included);
+  through a gate) and the config module of each selected provider the product loads only by a non-literal import
+  (M31_FACTORIES' configs, B-M31-CFG), then their closure inside the product's wheel (relative imports resolved, parent packages included);
   every import that leaves the product is checked as in part 2;
 * the standard library is the base interpreter's own sys.stdlib_module_names (Q-SPLIT-2), asked under the contract in
   main() (-I -B) and named in the result with its sha256.
@@ -49,8 +50,12 @@ VENV_ARMS = {"mem0_v3": ("mem0", "mem0-store"), "graphiti_v3": ("zep-graphiti",)
 #: Q-SPLIT-5 = O-a: the product modules each arm's config selects through the product's factories, declared before the
 #: download - mem0's utils/factory.py maps a provider to a class path (a string, or a tuple whose first item is one);
 #: arm_mem0.mem0_config names LLM deepseek (mem0) or NO_LLM's ollama (mem0-store), embedder ollama, vector store qdrant.
+#: "configs" (B-M31-CFG, the auditor 2026-09-30): the config module of a selected provider that the product loads only
+#: by a non-literal import - mem0/vector_stores/configs.py:49 __import__(f"mem0.configs.vector_stores.{provider}") - an
+#: entry of the closure like a factory's target, so its imports are checked too
 M31_FACTORIES = {arm: {"file": "mem0/utils/factory.py",
-                       "select": {"LlmFactory": (llm,), "EmbedderFactory": ("ollama",), "VectorStoreFactory": ("qdrant",)}}
+                       "select": {"LlmFactory": (llm,), "EmbedderFactory": ("ollama",), "VectorStoreFactory": ("qdrant",)},
+                       "configs": ("mem0.configs.vector_stores.qdrant",)}
                  for arm, llm in (("mem0", "deepseek"), ("mem0-store", "ollama"))}
 OPTIONAL_EXC = frozenset({"ImportError", "ModuleNotFoundError", "Exception", "BaseException"})
 _RECORD = re.compile(r"[^/]+\.dist-info/RECORD")
@@ -276,6 +281,12 @@ def run_m31(*, venv_name: str, run: str, runs_root: Path, stdlib, stdlib_source:
                                     f"(M31_FACTORIES is fixed through a gate)")
                 else:
                     entries.setdefault(mod, f"{arm}: {cls}[{key!r}]")
+        for mod in (fac or {}).get("configs", ()):         # B-M31-CFG: a selected provider's config module
+            if not wh.is_module(mod):
+                problems.append(f"part 3 {arm}: the config module {mod} is not in the download's wheels (M31_FACTORIES "
+                                "is fixed through a gate)")
+            else:
+                entries.setdefault(mod, f"{arm}: config {mod}")
     queue, seen = list(entries), set()
     while queue:
         dotted = queue.pop(0)

@@ -227,6 +227,27 @@ try:
           "their M31 has no part-1 problem to refuse (the pacer's httpx/httpx2 imports are literal)",
           real_part1 == {}, str(real_part1)[:400])
 
+    print("\n- B-M31-CFG (the auditor 2026-09-30): the config module of a selected provider is declared and followed -")
+    PRODX_CFG = {**PRODX, "prodx/configs/__init__.py": "", "prodx/configs/store/__init__.py": "",
+                 "prodx/configs/store/x.py": "import json\nimport cfgdep\n\nclass XConfig:\n    pass\n",
+                 "prodx/store_configs.py": "def load(p):\n    return __import__(f'prodx.configs.store.{p}')\n"}
+    FAC_CFG = {"prodx-arm": {**FACTORIES["prodx-arm"], "configs": ("prodx.configs.store.x",)}}
+    runs21, _b21 = world("cfg", [wheel("prodx", "1.0.0", PRODX_CFG), W_DEPA, W_OLLAMA, *W_ADD])
+    r21, e21 = holds(lambda: m31(runs21, factories=FAC_CFG))
+    r21n, e21n = holds(lambda: m31(runs21))
+    check("M3-21 (B-M31-CFG): a provider's config module the product imports only by a non-literal __import__ is declared "
+          "beside its factory selection and followed - its module-level import of an unprovided name blocks (cfgdep, "
+          "prodx/configs/store/x.py); undeclared, it is outside the closure",
+          e21 is None and "cfgdep" in names(r21, "unprovided") and "prodx.configs.store.x" in (r21.get("entries") or {})
+          and any("prodx/configs/store/x.py" in s_.get("where", "") and s_.get("blocking") for s_ in r21["parts"]["3"])
+          and e21n is None and "cfgdep" not in names(r21n, "unprovided"),
+          str(e21 or (names(r21, "unprovided"), sorted((r21 or {}).get("entries") or {})))[:400])
+    r22, e22 = holds(lambda: m31(runs21, factories={"prodx-arm": {**FACTORIES["prodx-arm"],
+                                                                  "configs": ("prodx.configs.store.nosuch",)}}))
+    check("M3-22 (B-M31-CFG): a declared config module the download's wheels do not have is a problem by name",
+          e22 is None and any("prodx.configs.store.nosuch" in p_ and "config" in p_ for p_ in r22["problems"]),
+          str(e22 or r22["problems"])[:300])
+
     print("\n- refusals: no verdict -")
     r3, e3 = holds(lambda: m31(world("probs", [W_PRODX], problems=["job 1 failed"])[0]))
     check("M3-8: a download with problems gets no verdict - refused by name, no m31.json",
@@ -282,6 +303,11 @@ try:
               ("mem0-store", "LlmFactory", "ollama"), ("mem0-store", "EmbedderFactory", "ollama"),
               ("mem0-store", "VectorStoreFactory", "qdrant")}
           and all((FA.get(a) or {}).get("file") == "mem0/utils/factory.py" for a in ("mem0", "mem0-store")), f"{provs} {sorted(sel)}")
+    cfgs = {a: tuple((FA.get(a) or {}).get("configs") or ()) for a in ("mem0", "mem0-store")}
+    check("M3-23 (B-M31-CFG): M31_FACTORIES declares the config module of each selected provider mem0 loads by a "
+          "non-literal import - mem0/vector_stores/configs.py:49 __import__(mem0.configs.vector_stores.<provider>): "
+          "qdrant's, for both arms", cfgs == {"mem0": ("mem0.configs.vector_stores.qdrant",),
+                                              "mem0-store": ("mem0.configs.vector_stores.qdrant",)}, str(cfgs))
     print("\n- the base's standard library (Q-SPLIT-2 = O-a) -")
     if M is not None:
         IV = LI._iv()
