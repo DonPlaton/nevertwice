@@ -76,6 +76,17 @@
    "release_tag": "server-v0.0.8",
    "max_redirects": 0
   },
+  "a7-docs-2": {
+   "hosts": ["api.github.com"],
+   "purpose": "text and metadata only (the auditor's Q-SM-API = O-a, plan d4): supermemory's API reference - the pages the adapter of supermemory-local is written from (documents and their processing status, search, ingest, container tags, memories, settings) and the API reference of the vendor's skill - through the contents API at the commit of the tag server-v0.0.8; a path the tag answers 404 for is read at the head the discovery found, and marked; the release server-v0.0.8's metadata as the plan reads it; no asset downloaded, no link followed",
+   "repo": "supermemoryai/supermemory",
+   "commit": "5d2b5855fe492a3682a1cde4a255e2db0c4db595",
+   "ref_name": "server-v0.0.8",
+   "head": "b392bc7d1b294a5b3dd2407d060ddcf229481d6f",
+   "paths": ["apps/docs/api-reference/overview.mdx", "apps/docs/api-reference/documents.mdx", "apps/docs/api-reference/search.mdx", "apps/docs/api-reference/ingest.mdx", "apps/docs/api-reference/container-tags.mdx", "apps/docs/api-reference/memories.mdx", "apps/docs/api-reference/settings.mdx", "skills/supermemory/references/api-reference.md"],
+   "release_tag": "server-v0.0.8",
+   "max_redirects": 0
+  },
   "a7-cognee-tag": {
    "hosts": ["api.github.com"],
    "purpose": "metadata only (the auditor's R2, plan d5): which commit cognee's tag v1.6.1 - the pinned cognee==1.6.1 - names, and only if it is the one the discovery found, the recursive tree at that commit, from which cognee's BEAM harness files are selected for the a7-github pins; no link followed, no file fetched",

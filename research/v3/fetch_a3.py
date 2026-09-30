@@ -673,6 +673,9 @@ def d3_report(record: dict) -> dict:
 # ── a7-docs plan d4 (the auditor's Q-A8-10: how the vendor ships supermemory-server 0.0.8) ─────────────────────
 
 D4_WINDOW = "a7-docs"
+#: Q-SM-API = O-a (the auditor, 2026-09-30): the same plan reads supermemory's API reference at the same tag, in a
+#: window of its own - each window's manifest entry is its single source.
+D4_WINDOWS = (D4_WINDOW, "a7-docs-2")
 D4_HOSTS = ["api.github.com"]
 D4_KEYS = frozenset({"hosts", "purpose", "repo", "commit", "ref_name", "head", "paths", "release_tag", "max_redirects"})
 D4_DOC_MAX = 4 * 1024 * 1024                  # a contents answer: the file base64-encoded inside JSON
@@ -681,16 +684,19 @@ _D4_TAG = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,99}")
 
 
 class D4ManifestError(ValueError):
-    """The manifest does not declare a7-docs as plan d4 reads it."""
+    """The manifest does not declare a plan d4 window (a7-docs, a7-docs-2) as plan d4 reads it."""
 
 
-def d4_decl(manifest: dict) -> dict:
-    """The manifest's a7-docs entry - the window's single source: exactly D4_KEYS; api.github.com only, no redirect;
+def d4_decl(manifest: dict, window: str = D4_WINDOW) -> dict:
+    """The manifest's entry of ``window`` (one of D4_WINDOWS; any other is refused) - the window's single source:
+    exactly D4_KEYS; api.github.com only, no redirect;
     a repository name; the tag's commit and the head as full shas; distinct relative paths of plain segments
     (no '..', no query, no leading '/'); a tag name. Anything else is refused by name before any spawn."""
-    w = (manifest.get("windows") or {}).get(D4_WINDOW)
+    if window not in D4_WINDOWS:
+        raise D4ManifestError(f"{window!r} is not a plan d4 window {list(D4_WINDOWS)}")
+    w = (manifest.get("windows") or {}).get(window)
     if not isinstance(w, dict) or set(w) != D4_KEYS:
-        raise D4ManifestError(f"the manifest's {D4_WINDOW} entry must have exactly the keys {sorted(D4_KEYS)}")
+        raise D4ManifestError(f"the manifest's {window} entry must have exactly the keys {sorted(D4_KEYS)}")
     probs = []
     if w["hosts"] != D4_HOSTS:
         probs.append(f"its hosts {w['hosts']} are not {D4_HOSTS}")
@@ -710,7 +716,7 @@ def d4_decl(manifest: dict) -> dict:
                     for p in paths)):
         probs.append("its paths must be distinct relative paths of plain segments")
     if probs:
-        raise D4ManifestError(f"the manifest's {D4_WINDOW} entry: " + "; ".join(probs))
+        raise D4ManifestError(f"the manifest's {window} entry: " + "; ".join(probs))
     return dict(w)
 
 
@@ -1524,11 +1530,12 @@ def _load(name: str, path: Path):
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="the A3 fetch windows (children under the contract)")
-    ap.add_argument("--window", required=True, choices=["a3-discovery", "a7-discovery", D4_WINDOW, D5_WINDOW, D6_WINDOW,
+    ap.add_argument("--window", required=True, choices=["a3-discovery", "a7-discovery", *D4_WINDOWS, D5_WINDOW, D6_WINDOW,
                                                           D7_WINDOW, D8_WINDOW, D9_WINDOW])
     ap.add_argument("--plan", default="d1", choices=["d1", "d2", "d3", "d4", "d5", "d6", "d7", "d8", "d9"],
                     help="d1: the full discovery; d2: the P1/P10 follow-up; d3: the A7 discovery (window a7-discovery); "
-                         "d4: supermemory's self-hosting documentation at the release tag (window a7-docs); "
+                         "d4: supermemory's documentation at the release tag (window a7-docs: self-hosting; a7-docs-2: the API "
+                         "reference); "
                          "d5: cognee's tree at the tag the pinned product carries (window a7-cognee-tag); "
                          "d6: the arXiv entries a declared query finds (window a7-arxiv); "
                          "d7: a model file's CDN host, one HEAD (window a7-hf-d); "
@@ -1545,14 +1552,15 @@ def main(argv: list[str] | None = None) -> int:
     if via is None:
         print("no declared hop (network.json)", file=sys.stderr)
         return 2
-    for plan, window in (("d9", D9_WINDOW), ("d8", D8_WINDOW), ("d7", D7_WINDOW), ("d6", D6_WINDOW), ("d5", D5_WINDOW), ("d4", D4_WINDOW), ("d3", "a7-discovery")):
-        if (args.plan == plan) != (args.window == window):
-            print(f"plan {plan} runs in window {window}, and only it", file=sys.stderr)
+    for plan, windows in (("d9", (D9_WINDOW,)), ("d8", (D8_WINDOW,)), ("d7", (D7_WINDOW,)), ("d6", (D6_WINDOW,)),
+                          ("d5", (D5_WINDOW,)), ("d4", D4_WINDOWS), ("d3", ("a7-discovery",))):
+        if (args.plan == plan) != (args.window in windows):
+            print(f"plan {plan} runs in window {' or '.join(windows)}, and only it", file=sys.stderr)
             return 2
     decl = None
     if args.plan in ("d4", "d5", "d6", "d7", "d8", "d9"):
         try:
-            decl = {"d4": d4_decl, "d5": d5_decl, "d6": d6_decl, "d7": d7_decl, "d8": d8_decl, "d9": d9_decl}[args.plan](manifest)
+            decl = {"d4": lambda m: d4_decl(m, args.window), "d5": d5_decl, "d6": d6_decl, "d7": d7_decl, "d8": d8_decl, "d9": d9_decl}[args.plan](manifest)
         except (D4ManifestError, D5ManifestError, D6ManifestError, D7ManifestError, D8ManifestError, D9ManifestError) as e:
             print(str(e), file=sys.stderr)
             return 2

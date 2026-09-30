@@ -104,6 +104,33 @@ for label, entry in bad_cases.items():
 check("DF: an entry with anything but the declared shape is refused by name (D4ManifestError) - "
       + ", ".join(bad_cases), all(refused.values()), str([k for k, v in refused.items() if not v]))
 
+print("\n- the manifest's a7-docs-2 entry (the auditor's Q-SM-API = O-a: supermemory's API reference, same tag) -")
+API_PATHS = [f"apps/docs/api-reference/{n}.mdx" for n in (
+    "overview", "documents", "search", "ingest", "container-tags", "memories", "settings")] + [
+    "skills/supermemory/references/api-reference.md"]
+REAL2 = MANI["windows"].get("a7-docs-2") or {}
+decl2, derr2 = holds(lambda: F.d4_decl(MANI, "a7-docs-2"))
+check("DD-1: the manifest declares a7-docs-2 as plan d4 reads it: api.github.com only, no redirect, supermemoryai/"
+      "supermemory at the tag server-v0.0.8's commit 5d2b585, the head b392bc7 (a 404 at the tag is read there, marked), "
+      "the release server-v0.0.8, and exactly the seven API-reference pages and the skill's API reference",
+      derr2 is None and decl2["hosts"] == ["api.github.com"] and decl2["max_redirects"] == 0
+      and decl2["repo"] == "supermemoryai/supermemory" and decl2["commit"] == "5d2b5855fe492a3682a1cde4a255e2db0c4db595"
+      and decl2["ref_name"] == "server-v0.0.8" and decl2["head"] == "b392bc7d1b294a5b3dd2407d060ddcf229481d6f"
+      and decl2["release_tag"] == "server-v0.0.8" and decl2["paths"] == API_PATHS and "Q-SM-API" in decl2["purpose"],
+      str(derr2 or decl2))
+_other, oerr = holds(lambda: F.d4_decl(MANI, "a7-discovery"))
+check("DD-2: plan d4's windows are exactly a7-docs and a7-docs-2 (D4_WINDOWS); its declaration of any other window is "
+      "refused by name (D4ManifestError naming the window)",
+      getattr(F, "D4_WINDOWS", None) == ("a7-docs", "a7-docs-2") and bool(oerr)
+      and oerr.startswith("D4ManifestError") and "a7-discovery" in oerr, f"{getattr(F, 'D4_WINDOWS', None)} {oerr}")
+bad2 = {}
+for label, entry in (("a redirect", {**REAL2, "max_redirects": 1}), ("another host", {**REAL2, "hosts": ["x.org"]}),
+                     ("a path going up", {**REAL2, "paths": ["../x.md"]}), ("an extra key", {**REAL2, "follow": 1})):
+    _v, e = holds(lambda entry=entry: F.d4_decl({"windows": {"a7-docs-2": entry}}, "a7-docs-2"))
+    bad2[label] = bool(e) and e.startswith("D4ManifestError") and "a7-docs-2" in e
+check("DD-3: an a7-docs-2 entry with anything but the declared shape is refused by name, the refusal naming a7-docs-2 - "
+      + ", ".join(bad2), bool(bad2) and all(bad2.values()), str(bad2))
+
 TMP = Path(tempfile.mkdtemp(prefix="nvt3_d4_"))
 GH = "api.github.com"
 made = TF.make_test_cert(TMP / "cert", GH, org="Sectigo Limited")
@@ -251,6 +278,7 @@ try:
         F.MANIFEST = mp
 
         def no_spawn(*a_, **k_):
+            SPAWNED.append(k_)
             raise _WouldSpawn("main reached the window")
         F.run_child_window = no_spawn
         err = io.StringIO()
@@ -265,6 +293,7 @@ try:
             F._load, F.MANIFEST, F.run_child_window = saved
         return rc, err.getvalue()
 
+    SPAWNED: list = []                      # the window keywords main() reached run_child_window with
     tail = ["--run", "t", "--python", sys.executable]
     m1 = run_main(["--window", "a7-docs", "--plan", "d3", *tail], MANI)
     m2 = run_main(["--window", "a7-discovery", "--plan", "d4", *tail], MANI)
@@ -277,6 +306,24 @@ try:
     m5 = run_main(["--window", "a7-docs", "--plan", "d4", *tail], MANI)
     check("D4-11: a manifest whose a7-docs entry is not the declared shape is refused (rc 2, named); the real one gets "
           "to the window", m4[0] == 2 and "a7-docs" in m4[1] and m5[0] == "spawned", f"{m4} {m5}")
+    SPAWNED.clear()
+    m6 = run_main(["--window", "a7-docs-2", "--plan", "d4", *tail], MANI)
+    got = SPAWNED[-1] if SPAWNED else {}
+    urls = [r.get("url", "") for r in (got.get("jobs") or [{}])[0].get("requests", [])] if got else []
+    want = [f"https://api.github.com/repos/supermemoryai/supermemory/contents/{p}"
+            f"?ref=5d2b5855fe492a3682a1cde4a255e2db0c4db595" for p in API_PATHS]
+    check("DD-4: plan d4 in window a7-docs-2 reaches the window as a7-docs-2 with the a7-docs-2 entry's own paths at the "
+          "tag's commit (never a7-docs' pages), then the release", m6[0] == "spawned" and got.get("window") == "a7-docs-2"
+          and urls[:len(want)] == want and len(urls) == len(want) + 1 and "releases/tags/server-v0.0.8" in urls[-1],
+          f"{m6} {got.get('window')} {urls}")
+    m7 = run_main(["--window", "a7-docs-2", "--plan", "d8", *tail], MANI)
+    m8 = run_main(["--window", "a7-docs-2", "--plan", "d3", *tail], MANI)
+    other2 = json.loads(json.dumps(MANI))
+    other2["windows"].setdefault("a7-docs-2", {})["max_redirects"] = 1
+    m9 = run_main(["--window", "a7-docs-2", "--plan", "d4", *tail], other2)
+    check("DD-5: window a7-docs-2 with another plan is refused (rc 2); a manifest whose a7-docs-2 entry is not the "
+          "declared shape is refused (rc 2, naming a7-docs-2) - before any spawn",
+          m7[0] == 2 and m8[0] == 2 and m9[0] == 2 and "a7-docs-2" in m9[1], f"{m7} {m8} {m9}")
 finally:
     try:
         hop.close()
