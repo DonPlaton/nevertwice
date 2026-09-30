@@ -107,8 +107,14 @@ def contract(tag):
                       conservation_root=base / "cv")
 
 
-def world(tag, *, record="ok", spm=SPM):
-    """A contract, a mem0_v3 venv with the source, and its install record."""
+PTH_BYTES = {"pywin32.pth": b"# .pth file for the PyWin32 extensions\nwin32\nimport pywin32_bootstrap\n",
+             "distutils-precedence.pth": b"import os; var = 'SETUPTOOLS_USE_DISTUTILS'; enabled = 1\n"}
+
+
+def world(tag, *, record="ok", spm=SPM, pth_owned=False):
+    """A contract, a mem0_v3 venv with the source, and its install record. ``pth_owned``: the venv as lock_install
+    left it - mem0_v3's two declared .pth files (lock_install.VENVS pth_allowed), each in its owner's RECORD at the
+    lock's version (pywin32 312, setuptools 84.0.0)."""
     c = contract(tag)
     venv = c.polygon_root / "mem0_v3"
     site = venv / "Lib" / "site-packages"
@@ -119,6 +125,11 @@ def world(tag, *, record="ok", spm=SPM):
     rec_dir.mkdir(parents=True)
     rec = {"problems": [], "pip": {"args": ["--use-deprecated=legacy-certs"]}, "venv_top_level": [],
            "lock": [{"name": "mem0ai", "version": "2.2.0"}, {"name": "spacy", "version": SPACY}]}
+    if pth_owned:
+        dist(site, "pywin32", "312", {"pywin32.pth": PTH_BYTES["pywin32.pth"], "win32/__init__.py": b""})
+        dist(site, "setuptools", "84.0.0", {"distutils-precedence.pth": PTH_BYTES["distutils-precedence.pth"],
+                                            "setuptools/__init__.py": b""})
+        rec["lock"] += [{"name": "pywin32", "version": "312"}, {"name": "setuptools", "version": "84.0.0"}]
     if record == "problem":
         rec["problems"] = ["pip's offline install failed (exit 1)"]
     elif record == "nospacy":
@@ -171,8 +182,10 @@ class Steps:
         return self.check_rc, (json.dumps(self.answer) + "\n").encode(), b"", chk
 
 
-def run(tag, *, window=None, steps=None, record="ok", spm=SPM, run_label="m1"):
-    c, venv = world(tag, record=record, spm=spm)
+def run(tag, *, window=None, steps=None, record="ok", spm=SPM, run_label="m1", pth_owned=False, tamper_pth=None):
+    c, venv = world(tag, record=record, spm=spm, pth_owned=pth_owned)
+    if tamper_pth:
+        (venv / "Lib" / "site-packages" / tamper_pth).write_bytes(b"import os; os.system('x')\n")
     w, st = window or FakeWindow(), steps or Steps()
     if st.site is None:
         st.site = venv / "Lib" / "site-packages"
@@ -278,6 +291,56 @@ rec, C, VENV, W, ST, err = run("dirty_pip", steps=Steps(dirty={"pip"}))
 check("pip's own boundary check counting an egress hit is a problem, and no check runs",
       ok(lambda: any("the pip check counted 1 egress" in p for p in rec["problems"]) and [c["arm"] for c in ST.calls] == ["pip"]),
       str(rec.get("problems")))
+print("\n- the venv's declared .pth files (Q-SPACY-M1, the auditor 2026-09-30: m1 failed on them) -")
+rec, C, VENV, W, ST, err = run("pth_owned", pth_owned=True)
+
+
+def _pth_rec(dist_, fname, v):
+    return {"file": fname, "dist": dist_, "version": v, "sha256": hashlib.sha256(PTH_BYTES[fname]).hexdigest(),
+            "reason": f"{LI.PTH_WHY[(dist_, fname)]} - {LI.PTH_RULE}"}
+
+
+check("MI-PTH-1: mem0_v3's two declared .pth files (lock_install.VENVS pth_allowed), each in its owner's RECORD at the "
+      "lock's version with its bytes' sha256, are no site problem - allowed_pth records them as the install record does, "
+      "and the check runs",
+      ok(lambda: err is None and rec["problems"] == []
+         and rec["allowed_pth"] == [_pth_rec("pywin32", "pywin32.pth", "312"),
+                                    _pth_rec("setuptools", "distutils-precedence.pth", "84.0.0")]
+         and [c["arm"] for c in ST.calls] == ["pip", "check"]), f"{err!r} {rec.get('problems')} {rec.get('allowed_pth')}")
+rec, C, VENV, W, ST, err = run("pth_owned_evil", pth_owned=True, steps=Steps(pth=True))
+check("MI-PTH-2: beside the declared two, a .pth the model's wheel adds is still a site problem by its name - no "
+      "interpreter starts",
+      ok(lambda: any("nvt3_evil.pth" in p and "interpreter start" in p for p in rec["problems"])
+         and not any("pywin32.pth" in p or "distutils-precedence.pth" in p for p in rec["problems"])
+         and [c["arm"] for c in ST.calls] == ["pip"]), str(rec.get("problems")))
+rec, C, VENV, W, ST, err = run("pth_owned_bytes", pth_owned=True, tamper_pth="pywin32.pth")
+check("MI-PTH-3: a declared .pth whose bytes are not the sha256 its owner's RECORD names is a problem by name - no "
+      "interpreter starts",
+      ok(lambda: any(p.startswith("pywin32.pth: its bytes are not the sha256") for p in rec["problems"])
+         and [c["arm"] for c in ST.calls] == ["pip"]), str(rec.get("problems")))
+
+
+def _site_problem_callers() -> set:
+    """(file, enclosing top-level function) of every call to site_problems in research/ - by the AST."""
+    import ast  # noqa: PLC0415
+    out = set()
+    for f in sorted((ROOT / "research").rglob("*.py")):
+        tree = ast.parse(f.read_text(encoding="utf-8"))
+        for top in tree.body:
+            for n in ast.walk(top):
+                if isinstance(n, ast.Call) and (getattr(n.func, "attr", None) or getattr(n.func, "id", None)) \
+                        == "site_problems":
+                    out.add((f.relative_to(ROOT).as_posix(), getattr(top, "name", "<module>")))
+    return out
+
+
+check("MI-PTH-CENSUS (the auditor): every call of site_problems for a venv with pth_allowed goes through "
+      "lock_install.site_check - the callers are exactly site_check and install_v3_data's own run_install (data venvs: "
+      "no pth_allowed)",
+      ok(lambda: _site_problem_callers() == {("research/v3/lock_install.py", "site_check"),
+                                             ("research/v3/install_v3_data.py", "run_install")}),
+      str(sorted(_site_problem_callers())))
+
 c2, v2 = world("used")
 (c2.runs_root / "_install" / MI.WINDOW / "m1").mkdir(parents=True)
 try:

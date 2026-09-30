@@ -170,7 +170,12 @@ def run_model_install(c, L, F, *, run: str, install_run: str, venv: Path, via_po
     except IV.InstallRefused as e:
         record["problems"].append(f"the model's installed set: {e}")
     names = [str(e.get("name")) for e in irec.get("lock") or []] + [model]
-    record["problems"] += IV.site_problems(site, names, list(irec.get("venv_top_level") or []))
+    # Q-SPACY-M1 (the auditor, 2026-09-30): the venv's declared .pth files pass here as they passed its install -
+    # lock_install's own site check, by owner, version and sha256 (m1 failed on the bare site_problems)
+    site_probs, record["allowed_pth"] = LI.site_check(site, list(irec.get("lock") or []), names,
+                                                      list(irec.get("venv_top_level") or []),
+                                                      (LI.VENVS.get(VENV) or {}).get("pth_allowed") or ())
+    record["problems"] += site_probs
     if record["problems"]:
         return _write(base, record)
     rc, out, _, chk = step([os.fspath(venv_py), "-I", "-B", "-c", CHECK_CODE, model], "check", None)
