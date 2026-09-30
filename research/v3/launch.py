@@ -848,6 +848,16 @@ def spawn(c: Contract, argv: Sequence[str], *, env: Mapping[str, str], cwd: str 
         claude_rec = {"version": c.claude_code_version, "binary_pinned": pinned_cc is not None,
                       "form": "node+cli.js" if node_form else "binary", "sha256": cc_sha, "config": cfg_rec,
                       "offered": "recorded" if offered_ok else (f"waived: attempt 2 after {attempt1}" if waived else None)}
+    unit_files = record.get("unit_files")
+    if unit_files is not None:                     # Q-BM25-MOCK (the auditor, 2026-09-30): a unit-local fastembed cache
+        unit_home = Path(os.path.abspath(os.fspath(cwd)) + ".home")
+        if env.get("HF_HUB_OFFLINE") != "1":
+            reasons.append("unit_files: a unit-local fastembed cache is read offline only - HF_HUB_OFFLINE is not 1 "
+                           "(Q-BM25-MOCK)")
+        placed = unit_files.get("path") if isinstance(unit_files, Mapping) else None
+        if not placed or env.get("FASTEMBED_CACHE_PATH") != placed or not _within(placed, unit_home):
+            reasons.append("unit_files: FASTEMBED_CACHE_PATH is not the placed cache inside this unit's fake home "
+                           "(Q-BM25-MOCK)")
     entry = {
         "spawn_id": spawn_id, "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         **{k: record.get(k) for k in ("role", "stand", "run", "arm", "unit")},
@@ -864,6 +874,7 @@ def spawn(c: Contract, argv: Sequence[str], *, env: Mapping[str, str], cwd: str 
         "claude_code": claude_rec,
         "cwd_reuse": ({"rule": "Q-47-6", "session": _CC_UNITS[_norm(cwd)]["uses"] + 1} if reuse else None),
         "home_canaries": record.get("home_canaries"),      # R-HOME-CANARY: file names and sha256, never a value
+        **({"unit_files": unit_files} if unit_files is not None else {}),   # Q-BM25-MOCK: the placed cache, its markers
     }
     _append_jsonl(spawns_log(c), entry)
     if reasons:

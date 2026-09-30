@@ -318,6 +318,9 @@ class LaunchSpec:
     unwitnessed_reason: str | None = None
     pipes: bool = False                        # stdin and stdout are the arm protocol's pipes (arms/base.py)
     stderr_path: str | None = None             # the child's stderr, appended to a file in its fake home - never a PIPE
+    #: Q-BM25-MOCK (the auditor, 2026-09-30): files the harness placed for the unit before its spawn (a mem0 unit's
+    #: fastembed cache) - the record launch.spawn checks and keeps; None for every other child
+    unit_files: Mapping | None = None
 
 
 def tree_kill_route(witnesses: Any) -> str | None:
@@ -357,6 +360,12 @@ class Scheduler:
         self._spawn_lock = threading.Lock()
         self.pid = os.getpid()                        # D3: every START names the scheduler's pid
 
+    @property
+    def hf_hub(self) -> Path:
+        """The contract's HF hub cache - launch.build_env's HF_HUB_CACHE - where the windows placed the HF pins (the
+        source of a unit's fastembed copy, Q-BM25-MOCK)."""
+        return Path(self.c.hf_home or Path(self.c.polygon_root) / "hf_cache") / "hub"
+
     def spawn_child(self, build: Callable[[Any], LaunchSpec], *, role: str, stand: str, run: str, arm: str,
                     unit: str, dirs: Any = None, window: Any = None) -> tuple[Any, Any]:
         """(the child, its unit directories). Under the one spawn lock: the unit's fresh directories (or ``dirs``, a
@@ -380,7 +389,8 @@ class Scheduler:
                 child = self.launch.spawn(
                     self.c, list(spec.argv), env=env, cwd=d.cwd,
                     record={"role": role, "stand": stand, "run": run, "arm": arm, "unit": unit,
-                            "home_canaries": planted},
+                            "home_canaries": planted,
+                            **({"unit_files": dict(spec.unit_files)} if spec.unit_files is not None else {})},
                     parent_env=self.parent_env, catcher_url=self.catcher_url, token_names=spec.token_names,
                     claude_names=spec.claude_names, env_exception=spec.env_exception,
                     argv_exception=spec.argv_exception, canaries=self.canaries, popen=self.popen,
@@ -508,7 +518,8 @@ class ChildArmLauncher:
                  store_persistence: str = "disk", path_dirs: Sequence[str] = (), declared: Mapping[str, str] | None = None,
                  token_names: Sequence[str] = (), reads_point: bool = False,
                  declared_for: Callable[..., Mapping[str, str]] | None = None,
-                 argv_exception: Mapping[int, str] | None = None) -> None:
+                 argv_exception: Mapping[int, str] | None = None,
+                 prepare: Callable[..., tuple] | None = None) -> None:
         if store_persistence not in ("disk", "memory"):
             raise SchedulerError(f"store_persistence {store_persistence!r} is disk or memory (Q25(4))")
         self.name, self.argv_for, self.spec_for = name, argv_for, spec_for
@@ -516,6 +527,9 @@ class ChildArmLauncher:
         self.declared, self.token_names = dict(declared or {}), tuple(token_names)
         self.reads_point, self.declared_for = reads_point, declared_for
         self.argv_exception = dict(argv_exception) if argv_exception else None
+        #: Q-BM25-MOCK: prepare(stage, stand=, run=, unit=, dirs=, hf_hub=) -> (env, unit_files) places the unit's own
+        #: files before its spawn, under the spawn lock (a mem0 unit's fastembed cache); None for every other arm
+        self.prepare = prepare
         self.env_names: dict[str, frozenset] = {}    # Q-A4-6 (1): per stage, the first unit's names
 
     def environment(self, stage: str, *, stand: str, run: str, unit: str, dirs: Any, write_dirs: Any) -> dict:
@@ -537,13 +551,21 @@ class ChildArmLauncher:
     def open(self, stage: str, *, sched: "Scheduler", stand: str, run: str, unit: str, write_dirs: Any = None) -> UnitClient:
         def build(d: Any) -> LaunchSpec:                 # under the scheduler's spawn lock
             env = self.environment(stage, stand=stand, run=run, unit=unit, dirs=d, write_dirs=write_dirs)
+            unit_files = None
+            if self.prepare is not None:                 # Q-BM25-MOCK: the unit's own files, placed before its spawn
+                penv, unit_files = self.prepare(stage, stand=stand, run=run, unit=unit, dirs=d, hf_hub=sched.hf_hub)
+                clash = sorted(set(penv) & set(env))
+                if clash:
+                    raise SchedulerError(f"{self.name}: prepare sets {clash}, which its environment already sets; "
+                                         "nothing was spawned")
+                env.update(penv)
             spec_path = Path(d.home) / f"spec.{stage}.json"
             spec_path.write_text(json.dumps(self.spec_for(stage, stand=stand, run=run, unit=unit, dirs=d,
                                                           write_dirs=write_dirs), sort_keys=True), encoding="utf-8")
             argv = self.argv_for(spec_path, stage=stage, stand=stand, run=run, unit=unit)
             return LaunchSpec(argv=tuple(argv), declared=env, path_dirs=self.path_dirs, token_names=self.token_names,
                               argv_exception=self.argv_exception, pipes=True,
-                              stderr_path=str(Path(d.home) / f"stderr.{stage}.log"))
+                              stderr_path=str(Path(d.home) / f"stderr.{stage}.log"), unit_files=unit_files)
         child, _d = sched.spawn_child(build, role=f"arm-{stage}", stand=stand, run=run, arm=self.name,
                                       unit=unit if stage == "write" else f"{unit}.q")
         client = UnitClient(child, stage=stage)

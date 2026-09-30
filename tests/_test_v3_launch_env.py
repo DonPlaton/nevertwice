@@ -532,6 +532,44 @@ for m_ in reversed(made):
         pass
 
 
+print("\n- Q-BM25-MOCK (the auditor, 2026-09-30): a unit-local fastembed cache is spawned only offline, inside the home -")
+
+
+def _uf_spawn(label: str, *, offline: bool, where: str = "home"):
+    """A spawn whose record names a unit-local fastembed cache (unit_files): (the reasons it was refused with or None,
+    the last spawns.jsonl entry)."""
+    ub = fresh(label)
+    home = Path(str(ub.cwd) + ".home")
+    cache = home / "fastembed_cache" if where == "home" else TMP / f"{label}_cache_outside"
+    uf = {"path": str(cache), "markers": [{"name": "mock.file", "bytes": 0, "reason": "Q-BM25-MOCK"}]}
+    env_u = L.build_env(C, parent_env=HOSTILE, unit=ub, path_dirs=[], declared={"FASTEMBED_CACHE_PATH": str(cache)},
+                        catcher_url=CATCHER, hf_offline=offline)
+    try:
+        L.spawn(C, [sys.executable, "-c", "pass"], env=env_u, cwd=ub.cwd,
+                record={"role": "test", "arm": "mem0", "unit_files": uf}, parent_env=HOSTILE, catcher_url=CATCHER,
+                popen=_FakePopen, requirement="optional", unwitnessed_reason=OPTIONAL)
+        reasons = None
+    except L.ContractViolation as e:
+        reasons = e.reasons
+    except Exception as e:  # noqa: BLE001 - the row reads it
+        reasons = [f"{type(e).__name__}: {e}"]
+    return reasons, json.loads(L.spawns_log(C).read_bytes().decode("utf-8").splitlines()[-1])
+
+
+r_ok, e_ok = _uf_spawn("u-bm25-ok", offline=True)
+check("BC-OFFLINE-1: a spawn with a unit-local fastembed cache, offline, the cache inside the unit's fake home, is "
+      "accepted - and its record carries unit_files (the markers by name, 0 bytes, the reason Q-BM25-MOCK)",
+      r_ok is None and (e_ok.get("unit_files") or {}).get("markers") == [{"name": "mock.file", "bytes": 0,
+                                                                            "reason": "Q-BM25-MOCK"}], str(r_ok))
+r_on, e_on = _uf_spawn("u-bm25-online", offline=False)
+check("BC-OFFLINE-2: ... the same spawn without HF_HUB_OFFLINE=1 is refused by name, and the refusal is recorded",
+      bool(r_on) and any("HF_HUB_OFFLINE" in r for r in r_on) and e_on.get("refused") is True
+      and any("HF_HUB_OFFLINE" in r for r in e_on.get("reasons") or []), str(r_on))
+r_out, _e_out = _uf_spawn("u-bm25-outside", offline=True, where="outside")
+check("BC-OFFLINE-3: ... and a FASTEMBED_CACHE_PATH outside the unit's fake home is refused by name",
+      bool(r_out) and any("FASTEMBED_CACHE_PATH" in r for r in r_out), str(r_out))
+
+
 print("\n- a real child does not inherit what this process holds -")
 os.environ["NVT3_TEST_DECOY_TOKEN"] = "decoy-token-value-0099"
 try:

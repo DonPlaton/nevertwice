@@ -176,11 +176,40 @@ M.U.FakeDeepSeek, M.U.FakeOllama = DS, OL          # the same fakes, kept so the
 real = P.real_deps(C, L, environ={k: v for k, v in os.environ.items() if k.upper() in ("SYSTEMROOT", "SYSTEMDRIVE", "WINDIR",
                                                                                          "COMSPEC", "PATHEXT", "PATH")},
                    proxy_python=Path(sys.executable))
+#: Q-BM25-MOCK (the auditor, 2026-09-30): the fake mem0 child needs no fastembed, but its spawns go through the real
+#: placement and launch's unit_files rule - from a synthetic hub (the real pins' bytes are the polygon's, never read here)
+import hashlib  # noqa: E402
+_bcs = importlib.util.spec_from_file_location("v3_bm25_cache_e2e", ROOT / "research" / "v3" / "bm25_cache.py")
+BCM = importlib.util.module_from_spec(_bcs)
+_bcs.loader.exec_module(BCM)
+SYN = {p_: f"{p_} synthetic\n".encode() for p_ in BCM.BM25_BLOBS}
+SYN_BLOBS = {p_: (BCM._git_blob(d_), len(d_)) for p_, d_ in SYN.items()}
+SYN_SHAS = {p_: hashlib.sha256(d_).hexdigest() for p_, d_ in SYN.items()}
+SYN_HUB = TMP / "syn_hub"
+for p_, d_ in SYN.items():
+    (SYN_HUB / "models--Qdrant--bm25" / "snapshots" / BCM.COMMIT / p_).parent.mkdir(parents=True, exist_ok=True)
+    (SYN_HUB / "models--Qdrant--bm25" / "snapshots" / BCM.COMMIT / p_).write_bytes(d_)
+PREPARED: list = []
+
+
+def _syn_prepare(stage, *, stand, run, unit, dirs, hf_hub):
+    placed = BCM.place_unit_cache(Path(dirs.home), hub=SYN_HUB, blobs=SYN_BLOBS, shas=SYN_SHAS)
+    PREPARED.append((stage, unit))
+    return {"FASTEMBED_CACHE_PATH": placed["path"]}, placed
+
+
+def _make_launcher(*a_, **k_):
+    ln_ = real.make_launcher(*a_, **k_)
+    if getattr(ln_, "prepare", None) is not None:
+        ln_.prepare = _syn_prepare
+    return ln_
+
+
 deps = P.ProbeDeps(modules=M, environ=real.environ, proxy_python=Path(sys.executable),
                    native=L.NativeEgressWitness(sampler=Quiet(), tick_s=60, jobs=None),
                    fs=L.FsWitness([L.WatchSpec("watched", TMP / "watched")]), start_proxy=start_proxy, stop_proxy=stop_proxy,
                    post=M.RP.post, make_witnesses=real.make_witnesses, make_scheduler=real.make_scheduler,
-                   make_launcher=real.make_launcher, clock=real.clock)
+                   make_launcher=_make_launcher, clock=real.clock)
 
 print("- the mem0 probe over the real wiring (children) -")
 try:
@@ -226,6 +255,16 @@ try:
 except P.ProbeError as e:
     again = str(e)
 check("E1: probe.json is written once - a second run of the label is refused", "written once" in again, again)
+spawned = [json.loads(x) for x in L.spawns_log(C).read_text(encoding="utf-8").splitlines()] \
+    if L.spawns_log(C).is_file() else []
+m0_sp = [e_ for e_ in spawned if e_.get("arm") == "mem0" and not e_.get("refused")]
+check("E-BC (Q-BM25-MOCK): every spawn of the mem0 child went through its unit's placement - the entry names the "
+      "placed cache in its fake home and the two markers (mock.file, tamil.txt), 0 bytes, reason Q-BM25-MOCK",
+      ok(lambda: bool(m0_sp) and len(PREPARED) >= len(m0_sp) and all(
+          [(m_["name"], m_["bytes"], m_["reason"]) for m_ in (e_.get("unit_files") or {}).get("markers", [])]
+          == [("mock.file", 0, "Q-BM25-MOCK"), ("tamil.txt", 0, "Q-BM25-MOCK")]
+          and str((e_.get("unit_files") or {}).get("path", "")).endswith("fastembed_cache") for e_ in m0_sp)),
+      str([e_.get("unit_files") for e_ in m0_sp])[:300])
 check("no row's condition raised", RAISED == [], str(RAISED))
 print(f"\nv3 probe driver e2e: {PASSED} passed, {FAILED} failed")
 sys.exit(1 if FAILED else 0)

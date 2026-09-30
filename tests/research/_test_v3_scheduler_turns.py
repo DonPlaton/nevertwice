@@ -1289,6 +1289,46 @@ try:
           cs3.specs and cs3.specs[0][1].declared == {"CONST": "1"} and cs3.specs[0][1].argv_exception is None,
           str(cs3.specs))
 
+    print("\n- Q-BM25-MOCK: an arm's prepare places the unit's files before its spawn; they ride on the LaunchSpec -")
+    prep_calls: list = []
+
+    def _prep(stage, *, stand, run, unit, dirs, hf_hub):
+        prep_calls.append((stage, run, unit, str(hf_hub), Path(dirs.home).is_dir()))
+        return ({"FASTEMBED_CACHE_PATH": str(Path(dirs.home) / "fastembed_cache")},
+                {"path": str(Path(dirs.home) / "fastembed_cache"), "markers": [{"name": "mock.file", "bytes": 0,
+                                                                                  "reason": "Q-BM25-MOCK"}]})
+
+    def _prep_launcher(prepare):
+        try:
+            return SC.ChildArmLauncher("o1p", argv_for=lambda p, *, stage, stand, run, unit: ["py", str(p)],
+                                       spec_for=lambda *a_, **k_: {}, declared={"CONST": "1"}, prepare=prepare)
+        except Exception as e:  # noqa: BLE001 - the rows read it
+            return f"{type(e).__name__}: {e}"
+
+    csp = CaptureSched()
+    csp.hf_hub = TMP / "hub_for_prepare"
+    lp = _prep_launcher(_prep)
+    gp = o1_open(lp, csp, "r1", "u1") if not isinstance(lp, str) else lp
+    sp_ = csp.specs[0][1] if csp.specs else None
+    check("BC-SCHED-1: a launcher's prepare runs inside build (under the spawn lock) with the unit's dirs and the "
+          "scheduler's hub, BEFORE the spec is returned - its env joins the declared env, its record rides on the "
+          "LaunchSpec as unit_files",
+          gp == "built" and prep_calls == [("write", "r1", "u1", str(TMP / "hub_for_prepare"), True)]
+          and sp_ is not None and sp_.declared.get("FASTEMBED_CACHE_PATH", "").endswith("fastembed_cache")
+          and sp_.declared.get("CONST") == "1" and (getattr(sp_, "unit_files", None) or {}).get("markers")
+          == [{"name": "mock.file", "bytes": 0, "reason": "Q-BM25-MOCK"}], f"{gp} {prep_calls} {sp_}")
+    csn = CaptureSched()
+    ln_ = _prep_launcher(None)
+    gn = o1_open(ln_, csn, "r1", "u1") if not isinstance(ln_, str) else ln_
+    clash_p = _prep_launcher(lambda stage, **k_: ({"CONST": "2"}, None))
+    cc_ = CaptureSched()
+    cc_.hf_hub = TMP / "hub_for_prepare"
+    gc = o1_open(clash_p, cc_, "r1", "u1") if not isinstance(clash_p, str) else clash_p
+    check("BC-SCHED-2: without prepare the LaunchSpec carries no unit_files; a prepare that would set a name the "
+          "environment already sets is refused by name before the spawn",
+          gn == "built" and csn.specs and getattr(csn.specs[0][1], "unit_files", "missing") is None
+          and "prepare" in gc and "CONST" in gc and not cc_.specs, f"{gn} | {gc}")
+
     print("\n- B-GATE-D1: a wait at the incident gate is no unit's active time; B-OPS: every op before the first spawn -")
     vcg = VirtualClock()
 

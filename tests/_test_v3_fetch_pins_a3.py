@@ -1204,6 +1204,16 @@ except Exception as e:  # noqa: BLE001
 check("BM-FP-4: a7-hf-bm25's plan from PINS_A7 and the real manifest - huggingface.co alone, one redirect, the 33 files "
       "at 22b8d2af into the hub's snapshot layout", bfp4 is True, str(pbmerr or (pbm and pbm.hosts)))
 check("BM-FP-5: the command takes the window a7-hf-bm25", '"a7-hf-bm25"' in __import__("inspect").getsource(P.main))
+try:
+    _bcs = importlib.util.spec_from_file_location("v3_bm25_cache_fp", ROOT / "research" / "v3" / "bm25_cache.py")
+    _BC = importlib.util.module_from_spec(_bcs)
+    _bcs.loader.exec_module(_BC)
+    bc_blobs, bc_err = {p: [b, s] for p, (b, s) in _BC.BM25_BLOBS.items()}, None
+except Exception as e:  # noqa: BLE001 - the row FAILs by name
+    bc_blobs, bc_err = {}, f"{type(e).__name__}: {e}"
+check("BM-FP-6 (Q-BM25-MOCK, Q3 = a): the unit cache's expected blobs (bm25_cache.BM25_BLOBS) are exactly the pins' "
+      "expectation - a7-discovery-2 d1's listing at 22b8d2af, each path's git blob and size",
+      bc_err is None and bc_blobs == BM_FILES, str(bc_err or sorted(set(bc_blobs) ^ set(BM_FILES))))
 check("nothing here touches the real A7 table", getattr(P.CP, "PINS_A7", {}) == A7_BEFORE)
 
 import inspect  # noqa: E402

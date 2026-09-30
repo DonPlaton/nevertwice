@@ -488,6 +488,9 @@ CODE_SOURCES = {"base.py": ARMS_DIR / "base.py", "_http_count.py": ARMS_DIR / "_
                 "_ollama_pacer.py": HERE.parent / "_ollama_pacer.py", "_rest.py": ARMS_DIR / "_rest.py"}
 RUNNER_LLM = ("nevertwice", "nevertwice-rawtext", "nevertwice-ablation")
 PROXY_TOKEN_ARMS = {**{a: "DEEPSEEK_API_KEY" for a in (*RUNNER_LLM, "mem0", "langmem", "zep-graphiti")}}
+#: Q-BM25-MOCK (the auditor, 2026-09-30): the arms whose product builds fastembed's Qdrant/bm25 (mem0 2.2.0's Qdrant
+#: store, qdrant.py:92-107) - each unit gets its own checked offline copy before its spawn (PlanLauncher.prepare)
+BM25_CACHE_ARMS = frozenset({"mem0", "mem0-store"})
 LETTA_CONTAINER_HOST = "host.docker.internal"
 EXTRA_NEEDED = {**{a: ("extract_temp",) for a in RUNNER_LLM}, "a-mem": ("llm", "product_pin"),
                 "zep-graphiti": ("falkor_host", "falkor_port"), "letta": ("server_url", "openapi_sha256", "agent")}
@@ -737,7 +740,18 @@ class PlanLauncher:
         return child_arm_launcher(self.arm, argv_for=self.argv_for, spec_for=self.spec_for,
                                   store_persistence=self.spec.store_persistence, path_dirs=(str(self.python.parent),),
                                   declared=self.declared(), token_names=(n,) if n else (),
-                                  reads_point=self.spec.reads_point, declared_for=self.declared_for, argv_exception=exc)
+                                  reads_point=self.spec.reads_point, declared_for=self.declared_for, argv_exception=exc,
+                                  prepare=self.prepare if self.arm in BM25_CACHE_ARMS else None)
+
+    def prepare(self, stage: str, *, stand: str, run: str, unit: str, dirs: Any, hf_hub: Any) -> tuple[dict, dict]:
+        """Q-BM25-MOCK (the auditor, 2026-09-30): the unit's own checked copy of fastembed's Qdrant/bm25 in its fake
+        home, from the hub copy window a7-hf-bm25 placed, by the filled pins (research/v3/bm25_cache.py) - and
+        FASTEMBED_CACHE_PATH naming it. A copy it cannot check refuses the spawn by name (CacheRefused)."""
+        BC = _mod("v3_bm25_cache_for_plan", "bm25_cache.py")
+        CP = _mod("v3_corpus_pin_for_plan", "corpus_pin_v3.py")
+        shas = {p["path"]: p.get("sha256") for p in CP.PINS_A7.values() if p.get("window") == "a7-hf-bm25"}
+        placed = BC.place_unit_cache(Path(dirs.home), hub=Path(hf_hub), shas=shas)
+        return {"FASTEMBED_CACHE_PATH": placed["path"]}, placed
 
     def record(self, *, interpreter: Mapping[str, Any] | None = None) -> dict:
         """The arm's launch record for the run record: names and paths, never a token (``interpreter``: python_decl)."""

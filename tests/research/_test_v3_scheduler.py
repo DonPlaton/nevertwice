@@ -362,6 +362,27 @@ check("R-HOME-CANARY: a scored scheduler without home canaries refuses at constr
       "made; a smoke one is left to the CLI", "R-HOME-CANARY" in no_can and with_can == smoke_ok == "no error",
       f"{no_can} | {with_can} | {smoke_ok}")
 
+# Q-BM25-MOCK: the unit's placed files (a mem0 unit's fastembed cache) reach the spawn record by name
+s_bc = sched("bc_unit_files")
+
+
+def _bc_spec(d):
+    cache = str(Path(d.home) / "fastembed_cache")
+    return SC.LaunchSpec(argv=(sys.executable, "-c", "pass"), path_dirs=(str(Path(sys.executable).parent),),
+                         declared={"FASTEMBED_CACHE_PATH": cache},
+                         unit_files={"path": cache, "markers": [{"name": "mock.file", "bytes": 0, "reason": "Q-BM25-MOCK"}]})
+
+
+bc_err = err(lambda: s_bc.spawn_child(_bc_spec, role="arm-write", stand="S5", run="r1", arm="mem0", unit="ubc"))
+bc_last = json.loads(L.spawns_log(s_bc.c).read_bytes().decode("utf-8").splitlines()[-1]) \
+    if L.spawns_log(s_bc.c).is_file() else {}
+check("BC-SCHED-3: a LaunchSpec's unit_files reach launch.spawn's record - the spawn entry names the placed cache and "
+      "its markers; the scheduler's hub is the contract's hf_cache/hub (the placement's source)",
+      bc_err == "no error" and (bc_last.get("unit_files") or {}).get("markers") == [
+          {"name": "mock.file", "bytes": 0, "reason": "Q-BM25-MOCK"}]
+      and str(getattr(s_bc, "hf_hub", "")) == str(Path(s_bc.c.hf_home or s_bc.c.polygon_root / "hf_cache") / "hub"),
+      f"{bc_err} {bc_last.get('unit_files')}")
+
 N_THREADS, PER_THREAD = 8, 2
 
 

@@ -564,10 +564,17 @@ try:
         pass
 
     class Cap:
+        hf_hub = None                     # Q-BM25-MOCK: the scheduler's hub (the mem0 copy is stubbed below)
+
         def spawn_child(self, build, **kw):
             d = L.make_unit_dirs(CT, "S4", "r9", kw["arm"], kw["unit"])
             self.spec = build(d)
             raise Built()
+
+    # Q-BM25-MOCK: the mem0 unit's fastembed copy is BC-PLAN-1's and the bm25_cache suite's; this row reads the
+    # launcher's own environment, so mem0's prepare places nothing here
+    if getattr(lns["mem0"], "prepare", None) is not None:
+        lns["mem0"].prepare = lambda stage, **k_: ({}, None)
 
     def via_sched(a):
         c_ = Cap()
@@ -996,6 +1003,25 @@ try:
           all("not bound" in v for v in unbound.values()) and bind1 == "accepted" and after == "accepted"
           and "bound" in bind2 and bind2 != "accepted" and "no proxy" in bind_none,
           str({**unbound, "bind1": bind1, "after": after, "bind2": bind2, "none": bind_none})[:500])
+
+    print("\n- Q-BM25-MOCK: mem0 and mem0-store place fastembed's Qdrant/bm25 in each unit's home before the spawn -")
+
+    def _cap(name, **kw):
+        return SimpleNamespace(name=name, **kw)
+
+    preps, pe = {}, None
+    try:
+        preps = {a: getattr(PLS[a].launcher(_cap), "prepare", None) for a in ("mem0", "mem0-store", "nevertwice", "langmem")}
+    except Exception as e:  # noqa: BLE001 - the row reads it
+        pe = f"{type(e).__name__}: {e}"
+    (TMP / "bc_home").mkdir(parents=True, exist_ok=True)
+    bc1 = refused(lambda: PLS["mem0"].prepare("write", stand="S4", run="r1", unit="u1",
+                                              dirs=SimpleNamespace(home=TMP / "bc_home"), hf_hub=TMP / "empty_hub"))
+    check("BC-PLAN-1: the launchers of mem0 and mem0-store carry prepare - their unit's checked Qdrant/bm25 copy - every "
+          "other arm none; mem0's prepare places from the hub copy by the filled pins, so a hub without the window's files "
+          "is refused by name (BC1) before any spawn",
+          pe is None and callable(preps.get("mem0")) and callable(preps.get("mem0-store"))
+          and preps.get("nevertwice") is None and preps.get("langmem") is None and "BC1" in bc1, f"{pe} {preps} {bc1}")
 
     print("\n- PL-V (Row V): the plan reads V at each arm's own default, on S1 alone -")
 
