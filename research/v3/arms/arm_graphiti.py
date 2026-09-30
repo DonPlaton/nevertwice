@@ -48,7 +48,7 @@ import time
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
@@ -119,6 +119,30 @@ def render_v(template: str, facts: str, entities: str) -> str:
         out += [template[pos:i], value]
         pos = i + len(slot)
     return "".join(out + [template[pos:]])
+
+
+def render_v_spans(template: str, facts: Sequence[str], entities: Sequence[str]) -> tuple[str, dict]:
+    """render_v with the facts and the entities one per line - the text byte for byte render_v's - and where each line
+    lands: its [start, end) character offsets in the rendered text (M33, the auditor's Q5 = (a): the Answerer counts
+    them whole, partial or lost against the cap)."""
+    values = {V_SLOTS[0]: ("facts", list(facts)), V_SLOTS[1]: ("entities", list(entities))}
+    out: list[str] = []
+    spans: dict = {"facts": [], "entities": []}
+    pos = cur = 0
+    for i, slot in sorted((template.index(slot), slot) for slot in V_SLOTS):
+        out.append(template[pos:i])
+        cur += i - pos
+        kind, lines = values[slot]
+        for n, line in enumerate(lines):
+            if n:
+                out.append("\n")
+                cur += 1
+            spans[kind].append([cur, cur + len(line)])
+            out.append(line)
+            cur += len(line)
+        pos = i + len(slot)
+    out.append(template[pos:])
+    return "".join(out), spans
 
 
 def proxy_base(spec: Mapping[str, Any]) -> str:
@@ -321,14 +345,14 @@ class Handler:
         ecfg.limit, ncfg.limit = V_EDGES, V_NODES
         er = self.loop.run_until_complete(self.g.search_(query, config=ecfg, group_ids=[self.unit]))
         nr = self.loop.run_until_complete(self.g.search_(query, config=ncfg, group_ids=[self.unit]))
-        text = render_v(template, "\n".join(self._fact_v(e) for e in er.edges),
-                        "\n".join(f"{n.name}: {n.summary}" for n in nr.nodes))
+        text, v_spans = render_v_spans(template, [self._fact_v(e) for e in er.edges],
+                                       [f"{n.name}: {n.summary}" for n in nr.nodes])
         self.reads["reads"] += 1
         self.reads["items_returned"] += 1
         item = {"kind": "rendered", "text": text, "rank": 1, "template_sha256": self.spec["v_template"]["sha256"]}
         return {"qid": qid, "items": [item], "items_returned": 1,
                 "k": {"edges": V_EDGES, "nodes": V_NODES}, "edges": len(er.edges), "nodes": len(nr.nodes), "point": "V",
-                "template_sha256": self.spec["v_template"]["sha256"], "t0": t0, "t1": time.time()}
+                "template_sha256": self.spec["v_template"]["sha256"], "v_spans": v_spans, "t0": t0, "t1": time.time()}
 
     def read(self, qid: str, query: str, k: int, point: str | None = None) -> dict:
         self._stage("read", "read")
@@ -356,8 +380,16 @@ class Handler:
         snap = HC.snapshot()
         transport: dict = {}
         self.pacer.attach(transport)
-        return {"http": snap, **self.tally, **self.episodes, **self.reads,
-                "ollama_transport": transport.get("ollama_transport")}
+        out = {"http": snap, **self.tally, **self.episodes, **self.reads,
+               "ollama_transport": transport.get("ollama_transport")}
+        if self.stage == "read":           # M34: the graph after the reads, by the seal's own function, beside the seal
+            try:
+                digest, counts = graph_state(self.g, self.loop, self.unit)
+                out["store_state"] = {"sha256": digest, "counts": counts,
+                                      "seal_sha256": (self.rec.get("seal") or {}).get("sha256")}
+            except Refused as e:
+                out["store_state"] = f"unmeasured: {e}"
+        return out
 
 
 class RefusedHandler:

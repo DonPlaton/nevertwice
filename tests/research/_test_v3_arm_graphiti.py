@@ -331,7 +331,34 @@ try:
           and [x.get("kind") for x in rv.get("items") or []] == ["rendered"] and (rv.get("items") or [{}])[0].get("template_sha256") == VT_SHA and (rv.get("items") or [{}])[0].get("text") == want_v
           and rv.get("k") == {"edges": 20, "nodes": 20} and rv.get("template_sha256") == VT_SHA
           and "Date range: 2023-05-20 - present" in facts_v, f"{sv} {str(rv)[:300]}")
+    vt_item = (rv.get("items") or [{}])[0].get("text", "")
+    vsp = rv.get("v_spans") or {}
+    check("T-GR-2 (M33, Q5 = (a)): the V read names each fact and entity line's character span in its rendered text - "
+          "each span's slice of the rendered bytes IS its line (the facts 'FACT (Date range: ...)', the entities 'name: "
+          "summary'), as many as the read's edges and nodes",
+          bool(vt_item) and [vt_item[x:y] for x, y in vsp.get("facts") or []] == facts_v.split("\n")
+          and [vt_item[x:y] for x, y in vsp.get("entities") or []] == ents_v.split("\n")
+          and len(vsp.get("facts") or []) == rv.get("edges") and len(vsp.get("entities") or []) == rv.get("nodes"),
+          str(vsp)[:300])
+    seal_sha = ((safely(lambda: c.request("hello"), {}).get("start") or {}).get("seal") or {}).get("sha256")
+    st_same = safely(lambda: c.request("counters"), {}).get("store_state") or {}
     c.close()
+    gfile3 = FALKOR / "127.0.0.1_6380_u1.json"
+    orig3 = gfile3.read_text(encoding="utf-8")
+    c, _ = start("rv3", dict(spec_for("rv3", "read", "u1"), v_template={"text": VT, "sha256": VT_SHA}), adir=v_dir("rv3"))
+    safely(lambda: c.request("hello"), {})
+    db3 = json.loads(orig3)
+    db3["edges"][0]["fact"] += " (changed by a read)"
+    gfile3.write_text(json.dumps(db3), encoding="utf-8")
+    st_moved = safely(lambda: c.request("counters"), {}).get("store_state") or {}
+    gfile3.write_text(orig3, encoding="utf-8")
+    c.close()
+    check("T-GR-3 (M34): the read stage's counters carry store_state - the graph as the product reads it back after the "
+          "reads, by the seal's own digest function: the write's seal digest when nothing moved, another digest when the "
+          "graph changed during the read stage (never a copy of the seal)",
+          isinstance(seal_sha, str) and st_same.get("sha256") == seal_sha == st_same.get("seal_sha256")
+          and isinstance(st_moved.get("sha256"), str) and st_moved.get("sha256") != seal_sha
+          and st_moved.get("seal_sha256") == seal_sha, str((seal_sha, st_same, st_moved))[:400])
 
     print("\n- an undated stand: the wall clock, strictly increasing, no validity rendered -")
     c, _ = start("w2", spec_for("w2", "write", "u2", dated=False))
@@ -371,6 +398,21 @@ try:
           "taken for a slot", rv_fn is not None and rv_fn(VT, "a {entities} b {facts}", "E") == (
               VT.split("{facts}")[0] + "a {entities} b {facts}" + VT.split("{facts}")[1].split("{entities}")[0] + "E"
               + VT.split("{entities}")[1]), "")
+    rvs = getattr(AG, "render_v_spans", None)
+    FACTS1, ENTS1 = ["a {entities} b", "fact two (Date range: 2023-05-20 - present)"], ["Caroline: a person", "Rex: a dog"]
+    VT_R = "E FIRST\n{entities}\nTHEN F\n{facts}\nEND"
+
+    def spans_ok(tpl):
+        try:
+            text, sp = rvs(tpl, FACTS1, ENTS1)
+        except Exception as e:  # noqa: BLE001 - the row FAILs by name
+            return f"{type(e).__name__}: {e}"
+        return (text == rv_fn(tpl, "\n".join(FACTS1), "\n".join(ENTS1))
+                and [text[x:y] for x, y in sp["facts"]] == FACTS1 and [text[x:y] for x, y in sp["entities"]] == ENTS1)
+    check("T-GR-1 (M33): render_v_spans renders byte for byte what render_v renders, and each fact and entity line's span "
+          "slices exactly that line - in either slot order, a fact holding a slot's name taken as text",
+          callable(rvs) and spans_ok(VT) is True and spans_ok(VT_R) is True,
+          str((spans_ok(VT), spans_ok(VT_R)) if callable(rvs) else "no render_v_spans"))
     hh = AG.Handler(dict(spec_for("inp", "write", "u9", dated=False)), {"g": None, "loop": None, "tally": {},
                                                                        "pacer": None}, {})
     hh.last_ref = datetime.now(timezone.utc) + timedelta(hours=1)
