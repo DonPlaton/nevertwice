@@ -7,13 +7,18 @@ URL's /chat/completions with the key mem0 reads from DEEPSEEK_API_KEY - through 
 the path of mem0's DeepSeekLLM and its openai.OpenAI (2.0.19: llms/deepseek.py:41, 108), whose response carries the
 upstream's usage (Q-AB-1: the adapter counts there) - and every text is embedded through
 <ollama_base_url>/api/embed. add(timestamp=...) raises ValueError, as mem0 OSS does. Memories persist as JSON under the
-vector store's path, so a new read-stage process sees them (Q25).
+vector store's path, so a new read-stage process sees them (Q25). Memory.vector_store is mem0 2.2.0's Qdrant store as
+far as M35 reads it (_FakeQdrant): the BM25 encoder loaded lazily at the first add or keyword_search, the bm25 slot,
+keyword_search called by search, and the store's warnings on its own logger - NVT3_FAKE_BM25 "noslot" (a collection
+without the slot) or "noencoder" (the encoder fails to load) turns BM25 off the way the product does.
 """
 from __future__ import annotations
 
 import json
+import logging
 import math
 import os
+import re
 import urllib.request
 import uuid
 from pathlib import Path
@@ -66,6 +71,47 @@ class _Completions:
         return self.last_response
 
 
+_QLOG = logging.getLogger("mem0.vector_stores.qdrant")     # mem0 2.2.0's store logger (vector_stores/qdrant.py:26)
+
+
+def _words(text: str) -> set:
+    return set(re.findall(r"\w+", text.lower()))
+
+
+class _FakeQdrant:
+    """mem0 2.2.0's Qdrant store as M35 reads it (vector_stores/qdrant.py): _bm25_encoder None until first needed, then
+    the encoder or False (sticky, with the warning "Failed to load BM25 encoder"); _has_bm25_slot, False for a
+    collection that predates v3 (the "predates v3 hybrid search" warning at init); keyword_search None without either,
+    else the unit's memories scored by the words they share with the query."""
+
+    def __init__(self, mem: "Memory") -> None:
+        self._mem = mem
+        self._bm25_encoder = None
+        self._has_bm25_slot = os.environ.get("NVT3_FAKE_BM25") != "noslot"
+        if not self._has_bm25_slot:
+            _QLOG.warning("Collection 'nvt3' predates v3 hybrid search (no 'bm25' sparse slot). BM25 keyword scoring "
+                          "will be disabled for this collection; semantic search works normally. To enable hybrid "
+                          "search, use a fresh collection.")
+
+    def _get_bm25_encoder(self):
+        if self._bm25_encoder is None:
+            if os.environ.get("NVT3_FAKE_BM25") == "noencoder":
+                _QLOG.warning("Failed to load BM25 encoder: %s", "the fake has no model files")
+                self._bm25_encoder = False
+            else:
+                self._bm25_encoder = object()
+        return self._bm25_encoder if self._bm25_encoder is not False else None
+
+    def keyword_search(self, query, top_k=5, filters=None):
+        _log("keyword_search", query=query, top_k=top_k, filters=filters)
+        if not self._has_bm25_slot or self._get_bm25_encoder() is None:
+            return None
+        q = _words(query)
+        mine = [m for m in self._mem._load() if m["user_id"] == (filters or {}).get("user_id")]
+        pts = [SimpleNamespace(id=m["id"], score=float(len(q & _words(m["memory"])))) for m in mine]
+        return sorted(pts, key=lambda x: -x.score)[:top_k]
+
+
 class Memory:
     def __init__(self, config: dict) -> None:
         self.config = config
@@ -79,6 +125,7 @@ class Memory:
             self.llm = SimpleNamespace(config=cfg)            # the Ollama LLM: no OpenAI client
         self._path = Path(config["vector_store"]["config"]["path"]) / "fake_memories.json"
         self._path.parent.mkdir(parents=True, exist_ok=True)
+        self.vector_store = _FakeQdrant(self)
 
     @classmethod
     def from_config(cls, config_dict: dict) -> "Memory":
@@ -119,6 +166,8 @@ class Memory:
                  same_params=set(got) == set(params) and all(got[k] is params[k] for k in params))
         store = self._load()
         results = []
+        if msgs and self.vector_store._has_bm25_slot:
+            self.vector_store._get_bm25_encoder()        # the store encodes BM25 at insert (qdrant.py:198-215)
         for m in msgs:
             mem = {"id": uuid.uuid4().hex, "memory": m["content"], "user_id": user_id, "metadata": metadata or {},
                    "vec": self._embed(m["content"]), "created_at": "2026-09-27T12:00:00+00:00"}
@@ -134,6 +183,7 @@ class Memory:
         top_k = 20 if top_k is _UNSET else top_k                   # mem0 2.0.19's defaults
         threshold = 0.1 if threshold is _UNSET else threshold
         qv = self._embed(query)
+        self.vector_store.keyword_search(query=query.lower(), top_k=max(top_k * 4, 60), filters=filters)
 
         def cos(a, b):
             na, nb = math.sqrt(sum(x * x for x in a)), math.sqrt(sum(x * x for x in b))

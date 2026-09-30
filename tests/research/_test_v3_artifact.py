@@ -127,6 +127,34 @@ def decl(system: str, **over) -> dict:
     return A.arm_decl(**base)
 
 
+M35_LINES = ("fastembed not installed", "Failed to load BM25 encoder", "predates v3 hybrid search")
+
+
+def bm25_block(stage: str, **over) -> dict:
+    """An honest unit's BM25 block as arm_mem0's counters give it (M35): no positive BM25 hit at all is still honest."""
+    b_ = {"names": {"store": "vector_store", "encoder": "_bm25_encoder", "slot": "_has_bm25_slot",
+                    "search": "keyword_search", "logger": "mem0.vector_stores.qdrant"},
+          "encoder": "loaded", "slot": True, "log_watched": True, "lines": {x: 0 for x in M35_LINES},
+          "keyword_search": ({"calls": 3, "not_none": 3, "hits": 7, "positive_hits": 0, "raised": 0} if stage == "read"
+                             else {"calls": 0, "not_none": 0, "hits": 0, "positive_hits": 0, "raised": 0}),
+          "results_bm25_positive": 0, "reads_bm25_positive": 0}
+    b_.update(over)
+    return b_
+
+
+def nlp_block(system: str, stage: str = "write", **over) -> dict:
+    """spaCy's state as nlp_state gives it: after mem0-store's adds only its lemma model; after any search both (M29)."""
+    n_ = {"names": {}, "module": True, "nlp_full": system == "mem0" or stage == "read", "nlp_lemma": True,
+          "failed_full": False, "failed_lemma": False, "is_package": True}
+    n_.update(over)
+    return n_
+
+
+def unit_counters(system: str, sid: list[str], units: int = 20) -> list:
+    return [{"status_id": s, "unit": f"u{i:02d}", "stage": st, "bm25": bm25_block(st), "nlp": nlp_block(system, st)}
+            for s in sid for i in range(units) for st in ("write", "read")]
+
+
 def row(system: str, *, sid: list[str], **over) -> dict:
     d = decl(system, **over.pop("decl", {}))
     r = {"arm_decl": d, "runs": [{"status_id": s, "units_dropped_own": 0} for s in sid],
@@ -143,6 +171,8 @@ def row(system: str, *, sid: list[str], **over) -> dict:
         r["p1"] = A.p1_block(lost_ops=[], transport_lost=0, logical_writes=20)
         r["yield"] = A.yield_block(unit="conversation", scored=True,
                                    units=[{"retrievable": 3, "chars_in": 900, "chars": 1000}] * 2)
+    if system in ("mem0", "mem0-store"):
+        r["unit_counters"] = unit_counters(system, sid)
     r.update(over)
     return r
 
@@ -590,6 +620,109 @@ check("P0j (c): single-witness without single_witness_ok for the arm",
                                                   base=REC_C)))
 check("P0j (c): another arm's single_witness_ok does not stand for this one",
       has(rec({}, ctx=A.P0Context(**{**ABC.__dict__, "single_witness_ok": {"zep": True}}), base=REC_C), "j"))
+
+print("\n- P0k (the auditor's Q-M35-FAIL = (d)): A5's four BM25 conditions (M35) and spaCy after the adds (M29) -")
+
+
+def uc_set(r, *, unit="u03", sid_i=0, stage="read", bm25=None, nlp=None, drop=None):
+    """Change one unit-stage entry of a row's unit counters in place."""
+    for e in r["unit_counters"]:
+        if (e["status_id"], e["unit"], e["stage"]) == (r["runs"][sid_i]["status_id"], unit, stage):
+            if bm25 is not None:
+                e["bm25"] = {**e["bm25"], **bm25}
+            if nlp is not None:
+                e["nlp"] = {**e["nlp"], **nlp}
+            for k in drop or ():
+                e.pop(k, None)
+
+
+def k_flags(mut, arm="mem0", base=None):
+    r = copy.deepcopy(base or clean)
+    mut(r)
+    try:
+        return [x for x in A.p0_flags(r, CTX, arm) if x.startswith("P0k:")]
+    except Exception as e:  # noqa: BLE001
+        return [f"CRASH {e!r}"]
+
+
+clean_store = row("mem0-store", sid=sids[:2])
+check("P0K-1: an honest mem0 row and an honest mem0-store row - every unit's four BM25 conditions held at both stages, "
+      "spaCy loaded after the adds - raise no P0k flag, though no unit has a single positive BM25 hit (A5: a count "
+      "published, never a failure)", k_flags(lambda r: None) == [] and k_flags(lambda r: None, arm="mem0-store",
+                                                                                base=clean_store) == [],
+      str((k_flags(lambda r: None), k_flags(lambda r: None, arm="mem0-store", base=clean_store)))[:300])
+K_CASES = {
+    "no bm25 slot at the write stage": (dict(stage="write", bm25={"slot": False}), "M35", "slot"),
+    "a slot not known at the read stage": (dict(bm25={"slot": None}), "M35", "slot"),
+    "fastembed not installed in the write log": (dict(stage="write", bm25={"lines": {**{x: 0 for x in M35_LINES},
+                                                                                     "fastembed not installed": 1}}),
+                                                 "M35", "fastembed not installed"),
+    "Failed to load BM25 encoder in the read log": (dict(bm25={"lines": {**{x: 0 for x in M35_LINES},
+                                                                         "Failed to load BM25 encoder": 2}}),
+                                                    "M35", "Failed to load BM25 encoder"),
+    "predates v3 hybrid search in the read log": (dict(bm25={"lines": {**{x: 0 for x in M35_LINES},
+                                                                       "predates v3 hybrid search": 1}}),
+                                                  "M35", "predates v3 hybrid search"),
+    "the lines not counted": (dict(bm25={"lines": {"fastembed not installed": 0}}), "M35", "lines"),
+    "the log not watched": (dict(stage="write", bm25={"log_watched": False}), "M35", "watched"),
+    "an encoder that failed at the write stage": (dict(stage="write", bm25={"encoder": "failed"}), "M35", "encoder"),
+    "an encoder never loaded by the reads": (dict(bm25={"encoder": "not-tried"}), "M35", "encoder"),
+    "keyword_search never not None": (dict(bm25={"keyword_search": {"calls": 3, "not_none": 0, "hits": 0,
+                                                                    "positive_hits": 0, "raised": 0}}),
+                                      "M35", "keyword_search"),
+    "no bm25 block at a stage": (dict(drop=("bm25",)), "M35", "not measured"),
+    "spaCy's full model not loaded after mem0's adds": (dict(stage="write", nlp={"nlp_full": False}), "M29", "nlp_full"),
+    "a failed spaCy load flag": (dict(stage="write", nlp={"failed_lemma": True}), "M29", "failed_lemma"),
+    "the spaCy model not installed": (dict(stage="write", nlp={"is_package": False}), "M29", "installed"),
+    "no nlp block after the adds": (dict(stage="write", drop=("nlp",)), "M29", "not measured"),
+}
+k_bad = []
+for label, (kw, code, word) in K_CASES.items():
+    got_ = k_flags(lambda r, kw=kw: uc_set(r, **kw))
+    want_key = f"{sids[0]}/u03"
+    if not (got_ and all(x.startswith(f"P0k: {code}: {want_key}") for x in got_) and any(word in x for x in got_)):
+        k_bad.append((label, got_))
+check("P0K-2: each broken condition of one unit is a P0k flag by name - \"P0k: M35|M29: <status_id>/<unit>: ...\" - "
+      "and only that unit's: " + ", ".join(K_CASES), k_bad == [], str(k_bad)[:700])
+ks_bad = []
+for label, (kw, code, word) in {"mem0-store: the lemma model not loaded": (dict(stage="write", nlp={"nlp_lemma": False}),
+                                                                           "M29", "nlp_lemma"),
+                                "mem0-store: no bm25 slot": (dict(stage="write", bm25={"slot": False}), "M35", "slot")}.items():
+    got_ = k_flags(lambda r, kw=kw: uc_set(r, **kw), arm="mem0-store", base=clean_store)
+    if not any(x.startswith(f"P0k: {code}: ") and word in x for x in got_):
+        ks_bad.append((label, got_))
+check("P0K-3: mem0-store is judged the same way (both arms run mem0's Qdrant store and spaCy) - its full spaCy model "
+      "is not required (M29: mem0-store lemmatizes only), its lemma model is",
+      ks_bad == [] and k_flags(lambda r: uc_set(r, stage="write", nlp={"nlp_full": False}), arm="mem0-store",
+                               base=clean_store) == [], str(ks_bad)[:400])
+f4a = k_flags(lambda r: r.pop("unit_counters"))
+f4b = k_flags(lambda r: r.__setitem__("unit_counters", [e for e in r["unit_counters"]
+                                                          if not (e["unit"] == "u07" and e["stage"] == "read")]))
+f4c = k_flags(lambda r: r.__setitem__("unit_counters", [e for e in r["unit_counters"] if e["unit"] != "u07"]))
+check("P0K-4: a mem0 row without unit counters is invalid as not measured (M35 and M29), a unit missing its read "
+      "stage is not measured there, and a run whose counters cover fewer units than the stand scores is flagged",
+      any("M35: not measured" in x for x in f4a) and any("M29: not measured" in x for x in f4a)
+      and any("u07" in x and "not measured at the read stage" in x for x in f4b)
+      and any("19 units" in x and "20" in x for x in f4c), str((f4a, f4b, f4c))[:600])
+f5 = k_flags(lambda r: (r.__setitem__("units_dropped", ["u07"]),
+                        r.__setitem__("unit_counters", [e for e in r["unit_counters"]
+                                                        if not (e["unit"] == "u07" and e["stage"] == "read")])))
+check("P0K-5: a unit the stand dropped (P0c counts it) is not judged by P0k - its missing read stage is no flag",
+      f5 == [], str(f5)[:300])
+f7 = {"mem0": k_flags(lambda r: uc_set(r, nlp={"nlp_full": False})),
+      "mem0-store": k_flags(lambda r: uc_set(r, nlp={"nlp_full": False}), arm="mem0-store", base=clean_store),
+      "missing": k_flags(lambda r: uc_set(r, drop=("nlp",)))}
+check("P0K-7 (Q-M29-READ = (a)): at the read stage both spaCy models must be loaded for both arms - the search "
+      "lemmatizes the BM25 query and extracts its entities with one code - so a read without the full model is P0k M29 "
+      "for mem0 and for mem0-store, and a read without its nlp block is not measured",
+      all(any(x.startswith(f"P0k: M29: {sids[0]}/u03: read:") and "nlp_full" in x for x in f7[a_])
+          for a_ in ("mem0", "mem0-store"))
+      and any("M29" in x and "read" in x and "not measured" in x for x in f7["missing"]), str(f7)[:500])
+other = row("nevertwice", sid=sids[2:4])
+check("P0K-6: other arms and a blocked mem0 row are not P0k's: no unit counters there is no flag",
+      [x for x in A.p0_flags(other, CTX, "nevertwice") if x.startswith("P0k:")] == []
+      and [x for x in A.p0_flags({"blocked": "blocked:install"}, CTX, "mem0") if x.startswith("P0k:")] == [],
+      str(A.p0_flags(other, CTX, "nevertwice"))[:300])
 
 rctx = A.P0Context(**{**CTX.__dict__, "windows": {s: (dt.datetime(2026, 10, 1, 8, 30, tzinfo=dt.timezone.utc),
                                                      dt.datetime(2026, 10, 1, 9, 0, 1, tzinfo=dt.timezone.utc))

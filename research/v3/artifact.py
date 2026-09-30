@@ -25,9 +25,10 @@ instrument did not measure is refused, not zeroed):
   sha256}}, measured_at {commit, dirty, utc} taken at assembly, after the last END (m2_v3 S4); declared_axes exactly
   as the point declares them (B and K none, V k - rev1 :1338), Row V as S1's product artifact alone, and at V a V≡
   arm's row is only {equivalent_to: B | K} - a pointer to the read its default is, never a copy of its numbers;
-* p0_flags() / p0_root_flags(): the P0 a-j clauses readable from an artifact and its context, one function each;
+* p0_flags() / p0_root_flags(): the P0 a-k clauses readable from an artifact and its context, one function each;
   p0j holds K87 checks 1-2 inside the row's reconciliation branch (the auditor's B-DUP ruling: accounting.py only
-  computes the numbers).
+  computes the numbers); p0k holds a mem0 / mem0-store row to A5's four BM25 conditions (M35) and spaCy's state
+  (M29) at both stages of every unit it scores (the auditor's Q-M35-FAIL = (d), Q-M29-READ = (a)).
 """
 from __future__ import annotations
 
@@ -76,6 +77,16 @@ CLOUD_ALSO = ("transport_recovered", "transport_lost", "upstream_errors", "clien
 BOUNDARY = ("canary_hits", "owner_marker_hits", "egress_hits", "fs_hits", "ollama_refused")
 #: rev1 P1's block classes - the only values a P1 block can name (P3's vocabulary).
 BLOCK_CLASSES = ("structured-output", "tool-calling", "transport")
+#: P0k (the auditor's Q-M35-FAIL = (d), 2026-09-30): the arms whose rows carry each unit's counters - mem0's Qdrant
+#: store and spaCy - and what they must show. M35 (A5, T34): the three warning lines of mem0's store (never one in the
+#: unit's log). M29 (B-NLP, the auditor 2026-09-28; Q-M29-READ = (a), 2026-09-30): spaCy's module imported, no failed
+#: load, the model installed, and the models each stage loads - after the adds both for mem0, the lemma model for
+#: mem0-store (it lemmatizes only); after the reads both for both arms (the search lemmatizes the BM25 query,
+#: main.py:1634, and extracts its entities, :1635, one code for both).
+MEM0_ARMS = ("mem0", "mem0-store")
+M35_LINES = ("fastembed not installed", "Failed to load BM25 encoder", "predates v3 hybrid search")
+M29_LOADED = {"mem0": ("nlp_full", "nlp_lemma"), "mem0-store": ("nlp_lemma",)}
+M29_READ = ("nlp_full", "nlp_lemma")
 #: What a lost operation is counted and published as (TB4.10 ruling; M1 ruling).
 LOSS_REASONS = ("structured-output", "tool-calling", "transport", "product-error", "breaker", "fallback_refused")
 #: The engine's _LLM_LAST["failure"] slugs (_engine_store.py), split by what they mean for a refused fallback.
@@ -662,7 +673,91 @@ def p0j(row: Mapping, ctx: P0Context, arm: str) -> list[str]:
     return out
 
 
-ROW_CLAUSES = (p0a, p0b, p0c, p0d, p0f, p0g, p0h, p0i, p0j)
+def _m35(b, stage: str) -> list[str]:
+    """A5's four BM25 conditions on one unit-stage block (the adapter's counters "bm25"): the collection's bm25 slot, the
+    store's log watched and none of the three lines in it, the encoder - loaded by the end of the reads, never failed
+    at the write stage - and keyword_search not None at least once in the reads. A positive BM25 count is never judged."""
+    if not isinstance(b, Mapping):
+        return ["not measured (no bm25 block)"]
+    out = []
+    if b.get("slot") is not True:
+        out.append(f"the collection's bm25 sparse slot is {b.get('slot')!r}, not present")
+    if b.get("log_watched") is not True:
+        out.append("the store's warning lines were not watched")
+    lines = b.get("lines")
+    if not isinstance(lines, Mapping) or set(lines) != set(M35_LINES):
+        out.append("the three warning lines were not counted")
+    else:
+        out += [f"the log holds \"{x}\" ({lines[x]!r})" for x in M35_LINES if not (_int(lines[x]) and lines[x] == 0)]
+    enc = b.get("encoder")
+    if stage == "read":
+        if enc != "loaded":
+            out.append(f"the BM25 encoder is {enc!r} by the end of the reads, not loaded")
+        ks = b.get("keyword_search")
+        if not (isinstance(ks, Mapping) and _int(ks.get("not_none")) and ks["not_none"] >= 1):
+            out.append("keyword_search never returned a result (not None)")
+    elif enc not in ("loaded", "not-tried"):
+        out.append(f"the BM25 encoder is {enc!r} at the write stage")
+    return out
+
+
+def _m29(n, arm: str, stage: str) -> list[str]:
+    """spaCy's state at the end of a stage (M29) - read by the adapter, never loaded by it."""
+    if not isinstance(n, Mapping):
+        return ["not measured (no nlp block)"]
+    out = []
+    if n.get("module") is not True:
+        out.append("mem0's spacy_models was never imported")
+    loaded = M29_LOADED[arm] if stage == "write" else M29_READ
+    out += [f"{f} not loaded ({n.get(f)!r})" for f in loaded if n.get(f) is not True]
+    out += [f"{f} is {n.get(f)!r}, not False" for f in ("failed_full", "failed_lemma") if n.get(f) is not False]
+    if n.get("is_package") is not True:
+        out.append(f"the model is not installed ({n.get('is_package')!r})")
+    return out
+
+
+def p0k(row: Mapping, ctx: P0Context, arm: str) -> list[str]:
+    """The auditor's Q-M35-FAIL = (d): a mem0 / mem0-store row is invalid by name when a unit it scores fails one of
+    A5's four BM25 conditions (M35) or spaCy's state (M29) at either stage - "P0k: M35|M29: <status_id>/<unit>:
+    <stage>: ...". A row without unit counters is not measured; a unit missing a stage is not measured there;
+    a run whose counters cover fewer units than the stand scores is flagged. A unit the stand dropped (units_dropped,
+    P0c's) is not judged here. Other arms and a blocked row are not P0k's."""
+    if arm not in MEM0_ARMS or row.get("blocked"):
+        return []
+    uc = row.get("unit_counters")
+    if not isinstance(uc, list) or not uc:
+        return ["P0k: M35: not measured - the row carries no unit counters",
+                "P0k: M29: not measured - the row carries no unit counters"]
+    dropped = set(row.get("units_dropped") or ())
+    out: list[str] = []
+    by: dict = {}
+    for e in uc:
+        if not isinstance(e, Mapping) or e.get("stage") not in ("write", "read"):
+            out.append(f"P0k: M35: an unreadable unit counters entry {str(e)[:80]}")
+            continue
+        if e.get("unit") in dropped:
+            continue
+        key = (str(e.get("status_id")), str(e.get("unit")))
+        if e["stage"] in by.setdefault(key, {}):
+            out.append(f"P0k: M35: {key[0]}/{key[1]}: two {e['stage']} entries")
+        by[key][e["stage"]] = e
+    for (sid, unit), st in sorted(by.items()):
+        for stage in ("write", "read"):
+            if stage not in st:
+                out.append(f"P0k: M35: {sid}/{unit}: not measured at the {stage} stage")
+                continue
+            out += [f"P0k: M35: {sid}/{unit}: {stage}: {w}" for w in _m35(st[stage].get("bm25"), stage)]
+            out += [f"P0k: M29: {sid}/{unit}: {stage}: {w}" for w in _m29(st[stage].get("nlp"), arm, stage)]
+    if ctx.stand_units:
+        want = ctx.stand_units - len(dropped)
+        for sid in _row_ids(row):
+            got = len({u for (s_, u) in by if s_ == sid})
+            if got != want:
+                out.append(f"P0k: M35: run {sid}: counters for {got} units, the stand scores {want}")
+    return out
+
+
+ROW_CLAUSES = (p0a, p0b, p0c, p0d, p0f, p0g, p0h, p0i, p0j, p0k)
 
 
 def _row_ids(row: Mapping) -> list[str]:
@@ -670,7 +765,7 @@ def _row_ids(row: Mapping) -> list[str]:
 
 
 def p0_flags(row: Mapping, ctx: P0Context, arm: str = "") -> list[str]:
-    """The row-level P0 clauses (a, b, c-own-drops, d, f-contexts, g, h, i, j); each named by its letter."""
+    """The row-level P0 clauses (a, b, c-own-drops, d, f-contexts, g, h, i, j, k); each named by its letter."""
     return [x for clause in ROW_CLAUSES for x in clause(row, ctx, arm)]
 
 

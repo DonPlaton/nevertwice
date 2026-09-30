@@ -750,6 +750,18 @@ with tempfile.TemporaryDirectory(prefix="v3acct_e2e_") as td:
                                                              {"unit": "u1", "retrievable_items": 1, "chars_to_writer": 900,
                                                               "unit_chars": 1000}], unit_kind="row"), scored=True),
             "reconciliation": rc, "questions": [{"qid": "q0", "invalid": None}], "units_dropped": []}
+    # P0k (M35 and M29, the auditor's Q-M35-FAIL = (d)): a mem0 row carries each unit's counters - honest here
+    arms["mem0"]["unit_counters"] = [
+        {"status_id": "S6/b01/r1/mem0", "unit": u, "stage": st,
+         "bm25": {"names": {}, "encoder": "loaded", "slot": True, "log_watched": True,
+                  "lines": {x: 0 for x in ("fastembed not installed", "Failed to load BM25 encoder",
+                                           "predates v3 hybrid search")},
+                  "keyword_search": {"calls": int(st == "read"), "not_none": int(st == "read"), "hits": 0,
+                                     "positive_hits": 0, "raised": 0},
+                  "results_bm25_positive": 0, "reads_bm25_positive": 0},
+         "nlp": {"names": {}, "module": True, "nlp_full": True, "nlp_lemma": True, "failed_full": False,
+                 "failed_lemma": False, "is_package": True}}
+        for u in ("u0", "u1") for st in ("write", "read")]
     sids2 = ["S6/b01/r1/mem0", "S6/b01/r1/zep"]
     doc2 = A.build(stand="S6", point="B", tier="product", arms=arms, brackets=None, input_manifest=MANIFEST,
                    model_version={"response_model": "deepseek-v4-flash", "changelog_newest": "2026-09-10"}, commit=ANCHOR,

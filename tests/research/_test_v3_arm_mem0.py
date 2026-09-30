@@ -199,6 +199,9 @@ def hello_error(name: str, spec: dict, *, env: dict | None = None, adir: Path | 
         c.close()
 
 
+LINES3 = ("fastembed not installed", "Failed to load BM25 encoder", "predates v3 hybrid search")   # A5's three lines
+
+
 def logged(event: str) -> list[dict]:
     if not LOG.exists():
         return []
@@ -215,8 +218,8 @@ try:
         elif isinstance(n, ast.ImportFrom) and n.module:
             mods.add(n.module.split(".")[0])
     check("arm_mem0 imports the standard library, base, _http_count, _ollama_pacer and mem0 - nothing of the repo "
-          "(importlib: NLP-3b's installed-version read, B-MEM0-IMP)",
-          mods <= {"__future__", "importlib", "json", "os", "re", "sys", "threading", "time", "urllib", "pathlib",
+          "(importlib: NLP-3b's installed-version read, B-MEM0-IMP; logging: M35's watch of the store's log)",
+          mods <= {"__future__", "importlib", "json", "logging", "os", "re", "sys", "threading", "time", "urllib", "pathlib",
                    "typing", "base", "_http_count", "_ollama_pacer", "mem0"}, str(sorted(mods)))
 
     print("\n- a mem0-store hit without an item index (in-process, on a fake product) -")
@@ -229,7 +232,8 @@ try:
     def store_read(hits):
         h = AM.Handler({"arm": "mem0-store", "stage": "read", "unit": "u1", "unit_dir": str(TMP / "fake_unit"),
                         "run": "r1", "stand": "s1"},
-                       {"mem": NS(search=lambda *a, **k: {"results": hits}), "pacer": None}, {})
+                       {"mem": NS(search=lambda *a, **k: {"results": hits}), "pacer": None,
+                        "bm25": getattr(AM, "BM25Watch", lambda: None)()}, {})     # built as bind builds it (M35)
         return h.read(qid="q", query="x", k=3)
     check("a mem0-store hit with its index reads back as index and bytes",
           safely(lambda: store_read([{"id": "a", "memory": "m", "metadata": {"index": 2}}]), {}).get("items")
@@ -341,7 +345,45 @@ try:
     check("a write in the read stage is refused (Q25)",
           raises(lambda: c.request("write", item={"item_id": "x", "role": "user", "speaker": "a", "text": "b"},
                                    date="2023-01-01"), B.ArmError, "write stage"))
+    cb = safely(lambda: c.request("counters"), {}).get("bm25") or {}
+    ksr = logged("keyword_search")
+    check("M35 (A5, T34): the read's counters carry the unit's BM25 - the encoder loaded, the bm25 slot, the store's log "
+          "watched with none of A5's three lines, keyword_search called once by the product's own search and answering "
+          "(not None), and the returned memory that shares the query's words counted BM25-positive",
+          cb.get("encoder") == "loaded" and cb.get("slot") is True and cb.get("log_watched") is True
+          and cb.get("lines") == {x: 0 for x in LINES3} and cb.get("keyword_search", {}).get("calls") == 1
+          and cb["keyword_search"].get("not_none") == 1 and cb.get("results_bm25_positive", 0) >= 1
+          and ksr and ksr[-1].get("filters") == {"user_id": "u1"}, str(cb)[:400])
     c.close()
+
+    print("\n- M35: a store whose BM25 is off is counted so (the verdict is artifact.p0k's) -")
+    off = {}
+    for mode in ("noslot", "noencoder"):
+        UM = TMP / "runs" / "s1" / "r1" / "mem0" / f"u{mode}"
+        UM.mkdir(parents=True)
+        c, _ = start(f"w{mode}", spec_for(f"w{mode}", "mem0", "write", UM, unit=f"u{mode}"),
+                     env=child_env(extra={"NVT3_FAKE_BM25": mode}))
+        safely(lambda: c.request("write", item={"item_id": f"u{mode}:0", "session_id": "0", "role": "user",
+                                                "speaker": "Caroline", "text": "I went hiking on Sunday"},
+                                 date="2023-05-20T10:00:00"), {})
+        safely(lambda: c.request("end_write"), {})
+        c.close()
+        c, errf = start(f"r{mode}", spec_for(f"r{mode}", "mem0", "read", UM, unit=f"u{mode}"),
+                        env=child_env(extra={"NVT3_FAKE_BM25": mode}))
+        safely(lambda: c.request("read", qid="q", query="Caroline hiking", k=3), {})
+        off[mode] = safely(lambda: c.request("counters"), {}).get("bm25") or {}
+        c.close()
+        off[mode + "_err"] = errf.read_text(encoding="utf-8", errors="replace") if errf.is_file() else ""
+    ns_, ne_ = off["noslot"], off["noencoder"]
+    check("M35: a collection without the bm25 slot reads slot False, its 'predates v3 hybrid search' line counted, "
+          "keyword_search called but never not None; an encoder that fails reads 'failed', its 'Failed to load BM25 "
+          "encoder' line counted - each line still in the child's own stderr (the filter drops nothing)",
+          ns_.get("slot") is False and ns_.get("lines", {}).get("predates v3 hybrid search") == 1
+          and ns_.get("keyword_search", {}).get("calls") == 1 and ns_["keyword_search"].get("not_none") == 0
+          and ne_.get("encoder") == "failed" and ne_.get("lines", {}).get("Failed to load BM25 encoder") == 1
+          and ne_.get("keyword_search", {}).get("not_none") == 0
+          and "predates v3 hybrid search" in off["noslot_err"] and "Failed to load BM25 encoder" in off["noencoder_err"],
+          str({k: v for k, v in off.items() if not k.endswith("_err")})[:500])
 
     print("\n- an undated stand: no header -")
     U2 = TMP / "runs" / "s1" / "r1" / "mem0" / "u2"

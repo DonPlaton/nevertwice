@@ -31,11 +31,16 @@ dated (does the stand carry dates), record_path. Counters: the HTTP counter (_ht
 the pacer's Ollama transport, the writes and their results, and for mem0 its LLM client's logical calls and tokens
 (LLMUsage on llm.client.chat.completions.create, Q-AB-1; a mem0 without that client is refused; mem0-store: None), and
 spaCy's state as mem0 left it (nlp_state: B-NLP NLP-3b, the auditor's PASSIVE check - read at every counters request,
-never loaded: mem0.utils.spacy_models' four names by exactly NLP_NAMES and the model's distribution by its metadata).
+never loaded: mem0.utils.spacy_models' four names by exactly NLP_NAMES and the model's distribution by its metadata),
+and the unit's BM25 (M35, A5 - T34): the Qdrant store's encoder and bm25 slot read passively by BM25_NAMES,
+keyword_search's answers counted around the store's own method, A5's three warning lines counted by a filter on the
+store's logger that drops nothing, and the returned results whose id had a BM25 score above zero. The verdict is not
+the adapter's: artifact.p0k judges each unit's block (the auditor's Q-M35-FAIL = (d)).
 """
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 import sys
@@ -152,6 +157,109 @@ def nlp_state(modules: Mapping | None = None, installed=None) -> dict:
     return out
 
 
+#: M35 (A5, T34): the names read from mem0 2.2.0's Qdrant store (mem0/vector_stores/qdrant.py, read as data) - the
+#: encoder (:86; _get_bm25_encoder :93-109 loads it lazily: None not tried, False failed and sticky, else the encoder),
+#: the slot (:90, set by create_col :137-163), keyword_search (:454-484: None without the slot, without the encoder or
+#: on an exception) and the store's logger (:26), whose warnings are A5's three lines.
+BM25_NAMES = {"store": "vector_store", "encoder": "_bm25_encoder", "slot": "_has_bm25_slot", "search": "keyword_search",
+              "logger": "mem0.vector_stores.qdrant"}
+BM25_LINES = ("fastembed not installed", "Failed to load BM25 encoder", "predates v3 hybrid search")
+
+
+class BM25Watch:
+    """M35: the unit's BM25, counted in the child - keyword_search's answers around the store's own method (the same
+    answer object back, the arguments as given, an exception counted and re-raised as it was) and A5's three lines by
+    a filter on the store's logger that drops nothing, so the product's output is unchanged. The log counts only while
+    that logger is enabled for WARNING, not disabled and carries the filter (log_watched)."""
+
+    def __init__(self) -> None:
+        self.ks = {"calls": 0, "not_none": 0, "hits": 0, "positive_hits": 0, "raised": 0}
+        self.lines = {x: 0 for x in BM25_LINES}
+        self.results_positive = self.reads_positive = 0
+        self._last_positive: set = set()
+        self.logger: logging.Logger | None = None
+        self._lock = threading.Lock()
+
+    def _count_line(self, record: logging.LogRecord) -> bool:
+        try:
+            msg = record.getMessage()
+        except Exception:  # noqa: BLE001 - a record whose arguments do not format is read by its template
+            msg = str(record.msg)
+        with self._lock:
+            for x in BM25_LINES:
+                if x in msg:
+                    self.lines[x] += 1
+        return True
+
+    def attach_log(self, logger: logging.Logger | None = None) -> None:
+        self.logger = logger if logger is not None else logging.getLogger(BM25_NAMES["logger"])
+        self.logger.addFilter(self._count_line)
+
+    def log_watched(self) -> bool:
+        lg = self.logger
+        return bool(lg is not None and not lg.disabled and lg.isEnabledFor(logging.WARNING)
+                    and self._count_line in lg.filters)
+
+    @staticmethod
+    def _id_score(point: Any) -> tuple:
+        if isinstance(point, Mapping):
+            return point.get("id"), point.get("score")
+        return getattr(point, "id", None), getattr(point, "score", None)
+
+    def wrap(self, store: Any) -> None:
+        inner = getattr(store, BM25_NAMES["search"])
+
+        def keyword_search(*args, **kwargs):
+            with self._lock:
+                self.ks["calls"] += 1
+            try:
+                res = inner(*args, **kwargs)
+            except BaseException:
+                with self._lock:
+                    self.ks["raised"] += 1
+                    self._last_positive = set()
+                raise
+            pos = set()
+            for point in res if res is not None else ():
+                pid, score = self._id_score(point)
+                if isinstance(score, (int, float)) and not isinstance(score, bool) and score > 0:
+                    pos.add(str(pid))
+            with self._lock:
+                if res is not None:
+                    self.ks["not_none"] += 1
+                    self.ks["hits"] += len(res)
+                    self.ks["positive_hits"] += len(pos)
+                self._last_positive = pos
+            return res
+        setattr(store, BM25_NAMES["search"], keyword_search)
+
+    def note_results(self, ids) -> None:
+        """A read's returned results: those whose id the read's own keyword_search scored above zero (published)."""
+        with self._lock:
+            n = sum(1 for i in ids if str(i) in self._last_positive)
+            self.results_positive += n
+            self.reads_positive += bool(n)
+            self._last_positive = set()
+
+    def snapshot(self) -> dict:
+        watched = self.log_watched()
+        with self._lock:
+            return {"keyword_search": dict(self.ks), "lines": dict(self.lines), "log_watched": watched,
+                    "results_bm25_positive": self.results_positive, "reads_bm25_positive": self.reads_positive}
+
+
+def bm25_state(mem: Any, watch: BM25Watch) -> dict:
+    """The unit's BM25 block (M35): the store's encoder and slot READ by BM25_NAMES - an attribute the store does not
+    have is unknown (never a default): encoder loaded / not-tried (None) / failed (False) / unknown; the slot the
+    store's bool or None - with the watch's counts."""
+    store = getattr(mem, BM25_NAMES["store"], _MISSING)
+    enc = _MISSING if store is _MISSING else getattr(store, BM25_NAMES["encoder"], _MISSING)
+    slot = _MISSING if store is _MISSING else getattr(store, BM25_NAMES["slot"], _MISSING)
+    encoder = ("unknown" if enc is _MISSING else "not-tried" if enc is None else "failed" if enc is False else "loaded")
+    return {"names": dict(BM25_NAMES), "encoder": encoder, "slot": slot if isinstance(slot, bool) else None,
+            **watch.snapshot()}
+
+
 class LLMUsage:
     """Q-AB-1 (the auditor's O-a): mem0's own LLM client counted in the child - the logical calls and the tokens its
     SDK response reports (response.usage), the same in every leg of the §4.6 A/B, and mem0's K87 check-2 source
@@ -250,7 +358,14 @@ def bind(spec: Mapping[str, Any], env: Mapping[str, str]) -> tuple[Any, dict]:
     store.mkdir(parents=True, exist_ok=True)
     cfg = mem0_config(spec)
     rec["config"] = cfg
+    bm25 = BM25Watch()
+    bm25.attach_log()                  # M35: before the product is built - create_col warns at init (qdrant.py:147)
     mem = Memory.from_config(cfg)
+    vstore = getattr(mem, BM25_NAMES["store"], None)
+    if not callable(getattr(vstore, BM25_NAMES["search"], None)):
+        raise Refused("mem0 has no vector_store.keyword_search - the unit's BM25 (M35) could not be counted")
+    bm25.wrap(vstore)
+    rec["bm25_watch"] = f"{BM25_NAMES['store']}.{BM25_NAMES['search']} and the logger {BM25_NAMES['logger']} (M35)"
     pulls = HC.total(HC.snapshot(), "ollama:pull")
     if pulls:
         raise Refused(f"the product sent {pulls} pull request(s) to Ollama while it was built")
@@ -266,13 +381,13 @@ def bind(spec: Mapping[str, Any], env: Mapping[str, str]) -> tuple[Any, dict]:
     rec["llm_usage"] = "mem0.llm.client.chat.completions.create, response.usage" if usage else None
     rec["env_names"] = sorted(env)
     rec["python"] = sys.version.split()[0]
-    return {"mem": mem, "pacer": P, "usage": usage}, rec
+    return {"mem": mem, "pacer": P, "usage": usage, "bm25": bm25}, rec
 
 
 class Handler:
     def __init__(self, spec: Mapping[str, Any], ns: Mapping[str, Any], rec: Mapping[str, Any]) -> None:
         self.spec, self.rec = spec, rec
-        self.mem, self.pacer, self.usage = ns["mem"], ns["pacer"], ns.get("usage")
+        self.mem, self.pacer, self.usage, self.bm25 = ns["mem"], ns["pacer"], ns.get("usage"), ns["bm25"]
         self.arm, self.stage, self.unit = spec["arm"], spec["stage"], spec["unit"]
         self.store = Path(spec["unit_dir"]) / "store"
         self.item_shas: dict[int, str] = {}
@@ -328,6 +443,7 @@ class Handler:
         t0 = time.time()
         res = self.mem.search(query, filters={"user_id": self.unit}, top_k=int(k), threshold=THRESHOLD)
         hits = res.get("results", []) if isinstance(res, dict) else (res or [])
+        self.bm25.note_results([h.get("id") for h in hits])          # M35: the published BM25-positive count
         items = []
         for rank, h in enumerate(hits, 1):
             if self.arm == "mem0":
@@ -348,7 +464,7 @@ class Handler:
         return {"http": snap, "llm_calls": HC.total(snap, "proxy:chat") + HC.total(snap, "ollama:generate"),
                 "llm_usage": self.usage.snapshot() if self.usage is not None else None,
                 "writes": dict(self.writes), **self.reads, "ollama_transport": transport.get("ollama_transport"),
-                "nlp": nlp_state()}
+                "nlp": nlp_state(), "bm25": bm25_state(self.mem, self.bm25)}
 
 
 class RefusedHandler:
