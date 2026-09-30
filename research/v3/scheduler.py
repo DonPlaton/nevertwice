@@ -321,6 +321,14 @@ class LaunchSpec:
     #: Q-BM25-MOCK (the auditor, 2026-09-30): files the harness placed for the unit before its spawn (a mem0 unit's
     #: fastembed cache) - the record launch.spawn checks and keeps; None for every other child
     unit_files: Mapping | None = None
+    #: C2 (the supermemory-local probe plan): "server" - a server child's stdio: stdin DEVNULL, stdout a PIPE the
+    #: harness drains (the server's banner prints its key, so a redacting pump reads it), stderr into stdout; never
+    #: with pipes or stderr_path. None - the child gets only what pipes and stderr_path give.
+    stdio: str | None = None
+
+
+#: LaunchSpec.stdio's modes
+STDIO_MODES = (None, "server")
 
 
 def tree_kill_route(witnesses: Any) -> str | None:
@@ -378,10 +386,18 @@ class Scheduler:
             d = dirs if dirs is not None else self.launch.make_unit_dirs(self.c, stand, run, arm, unit)
             planted = self._plant(d)                      # R-HOME-CANARY: before the child exists
             spec = build(d)
+            who = f"{stand}/{run}/{arm}/{unit}"
+            if spec.stdio not in STDIO_MODES:
+                raise SchedulerError(f"{who}: stdio {spec.stdio!r} is not one of {STDIO_MODES}; nothing was spawned")
+            if spec.stdio == "server" and (spec.pipes or spec.stderr_path):
+                raise SchedulerError(f"{who}: a server's stdio (stdin DEVNULL, stdout a PIPE, stderr into it) is never "
+                                     f"the arm protocol's pipes or a stderr file; nothing was spawned")
             env = self.launch.build_env(self.c, parent_env=self.parent_env, unit=d, path_dirs=spec.path_dirs,
                                         declared=dict(spec.declared), catcher_url=self.catcher_url,
                                         hf_offline=spec.hf_offline)
             kw: dict = {"stdin": subprocess.PIPE, "stdout": subprocess.PIPE} if spec.pipes else {}
+            if spec.stdio == "server":
+                kw = {"stdin": subprocess.DEVNULL, "stdout": subprocess.PIPE, "stderr": subprocess.STDOUT}
             err = open(spec.stderr_path, "ab") if spec.stderr_path else None   # noqa: SIM115 - handed to the child
             if err is not None:
                 kw["stderr"] = err

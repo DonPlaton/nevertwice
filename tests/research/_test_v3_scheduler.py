@@ -27,6 +27,7 @@ import hashlib
 import json
 import importlib.util
 import math
+import subprocess
 import sys
 from pathlib import Path
 
@@ -293,6 +294,53 @@ except L.ContractViolation as e:
 ch3, d3 = spawned(unit="u3")
 check("a refused spawn raises the contract's refusal, and the lock is released - the next spawn goes through",
       refusal != "spawned" and ch3 is not None, f"{refusal} | {d3}")
+
+
+print("\n- C2: a server child's stdio (LaunchSpec.stdio = \"server\") -")
+
+
+class StdioPopen(FakePopen):
+    """FakePopen that keeps what each spawn asked for its stdin, stdout and stderr."""
+    seen: list = []
+
+    def __init__(self, args, env=None, cwd=None, **kw) -> None:
+        super().__init__(args, env=env, cwd=cwd, **kw)
+        StdioPopen.seen.append({k: kw.get(k, "unset") for k in ("stdin", "stdout", "stderr")})
+
+
+s_io = SC.Scheduler(contract("stdio"), None, None, L, None, None, tag="smoke",
+                    witnesses=SimpleNamespace(native=StubNative()), parent_env=dict(os.environ),
+                    catcher_url="http://127.0.0.1:47001", popen=StdioPopen)
+
+
+def _io(unit: str, **spec_kw) -> str:
+    """"spawned", or the refusal as text - anything raised is that row's named FAIL, never a traceback."""
+    try:
+        s_io.spawn_child(lambda d: SC.LaunchSpec(argv=(sys.executable, "-c", "pass"),
+                                                 path_dirs=(str(Path(sys.executable).parent),), **spec_kw),
+                         role="arm-write", stand="S1", run="r1", arm="mem0", unit=unit)
+        return "spawned"
+    except SC.SchedulerError as e:
+        return f"refused: {e}"
+    except Exception as e:  # noqa: BLE001
+        return f"raised {type(e).__name__}: {e}"
+
+
+io_default = (_io("u-io0"), StdioPopen.seen[-1:])
+io_server = (_io("u-io1", stdio="server"), StdioPopen.seen[-1:])
+check("SMS-STDIO-1: stdio \"server\" gives the child stdin DEVNULL, stdout a PIPE (the harness drains it: the banner "
+      "prints the key) and stderr into stdout; with no stdio the child is given none of the three, as before",
+      io_default == ("spawned", [{"stdin": "unset", "stdout": "unset", "stderr": "unset"}])
+      and io_server == ("spawned", [{"stdin": subprocess.DEVNULL, "stdout": subprocess.PIPE,
+                                     "stderr": subprocess.STDOUT}]), f"{io_default} {io_server}")
+n_io = len(StdioPopen.seen)
+io_bad = {"with the arm protocol's pipes": _io("u-io2", stdio="server", pipes=True),
+          "with a stderr file": _io("u-io3", stdio="server", stderr_path=str(TMPS / "io3.err")),
+          "an unknown mode": _io("u-io4", stdio="tty")}
+check("SMS-STDIO-2: a server's stdio is never combined with the arm protocol's pipes or a stderr file, and an unknown "
+      "stdio mode is no mode - each refused by the scheduler by name before anything is spawned",
+      all(v.startswith("refused: ") and "nothing was spawned" in v for v in io_bad.values())
+      and len(StdioPopen.seen) == n_io, f"{io_bad} spawned={len(StdioPopen.seen) - n_io}")
 
 
 own = L.make_unit_dirs(s1.c, "S1", "r1", "mem0", "u10")
