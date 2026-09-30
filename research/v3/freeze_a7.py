@@ -97,6 +97,11 @@ CLEARED_A7 = [
         "_fetch/a7-arxiv-src/s3/d8_report.json": "8870d618f48874fe6244b74845bed011c2f882d319ce41f58a93afff31e195e4",
         "_fetch/a7-arxiv-src/s3/place_record.json": "add814183b51ce647e344b9b0714df39081a4dd48843423d05220343ce5b0fc6",
         "_fetch/a7-arxiv-src/s3/pin_fill.json": "164e66a42a1eb4b96294ce9f6fb2237084b18959db82be475de2474d5946f78a"}},
+    # supermemory's API reference at server-v0.0.8 (commit 5d2b585; 8 texts, all read at the tag), the auditor's clearing
+    # (2026-09-30 14:1x: m6 --window PASS, m5 PASS, secret_scan 0) - the texts the supermemory-local adapter follows
+    {"window": "a7-docs-2", "run": "d1", "kind": "report", "files": {
+        "_fetch/a7-docs-2/d1/record.json": "2ccb013fb8ab955950f8b3ece6eded5eba4a12bbf592392a09cadecc3cc9513c",
+        "_fetch/a7-docs-2/d1/d4_report.json": "66f2d8daf1ec89a2f729e2616ed885f46a230f5383f1bb0a5d7f4ebf714e635b"}},
 ]
 #: The A7 runs that were NOT cleared - kept by sha256 with the reason, never used.
 FAILED_A7 = [

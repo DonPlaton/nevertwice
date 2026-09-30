@@ -116,7 +116,10 @@ WANT_CLEARED = {
     # the auditor's clearing of a7-github-2 g1 (2026-09-30 07:5x): LME's run_generation.sh and AMA's method code
     ("a7-github-2", "g1"): {"_fetch/a7-github-2/g1/record.json": "ad6ff8fb61bc456db6c30c5d1aef03382580cdfc792f3565beaf2a288ebd4272",
                             "_fetch/a7-github-2/g1/place_record.json": "aedefc7e632e9a46101287b47ad0f82629e184047db0a4a88cb8d55c64be9f9c",
-                            "_fetch/a7-github-2/g1/pin_fill.json": "fa5375b6678530c023ec875bed830accd447e6e132abf5aec167207e6b3a28b7"}}
+                            "_fetch/a7-github-2/g1/pin_fill.json": "fa5375b6678530c023ec875bed830accd447e6e132abf5aec167207e6b3a28b7"},
+    # the auditor's clearing of a7-docs-2 d1 (2026-09-30 14:1x): supermemory's API reference at server-v0.0.8 (5d2b585)
+    ("a7-docs-2", "d1"): {"_fetch/a7-docs-2/d1/record.json": "2ccb013fb8ab955950f8b3ece6eded5eba4a12bbf592392a09cadecc3cc9513c",
+                          "_fetch/a7-docs-2/d1/d4_report.json": "66f2d8daf1ec89a2f729e2616ed885f46a230f5383f1bb0a5d7f4ebf714e635b"}}
 WANT_FAILED = {("a7-npm", "g1"): {"_fetch/a7-npm/g1/record.json": "fb4212e565e4233c86ef4432ec48a3e09d2bd031f6ffc84a875cc46e2ff84f8d"},
                ("a7-arxiv", "d1"): {"_fetch/a7-arxiv/d1/record.json": "854b13dd774ada2c5d94ef19ac4ba6b34685590ab293d49338c9f6eaa9ca11a6",
                                     "_fetch/a7-arxiv/d1/d6_report.json": "e3d01b8e784ba0af38c16df0632f98204ef6f9dc4e014b37b2e937deaddc36e4"},
@@ -131,8 +134,8 @@ NPM_PROBLEMS = ["job 0: the fetch child exited with 3", "job 0 request npm:packa
 PREREG = {"research/v3/PREREG-V3-rev1.md": "1" * 64, "research/v3/PREREG-V3-AMENDMENTS.md": "2" * 64}
 
 print("- the declared lists are the auditor's -")
-check("F7-1: CLEARED_A7 is exactly the auditor's twelve runs - the four of Q-F7, a7-github g1, a7-hf-d d1, a7-arxiv d2, "
-      "a8-supermemory-bin b2, a7-hf h1, py-base-312 p1, a7-github-2 g1 and a7-arxiv-src s3 - with their twenty-eight "
+check("F7-1: CLEARED_A7 is exactly the auditor's thirteen runs - the four of Q-F7, a7-github g1, a7-hf-d d1, a7-arxiv d2, "
+      "a8-supermemory-bin b2, a7-hf h1, py-base-312 p1, a7-github-2 g1, a7-arxiv-src s3 and a7-docs-2 d1 - with their thirty "
       "record files by sha256, "
       "and FAILED_A7 is "
       "a7-npm g1 (npm answers 404; revision 1's channel, erratum A3 T32), a7-arxiv d1 (429, nothing read), "
@@ -195,6 +198,11 @@ def world(tag: str, *, npm_problems=NPM_PROBLEMS, gh_org="Sectigo Limited"):
     rec = {"a7-discovery": {"window": "a7-discovery", "run": "d1", "problems": [], "hosts": ["api.github.com", "huggingface.co"],
                             "issuers": [gh, ["huggingface.co", "Amazon", "Amazon RSA 2048 M01"]]},
            "a7-docs": {"window": "a7-docs", "run": "d1", "problems": [], "hosts": ["api.github.com"], "issuers": [gh]},
+           # a7-docs-2 d1's form: one declared host, tunnelled, Sectigo's issuer
+           "a7-docs-2": {"window": "a7-docs-2", "run": "d1", "problems": [], "hosts": ["api.github.com"],
+                         "catcher": [{"host": "api.github.com", "port": 443, "tunnelled": True, "refused": False,
+                                      "hop_status": 200}],
+                         "issuers": [gh]},
            "a7-cognee-tag": {"window": "a7-cognee-tag", "run": "d1", "problems": [], "hosts": ["api.github.com"], "issuers": [gh]},
            "a7-npm-d": {"window": "a7-npm-d", "run": "d1", "problems": list(npm_problems), "hosts": ["registry.npmjs.org"],
                         "issuers": [["registry.npmjs.org", "Google Trust Services", "WE1"]]},
