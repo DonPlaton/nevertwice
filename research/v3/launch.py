@@ -1005,6 +1005,9 @@ class EgressResult:
     allowed_listeners: list = field(default_factory=list)   # W7: [(reason, pid)]
     revoked_listeners: list = field(default_factory=list)   # W7: [(reason, pid)] revoked, e.g. at a window's END
     allowed_ports: list = field(default_factory=list)       # W7: declared container gateway ports
+    listen_declared: int = 0                                # C4: LISTEN rows of a declared listener - not hits
+    declared_listeners: list = field(default_factory=list)  # C4: [{reason, pid, port, firewall_rule}]
+    refused_declarations: list = field(default_factory=list)    # C4: [{reason, pid, port, why}]
     tick_s: float = DEFAULT_TICK_S
     elapsed_s: float = 0.0
     sample_cost_ms: float = 0.0
@@ -1031,6 +1034,8 @@ class EgressResult:
                 "allowed_listeners": [{"reason": r, "pid": pid} for r, pid in self.allowed_listeners],
                 "revoked_listeners": [{"reason": r, "pid": pid} for r, pid in self.revoked_listeners],
                 "allowed_ports": sorted(self.allowed_ports),
+                "listen_declared": self.listen_declared, "declared_listeners": list(self.declared_listeners),
+                "refused_declarations": list(self.refused_declarations),
                 "tick_s": self.tick_s, "elapsed_s": round(self.elapsed_s, 3),
                 "expected_samples": self.expected_samples, "sample_cost_ms": round(self.sample_cost_ms, 2),
                 "limit": self.limit, "complete": self.complete}
@@ -1295,12 +1300,30 @@ class WinJobs:
         return bool(job) and bool(self.k32.TerminateJobObject(job, 1))
 
 
+#: C4: the addresses a declared listener may hold - unspecified only; a listener on one named interface stays a hit
+UNSPECIFIED_HOSTS = ("0.0.0.0", "::")
+
+
+def firewall_blocks_inbound(rule: Mapping | None) -> bool:
+    """SF3 (Q-A8S-LISTEN = a, the auditor 2026-09-30 17:32): the firewall facts the probe's fw-read child gave - an
+    enabled Inbound Block rule, named, for the server's own binary, covering the active network profile. The only ground on which a listener on
+    an unspecified address is declared rather than a hit; anything else, or no rule, is no ground."""
+    return (isinstance(rule, Mapping)
+            and rule.get("enabled") is True
+            and rule.get("direction") == "Inbound"
+            and rule.get("action") == "Block"
+            and rule.get("profile_covered") is True
+            and rule.get("program_matches") is True
+            and bool(rule.get("name")))
+
+
 class NativeEgressWitness(_Ticker):
     """§2.6.9: each tick, the connections of every process in the registered trees. On Windows a tree is its Job
     Object (W1), so an orphaned grandchild stays in it; elsewhere it is followed by parent identity and create time,
     with that limit declared. A child whose identity cannot be read is never a pid wildcard: it is counted as an
     unwitnessed registration and the check is incomplete (W2). Loopback is ignored; a non-loopback remote is a hit
-    unless a window covering that tree is open (W3); a listener on a non-loopback interface is a hit (AQ16)."""
+    unless a window covering that tree is open (W3); a listener on a non-loopback interface is a hit (AQ16) unless
+    declared (C4: its pid by identity, its port, an unspecified address, an inbound-blocking firewall rule)."""
 
     def __init__(self, *, sampler=None, tick_s: float = DEFAULT_TICK_S, jobs: "WinJobs | None | bool" = True):
         super().__init__(tick_s)
@@ -1316,6 +1339,7 @@ class NativeEgressWitness(_Ticker):
         self.label_of: dict[int, str] = {}           # root pid -> its spawn id (W7's per-tree counters)
         self.allowed: dict[int, tuple[float, str]] = {}   # W7: listener pid -> (create_time, reason)
         self.allowed_ports: set[int] = set()         # W7: declared container gateway ports on loopback
+        self.declared: dict[tuple[int, int], tuple[float, str]] = {}   # C4: (pid, port) -> (create_time, reason)
         self.result = EgressResult(tick_s=tick_s, limit=LIMIT_TEXT.format(tick=tick_s)
                                    + ("" if self.jobs else LIMIT_NO_JOBS) + LIMIT_LOOPBACK)
         self._lock = threading.Lock()
@@ -1368,6 +1392,35 @@ class NativeEgressWitness(_Ticker):
         with self._lock:
             self.allowed_ports.add(int(port))
             self.result.allowed_ports = sorted(self.allowed_ports)
+
+    def declare_listener(self, pid: int, port: int, reason: str, *, firewall: Mapping | None) -> bool:
+        """C4 (Q-A8S-LISTEN = a, bound to SF3): this process's listener on this port at an unspecified address
+        (0.0.0.0 or ::) is counted as listen_declared, not a hit - held by (pid, create time), so a reused pid is
+        not declared - and only on the ground of an inbound-blocking firewall rule (firewall_blocks_inbound). No
+        ground, or no identity: refused (False), named in refused_declarations, and the listener stays a hit."""
+        with self._lock:
+            if not firewall_blocks_inbound(firewall):
+                self.result.refused_declarations.append({"reason": reason, "pid": pid, "port": int(port),
+                                                         "why": "no inbound-blocking firewall rule"})
+                return False
+            ct = self._identity(pid)
+            if ct is None:
+                self.result.refused_declarations.append({"reason": reason, "pid": pid, "port": int(port),
+                                                         "why": "no identity"})
+                return False
+            self.declared[(pid, int(port))] = (ct, reason)
+            self.result.declared_listeners.append({"reason": reason, "pid": pid, "port": int(port),
+                                                   "firewall_rule": str(firewall["name"])})
+            return True
+
+    def _declared(self, pid: int, lip: str, lport: int, ct_of: dict) -> bool:
+        """C4: a LISTEN row is a declared listener's - its (pid, port), an unspecified address, the same process."""
+        got = self.declared.get((pid, lport))
+        if got is None:
+            return False
+        if lip not in UNSPECIFIED_HOSTS:
+            return False
+        return self._same(ct_of.get(pid, -1.0), got[0])
 
     def _loopback_verdict(self, pid: int, lport: int, rport: int | None, status: str, listeners: dict | None,
                           ct_of: dict) -> str:
@@ -1440,7 +1493,11 @@ class NativeEgressWitness(_Ticker):
             undetermined = 0
             for pid, lip, _lport, rip, rport, status in rows:
                 if status == "LISTEN":
-                    if not _is_loopback(lip):
+                    if _is_loopback(lip):
+                        continue
+                    if self._declared(pid, lip, _lport, ct_of):     # C4
+                        self.result.listen_declared += 1
+                    else:
                         self.result.listen_nonloopback += 1
                         self.result.hits += 1
                     continue

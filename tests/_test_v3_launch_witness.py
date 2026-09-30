@@ -287,6 +287,106 @@ check("W7 the listener map keeps TCP LISTEN and unconnected UDP on loopback or u
                       (5, "127.0.0.1", 84, True, "NONE"), (6, "127.0.0.1", 85, True, "ESTABLISHED")])
       == {("tcp", 80): {1}, ("tcp", 81): {2}, ("udp", 83): {4}})
 
+print("\n- C4 (Q-A8S-LISTEN = a, SF3): a declared listener - by identity, port, unspecified address, firewall -")
+SM_PID, SM_KID, SM_PORT = 600, 601, 6543
+FW = {"name": "nvt3-supermemory-inbound-block", "enabled": True, "direction": "Inbound", "action": "Block",
+      "profile_covered": True, "program_matches": True}
+SM_REASON = "supermemory-local binds 0.0.0.0 (sm_bundle r8)"
+
+
+def decl(rows, *, firewall=FW, kid_ct=61.0):
+    """(the result after one tick, what declare_listener answered) for a tree rooted at SM_PID that declared
+    (SM_PID, SM_PORT); an exception is the row's named FAIL (None, repr), never a traceback."""
+    try:
+        s = FakeSampler()
+        s.procs = [(SM_PID, 1, 60.0), (SM_KID, SM_PID, kid_ct)]
+        w = L.NativeEgressWitness(sampler=s, tick_s=60, jobs=None)
+        w.register(SM_PID, label="spawn-sm")
+        said = w.declare_listener(SM_PID, SM_PORT, SM_REASON, firewall=firewall)
+        s.rows, s.listen = rows, {}
+        w.sample()
+        return w.result, said
+    except Exception as e:  # noqa: BLE001
+        return None, repr(e)
+
+
+def _listen(pid, host, port=SM_PORT):
+    return [(pid, host, port, None, None, "LISTEN")]
+
+
+def _hit(r) -> bool:
+    return r is not None and r.hits == 1 and r.listen_nonloopback == 1 and r.listen_declared == 0
+
+
+r4, said4 = decl(_listen(SM_PID, "0.0.0.0"))
+r6, said6 = decl(_listen(SM_PID, "::"))
+rec4 = r4.as_record() if r4 is not None else {}
+check("LW-DECL-1: a declared listener - its pid by identity, its port, on 0.0.0.0 or :: - is listen_declared, not a "
+      "hit, and the record names it with its reason and firewall rule",
+      said4 is True and said6 is True and r4.hits == 0 and r4.listen_nonloopback == 0 and r4.listen_declared == 1
+      and r6.hits == 0 and r6.listen_declared == 1 and rec4.get("listen_declared") == 1
+      and rec4.get("declared_listeners") == [{"reason": SM_REASON, "pid": SM_PID, "port": SM_PORT,
+                                              "firewall_rule": FW["name"]}] and rec4.get("refused_declarations") == [],
+      str(rec4 or said4))
+r_kid, _ = decl(_listen(SM_KID, "0.0.0.0"), kid_ct=60.0)
+check("LW-DECL-2: another process on the declared port - a child born in the same tick as the server - is a hit: "
+      "the declaration is the pid's and the port's together", _hit(r_kid), str(r_kid.as_record() if r_kid else r_kid))
+r_port, _ = decl(_listen(SM_PID, "0.0.0.0", SM_PORT + 1))
+check("LW-DECL-3: the declared process on another port is a hit", _hit(r_port),
+      str(r_port.as_record() if r_port else r_port))
+
+
+def _reused():
+    """The result after one tick: pid 650 declared while another process (create time 50) held it, then reused by
+    a child of the tree (create time 99) that listens on the declared port. A pid reused inside the tree keeps its
+    stale entry and is never alive again, so this is the one path the identity clause decides."""
+    try:
+        s = FakeSampler()
+        s.procs = [(SM_PID, 1, 60.0), (SM_KID, SM_PID, 61.0), (650, 1, 50.0)]
+        w = L.NativeEgressWitness(sampler=s, tick_s=60, jobs=None)
+        w.register(SM_PID, label="spawn-sm")
+        w.declare_listener(650, SM_PORT, SM_REASON, firewall=FW)
+        s.procs = [(SM_PID, 1, 60.0), (SM_KID, SM_PID, 61.0), (650, SM_PID, 99.0)]
+        s.rows, s.listen = _listen(650, "0.0.0.0"), {}
+        w.sample()
+        return w.result
+    except Exception:  # noqa: BLE001 - the row FAILs by name
+        return None
+
+
+r_re = _reused()
+
+
+def _no_identity():
+    """(what declare_listener answered for a pid with no identity, what was declared, what was refused)."""
+    try:
+        w = L.NativeEgressWitness(sampler=FakeSampler(), tick_s=60, jobs=None)
+        said = w.declare_listener(777, SM_PORT, SM_REASON, firewall=FW)
+        return said, dict(w.declared), list(w.result.refused_declarations)
+    except Exception as e:  # noqa: BLE001 - the row FAILs by name
+        return repr(e), None, None
+
+
+said_id, decl_id, ref_id = _no_identity()
+check("LW-DECL-4: a reused pid (another create time) on the declared port is a hit; a pid with no identity is "
+      "refused, named, and declares nothing", _hit(r_re) and said_id is False and decl_id == {}
+      and ref_id == [{"reason": SM_REASON, "pid": 777, "port": SM_PORT, "why": "no identity"}],
+      f"{r_re.as_record() if r_re else r_re} {said_id} {decl_id} {ref_id}")
+r_if, _ = decl(_listen(SM_PID, "10.0.0.5"))
+check("LW-DECL-5: the declared process and port on one named interface (10.0.0.5) is a hit - only 0.0.0.0 and :: "
+      "are declared", _hit(r_if), str(r_if.as_record() if r_if else r_if))
+NO_GROUND = {"no rule": None, "disabled": {**FW, "enabled": False}, "outbound": {**FW, "direction": "Outbound"},
+             "allow": {**FW, "action": "Allow"}, "profile not covered": {**FW, "profile_covered": False},
+             "unnamed": {**FW, "name": ""}, "another program": {**FW, "program_matches": False}}
+fw_got = {k: decl(_listen(SM_PID, "0.0.0.0"), firewall=v) for k, v in NO_GROUND.items()}
+fw_view = {k: (said, r.hits if r else None, [x.get("why") for x in r.refused_declarations] if r else None)
+           for k, (r, said) in fw_got.items()}
+check("LW-DECL-6: with no inbound-blocking firewall rule - none, disabled, outbound, allow, the active profile not "
+      "covered, unnamed, another program - a declaration is refused, named, and the listener stays a hit (SF3)",
+      all(said is False and _hit(r) and [x.get("why") for x in r.refused_declarations]
+          == ["no inbound-blocking firewall rule"] and r.declared_listeners == [] for r, said in fw_got.values()),
+      str(fw_view))
+
 print("\n- the filesystem witness -")
 REPO = TMP / "repo"
 for d in (".git", ".loop", "research/v3/results", "pkg/__pycache__", ".claude/agents", "src", "src/SENTINEL_DIR_QXZ"):
