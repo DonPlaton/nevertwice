@@ -13,6 +13,10 @@ only).
   artifact.build on the BASE stand S1 (artifact.py reads Row V on base stands: the auditor's T-RV) and pilot.json. A
   pilot row is a partial arm_decl and the answer rows - ids, sha256s, counts, v_cut; never text; at V a V≡ arm is only
   its pointer and a refused one is left out, named in v_not_read. The output never lands in research/v3/results (R7).
+  A mem0 or mem0-store row carries its unit counters (M35, M29: each unit's write and read stage of each run, keyed by
+  the run's status_id, the bm25 and nlp blocks as the run record the scheduler wrote holds them, read by the sha256
+  records.jsonl names - artifact.p0k judges them); pilot.json publishes the M35 table (per mem0 arm, the units whose
+  reads returned no result with a BM25 score above zero - a count, never a failure).
   An unmeasurable M33 or M34 cell is a problem by name; a store that changed during the reads is a finding (M34: an E5
   line and a decision before the campaign), never folded into "unchanged".
 * main (A6): `run_v3_pilot.py --stand S1 --arms a,b --runs r1,r2 --config <run config> [--mem0-probe-run <run>]` - S1
@@ -218,6 +222,70 @@ def _answers(res: Mapping[str, Any], arm: str, point: str) -> list:
             if r.get("point") == point and isinstance(r.get("answer"), Mapping)]
 
 
+def unit_counters(recs: Mapping[str, Mapping], runs_root: Path, arm: str) -> tuple[list, list]:
+    """M35, M29 (the auditor, 2026-09-30 18:05: before the pilot): a mem0 / mem0-store row's unit counters - for each
+    run record of the arm (records.jsonl: status_id, path, sha256), each unit's write stage (the write child's
+    counters) and read stage (the question child's), {status_id, unit, stage, bm25, nlp} with the blocks as the record
+    holds them (a block the counters lack is left out: P0k names it not measured). A record that cannot be read, whose
+    bytes are not the sha256 records.jsonl names, or that names another run is a problem by name and gives no entries
+    (P0k's coverage then names its units). Returns (entries, problems)."""
+    out: list = []
+    problems: list = []
+    for sid, r in sorted(recs.items()):
+        if not str(r.get("path", "")).endswith(f".{arm}.json"):
+            continue
+        who = f"unit counters {arm}: {sid}: the run record {r['path']}"
+        try:
+            data = (Path(runs_root) / r["path"]).read_bytes()
+        except OSError as e:
+            problems.append(f"{who} cannot be read ({type(e).__name__})")
+            continue
+        if hashlib.sha256(data).hexdigest() != r.get("sha256"):
+            problems.append(f"{who}: its bytes are not the sha256 records.jsonl names")
+            continue
+        try:
+            rec = json.loads(data)
+        except ValueError as e:
+            problems.append(f"{who} is not JSON ({e})")
+            continue
+        if rec.get("status_id") != sid or rec.get("arm") != arm:
+            problems.append(f"{who} names {rec.get('status_id')!r} / {rec.get('arm')!r}")
+            continue
+        for unit, u in sorted((rec.get("units") or {}).items()):
+            u = u if isinstance(u, Mapping) else {}
+            for stage, part in (("write", u.get("write")), ("read", u.get("questions"))):
+                c = (part or {}).get("counters") if isinstance(part, Mapping) else None
+                e = {"status_id": sid, "unit": unit, "stage": stage}
+                if isinstance(c, Mapping):
+                    e.update({k: c[k] for k in ("bm25", "nlp") if k in c})
+                out.append(e)
+    return out, problems
+
+
+def m35_table(res: Mapping[str, Any], *, arms: Sequence[str]) -> tuple[dict, list]:
+    """M35 (T34, a count published, never a failure): per mem0 arm, over its units' read stages, the units whose reads
+    returned no result with a BM25 score above zero (the adapter's results_bm25_positive) and their share; a unit
+    whose read counters carry no such count is unmeasured by name, never counted as zero. Returns (table, problems)."""
+    table: dict = {}
+    problems: list = []
+    for arm, run, unit, _w, q in _cells(res):
+        if arm not in arms:
+            continue
+        t = table.setdefault(arm, {"units": 0, "zero_positive": 0, "results_bm25_positive": 0, "unmeasured": 0})
+        b = ((q or {}).get("counters") or {}).get("bm25")
+        n = b.get("results_bm25_positive") if isinstance(b, Mapping) else None
+        if not (isinstance(n, int) and not isinstance(n, bool) and n >= 0):
+            t["unmeasured"] += 1
+            problems.append(f"M35: {arm}/{run}/{unit}: the read counters carry no BM25-positive count ({n!r})")
+            continue
+        t["units"] += 1
+        t["zero_positive"] += n == 0
+        t["results_bm25_positive"] += n
+    for t in table.values():
+        t["share_zero"] = t["zero_positive"] / t["units"] if t["units"] else None
+    return table, problems
+
+
 def pilot_artifacts(res: Mapping[str, Any], *, inp: Any, arms: Sequence[str], out_dir: Path, runs_root: Path,
                     lme_sha256: str | None, list_sha256: str, A: Any, PT: Any) -> tuple[dict, dict, list]:
     """One artifact per point through artifact.build on the base stand (see the module docstring). Returns ({point:
@@ -232,6 +300,11 @@ def pilot_artifacts(res: Mapping[str, Any], *, inp: Any, arms: Sequence[str], ou
     man = {"dataset_sha256": lme_sha256 or "unknown", "list_sha256": list_sha256, "split": SPLIT}
     isha = A.sha256_of(man)
     tree = res.get("tree_start") or {}
+    uc: dict = {}
+    for arm in arms:
+        if arm in A.MEM0_ARMS:                     # M35, M29: artifact.p0k judges these rows by their unit counters
+            uc[arm], p_uc = unit_counters(recs, runs_root, arm)
+            problems += p_uc
     for point in POINT_ORDER:
         rows, sids = {}, []
         for arm in arms:
@@ -241,7 +314,8 @@ def pilot_artifacts(res: Mapping[str, Any], *, inp: Any, arms: Sequence[str], ou
                 rows[arm] = {"arm_decl": {"system": arm, "point": point, "tier": "product", "input_sha256": isha,
                                           "pilot": True},
                              "runs": [{"status_id": s} for s in arm_sids], "answers": answers,
-                             "questions": [{"qid": a.get("qid"), "invalid": None} for a in answers]}
+                             "questions": [{"qid": a.get("qid"), "invalid": None} for a in answers],
+                             **({"unit_counters": uc[arm]} if arm in uc else {})}
                 sids += arm_sids
             elif point == "V":
                 vr = PT.v_row(arm)
@@ -283,6 +357,7 @@ def run_pilot(cfg: Any, *, arm_names: Sequence[str], runs: Sequence[str], deps: 
         reads = reads_table(res)
         m33, p33 = m33_table(res)
         m34, findings, p34 = m34_table(res, plans=plans, tree_manifest=base.tree_manifest)
+        m35, p35 = m35_table(res, arms=A.MEM0_ARMS)
         arts, v_not_read, pa = pilot_artifacts(res, inp=inp, arms=list(arms), out_dir=out_dir,
                                                runs_root=deps.contract.runs_root, lme_sha256=deps.lme_sha256,
                                                list_sha256=deps.s1_sha256, A=A, PT=PT)
@@ -291,7 +366,7 @@ def run_pilot(cfg: Any, *, arm_names: Sequence[str], runs: Sequence[str], deps: 
             (out_dir / name).write_bytes(A.render(obj))
         pilot = {"stand": stand_id, "arms": sorted(arms), "runs": list(runs),
                  "points": {a: list(inp.points(a)) for a in arms}, "v_not_read": v_not_read, "artifacts": arts,
-                 "findings": findings, "problems": p33 + p34 + pa,
+                 "m35": m35, "findings": findings, "problems": p33 + p34 + p35 + pa,
                  "launch": {a: (pl.record() if hasattr(pl, "record") else {"arm": a}) for a, pl in plans.items()}}
         (out_dir / "pilot.json").write_bytes(A.render(pilot))
         for f in findings:

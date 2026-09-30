@@ -29,6 +29,7 @@ on a stand result built in this process.
 from __future__ import annotations
 
 import copy
+import hashlib
 import importlib.util
 import json
 import os
@@ -444,9 +445,15 @@ try:
           and any("u2" in p_ and "no v_spans" in p_ for p_ in p33), str((zr, p33))[:400])
     RR = TMP / "art_runs"
     (RR / "_launch").mkdir(parents=True)
+    rec7 = A.render({"stand": "S1-smoke-9", "block": "b01", "run": "r1", "arm": "mem0",
+                     "status_id": "S1-smoke-9/b01/r1/mem0",
+                     "units": {"u1": {"write": {"counters": {}}, "questions": {"counters": {}}}}})
+    (RR / "S1-smoke-9" / "_records" / "b01").mkdir(parents=True)
+    (RR / "S1-smoke-9" / "_records" / "b01" / "r1.mem0.json").write_bytes(rec7)    # T-PLT-15: mem0's record is read
     (RR / "_launch" / "records.jsonl").write_text(
         "".join(json.dumps({"status_id": f"S1-smoke-9/b01/r1/{a_}", "path": f"S1-smoke-9/_records/b01/r1.{a_}.json",
-                            "sha256": "5" * 64}) + "\n" for a_ in ("nevertwice", "mem0", "letta")), encoding="utf-8")
+                            "sha256": hashlib.sha256(rec7).hexdigest() if a_ == "mem0" else "5" * 64}) + "\n"
+                for a_ in ("nevertwice", "mem0", "letta")), encoding="utf-8")
     res7 = {"tree_start": {"anchor": "a" * 40, "clean": True},
             "blocks": [{"write": {a_: {("r1", "u1"): SimpleNamespace(seal=None)} for a_ in ("nevertwice", "mem0", "letta")},
                         "questions": {a_: {("r1", "u1"): {"reads": [{"qid": "q1", "point": p_, "answer": ans(p_)}
@@ -493,6 +500,113 @@ try:
           "changelog_newest - so no reader takes them for measured values",
           v7.get("model_version") == {"response_model": "pilot-placeholder", "changelog_newest": "pilot-placeholder"},
           str(v7.get("model_version")))
+
+    print("\n- T-PLT-15..18 (M35, M29 - the auditor, 2026-09-30 18:05: before the pilot): the mem0 rows' unit counters -")
+    RU = TMP / "uc_runs"
+    (RU / "_launch").mkdir(parents=True)
+
+    def uc_counters(stage: str, unit: str, pos: int | None) -> dict:
+        """A child's counters as the scheduler keeps them - each block marked with its stage and unit."""
+        b_ = {"encoder": "loaded", "slot": True, "mark": f"{stage}/{unit}"}
+        if pos is not None:
+            b_["results_bm25_positive"] = pos
+        return {"http": {}, "bm25": b_, "nlp": {"module": True, "mark": f"{stage}/{unit}"}}
+
+    UC_RUNS = {("mem0", "r1"): {"u1": 0, "u2": 3}, ("mem0", "r2"): {"u1": 0, "u2": 0},
+               ("mem0-store", "r1"): {"u1": 2, "u2": 1}}
+    uc_lines, uc_paths = [], {}
+    for (a_, r_), pos_ in UC_RUNS.items():
+        sid_ = f"S1-smoke-9/b01/{r_}/{a_}"
+        rel_ = f"S1-smoke-9/_records/b01/{r_}.{a_}.json"
+        data_ = A.render({"stand": "S1-smoke-9", "block": "b01", "run": r_, "arm": a_, "status_id": sid_,
+                          "units": {u_: {"write": {"seal": None, "counters": uc_counters("write", u_, 0)},
+                                         "questions": {"reads": [], "counters": uc_counters("read", u_, p_)}}
+                                    for u_, p_ in pos_.items()}})
+        (RU / rel_).parent.mkdir(parents=True, exist_ok=True)
+        (RU / rel_).write_bytes(data_)
+        uc_paths[(a_, r_)] = RU / rel_
+        uc_lines.append({"status_id": sid_, "path": rel_, "sha256": hashlib.sha256(data_).hexdigest()})
+    uc_lines.append({"status_id": "S1-smoke-9/b01/r1/nevertwice", "path": "S1-smoke-9/_records/b01/r1.nevertwice.json",
+                     "sha256": "5" * 64})
+    (RU / "_launch" / "records.jsonl").write_text("".join(json.dumps(x) + "\n" for x in uc_lines), encoding="utf-8")
+    UC_ARMS = ("nevertwice", "mem0", "mem0-store")
+    res15 = {"tree_start": {"anchor": "a" * 40, "clean": True},
+             "blocks": [{"write": {a_: {(r_, u_): SimpleNamespace(seal=None) for (b_, r_), ps in UC_RUNS.items()
+                                        if b_ == a_ for u_ in ps} for a_ in ("mem0", "mem0-store")}
+                         | {"nevertwice": {("r1", "u1"): SimpleNamespace(seal=None)}},
+                         "questions": {a_: {(r_, u_): {"reads": [{"qid": f"q{u_}", "point": p_, "answer": ans(p_)}
+                                                                  for p_ in PT7.read_points("S1-smoke-9", a_)],
+                                                       "counters": uc_counters("read", u_, pos_)}
+                                            for (b_, r_), ps in UC_RUNS.items() if b_ == a_ for u_, pos_ in ps.items()}
+                                       for a_ in ("mem0", "mem0-store")}
+                         | {"nevertwice": {("r1", "u1"): {"reads": [{"qid": "q1", "point": p_, "answer": ans(p_)}
+                                                                    for p_ in "BKV"]}}}}]}
+    got15 = val(lambda: PI.pilot_artifacts(res15, inp=inp7, arms=list(UC_ARMS), out_dir=TMP / "art15", runs_root=RU,
+                                            lme_sha256="e" * 64, list_sha256="f" * 64, A=A, PT=PT7),
+                ({}, {}, ["raised"])) if PI else ({}, {}, ["no module"])
+    arts15 = {p_: jload(Path(v_.get("path", TMP / "none")), {}) for p_, v_ in got15[0].items()}
+
+    def uc_want(arm: str, runs_=None) -> list:
+        return sorted(((f"S1-smoke-9/b01/{r_}/{arm}", u_, st_, f"{st_}/{u_}", f"{st_}/{u_}")
+                       for (a_, r_), ps in UC_RUNS.items() if a_ == arm and (runs_ is None or r_ in runs_)
+                       for u_ in ps for st_ in ("write", "read")))
+
+    def uc_got(row: dict) -> list:
+        return sorted((e.get("status_id"), e.get("unit"), e.get("stage"), (e.get("bm25") or {}).get("mark"),
+                       (e.get("nlp") or {}).get("mark")) for e in (row or {}).get("unit_counters") or [])
+    rows15 = {p_: d_.get("arms") or {} for p_, d_ in arts15.items()}
+    mem0_pts = [p_ for p_ in rows15 if "arm_decl" in (rows15[p_].get("mem0") or {})]
+    store_pts = [p_ for p_ in rows15 if "arm_decl" in (rows15[p_].get("mem0-store") or {})]
+    check("T-PLT-15: every mem0 and mem0-store row the pilot reads carries its unit counters - each unit's write and read "
+          "stage of each run, keyed by the run's status_id, the bm25 and nlp blocks exactly the counters the run record "
+          "holds - and no other arm's row does (a V pointer carries none)",
+          got15[2] == [] and mem0_pts and store_pts
+          and all(uc_got(rows15[p_]["mem0"]) == uc_want("mem0") for p_ in mem0_pts)
+          and all(uc_got(rows15[p_]["mem0-store"]) == uc_want("mem0-store") for p_ in store_pts)
+          and all(set(e) == {"status_id", "unit", "stage", "bm25", "nlp"} for p_ in mem0_pts
+                  for e in rows15[p_]["mem0"]["unit_counters"])
+          and not any("unit_counters" in (r_.get("nevertwice") or {}) for r_ in rows15.values())
+          and all("unit_counters" not in (r_.get("mem0") or {}) for r_ in rows15.values()
+                  if "equivalent_to" in (r_.get("mem0") or {})),
+          str((got15[2], {p_: sorted(r_) for p_, r_ in rows15.items()},
+               uc_got(rows15.get("B", {}).get("mem0")) [:3]))[:600])
+    uc_paths[("mem0", "r2")].write_bytes(uc_paths[("mem0", "r2")].read_bytes().replace(b'"u2"', b'"u9"'))
+    got16 = val(lambda: PI.pilot_artifacts(res15, inp=inp7, arms=["mem0"], out_dir=TMP / "art16", runs_root=RU,
+                                            lme_sha256="e" * 64, list_sha256="f" * 64, A=A, PT=PT7),
+                ({}, {}, ["raised"])) if PI else ({}, {}, ["no module"])
+    b16 = jload(Path((got16[0].get("B") or {}).get("path", TMP / "none")), {})
+    uc_paths[("mem0", "r1")].unlink()
+    got16b = val(lambda: PI.pilot_artifacts(res15, inp=inp7, arms=["mem0"], out_dir=TMP / "art16b", runs_root=RU,
+                                             lme_sha256="e" * 64, list_sha256="f" * 64, A=A, PT=PT7),
+                 ({}, {}, ["raised"])) if PI else ({}, {}, ["no module"])
+    check("T-PLT-16: a mem0 run record whose bytes are not the sha256 records.jsonl names, or that is gone, is a problem "
+          "by name and gives its run no entries (P0k then names those units not measured) - never read as it is",
+          any("S1-smoke-9/b01/r2/mem0" in p_ and "sha256" in p_ for p_ in got16[2])
+          and uc_got((b16.get("arms") or {}).get("mem0")) == uc_want("mem0", runs_=("r1",))
+          and any("S1-smoke-9/b01/r1/mem0" in p_ and "cannot be read" in p_ for p_ in got16b[2]),
+          str((got16[2], got16b[2]))[:500])
+    m35, p35 = val(lambda: PI.m35_table(res15, arms=A.MEM0_ARMS), ({}, ["raised"])) if PI else ({}, ["no module"])
+    res17 = copy.deepcopy(res15)
+    del res17["blocks"][0]["questions"]["mem0"][("r2", "u1")]["counters"]["bm25"]["results_bm25_positive"]
+    m35b, p35b = val(lambda: PI.m35_table(res17, arms=A.MEM0_ARMS), ({}, ["raised"])) if PI else ({}, ["no module"])
+    check("T-PLT-17 (M35, a count published, never a failure): per mem0 arm the units whose reads returned no result with "
+          "a BM25 score above zero - mem0 3 of 4, mem0-store 0 of 2 - and a unit whose read counters carry no count is "
+          "unmeasured by name, never counted as zero",
+          p35 == [] and (m35.get("mem0") or {}).get("units") == 4 and m35["mem0"].get("zero_positive") == 3
+          and m35["mem0"].get("share_zero") == 0.75 and (m35.get("mem0-store") or {}).get("zero_positive") == 0
+          and m35["mem0-store"].get("units") == 2 and "nevertwice" not in m35
+          and (m35b.get("mem0") or {}).get("units") == 3 and m35b["mem0"].get("unmeasured") == 1
+          and any("mem0/r2/u1" in p_ for p_ in p35b), str((m35, p35, m35b, p35b))[:500])
+    import ast as _ast  # noqa: PLC0415
+    rp_src = (ROOT / "research" / "v3" / "run_v3_pilot.py").read_text(encoding="utf-8")
+    rp_fn = next((n for n in _ast.walk(_ast.parse(rp_src)) if isinstance(n, _ast.FunctionDef) and n.name == "run_pilot"),
+                 None)
+    rp_calls = {getattr(n.func, "id", None) for n in _ast.walk(rp_fn) if isinstance(n, _ast.Call)} if rp_fn else set()
+    rp_keys = {k.value for n in _ast.walk(rp_fn) if isinstance(n, _ast.Dict) for k in n.keys
+               if isinstance(k, _ast.Constant)} if rp_fn else set()
+    check("T-PLT-18: run_pilot publishes the M35 table in pilot.json (\"m35\", from m35_table over MEM0_ARMS) and its "
+          "problems with the others'", "m35_table" in rp_calls and "m35" in rp_keys and "MEM0_ARMS" in rp_src,
+          str(sorted(k for k in rp_keys if isinstance(k, str)))[:300])
 finally:
     up.close()
     shutil.rmtree(TMP, ignore_errors=True)
