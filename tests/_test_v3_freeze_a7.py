@@ -178,8 +178,9 @@ check("F7-3: the fragment holds the four cleared runs and the failed one, each f
       ok(lambda: oerr is None and [(w["window"], w["run"]) for w in OUT["windows"]] == [(e["window"], e["run"]) for e in CL]
          and OUT["windows"][3]["problems"] == {k: (2 if k.endswith("record.json") else 0) for k in CL[3]["files"]}
          and [(f["window"], f["run"]) for f in OUT["failed_runs"]] == [("a7-npm", "g1"), ("a7-arxiv", "d1")]), str(oerr))
-check("F7-4: its pins are PINS_A7 as filled - all 52, each with where it came from - and its issuers the public ones the "
-      "records name", ok(lambda: sorted(OUT["pins"]) == sorted(CP.PINS_A7_DECLARED) and len(OUT["pins"]) == 52
+check("F7-4: its pins are PINS_A7 as filled - all 62 (a7-github's 52 and a7-hf's 10), each with where it came from - "
+      "and its issuers the public ones the records name",
+      ok(lambda: sorted(OUT["pins"]) == sorted(CP.PINS_A7_DECLARED) and len(OUT["pins"]) == 62
                          and all(v["filled_from"] == "a7-github g1 pin_fill 0123456789ab" for v in OUT["pins"].values())
                          and sorted(OUT["issuers"]) == ["api.github.com", "huggingface.co", "raw.githubusercontent.com",
                                                         "registry.npmjs.org"]), str(oerr))

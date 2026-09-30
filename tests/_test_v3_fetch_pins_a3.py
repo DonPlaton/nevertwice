@@ -1040,6 +1040,81 @@ check("A7-13: a cognee pin stops by name when its tag report is not the pin's - 
 wrong_from = dict(getattr(P.CP, "PINS_A7", {}).get("cognee_run_beam_eval") or {}, revision_from="a7-cognee-tag d1 000000000000")
 check("A7-14: a cognee pin whose revision_from names another tag record (not 1b5d58bfb9f4) stops by name (S1)",
       dcerr is None and bool(COG_NAMES) and stopped(lambda: P.expectation(DC, wrong_from), "S1", "a7-cognee-tag d1"))
+
+print("\n- the MiniLM pins (the auditor's Q-A7-P3 = O-a): a7-discovery d1 holds their revision, card and tree -")
+MINI_REPO, MINI_REV = "sentence-transformers/all-MiniLM-L6-v2", "1110a243fdf4706b3f48f1d95db1a4f5529b4d41"
+#: a7-discovery d1's tree entries for the ten files (oid, size, LFS sha256) - the values its d3_report.json holds
+MINI_FILES = {
+    "modules.json": ("952a9b81c0bfd99800fabf352f69c7ccd46c5e43", 349, None),
+    "config.json": ("72b987fd805cfa2b58c4c8c952b274a11bfd5a00", 612, None),
+    "sentence_bert_config.json": ("59d594003bf59880a884c574bf88ef7555bb0202", 53, None),
+    "config_sentence_transformers.json": ("fd1b291129c607e5d49799f87cb219b27f98acdf", 116, None),
+    "tokenizer.json": ("cb202bfe2e3c98645018a6d12f182a434c9d3e02", 466247, None),
+    "tokenizer_config.json": ("c79f2b6a0cea6f4b564fed1938984bace9d30ff0", 350, None),
+    "vocab.txt": ("fb140275c155a9c7c5a3b3e0e77a9e839594a938", 231508, None),
+    "special_tokens_map.json": ("e7b0375001f109a6b8873d756ad4f7bbb15fbaa5", 112, None),
+    "1_Pooling/config.json": ("d1514c3162bbe87b343f565fadc62e6c06f04f03", 190, None),
+    "model.safetensors": ("d49eff1e4a6f0e3ba5069f21c6d20aad156dd2c9", 90868376,
+                          "53aa51172d142c89d9012cce15ae4d6cc0ca6895895114379cacb4fab128d9db")}
+
+
+def mini_disc(base: Path, *, rev_echo=MINI_REV, tree_rev=MINI_REV, drop=None, licence="apache-2.0"):
+    """A Discovery whose a7d1 record holds MiniLM as a7-discovery d1 saved it: job 1 revision.json, job 3 tree.json."""
+    safe = MINI_REPO.replace("/", "__")
+    j1, j3 = base / "a7d1" / "j1", base / "a7d1" / "j3"
+    write(j1 / f"meta/models/{safe}/revision.json", {"sha": rev_echo, "cardData": {"license": licence}})
+    tree = [{"type": "file", "path": pth, "oid": oid, "size": sz, **({"lfs": {"oid": lfs, "size": sz}} if lfs else {})}
+            for pth, (oid, sz, lfs) in MINI_FILES.items() if pth != drop]
+    write(j3 / f"meta/models/{safe}/tree.json", tree)
+    req = {"id": f"tree:models:{MINI_REPO}", "url": f"https://huggingface.co/api/models/{MINI_REPO}/tree/{tree_rev}?recursive=true"}
+    rec = {"jobs": [{"index": j, "unit": str(base / "a7d1" / f"j{j}"), "job": {"requests": [req] if j == 3 else []},
+                     "summary": []} for j in range(4)]}
+    return P.Discovery({"a7d1": rec})
+
+
+MINI_NAMES = sorted(n for n, p_ in getattr(P.CP, "PINS_A7", {}).items() if p_["repo"] == MINI_REPO)
+DM = mini_disc(TMP / "disc_mini")
+exm, exmerr = _try(lambda: {n: P.expectation(DM, P.CP.PINS_A7[n]) for n in MINI_NAMES})
+a715, a715err = _try(lambda: exmerr is None and len(MINI_NAMES) == 10 and exm == {
+    n: ({"sha256": MINI_FILES[P.CP.PINS_A7[n]["path"]][2], "size": MINI_FILES[P.CP.PINS_A7[n]["path"]][1]}
+        if MINI_FILES[P.CP.PINS_A7[n]["path"]][2] else
+        {"git_blob_sha1": MINI_FILES[P.CP.PINS_A7[n]["path"]][0], "size": MINI_FILES[P.CP.PINS_A7[n]["path"]][1]})
+    for n in MINI_NAMES})
+check("A7-15: each of the 10 MiniLM pins is expected from a7-discovery d1's tree at 1110a243 - the LFS file by its "
+      "sha256 and size, every other by its git blob and size", a715 is True, str(exmerr or a715err or exm)[:300])
+licm, licmerr = _try(lambda: {P.licence_found(DM, P.CP.PINS_A7[n]) for n in MINI_NAMES})
+check("A7-16: the licence found is the model card's (apache-2.0, from a7-discovery d1's revision answer)",
+      licmerr is None and licm == {("apache-2.0", f"a7d1 card {MINI_REPO}")}, str(licmerr or licm))
+safe_ = getattr(P.CP, "PINS_A7", {}).get("minilm_config")
+mini_stops = {}
+if safe_ is not None:
+    for label, disc_kw, pin_over, code in (
+            ("the revision answer names another commit", {"rev_echo": "f" * 40}, {}, "S4"),
+            ("the tree was read at another revision", {"tree_rev": "f" * 40}, {}, "S4"),
+            ("the file is not in the tree", {"drop": "config.json"}, {}, "S2"),
+            ("the pin names another a7-discovery record", {}, {"revision_from": "a7-discovery d1 000000000000"}, "S1")):
+        Dx = mini_disc(TMP / f"disc_mini_{len(mini_stops)}", **disc_kw)
+        mini_stops[label] = stopped(lambda Dx=Dx, po=pin_over: P.expectation(Dx, {**safe_, **po}), code)
+    mini_stops["no a7-discovery record loaded"] = stopped(lambda: P.expectation(P.Discovery({}), safe_), "S1", "a7-discovery d1")
+check("A7-17: a MiniLM pin stops by name when its record is not the pin's - " + ", ".join(mini_stops or ["(no pins)"]),
+      bool(mini_stops) and all(mini_stops.values()), str([k for k, v in mini_stops.items() if not v]))
+try:                                          # plan_window touches no disk: short roots (h, p, u), never TMP
+    phf, phferr = P.plan_window("a7-hf", disc=DM, pins=P.CP.PINS_A7, manifest=REAL_MANI, hf_hub=Path("h"), pins_root=Path("p"),
+                                unit_root=Path("u")), None
+except Exception as e:  # noqa: BLE001
+    phf, phferr = None, f"{type(e).__name__}: {e}"
+try:
+    a718 = (phferr is None and phf.hosts == ["huggingface.co", "us.aws.cdn.hf.co"] and len(phf.items) == 10
+            and all(j.get("max_redirects") == 1 for j in phf.jobs)
+            and {it.url for it in phf.items} == {f"https://huggingface.co/{MINI_REPO}/resolve/{MINI_REV}/{pth}" for pth in MINI_FILES}
+            and {Path(it.dest).as_posix() for it in phf.items} == {
+                f"h/models--sentence-transformers--all-MiniLM-L6-v2/snapshots/{MINI_REV}/{pth}" for pth in MINI_FILES}
+            and set(phf.licences.values()) == {("apache-2.0", f"a7d1 card {MINI_REPO}")})
+except Exception as e:  # noqa: BLE001
+    a718, phferr = False, f"{type(e).__name__}: {e}"
+check("A7-18: a7-hf's plan from PINS_A7 and the real manifest - huggingface.co and us.aws.cdn.hf.co only, one redirect, "
+      "the 10 files at 1110a243 into the hub's snapshot, the card's licence", a718 is True, str(phferr or (phf and phf.hosts)))
+check("A7-19: the command takes the window a7-hf", '"a7-hf"' in __import__("inspect").getsource(P.main))
 check("nothing here touches the real A7 table", getattr(P.CP, "PINS_A7", {}) == A7_BEFORE)
 
 import inspect  # noqa: E402

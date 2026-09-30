@@ -107,6 +107,13 @@
    "path": "model.safetensors",
    "max_redirects": 0
   },
+  "a7-hf": {
+   "hosts": ["huggingface.co", "us.aws.cdn.hf.co"],
+   "hosts_from_record": "2ec9f5f251e755860f5cc6ea887766f939a8fe2d93b6d7a3ba165220c69c6ca4",
+   "purpose": "A7 phase 3 (the auditor's Q-A7-P3 = O-a): all-MiniLM-L6-v2's ten files at the revision a7-discovery d1 found (1110a243...), each checked against that record's tree - the LFS model by its sha256 and size, every other file by its git blob and size; the hosts are huggingface.co and the CDN host a7-hf-d d1 recorded (d7_report.json 2ec9f5f2...), no other; the pins of the table PINS_A7",
+   "pins": ["minilm_modules", "minilm_config", "minilm_st_config", "minilm_st_model_config", "minilm_tokenizer", "minilm_tokenizer_config", "minilm_vocab", "minilm_special_tokens", "minilm_pooling", "minilm_safetensors"],
+   "max_redirects": 1
+  },
   "py-base-312": {
    "hosts": ["api.nuget.org"],
    "purpose": "A8 C1 (the auditor's Q-A8-2): CPython 3.12.10 from NuGet's python package into the polygon's py312 - the base of the product venvs PREREG-V3 2.2 pins to 3.12; NuGet's flat index is read first and the declared version must be the newest stable 3.12.x",

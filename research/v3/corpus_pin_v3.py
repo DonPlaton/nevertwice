@@ -72,16 +72,16 @@ REV_D2 = {"gh_mem0": "b3ede5b7c0ac0e847b03786a603c107ac943b3ee", "gh_ama": "ddfd
           "gh_beam": "b2da22eac88bb0874c64665f13457eb99835774a"}
 #: A7's records (the auditor's fixing): cognee's tag v1.6.1 - the pinned cognee==1.6.1 - and the tree at its commit,
 #: from which its BEAM harness files were selected (a7-cognee-tag d1, d5_report.json); cognee's repository and its
-#: licence (a7-discovery d1, record.json).
+#: licence (a7-discovery d1, record.json), which also holds all-MiniLM-L6-v2's revision, card and tree (its jobs 1 and 3).
 COGNEE_TAG, COGNEE_TAG_D1 = "v1.6.1", "1b5d58bfb9f484249ba0ac32f14c673c0db27f140a0f07825426ae34934e6620"
 A7_DISCOVERY_D1 = "1689534abb103971d502774dfd2a4566d6947c3efaeda552dbe3704b72ed037e"
-REV_A7 = {"gh_cognee": "eb90d03740755f5252b8b12cce91fd09970f2d81"}
+REV_A7 = {"gh_cognee": "eb90d03740755f5252b8b12cce91fd09970f2d81", "hf_minilm": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41"}
 _RECORDS = {"d1": ("a3-discovery d1", DISCOVERY_D1), "d2": ("a3-discovery d2", DISCOVERY_D2),
-            "cognee-tag": ("a7-cognee-tag d1", COGNEE_TAG_D1)}
+            "cognee-tag": ("a7-cognee-tag d1", COGNEE_TAG_D1), "a7-discovery": ("a7-discovery d1", A7_DISCOVERY_D1)}
 
 
 def _at(pin: dict, revision: str, path: str | None = None, *, record: str = "d1") -> dict:
-    """A pin whose revision (and path) a discovery record declares (d1, d2, or A7's cognee-tag)."""
+    """A pin whose revision (and path) a discovery record declares (d1, d2, or A7's cognee-tag and a7-discovery)."""
     label, rec_sha = _RECORDS[record]
     pin.update(revision=revision, revision_from=f"{label} {rec_sha[:12]}")
     if path is not None:
@@ -94,6 +94,7 @@ BEAM, MABD, AMAD, BGE = "Mohammadta/BEAM", "ai-hyz/MemoryAgentBench", "AMA-bench
 GH_LME, GH_LOCOMO, GH_MAB = "xiaowu0162/LongMemEval", "snap-research/locomo", "HUST-AI-HYZ/MemoryAgentBench"
 GH_MEM0, GH_AMA, GH_BEAM = "mem0ai/mem0", "AMA-Bench/AMA-Bench", "mohammadtavakoli78/BEAM"
 GH_COGNEE = "topoteretes/cognee"
+HF_MINILM = "sentence-transformers/all-MiniLM-L6-v2"
 BEAM_LIC = "CC-BY-SA-4.0 (data); MIT (code)"
 PINS: dict[str, dict] = {
     # ── evaluation and bracket data (§3.1, lines 814-823) ──
@@ -473,8 +474,19 @@ PINS_A7: dict[str, dict] = {
            ("beam_rubric", "scoring", "beam/eval/metrics/beam_rubric.py", "the vendor's rubric"),
            ("kendall_tau", "scoring", "beam/eval/metrics/kendall_tau.py", "the vendor's event-ordering metric"),
            ("aggregate_cross_run", "scoring", "beam/eval/aggregate_cross_run.py", "the vendor's aggregation"))},
+    # all-MiniLM-L6-v2 for BEAM's event ordering (Q-49-3 O-b: the official semantic alignment; the auditor's Q-A7-P3 =
+    # O-a): the model at the revision a7-discovery d1 found, the A7 plan's nine files and config_sentence_transformers.json
+    # (the vendor's similarity_fn); fetched by the window a7-hf on the hosts a7-hf-d d1 showed. Row 1627 of revision 1.
+    **{f"minilm_{k}": _at(_pin("scoring", ["S5"], "hf-model", HF_MINILM, None, "Apache-2.0", "a7-hf", 1627,
+                               note=f"Q-49-3, Q-A7-P3: {path}"), REV_A7["hf_minilm"], path, record="a7-discovery")
+       for k, path in (("modules", "modules.json"), ("config", "config.json"), ("st_config", "sentence_bert_config.json"),
+                       ("st_model_config", "config_sentence_transformers.json"), ("tokenizer", "tokenizer.json"),
+                       ("tokenizer_config", "tokenizer_config.json"), ("vocab", "vocab.txt"),
+                       ("special_tokens", "special_tokens_map.json"), ("pooling", "1_Pooling/config.json"),
+                       ("safetensors", "model.safetensors"))},
 }
-#: The values the window a7-github found, written by research/v3/pins_apply.py between these markers, never by hand.
+#: The values the windows a7-github and a7-hf found, written by research/v3/pins_apply.py between these markers, never
+#: by hand.
 # >>> A7 FILLED
 FILLED_A7: dict[str, dict] = {
     "ama_agent_conf": {"revision": "ddfd319e0be33424288c13806f1eafc63e625b59", "sha256": "ab5dbdb22c7d0756a7a34469c8530fbc073e630e24d3811b2ca491da704f4788", "bytes": 893, "licence_found": "MIT", "licence_source": "d2 repo AMA-Bench/AMA-Bench", "from": "a7-github g1 pin_fill acae9e52bc93"},

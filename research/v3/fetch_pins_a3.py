@@ -60,6 +60,9 @@ DISCOVERY_SHAS = {"d1": CP.DISCOVERY_D1, "d2": CP.DISCOVERY_D2}
 A7_SHAS = {"a7d1": CP.A7_DISCOVERY_D1, "cogtag": CP.COGNEE_TAG_D1}
 A7_FILES = {"a7d1": ("a7-discovery", "d1", "record.json"), "cogtag": ("a7-cognee-tag", "d1", "d5_report.json")}
 COGNEE_FROM = f"a7-cognee-tag d1 {CP.COGNEE_TAG_D1[:12]}"
+#: an HF pin whose revision a7-discovery d1 declares (MiniLM, Q-A7-P3): its revision answer in that record's job 1, its
+#: tree in job 3 - a3-discovery d1 kept them in jobs 0 and 1
+A7D1_FROM = f"a7-discovery d1 {CP.A7_DISCOVERY_D1[:12]}"
 _SHA40 = re.compile(r"[0-9a-f]{40}")
 
 #: Where each GitHub repository's tree at its pinned commit was saved, when not d1's phase 4 (the auditor's B3:
@@ -134,10 +137,22 @@ def _kind(pin: dict) -> str:
     return "datasets" if pin["source"] == "hf-dataset" else "models"
 
 
+def _hf_record(pin: dict) -> tuple[str, int, int]:
+    """(record, the job of its revision answer, the job of its tree) for an HF pin: a7-discovery d1's for a pin that names
+    it - exactly the pinned record, else S1 - a3-discovery d1's for every other."""
+    rf = str(pin.get("revision_from") or "")
+    if not rf.startswith("a7-discovery "):
+        return "d1", 0, 1
+    if rf != A7D1_FROM:
+        raise Stop("S1", "a7-discovery d1", f"{_subject(pin)} names {rf!r}, not the pinned {A7D1_FROM!r}")
+    return "a7d1", 1, 3
+
+
 def tree_source(pin: dict) -> tuple[str, int, str]:
     """(record, job, saved path) of the tree that holds ``pin``'s file at its revision."""
     if pin["source"] in ("hf-dataset", "hf-model"):
-        return "d1", 1, f"meta/{_kind(pin)}/{_safe(pin['repo'])}/tree.json"
+        rec, _rjob, tjob = _hf_record(pin)
+        return rec, tjob, f"meta/{_kind(pin)}/{_safe(pin['repo'])}/tree.json"
     if pin["source"] == "github":
         return GH_TREES.get(pin["repo"], ("d1", 3, f"gh/{_safe(pin['repo'])}/tree.json"))
     raise Stop("S2", pin.get("repo") or "?", f"a {pin['source']} pin has no discovery tree")
@@ -183,11 +198,14 @@ def expectation(disc: Discovery, pin: dict) -> dict:
         return tag_expectation(disc, pin)
     rec, job, rel = tree_source(pin)
     subj = _subject(pin)
+    if rec not in disc.records:
+        raise Stop("S1", "a7-discovery d1" if rec == "a7d1" else f"a3-discovery {rec}", f"the record is missing - {subj} has no tree")
     tree = disc.read(rec, job, rel)
     if tree is None:
         raise Stop("S2", subj, f"no tree saved at {rec} j{job} {rel}")
     if pin["source"] in ("hf-dataset", "hf-model"):
-        revision = (disc.read("d1", 0, f"meta/{_kind(pin)}/{_safe(pin['repo'])}/revision.json") or {}).get("sha")
+        rrec, rjob, _tjob = _hf_record(pin)
+        revision = (disc.read(rrec, rjob, f"meta/{_kind(pin)}/{_safe(pin['repo'])}/revision.json") or {}).get("sha")
         url = disc.request_url(rec, job, f"tree:{_kind(pin)}:{pin['repo']}") or ""
         if revision != pin["revision"] or f"/tree/{pin['revision']}" not in url:
             raise Stop("S4", subj, f"the record's revision {str(revision)[:12]} / tree URL is not the pin's")
@@ -212,8 +230,9 @@ def licence_found(disc: Discovery, pin: dict) -> tuple[str | None, str]:
     """(the licence the discovery records state for ``pin``'s repository, where it was read). NOASSERTION is none."""
     repo = pin["repo"]
     if pin["source"] in ("hf-dataset", "hf-model"):
-        rev = disc.read("d1", 0, f"meta/{_kind(pin)}/{_safe(repo)}/revision.json") or {}
-        return (rev.get("cardData") or {}).get("license"), f"d1 card {repo}"
+        rrec, rjob, _tjob = _hf_record(pin)
+        rev = disc.read(rrec, rjob, f"meta/{_kind(pin)}/{_safe(repo)}/revision.json") or {}
+        return (rev.get("cardData") or {}).get("license"), f"{rrec} card {repo}"
     rec, job, rel = GH_REPOS.get(repo, ("d1", 2, f"gh/{_safe(repo)}/repo.json"))
     spdx = ((disc.read(rec, job, rel) or {}).get("license") or {}).get("spdx_id")
     return (None if spdx in (None, "NOASSERTION") else spdx), f"{rec} repo {repo}"
@@ -859,7 +878,7 @@ def main(argv: list[str] | None = None) -> int:
     import argparse  # noqa: PLC0415
     ap = argparse.ArgumentParser(description="one pin window (a3-hf, a3-github, a3-tiktoken, a3-git; A7's a7-github), "
                                              "then place and fill")
-    ap.add_argument("--window", required=True, choices=["a3-hf", "a3-github", "a3-tiktoken", "a3-git", "a7-github"])
+    ap.add_argument("--window", required=True, choices=["a3-hf", "a3-github", "a3-tiktoken", "a3-git", "a7-github", "a7-hf"])
     ap.add_argument("--run", required=True)
     ap.add_argument("--python", required=True, help="the polygon's py314 interpreter")
     args = ap.parse_args(argv)

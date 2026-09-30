@@ -201,7 +201,7 @@ check("the window hosts are the declared exact names",
           "a7-npm-d": ["registry.npmjs.org"], "a7-discovery": ["api.github.com", "huggingface.co"],
           "a7-docs": ["api.github.com"], "a7-cognee-tag": ["api.github.com"], "a7-github": ["raw.githubusercontent.com"],
           "a7-arxiv": ["export.arxiv.org"],
-          "a7-hf-d": ["huggingface.co"],
+          "a7-hf-d": ["huggingface.co"], "a7-hf": ["huggingface.co", "us.aws.cdn.hf.co"],
           "py-base-312": ["api.nuget.org"], "a8-pypi-mem0_v3": ["files.pythonhosted.org", "pypi.org"],
           "a8-pypi-graphiti_v3": ["files.pythonhosted.org", "pypi.org"],
           "a8-pypi-langmem_v3": ["files.pythonhosted.org", "pypi.org"],
@@ -212,6 +212,10 @@ check("the window hosts are the declared exact names",
                              "release-assets.githubusercontent.com"],
           "a8-supermemory-bin": ["api.github.com", "github.com", "objects.githubusercontent.com",
                                  "release-assets.githubusercontent.com"]})
+check("a7-hf's hosts come from a7-hf-d d1's report (d7_report.json 2ec9f5f2...) - huggingface.co and the CDN host it "
+      "recorded, no other - with one redirect", MAN["windows"].get("a7-hf", {}).get("hosts_from_record")
+      == "2ec9f5f251e755860f5cc6ea887766f939a8fe2d93b6d7a3ba165220c69c6ca4"
+      and MAN["windows"]["a7-hf"]["hosts"] == ["huggingface.co", "us.aws.cdn.hf.co"] and MAN["windows"]["a7-hf"]["max_redirects"] == 1)
 check("a3-hf's hosts come from the discovery record d1; discovery follows no redirect",
       MAN["windows"]["a3-hf"]["hosts_from_record"] == CP.DISCOVERY_D1 and MAN["windows"]["a3-discovery"]["max_redirects"] == 0)
 
@@ -269,24 +273,44 @@ COGNEE = {
     "cognee_kendall_tau": ("beam/eval/metrics/kendall_tau.py", "scoring"),
     "cognee_aggregate_cross_run": ("beam/eval/aggregate_cross_run.py", "scoring")}
 WANT_A7.update({n: (COG_G, COG_R, COG_P + path, role) for n, (path, role) in COGNEE.items()})
-check("A7-1: PINS_A7 holds exactly the 52 pins the auditor fixed - the 17 of phase 2 and the 35 cognee files - each its "
-      "repository, commit, path and role", {n: (p["repo"], p["revision"], p["path"], p["role"]) for n, p in A7.items()}
-      == WANT_A7 and len(WANT_A7) == 52 and len(COGNEE) == 35
+#: the auditor's Q-A7-P3 = O-a (2026-09-30): all-MiniLM-L6-v2 at the revision a7-discovery d1 found, ten files - the
+#: nine of the A7 plan's phase 3 and config_sentence_transformers.json (the vendor's similarity_fn) - scoring for S5's
+#: event ordering (Q-49-3 O-b), fetched by the window a7-hf
+MINI_G, MINI_R = "sentence-transformers/all-MiniLM-L6-v2", "1110a243fdf4706b3f48f1d95db1a4f5529b4d41"
+MINILM = {"minilm_modules": "modules.json", "minilm_config": "config.json",
+          "minilm_st_config": "sentence_bert_config.json", "minilm_st_model_config": "config_sentence_transformers.json",
+          "minilm_tokenizer": "tokenizer.json", "minilm_tokenizer_config": "tokenizer_config.json",
+          "minilm_vocab": "vocab.txt", "minilm_special_tokens": "special_tokens_map.json",
+          "minilm_pooling": "1_Pooling/config.json", "minilm_safetensors": "model.safetensors"}
+WANT_A7.update({n: (MINI_G, MINI_R, path, "scoring") for n, path in MINILM.items()})
+check("A7-1: PINS_A7 holds exactly the 62 pins the auditor fixed - the 17 of phase 2, the 35 cognee files and the 10 "
+      "MiniLM files - each its repository, commit, path and role",
+      {n: (p["repo"], p["revision"], p["path"], p["role"]) for n, p in A7.items()}
+      == WANT_A7 and len(WANT_A7) == 62 and len(COGNEE) == 35 and len(MINILM) == 10
       and [sum(r == x for _p, r in COGNEE.values()) for x in ("arm-source", "prompt", "scoring")] == [17, 15, 3],
       str(sorted(set(A7) ^ set(WANT_A7))))
 COG_FROM = "a7-cognee-tag d1 1b5d58bfb9f4"
 A7_FROM = "a7-github g1 pin_fill acae9e52bc93"       # the window run the auditor cleared (2026-09-30 03:0x)
-check("A7-2: every A7 pin is a GitHub file of the window a7-github, filled from its cleared run (a7-github g1, pin_fill "
-      "acae9e52bc93: a 64-hex sha256 and a size), its revision from a discovery record that holds its tree - phase 2's "
-      "from a3-discovery d1 or d2, cognee's from a7-cognee-tag d1",
+MINI_FROM = "a7-discovery d1 1689534abb10"
+check("A7-2: every GitHub pin of A7 is a file of the window a7-github, filled from its cleared run (a7-github g1, "
+      "pin_fill acae9e52bc93: a 64-hex sha256 and a size), its revision from a discovery record that holds its tree - "
+      "phase 2's from a3-discovery d1 or d2, cognee's from a7-cognee-tag d1; every MiniLM pin a file of a7-hf (hf-model), "
+      "unfilled until it, its revision from a7-discovery d1",
       bool(A7) and all(
-          p["source"] == "github" and p["window"] == "a7-github" and p.get("filled_from") == A7_FROM
-          and isinstance(p["sha256"], str) and len(p["sha256"]) == 64 and isinstance(p["bytes"], int)
-          and (str(p["revision_from"]) == COG_FROM if n in COGNEE
-               else str(p["revision_from"]).startswith(("a3-discovery d1 ", "a3-discovery d2 "))) for n, p in A7.items())
-      and {n for n, p in A7.items() if p["revision_from"] == COG_FROM} == set(COGNEE),
-      str([(n, p.get("filled_from"), p["revision_from"]) for n, p in A7.items() if p.get("filled_from") != A7_FROM
-           or p["window"] != "a7-github" or (n in COGNEE) != (p["revision_from"] == COG_FROM)][:4]))
+          ((p["source"], p["window"], str(p["revision_from"]), p["sha256"], p["bytes"])
+           == ("hf-model", "a7-hf", MINI_FROM, None, None)) if n in MINILM else
+          (p["source"] == "github" and p["window"] == "a7-github" and p.get("filled_from") == A7_FROM
+           and isinstance(p["sha256"], str) and len(p["sha256"]) == 64 and isinstance(p["bytes"], int)
+           and (str(p["revision_from"]) == COG_FROM if n in COGNEE
+                else str(p["revision_from"]).startswith(("a3-discovery d1 ", "a3-discovery d2 ")))) for n, p in A7.items())
+      and {n for n, p in A7.items() if p["revision_from"] == COG_FROM} == set(COGNEE)
+      and {n for n, p in A7.items() if p["revision_from"] == MINI_FROM} == set(MINILM),
+      str([(n, p["source"], p["window"], p.get("filled_from"), p["revision_from"]) for n, p in A7.items()
+           if (n in MINILM) != (p["window"] == "a7-hf") or (n in COGNEE) != (p["revision_from"] == COG_FROM)][:4]))
+check("A7-2c: the MiniLM pins serve BEAM (S5) only - event ordering's alignment, scoring - under the licence the model's "
+      "card states (Apache-2.0)", all(n in A7 for n in MINILM) and all(
+          tuple(A7[n]["stands"]) == ("S5",) and A7[n]["licence"] == "Apache-2.0" and A7[n]["role"] == "scoring"
+          for n in MINILM if n in A7), str([(n, A7[n]["stands"], A7[n]["licence"]) for n in MINILM if n in A7][:3]))
 check("A7-2b: the cognee pins serve BEAM (S5) only, under the licence cognee's repository states (Apache-2.0), and "
       "their record is the auditor's a7-cognee-tag d1 (d5_report.json 1b5d58bf...6620) at the tag v1.6.1",
       all(tuple(A7[n]["stands"]) == ("S5",) and A7[n]["licence"] == "Apache-2.0" for n in COGNEE if n in A7)
@@ -357,10 +381,10 @@ except Exception as e:  # noqa: BLE001
 check("A7-4c: an honest neighbour - the same source, repository and path at ANOTHER commit, in the other table - is not "
       "a file pinned twice: pinned_twice() names nothing and the table's own command passes (a commit is part of a file's "
       "identity)", nb is not None and nb == ([], 0, True), str(nberr or nb))
-check("A7-5: the table's rules hold for PINS_A7, and its fragment files the 35 prompt and scoring pins under "
-      "prompt_files and the 17 cognee arm-source pins under arm_sources, nothing elsewhere",
+check("A7-5: the table's rules hold for PINS_A7, and its fragment files the 45 prompt and scoring pins (the MiniLM "
+      "ten among them) under prompt_files and the 17 cognee arm-source pins under arm_sources, nothing elsewhere",
       fr is not None and sorted(fr["prompt_files"]) == sorted(n for n, v in WANT_A7.items() if v[3] in ("prompt", "scoring"))
-      and len(fr["prompt_files"]) == 35
+      and len(fr["prompt_files"]) == 45 and set(MINILM) <= set(fr["prompt_files"])
       and sorted(fr["arm_sources"]) == sorted(n for n, (_p, r) in COGNEE.items() if r == "arm-source")
       and not any(fr[g] for g in fr if g not in ("prompt_files", "arm_sources")),
       str(frerr or {g: sorted(v) for g, v in (fr or {}).items()}))
