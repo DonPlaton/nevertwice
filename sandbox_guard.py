@@ -382,6 +382,10 @@ def isolate(prefix: str = "nevertwice-sandbox-") -> Path:
     os.environ["NEVERTWICE_PROJECTS_ROOT"] = str(_STORE / "transcripts")
     _no_git_housekeeping()
     _MODE = "sandbox"
+    # The v3 contract's guard (the auditor, 2026-09-30: a suite's main() once took the real Contract.default() and ran a
+    # real window): a sandboxed process - and every child it starts, which inherits this - never gets the machine's
+    # contract, so never the real polygon or the network hop (launch.Contract.default refuses by name).
+    os.environ["NEVERTWICE_SANDBOX"] = "1"
     atexit.register(_cleanup)
     verify()
     return _STORE

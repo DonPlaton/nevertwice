@@ -763,6 +763,7 @@ try:
         return [ast.unparse(n) for n in sorted((n for f in fns for n in ast.walk(f) if isinstance(n, ast.Call)
                                                  and ast.unparse(n.func).split(".")[-1] in ("cli_deps", "SmokeDeps",
                                                                                             "check_mem0_probe_run",
+                                                                                            "read_run_config", "default",
                                                                                             "load_run_config")),
                                                 key=lambda n: (n.lineno, n.col_offset))]
 
@@ -774,14 +775,17 @@ try:
           len(rsd_kw) == 1 and rsd_kw[0].get("writer_bounds") == "writer_bounds", str(rsd_kw)[:300])
     rv_main = main_calls((ROOT / "research" / "v3" / "run_v3.py").read_text(encoding="utf-8"), "run_v3")
     ab_main = main_calls((ROOT / "research" / "v3" / "ab_harness.py").read_text(encoding="utf-8"), "ab_harness")
-    check("R-AB-CLI: both command lines check --mem0-probe-run first and build their deps only through cli_deps - no "
-          "SmokeDeps of their own, so mem0 is never left at the default bounds",
-          rv_main == ["check_mem0_probe_run(arm_names, args.mem0_probe_run)",
-                      "load_run_config(args.config, secrets_dir=c.secrets_dir)",
+    check("R-AB-CLI: both command lines check --mem0-probe-run first, read the config before the machine's contract "
+          "(F4), and build their deps only through cli_deps - no SmokeDeps of their own, so mem0 is never left at the "
+          "default bounds",
+          rv_main == ["check_mem0_probe_run(arm_names, args.mem0_probe_run)", "read_run_config(args.config)",
+                      "load('launch.py', smoke=True).Contract.default()",
+                      "load_run_config(args.config, secrets_dir=c.secrets_dir, raw=raw)",
                       "cli_deps(c, cfg, arm_names, args.mem0_probe_run)"]
-          and ab_main == ["RV.check_mem0_probe_run(arm_names, args.mem0_probe_run)",
-                          "RV.load_run_config(args.config, secrets_dir=c.secrets_dir)",
-                          "RV.cli_deps(c, cfg, arm_names, args.mem0_probe_run)"], str((rv_main, ab_main))[:500])
+          and ab_main == ["RV.check_mem0_probe_run(arm_names, args.mem0_probe_run)", "RV.read_run_config(args.config)",
+                          "RV.load('launch.py', smoke=True).Contract.default()",
+                          "RV.load_run_config(args.config, secrets_dir=c.secrets_dir, raw=raw)",
+                          "RV.cli_deps(c, cfg, arm_names, args.mem0_probe_run)"], str((rv_main, ab_main))[:600])
     import dataclasses  # noqa: E402
     fdef = {f.name: f for f in dataclasses.fields(RV.SmokeDeps)}
     check("C3 SmokeDeps.writer_bounds: WRITER_BOUNDS' by default, as a copy - a stand without mem0 needs no probe",

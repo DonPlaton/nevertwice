@@ -717,15 +717,15 @@ check("no owner, two owners, an unreadable owner or no table: no pid",
       and L.hop_listener_pid(10809, sampler=ListenSampler({("tcp", 10809): {None}})) is None
       and L.hop_listener_pid(10809, sampler=ListenSampler(None)) is None
       and L.hop_listener_pid(10809, sampler=ListenSampler({("udp", 10809): {7}})) is None)
-check("py314 is in the watched idle set of the machine's contract", "py314" in L.Contract.default().polygon_idle
-      and any(s.label == "polygon_py314" for s in L.watched_set(L.Contract.default())))
+check("py314 is in the watched idle set of the machine's contract", "py314" in L.Contract._machine().polygon_idle
+      and any(s.label == "polygon_py314" for s in L.watched_set(L.Contract._machine())))
 check("Q-A4-5: arms314, the venv our arms and letta's adapter run on, is in the watched idle set - no child alters "
-      "the interpreter an arm runs on", "arms314" in L.Contract.default().polygon_idle
-      and any(s.label == "polygon_arms314" for s in L.watched_set(L.Contract.default())))
+      "the interpreter an arm runs on", "arms314" in L.Contract._machine().polygon_idle
+      and any(s.label == "polygon_arms314" for s in L.watched_set(L.Contract._machine())))
 check("the auditor's replay tooling (py310, core_bare310, ci_linux) is in the watched idle set too",
-      {"py310", "core_bare310", "ci_linux"} <= set(L.Contract.default().polygon_idle)
+      {"py310", "core_bare310", "ci_linux"} <= set(L.Contract._machine().polygon_idle)
       and {"polygon_py310", "polygon_core_bare310", "polygon_ci_linux"}
-      <= {s.label for s in L.watched_set(L.Contract.default())})
+      <= {s.label for s in L.watched_set(L.Contract._machine())})
 
 if made:
     try:

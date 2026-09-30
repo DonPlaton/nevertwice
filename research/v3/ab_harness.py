@@ -583,8 +583,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     RV = _rv()
     arm_names = [a for a in args.arms.split(",") if a]
     RV.check_mem0_probe_run(arm_names, args.mem0_probe_run)          # before anything is read (R-AB-CLI)
+    raw = RV.read_run_config(args.config)                            # F4: before the machine's contract
     c = RV.load("launch.py", smoke=True).Contract.default()
-    cfg = RV.load_run_config(args.config, secrets_dir=c.secrets_dir)
+    cfg = RV.load_run_config(args.config, secrets_dir=c.secrets_dir, raw=raw)
     return run_ab(cfg, stand=args.stand, arm_names=arm_names, deps=RV.cli_deps(c, cfg, arm_names, args.mem0_probe_run)).rc
 
 

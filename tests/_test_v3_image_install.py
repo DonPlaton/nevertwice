@@ -398,7 +398,7 @@ check("every docker call: DOCKER_CONFIG is an empty directory in its unit (never
       str(sorted(seen.get("env", {}))))
 
 check("the docker CLI image_install runs is the contract's named exception (launch.Contract.default)",
-      L.Contract.default().binary_exceptions.get(str(II.DOCKER)) == "the system docker CLI", str(II.DOCKER))
+      L.Contract._machine().binary_exceptions.get(str(II.DOCKER)) == "the system docker CLI", str(II.DOCKER))
 
 print("\n- the manifest declares both image windows as the code does -")
 MANW = json.loads((ROOT / "research" / "v3" / "fetch_manifest.json").read_text(encoding="utf-8"))["windows"]

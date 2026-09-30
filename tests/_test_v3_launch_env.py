@@ -485,7 +485,7 @@ except L.ContractViolation as e:
 shutil.rmtree(TMP / "secrets" / "sub")
 # B6: the owner's home
 with mock.patch.dict(os.environ, {"USERPROFILE": str(TMP / "fake_profile")}):
-    D = L.Contract.default()
+    D = L.Contract._machine()
 check("B6 the default contract pins the owner's home literally, whatever USERPROFILE says",
       L._norm(D.owner_home) == L._norm(r"C:\Users\Platon"), str(D.owner_home))
 check("B6 ... and denies a USERPROFILE that differs from it", any(L._norm(p) == L._norm(TMP / "fake_profile") for p in D.other_deny),

@@ -53,6 +53,7 @@ import re
 import secrets
 import stat
 import subprocess
+import sys
 import threading
 import time
 import uuid
@@ -148,8 +149,21 @@ class Contract:
 
     @classmethod
     def default(cls) -> "Contract":
-        """The real machine's contract. Only the scheduler calls this. The owner's home is the literal path §2.6.4
-        names (B6); if this process's USERPROFILE says something else, that is denied too."""
+        """The real machine's contract. Only the scheduler and the window tools call this - never a test: under the
+        test sandbox (sandbox_guard's mode, or NEVERTWICE_SANDBOX=1 a sandboxed parent passed down) it refuses by
+        name (the auditor, 2026-09-30: a suite's unstubbed main() once reached it and ran window a8-pypi-mem0_v3 x
+        without GO). The owner's home is the literal path §2.6.4 names (B6)."""
+        guard = sys.modules.get("sandbox_guard")
+        if os.environ.get("NEVERTWICE_SANDBOX") == "1" or getattr(guard, "_MODE", None) == "sandbox":
+            raise ContractViolation(["Contract.default() under the test sandbox: a suite never reaches the real "
+                                     "polygon or the network hop (the 2026-09-30 incident, window a8-pypi-mem0_v3 x) "
+                                     "- give it a contract of its own, or Contract._machine() to read values"])
+        return cls._machine()
+
+    @classmethod
+    def _machine(cls) -> "Contract":
+        """The machine's declared contract, plain data: default() gives it to the tools; a test reads its values here
+        and never acts on it. If this process's USERPROFILE is not the owner's home, it is denied too."""
         polygon = Path(r"D:\Coding\_nevertwice_polygon")
         other = [Path(r"D:\Obsidian\Claude_Memory"), Path(r"D:\Local_AI_Models")]
         env_home = os.environ.get("USERPROFILE")

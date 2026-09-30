@@ -123,13 +123,19 @@ RUN_KEYS = {"proxy_python", "key_file", "git", "campaign_seed", "embed_tag", "ol
 ARM_KEYS = {"python", "llm", "llm_transport", "embeds_via_ollama", "extra"}
 
 
-def load_run_config(path: str | os.PathLike, *, secrets_dir: str | os.PathLike) -> RunConfig:
-    """The run config (see the module docstring); every problem named, nothing defaulted - a missing or unreadable file
-    too (B-RV-CFG: the CLI's own refusal, never a raw OSError)."""
+def read_run_config(path: str | os.PathLike) -> bytes:
+    """The run config's bytes - a missing or unreadable file refused by name (B-RV-CFG: the CLI's own refusal, never a
+    raw OSError). Both command lines call it BEFORE the machine's contract: a bad invocation never reaches it (F4)."""
     try:
-        raw = Path(path).read_bytes()
+        return Path(path).read_bytes()
     except OSError as e:
         raise CLIError(f"{path}: no run config ({type(e).__name__})") from None
+
+
+def load_run_config(path: str | os.PathLike, *, secrets_dir: str | os.PathLike, raw: bytes | None = None) -> RunConfig:
+    """The run config (see the module docstring); every problem named, nothing defaulted - a missing or unreadable file
+    too (read_run_config; ``raw``: the bytes it already read)."""
+    raw = read_run_config(path) if raw is None else raw
     try:
         d = json.loads(raw.decode("utf-8"))
     except (UnicodeDecodeError, ValueError) as e:
@@ -936,8 +942,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         raise CLIError(f"a smoke of {args.stand} is not possible yet - only {SMOKE_STANDS} (templates.PENDING, §5.6)")
     arm_names = [a for a in args.arms.split(",") if a]
     check_mem0_probe_run(arm_names, args.mem0_probe_run)       # before anything is read (C3)
+    raw = read_run_config(args.config)                         # F4: before the machine's contract
     c = load("launch.py", smoke=True).Contract.default()
-    cfg = load_run_config(args.config, secrets_dir=c.secrets_dir)
+    cfg = load_run_config(args.config, secrets_dir=c.secrets_dir, raw=raw)
     return run_smoke(cfg, stand=args.stand, arm_names=arm_names, runs=[r for r in args.runs.split(",") if r],
                      deps=cli_deps(c, cfg, arm_names, args.mem0_probe_run))
 
