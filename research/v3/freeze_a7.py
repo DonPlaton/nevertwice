@@ -7,7 +7,9 @@ A7's own lists and table:
   missing or whose bytes moved stops the build, nothing is written; a cleared record WITH problems stops it unless its
   entry carries the ruling note, the problems verbatim and the excluded request (a7-npm-d d1: npm's 404 by construction);
 * failed_runs: the A7 runs that were not cleared, by sha256 and a one-line reason;
-* issuers: every TLS issuer the records name is public (R-A3-7), every contacted host has one;
+* issuers: every TLS issuer the records name is public (R-A3-7), every contacted host has one - contacted is what a
+  record's catcher tunnelled (Q-DH-1 = O-a); a declared host never tunnelled is its window's declared_not_reached
+  (a8-supermemory-bin b2: objects.githubusercontent.com);
 * pins: PINS_A7 as filled (FILLED_A7) - every pin filled, or the build stops ("A7 is not complete");
 * prereg: the sha256 of every research/v3/PREREG-V3*.md tracked at the anchor commit, by its git blob - revision 1 and
   the amendments at least - and the anchor itself; never the working copy.

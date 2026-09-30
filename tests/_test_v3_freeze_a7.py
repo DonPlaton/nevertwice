@@ -151,9 +151,13 @@ def world(tag: str, *, npm_problems=NPM_PROBLEMS, gh_org="Sectigo Limited"):
                        "issuers": [["huggingface.co", "Amazon", "Amazon RSA 2048 M01"]]},
            "a7-arxiv": {"window": "a7-arxiv", "run": "d2", "problems": [], "hosts": ["export.arxiv.org"],
                         "issuers": [["export.arxiv.org", "Certainly", "Certainly Intermediate R1"]]},
-           # b2's three tunnelled hosts (its fourth declared host, objects.githubusercontent.com, is Q-DH-1's)
+           # b2's form: four declared hosts, its catcher tunnelled three (Q-DH-1: objects.githubusercontent.com never)
            "a8-supermemory-bin": {"window": "a8-supermemory-bin", "run": "b2", "problems": [],
-                                  "hosts": ["api.github.com", "github.com", "release-assets.githubusercontent.com"],
+                                  "hosts": ["api.github.com", "github.com", "objects.githubusercontent.com",
+                                            "release-assets.githubusercontent.com"],
+                                  "catcher": [{"host": h, "port": 443, "tunnelled": True, "refused": False, "hop_status": 200}
+                                              for h in ("api.github.com", "api.github.com", "github.com",
+                                                        "release-assets.githubusercontent.com")],
                                   "issuers": [["api.github.com", "Sectigo Limited", "Sectigo Public Server Authentication CA DV E36"],
                                               ["github.com", "Sectigo Limited", "Sectigo Public Server Authentication CA DV E36"],
                                               ["release-assets.githubusercontent.com", "Let's Encrypt", "YR1"]]}}
@@ -197,6 +201,11 @@ check("F7-3: the fragment holds the four cleared runs and the failed one, each f
          and OUT["windows"][3]["problems"] == {k: (2 if k.endswith("record.json") else 0) for k in CL[3]["files"]}
          and [(f["window"], f["run"]) for f in OUT["failed_runs"]] == [("a7-npm", "g1"), ("a7-arxiv", "d1"),
                                                                         ("a8-supermemory-bin", "b1")]), str(oerr))
+check("F7-15: a8-supermemory-bin b2's window names objects.githubusercontent.com declared_not_reached (Q-DH-1 = O-a) - "
+      "declared, never tunnelled, so no issuer is asked of it; no other window carries the list",
+      ok(lambda: oerr is None and {w["window"]: w.get("declared_not_reached") for w in OUT["windows"]
+                                   if "declared_not_reached" in w} == {"a8-supermemory-bin": ["objects.githubusercontent.com"]}
+         and "objects.githubusercontent.com" not in OUT["issuers"]), str(oerr))
 check("F7-4: its pins are PINS_A7 as filled - all 62 (a7-github's 52 and a7-hf's 10), each with where it came from - "
       "and its issuers the public ones the records name",
       ok(lambda: sorted(OUT["pins"]) == sorted(CP.PINS_A7_DECLARED) and len(OUT["pins"]) == 62

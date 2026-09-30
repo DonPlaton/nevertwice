@@ -5,6 +5,9 @@
 * the runs that were not cleared (a3-hf h1, facts j1, facts j2) are listed by sha256 with their reasons, and their
   records are bound by sha256 too (the auditor's A3.k addition);
 * every TLS issuer organisation is public (R-A3-7), or the build stops;
+* a record's contacted hosts are the ones its catcher tunnelled (Q-DH-1 = O-a): each needs its issuer, a declared host
+  never tunnelled needs none and is named in its window's declared_not_reached; a catcher line that is neither a tunnel
+  nor a refusal stops the build;
 * every non-alias v3 pin is filled, or the build stops;
 * models, the D1 tag, the local-v2 places, the venvs and the facts record come from their cleared records;
 * the same records give the same bytes (sorted JSON, LF);
@@ -253,6 +256,79 @@ unfilled = copy.deepcopy(CP.PINS)
 unfilled["beam_128k"]["sha256"] = None
 check("an unfilled non-alias v3 pin stops the build", refused(
     lambda: F.build(runs, pins=unfilled, cleared=cl, failed=fl, prereg=pre), "beam_128k: not filled"))
+
+print("\n- Q-DH-1: a record's contacted hosts are the ones its catcher tunnelled -")
+B2_HOSTS = ("api.github.com", "github.com", "objects.githubusercontent.com", "release-assets.githubusercontent.com")
+B2_ISSUERS = [["api.github.com", "Sectigo Limited", "Sectigo Public Server Authentication CA DV E36"],
+              ["github.com", "Sectigo Limited", "Sectigo Public Server Authentication CA DV E36"],
+              ["release-assets.githubusercontent.com", "Let's Encrypt", "YR1"]]
+
+
+def line(host: str, *, tunnelled: object = True, refused: object = False) -> dict:
+    """One catcher line as the v3 proxy writes it: born refused, turned into a tunnel only when its hop answered 200."""
+    return {"arm": "fetch", "host": host, "port": 443, "window": "a8-bin", "tunnelled": tunnelled, "refused": refused,
+            "hop_status": 200 if tunnelled is True else "refused"}
+
+
+B2_LINES = [line("api.github.com"), line("api.github.com"), line("github.com"), line("release-assets.githubusercontent.com")]
+
+
+def dh(tag: str, lines: object, *, hosts: tuple = B2_HOSTS, issuers: list | None = None) -> tuple:
+    """tree() and one more cleared fetch record in the form of a8-supermemory-bin b2's: its declared hosts, its issuers
+    and its catcher lines."""
+    r, cl, fl, pre = tree(tag)
+    rel = "_fetch/a8-bin/b2/record.json"
+    cl.append({"window": "a8-bin", "run": "b2", "kind": "binary", "files": {rel: put(r, rel, {
+        "hosts": list(hosts), "issuers": B2_ISSUERS if issuers is None else issuers, "catcher": lines, "problems": []})}})
+    return r, cl, fl, pre
+
+
+def dh_build(tag: str, lines: object, **kw) -> tuple:
+    r, cl, fl, pre = dh(tag, lines, **kw)
+    try:
+        return F.build(r, pins=CP.PINS, cleared=cl, failed=fl, prereg=pre), None
+    except Exception as e:  # noqa: BLE001 - a refusal FAILs the row by name
+        return {}, f"{type(e).__name__}: {e}"
+
+
+def dh_refused(tag: str, lines: object, words: str, **kw) -> bool:
+    r, cl, fl, pre = dh(tag, lines, **kw)
+    return refused(lambda: F.build(r, pins=CP.PINS, cleared=cl, failed=fl, prereg=pre), words)
+
+
+def entry(fz_: dict, window: str) -> dict:
+    return next((w for w in fz_.get("windows", []) if w["window"] == window), {})
+
+
+fz_b2, err_b2 = dh_build("dh_b2", B2_LINES)
+check("DH-1: b2's form builds - the three hosts its catcher tunnelled have their issuers, and objects.githubusercontent.com, "
+      "declared but never tunnelled, needs none: it is its window's declared_not_reached, neither an issuer nor unrecorded",
+      err_b2 is None and entry(fz_b2, "a8-bin").get("declared_not_reached") == ["objects.githubusercontent.com"]
+      and "objects.githubusercontent.com" not in fz_b2["issuers"]
+      and "objects.githubusercontent.com" not in fz_b2["issuers_unrecorded"], str(err_b2))
+check("DH-2: a host the catcher tunnelled with no recorded issuer stops the build by name",
+      dh_refused("dh_no_issuer", B2_LINES, "release-assets.githubusercontent.com was contacted with no recorded issuer",
+                 issuers=B2_ISSUERS[:2]))
+fz_ref, err_ref = dh_build("dh_refusal", B2_LINES + [line("objects.githubusercontent.com", tunnelled=False, refused=True)])
+check("DH-3: a refusal line (tunnelled False, refused True) needs no issuer - no TLS was made; its host stays "
+      "declared_not_reached", err_ref is None
+      and entry(fz_ref, "a8-bin").get("declared_not_reached") == ["objects.githubusercontent.com"], str(err_ref))
+check("DH-4: a host the catcher tunnelled that the record does not declare still needs its issuer, named",
+      dh_refused("dh_undeclared", B2_LINES + [line("mirror.example")], "mirror.example was contacted with no recorded issuer"))
+for n_, (t_, r_) in enumerate(((True, True), (False, False), (1, 0), ("yes", False))):
+    check(f"DH-5: a catcher line that is neither a tunnel nor a refusal (tunnelled {t_!r}, refused {r_!r}) stops the build "
+          "by name - the proxy writes only (True, False) and (False, True)",
+          dh_refused(f"dh_form_{n_}", B2_LINES + [line("objects.githubusercontent.com", tunnelled=t_, refused=r_)],
+                     f"catcher line 4 (objects.githubusercontent.com) has tunnelled {t_!r} with refused {r_!r}"))
+fz_all, err_all = dh_build("dh_all_reached", B2_LINES + [line("objects.githubusercontent.com")],
+                           issuers=B2_ISSUERS + [["objects.githubusercontent.com", "Sectigo Limited", "Sectigo DV E36"]])
+check("DH-6: a window whose every declared host was tunnelled carries no declared_not_reached - nor does any window "
+      "without a catcher (freeze_a3.json stays byte for byte)",
+      err_all is None and "declared_not_reached" not in entry(fz_all, "a8-bin")
+      and not any("declared_not_reached" in w for w in fz["windows"]), str(err_all))
+fz_none, err_none = dh_build("dh_empty", [], issuers=[])
+check("DH-7: an empty catcher tunnelled nothing - no issuer is needed and every declared host is declared_not_reached",
+      err_none is None and entry(fz_none, "a8-bin").get("declared_not_reached") == sorted(B2_HOSTS), str(err_none))
 
 print("\n- the declared lists: exactly the auditor's verdicts -")
 got_cleared = sorted((e["window"], e["run"]) for e in F.CLEARED)

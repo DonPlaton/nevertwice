@@ -9,7 +9,11 @@ is missing or whose bytes moved stops the build (FreezeRefused), nothing is writ
   did not pass (the auditor, A3.k);
 * issuers: per host, the TLS issuers the windows recorded (a fetch record's "issuers", a tool record's "peer") - every
   organisation public (R-A3-7) or the build stops; every host a cleared record contacted has a recorded issuer or a
-  declared reason in issuers_unrecorded (pip's own hosts: its vendored certifi verified them, no child recorded them);
+  declared reason in issuers_unrecorded (pip's own hosts: its vendored certifi verified them, no child recorded them).
+  A record with a catcher contacted the hosts its catcher tunnelled (lines with tunnelled True and refused False - the
+  auditor's Q-DH-1 = O-a); a host it declared and never tunnelled made no TLS, needs no issuer and is named in its
+  window's declared_not_reached (written only when there is one); a catcher line that is neither a tunnel nor a refusal
+  stops the build. A record without a catcher (a tool record) contacted its request URLs' hosts;
 * pins: the v3 pin table as filled (research/v3/corpus_pin_v3.py) - every non-alias pin filled or the build stops;
 * models: the A3.h inventory's pinned models (digest and the 12-hex pin) and the Ollama version;
 * d1_tag: the D1 tag's digest, its base and its Modelfile sha256 (A3.i) - every embedding stand checks the tag at this
@@ -147,6 +151,21 @@ def _hosts(rec: dict) -> set:
             if isinstance(rec.get(k), str) and rec[k].startswith("https://")}
 
 
+def _tunnelled(rec: dict, rel: str) -> set | None:
+    """The hosts a record's catcher tunnelled (Q-DH-1 = O-a): its lines with tunnelled True and refused False; None when
+    the record has no catcher. A line that is neither a tunnel (True, False) nor a refusal (False, True) - the only two
+    forms the v3 proxy writes - stops the build, so no TLS contact hides behind a malformed line."""
+    lines = rec.get("catcher")
+    if not isinstance(lines, list):
+        return None
+    for i, ln in enumerate(lines):
+        t, r = ln.get("tunnelled"), ln.get("refused")
+        if not ((t is True and r is False) or (t is False and r is True)):
+            raise FreezeRefused(f"{rel}: catcher line {i} ({ln.get('host')}) has tunnelled {t!r} with refused {r!r} - "
+                                "neither a tunnel nor a refusal")
+    return {ln.get("host") for ln in lines if ln.get("tunnelled") is True and ln.get("refused") is False}
+
+
 def _issuer_rows(rec: dict) -> list:
     """(host, organisation, CN) rows: a fetch record's "issuers", or a tool record's TLS "peer" (its subject's host)."""
     rows = [tuple(r) for r in rec.get("issuers") or []]
@@ -202,7 +221,8 @@ def build(runs_root: Path, *, pins: dict, filled: dict | None = None, cleared: l
                  "pins_from_excluded_requests": excluded_traces}
     unrecorded = ISSUERS_UNRECORDED if unrecorded is None else unrecorded
     contacted: dict = {}
-    for (_w, _r, rel), rec in sorted(recs.items()):
+    not_reached: dict = {}
+    for (w_, r_, rel), rec in sorted(recs.items()):
         if not (rel.endswith("/record.json") or rel.startswith("_tools/")):
             continue
         for host, org, cn in _issuer_rows(rec):
@@ -211,8 +231,15 @@ def build(runs_root: Path, *, pins: dict, filled: dict | None = None, cleared: l
             out["issuers"].setdefault(host, [])
             if [org, cn] not in out["issuers"][host]:
                 out["issuers"][host].append([org, cn])
-        for host in _hosts(rec):
+        reached = _tunnelled(rec, rel)
+        for host in (_hosts(rec) if reached is None else reached):
             contacted.setdefault(host, rel)
+        if reached is not None and _hosts(rec) - reached:
+            not_reached.setdefault((w_, r_), set()).update(_hosts(rec) - reached)
+    for w in out["windows"]:
+        gone = not_reached.get((w["window"], w["run"]))
+        if gone:                                         # only when there is one: freeze_a3.json stays byte for byte
+            w["declared_not_reached"] = sorted(gone)
     for host in out["issuers"]:
         out["issuers"][host].sort()
     for host, rel in sorted(contacted.items()):          # F2: every contacted host - an issuer, or a declared reason
