@@ -428,7 +428,7 @@ try:
           and ep.get("content_encoding") == "x-gzip" and rep8.get("problems") == [], json.dumps(rep8)[:600])
     unit1 = F._unit_of(rec8["jobs"], 1) if rec8 else None
     check("D8-5: the e-print's unit holds the file as sent; nothing is unpacked anywhere in the run",
-          unit1 is not None and (unit1 / "eprint.bin").read_bytes() == TGZ
+          unit1 is not None and (unit1 / "eprint.bin").is_file() and (unit1 / "eprint.bin").read_bytes() == TGZ
           and not any(p.name == "main.tex" for p in (TMP / "d8a").rglob("*")), str(unit1))
     check("D8-6: the window's check is complete, no native hit, no problem; its catcher tunnelled the three hosts and the "
           "record names an issuer for each - export.arxiv.org's too, though its 301 closed the connection (B-ISS-CLOSE)",

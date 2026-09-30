@@ -126,14 +126,14 @@ def slots_of(text: str) -> tuple:
 
 
 def build(stand: str, pinned: Path, pin_sha256: str, spec: Source, replacements: Sequence[tuple[str, str]],
-          slots: Sequence[str]) -> Template:
+          slots: Sequence[str], base_of=None) -> Template:
     """The stand's template from its pinned file: the pin checked, the base extracted, the transform applied, the slots
     required to be exactly the declared ones."""
     raw = Path(pinned).read_bytes()
     got = hashlib.sha256(raw).hexdigest()
     if got != pin_sha256:
         raise TemplateError(f"{stand}: the pinned file {Path(pinned).name} is {got}, not the pin {pin_sha256}")
-    text = transform(extract(raw, spec), replacements, stand=stand)
+    text = transform(base_of(raw) if base_of is not None else extract(raw, spec), replacements, stand=stand)
     found = slots_of(text)
     if found != tuple(slots):
         raise TemplateError(f"{stand}: the template's slots are {list(found)}, not the declared {list(slots)}")
@@ -188,6 +188,69 @@ MAB_NOTE = ("the MAB driver sends its SYSTEM_MESSAGE (a name in the pinned file,
             "stand's reader sends no system message (Q-TPL-3)")
 
 
+#: Q-48-1, Q-TPL-1 (the auditor, from the pins): LME's documented command runs run_generation.sh, whose default
+#: READING_METHOD "con" passes --cot true (run_generation.sh:14, :64-65); con stays false, merge none - so the source
+#: is prepare_prompt's cot template (run_generation.py:55). Our one insertion before "Answer (step by step):" allows
+#: "unanswerable" (rev1 8.1) and asks the SHORT ANSWER line.
+LME_UNANSWERABLE = "If the chat history does not hold the answer, say that the question is unanswerable."
+LME_EVIDENCE = (("lme_run_generation_sh", 'reading_method=${7:-"con"}\n'),
+                ("lme_run_generation_sh", 'elif [[ $reading_method == "con" ]]; then\n    reading_flags="--cot true"\n'))
+LME_NOTE = ("--cot true: README's documented command runs run_generation.sh, whose default READING_METHOD 'con' passes "
+            "--cot true (run_generation.sh:14, :64-65); con false, merge none (run_generation.py:55). The vendor's "
+            "gen_length with cot is 800 (run_generation.py:342 - '500 if not args.cot else 800' tests a non-empty string, "
+            "so it is always 800); the reader's max_tokens, 1024 (rev1 8.1), is at least that, the same for every arm.")
+#: Q-TPL-4 = O-d (the auditor, from the pins): no pinned code uses AMA's ANSWER_WITH/WITHOUT_RETRIEVAL_PROMPT_TEMPLATE;
+#: the vendor asks its external memory methods (bm25, embedding_mem, longcontext) with longcontext.py's list-mode prompt
+#: (181-217). One question per call (8), so n = 1: {context}, then the non-MCQ suffix, its answer slot turned into the
+#: SHORT ANSWER line. The layout is checked against the pinned f-strings (the parts, in order); any difference refuses.
+_AMA_INTRO = Source("ama_method_longcontext", "section_intro", marker="provide a direct and concise answer")
+_AMA_INSTR = Source("ama_method_longcontext", "instructions", marker="Please provide answers in the following format")
+_AMA_SUFFIX = (("s", "\n\n## Questions\n"), ("v", "section_intro"), ("s", "\n\n"), ("v", "questions_block"),
+               ("s", "\n## Instructions\n"), ("v", "instructions"), ("s", "\n\n"), ("v", "answer_slots"))
+_AMA_QLINE = (("s", "Question "), ("v", "i"), ("s", ": "), ("v", "q"), ("s", "\n"))
+_AMA_SLOT = (("s", "Answer["), ("v", "i"), ("s", "]: [your answer here]"))
+AMA_NOTE = ("AMA's ANSWER_WITH_RETRIEVAL_PROMPT_TEMPLATE and ANSWER_WITHOUT_RETRIEVAL_PROMPT_TEMPLATE are used by no "
+            "pinned code; the vendor asks its external memory methods with longcontext.py's list-mode prompt (181-217). "
+            "One question per call (8), so n = 1; its 'Answer[1]: [your answer here]' slot is the SHORT ANSWER line.")
+
+
+def _joined_parts(node: ast.JoinedStr) -> tuple | None:
+    """An f-string's parts in order: ("s", its text) for a literal piece, ("v", a name) for a plain {name}; None when a
+    piece is anything else (a call, a conversion, a format spec)."""
+    parts = []
+    for v in node.values:
+        if isinstance(v, ast.Constant) and isinstance(v.value, str):
+            parts.append(("s", v.value))
+        elif (isinstance(v, ast.FormattedValue) and isinstance(v.value, ast.Name) and v.conversion == -1
+              and v.format_spec is None):
+            parts.append(("v", v.value.id))
+        else:
+            return None
+    return tuple(parts)
+
+
+def _fill_parts(parts: tuple, values: Mapping[str, str]) -> str:
+    return "".join(p if k == "s" else values[p] for k, p in parts)
+
+
+def ama_list_base(raw: bytes) -> str:
+    """S7's base from the pinned longcontext.py: {context}, then the non-MCQ list-mode suffix for one question."""
+    try:
+        tree = ast.parse(raw.decode("utf-8"))
+    except (UnicodeDecodeError, SyntaxError) as e:
+        raise TemplateError(f"S7: the pinned longcontext.py does not parse ({type(e).__name__})") from None
+    for label, want in (("the suffix", _AMA_SUFFIX), ("a question line", _AMA_QLINE), ("an answer slot", _AMA_SLOT)):
+        n = sum(1 for node in ast.walk(tree) if isinstance(node, ast.JoinedStr) and _joined_parts(node) == want)
+        if n != 1:
+            raise TemplateError(f"S7: {label}'s layout occurs {n} times in the pinned longcontext.py - exactly once is the "
+                                "vendor's prompt as read")
+    intro, instr = extract(raw, _AMA_INTRO), extract(raw, _AMA_INSTR)
+    qline = _fill_parts(_AMA_QLINE, {"i": "1", "q": "{question}"})
+    slot = _fill_parts(_AMA_SLOT, {"i": "1"})
+    return "{context}" + _fill_parts(_AMA_SUFFIX, {"section_intro": intro, "questions_block": qline,
+                                                   "instructions": instr, "answer_slots": slot})
+
+
 @dataclass(frozen=True)
 class StandSpec:
     source: Source
@@ -196,6 +259,8 @@ class StandSpec:
     must_occur: tuple = ()           # committed text that must occur verbatim in the pinned file (its provenance)
     same_as: Source | None = None    # another constant of the same file whose text must be the source's (S6L = S6)
     note: str = ""                   # what FREEZE-V3 names beside the template (a difference from the vendor's run)
+    evidence: tuple = ()             # (pin, text): text that must occur verbatim in another pinned file (the choice's basis)
+    compose: str | None = None       # a composer of the base text from the pinned file, instead of one constant
 
 
 STANDS = {
@@ -215,14 +280,18 @@ STANDS = {
     "S6L": StandSpec(Source("mab_templates", "BASE_TEMPLATES", ("factconsolidation", "query", "long_context_agent")),
                      _MAB_BASE, ("context", "question"), same_as=Source("mab_templates", "BASE_TEMPLATES", _MAB_QUERY),
                      note=MAB_NOTE),
+    "S1": StandSpec(Source("lme_answer_prompt", "answer_prompt_template",
+                           marker="relevant chat history. Answer the question step by step"),
+                    (("\nAnswer (step by step):", "\n" + LME_UNANSWERABLE + "\n" + SHORT_ANSWER + "\nAnswer (step by step):"),),
+                    ("", "", ""), note=LME_NOTE, evidence=LME_EVIDENCE),
+    "S7": StandSpec(Source("ama_method_longcontext", None), (("Answer[1]: [your answer here]", SHORT_ANSWER),),
+                    ("context", "question"), note=AMA_NOTE, compose="ama_list"),
 }
+#: S3, the oracle bracket, reads S1's template (Q-48-1).
+STANDS["S3"] = STANDS["S1"]
+COMPOSERS = {"ama_list": ama_list_base}
 #: Stands whose template waits for a pin (the auditor's Q-48): named, never guessed.
-PENDING = {
-    "S1": "LME's cot setting: how README's READING_METHOD maps to --cot/--con (Q-48-1, Q-TPL-1 = O-b; the A7 window "
-          "a7-github-2 pins run_generation.sh)",
-    "S3": "as S1 (the oracle bracket reads S1's template)",
-    "S7": "which of AMA's two answer templates its code chooses (Q17, Q-TPL-4; the A7 window a7-github-2 pins it)",
-}
+PENDING: dict = {}
 #: Text the stand appends to a LoCoMo cat-2 question: the pinned file's own constant, found by it.
 LOCOMO_CAT2 = Source("locomo_answer_prompt", None, marker="Use DATE of CONVERSATION")
 
@@ -239,10 +308,18 @@ def _cp():
     return sys.modules[name]
 
 
+def _table(pin: str) -> dict:
+    """The table that holds the pin: A3's PINS, or A7's PINS_A7 (a7-github-2's LME and AMA files)."""
+    cp = _cp()
+    return cp.PINS if pin in cp.PINS else cp.PINS_A7
+
+
 def _pinned(pin: str, pins_root: Path) -> tuple[Path, str]:
     cp = _cp()
-    p = cp.PINS[pin]
-    return cp.location(pin, hf_hub=Path(pins_root).parent / "hf_cache_unused", pins_root=pins_root), p["sha256"]
+    table = _table(pin)
+    p = table[pin]
+    return cp.location(pin, hf_hub=Path(pins_root).parent / "hf_cache_unused", pins_root=pins_root,
+                       pins=table), p["sha256"]
 
 
 def stand_template(stand: str, *, pins_root: Path) -> Template:
@@ -253,9 +330,17 @@ def stand_template(stand: str, *, pins_root: Path) -> Template:
         raise TemplateError(f"{stand}: not a stand with a reader template")
     spec = STANDS[stand]
     path, pin_sha = _pinned(spec.source.pin, pins_root)
-    tpl = build(stand, path, pin_sha, spec.source, spec.replacements, spec.slots)
+    tpl = build(stand, path, pin_sha, spec.source, spec.replacements, spec.slots,
+                base_of=COMPOSERS[spec.compose] if spec.compose else None)
     raw = Path(path).read_bytes()
     text = raw.decode("utf-8")
+    for pin, s in spec.evidence:                         # the choice's basis, in its own pinned file
+        epath, esha = _pinned(pin, pins_root)
+        eraw = Path(epath).read_bytes()
+        if hashlib.sha256(eraw).hexdigest() != esha:
+            raise TemplateError(f"{stand}: the pinned file of {pin} is not the pin")
+        if s not in eraw.decode("utf-8"):
+            raise TemplateError(f"{stand}: the evidence {s[:50]!r} does not occur in the pinned file of {pin}")
     if spec.same_as is not None and extract(raw, spec.same_as) != extract(raw, spec.source):
         raise TemplateError(f"{stand}: its base text is not the one {'/'.join(spec.same_as.path)} gives - the two "
                             "stands would read different templates")
@@ -304,7 +389,7 @@ def freeze_fragment(*, pins_root: Path, texts_path: Path) -> dict:
     for stand in sorted(STANDS):
         spec = STANDS[stand]
         t = stand_template(stand, pins_root=pins_root)
-        pin = cp.PINS[spec.source.pin]
+        pin = _table(spec.source.pin)[spec.source.pin]
         committed[stand] = {"source_pin": t.source_pin, "source_path": f"{pin['repo']}@{pin['revision']}:{pin['path']}",
                             "source_sha256": t.source_sha256, "replacements": [list(r) for r in spec.replacements],
                             "must_occur": list(spec.must_occur), "slots": list(t.slots), "sha256": t.sha256}

@@ -14,6 +14,7 @@ Q-48-6), on an artificial pinned file (the stands' own sources and transforms fo
 """
 from __future__ import annotations
 
+import ast
 import hashlib
 import importlib.util
 import json
@@ -159,9 +160,8 @@ try:
     params = inspect.signature(TP.stand_template).parameters
     check("Q-48-6 stand_template takes the stand (and where the pins are) - never an arm, a bracket or **kwargs",
           list(params) == ["stand", "pins_root"] and all(p.kind != p.VAR_KEYWORD for p in params.values()), str(list(params)))
-    for s in ("S1", "S3", "S7"):
-        e = err(lambda s=s: TP.stand_template(s, pins_root=TMP))
-        check(f"{s} is pending with its named reason, never guessed", "no template yet" in e and "A7" in e or "as S" in e, e)
+    check("no stand is pending any more - S1, S3 and S7 are built from their pins (Q-TPL-1, Q-TPL-4)", TP.PENDING == {},
+          str(TP.PENDING))
     check("a stand without a reader template refuses", "not a stand" in err(lambda: TP.stand_template("S2", pins_root=TMP)))
     GPT = (b'''QA_PROMPT = """
 Based on the above context, write a short phrase. Use exact words.
@@ -198,9 +198,70 @@ def ask(qa):
     bf.write_bytes(BEAM)
     mf.write_bytes(MAB)
 
+    #: LME's run_generation.py and run_generation.sh, AMA's longcontext.py - in their shapes (made up here, Q-A3-6)
+    LMEF = (b"def prepare_prompt(entry, retriever_type, cot, merge):\n"
+            b"    if retriever_type == 'no-retrieval':\n"
+            b"        answer_prompt_template = '{}'\n"
+            b"        if cot:\n"
+            b"            answer_prompt_template += 'Answer step by step.'\n"
+            b"    elif merge == 'none':\n"
+            b"        if cot:\n"
+            b"            answer_prompt_template = 'I will give you chats. Please answer based on the relevant chat history. "
+            b"Answer the question step by step: extract, then reason.\\n\\n\\nHistory Chats:\\n\\n{}\\n\\nCurrent Date: {}\\n"
+            b"Question: {}\\nAnswer (step by step):'\n"
+            b"        else:\n"
+            b"            answer_prompt_template = 'I will give you chats. Please answer based on the relevant chat history.\\n\\n\\n"
+            b"History Chats:\\n\\n{}\\n\\nCurrent Date: {}\\nQuestion: {}\\nAnswer:'\n"
+            b"    elif merge == 'merge':\n"
+            b"        if cot:\n"
+            b"            answer_prompt_template = 'I will give you chats and facts. Please answer based on the relevant chat "
+            b"history and the user facts. Answer the question step by step: x.\\n\\n{}\\n\\n{}\\n\\nCurrent Date: {}\\n"
+            b"Question: {}\\nAnswer (step by step):'\n"
+            b"    return answer_prompt_template\n")
+    LMESH = (b'#!/bin/bash\nreading_method=${7:-"con"}\nif [[ $reading_method == "direct" ]]; then\n'
+             b'    reading_flags="--cot false"\nelif [[ $reading_method == "con" ]]; then\n    reading_flags="--cot true"\n'
+             b'elif [[ $reading_method == "con-separate" ]]; then\n    reading_flags="--cot true --con true"\nfi\n')
+    INTRO = ("Please answer the following questions based on the task description and agent trajectory above. For each "
+             "question, provide a direct and concise answer.")
+    INSTR = "Please provide answers in the following format:"
+    LCF_SRC = (
+        "def prompt(memory, questions, mcq_mode):\n"
+        "    questions_block = \"\\n\".join(\n"
+        "        f\"Question {i}: {q}\\n\"\n"
+        "        for i, q in enumerate(questions, 1)\n"
+        "    )\n"
+        "    if mcq_mode:\n"
+        "        section_intro = (\n"
+        "            \"Please answer the following multiple-choice questions based on \"\n"
+        "            \"the task description and agent trajectory above.\"\n"
+        "        )\n"
+        "        instructions = (\"For each question, select all correct options.\")\n"
+        "        answer_slots = \"\\n\".join(f\"Answer[{i}]: [(A)/(B)/(C)/(D)]\" for i in range(1, len(questions) + 1))\n"
+        "    else:\n"
+        "        section_intro = (\n"
+        "            \"Please answer the following questions based on the task description \"\n"
+        "            \"and agent trajectory above. For each question, provide a direct and \"\n"
+        "            \"concise answer.\"\n"
+        "        )\n"
+        "        instructions = \"Please provide answers in the following format:\"\n"
+        "        answer_slots = \"\\n\".join(f\"Answer[{i}]: [your answer here]\" for i in range(1, len(questions) + 1))\n"
+        "    suffix = (\n"
+        "        f\"\\n\\n## Questions\\n{section_intro}\\n\\n\"\n"
+        "        f\"{questions_block}\\n\"\n"
+        "        f\"## Instructions\\n{instructions}\\n\\n\"\n"
+        "        f\"{answer_slots}\"\n"
+        "    )\n"
+        "    return memory + suffix\n")
+    LCF = LCF_SRC.encode()
+    lf, shf, lcf = TMP / "run_generation.py", TMP / "run_generation.sh", TMP / "longcontext.py"
+    lf.write_bytes(LMEF)
+    shf.write_bytes(LMESH)
+    lcf.write_bytes(LCF)
+
     def fakes(**over):
         """_pinned for the test: each pin its own made-up file, by name (``over``: pin -> bytes)."""
-        files = {"locomo_answer_prompt": gf, "beam_prompts": bf, "mab_templates": mf}
+        files = {"locomo_answer_prompt": gf, "beam_prompts": bf, "mab_templates": mf, "lme_answer_prompt": lf,
+                 "lme_run_generation_sh": shf, "ama_method_longcontext": lcf}
         def pinned(pin, root):
             if pin in over:
                 f_ = TMP / f"over_{pin}.py"
@@ -251,6 +312,49 @@ def ask(qa):
         r6 = safe(lambda: TP.render(s6, {"context": "Memory 1:\nfact {x}", "question": "who?"}))
         check("T6-4: rendered, the arm's block comes first, verbatim, then a newline and the benchmark's query",
               r6.startswith("Memory 1:\nfact {x}\nPretend you are a knowledge management system.") and "who? \n" in r6, repr(r6[:120]))
+        s1 = safe(lambda: TP.stand_template("S1", pins_root=TMP), blank)
+        s3 = safe(lambda: TP.stand_template("S3", pins_root=TMP), blank)
+        want1 = ("I will give you chats. Please answer based on the relevant chat history. Answer the question step by step: "
+                 "extract, then reason.\n\n\nHistory Chats:\n\n{}\n\nCurrent Date: {}\nQuestion: {}\n" + getattr(TP, "LME_UNANSWERABLE", "(missing)")
+                 + "\n" + TP.SHORT_ANSWER + "\nAnswer (step by step):")
+        check("T1-1 (Q-TPL-1): S1 = LME's cot template (none merge) - the documented command's READING_METHOD 'con' passes "
+              "--cot true; three slots (the arm's block, the date, the question); the unanswerable line and the SHORT "
+              "ANSWER line before 'Answer (step by step):'", s1.text == want1 and s1.slots == ("", "", ""), repr(s1.text))
+        check("T1-2: S3 (the oracle bracket) reads S1's template", s3.text == s1.text == want1 and s3.sha256 == s1.sha256, repr(s3.text[:80]))
+        TP._pinned = fakes(lme_run_generation_sh=LMESH.replace(b'reading_flags="--cot true"\nelif', b'reading_flags="--cot false"\nelif'))
+        e1 = err(lambda: TP.stand_template("S1", pins_root=TMP))
+        check("T1-3: when the pinned run_generation.sh does not map 'con' to --cot true, S1 is refused by name - the cot "
+              "template rests on that line", "S1" in e1 and "lme_run_generation_sh" in e1 and "does not occur" in e1, e1)
+        TP._pinned = fakes(lme_run_generation_sh=LMESH.replace(b'${7:-"con"}', b'${7:-"direct"}'))
+        e1b = err(lambda: TP.stand_template("S1", pins_root=TMP))
+        check("T1-4: ... and when its default READING_METHOD is not 'con'", "S1" in e1b and "does not occur" in e1b, e1b)
+        TP._pinned = fakes(lme_answer_prompt=LMEF.replace(b"relevant chat history and the user facts. Answer",
+                                                          b"relevant chat history. Answer"))
+        check("T1-5: two constants carrying S1's marker are refused by name - exactly one is its source",
+              "exactly one" in err(lambda: TP.stand_template("S1", pins_root=TMP)))
+        TP._pinned = fakes()
+        s7 = safe(lambda: TP.stand_template("S7", pins_root=TMP), blank)
+        want7 = ("{context}\n\n## Questions\n" + INTRO + "\n\nQuestion 1: {question}\n\n## Instructions\n" + INSTR + "\n\n"
+                 + TP.SHORT_ANSWER)
+        check("T7-1 (Q-TPL-4 = O-d): S7 = the arm's block and AMA's list-mode suffix for one question - its non-MCQ "
+              "section_intro and instructions, the question line, the answer slot turned into the SHORT ANSWER line",
+              s7.text == want7 and s7.slots == ("context", "question"), repr(s7.text))
+        bad7 = {
+            "the suffix's layout": (LCF_SRC.replace('f\"## Instructions\\n{instructions}\\n\\n\"', 'f\"## Notes\\n{instructions}\\n\\n\"'),
+                                    "the suffix"),
+            "the question line": (LCF_SRC.replace('f\"Question {i}: {q}\\n\"', 'f\"Q{i}: {q}\\n\"'), "a question line"),
+            "the answer slot": (LCF_SRC.replace("[your answer here]", "[answer]"), "an answer slot"),
+            "the non-MCQ intro": (LCF_SRC.replace("provide a direct and ", "be "), "section_intro"),
+        }
+        for label, (src_, words) in bad7.items():
+            TP._pinned = fakes(ama_method_longcontext=src_.encode())
+            e7 = err(lambda: TP.stand_template("S7", pins_root=TMP))
+            check(f"T7-2 ({label}): a pinned longcontext.py whose {label} is not the vendor's as read is refused by name",
+                  src_ != LCF_SRC and words in e7 and "S7" in e7 or (words == "section_intro" and "exactly one" in e7), e7)
+        TP._pinned = fakes()
+        r7 = safe(lambda: TP.render(s7, {"context": "trajectory {x}", "question": "What did the agent do?"}))
+        check("T7-3: rendered, the arm's block, then the vendor's questions section with our one question",
+              r7.startswith("trajectory {x}\n\n## Questions\n") and "Question 1: What did the agent do?\n" in r7, repr(r7[:160]))
         check("the SHORT ANSWER instruction is rev1 §8.1's", TP.SHORT_ANSWER.endswith("SHORT ANSWER: <at most 15 words>"))
         rendered = safe(lambda: TP.render(s4, {"context": "- item one\n- item {two}", "question": "Where?"}))
         check("rendered: the block verbatim where the conversation stood", rendered.startswith("- item one\n- item {two}\n\n\nBased"))
@@ -279,8 +383,20 @@ def ask(qa):
               "does not (SYSTEM_MESSAGE); S4 carries no note; S5, S5-full, S6 and S6L are built, S1, S3 and S7 pending",
               all("SYSTEM_MESSAGE" in fr["templates"].get(s, {}).get("note", "") for s in ("S6", "S6L"))
               and "note" not in fr["templates"].get("S4", {})
-              and {"S5", "S5-full", "S6", "S6L"} <= set(fr["templates"]) and set(fr["pending"]) == {"S1", "S3", "S7"},
+              and {"S5", "S5-full", "S6", "S6L"} <= set(fr["templates"]) and set(fr["pending"]) == set(),
               str({s: fr["templates"].get(s, {}).get("note") for s in ("S4", "S6", "S6L")}))
+        check("T1-6/T7-4: the FREEZE notes - S1 and S3 name --cot true from run_generation.sh's 'con' and the reader's "
+              "max_tokens against the vendor's 800; S7 names the dead ANSWER_* constants and n = 1; nothing is pending",
+              all("--cot true" in fr["templates"].get(s, {}).get("note", "") and "800" in fr["templates"][s]["note"]
+                  for s in ("S1", "S3"))
+              and "ANSWER_WITH_RETRIEVAL_PROMPT_TEMPLATE" in fr["templates"].get("S7", {}).get("note", "")
+              and "n = 1" in fr["templates"]["S7"]["note"] and fr["pending"] == {}, str({s: fr["templates"].get(s, {}).get("note")
+                                                                                      for s in ("S1", "S7")})[:500])
+        _rj = ast.parse((ROOT / "research" / "v3" / "reader_judge.py").read_text(encoding="utf-8"))
+        _rp = next((ast.literal_eval(n.value) for n in ast.walk(_rj) if isinstance(n, ast.Assign)
+                    and any(isinstance(t, ast.Name) and t.id == "READER_PARAMS" for t in n.targets)), {})
+        check("T1-7 (Q-TPL-1): the reader's max_tokens is at least the vendor's 800 for S1/S3 (gen_length with cot, "
+              "run_generation.py:342) - the same for every arm", _rp.get("max_tokens", 0) >= 800, str(_rp))
         texts = json.loads(tf.read_bytes()) if tf.is_file() else {}
         check("the full texts go to the runs-tree file, whose sha256 the fragment records",
               texts.get("templates", {}).get("S4", {}).get("text") == s4.text
@@ -312,6 +428,14 @@ def ask(qa):
               and real.slots == ("context", "question") and "Short answer:" not in real.text)
         check("local: the build is deterministic (the same sha256 twice)", TP.stand_template("S4", pins_root=REAL).sha256 == real.sha256)
         r5, r5f, r6_, r6l = (safe(lambda s=s: TP.stand_template(s, pins_root=REAL), None) for s in ("S5", "S5-full", "S6", "S6L"))
+        r1, r3, r7_ = (safe(lambda s=s: TP.stand_template(s, pins_root=REAL), None) for s in ("S1", "S3", "S7"))
+        check("local: S1 and S3 build from the real pins (run_generation.py's cot line, run_generation.sh's 'con' mapping) and "
+              "are one text - three slots, 'Answer (step by step):' last",
+              r1 is not None and r3 is not None and r1.text == r3.text and r1.slots == ("", "", "")
+              and r1.text.endswith(TP.SHORT_ANSWER + "\nAnswer (step by step):"))
+        check("local: S7 builds from the real longcontext.py pin - the block first, the vendor's questions section, the "
+              "SHORT ANSWER line last", r7_ is not None and r7_.slots == ("context", "question")
+              and r7_.text.startswith("{context}\n\n## Questions\n") and r7_.text.endswith(TP.SHORT_ANSWER))
         check("local: S5 and S5-full build from the real beam_prompts pin - two slots, no '<context>' left, the SHORT ANSWER line "
               "only in S5", r5 is not None and r5f is not None and r5.slots == r5f.slots == ("context", "question")
               and "<context>" not in r5.text and TP.SHORT_ANSWER in r5.text and TP.SHORT_ANSWER not in r5f.text)
