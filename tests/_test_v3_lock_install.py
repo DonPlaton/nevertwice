@@ -310,7 +310,8 @@ check("B-NLP (the auditor's method rule): every VENVS spec is its PREREG §2.2 r
       "its version, quoted in PREREG_22 - and every venv has that row",
       set(LI.PREREG_22) == set(LI.VENVS) and all(
           [LI.spec_parts(x) for x in LI.VENVS[v]["specs"]]
-          == [(LI.PREREG_22[v]["dist"], LI.PREREG_22[v]["extras"], LI.PREREG_22[v]["version"])]
+          == ([tuple(p) for p in LI.PREREG_22[v]["pins"]] if "pins" in LI.PREREG_22[v]
+              else [(LI.PREREG_22[v]["dist"], LI.PREREG_22[v]["extras"], LI.PREREG_22[v]["version"])])
           and LI.PREREG_22[v]["base"] == LI.VENVS[v]["base"] for v in LI.VENVS),
       str(LI.PREREG_22))
 REV1, AMD = "research/v3/PREREG-V3-rev1.md", "research/v3/PREREG-V3-AMENDMENTS.md"
@@ -318,7 +319,7 @@ _SRC = {s: (ROOT / s).read_text(encoding="utf-8") if (ROOT / s).is_file() else "
 check("... and each quoted row is its named source's own §2.2 line, word for word (its extras included) - revision 1, "
       "or the amendments file beside it (Q-C5e-3)",
       all(LI.PREREG_22[v].get("source") in _SRC and _SRC[LI.PREREG_22[v]["source"]].count(LI.PREREG_22[v]["row"]) == 1
-          and all(f"with `[{x}]`" in LI.PREREG_22[v]["row"] for x in LI.PREREG_22[v]["extras"]) for v in LI.PREREG_22),
+          and all(f"with `[{x}]`" in LI.PREREG_22[v]["row"] for x in LI.PREREG_22[v].get("extras", [])) for v in LI.PREREG_22),
       str([(v.get("source"), v["row"][:60]) for v in LI.PREREG_22.values()]))
 check("C5e (Q-C5e-1 = O-a, Q-C5e-2 = O-a): graphiti_v3 = graphiti-core[falkordb] 0.30.2 (T31: its FalkorDB driver's "
       "client, imported with the driver), langmem_v3 = langmem 0.0.30 with langgraph pinned by the lock and checked, "
@@ -338,17 +339,28 @@ check("Q-C5e-3: graphiti's quote is the amendments file's row, and that row is r
       "text - nothing else of the row drifts in by the amendment; revision 1 still holds its own row, unchanged",
       LI.PREREG_22.get("graphiti_v3", {}).get("source") == AMD and _amd_g.count(_ins) == 1
       and _amd_g.replace(_ins, "", 1) == _rev1_g and _SRC[REV1].count(_rev1_g) == 1 and _ins not in _SRC[REV1]
-      and all(LI.PREREG_22[v]["source"] == REV1 for v in LI.PREREG_22 if v != "graphiti_v3"), _amd_g[:200])
+      and all(LI.PREREG_22[v]["source"] == REV1 for v in LI.PREREG_22 if v not in ("graphiti_v3", "scorer_v3")), _amd_g[:200])
 check("Q-C5e-3: the amendment carries its id, trap, date, ruling, reason and its trap-closure line",
       all(s in _SRC[AMD] for s in ("## A1 - T31", "**Date:** 2026-09-28", "Q-C5e-2 (2026-09-28, 11:13)",
                                    "the client its FalkorDB driver imports (arm_graphiti.py:162)",
                                    "| T31 graphiti's FalkorDB client | §2.2 |")))
 FNC = getattr(LI, "FREEZE_NEWER_CHECK", {})
+SC_SPECS = ['sentence-transformers==6.1.0', 'nltk==3.10.3', 'scipy==1.18.1', 'torch==2.14.0', 'transformers==5.17.0', 'huggingface-hub==1.33.0', 'tokenizers==0.23.2', 'numpy==2.5.3', 'scikit-learn==1.9.1', 'typing-extensions==4.16.0', 'tqdm==4.70.1']
+check("SC-1 (A4, T33): scorer_v3 is the scorer's venv on py-base-312 - exactly the eleven versions window a8-pypi-d p1 "
+      "read (Q-SCR-5 = O-a), sentence-transformers, nltk, scipy and torch imported, all eleven version-checked",
+      LI.VENVS.get("scorer_v3") == {"base": "py-base-312", "specs": SC_SPECS,
+                                    "imports": ["sentence_transformers", "nltk", "scipy", "torch"],
+                                    "dists": [x.split("==")[0] for x in SC_SPECS]}, str(LI.VENVS.get("scorer_v3"))[:300])
+check("SC-2 (A4): scorer_v3's PREREG_22 row is A4's own paragraph in the amendments file, once, naming every one of its "
+      "eleven pins as name==version", LI.PREREG_22.get("scorer_v3", {}).get("source") == AMD
+      and _SRC[AMD].count(LI.PREREG_22.get("scorer_v3", {}).get("row", "\x00")) == 1
+      and all(x in LI.PREREG_22["scorer_v3"]["row"] for x in SC_SPECS), str(LI.PREREG_22.get("scorer_v3"))[:300])
 check("Q-C5e-1: the freeze check of every product pin, declared as data now - at FREEZE-V3 a metadata read (no install) "
-      "of the newest stable; a newer one is an E5 line and a question to the auditor, never a silent move",
-      set(FNC.get("pins", {})) == set(LI.VENVS)
+      "of the newest stable; a newer one is an E5 line and a question to the auditor, never a silent move - the scorer, "
+      "no arm, is not a product: its versions are A4's (read 2026-09-30)",
+      set(FNC.get("pins", {})) == set(LI.VENVS) - {"scorer_v3"}
       and all(FNC["pins"][v]["dist"] == LI.spec_parts(LI.VENVS[v]["specs"][0])[0]
-              and FNC["pins"][v]["version"] == LI.spec_parts(LI.VENVS[v]["specs"][0])[2] for v in LI.VENVS)
+              and FNC["pins"][v]["version"] == LI.spec_parts(LI.VENVS[v]["specs"][0])[2] for v in FNC["pins"])
       and FNC["pins"]["mem0_v3"]["read"] == "2026-09-23" and FNC["pins"]["graphiti_v3"]["read"] == "2026-09-26"
       and all(FNC["pins"][v]["read"] == "2026-09-26 (rev1's date; the row names none)" for v in ("langmem_v3", "cognee_v3"))
       and "no install" in FNC.get("rule", "") and "never a silent move" in FNC.get("rule", "")

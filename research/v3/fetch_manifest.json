@@ -175,6 +175,14 @@
    "specs": ["cognee==1.6.1"],
    "max_redirects": 0
   },
+  "a8-pypi-scorer_v3": {
+   "hosts": ["pypi.org", "files.pythonhosted.org"],
+   "install": "A4 (T33, the auditor's Q-SCR-1..5): lock_install as for the product venvs - the scorer's own venv scorer_v3 on py-base-312 p1, the eleven versions window a8-pypi-d p1 read (d9_report.json 49c3d7a042ee1576826a75d1ffb6f97be54ae8fb503330d561f1ad45e7266bd5), every further package resolved by the lock and recorded with its wheel's sha256; torch from PyPI's own CPU wheel",
+   "venv": "scorer_v3",
+   "base": "py-base-312",
+   "specs": ["sentence-transformers==6.1.0", "nltk==3.10.3", "scipy==1.18.1", "torch==2.14.0", "transformers==5.17.0", "huggingface-hub==1.33.0", "tokenizers==0.23.2", "numpy==2.5.3", "scikit-learn==1.9.1", "typing-extensions==4.16.0", "tqdm==4.70.1"],
+   "max_redirects": 0
+  },
   "a8-docker-letta": {
    "hosts": ["registry-1.docker.io", "auth.docker.io", "production.cloudflare.docker.com"],
    "image": "A8 C4 (the auditor's Q-C4-1..5): the Letta server image by digest - the newest release ^v?X.Y.Z$ by the numbers, its linux/amd64 manifest, config and layers checked on the disk, loaded offline from an OCI layout; no pull, no login, no setting",

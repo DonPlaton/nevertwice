@@ -76,7 +76,18 @@ VENVS = {"mem0_v3": {"base": "py-base-312", "specs": ["mem0ai[nlp]==2.2.0"], "im
                          "dists": ["graphiti-core", "falkordb"]},
          "langmem_v3": {"base": "py-base-312", "specs": ["langmem==0.0.30"], "imports": ["langmem", "langgraph"],
                         "dists": ["langmem", "langgraph"]},
-         "cognee_v3": {"base": "py-base-312", "specs": ["cognee==1.6.1"], "imports": ["cognee"], "dists": ["cognee"]}}
+         "cognee_v3": {"base": "py-base-312", "specs": ["cognee==1.6.1"], "imports": ["cognee"], "dists": ["cognee"]},
+         # A4 (T33, the auditor's Q-SCR-1..5): the scorer's own venv - no arm; the eleven versions window a8-pypi-d p1
+         # read, every further package the lock's to resolve and record by its wheel's sha256
+         "scorer_v3": {"base": "py-base-312",
+                       "specs": ["sentence-transformers==6.1.0", "nltk==3.10.3", "scipy==1.18.1",
+                                 "torch==2.14.0", "transformers==5.17.0", "huggingface-hub==1.33.0",
+                                 "tokenizers==0.23.2", "numpy==2.5.3", "scikit-learn==1.9.1",
+                                 "typing-extensions==4.16.0", "tqdm==4.70.1"],
+                       "imports": ["sentence_transformers", "nltk", "scipy", "torch"],
+                       "dists": ["sentence-transformers", "nltk", "scipy", "torch",
+                                 "transformers", "huggingface-hub", "tokenizers", "numpy",
+                                 "scikit-learn", "typing-extensions", "tqdm"]}}
 #: PREREG-V3 §2.2's row of each venv, quoted word for word from its named source (the auditor's method rule, B-NLP;
 #: Q-C5e-3: revision 1 is frozen, an amended row lives in the amendments file beside it): its distribution, extras,
 #: version and base - a suite row checks every VENVS spec against it.
@@ -94,9 +105,23 @@ PREREG_22 = {"mem0_v3": {"row": "| mem0 | product | mem0ai, latest stable at fre
                                    "venv langmem_v3 |",
                             "source": _REV1, "dist": "langmem", "extras": [], "version": "0.0.30", "base": "py-base-312"},
              "cognee_v3": {"row": "| cognee | product | cognee, latest stable (1.6.1) | 3.12, fresh venv cognee_v3 |",
-                           "source": _REV1, "dist": "cognee", "extras": [], "version": "1.6.1", "base": "py-base-312"}}
+                           "source": _REV1, "dist": "cognee", "extras": [], "version": "1.6.1", "base": "py-base-312"},
+             # A4's paragraph (the amendments file, 2.2): a venv of eleven pins, each (dist, extras, version)
+             "scorer_v3": {"row": ("Its venv scorer_v3 (3.12, a fresh venv on the base py-base-312 p1) holds exactly\n"
+                                   "sentence-transformers==6.1.0, nltk==3.10.3, scipy==1.18.1 and torch==2.14.0 (the PyPI CPU wheel; no CUDA index is\n"
+                                   "declared), and the requirements sentence-transformers 6.1.0 declares without an extra: transformers==5.17.0,\n"
+                                   "huggingface-hub==1.33.0, tokenizers==0.23.2, numpy==2.5.3, scikit-learn==1.9.1, typing-extensions==4.16.0 and\n"
+                                   "tqdm==4.70.1 - each the newest stable release its specifier allows (huggingface-hub: 2.0.0 is newer, the specifier\n"
+                                   "<2.0.0,>=1.3.0 takes 1.33.0), read by the window a8-pypi-d p1."),
+                           "source": _AMENDMENTS,
+                           "pins": [("sentence-transformers", [], "6.1.0"), ("nltk", [], "3.10.3"), ("scipy", [], "1.18.1"),
+                                    ("torch", [], "2.14.0"), ("transformers", [], "5.17.0"), ("huggingface-hub", [], "1.33.0"),
+                                    ("tokenizers", [], "0.23.2"), ("numpy", [], "2.5.3"), ("scikit-learn", [], "1.9.1"),
+                                    ("typing-extensions", [], "4.16.0"), ("tqdm", [], "4.70.1")],
+                           "base": "py-base-312"}}
 #: Q-C5e-1 (the auditor, 11:13): the freeze check of every product pin, declared now as data - "read" is the date the
-#: row read the version (revision 1's own date, 2026-09-26, where the row names none).
+#: row read the version (revision 1's own date, 2026-09-26, where the row names none). The scorer (A4) is no product: its
+#: eleven versions were read on 2026-09-30 by window a8-pypi-d p1.
 FREEZE_NEWER_CHECK = {
     "rule": ("at FREEZE-V3 (A10), a metadata read of each product pin's index entry - no install - records the newest "
              "stable version; if it is newer than the pin: an E5 line \"pinned X (read D1); newest at freeze Y\" and a "
