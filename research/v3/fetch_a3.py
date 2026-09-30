@@ -191,7 +191,8 @@ def judge(record: dict) -> list[str]:
 
 def record_issuers(results: list) -> list:
     """(host, issuer O, issuer CN) of every request that says one: a flat request summary (run_job's) by its final host,
-    and each nested request of a gh_release, gh_model or oci job by its own host (R-GHR-ISS). One with none adds none."""
+    each host of its followed redirect (its hops, B-ISS-CLOSE), and each nested request of a gh_release, gh_model or
+    oci job by its own host (R-GHR-ISS). One with none adds none."""
     rows = set()
     for j in results:
         for r in j.get("summary") or []:
@@ -199,7 +200,7 @@ def record_issuers(results: list) -> list:
                 continue
             if r.get("issuer_cn"):
                 rows.add((r.get("final_host"), r.get("issuer_o"), r.get("issuer_cn")))
-            for q in r.get("requests") or []:
+            for q in [*(r.get("requests") or []), *(r.get("hops") or [])]:   # B-ISS-CLOSE: a redirect's every host
                 if isinstance(q, dict) and q.get("issuer_cn"):
                     rows.add((q.get("host"), q.get("issuer_o"), q.get("issuer_cn")))
     return sorted(rows)
@@ -1041,7 +1042,8 @@ def d7_report(record: dict, decl: dict) -> dict:
 # ── a7-arxiv-src plan d8 (the auditor's Q-D8-1..3 = O-a: the chosen paper's licence, versions and LaTeX source) ──
 
 D8_WINDOW = "a7-arxiv-src"
-D8_HOSTS = ["export.arxiv.org", "arxiv.org"]
+D8_HOSTS = ["export.arxiv.org", "oaipmh.arxiv.org", "arxiv.org"]    # Q-D8-5 = O-b: s1 found OAI moved to oaipmh
+D8_OAI_HOSTS = ["export.arxiv.org", "oaipmh.arxiv.org"]              # the OAI request's one redirect: there only
 D8_KEYS = frozenset({"hosts", "purpose", "arxiv_id", "version", "max_bytes", "max_redirects"})
 D8_MAX_BYTES = 64 * 1024 * 1024                  # the bound the manifest may declare for the e-print
 D8_OAI_MAX = 1024 * 1024                         # one arXivRaw record
@@ -1057,17 +1059,18 @@ class D8ManifestError(ValueError):
 
 
 def d8_decl(manifest: dict) -> dict:
-    """The manifest's a7-arxiv-src entry - the window's single source: exactly D8_KEYS; export.arxiv.org and arxiv.org,
-    no redirect; a new-style arXiv id without its version, the version apart (an integer from 1), and a byte bound of
-    at most 64 MB. Anything else is refused by name before any spawn."""
+    """The manifest's a7-arxiv-src entry - the window's single source: exactly D8_KEYS; export.arxiv.org,
+    oaipmh.arxiv.org and arxiv.org, one redirect (the OAI request's); a new-style arXiv id without its version, the
+    version apart (an integer from 1), and a byte bound of at most 64 MB. Anything else is refused by name before any
+    spawn."""
     w = (manifest.get("windows") or {}).get(D8_WINDOW)
     if not isinstance(w, dict) or set(w) != D8_KEYS:
         raise D8ManifestError(f"the manifest's {D8_WINDOW} entry must have exactly the keys {sorted(D8_KEYS)}")
     probs = []
     if w["hosts"] != D8_HOSTS:
         probs.append(f"its hosts {w['hosts']} are not {D8_HOSTS}")
-    if isinstance(w["max_redirects"], bool) or w["max_redirects"] != 0:
-        probs.append("its max_redirects is not 0")
+    if isinstance(w["max_redirects"], bool) or w["max_redirects"] != 1:
+        probs.append("its max_redirects is not 1 (the OAI request's one redirect, to oaipmh.arxiv.org)")
     if not (isinstance(w["arxiv_id"], str) and _D8_ID.fullmatch(w["arxiv_id"])):
         probs.append(f"its arxiv_id {w['arxiv_id']!r} is not a new-style arXiv id without its version")
     v = w["version"]
@@ -1083,10 +1086,11 @@ def d8_decl(manifest: dict) -> dict:
 
 def d8_jobs(decl: dict, *, sleep=time.sleep) -> list:
     """Job 0: the OAI-PMH GetRecord of the paper in the arXivRaw format (its licence and every version) from
-    export.arxiv.org. Job 1, only when that answer came: after D8_PAUSE_S, the e-print of the declared version from
-    arxiv.org, saved as sent (raw_encoding: a gzip-encoded body is never decoded). No redirect is followed."""
+    export.arxiv.org, following one redirect, to oaipmh.arxiv.org only, at the path the server gives (Q-D8-5 = O-b).
+    Job 1, only when that answer came: after D8_PAUSE_S, the e-print of the declared version from arxiv.org, saved as
+    sent (raw_encoding: a gzip-encoded body is never decoded), no redirect followed."""
     aid, ver = decl["arxiv_id"], decl["version"]
-    oai = {"hosts": ["export.arxiv.org"], "max_redirects": 0, "requests": [
+    oai = {"hosts": D8_OAI_HOSTS, "max_redirects": 1, "requests": [
         {"id": f"oai:{aid}", "save": "oai_record.xml", "max_bytes": D8_OAI_MAX,
          "url": f"https://export.arxiv.org/oai2?verb=GetRecord&identifier=oai:arXiv.org:{aid}&metadataPrefix=arXivRaw"}]}
 
@@ -1116,7 +1120,7 @@ def _request_problem(what: str, summ: dict | None, host: str) -> str | None:
     if summ.get("rate_limited") or summ.get("status") == 429:
         return f"{host} answered 429 to the {what} request (rate-limited): nothing more was sent"
     if summ.get("redirect_host"):
-        return f"the {what} request was redirected to {summ['redirect_host']} - not followed (no redirect is declared)"
+        return f"the {what} request was redirected to {summ['redirect_host']} - not followed ({summ.get('error')})"
     return f"the {what} failed: {summ.get('error')}"
 
 
@@ -1157,9 +1161,9 @@ def d8_report(record: dict, decl: dict) -> dict:
 
     aid, ver = decl["arxiv_id"], decl["version"]
     problems: list[str] = []
-    oai: dict = {"status": None, "licence": None, "versions": [], "title": None}
+    oai: dict = {"status": None, "final_host": None, "redirect_path": None, "licence": None, "versions": [], "title": None}
     s0 = _summary_of(record, 0)
-    oai["status"] = (s0 or {}).get("status")
+    oai.update({k: (s0 or {}).get(k) for k in ("status", "final_host", "redirect_path")})
     p = _request_problem("OAI", s0, "export.arxiv.org")
     if p:
         problems.append(p)

@@ -296,17 +296,21 @@ try:
 
     REAL8 = MANI["windows"].get("a7-arxiv-src") or {}
     decl8, derr8 = holds(lambda: F.d8_decl(MANI))
-    check("D8-M1: the manifest declares a7-arxiv-src as plan d8 reads it: export.arxiv.org and arxiv.org, no redirect, "
-          "arXiv 2501.13956 (the auditor's choice from a7-arxiv d2's report) at version 1, at most 64 MB",
-          derr8 is None and decl8["hosts"] == ["export.arxiv.org", "arxiv.org"] and decl8["max_redirects"] == 0
+    check("D8-M1: the manifest declares a7-arxiv-src as plan d8 reads it: export.arxiv.org, oaipmh.arxiv.org and "
+          "arxiv.org, one redirect (the OAI request's, Q-D8-5 = O-b), arXiv 2501.13956 (the auditor's choice from a7-arxiv "
+          "d2's report) at version 1, at most 64 MB",
+          derr8 is None and decl8["hosts"] == ["export.arxiv.org", "oaipmh.arxiv.org", "arxiv.org"]
+          and decl8["max_redirects"] == 1
           and decl8["arxiv_id"] == "2501.13956" and decl8["version"] == 1 and decl8["max_bytes"] == 64 * 1024 * 1024,
           str(derr8 or decl8))
     bad8 = {
         "an extra key": {**REAL8, "search_query": "ti:zep"},
         "a missing key": {k: v for k, v in REAL8.items() if k != "version"},
-        "a third host": {**REAL8, "hosts": ["export.arxiv.org", "arxiv.org", "oaipmh.arxiv.org"]},
+        "a fourth host": {**REAL8, "hosts": ["export.arxiv.org", "oaipmh.arxiv.org", "arxiv.org", "evil.example"]},
+        "the old two hosts": {**REAL8, "hosts": ["export.arxiv.org", "arxiv.org"]},
         "one host only": {**REAL8, "hosts": ["export.arxiv.org"]},
-        "a redirect": {**REAL8, "max_redirects": 1},
+        "no redirect": {**REAL8, "max_redirects": 0},
+        "two redirects": {**REAL8, "max_redirects": 2},
         "an id with its version": {**REAL8, "arxiv_id": "2501.13956v1"},
         "an old-style id": {**REAL8, "arxiv_id": "hep-th/9901001"},
         "an id that climbs": {**REAL8, "arxiv_id": "../2501.13956"},
@@ -325,9 +329,11 @@ try:
           all(ref8.values()), str([k for k, v in ref8.items() if not v]))
 
     ID8 = "2501.00001"
-    DECL8 = {"hosts": ["export.arxiv.org", "arxiv.org"], "purpose": "test", "arxiv_id": ID8, "version": 1,
-             "max_bytes": 1 << 20, "max_redirects": 0}
+    DECL8 = {"hosts": ["export.arxiv.org", "oaipmh.arxiv.org", "arxiv.org"], "purpose": "test", "arxiv_id": ID8, "version": 1,
+             "max_bytes": 1 << 20, "max_redirects": 1}
     OAI_Q = f"/oai2?verb=GetRecord&identifier=oai:arXiv.org:{ID8}&metadataPrefix=arXivRaw"
+    OAI_Q2 = f"/oai?verb=GetRecord&identifier=oai:arXiv.org:{ID8}&metadataPrefix=arXivRaw"   # the moved endpoint's path
+    MOVED = (301, [("Location", "https://oaipmh.arxiv.org" + OAI_Q2), ("Connection", "close")], b"")
     EP_Q = f"/e-print/{ID8}v1"
     LIC = "http://creativecommons.org/licenses/by/4.0/"
 
@@ -368,7 +374,8 @@ try:
                 + struct.pack("<II", zlib.crc32(body), len(body)))
 
     TGZ = tar_bytes(True)
-    made8 = TF.make_test_cert(TMP / "cert8", "export.arxiv.org", extra_hosts=("arxiv.org",), org="Let's Encrypt")
+    made8 = TF.make_test_cert(TMP / "cert8", "export.arxiv.org", extra_hosts=("arxiv.org", "oaipmh.arxiv.org"),
+                              org="Let's Encrypt")
 
     def head_of(h: bytes) -> tuple:
         lines = h.split(b"\r\n")
@@ -400,13 +407,13 @@ try:
                 pass
         return heads, rec, rep, perr
 
-    routes_ok = {OAI_Q: (200, [("Content-Type", "text/xml")], oai()),
+    routes_ok = {OAI_Q: MOVED, OAI_Q2: (200, [("Content-Type", "text/xml")], oai()),
                  EP_Q: (200, [("Content-Type", "application/x-eprint-tar"), ("Content-Encoding", "x-gzip")], TGZ)}
     pauses: list = []
     heads8, rec8, rep8, perr8 = window8("d8a", routes_ok, pauses)
-    check("D8-1: exactly two GETs, in order - the OAI-PMH GetRecord (arXivRaw) on export.arxiv.org, then the e-print of v1 "
-          "on arxiv.org; no link followed", perr8 is None
-          and heads8 == [(OAI_Q, "export.arxiv.org"), (EP_Q, "arxiv.org")], f"{perr8} {heads8}")
+    check("D8-1: exactly three GETs, in order - the OAI-PMH GetRecord (arXivRaw) on export.arxiv.org, its one redirect to "
+          "oaipmh.arxiv.org at the path the server gave, then the e-print of v1 on arxiv.org; no link followed", perr8 is None
+          and heads8 == [(OAI_Q, "export.arxiv.org"), (OAI_Q2, "oaipmh.arxiv.org"), (EP_Q, "arxiv.org")], f"{perr8} {heads8}")
     check("D8-2: the harness pauses at least 3 s between them - asked once, before the e-print",
           pauses == [getattr(F, "D8_PAUSE_S", None)] and getattr(F, "D8_PAUSE_S", 0) >= 3, str(pauses))
     rep8 = rep8 or {}
@@ -423,10 +430,31 @@ try:
     check("D8-5: the e-print's unit holds the file as sent; nothing is unpacked anywhere in the run",
           unit1 is not None and (unit1 / "eprint.bin").read_bytes() == TGZ
           and not any(p.name == "main.tex" for p in (TMP / "d8a").rglob("*")), str(unit1))
-    check("D8-6: the window's check is complete, no native hit, no problem; its catcher tunnelled both hosts",
+    check("D8-6: the window's check is complete, no native hit, no problem; its catcher tunnelled the three hosts and the "
+          "record names an issuer for each - export.arxiv.org's too, though its 301 closed the connection (B-ISS-CLOSE)",
           rec8 is not None and rec8["check"]["complete"] and rec8["check"]["native_hits"] == 0 and rec8["problems"] == []
-          and {x["host"] for x in rec8["catcher"] if x.get("tunnelled")} == {"export.arxiv.org", "arxiv.org"},
-          str((rec8 or {}).get("problems")))
+          and {x["host"] for x in rec8["catcher"] if x.get("tunnelled")} == {"export.arxiv.org", "oaipmh.arxiv.org", "arxiv.org"}
+          and {i[0] for i in rec8["issuers"]} == {"export.arxiv.org", "oaipmh.arxiv.org", "arxiv.org"},
+          str((rec8 or {}).get("problems")) + str((rec8 or {}).get("issuers")))
+    check("D8-R1 (Q-D8-5 = O-b): the report names the OAI answer's final host and the redirect's path, never its query",
+          oa.get("final_host") == "oaipmh.arxiv.org" and oa.get("redirect_path") == "/oai" and "verb=" not in json.dumps(oa),
+          json.dumps(oa)[:300])
+    pe: list = []
+    heads_e, _rec_e, rep_e, perr_e = window8("d8e", {OAI_Q: (301, [("Location", "https://evil.example" + OAI_Q2)], b""),
+                                                   EP_Q: routes_ok[EP_Q]}, pe)
+    probs_e = (rep_e or {}).get("problems") or []
+    check("D8-R2: a redirect to any other host is refused by name - not followed, the e-print never asked for",
+          perr_e is None and heads_e == [(OAI_Q, "export.arxiv.org")] and pe == []
+          and any("redirected to evil.example" in p and "not followed" in p for p in probs_e)
+          and any("the e-print was not asked for" in p for p in probs_e), f"{perr_e} {heads_e} {probs_e}")
+    p2: list = []
+    heads_2, _rec_2, rep_2, perr_2 = window8("d8r", {OAI_Q: MOVED, OAI_Q2: (301, [("Location", "https://oaipmh.arxiv.org/oai3")], b""),
+                                                   EP_Q: routes_ok[EP_Q]}, p2)
+    probs_2 = (rep_2 or {}).get("problems") or []
+    check("D8-R3: a second redirect is refused by name - the declared one is the only one followed, no e-print",
+          perr_2 is None and heads_2 == [(OAI_Q, "export.arxiv.org"), (OAI_Q2, "oaipmh.arxiv.org")] and p2 == []
+          and any("not followed" in p and "more redirects" in p for p in probs_2)
+          and any("the e-print was not asked for" in p for p in probs_2), f"{perr_2} {heads_2} {probs_2}")
     p429: list = []
     heads9, _rec9, rep9, perr9 = window8("d8b", {OAI_Q: (429, [("Retry-After", "60")], b""), EP_Q: routes_ok[EP_Q]}, p429)
     probs9 = (rep9 or {}).get("problems") or []

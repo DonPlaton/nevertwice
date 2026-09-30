@@ -102,7 +102,11 @@ made = TF.make_test_cert(TMP / "cert", HF, extra_hosts=(CDN, "evil.example", GHA
 if made is None:
     print("  SKIP the fetch child checks: neither cryptography nor openssl is available (not passed)")
     sys.exit(0 if FAILED == 0 else 1)
-TRUST = ssl.create_default_context(cafile=str(made[0]))
+#: B-ISS-CLOSE: cdn-lfs.hf.co gets a certificate of its own (by SNI), so a redirect's two hosts name two issuers
+made_cdn = TF.make_test_cert(TMP / "cert_cdn", CDN, org="CDN Test CA")
+BUNDLE = TMP / "bundle.pem"
+BUNDLE.write_bytes(Path(made[0]).read_bytes() + Path(made_cdn[0]).read_bytes())
+TRUST = ssl.create_default_context(cafile=str(BUNDLE))
 ROUTES = {
     "/api/datasets/x/revision/main": (200, [("Content-Type", "application/json")], META),
     "/datasets/x/resolve/0123/data.json": (302, [("Location", f"https://{CDN}/blob/data.json")], b""),
@@ -114,12 +118,14 @@ ROUTES = {
     "/gzraw.bin": (200, [("Content-Encoding", "x-gzip"), ("Content-Type", "application/x-eprint-tar")], GZ),
     "/e-print/2501.00001v1": (200, [("Content-Encoding", "x-gzip"), ("Content-Type", "application/x-eprint-tar")], GZ),
     "/e-print/2501.00002v1": (200, [("Content-Encoding", "br")], DATA),
+    "/closing": (301, [("Location", f"https://{CDN}/blob/data.json?X-Sig=secret"), ("Connection", "close")], b""),
+    "/closing200": (200, [("Connection", "close")], DATA),
     "/big.bin": (200, [], BIG),
     "/limited": (429, [("Retry-After", "60")], b""),
     "/repos/o/r": (403, [], b'{"message": "API rate limit exceeded"}'),
     "/forbidden": (403, [], b""),
 }
-srv = TF.TlsHttpServer(made[0], made[1], ROUTES)
+srv = TF.TlsHttpServer(made[0], made[1], ROUTES, sni={CDN: (made_cdn[0], made_cdn[1])})
 hop = TF.TunnelHop(srv.port)
 cfg = P.ProxyConfig(arms=[P.ArmConfig(arm="fetch", mode="catch")], run_dir=TMP / "proxy", via_port=hop.port,
                     control_token="ctl")
@@ -171,7 +177,7 @@ check("a file behind one redirect to an allowed host is fetched, checked and ren
       r_file["ok"] and r_file["final_host"] == CDN and (cwd / "files" / "data.json").read_bytes() == DATA
       and not (cwd / "files" / "data.json.partial").exists() and r_file["git_blob_sha1"] == blob_sha1(DATA), str(r_file))
 check("each request records its peer certificate's issuer (the target of a redirect for a redirected one)",
-      r_meta["issuer_cn"] == HF and r_file["issuer_cn"] == HF and r_file["final_host"] == CDN, str((r_meta["issuer_cn"],
+      r_meta["issuer_cn"] == HF and r_file["issuer_cn"] == CDN and r_file["final_host"] == CDN, str((r_meta["issuer_cn"],
                                                                                                  r_file["issuer_cn"])))
 check("a chunked body (no length) still gets its git blob sha1, from the saved file",
       r_chunk["ok"] and r_chunk["git_blob_sha1"] == blob_sha1(DATA) and r_chunk["bytes"] == len(DATA), str(r_chunk))
@@ -179,6 +185,25 @@ n_blob = sum(1 for h in srv.heads if h.startswith(b"GET /blob/data.json"))
 check("a HEAD reports the redirect's host and never follows it",
       r_head["ok"] and r_head["status"] == 302 and r_head["redirect_host"] == CDN and n_blob == 1
       and not any(h.startswith(b"HEAD /blob") for h in srv.heads), f"{r_head} blob GETs={n_blob}")
+
+print("\n- B-ISS-CLOSE: the issuer read on connect, every host of a redirect kept -")
+(c1,), _ = job([{"id": "c1", "url": f"https://{HF}/closing", "save": "cl/a.json", "max_bytes": 1 << 20}],
+               max_redirects=0, cwd_name="closing")
+(c1h,), _ = job([{"id": "c1h", "method": "HEAD", "url": f"https://{HF}/closing"}], cwd_name="closing_head")
+(c2,), _ = job([{"id": "c2", "url": f"https://{HF}/closing200", "save": "cl/b.json", "max_bytes": 1 << 20}],
+               cwd_name="closing200")
+check("ISS-C1: a response that closes its connection (Connection: close) still has its host's issuer - a refused 301, "
+      "a HEAD's 301 and a 200 alike", not c1["ok"] and "more redirects" in (c1["error"] or "") and c1["issuer_cn"] == HF
+      and c1h["ok"] and c1h["issuer_cn"] == HF and c2["ok"] and c2["issuer_cn"] == HF, str((c1, c1h, c2)))
+check("ISS-C2: a redirect's summary names the Location's path without its query (a signature lives there) - "
+      "redirect_path", c1.get("redirect_path") == "/blob/data.json" and c1h.get("redirect_path") == "/blob/data.json"
+      and "X-Sig" not in json.dumps([c1, c1h]), str((c1.get("redirect_path"), c1h.get("redirect_path"))))
+check("ISS-C3: a followed redirect keeps every host it connected to, each with its own issuer (hops); the summary's "
+      "issuer is the last host's", r_file.get("hops") == [{"host": HF, "issuer_o": None, "issuer_cn": HF},
+                                                          {"host": CDN, "issuer_o": "CDN Test CA", "issuer_cn": CDN}]
+      and r_file["issuer_o"] == "CDN Test CA" and r_file.get("redirect_path") == "/blob/data.json", str(r_file))
+check("ISS-C4: a request with no redirect has neither hops nor redirect_path - every other record reads as before",
+      "hops" not in r_meta and "redirect_path" not in r_meta and "hops" not in c2 and "hops" not in c1, str(sorted(r_meta)))
 
 print("\n- refusals, nothing written -")
 cases = [

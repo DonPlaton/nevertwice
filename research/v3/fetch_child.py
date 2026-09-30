@@ -98,6 +98,14 @@ def _check_url(url: str, hosts: frozenset) -> tuple[str, str]:
     return u.hostname, (u.path or "/") + (f"?{u.query}" if u.query else "")
 
 
+def _issuer_of(conn: http.client.HTTPSConnection) -> tuple:
+    """(organisation, common name) of the connected peer certificate's issuer; (None, None) without TLS."""
+    if isinstance(conn.sock, ssl.SSLSocket):
+        issuer = dict(x[0] for x in conn.sock.getpeercert().get("issuer", ()))
+        return issuer.get("organizationName"), issuer.get("commonName")
+    return None, None
+
+
 def _open(host: str, port: int, ctx: ssl.SSLContext, timeout: float) -> http.client.HTTPSConnection:
     conn = http.client.HTTPSConnection("127.0.0.1", port, context=ctx, timeout=timeout)
     conn.set_tunnel(host, 443)
@@ -124,19 +132,24 @@ def run_request(req: dict, *, hosts: frozenset, max_redirects: int, port: int, c
         rel = _safe_rel(req["save"]) if req.get("save") else None
         host, path = _check_url(req["url"], hosts)
         hops = 0
+        chain: list = []
         while True:
             conn = _open(host, port, ctx, timeout)
             try:
+                # B-ISS-CLOSE: the certificate is read on connect, before the request - a response with Connection:
+                # close has closed the socket by the time getresponse() returns
+                conn.connect()
+                o, cn = _issuer_of(conn)
+                out["issuer_o"], out["issuer_cn"] = o, cn          # the last host's (a redirect's target wins)
+                chain.append({"host": host, "issuer_o": o, "issuer_cn": cn})
                 conn.request(method, path, headers={"User-Agent": "nvt3-fetch/1", "Accept-Encoding": "identity"})
                 r = conn.getresponse()
                 out["status"], out["final_host"] = r.status, host
-                if isinstance(conn.sock, ssl.SSLSocket):  # the last host's certificate (a redirect's target wins)
-                    issuer = dict(x[0] for x in conn.sock.getpeercert().get("issuer", ()))
-                    out["issuer_o"], out["issuer_cn"] = issuer.get("organizationName"), issuer.get("commonName")
                 if r.status in (301, 302, 303, 307, 308):
                     loc = r.getheader("Location") or ""
                     target = urllib.parse.urljoin(f"https://{host}{path}", loc)
                     out["redirect_host"] = urllib.parse.urlsplit(target).hostname
+                    out["redirect_path"] = urllib.parse.urlsplit(target).path   # never the query: signatures live there
                     r.read(65536)                    # a redirect body is short: drain it
                     if method == "HEAD":                 # discovery: report where it points, never follow
                         out["ok"] = True
@@ -144,6 +157,7 @@ def run_request(req: dict, *, hosts: frozenset, max_redirects: int, port: int, c
                     if hops >= max_redirects:
                         raise Refused("more redirects than the job allows")
                     host, path = _check_url(target, hosts)
+                    out["hops"] = chain                          # every host of a followed redirect, each its issuer
                     hops += 1
                     continue
                 if r.status == 429 or (r.status == 403 and host == "api.github.com"):

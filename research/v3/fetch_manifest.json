@@ -100,12 +100,12 @@
    "max_redirects": 0
   },
   "a7-arxiv-src": {
-   "hosts": ["export.arxiv.org", "arxiv.org"],
-   "purpose": "the chosen paper's source (the auditor's Q-D8-1..3 = O-a, plan d8): Zep's paper, arXiv 2501.13956 v1 (his choice from a7-arxiv d2's report) - its OAI-PMH arXivRaw record (licence, versions) from export.arxiv.org, then after a pause of 3 s its e-print of v1 from arxiv.org, kept as sent (sha256, size; never decoded or unpacked) for the offline reading of its LME template; no redirect followed",
+   "hosts": ["export.arxiv.org", "oaipmh.arxiv.org", "arxiv.org"],
+   "purpose": "the chosen paper's source (the auditor's Q-D8-1..3 = O-a, plan d8): Zep's paper, arXiv 2501.13956 v1 (his choice from a7-arxiv d2's report) - its OAI-PMH arXivRaw record (licence, versions) from export.arxiv.org, following its one redirect to oaipmh.arxiv.org only (s1 found the endpoint moved; Q-D8-5 = O-b), then after a pause of 3 s its e-print of v1 from arxiv.org, no redirect, kept as sent (sha256, size; never decoded or unpacked) for the offline reading of its LME template",
    "arxiv_id": "2501.13956",
    "version": 1,
    "max_bytes": 67108864,
-   "max_redirects": 0
+   "max_redirects": 1
   },
   "a7-hf-d": {
    "hosts": ["huggingface.co"],

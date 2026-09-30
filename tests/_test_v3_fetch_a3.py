@@ -183,6 +183,16 @@ try:
     got_iss, iss_err = F.record_issuers(RES_ISS), None
 except Exception as e:  # noqa: BLE001
     got_iss, iss_err = None, f"{type(e).__name__}: {e}"
+RES_HOPS = [{"summary": [{"final_host": "cdn.example", "issuer_o": "CDN CA", "issuer_cn": "C1",
+                         "hops": [{"host": "first.example", "issuer_o": "First CA", "issuer_cn": "F1"},
+                                  {"host": "cdn.example", "issuer_o": "CDN CA", "issuer_cn": "C1"}]}]}]
+try:
+    got_hops, hops_err = F.record_issuers(RES_HOPS), None
+except Exception as e:  # noqa: BLE001
+    got_hops, hops_err = None, f"{type(e).__name__}: {e}"
+check("ISS-4 (B-ISS-CLOSE): a followed redirect's every host is among the record's issuers, from its hops",
+      hops_err is None and got_hops == [("cdn.example", "CDN CA", "C1"), ("first.example", "First CA", "F1")],
+      str(hops_err or got_hops))
 check("ISS-3 (R-GHR-ISS): the record's issuers are collected from flat request summaries AND from the nested requests "
       "of the gh_release, gh_model and oci jobs; an entry with no issuer adds none",
       iss_err is None and got_iss == sorted({("flat.example", "Amazon", "M01"), ("api.github.com", "Sectigo Limited", "E36"),

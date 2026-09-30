@@ -62,9 +62,22 @@ class TlsHttpServer:
     """HTTP/1.1 over TLS on loopback, keep-alive, one fixed response per path: routes[path] = (status, headers, body).
     Counts completed handshakes and records every request head."""
 
-    def __init__(self, cert: Path, keyf: Path, routes: dict):
+    def __init__(self, cert: Path, keyf: Path, routes: dict, sni: dict | None = None):
+        """``sni``: {host: (cert, key)} - a host named there by the client's SNI gets its own certificate (and so its
+        own issuer); any other gets ``cert``."""
         self.ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         self.ctx.load_cert_chain(str(cert), str(keyf))
+        if sni:
+            by_host = {}
+            for h, (c, k) in sni.items():
+                hc = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+                hc.load_cert_chain(str(c), str(k))
+                by_host[h] = hc
+
+            def pick(sslobj, name, _ctx):
+                if name in by_host:
+                    sslobj.context = by_host[name]
+            self.ctx.sni_callback = pick
         self.routes = routes
         self.sock = socket.socket()
         self.sock.bind(("127.0.0.1", 0))
