@@ -89,6 +89,42 @@ def v_equivalent(arm: str, *, defaults: dict | None = None) -> str | None:
     return eq
 
 
+def v_row(arm: str, *, defaults: dict | None = None) -> dict:
+    """An arm's Row V, named: {"read": k} for its own V read, {"equivalent_to": B|K} for V≡, {"refused": reason} while its
+    row cannot be built, {"none": reason} for an arm rev1 gives no V row. A declared V≡ that does not hold raises."""
+    table = V_DEFAULTS if defaults is None else defaults
+    e = table.get(arm)
+    if e is None:
+        return {"none": f"{arm}: no Row V - rev1 §5.2 (:1339-1347) gives a vendor default to each product, not to it"}
+    if e.get("refused"):
+        return {"refused": e["refused"]}
+    eq = v_equivalent(arm, defaults=table)
+    if eq is not None:
+        return {"equivalent_to": eq}
+    return {"read": e["k"]}
+
+
+def read_points(stand: str, arm: str, *, defaults: dict | None = None) -> tuple[str, ...]:
+    """The points an arm is read at on a stand, in the declared order B, K, V (the auditor's Q3 = (a)), by the stand's
+    BASE id (S1-smoke-2 is S1): rev1 §3.2 (:880) reads a product arm at B, K and V on V_STANDS - K left out for an arm
+    that lacks it (claude-code-memory, competitor-lacks-capability:k), V only when its Row V is its own read (v_row
+    "read"; V≡ arms are named equivalent_to, refused ones are not read) - and every other arm and stand at B alone.
+    The product arms are Row V's (V_DEFAULTS: rev1 gives each product a V row). A broken V≡ raises."""
+    table = V_DEFAULTS if defaults is None else defaults
+    if stand.split("-", 1)[0] not in V_STANDS or arm not in table:
+        return ("B",)
+    pts = ["B"]
+    try:
+        k_for("K", arm)
+        pts.append("K")
+    except PointError as e:
+        if str(e) != CC_LACKS_K:
+            raise
+    if "read" in v_row(arm, defaults=table):
+        pts.append("V")
+    return tuple(pts)
+
+
 def k_for(point: str, arm: str, *, defaults: dict | None = None) -> int:
     """The k an arm is asked for at a point; Claude Code has no k (it reads R-all at B). At V, the arm's documented
     default (V_DEFAULTS) - refused by the arm's own name while its row cannot be built, and by V≡B / V≡K when its

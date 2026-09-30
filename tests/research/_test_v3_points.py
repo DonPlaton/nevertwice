@@ -252,6 +252,50 @@ check("PT-V8: zep-graphiti's V entry is its adapter's - the template sha256 the 
       and zv.get("params", {}).get("edges") == zep_consts.get("V_EDGES") == 20
       and zv.get("params", {}).get("nodes") == zep_consts.get("V_NODES") == 20, str(zep_consts))
 
+print("\n- the points each arm is read at (A1; rev1 §3.2 :880, K65; the auditor's Q3 = (a): B, K, V in that order) -")
+rp, vr = attr("read_points"), attr("v_row")
+
+
+def rps(stand: str, arm: str, **kw) -> object:
+    try:
+        return rp(stand, arm, **kw)
+    except Exception as e:  # noqa: BLE001 - the row FAILs by name
+        return f"{type(e).__name__}: {e}"
+
+
+def vrs(arm: str, **kw) -> object:
+    try:
+        return vr(arm, **kw)
+    except Exception as e:  # noqa: BLE001
+        return f"{type(e).__name__}: {e}"
+
+
+got1 = {a: rps("S1-smoke-1", a) for a in ("nevertwice", "zep-graphiti", "mem0", "langmem", "a-mem", "letta",
+                                          "claude-code-memory")} if callable(rp) else None
+check("T-RP1: on S1 - by its base stand, a smoke id S1-smoke-1 is S1 - a product arm is read at B and K, and at V only "
+      "when its Row V is its own read: nevertwice and zep-graphiti B, K, V; mem0 (V≡B), langmem (V≡K), a-mem and letta "
+      "(V refused) B, K; claude-code-memory B alone (no K: competitor-lacks-capability:k; its V refused) - always in "
+      "the order B, K, V",
+      got1 == {"nevertwice": ("B", "K", "V"), "zep-graphiti": ("B", "K", "V"), "mem0": ("B", "K"), "langmem": ("B", "K"),
+               "a-mem": ("B", "K"), "letta": ("B", "K"), "claude-code-memory": ("B",)}, str(got1)[:400])
+got2 = ({a: rps(s_, a) for s_ in ("S4", "S4-smoke-2", "S6", "S2") for a in ("nevertwice", "zep-graphiti")}
+        | {a: rps("S1", a) for a in ("nevertwice-ablation", "bm25-floor", "mem0-store", "nevertwice-ranker")}
+        if callable(rp) else None)
+check("T-RP2: every other stand reads B alone, for every arm; on S1 an arm that is no product (rev1 §3.2: the "
+      "ablation, the floor, the stores - an 'x', no K or V) reads B alone",
+      isinstance(got2, dict) and all(v == ("B",) for v in got2.values()), str(got2)[:400])
+bad_eq = {**VD, "langmem": {**VD.get("langmem", {}), "k": 12}} if VD else {}
+r3 = rps("S1", "langmem", defaults=bad_eq) if callable(rp) else None
+check("T-RP3: a declared V≡ that does not hold refuses the arm's points by name (PointError) - never read, never "
+      "borrowed silently", isinstance(r3, str) and r3.startswith("PointError") and "not equivalent" in r3, str(r3))
+got4 = {a: vrs(a) for a in ("nevertwice", "zep-graphiti", "mem0", "langmem", "letta", "bm25-floor")} if callable(vr) else None
+check("T-RP4: v_row names each arm's V - {read: k} for its own read (nevertwice 3, zep-graphiti 20), {equivalent_to} "
+      "for V≡ (mem0 B, langmem K), {refused} with the arm's reason, {none} for an arm with no rev1 V row",
+      isinstance(got4, dict) and got4.get("nevertwice") == {"read": 3} and got4.get("zep-graphiti") == {"read": 20}
+      and got4.get("mem0") == {"equivalent_to": "B"} and got4.get("langmem") == {"equivalent_to": "K"}
+      and got4.get("letta") == {"refused": "V:page-size-unpinned (Q-47-8h)"}
+      and set((got4.get("bm25-floor") or {})) == {"none"}, str(got4)[:400])
+
 print("\n- Claude Code: R-all and R-index -")
 TMP = Path(tempfile.mkdtemp(prefix="v3points_"))
 try:
