@@ -16,13 +16,21 @@ The mechanics, for every stand (the per-stand sources and transforms follow the 
 * render: the template's slots ("{}" positional or "{name}") are filled in order by the stand, each value inserted
   verbatim - a context block full of braces is never parsed as a format string; the slots must be exactly the ones the
   stand declares.
+* an arm's template (ARM_TEMPLATES, the auditor's Q-ZT-1..6: zep-graphiti's Point V on the LME stands) comes the same
+  way from a member of a pinned archive - Zep's paper's e-print, read in memory only (at most 64 MB unpacked and 2000
+  members; a symlink, a hardlink, an absolute or ".." member refuses the archive): the text between two declared
+  markers, then the declared replacements, each exactly once. FREEZE gets the member's path and sha256 and the text's
+  sha256, never the text (Q-D8-7).
 """
 from __future__ import annotations
 
 import ast
+import gzip
 import hashlib
+import io
 import json
 import string
+import tarfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Mapping, Sequence
@@ -350,6 +358,114 @@ def stand_template(stand: str, *, pins_root: Path) -> Template:
     return tpl
 
 
+# ── an arm's template from a member of a pinned archive (the auditor's Q-ZT-1..6) ────────────────────────────────
+
+#: Q-ZT-5 = O-a: an archive is read in memory only, at most 64 MB unpacked in all and 2000 members
+ARCHIVE_MAX_BYTES = 64 * 1024 * 1024
+ARCHIVE_MAX_MEMBERS = 2000
+
+
+@dataclass(frozen=True)
+class MemberSource:
+    """A base text inside ``member`` of a pinned gzip'd tar: the text strictly between ``start`` (exactly once) and the
+    first ``end`` after it."""
+    pin: str
+    member: str
+    start: str
+    end: str
+
+
+@dataclass(frozen=True)
+class ArmTemplateSpec:
+    source: MemberSource
+    replacements: tuple
+    slots: tuple
+    note: str = ""
+
+
+def archive_member(raw: bytes, member: str) -> bytes:
+    """The bytes of ``member`` in a gzip'd tar, read in memory: refused by name past ARCHIVE_MAX_BYTES unpacked or
+    ARCHIVE_MAX_MEMBERS members, for a symlink, hardlink, absolute or ".." member anywhere in it, and unless exactly one
+    regular member has that name."""
+    try:
+        with gzip.GzipFile(fileobj=io.BytesIO(raw)) as g:
+            body = g.read(ARCHIVE_MAX_BYTES + 1)
+    except (OSError, EOFError) as e:
+        raise TemplateError(f"the archive is not a gzip ({type(e).__name__})") from None
+    if len(body) > ARCHIVE_MAX_BYTES:
+        raise TemplateError("the archive unpacks past 64 MB (Q-ZT-5)")
+    try:
+        members = tarfile.open(fileobj=io.BytesIO(body), mode="r:").getmembers()
+    except tarfile.TarError as e:
+        raise TemplateError(f"the archive is not a tar ({type(e).__name__})") from None
+    if len(members) > ARCHIVE_MAX_MEMBERS:
+        raise TemplateError(f"the archive has {len(members)} members, past {ARCHIVE_MAX_MEMBERS} (Q-ZT-5)")
+    for m in members:
+        name = m.name.replace("\\", "/")
+        if m.issym() or m.islnk() or name.startswith("/") or ".." in name.split("/") or (len(name) > 1 and name[1] == ":"):
+            raise TemplateError(f"the archive holds a link or a path outside it: {m.name!r} (Q-ZT-5)")
+    hits = [m for m in members if m.name == member and m.isfile()]
+    if len(hits) != 1:
+        raise TemplateError(f"the archive holds {len(hits)} regular members named {member}, not one")
+    tf = tarfile.open(fileobj=io.BytesIO(body), mode="r:")
+    return tf.extractfile(tf.getmember(member)).read()
+
+
+def member_block(data: bytes, spec: MemberSource) -> str:
+    """The text strictly between spec.start (exactly once) and the first spec.end after it."""
+    try:
+        text = data.decode("utf-8")
+    except UnicodeDecodeError:
+        raise TemplateError(f"{spec.pin}: {spec.member} is not UTF-8") from None
+    n = text.count(spec.start)
+    if n != 1:
+        raise TemplateError(f"{spec.pin}: the start marker occurs {n} times in {spec.member}, not exactly once")
+    a = text.index(spec.start) + len(spec.start)
+    b = text.find(spec.end, a)
+    if b < 0:
+        raise TemplateError(f"{spec.pin}: no end marker after the start in {spec.member}")
+    return text[a:b]
+
+
+#: Q-ZT-2 = C1 (the auditor's choice from the survey of a7-arxiv-src s3): Zep's paper's one context string template.
+ZEP_NOTE = ("zep-graphiti's Point V on the LME stands (Q-46b-4): the paper's one context string template - main.tex, "
+            "'Sample context string template', inside \\fbox{\\parbox{..}} in its section 3 (Memory Retrieval). The paper "
+            "does not write that this template was used in its LME runs: the link is inferred - its section 5 (:204) "
+            "retrieves 'the 20 most relevant edges (facts) and entity nodes' and 'reformats this data into a context "
+            "string, matching the functionality provided by Zep's memory APIs', and this is the paper's one context string "
+            "template (DMR's top 10 is not our stand). 20 edges + 20 nodes. Three declared replacements, each exactly once "
+            "(\\{facts\\}, \\{entities\\}, ENTITY\\_NAME); the paragraph breaks as in the source (Q-ZT-3a = O-a). The fact "
+            "line: one fact per line, 'FACT (Date range: from - to)' with the K/B rendering's dates (ISO) on a dated "
+            "stand; on an undated stand the fact alone - the template's own text is never changed (Q-ZT-7 = O-a, an E5 "
+            "line). The entity line: 'name: summary'. The paper's communities are not read.")
+ARM_TEMPLATES = {
+    "zep-graphiti:V": ArmTemplateSpec(
+        MemberSource("zep_paper_src", "main.tex",
+                     "Sample context string template:\n\n\\noindent\\fbox{%\n    \\parbox{\\textwidth}{%\n", "\n    }%\n}\n"),
+        (("\\{facts\\}", "{facts}"), ("\\{entities\\}", "{entities}"), ("ENTITY\\_NAME", "ENTITY_NAME")),
+        ("facts", "entities"), ZEP_NOTE),
+}
+
+
+def arm_build(key: str, pinned: Path, pin_sha256: str) -> Template:
+    """ARM_TEMPLATES[key] from its pinned archive at ``pinned``: the pin checked, the member's block, the replacements,
+    the slots - build()'s own checks."""
+    spec = ARM_TEMPLATES[key]
+    return build(key, pinned, pin_sha256, spec.source, spec.replacements, spec.slots,
+                 base_of=lambda raw: member_block(archive_member(raw, spec.source.member), spec.source))
+
+
+def arm_template(key: str, *, pins_root: Path) -> Template:
+    """An arm's template (Q-ZT-6: zep-graphiti's Point V row only with it) - refused by name while its pin is not filled."""
+    if key not in ARM_TEMPLATES:
+        raise TemplateError(f"{key}: not an arm with a template")
+    pin = ARM_TEMPLATES[key].source.pin
+    path, pin_sha = _pinned(pin, pins_root)
+    if pin_sha is None:
+        raise TemplateError(f"{key}: its pin {pin} is not filled - no template (Q-ZT-6: the arm's row stays refused)")
+    return arm_build(key, path, pin_sha)
+
+
 def _locomo_category(category) -> int | None:
     """B-CAT: the loader's own reading of a category (loaders.locomo_category) - "2" and 2 alike."""
     import importlib.util  # noqa: PLC0415
@@ -396,8 +512,24 @@ def freeze_fragment(*, pins_root: Path, texts_path: Path) -> dict:
         if spec.note:
             committed[stand]["note"] = spec.note
         texts[stand] = {"text": t.text, "sha256": t.sha256}
-    raw = (json.dumps({"templates": texts}, ensure_ascii=False, sort_keys=True, indent=1) + "\n").encode("utf-8")
+    arms, arm_texts, pending_arms = {}, {}, {}
+    for key in sorted(ARM_TEMPLATES):
+        spec = ARM_TEMPLATES[key]
+        path, pin_sha = _pinned(spec.source.pin, pins_root)
+        if pin_sha is None:
+            pending_arms[key] = f"its pin {spec.source.pin} is not filled"
+            continue
+        t = arm_build(key, path, pin_sha)
+        member = archive_member(Path(path).read_bytes(), spec.source.member)
+        arms[key] = {"source_pin": t.source_pin, "source_sha256": t.source_sha256, "member": spec.source.member,
+                     "member_sha256": hashlib.sha256(member).hexdigest(), "markers": [spec.source.start, spec.source.end],
+                     "replacements": [list(r) for r in spec.replacements], "slots": list(t.slots), "sha256": t.sha256,
+                     "note": spec.note}
+        arm_texts[key] = {"text": t.text, "sha256": t.sha256}
+    raw = (json.dumps({"templates": texts, "arm_templates": arm_texts}, ensure_ascii=False, sort_keys=True, indent=1)
+           + "\n").encode("utf-8")
     Path(texts_path).parent.mkdir(parents=True, exist_ok=True)
     Path(texts_path).write_bytes(raw)
-    return {"templates": committed, "pending": dict(sorted(PENDING.items())),
+    return {"templates": committed, "pending": dict(sorted(PENDING.items())), "arm_templates": arms,
+            "pending_arms": pending_arms,
             "texts_file": {"path": str(texts_path), "sha256": hashlib.sha256(raw).hexdigest()}}

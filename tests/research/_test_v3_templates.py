@@ -257,11 +257,41 @@ def ask(qa):
     lf.write_bytes(LMEF)
     shf.write_bytes(LMESH)
     lcf.write_bytes(LCF)
+    # Z2 (Q-ZT-1..6): a made-up e-print shaped like Zep's - a gzip'd tar whose main.tex holds a context template inside
+    # \fbox{\parbox{..}} with the paper's three LaTeX escapes (our text, never the paper's)
+    import gzip  # noqa: PLC0415
+    import io as _io  # noqa: PLC0415
+    import tarfile  # noqa: PLC0415
+    ZSTART = "Sample context string template:\n\n\\noindent\\fbox{%\n    \\parbox{\\textwidth}{%\n"
+    ZEND = "\n    }%\n}\n"
+    ZBLOCK = ("CONTEXT for the test.\n\nThe facts, dated.\n\nformat: FACT (Date range: from - to)\n\n<FACTS>\n\n\\{facts\\}\n\n"
+              "</FACTS>\n\nThe entities\n\nENTITY\\_NAME: entity summary\n\n<ENTITIES>\n\n\\{entities\\}\n\n</ENTITIES>")
+    ZTEX = ("\\section{Memory}\nText before.\n\n" + ZSTART + ZBLOCK + ZEND + "\n\\section{Search}\nAfter.\n    }%\n}\n").encode()
+
+    def tar_gz(members, *, kinds=None):
+        buf = _io.BytesIO()
+        with tarfile.open(fileobj=buf, mode="w:") as tf_:
+            for name, data in members:
+                ti = tarfile.TarInfo(name)
+                kind = (kinds or {}).get(name)
+                if kind == "sym":
+                    ti.type, ti.linkname = tarfile.SYMTYPE, "/etc/passwd"
+                    tf_.addfile(ti)
+                elif kind == "hard":
+                    ti.type, ti.linkname = tarfile.LNKTYPE, "main.tex"
+                    tf_.addfile(ti)
+                else:
+                    ti.size = len(data)
+                    tf_.addfile(ti, _io.BytesIO(data))
+        return gzip.compress(buf.getvalue())
+    ZEP = tar_gz([("main.tex", ZTEX), ("PRIMEarxiv.sty", b"% a style\n")])
+    zf = TMP / "eprint.bin"
+    zf.write_bytes(ZEP)
 
     def fakes(**over):
         """_pinned for the test: each pin its own made-up file, by name (``over``: pin -> bytes)."""
         files = {"locomo_answer_prompt": gf, "beam_prompts": bf, "mab_templates": mf, "lme_answer_prompt": lf,
-                 "lme_run_generation_sh": shf, "ama_method_longcontext": lcf}
+                 "lme_run_generation_sh": shf, "ama_method_longcontext": lcf, "zep_paper_src": zf}
         def pinned(pin, root):
             if pin in over:
                 f_ = TMP / f"over_{pin}.py"
@@ -414,6 +444,75 @@ def ask(qa):
               "exactly one" in err(lambda: TP.locomo_question("q", 2, pins_root=TMP)))
         TP._pinned = lambda pin, root: (gf, "0" * 64)
         check("cat 2's suffix is read only from the pinned file", "not the pin" in err(lambda: TP.locomo_question("q", 2, pins_root=TMP)))
+        print("\n- Z2 (Q-ZT-1..6): Zep's context template for zep-graphiti's Point V, from an archive member -")
+        am = getattr(TP, "archive_member", None)
+        mb = getattr(TP, "member_block", None)
+        got_m = safe(lambda: am(ZEP, "main.tex"), b"") if am else b""
+        check("ZT-1 (Q-ZT-5): archive_member reads a member of a gzip'd tar in memory - its bytes, nothing written",
+              got_m == ZTEX and not any(TMP.glob("main.tex*")), str(got_m[:40]))
+        bad_archives = {
+            "a symlink member": (tar_gz([("main.tex", ZTEX), ("link.tex", b"")], kinds={"link.tex": "sym"}), "link.tex"),
+            "a hardlink member": (tar_gz([("main.tex", ZTEX), ("hard.tex", b"")], kinds={"hard.tex": "hard"}), "hard.tex"),
+            "a member going up": (tar_gz([("main.tex", ZTEX), ("../evil.tex", b"x")]), "../evil.tex"),
+            "an absolute member": (tar_gz([("main.tex", ZTEX), ("/abs.tex", b"x")]), "/abs.tex"),
+            "2001 members": (tar_gz([("main.tex", ZTEX)] + [(f"f{i}", b"") for i in range(2000)]), "2001"),
+            "65 MB unpacked": (gzip.compress(b"0" * (65 * 1024 * 1024)), "64 MB"),
+            "no such member": (tar_gz([("other.tex", ZTEX)]), "main.tex"),
+            "the member twice": (tar_gz([("main.tex", ZTEX), ("main.tex", ZTEX)]), "main.tex"),
+        }
+        ref_a = {k: err(lambda raw=raw: am(raw, "main.tex")) if am else "no archive_member" for k, (raw, _w) in bad_archives.items()}
+        check("ZT-2 (Q-ZT-5): refused by name, before any member is used - " + ", ".join(bad_archives),
+              all(w in ref_a[k] and not ref_a[k].startswith(("not a", "no ")) for k, (_r, w) in bad_archives.items()),
+              str({k: v[:80] for k, v in ref_a.items()}))
+        ZS = getattr(TP, "MemberSource", None)
+        zs = ZS("zep_paper_src", "main.tex", ZSTART, ZEND) if ZS else None
+        blk = safe(lambda: mb(ZTEX, zs), "") if mb else ""
+        check("ZT-3: member_block is the text strictly between the start marker (exactly once) and the first end after it; "
+              "a start twice or never, or no end after it, refuses by name",
+              blk == ZBLOCK and all("exactly once" in err(lambda d=d: mb(d, zs)) for d in (ZTEX + ZSTART.encode(), b"none"))
+              and "end" in err(lambda: mb(ZSTART.encode() + b"body", zs)), repr(blk[:60]))
+        ab = getattr(TP, "arm_build", None)
+        zt = safe(lambda: ab("zep-graphiti:V", zf, hashlib.sha256(ZEP).hexdigest()), blank) if ab else blank
+        want_z = ZBLOCK.replace("\\{facts\\}", "{facts}").replace("\\{entities\\}", "{entities}").replace("ENTITY\\_NAME", "ENTITY_NAME")
+        check("ZT-4 (Q-ZT-3a = O-a): the arm template is the block with exactly the three declared replacements (\\{facts\\}, "
+              "\\{entities\\}, ENTITY\\_NAME), the paragraph breaks as in the source, the slots the paper's own (facts, "
+              "entities), the pin and its sha256 named",
+              zt.text == want_z and "\\" not in zt.text and "\n\n" in zt.text and zt.slots == ("facts", "entities")
+              and zt.source_pin == "zep_paper_src" and zt.source_sha256 == hashlib.sha256(ZEP).hexdigest(), repr(zt.text[:80]))
+        ZEP2 = tar_gz([("main.tex", ZTEX.replace(b"</FACTS>", b"\\{facts\\} </FACTS>"))])
+        z2f = TMP / "eprint2.bin"
+        z2f.write_bytes(ZEP2)
+        check("ZT-5: a block where a declared replacement occurs twice refuses by name (each exactly once)",
+              "2 times" in err(lambda: ab("zep-graphiti:V", z2f, hashlib.sha256(ZEP2).hexdigest())) if ab else False)
+        ZV = (getattr(TP, "ARM_TEMPLATES", {}) or {}).get("zep-graphiti:V")
+        check("ZT-6 (Q-ZT-2 = C1, Q-ZT-4, Q-ZT-7): the declaration - pin zep_paper_src, member main.tex, the parbox's markers, "
+              "the three replacements, slots facts and entities; its note says the LME link is inferred (:204), 20 edges + "
+              "20 nodes, the fact line's format and dates, the undated stands (Q-ZT-7), and that communities are not read",
+              ZV is not None and ZV.source == ZS("zep_paper_src", "main.tex", ZSTART, ZEND)
+              and ZV.replacements == (("\\{facts\\}", "{facts}"), ("\\{entities\\}", "{entities}"), ("ENTITY\\_NAME", "ENTITY_NAME"))
+              and ZV.slots == ("facts", "entities")
+              and all(w in ZV.note for w in ("inferred", ":204", "20 edges + 20 nodes", "Q-ZT-7", "communities", "ISO")),
+              str(ZV)[:300])
+        TP._pinned = lambda pin, root: (zf, None) if pin == "zep_paper_src" else fakes()(pin, root)
+        at = getattr(TP, "arm_template", None)
+        check("ZT-7 (Q-ZT-6): while its pin is not filled the arm template refuses by name - Point V has no zep row",
+              "zep_paper_src" in err(lambda: at("zep-graphiti:V", pins_root=TMP)) and "not filled" in err(
+                  lambda: at("zep-graphiti:V", pins_root=TMP)) if at else False)
+        fr_u = safe(lambda: TP.freeze_fragment(pins_root=TMP, texts_path=TMP / "runs" / "ft_u.json"), {})
+        TP._pinned = fakes()
+        fr_z = safe(lambda: TP.freeze_fragment(pins_root=TMP, texts_path=TMP / "runs" / "ft_z.json"), {})
+        ez = (fr_z.get("arm_templates") or {}).get("zep-graphiti:V") or {}
+        tz = json.loads((TMP / "runs" / "ft_z.json").read_bytes()) if (TMP / "runs" / "ft_z.json").is_file() else {}
+        check("ZT-8 (Q-ZT-5): FREEZE's arm template holds the pin, the member's path and sha256, our replacements, the slots, "
+              "the note and the text's sha256 - never the text (Q-D8-7); the runs-tree texts file holds it; an unfilled pin "
+              "is pending, named",
+              ez.get("source_pin") == "zep_paper_src" and ez.get("member") == "main.tex"
+              and ez.get("member_sha256") == hashlib.sha256(ZTEX).hexdigest() and ez.get("sha256") == zt.sha256
+              and ez.get("slots") == ["facts", "entities"] and len(ez.get("replacements") or []) == 3 and "text" not in ez
+              and "CONTEXT for the test" not in json.dumps(fr_z) and (tz.get("arm_templates") or {}).get(
+                  "zep-graphiti:V", {}).get("text") == zt.text
+              and "zep-graphiti:V" in (fr_u.get("pending_arms") or {}) and not (fr_u.get("arm_templates") or {}),
+              str(ez)[:300])
     finally:
         TP._pinned = real_pinned
     REAL = Path("D:/Coding/_nevertwice_polygon/runs/v3/_pins")
@@ -443,6 +542,14 @@ def ask(qa):
               "line before the last 'Answer:'", r6_ is not None and r6l is not None and r6_.text == r6l.text
               and r6_.text.startswith("{context}\nPretend you are a knowledge management system.")
               and r6_.text.endswith(TP.SHORT_ANSWER + "\nAnswer:"))
+        rz = safe(lambda: TP.arm_template("zep-graphiti:V", pins_root=REAL), None) if hasattr(TP, "arm_template") else None
+        if rz is None:
+            print("  skip the real Zep row: its pin is not filled or its e-print not placed here (not counted)")
+        else:
+            check("local: zep-graphiti's V template builds from the real e-print - the text the auditor chose (Q-ZT-3a: "
+                  "1f380100...a9b7), slots facts and entities",
+                  rz.sha256 == "1f38010000254c1fcdc7bf2a64b88326023c1094eea6ac6fe2446d263193a9b7" and rz.slots == ("facts", "entities"),
+                  rz.sha256)
 finally:
     shutil.rmtree(TMP, ignore_errors=True)
 
