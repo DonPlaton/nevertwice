@@ -211,6 +211,7 @@ check("the window hosts are the declared exact names",
           "a7-npm-d": ["registry.npmjs.org"], "a7-discovery": ["api.github.com", "huggingface.co"],
           "a7-docs": ["api.github.com"], "a7-cognee-tag": ["api.github.com"], "a7-github": ["raw.githubusercontent.com"],
           "a7-arxiv": ["export.arxiv.org"], "a7-arxiv-src": ["arxiv.org", "export.arxiv.org"],
+          "a7-github-2": ["raw.githubusercontent.com"],
           "a7-hf-d": ["huggingface.co"], "a7-hf": ["huggingface.co", "us.aws.cdn.hf.co"],
           "py-base-312": ["api.nuget.org"], "a8-pypi-mem0_v3": ["files.pythonhosted.org", "pypi.org"],
           "a8-pypi-graphiti_v3": ["files.pythonhosted.org", "pypi.org"],
@@ -293,10 +294,27 @@ MINILM = {"minilm_modules": "modules.json", "minilm_config": "config.json",
           "minilm_vocab": "vocab.txt", "minilm_special_tokens": "special_tokens_map.json",
           "minilm_pooling": "1_Pooling/config.json", "minilm_safetensors": "model.safetensors"}
 WANT_A7.update({n: (MINI_G, MINI_R, path, "scoring") for n, path in MINILM.items()})
-check("A7-1: PINS_A7 holds exactly the 62 pins the auditor fixed - the 17 of phase 2, the 35 cognee files and the 10 "
-      "MiniLM files - each its repository, commit, path and role",
+#: the auditor's Q-TPL-1 = O-b and Q-TPL-4 (2026-09-30 05:4x): the window a7-github-2 - LME's run_generation.sh (how
+#: READING_METHOD maps to --cot/--con) and AMA's method code (which answer template the vendor chooses, and in which mode
+#: its external memory methods run), each at its discovery commit
+GH2 = {"lme_run_generation_sh": (LME_G, LME_R, "src/generation/run_generation.sh", "prompt"),
+       **{n: (AMA_G, AMA_R, path, "prompt") for n, path in (
+           ("ama_core_construct", "src/method/ama_agent_core/construct.py"),
+           ("ama_core_retrieve", "src/method/ama_agent_core/retrieve.py"),
+           ("ama_core_tool", "src/method/ama_agent_core/tool.py"),
+           ("ama_core_utils", "src/method/ama_agent_core/utils.py"),
+           ("ama_method_ama_agent", "src/method/ama_agent.py"),
+           ("ama_method_agent", "src/method/agent_method.py"),
+           ("ama_method_base", "src/method/base_method.py"),
+           ("ama_method_bm25", "src/method/bm25.py"),
+           ("ama_method_embedding", "src/method/embedding_mem.py"),
+           ("ama_method_longcontext", "src/method/longcontext.py"),
+           ("ama_method_register", "src/method_register.py"),)}}
+WANT_A7.update(GH2)
+check("A7-1: PINS_A7 holds exactly the 74 pins the auditor fixed - the 17 of phase 2, the 35 cognee files, the 10 "
+      "MiniLM files and a7-github-2's 12 - each its repository, commit, path and role",
       {n: (p["repo"], p["revision"], p["path"], p["role"]) for n, p in A7.items()}
-      == WANT_A7 and len(WANT_A7) == 62 and len(COGNEE) == 35 and len(MINILM) == 10
+      == WANT_A7 and len(WANT_A7) == 74 and len(COGNEE) == 35 and len(MINILM) == 10 and len(GH2) == 12
       and [sum(r == x for _p, r in COGNEE.values()) for x in ("arm-source", "prompt", "scoring")] == [17, 15, 3],
       str(sorted(set(A7) ^ set(WANT_A7))))
 COG_FROM = "a7-cognee-tag d1 1b5d58bfb9f4"
@@ -313,11 +331,23 @@ check("A7-2: every GitHub pin of A7 is a file of the window a7-github, filled fr
           (p["source"] == "github" and p["window"] == "a7-github" and p.get("filled_from") == A7_FROM
            and isinstance(p["sha256"], str) and len(p["sha256"]) == 64 and isinstance(p["bytes"], int)
            and (str(p["revision_from"]) == COG_FROM if n in COGNEE
-                else str(p["revision_from"]).startswith(("a3-discovery d1 ", "a3-discovery d2 ")))) for n, p in A7.items())
+                else str(p["revision_from"]).startswith(("a3-discovery d1 ", "a3-discovery d2 ")))) for n, p in A7.items()
+          if n not in GH2)
       and {n for n, p in A7.items() if p["revision_from"] == COG_FROM} == set(COGNEE)
       and {n for n, p in A7.items() if p["revision_from"] == MINI_FROM} == set(MINILM),
       str([(n, p["source"], p["window"], p.get("filled_from"), p["revision_from"]) for n, p in A7.items()
            if (n in MINILM) != (p["window"] == "a7-hf") or (n in COGNEE) != (p["revision_from"] == COG_FROM)][:4]))
+check("A7-2d: a7-github-2's 12 pins are GitHub files of that window, unfilled until it, each at its discovery commit - "
+      "LME's run_generation.sh from a3-discovery d1 for S1-S3, AMA's method code from a3-discovery d2 for S7 - under MIT",
+      bool(A7) and all(n in A7 for n in GH2) and all(
+          (p["source"], p["window"], p["sha256"], p["bytes"], p["licence"], p["role"]) == ("github", "a7-github-2", None, None,
+                                                                                         "MIT", "prompt")
+          and str(p["revision_from"]).startswith("a3-discovery d1 " if n == "lme_run_generation_sh" else "a3-discovery d2 ")
+          and tuple(p["stands"]) == (("S1", "S2", "S3") if n == "lme_run_generation_sh" else ("S7",))
+          for n, p in A7.items() if n in GH2)
+      and sorted(MAN["windows"].get("a7-github-2", {}).get("pins", [])) == sorted(GH2)
+      and MAN["windows"].get("a7-github-2", {}).get("max_redirects") == 0,
+      str([(n, A7[n]["window"], A7[n]["revision_from"]) for n in GH2 if n in A7][:3]))
 check("A7-2c: the MiniLM pins serve BEAM (S5) only - event ordering's alignment, scoring - under the licence the model's "
       "card states (Apache-2.0)", all(n in A7 for n in MINILM) and all(
           tuple(A7[n]["stands"]) == ("S5",) and A7[n]["licence"] == "Apache-2.0" and A7[n]["role"] == "scoring"
@@ -392,10 +422,10 @@ except Exception as e:  # noqa: BLE001
 check("A7-4c: an honest neighbour - the same source, repository and path at ANOTHER commit, in the other table - is not "
       "a file pinned twice: pinned_twice() names nothing and the table's own command passes (a commit is part of a file's "
       "identity)", nb is not None and nb == ([], 0, True), str(nberr or nb))
-check("A7-5: the table's rules hold for PINS_A7, and its fragment files the 45 prompt and scoring pins (the MiniLM "
-      "ten among them) under prompt_files and the 17 cognee arm-source pins under arm_sources, nothing elsewhere",
+check("A7-5: the table's rules hold for PINS_A7, and its fragment files the 57 prompt and scoring pins (the MiniLM "
+      "ten and a7-github-2's twelve among them) under prompt_files and the 17 cognee arm-source pins under arm_sources, nothing elsewhere",
       fr is not None and sorted(fr["prompt_files"]) == sorted(n for n, v in WANT_A7.items() if v[3] in ("prompt", "scoring"))
-      and len(fr["prompt_files"]) == 45 and set(MINILM) <= set(fr["prompt_files"])
+      and len(fr["prompt_files"]) == 57 and set(MINILM) <= set(fr["prompt_files"]) and set(GH2) <= set(fr["prompt_files"])
       and sorted(fr["arm_sources"]) == sorted(n for n, (_p, r) in COGNEE.items() if r == "arm-source")
       and not any(fr[g] for g in fr if g not in ("prompt_files", "arm_sources")),
       str(frerr or {g: sorted(v) for g, v in (fr or {}).items()}))

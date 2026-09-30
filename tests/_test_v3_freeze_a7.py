@@ -247,9 +247,10 @@ check("F7-15: a8-supermemory-bin b2's window names objects.githubusercontent.com
       ok(lambda: oerr is None and {w["window"]: w.get("declared_not_reached") for w in OUT["windows"]
                                    if "declared_not_reached" in w} == {"a8-supermemory-bin": ["objects.githubusercontent.com"]}
          and "objects.githubusercontent.com" not in OUT["issuers"]), str(oerr))
-check("F7-4: its pins are PINS_A7 as filled - all 62 (a7-github's 52 and a7-hf's 10), each with where it came from - "
+check("F7-4: its pins are PINS_A7 as filled - all 74 (a7-github's 52, a7-hf's 10 and a7-github-2's 12), each with where "
+      "it came from - "
       "and its issuers the public ones the records name",
-      ok(lambda: sorted(OUT["pins"]) == sorted(CP.PINS_A7_DECLARED) and len(OUT["pins"]) == 62
+      ok(lambda: sorted(OUT["pins"]) == sorted(CP.PINS_A7_DECLARED) and len(OUT["pins"]) == 74
                          and all(v["filled_from"] == "a7-github g1 pin_fill 0123456789ab" for v in OUT["pins"].values())
                          and sorted(OUT["issuers"]) == ["api.github.com", "export.arxiv.org", "github.com", "huggingface.co",
                                                         "raw.githubusercontent.com", "registry.npmjs.org",

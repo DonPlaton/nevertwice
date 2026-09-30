@@ -122,6 +122,12 @@
    "pins": ["minilm_modules", "minilm_config", "minilm_st_config", "minilm_st_model_config", "minilm_tokenizer", "minilm_tokenizer_config", "minilm_vocab", "minilm_special_tokens", "minilm_pooling", "minilm_safetensors"],
    "max_redirects": 1
   },
+  "a7-github-2": {
+   "hosts": ["raw.githubusercontent.com"],
+   "purpose": "the auditor's Q-TPL-1 = O-b and Q-TPL-4 (2026-09-30): LME's run_generation.sh at 9e0b455 (how its documented READING_METHOD maps to --cot/--con, for S1's template) and AMA's method code at ddfd319 (which of its two answer templates the vendor's code chooses, and in which mode its external memory methods run, for S7's), each checked against the git blob and size of the a3-discovery d1/d2 tree it comes from; the pins of the table PINS_A7",
+   "pins": ["lme_run_generation_sh", "ama_core_construct", "ama_core_retrieve", "ama_core_tool", "ama_core_utils", "ama_method_ama_agent", "ama_method_agent", "ama_method_base", "ama_method_bm25", "ama_method_embedding", "ama_method_longcontext", "ama_method_register"],
+   "max_redirects": 0
+  },
   "py-base-312": {
    "hosts": ["api.nuget.org"],
    "purpose": "A8 C1 (the auditor's Q-A8-2): CPython 3.12.10 from NuGet's python package into the polygon's py312 - the base of the product venvs PREREG-V3 2.2 pins to 3.12; NuGet's flat index is read first and the declared version must be the newest stable 3.12.x",

@@ -434,6 +434,26 @@ PINS_A7: dict[str, dict] = {
                                 ("extract_answer", "scoring", "utils/extract_final_answer.py", "the answer parse"),
                                 ("agent_conf", "prompt", "configs/ama_agent.yaml", "the agent's config"),
                                 ("readme", "prompt", "README.md", "the documented run"))},
+    # the window a7-github-2 (the auditor's Q-TPL-1 = O-b and Q-TPL-4, 2026-09-30 05:4x): how LME's documented command
+    # maps READING_METHOD to --cot/--con, and which of AMA's two answer templates the vendor's code chooses (and in which
+    # mode its external memory methods run) - read before S1's and S7's templates are chosen
+    "lme_run_generation_sh": _at(_pin("prompt", ["S1", "S2", "S3"], "github", GH_LME, None, "MIT", "a7-github-2", 1557,
+                                      note="Q-TPL-1: READING_METHOD to --cot/--con"),
+                                 REV["gh_lme"], "src/generation/run_generation.sh"),
+    **{n: _at(_pin("prompt", ["S7"], "github", GH_AMA, None, "MIT", "a7-github-2", 1557, note=f"Q-TPL-4: {t}"),
+              REV_D2["gh_ama"], path, record="d2")
+       for n, path, t in (
+           ("ama_core_construct", "src/method/ama_agent_core/construct.py", "the agent's memory construction"),
+           ("ama_core_retrieve", "src/method/ama_agent_core/retrieve.py", "retrieval, where the answer template is chosen"),
+           ("ama_core_tool", "src/method/ama_agent_core/tool.py", "the agent's tools"),
+           ("ama_core_utils", "src/method/ama_agent_core/utils.py", "the agent's helpers"),
+           ("ama_method_ama_agent", "src/method/ama_agent.py", "the AMA agent method"),
+           ("ama_method_agent", "src/method/agent_method.py", "the agent method base"),
+           ("ama_method_base", "src/method/base_method.py", "every method's base"),
+           ("ama_method_bm25", "src/method/bm25.py", "an external memory method: BM25"),
+           ("ama_method_embedding", "src/method/embedding_mem.py", "an external memory method: embeddings"),
+           ("ama_method_longcontext", "src/method/longcontext.py", "the long-context baseline"),
+           ("ama_method_register", "src/method_register.py", "which method runs under which name"),)},
     # cognee's own BEAM harness at the tag v1.6.1 (Q-46b-6; the auditor's choice 2026-09-30 00:43: 35 of the 48 files
     # a7-cognee-tag d1 selected; the nine raw *.json.gz runs - the two summaries cover them - and the four empty
     # __init__.py are not pinned). The two cross-run summaries are the vendor's own numbers: E5 checks our cognee arm

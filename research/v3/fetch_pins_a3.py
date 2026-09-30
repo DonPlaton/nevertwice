@@ -878,7 +878,8 @@ def main(argv: list[str] | None = None) -> int:
     import argparse  # noqa: PLC0415
     ap = argparse.ArgumentParser(description="one pin window (a3-hf, a3-github, a3-tiktoken, a3-git; A7's a7-github), "
                                              "then place and fill")
-    ap.add_argument("--window", required=True, choices=["a3-hf", "a3-github", "a3-tiktoken", "a3-git", "a7-github", "a7-hf"])
+    ap.add_argument("--window", required=True, choices=["a3-hf", "a3-github", "a3-tiktoken", "a3-git", "a7-github", "a7-hf",
+                                                          "a7-github-2"])
     ap.add_argument("--run", required=True)
     ap.add_argument("--python", required=True, help="the polygon's py314 interpreter")
     args = ap.parse_args(argv)

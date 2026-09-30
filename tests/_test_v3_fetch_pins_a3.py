@@ -869,10 +869,24 @@ b7 = TMP / "disc_a7"
 for rec_, n_ in (("d1", 4), ("d2", 3)):
     for j_ in range(n_):
         (b7 / rec_ / f"j{j_}").mkdir(parents=True, exist_ok=True)
+#: a7-github-2's files (the auditor's Q-TPL-1 = O-b, Q-TPL-4) in the same trees, with their real blobs and sizes
+GH2_FILES = {"xiaowu0162/LongMemEval": {"src/generation/run_generation.sh": ("a95ae534d229e477fa8e63dc383090f2d6006085", 3308)},
+             "AMA-Bench/AMA-Bench": {
+                 "src/method/ama_agent_core/construct.py": ("56494a9bda38e6ee931a00d808442c2cb3e2a28a", 19613),
+                 "src/method/ama_agent_core/retrieve.py": ("da4c46533b3b75e4ddd2c5db5ea4dac8cab54bfe", 18074),
+                 "src/method/ama_agent_core/tool.py": ("07d2b850652108a9d61c571af1e7b1f34e3268c7", 10656),
+                 "src/method/ama_agent_core/utils.py": ("1361c28f9e06754a525a42f0ab21413330e866e2", 29667),
+                 "src/method/ama_agent.py": ("794dc72b069939cc5f1a4400a7dbd730bf26f38f", 5305),
+                 "src/method/agent_method.py": ("658363002a3b13007786e54e0492ca0c3a667bcf", 3137),
+                 "src/method/base_method.py": ("5bedc6d78244a7c39eebde0848fd42e27ec8a5ad", 2088),
+                 "src/method/bm25.py": ("b36fda7f22f898dfb0bc1af31fa0c957309192e4", 4247),
+                 "src/method/embedding_mem.py": ("0d6d6cb33819e034c82a773978f286bc0b9d3013", 7770),
+                 "src/method/longcontext.py": ("5d95251beb3a86ee93d1703c61d5cbf9c5f59c08", 9195),
+                 "src/method_register.py": ("f48fbb948965f18ee6b0ef9ab3beb4d7cd3c1577", 3081),}}
 for repo_, (rec_, job_, rev_, files_) in A7_TREES.items():
     saved = P.GH_TREES.get(repo_, (rec_, job_, f"gh/{P._safe(repo_)}/tree.json"))[2]
     write(b7 / rec_ / f"j{job_}" / saved, {"sha": rev_, "truncated": False, "tree": [
-        {"path": pth, "type": "blob", "sha": blb, "size": sz} for pth, (blb, sz) in files_.items()]})
+        {"path": pth, "type": "blob", "sha": blb, "size": sz} for pth, (blb, sz) in {**files_, **GH2_FILES.get(repo_, {})}.items()]})
     lrec, ljob, lrel = P.GH_REPOS.get(repo_, ("d1", 2, f"gh/{P._safe(repo_)}/repo.json"))
     write(b7 / lrec / f"j{ljob}" / lrel, {"full_name": repo_, "license": {"spdx_id": "MIT"}})
 D7 = P.Discovery({r: {"jobs": [{"index": j, "unit": str(b7 / r / f"j{j}"), "job": {"requests": []}, "summary": []}
@@ -962,6 +976,20 @@ check("A7-8: run_pin_window with no table given plans a7-github from PINS_A7 and
       [(w, t is getattr(P.CP, "PINS_A7", None) if w == "a7-github" else t is P.CP.PINS) for w, t in seen_pins]
       == [("a7-github", True), ("a3-github", True)], str([(w, type(t).__name__, str(t)[:80]) for w, t in seen_pins]))
 check("A7-9: main() takes the window a7-github", '"a7-github"' in __import__("inspect").getsource(P.main))
+try:
+    p72, p72err = P.plan_window("a7-github-2", disc=D7, pins=P.CP.PINS_A7, manifest=REAL_MANI, hf_hub=HUB7, pins_root=PR7,
+                                unit_root=UR7), None
+except Exception as e:  # noqa: BLE001
+    p72, p72err = None, f"{type(e).__name__}: {e}"
+want72 = {(f"https://raw.githubusercontent.com/{repo_}/{A7_TREES[repo_][2]}/{pth}", blb, sz)
+          for repo_, files_ in GH2_FILES.items() for pth, (blb, sz) in files_.items()}
+got72 = {(it.url, it.expect.get("git_blob_sha1"), it.expect.get("size")) for it in (p72.items if p72 else [])}
+check("A7-20: a7-github-2's plan from PINS_A7 and the real manifest - raw.githubusercontent.com only, no redirect, the 12 "
+      "files (LME's run_generation.sh at 9e0b455, AMA's method code at ddfd319) each expected to be its discovery tree's "
+      "git blob and size, placed under _pins/github/", p72err is None and p72.hosts == ["raw.githubusercontent.com"]
+      and len(p72.items) == 12 and got72 == want72 and all(j.get("max_redirects") == 0 for j in p72.jobs)
+      and all("/github/" in str(it.dest).replace("\\", "/") for it in p72.items), str(p72err or sorted(want72 ^ got72)[:3]))
+check("A7-21: main() takes the window a7-github-2", '"a7-github-2"' in __import__("inspect").getsource(P.main))
 
 print("\n- the cognee pins (the auditor, 2026-09-30 00:43): a7-cognee-tag d1 holds their tree, a7-discovery d1 their licence -")
 
