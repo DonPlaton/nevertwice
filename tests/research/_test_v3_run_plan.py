@@ -601,6 +601,66 @@ try:
           "differ from arm_mem0.py's SPEC_KEYS" in r_few and "'dated'" in r_few
           and "differ from arm_mem0.py's SPEC_KEYS" in r_more and "'extra_key'" in r_more, f"{r_few} | {r_more}")
 
+    print("\n- PLN-V (Row V, Q4 = (a)): Zep's Point V template in its S1 read spec, never in a file of the repository -")
+    TPLZ = _load("v3_templates_for_plan_v", ROOT / "research" / "v3" / "templates.py")
+    ZT = "FACTS:\n{facts}\n\nENTITIES:\n{entities}\n"
+    ZSHA_T = hashlib.sha256(ZT.encode()).hexdigest()
+    TZ = TPLZ.Template(stand="zep-graphiti:V", text=ZT, sha256=ZSHA_T, source_pin="zep_paper_src",
+                       source_sha256="0" * 64, slots=("facts", "entities"))
+    PTP = PL._mod("v3_points_for_plan", "points.py")            # the plan's own points module: its pin, patched here
+    zent = (getattr(PTP, "V_DEFAULTS", None) or {}).get("zep-graphiti")
+    pinned_before = zent.get("template_sha256") if zent else None
+
+    def zpl(stand, **kw):
+        return PL.PlanLauncher("zep-graphiti", stand=stand, python=PY, proxy=PX, stager=stager, unit_block=UB,
+                               embed_tag="nvt3-bge-m3-d1:latest", dated=True, extra=EXTRA["zep-graphiti"], **kw)
+
+    ZDIRS: dict = {}
+
+    def zdirs(stand, u, q):
+        """The PLN-V rows' own run (rv): each unit's dirs made once - never the dirs the rows above made."""
+        if (stand, u, q) not in ZDIRS:
+            ZDIRS[(stand, u, q)] = L.make_unit_dirs(CT, stand, "rv", "zep-graphiti", f"{u}.q" if q else u)
+        return ZDIRS[(stand, u, q)]
+
+    pln = {}
+    try:
+        if zent is not None:
+            zent["template_sha256"] = ZSHA_T                      # the test template stands in for Zep's pinned one
+        z1 = zpl("S1", v_template=TZ)
+        pln["read"] = z1.spec_for("read", stand="S1", run="rv", unit="u1", dirs=zdirs("S1", "u1", True),
+                                  write_dirs=zdirs("S1", "u1", False))
+        pln["write"] = z1.spec_for("write", stand="S1", run="rv", unit="u2", dirs=zdirs("S1", "u2", False),
+                                   write_dirs=None)
+        pln["s4"] = zpl("S4", v_template=TZ).spec_for("read", stand="S4", run="rv", unit="u1",
+                                                      dirs=zdirs("S4", "u1", True), write_dirs=zdirs("S4", "u1", False))
+        pln["other_sha"] = refused(lambda: zpl("S1", v_template=TPLZ.Template(
+            stand="zep-graphiti:V", text=ZT + "x", sha256=hashlib.sha256((ZT + "x").encode()).hexdigest(),
+            source_pin="zep_paper_src", source_sha256="0" * 64, slots=("facts", "entities"))))
+        pln["not_its"] = refused(lambda: PL.PlanLauncher(
+            "mem0", stand="S1", python=PY, proxy=PX, stager=stager, unit_block=UB, embed_tag="nvt3-bge-m3-d1:latest",
+            dated=True, extra=EXTRA.get("mem0", {}), v_template=TZ))
+        pln["no_tpl"] = refused(lambda: zpl("S1").check_points(("B", "K", "V")))
+        pln["tpl_ok"] = refused(lambda: z1.check_points(("B", "K", "V")))
+        pln["bk_ok"] = refused(lambda: zpl("S1").check_points(("B", "K")))
+    except Exception as e:  # noqa: BLE001 - the rows FAIL by name
+        pln["error"] = f"{type(e).__name__}: {e}"
+    finally:
+        if zent is not None:
+            zent["template_sha256"] = pinned_before
+    zk = set(PL.adapter_constant("arm_graphiti.py", "SPEC_KEYS"))
+    check("PLN-V1: zep-graphiti's S1 read spec carries v_template {key, text, sha256} - its write spec and its S4 read "
+          "spec do not; each is its adapter's SPEC_KEYS plus only its SPEC_OPTIONAL",
+          (pln.get("read") or {}).get("v_template") == {"key": "zep-graphiti:V", "text": ZT, "sha256": ZSHA_T}
+          and set(pln.get("read") or {}) == zk | {"v_template"} and "v_template" not in (pln.get("write") or {"v_template": 1})
+          and set(pln.get("s4") or {}) == zk, str({k: (sorted(v) if isinstance(v, dict) else v) for k, v in pln.items()})[:500])
+    check("PLN-V2: a template whose sha256 is not the pinned one, or a template for an arm whose V is not rendered, is "
+          "refused by name at the launcher; an S1 launcher asked to read V without its template is refused - B and K "
+          "need none",
+          "not the pinned" in pln.get("other_sha", "") and "no rendered Point V" in pln.get("not_its", "")
+          and "no Point V template" in pln.get("no_tpl", "") and pln.get("tpl_ok") == "accepted"
+          and pln.get("bk_ok") == "accepted", str(pln)[:500])
+
     print("\n- AN (§4.3a, §5.2, §8.1, Q8): the Answerer -")
     TPL = _load("v3_templates_for_plan_t", ROOT / "research" / "v3" / "templates.py")
     RJ = _load("v3_reader_judge_for_plan_t", ROOT / "research" / "v3" / "reader_judge.py")
@@ -717,6 +777,48 @@ try:
     check("AN: a read that returned no list of item texts is refused by name - never answered from nothing",
           "no list of item texts" in nolist and "no list of item texts" in notext, f"{nolist} | {notext}")
 
+    print("\n- AN-V (Row V, Q1 = (a), Q2 = (a)): a rendered V context, its shape and its pin checked -")
+    ZSHA = ((getattr(PT, "V_DEFAULTS", None) or {}).get("zep-graphiti") or {}).get("template_sha256") or "0" * 64
+    ansv = PL.Answerer("S4", questions=QS, reader=reader, post=fake_post, count=wcount, cut=wcut,
+                       answers_root=TMP / "ansv", reaskable=SC.ReaskableError)
+    LONGV = " ".join(f"w{i}" for i in range(9000))
+
+    def zitem(**over):
+        return {"kind": "rendered", "text": LONGV, "rank": 1, "template_sha256": ZSHA, **over}
+
+    reqv = SC.ReadReq(qid="u1:q1", query="what did I say?", point="V", k=20)
+    try:
+        rowv = ansv("zep-graphiti", "r1", "u1", reqv, {"items": [zitem()], "items_returned": 1})
+    except Exception as e:  # noqa: BLE001 - the rows FAIL by name
+        rowv = {"error": f"{type(e).__name__}: {e}"}
+    check("AN-V1 (Q2 = (a)): zep-graphiti's one rendered V item is cut at the cap like any last item (7,000 of its "
+          "9,000 tokens, last_cut) and its answer row carries k 20, shape rendered, the template's sha256 and the "
+          "arm's own item count",
+          rowv.get("k") == 20 and rowv.get("shape") == "rendered" and rowv.get("template_sha256") == ZSHA
+          and rowv.get("arm_items") == 1 and rowv.get("last_cut") is True and rowv.get("context_tokens") == 7000
+          and rowv.get("items_used") == 1, str({k: rowv.get(k) for k in ("k", "shape", "template_sha256", "arm_items",
+                                                                        "last_cut", "context_tokens", "error")}))
+    anv = {
+        "two": refused(lambda: ansv("zep-graphiti", "r2", "u1", reqv, {"items": [zitem(), zitem(rank=2)]})),
+        "sha": refused(lambda: ansv("zep-graphiti", "r3", "u1", reqv, {"items": [zitem(template_sha256="1" * 64)]})),
+        "items_arm": refused(lambda: ansv("nevertwice", "r4", "u1", SC.ReadReq(qid="u1:q1", query="q", point="V", k=3),
+                                          {"items": [zitem()]})),
+        "at_b": refused(lambda: ansv("zep-graphiti", "r5", "u1", SC.ReadReq(qid="u1:q1", query="q", point="B",
+                                                                               k=200), {"items": [zitem()]}))}
+    check("AN-V2: two items at a rendered V, a template sha256 that is not the pinned one, a rendered item from an arm "
+          "whose V reads are items, and a rendered item at B are each refused by name - never answered",
+          "one rendered context" in anv["two"] and "not the pinned" in anv["sha"]
+          and "rendered item" in anv["items_arm"] and "rendered item" in anv["at_b"], str(anv)[:500])
+    try:
+        rowb = ansv("mem0", "r6", "u1", SC.ReadReq(qid="u1:q1", query="q", point="B", k=200), READ)
+    except Exception as e:  # noqa: BLE001 - the row FAILs by name
+        rowb = {"error": f"{type(e).__name__}: {e}"}
+    check("AN-V3: an answer row holds no context text - not the rendered template's words (NC-SA, never beside the "
+          "numbers) - and an items read's row says shape items, no template, its k",
+          "w8999" not in json.dumps(rowv) and "w0 " not in json.dumps(rowv) and rowb.get("shape") == "items"
+          and rowb.get("template_sha256") is None and rowb.get("k") == 200 and "hi from the store" not in json.dumps(rowb),
+          str({k: rowb.get(k) for k in ("shape", "template_sha256", "k", "error")}))
+
     print("\n- TR, SP: the truncation per arm-run, stand_plan -")
     trunc = TK.Truncator(spans, cap=9, specials=2)            # 7 words: the dated LME lines (5) fit, u5:1 (11) does not
     LONG = unit("u5", [("s1", "2023/05/20 (Sat) 02:21", [("u5:1", "one two three four five six seven", "user", None),
@@ -812,6 +914,33 @@ try:
                                             k_at=PT.K_AT))
     check("SP: an arm with no plan (cognee: no adapter, A8) and a dotted run id are refused by name",
           "no plan" in unk and "not [A-Za-z0-9_-]" in bad_run, f"{unk} | {bad_run}")
+
+    print("\n- PL-V (Row V): the plan reads V at each arm's own default, on S1 alone -")
+
+    def v_plan(stand, pts, names):
+        return PL.stand_plan(stand, [LME], {a: lns[a] for a in names}, standplan=SC.StandPlan, read_req=SC.ReadReq,
+                             runs=("r1",), campaign_seed=7, unit_tokens={"u1": 1}, medians={}, answer=ra,
+                             embed_tag="e", dated=True, points=lambda a: pts.get(a, ("B",)), k_at=PT.K_AT)
+
+    try:
+        spv, _stv = v_plan("S1", {"zep-graphiti": ("B", "K", "V"), "nevertwice": ("B", "V")},
+                           ("zep-graphiti", "nevertwice", "bm25-floor"))
+        rpv = {a: [(r.point, r.k) for r in spv.read_plan(a, "u1")] for a in ("zep-graphiti", "nevertwice", "bm25-floor")}
+    except Exception as e:  # noqa: BLE001 - the row FAILs by name
+        rpv = f"{type(e).__name__}: {e}"
+    check("PL-V1: on S1 the plan reads V at each arm's own default - zep-graphiti at 20, ours at 3 - beside B at 200 "
+          "and K at 10; an arm without V in its points reads none",
+          rpv == {"zep-graphiti": [("B", 200), ("K", 10), ("V", 20)], "nevertwice": [("B", 200), ("V", 3)],
+                  "bm25-floor": [("B", 200)]}, str(rpv))
+    plv = {"S4": refused(lambda: v_plan("S4", {"zep-graphiti": ("B", "V")}, ("zep-graphiti",))),
+           **{a: refused(lambda a=a: v_plan("S1", {a: ("B", "V")}, (a,)))
+              for a in ("bm25-floor", "nevertwice-ablation", "letta", "mem0", "langmem")}}
+    check("PL-V2: V off S1 is refused by name before any op (Row V is S1's alone)", "Row V is read on" in plv["S4"],
+          plv["S4"])
+    check("PL-V3: V for an arm without a rev1 V row (bm25-floor, the ablation - Q5 = (a)), for letta (its page size "
+          "unpinned), and for a V≡ arm (mem0 V≡B, langmem V≡K - not read again) is refused by the arm's own name",
+          "no Row V" in plv["bm25-floor"] and "no Row V" in plv["nevertwice-ablation"]
+          and "V:page-size-unpinned" in plv["letta"] and "V≡B" in plv["mem0"] and "V≡K" in plv["langmem"], str(plv)[:600])
 finally:
     shutil.rmtree(TMP, ignore_errors=True)
 

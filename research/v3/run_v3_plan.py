@@ -530,11 +530,14 @@ def _runner():
 class PlanLauncher:
     """Q-A4-6: one arm's children on one stand (see part 3 of the module docstring). ``proxy``: the run's ProxyHandle
     (its ports and tokens); ``unit_block``: each unit's block; ``unit_chars``: each unit's length in characters (the
-    ablation's window, Q14); ``extra``: the run config's values the arm needs (EXTRA_NEEDED) and nothing else."""
+    ablation's window, Q14); ``extra``: the run config's values the arm needs (EXTRA_NEEDED) and nothing else;
+    ``v_template``: Row V (Q4 = (a)) - the templates.Template of an arm whose V context is vendor-rendered
+    (templates.arm_template, from its pinned source at launch), its sha256 the one points.V_DEFAULTS pins; it goes into
+    the arm's read spec on a V stand, never into a file of the repository."""
 
     def __init__(self, arm: str, *, stand: str, python: str | os.PathLike, proxy: Any, stager: CodeStager,
                  unit_block: Mapping[str, str], embed_tag: str, dated: bool, unit_chars: Mapping[str, int] | None = None,
-                 extra: Mapping[str, Any] | None = None) -> None:
+                 extra: Mapping[str, Any] | None = None, v_template: Any = None) -> None:
         self.spec = arm_spec(arm)
         self.arm, self.stand, self.python = arm, stand, Path(python)
         if not self.python.is_absolute():
@@ -550,7 +553,28 @@ class PlanLauncher:
         if arm == "a-mem" and self.extra["llm"] not in ("deepseek", "ollama"):
             raise PlanError(f"a-mem: llm {self.extra['llm']!r} is deepseek or ollama")
         self.spec_keys = tuple(adapter_constant(self.spec.adapter, "SPEC_KEYS"))
+        try:
+            self.spec_optional = tuple(adapter_constant(self.spec.adapter, "SPEC_OPTIONAL"))
+        except PlanError:
+            self.spec_optional = ()
+        self.v_template = v_template
+        if v_template is not None:
+            e = _mod("v3_points_for_plan", "points.py").V_DEFAULTS.get(arm) or {}
+            if e.get("shape") != "rendered":
+                raise PlanError(f"{arm}: a Point V template for an arm with no rendered Point V (points.V_DEFAULTS)")
+            text = getattr(v_template, "text", None)
+            if not isinstance(text, str) or hashlib.sha256(text.encode("utf-8")).hexdigest() != v_template.sha256 \
+                    or v_template.sha256 != e.get("template_sha256"):
+                raise PlanError(f"{arm}: the Point V template {getattr(v_template, 'sha256', None)} is not the pinned "
+                                f"one {e.get('template_sha256')} (points.V_DEFAULTS; its text hashed again)")
         self.copies: dict[tuple[str, str], tuple[Path, dict]] = {}
+
+    def check_points(self, points: Sequence[str]) -> None:
+        """Row V before the stand: an arm whose V context is rendered reads V only with its template (Q4 = (a))."""
+        e = _mod("v3_points_for_plan", "points.py").V_DEFAULTS.get(self.arm) or {}
+        if "V" in points and e.get("shape") == "rendered" and self.v_template is None:
+            raise PlanError(f"{self.arm}: no Point V template - its V context is vendor-rendered in its pinned "
+                            "template (templates.arm_template), never read without it")
 
     # the proxy's side
     def _port(self, role: str) -> int | None:
@@ -618,13 +642,18 @@ class PlanLauncher:
         elif ad == "arm_graphiti.py":
             s.update(port=self._need_port("write"), embed_tag=self.embed_tag, ollama_url=leg(),
                      falkor_host=self.extra["falkor_host"], falkor_port=self.extra["falkor_port"], dated=self.dated)
+            if stage == "read" and self.v_template is not None \
+                    and stand in _mod("v3_points_for_plan", "points.py").V_STANDS:
+                s["v_template"] = {"key": "zep-graphiti:V", "text": self.v_template.text,
+                                   "sha256": self.v_template.sha256}
         elif ad == "arm_letta.py":
             s.update(server_url=self.extra["server_url"], openapi_sha256=self.extra["openapi_sha256"],
                      port=self._need_port("write"), ollama_leg_port=self._need_port("ollama"),
                      container_host=LETTA_CONTAINER_HOST, embed_tag=self.embed_tag, dated=self.dated,
                      agent=self.extra["agent"])
-        if set(s) != set(self.spec_keys):
-            raise PlanError(f"{a}: the plan's spec keys differ from {ad}'s SPEC_KEYS by {sorted(set(s) ^ set(self.spec_keys))}")
+        if set(s) - set(self.spec_optional) != set(self.spec_keys):
+            raise PlanError(f"{a}: the plan's spec keys differ from {ad}'s SPEC_KEYS by "
+                            f"{sorted((set(s) - set(self.spec_optional)) ^ set(self.spec_keys))}")
         return s
 
     def declared(self) -> dict:
@@ -750,6 +779,23 @@ class Answerer:
             raise PlanError(f"{arm}/{run}/{unit}: the read of {req.qid!r} returned no list of item texts")
         pts, tpl = _mod("v3_points_for_plan", "points.py"), _mod("v3_templates_for_plan", "templates.py")
         rj = _mod("v3_reader_judge_for_plan", "reader_judge.py")
+        # Row V (Q1 = (a)): a vendor-rendered V context is exactly one item {kind rendered, text, template_sha256} of
+        # the pinned template; a rendered item anywhere else - at B or K, or from an arm whose V reads are items - is
+        # refused. The cap then cuts it like any last item (Q2 = (a)).
+        ve = (pts.V_DEFAULTS.get(arm) or {}) if req.point == "V" else {}
+        rendered = [it for it in items if it.get("kind") == "rendered"]
+        shape, v_sha = ("rendered" if ve.get("shape") == "rendered" else "items"), None
+        if shape == "rendered":
+            if len(items) != 1 or len(rendered) != 1:
+                raise PlanError(f"{arm}/{run}/{unit}: at V {arm} returns one rendered context (Q1 = (a)) - got "
+                                f"{len(items)} items, {len(rendered)} rendered")
+            v_sha = rendered[0].get("template_sha256")
+            if v_sha != ve.get("template_sha256"):
+                raise PlanError(f"{arm}/{run}/{unit}: its V context's template {v_sha} is not the pinned one "
+                                f"{ve.get('template_sha256')}")
+        elif rendered:
+            raise PlanError(f"{arm}/{run}/{unit}: a rendered item at {req.point} from a read whose context is items - "
+                            "never read as one")
         request_key = _load("v3_llm_proxy_for_plan", HERE.parent / "_llm_proxy.py").request_key
         ctx = pts.fill(texts, count=self.count, cut=self.cut)
         values = {"context": ctx.text, "question": question}
@@ -789,7 +835,8 @@ class Answerer:
                 fh.write(blob)
         except FileExistsError:
             raise PlanError(f"{f}: an answer for {req.qid!r} at point {req.point} was already written") from None
-        return {"qid": req.qid, "point": req.point, "context_sha256": text_sha256(ctx.text),
+        return {"qid": req.qid, "point": req.point, "k": getattr(req, "k", None), "shape": shape,
+                "template_sha256": v_sha, "arm_items": got.get("items_returned"), "context_sha256": text_sha256(ctx.text),
                 "context_tokens": ctx.tokens, "items_offered": ctx.items_offered, "items_used": ctx.items_used,
                 "last_cut": ctx.last_cut, "prompt_sha256": text_sha256(prompt), "reply_sha256": text_sha256(res.text),
                 "short_answer_sha256": text_sha256(res.short_answer),
@@ -851,12 +898,26 @@ def stand_plan(stand: str, units: Sequence[Any], launchers: Mapping[str, Any], *
                bodies_dir: str | os.PathLike | None = None) -> tuple[Any, PlanState]:
     """(the scheduler's StandPlan, the PlanState its callbacks fill). ``standplan``/``read_req``: the scheduler's
     StandPlan and ReadReq classes; ``points(arm)``: the points the arm reads on this stand (the smoke: B);
-    ``smaps``: unit id -> its speaker map (speaker_maps; B-S4-SMAP) - a unit not in it has none."""
+    ``smaps``: unit id -> its speaker map (speaker_maps; B-S4-SMAP) - a unit not in it has none. Row V: an arm reads V
+    only on points.V_STANDS, at its own points.V_DEFAULTS k - an arm with no V row, one refused by name, or a V≡ arm
+    (its V is its B or K read) is refused before any op; a rendered-V arm's launcher checks its template
+    (PlanLauncher.check_points)."""
     check_ids(runs, [u.unit_id for u in units])
     by_id = {u.unit_id: u for u in units}
     missing = sorted(set(launchers) - set(ARMS))
     if missing:
         raise PlanError(f"{stand}: arms {missing} have no plan (A8: no adapter yet, or not an arm)")
+    pts_mod = _mod("v3_points_for_plan", "points.py")
+    k_of: dict[str, dict] = {}
+    for arm in sorted(launchers):
+        k_of[arm] = dict(k_at)
+        if "V" in tuple(points(arm)):
+            if stand not in pts_mod.V_STANDS:
+                raise PlanError(f"{stand}: Row V is read on {list(pts_mod.V_STANDS)} alone (rev1 :1337) - not for {arm}")
+            try:
+                k_of[arm]["V"] = pts_mod.k_for("V", arm)
+            except pts_mod.PointError as e:
+                raise PlanError(f"{stand}: {arm} reads no V - {e}") from None
     for u in units:
         _check_unit_dates(u, dated)
     smaps = dict(smaps or {})
@@ -874,7 +935,7 @@ def stand_plan(stand: str, units: Sequence[Any], launchers: Mapping[str, Any], *
         return ops
 
     def read_plan_for(arm: str, unit: str) -> list:
-        return read_plan(by_id[unit], points=tuple(points(arm)), read_req=read_req, k_at=k_at)
+        return read_plan(by_id[unit], points=tuple(points(arm)), read_req=read_req, k_at=k_of.get(arm, k_at))
 
     sp = standplan(stand=stand, runs=tuple(runs), launchers=dict(launchers), campaign_seed=campaign_seed,
                    unit_tokens=dict(unit_tokens), medians=dict(medians), write_ops=write_ops_for,
