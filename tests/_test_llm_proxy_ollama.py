@@ -542,6 +542,120 @@ check("LEG-AUTH-3: a refused line carries client_auth too - a pull with a bearer
       got_auth["auth4"].startswith(b"HTTP/1.1 403") and auth_by.get("r1.auth4", {}).get("error") == "refused:path"
       and auth_by.get("r1.auth4", {}).get("client_auth") == "bearer", str(auth_view))
 
+print("\n- B-STOP-DRAIN-2: the leg's line is on the disk when stop() returns; after it began nothing reaches Ollama -")
+
+
+def leg_answer(s: socket.socket, timeout: float = 5.0) -> bytes:
+    """One answer read by its Content-Length, the connection left open."""
+    s.settimeout(timeout)
+    buf = bytearray()
+    while b"\r\n\r\n" not in buf:
+        chunk = s.recv(65536)
+        if not chunk:
+            return bytes(buf)
+        buf += chunk
+    head, _, rest = bytes(buf).partition(b"\r\n\r\n")
+    need = next((int(line.split(b":", 1)[1]) for line in head.split(b"\r\n")[1:]
+                 if line.lower().startswith(b"content-length:")), 0)
+    body = bytearray(rest)
+    while len(body) < need:
+        chunk = s.recv(65536)
+        if not chunk:
+            break
+        body += chunk
+    return head + b"\r\n\r\n" + bytes(body)
+
+
+def leg_req(unit: str) -> bytes:
+    body = b'{"model":"m","input":"x"}'
+    return (f"POST /u/{unit}/api/embed HTTP/1.1\r\nHost: x\r\nContent-Type: application/json\r\n"
+            f"Content-Length: {len(body)}\r\n\r\n").encode() + body
+
+
+def slow_lines(seconds: dict):
+    """The seam: unit u's ollama.jsonl line is written ``seconds[u]`` late - after the leg's answer went out. Returns
+    the real writer, for the row's finally."""
+    inner = P._append_jsonl
+
+    def slow(path, record, *a, **kw):
+        if Path(path).name == "ollama.jsonl":
+            time.sleep(seconds.get(record.get("unit"), 0.0))
+        return inner(path, record, *a, **kw)
+    P._append_jsonl = slow
+    return inner
+
+
+def leg_lines(run: str, unit: str) -> list[dict]:
+    f = TMP / run / "ollama.jsonl"
+    return [r for r in (json.loads(x) for x in f.read_bytes().decode("utf-8").split("\n") if x.strip())
+            if r.get("unit") == unit] if f.exists() else []
+
+
+def sd_try(fn):
+    try:
+        return fn(), None
+    except Exception as e:  # noqa: BLE001 - the row FAILs by name
+        return None, f"{type(e).__name__}: {e}"
+
+
+def _sd4():
+    inner = slow_lines({"r1.drain": 0.3})
+    try:
+        OL.script["/api/embed"] = [(200, EMBED_OK)]
+        pxd, pd = make(run="run_sd4")
+        s = socket.create_connection(("127.0.0.1", pd["arms"]["local"]["ollama"]))
+        s.sendall(leg_req("r1.drain"))
+        got = leg_answer(s)
+        t = time.monotonic()
+        left = pxd.stop()
+        dt = time.monotonic() - t
+        seen = [(r.get("status"), r.get("error")) for r in leg_lines("run_sd4", "r1.drain")]
+        s.close()
+        return got[:12], left, round(dt, 2) < 1.5, seen
+    finally:
+        P._append_jsonl = inner
+
+
+r_sd4, e_sd4 = sd_try(_sd4)
+check("SD-4 (B-STOP-DRAIN-2): the leg's ollama.jsonl line, written after its answer went out, is on the disk when "
+      "stop() returns {} - the leg's request is in the drain window too",
+      e_sd4 is None and r_sd4 == (b"HTTP/1.1 200", {}, True, [(200, None)]), str(e_sd4 or r_sd4))
+
+
+def _sd4b():
+    inner = slow_lines({"r1.drainA": 1.0})
+    try:
+        OL.script["/api/embed"] = [(200, EMBED_OK)]
+        pxd, pd = make(run="run_sd4b")
+        lp_ = pd["arms"]["local"]["ollama"]
+        a = socket.create_connection(("127.0.0.1", lp_))
+        b = socket.create_connection(("127.0.0.1", lp_))           # open before stop(), idle
+        a.sendall(leg_req("r1.drainA"))
+        leg_answer(a)
+        n_ol = sum(OL.attempts.values())
+        out: dict = {}
+        th = threading.Thread(target=lambda: out.update(left=pxd.stop(), seen=leg_lines("run_sd4b", "r1.drainB")),
+                              daemon=True)
+        th.start()
+        deadline = time.monotonic() + 2.0
+        while not pxd._stop.is_set() and time.monotonic() < deadline:
+            time.sleep(0.005)
+        b.sendall(leg_req("r1.drainB"))
+        got_b = leg_answer(b)
+        b.close()
+        th.join(10)
+        a.close()
+        return (got_b[:12], sum(OL.attempts.values()) - n_ol, out.get("left"),
+                [(r.get("status"), r.get("error")) for r in out.get("seen", [])])
+    finally:
+        P._append_jsonl = inner
+
+
+r_sd4b, e_sd4b = sd_try(_sd4b)
+check("SD-4b (B-STOP-DRAIN-2): a leg request that arrives after stop() began is refused 503 and never reaches Ollama - "
+      "its line, refused:proxy-stopping, is on the disk before stop() returns",
+      e_sd4b is None and r_sd4b == (b"HTTP/1.1 503", 0, {}, [(None, "refused:proxy-stopping")]), str(e_sd4b or r_sd4b))
+
 px.stop()
 pxo.stop()
 OL.close()

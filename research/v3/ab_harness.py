@@ -484,7 +484,9 @@ def run_ab(cfg: Any, *, stand: str, arm_names: Sequence[str], deps: Any, thinkin
                 break
     finally:
         pstop = dict(deps.stop_proxy(h))
-    if pstop.get("killed") or pstop.get("rc") not in (0,):
+    if pstop.get("records_unwritten"):
+        problems.append(f"harness: proxy records unwritten at stop: {pstop}")
+    elif pstop.get("killed") or pstop.get("rc") not in (0,):
         problems.append(f"the proxy did not stop by itself: {pstop}")
     if stop:
         stop["rule"] = "§4.5 (D-AB-8): the A/B stops by name, is not repeated, and waits for the owner"

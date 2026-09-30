@@ -24,6 +24,7 @@ with the usage chunk, tool calls in deltas, /anthropic SSE with a thinking block
 """
 from __future__ import annotations
 
+import ast
 import importlib.util
 import json
 import shutil
@@ -1006,6 +1007,247 @@ del pp.counters_snapshot
 check("HOP-6 (the auditor): /counters answers exactly what counters_snapshot() returns", pc3 == SENTINEL, str(pc3)[:200])
 pp.stop()
 pu.close()
+
+print("\n- B-STOP-DRAIN-2: stop() waits for every forwarded request's records and names what it could not wait for -")
+
+
+def answer_of(s: socket.socket, timeout: float = 5.0) -> bytes:
+    """One HTTP answer read by its Content-Length - the connection stays open (keep-alive)."""
+    s.settimeout(timeout)
+    buf = bytearray()
+    while b"\r\n\r\n" not in buf:
+        chunk = s.recv(65536)
+        if not chunk:
+            return bytes(buf)
+        buf += chunk
+    head, _, rest = bytes(buf).partition(b"\r\n\r\n")
+    need = next((int(line.split(b":", 1)[1]) for line in head.split(b"\r\n")[1:]
+                 if line.lower().startswith(b"content-length:")), 0)
+    body = bytearray(rest)
+    while len(body) < need:
+        chunk = s.recv(65536)
+        if not chunk:
+            break
+        body += chunk
+    return head + b"\r\n\r\n" + bytes(body)
+
+
+def keepalive_req(unit: str, *, close: bool = False) -> bytes:
+    body = json.dumps({"model": "deepseek-flash", "messages": [], "thinking": {"type": "disabled"}}).encode()
+    return (f"POST /u/{unit}/v1/chat/completions HTTP/1.1\r\nHost: x\r\nAuthorization: Bearer {T_ARM}\r\n"
+            f"Content-Type: application/json\r\n{'Connection: close' + chr(13) + chr(10) if close else ''}"
+            f"Content-Length: {len(body)}\r\n\r\n").encode() + body
+
+
+def slow_tail(px_, seconds: dict) -> None:
+    """The seam: _finish_call - the record's write, after the answer went out - first sleeps ``seconds[unit]``."""
+    inner = px_._finish_call
+
+    def slow(arm, rec, *a, **kw):
+        time.sleep(seconds.get(rec.get("unit"), 0.0))
+        return inner(arm, rec, *a, **kw)
+    px_._finish_call = slow
+
+
+def by_unit(px_, unit: str) -> list[dict]:
+    return [r for r in records(px_) if r.get("unit") == unit]
+
+
+def sd_try(fn):
+    try:
+        return fn(), None
+    except Exception as e:  # noqa: BLE001 - the row FAILs by name
+        return None, f"{type(e).__name__}: {e}"
+
+
+def wait_for(cond, seconds: float = 5.0) -> bool:
+    deadline = time.monotonic() + seconds
+    while not cond():
+        if time.monotonic() >= deadline:
+            return False
+        time.sleep(0.02)
+    return True
+
+
+def _sd1():
+    pxd, portsd, upd = make("run_sd1")
+    try:
+        slow_tail(pxd, {"d1": 0.3})
+        s = socket.create_connection(("127.0.0.1", portsd["arms"]["nevertwice"]["write"]))
+        s.sendall(keepalive_req("d1"))
+        got = answer_of(s)
+        t = time.monotonic()
+        left = pxd.stop()
+        dt = time.monotonic() - t
+        seen = [(r.get("status"), r.get("refused")) for r in by_unit(pxd, "d1")]
+        s.close()
+        return got[:12], left, round(dt, 2), seen
+    finally:
+        upd.close()
+
+
+r_sd1, e_sd1 = sd_try(_sd1)
+check("SD-1 (B-STOP-DRAIN-2): a keep-alive call whose record is written after its answer went out - stop() called the "
+      "moment the client has the answer returns {} with the record already on the disk; the idle keep-alive connection "
+      "after it is not waited for",
+      e_sd1 is None and r_sd1[0] == b"HTTP/1.1 200" and r_sd1[1] == {} and r_sd1[3] == [(200, None)] and r_sd1[2] < 1.5,
+      str(e_sd1 or r_sd1))
+
+
+def _sd2():
+    pxd, portsd, upd = make("run_sd2")
+    try:
+        slow_tail(pxd, {"d2": 1.5})
+        s = socket.create_connection(("127.0.0.1", portsd["arms"]["nevertwice"]["write"]))
+        s.sendall(keepalive_req("d2"))
+        answer_of(s)
+        t = time.monotonic()
+        left = pxd.stop(drain_s=0.3)
+        dt = time.monotonic() - t
+        at_stop = len(by_unit(pxd, "d2"))
+        landed = wait_for(lambda: by_unit(pxd, "d2"))
+        s.close()
+        return left, dict(getattr(pxd, "stop_left", {"<no stop_left>": -1})), round(dt, 2), at_stop, landed
+    finally:
+        upd.close()
+
+
+r_sd2, e_sd2 = sd_try(_sd2)
+check("SD-2 (B-STOP-DRAIN-2): a record still unwritten at the drain's deadline is named - stop() returns {arm: 1} at "
+      "its deadline and keeps it as stop_left; the record lands afterwards",
+      e_sd2 is None and r_sd2[0] == {"nevertwice": 1} and r_sd2[1] == {"nevertwice": 1} and 0.25 <= r_sd2[2] <= 1.2
+      and r_sd2[3] == 0 and r_sd2[4] is True, str(e_sd2 or r_sd2))
+
+
+def _sd3():
+    pxd, portsd, upd = make("run_sd3")
+    try:
+        slow_tail(pxd, {"d3a": 1.0})
+        wp = portsd["arms"]["nevertwice"]["write"]
+        a = socket.create_connection(("127.0.0.1", wp))
+        b = socket.create_connection(("127.0.0.1", wp))          # open before stop(), idle
+        a.sendall(keepalive_req("d3a"))
+        got_a = answer_of(a)
+        n_up = len(upd.requests)
+        out: dict = {}
+        th = threading.Thread(target=lambda: out.update(left=pxd.stop(), seen=by_unit(pxd, "d3b")), daemon=True)
+        th.start()
+        wait_for(pxd._stop.is_set, 2.0)
+        b.sendall(keepalive_req("d3b", close=True))
+        got_b = answer_of(b)
+        b.close()
+        th.join(10)
+        a.close()
+        return (got_a[:12], got_b[:12], len(upd.requests) - n_up, out.get("left"),
+                [(r.get("refused"), r.get("status")) for r in out.get("seen", [])])
+    finally:
+        upd.close()
+
+
+r_sd3, e_sd3 = sd_try(_sd3)
+check("SD-3 (B-STOP-DRAIN-2, the auditor's correction): a request that arrives after stop() began is never forwarded "
+      "and never silent - a 503, the upstream not reached, and its calls.jsonl line refused \"proxy stopping\" written "
+      "before stop() returns",
+      e_sd3 is None and r_sd3 == (b"HTTP/1.1 200", b"HTTP/1.1 503", 0, {}, [("proxy stopping", None)]),
+      str(e_sd3 or r_sd3))
+
+
+def _sd5():
+    old = P.STOP_DRAIN_S
+    pxd, portsd, upd = make("run_sd5")
+    try:
+        P.STOP_DRAIN_S = 0.3
+        slow_tail(pxd, {"d5": 1.5})
+        s = socket.create_connection(("127.0.0.1", portsd["arms"]["nevertwice"]["write"]))
+        s.sendall(keepalive_req("d5"))
+        answer_of(s)
+        shut = call(portsd["control"], "/shutdown", {}, token="ctl-token")
+        rc = P._serve_until_stopped(pxd, poll_s=0.05)
+        left = dict(getattr(pxd, "stop_left", {"<no stop_left>": -1}))
+        landed = wait_for(lambda: by_unit(pxd, "d5"))
+        s.close()
+        return shut[:12], rc == getattr(P, "UNWRITTEN_RC", object()), left, landed
+    finally:
+        P.STOP_DRAIN_S = old
+        upd.close()
+
+
+r_sd5, e_sd5 = sd_try(_sd5)
+_main = next(n for n in ast.walk(ast.parse((ROOT / "research" / "_llm_proxy.py").read_text(encoding="utf-8")))
+             if isinstance(n, ast.FunctionDef) and n.name == "main")
+main_returns = any(isinstance(n, ast.Return) and isinstance(n.value, ast.Call) and isinstance(n.value.func, ast.Name)
+                   and n.value.func.id == "_serve_until_stopped" for n in ast.walk(_main))
+check("SD-5 (B-STOP-DRAIN-2): /shutdown's remainder reaches the process's exit - stop() on the control's Timer reads "
+      "STOP_DRAIN_S when it runs, and _serve_until_stopped returns UNWRITTEN_RC, which main() returns, when a record "
+      "was still unwritten at the deadline",
+      e_sd5 is None and r_sd5 == (b"HTTP/1.1 200", True, {"nevertwice": 1}, True) and main_returns
+      and getattr(P, "UNWRITTEN_RC", 0) not in (0, 1, 2, 4), str(e_sd5 or r_sd5) + f" main_returns={main_returns}")
+
+#: SD-6: every call that writes a record, by the function it sits in, and why stop() cannot return before it
+SD_WRITERS = ("_append_jsonl", "_write_call", "capture_body", "_flag", "flag", "_inspect", "_finish_call", "_refuse_path")
+SD_WINDOW = ("Proxy._client", "Proxy._inspect", "Proxy._finish_call", "Proxy._write_call", "Proxy._flag", "capture_body",
+             "OllamaLeg._serve_request", "OllamaLeg._refuse_path")
+SD_CENSUS = {**{k: "the drain window: forward_open is up while it runs" for k in SD_WINDOW},
+             "Proxy._catcher": "catcher_open (F-P2-6)", "Proxy._control": "written before its own answer",
+             "_start_serve": "startup, before READY"}
+
+
+def sd_calls(tree) -> dict:
+    """{scope: [(callee, line)]} for every call of a writer, the scope the enclosing Class.function."""
+    out: dict = {}
+
+    def walk(node, scope):
+        for ch in ast.iter_child_nodes(node):
+            if isinstance(ch, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+                walk(ch, scope + [ch.name])
+                continue
+            if isinstance(ch, ast.Call):
+                f = ch.func
+                name = f.attr if isinstance(f, ast.Attribute) else f.id if isinstance(f, ast.Name) else None
+                if name in SD_WRITERS:
+                    out.setdefault(".".join(scope), []).append((name, ch.lineno))
+            walk(ch, scope)
+    walk(tree, [])
+    return out
+
+
+def sd_census(src: str) -> list[str]:
+    """The census's problems - [] when every writer sits where the map says."""
+    tree = ast.parse(src)
+    calls = sd_calls(tree)
+    probs = [f"a writer in {k}, outside the map" for k in sorted(set(calls) - set(SD_CENSUS))]
+    probs += [f"{k} in the map writes nothing" for k in sorted(set(SD_CENSUS) - set(calls))]
+    probs += [f"{k} calls {n} (line {ln}) outside the drain window" for k, v in sorted(calls.items())
+              for n, ln in v if n != "_append_jsonl" and k not in SD_WINDOW]
+    fn = {f"{c.name}.{f.name}": f for c in tree.body if isinstance(c, ast.ClassDef) for f in c.body
+          if isinstance(f, ast.FunctionDef)}
+    client = fn.get("Proxy._client")
+    begins = [n.lineno for n in ast.walk(client) if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
+              and n.func.attr == "_begin_forward"] if client else []
+    if not begins or min(begins) > min(ln for _n, ln in calls.get("Proxy._client", [(None, 0)])):
+        probs.append("Proxy._client writes before _begin_forward")
+    serve = fn.get("OllamaLeg.serve")
+    held = serve is not None and any(
+        isinstance(t, ast.Try) and any(isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
+                                       and n.func.attr == "_serve_request" for b in t.body for n in ast.walk(b))
+        and any(isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute) and n.func.attr == "end"
+                for b in t.finalbody for n in ast.walk(b)) for t in ast.walk(serve))
+    if not held:
+        probs.append("OllamaLeg.serve does not hold _serve_request in a try whose finally calls end")
+    return probs
+
+
+PROXY_SRC = (ROOT / "research" / "_llm_proxy.py").read_text(encoding="utf-8")
+c_now, e_now = sd_try(lambda: sd_census(PROXY_SRC))
+stray = PROXY_SRC.replace("    try:\n        while not proxy._stopped.is_set():",
+                          "    _append_jsonl(Path('x'), {})\n    try:\n        while not proxy._stopped.is_set():", 1)
+c_stray, e_stray = sd_try(lambda: sd_census(stray))
+check("SD-6 (B-STOP-DRAIN-2, the census): every call that writes a record sits where the map says - in the drain "
+      "window (forward_open up; _begin_forward before the first write of _client; the leg's request held in a try "
+      "whose finally lowers it), under catcher_open, before the control's own answer, or at startup - and a stray "
+      "write outside the map is named",
+      e_now is None and c_now == [] and e_stray is None and c_stray == ["a writer in _serve_until_stopped, outside the map"],
+      str(e_now or c_now) + f" stray={e_stray or c_stray}")
 
 shutil.rmtree(TMP, ignore_errors=True)
 print(f"\nproxy recording: {PASSED} passed, {FAILED} failed")

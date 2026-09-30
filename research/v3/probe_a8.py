@@ -1645,7 +1645,9 @@ def run_mem0_probe(c: Any, L: Any, *, run: str, install_run: str, model_run: str
         fd.close()
         fo.close()
     record["proxy_stop"] = pstop
-    if pstop.get("killed") or pstop.get("rc") not in (0,):
+    if pstop.get("records_unwritten"):
+        problems.append(f"harness: proxy records unwritten at stop: {pstop}")
+    elif pstop.get("killed") or pstop.get("rc") not in (0,):
         problems.append(f"the proxy did not stop by itself: {pstop}")
     record["status_sha256"] = hashlib.sha256(status_path.read_bytes()).hexdigest() if status_path.exists() else None
     record["fake_traps"], record["fake_unknown"] = list(fo.traps), list(fo.unknown)

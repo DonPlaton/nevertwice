@@ -161,14 +161,14 @@ class Control:
 class World:
     """The injected edges: the proxy's start and stop, the scheduler, the launcher, the witnesses, the post."""
 
-    def __init__(self, *, model="deepseek-flash", aborted=None, failed_op=False, raise_in_turn=False, pstop_rc=0,
+    def __init__(self, *, model="deepseek-flash", aborted=None, failed_op=False, raise_in_turn=False, pstop_rc=0, pstop_unwritten=False,
                  trap=False, temperature=0.1, counters=None, stops=None, interrupt=False, unserved=False,
                  timeless=False, catcher=False, dirty_check=False, bad_record=False):
         self.interrupt, self.unserved, self.timeless, self.catcher = interrupt, unserved, timeless, catcher
         self.dirty_check, self.bad_record = dirty_check, bad_record
         self.model, self.aborted, self.failed_op, self.raise_in_turn = model, aborted, failed_op, raise_in_turn
         self.pstop_rc, self.trap, self.temperature, self.stops = pstop_rc, trap, temperature, stops
-        self.counters = counters
+        self.counters, self.pstop_unwritten = counters, pstop_unwritten
         self.started = self.stopped = None
         self.w_log: list = []
         self.turn_seen: dict = {}
@@ -186,6 +186,8 @@ class World:
 
     def stop_proxy(self, h):
         self.stopped = True
+        if self.pstop_unwritten:                      # B-STOP-DRAIN-2: run_v3_proxy.stop on exit UNWRITTEN_RC
+            return {"rc": 5, "killed": False, "records_unwritten": True}
         return {"rc": self.pstop_rc, "killed": False}
 
     def post(self, port, path, body, token, timeout=60.0):
@@ -394,6 +396,11 @@ check("an interrupt (not an Exception) still stops the proxy on its way out - th
       how == "interrupted" and wd3.stopped is True, f"{how} stopped={wd3.stopped}")
 rec, C, VENV, WD, err = run("pstop", World(pstop_rc=3))
 check("a proxy that did not stop by itself is a problem", ok(lambda: any("did not stop by itself" in p for p in rec["problems"])))
+rec, C, VENV, WD, err = run("pstop_unwritten", World(pstop_unwritten=True))
+check("SD-9 (B-STOP-DRAIN-2): a proxy whose stop() could not wait for every record is a problem by that name - "
+      "'harness: proxy records unwritten at stop' - and not the generic 'did not stop by itself'",
+      ok(lambda: sum(p.startswith("harness: proxy records unwritten at stop") for p in rec["problems"]) == 1
+         and not any("did not stop by itself" in p for p in rec["problems"])), str(rec.get("problems") or err))
 rec, C, VENV, WD, err = run("trap", World(trap=True))
 check("a trap the fake Ollama saw (a pull) is a problem by name", ok(lambda: any("saw a trap" in p for p in rec["problems"])
       and rec["fake_traps"] == [{"method": "POST", "path": "/api/pull"}]), str(rec.get("problems")))

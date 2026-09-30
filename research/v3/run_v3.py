@@ -917,7 +917,9 @@ def _drive_stand(cfg: RunConfig, inp: StandInputs, arms: Mapping[str, ArmRun], r
             gd.stop()
             problems += [f"gate: {p}" for p in gd.problems]
         pstop = dict(deps.stop_proxy(h))
-    if pstop.get("killed") or pstop.get("rc") not in (0,):
+    if pstop.get("records_unwritten"):
+        problems.append(f"harness: proxy records unwritten at stop: {pstop}")
+    elif pstop.get("killed") or pstop.get("rc") not in (0,):
         problems.append(f"the proxy did not stop by itself: {pstop}")
     smoke_dir.mkdir(parents=True, exist_ok=True)
     record = {"stand": stand_id, "order": n, "attempt": attempt, "arms": sorted(arms), "runs": list(runs), "config_sha256": cfg.sha256,

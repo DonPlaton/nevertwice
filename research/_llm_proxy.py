@@ -311,6 +311,7 @@ class Counters:
     records: int = 0
     catcher_hosts: list = field(default_factory=list)
     catcher_open: int = 0                   # F-P2-6: catcher connections whose log line is not written yet
+    forward_open: int = 0                   # B-STOP-DRAIN-2: forwarded requests whose records are not all written yet
     #: Q-AB-2: per forwarded call that got a reply byte, the time the proxy itself held it, in ms - request read to
     #: upstream send done (the upstream connect subtracted) plus first upstream byte in to that byte sent to the
     #: client. The same code in every mode; at most OWN_HOP_CAP kept, the rest counted.
@@ -864,8 +865,12 @@ class OllamaLeg:
     def __init__(self, arm: str, *, mode: str, cloud_arm: bool, upstream: tuple[str, int], log: Callable[[str], None],
                  run_dir: Path, connect: Callable[[tuple[str, int]], socket.socket] | None = None,
                  embed_count: Callable[[str], int] | None = None, embed_cap: int | None = None,
-                 scan: Callable[[bytes], dict] | None = None, flag: Callable[[str, str, str | None], None] | None = None):
+                 scan: Callable[[bytes], dict] | None = None, flag: Callable[[str, str, str | None], None] | None = None,
+                 begin: Callable[[str], bool] | None = None, end: Callable[[str], bool] | None = None,
+                 stopping: Callable[[], bool] | None = None):
         self.arm, self.cloud_arm, self.upstream, self.log, self.run_dir = arm, cloud_arm, upstream, log, run_dir
+        #: B-STOP-DRAIN-2: the proxy's forward_open for this arm, and whether its stop() began - None for a bare leg
+        self.begin, self.end, self.stopping = begin, end, stopping
         #: Q4 (R-HOME-CANARY, K1): the proxy's own scan (Proxy.scan_body) and flag - the main path's, never a copy
         self.scan, self.flag = scan, flag
         self.pacer = load_pacer_copy(arm, mode)
@@ -940,6 +945,16 @@ class OllamaLeg:
         if head is None:
             return
         start, headers = _parse_head(head)
+        opened = self.begin is not None and self.begin(self.arm)
+        try:                                             # B-STOP-DRAIN-2: stop() waits until its line is written
+            self._serve_request(cs, stage, buf, start, headers)
+        finally:
+            if opened:
+                self.end(self.arm)
+
+    def _serve_request(self, cs: socket.socket, stage: dict, buf: bytearray, start: str,
+                       headers: list[tuple[str, str]]) -> None:
+        """serve()'s request once its head is read: refused, or forwarded and answered, and its line written."""
         method, _, rest = start.partition(" ")
         target = rest.rsplit(" ", 1)[0]
         if _smuggles(start, headers):                    # X4, the request line included (B-X4-LINE)
@@ -982,6 +997,10 @@ class OllamaLeg:
             self._refuse_path(cs, 403, "Forbidden", b"a planted canary or the owner's words never reach Ollama", unit=unit,
                               path=path, error=f"refused:{kind}", headers=headers, buffered=len(buf), stage=stage,
                               extra=hits)
+            return
+        if self.stopping is not None and self.stopping():      # B-STOP-DRAIN-2: nothing reaches Ollama after stop()
+            self._refuse_path(cs, 503, "Service Unavailable", b"the proxy is stopping", unit=unit, path=path,
+                              error="refused:proxy-stopping", headers=headers, buffered=len(buf), stage=stage)
             return
         lines = [f"{method} {path} HTTP/1.1", f"Host: {self.upstream[0]}:{self.upstream[1]}"]
         lines += [f"{k}: {v}" for k, v in headers if k.lower() in ("content-type", "accept")]
@@ -1207,6 +1226,9 @@ SPECIAL_ROLES = ("j3", "scheduler")
 #: CI e8e9088: how long stop() waits for the catcher's open connections to write their lines. A relay loop sees the
 #: stop within its 1 s select timeout and logs its tunnel on the way out.
 STOP_DRAIN_S = 5.0
+#: B-STOP-DRAIN-2: the process's exit when stop() returned with records still unwritten (1 a raise, 2 argparse, 4
+#: UPSTREAM_FAILED); run_v3_proxy.PROXY_UNWRITTEN_RC mirrors it
+UNWRITTEN_RC = 5
 
 
 class Proxy:
@@ -1231,6 +1253,7 @@ class Proxy:
         self._listeners: list[socket.socket] = []
         self._stop = threading.Event()
         self._stopped = threading.Event()           # B-SHUT: set when stop() has drained, the process's own exit waits
+        self.stop_left: dict[str, int] = {}          # B-STOP-DRAIN-2: what the last stop() could not wait for, by arm
         self._threads: list[threading.Thread] = []
         self.scan_refused = 0
         self._lock = threading.Lock()
@@ -1240,7 +1263,8 @@ class Proxy:
             count, cap = self._embed_tokenizer(config)
         self.legs = {a.arm: OllamaLeg(a.arm, mode=config.ollama_mode, cloud_arm=a.cloud_arm,
                                       upstream=tuple(config.ollama_upstream), log=self.log, run_dir=config.run_dir,
-                                      embed_count=count, embed_cap=cap, scan=self.scan_body, flag=self._flag)
+                                      embed_count=count, embed_cap=cap, scan=self.scan_body, flag=self._flag,
+                                      begin=self._begin_forward, end=self._end_forward, stopping=self._stop.is_set)
                      for a in config.arms if a.ollama_leg}
 
     @staticmethod
@@ -1331,12 +1355,15 @@ class Proxy:
             except OSError:
                 pass
 
-    def stop(self, *, drain_s: float = STOP_DRAIN_S) -> dict[str, int]:
-        """Stop accepting, then wait up to ``drain_s`` until every open catcher connection has written its line to
-        catcher.jsonl (CI e8e9088: a tunnel open at the stop must leave its record). Returns the arms whose
-        connections are still open at the deadline, by count - {} when every line is written. B-SHUT: _stopped is set
-        at its end, whatever happened - the process's main loop exits on it, not on _stop, so a /shutdown's drain
-        (run on a daemon Timer) is never cut short by the interpreter's exit."""
+    def stop(self, *, drain_s: float | None = None) -> dict[str, int]:
+        """Stop accepting, then wait up to ``drain_s`` (STOP_DRAIN_S when it runs) until every open catcher connection
+        has written its line to catcher.jsonl (CI e8e9088: a tunnel open at the stop must leave its record) and every
+        forwarded request its records - calls, bodies, flags, the leg's line (B-STOP-DRAIN-2: they are written after
+        the answer went out). Returns the arms with connections or requests still open at the deadline, by count - {}
+        when every line is written - and keeps it as stop_left. B-SHUT: _stopped is set at its end, whatever happened
+        - the process's main loop exits on it, not on _stop, so a /shutdown's drain (run on a daemon Timer) is never
+        cut short by the interpreter's exit."""
+        drain_s = STOP_DRAIN_S if drain_s is None else drain_s
         self._stop.set()
         try:
             for s in self._listeners:
@@ -1347,12 +1374,15 @@ class Proxy:
             deadline = time.monotonic() + drain_s
             while True:
                 with self._lock:
-                    still = {a: c.catcher_open for a, c in self.counters.items() if c.catcher_open}
+                    still = {a: c.catcher_open + c.forward_open for a, c in self.counters.items()
+                             if c.catcher_open or c.forward_open}
                 if not still or time.monotonic() >= deadline:
                     break
                 time.sleep(0.05)
+            self.stop_left = dict(still)
             if still:
-                self.log(f"stop: {sum(still.values())} catcher connection(s) still open after {drain_s} s")
+                self.log(f"stop: {sum(still.values())} catcher connection(s) or forwarded request(s) still open after "
+                         f"{drain_s} s")
             return still
         finally:
             self._stopped.set()
@@ -1460,6 +1490,7 @@ class Proxy:
         ctr = self.counters[arm.arm]
         buf = bytearray()
         up: socket.socket | None = None
+        inflight = False
         try:
             while not self._stop.is_set():
                 head = _read_head(cs, buf)
@@ -1470,6 +1501,7 @@ class Proxy:
                 method, _, rest = start.partition(" ")
                 target = rest.rsplit(" ", 1)[0]
                 ctr.requests += 1
+                inflight = self._begin_forward(arm.arm)  # B-STOP-DRAIN-2: lowered once its records are written
                 if _smuggles(start, headers):
                     ctr.refused_header += 1                  # X4: no smuggled header line reaches the upstream
                     _refuse(cs, 400, "Bad Request", b"a header carries CR, LF or NUL",
@@ -1530,6 +1562,13 @@ class Proxy:
                         self._write_call(rec)
                         _refuse(cs, 400, "Bad Request", f"refused: {refusal}".encode())    # body read: to EOF
                         return
+                if self._stop.is_set():                  # B-STOP-DRAIN-2: nothing is forwarded after stop() began,
+                    self.log(f"stop: a request on {arm.arm} refused, the proxy is stopping")    # never silently
+                    if rec is not None:
+                        rec.update(refused="proxy stopping", t1=_iso(time.time()))
+                        self._write_call(rec)
+                    _refuse(cs, 503, "Service Unavailable", b"the proxy is stopping")    # body read: to EOF
+                    return
                 body, injected = self._fallback(arm, method, path, headers, body)
                 ctr.thinking_injected += injected
                 out = self._outgoing_head(method, path, headers, len(body))
@@ -1580,11 +1619,14 @@ class Proxy:
                                          scan=self.scan_body)
                         except CaptureRefused as e:
                             self._flag(arm.arm, e.kind, rec.get("request_key"))
+                inflight = self._end_forward(arm.arm)    # B-STOP-DRAIN-2: every record of this request is written
                 version = rest.rsplit(" ", 1)[-1].upper()
                 conn = (_hget(headers, "connection") or "").lower()
                 if not keep or "close" in conn or (version == "HTTP/1.0" and "keep-alive" not in conn):
                     return                               # the finally closes upstream; _guard closes the client
         finally:
+            if inflight:
+                self._end_forward(arm.arm)
             if up is not None:
                 try:
                     up.close()
@@ -1708,6 +1750,18 @@ class Proxy:
         with self._lock:
             self.counters[rec["arm"]].records += 1
             _append_jsonl(self.config.run_dir / "calls.jsonl", rec)
+
+    def _begin_forward(self, arm: str) -> bool:
+        """B-STOP-DRAIN-2: one more request of ``arm`` whose records stop() waits for. Returns True (in flight)."""
+        with self._lock:
+            self.counters[arm].forward_open += 1
+        return True
+
+    def _end_forward(self, arm: str) -> bool:
+        """B-STOP-DRAIN-2: that request's records are all written, or it ended. Returns False (no longer in flight)."""
+        with self._lock:
+            self.counters[arm].forward_open -= 1
+        return False
 
     def _fallback(self, arm: ArmConfig, method: str, path: str, headers, body: bytes) -> tuple[bytes, int]:
         """The declared thinking fallback: branch (b) only, fallback arms only, one field, at the body's front."""
@@ -2086,8 +2140,7 @@ def main(argv: list[str] | None = None) -> int:
             return started                               # UPSTREAM_FAILED, said on stdout
         proxy, digest = started
     print(f"READY {digest}", flush=True)
-    _serve_until_stopped(proxy)                          # B-SHUT: one call site, so both modes wait for stop()'s drain
-    return 0
+    return _serve_until_stopped(proxy)                   # B-SHUT: one call site, so both modes wait for stop()'s drain
 
 
 def _start_serve(args: argparse.Namespace, secrets: dict) -> "tuple[Proxy, str] | int":
@@ -2112,15 +2165,20 @@ def _start_serve(args: argparse.Namespace, secrets: dict) -> "tuple[Proxy, str] 
     return proxy, write_ports(config.run_dir, ports)
 
 
-def _serve_until_stopped(proxy: "Proxy", *, poll_s: float = 0.2) -> None:
+def _serve_until_stopped(proxy: "Proxy", *, poll_s: float = 0.2) -> int:
     """The process lives until stop() has FINISHED (B-SHUT): /shutdown runs stop() on a daemon Timer and stop() sets
     _stop first, so a loop on _stop alone returned at once and the interpreter's exit cut the drain short - a tunnel
-    open at the stop lost its catcher.jsonl line. A Ctrl-C stops here, in this thread."""
+    open at the stop lost its catcher.jsonl line. A Ctrl-C stops here, in this thread. Returns the process's exit:
+    UNWRITTEN_RC when stop() returned with records still unwritten (B-STOP-DRAIN-2), else 0."""
     try:
         while not proxy._stopped.is_set():
             time.sleep(poll_s)
     except KeyboardInterrupt:
         proxy.stop()
+    if proxy.stop_left:
+        proxy.log(f"proxy records unwritten at stop: {proxy.stop_left}")
+        return UNWRITTEN_RC
+    return 0
 
 
 if __name__ == "__main__":

@@ -49,6 +49,7 @@ HARNESS_CATCHER = "harness-catcher"            # Q-12-1 O-b: the smoke's one cat
 ARM_ROLES = ("write", "reader", "catcher", "ollama")
 SPECIAL_ROLES = ("scheduler", "j3")            # _llm_proxy.SPECIAL_ROLES: single-port roles, always recorded
 CLAUDE_CODE_ARM = "claude-code-memory"         # _llm_proxy.HOME_CANARY_ARM (R-CC-WIT)
+PROXY_UNWRITTEN_RC = 5                         # _llm_proxy.UNWRITTEN_RC (B-STOP-DRAIN-2)
 _RUN_ID = re.compile(r"[A-Za-z0-9_-]+")
 _UNIT_PART = re.compile(r"[A-Za-z0-9._-]+")
 _PREFIX_MAX = 128                              # _llm_proxy._UNIT: /u/<prefix of 1..128 characters>
@@ -258,14 +259,19 @@ def post(port: int, path: str, body: Any, token: str, *, timeout: float = 60.0) 
 
 def stop(h: ProxyHandle, *, timeout: float = 30.0) -> dict:
     """Ask the proxy to stop itself (its records are already on the disk, R-FSYNC) and wait for it:
-    {"rc": its exit code or None, "killed": whether it had to be killed, "shutdown_error": what /shutdown said}."""
+    {"rc": its exit code or None, "killed": whether it had to be killed, "shutdown_error": what /shutdown said}, and
+    "records_unwritten": True when it exited PROXY_UNWRITTEN_RC - its stop() could not wait for every record."""
     err = None
     try:
         h.control.shutdown()
     except Exception as e:  # noqa: BLE001 - a proxy that is gone answers nothing; it is still waited for below
         err = type(e).__name__
     try:
-        return {"rc": h.child.process.wait(timeout), "killed": False, "shutdown_error": err}
+        rc = h.child.process.wait(timeout)
+        out = {"rc": rc, "killed": False, "shutdown_error": err}
+        if rc == PROXY_UNWRITTEN_RC:                  # B-STOP-DRAIN-2: named by the harness, never the generic rc
+            out["records_unwritten"] = True
+        return out
     except subprocess.TimeoutExpired:
         h.child.kill_tree()
         try:

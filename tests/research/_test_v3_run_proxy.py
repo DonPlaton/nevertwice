@@ -215,6 +215,40 @@ try:
     check("RP6: one that does not exit even after the kill - rc None, killed=True (never a made-up code)",
           r_stuck == {"rc": None, "killed": True, "shutdown_error": None}, str(r_stuck))
 
+    print("\n- B-STOP-DRAIN-2: the proxy's exit code for records unwritten at stop -")
+
+    class _Exits:
+        def __init__(self, rc):
+            self.rc = rc
+
+        def wait(self, timeout=None):
+            return self.rc
+
+    def exit_handle(rc):
+        child = SimpleNamespace(process=_Exits(rc), kill_tree=lambda: None)
+        return RP.ProxyHandle(child=child, ports={}, control=SimpleNamespace(shutdown=lambda: {"ok": True}),
+                              tokens={}, run_dir=TMP)
+
+    try:
+        sd7 = [RP.stop(exit_handle(rc), timeout=0.01) for rc in (5, 0, 1)]
+    except Exception as e:  # noqa: BLE001 - the row FAILs by name
+        sd7 = f"{type(e).__name__}: {e}"
+    check("SD-7 (B-STOP-DRAIN-2): a proxy that exits UNWRITTEN_RC after /shutdown - its stop() could not wait for every "
+          "record - is records_unwritten=True beside its rc; exit 0 and 1 are not; the code is the proxy's own",
+          sd7 == [{"rc": 5, "killed": False, "shutdown_error": None, "records_unwritten": True},
+                  {"rc": 0, "killed": False, "shutdown_error": None},
+                  {"rc": 1, "killed": False, "shutdown_error": None}]
+          and getattr(RP, "PROXY_UNWRITTEN_RC", None) == getattr(P, "UNWRITTEN_RC", -1) == 5, str(sd7))
+    NAMED = ('    if pstop.get("records_unwritten"):\n'
+             '        problems.append(f"harness: proxy records unwritten at stop: {pstop}")\n'
+             '    elif pstop.get("killed") or pstop.get("rc") not in (0,):\n'
+             '        problems.append(f"the proxy did not stop by itself: {pstop}")\n')
+    sd8 = {n: (s.count(NAMED), s.count("did not stop by itself")) for n in ("run_v3.py", "probe_a8.py", "ab_harness.py")
+           for s in [(ROOT / "research" / "v3" / n).read_text(encoding="utf-8")]}
+    check("SD-8 (B-STOP-DRAIN-2): each harness that stops the proxy - run_v3, probe_a8, ab_harness - names records "
+          "unwritten at stop by that name, before and instead of the generic 'did not stop by itself'",
+          sd8 == {n: (1, 1) for n in ("run_v3.py", "probe_a8.py", "ab_harness.py")}, str(sd8))
+
     print("\n- the real proxy, started through the launch contract -")
     C = L.Contract(polygon_root=TMP / "polygon", runs_root=TMP / "polygon" / "runs" / "v3", repo_root=ROOT,
                    owner_home=TMP / "owner", secrets_dir=TMP / "secrets", quarantine_root=TMP / "quarantine",
