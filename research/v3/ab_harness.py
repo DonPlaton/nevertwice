@@ -387,9 +387,11 @@ def run_ab(cfg: Any, *, stand: str, arm_names: Sequence[str], deps: Any, thinkin
 
     # the forecast and the preflight, before any spawn (Q-AB-3; C3: the smoke's own stand_forecast)
     prompts = {k: TP.render(t, {"context": "", "question": q}) for k, (t, q) in questions.items()}
+    points = RV.points_b_only                          # B2: the legs read at these points, the forecast counts them
     fc = RV.stand_forecast(arms, units, smaps=su["smaps"], prompts=prompts, runs=len(LEGS), count=count,
                            cl100k_source=deps.cl100k_source, max_token_bytes=deps.max_token_bytes,
-                           writer_bounds=deps.writer_bounds, dated=True, label=f"the {AB_UNITS} A/B units")
+                           writer_bounds=deps.writer_bounds, points=points, dated=True,
+                           label=f"the {AB_UNITS} A/B units")
     pf = RV.preflight(c, L, arms, stand_id=ab_id, config_sha256=cfg.sha256, decl=deps.decl, now=deps.now_utc,
                       forecast=fc)
     attempt = f"attempt-{pf['position']:05d}"
@@ -444,7 +446,7 @@ def run_ab(cfg: Any, *, stand: str, arm_names: Sequence[str], deps: Any, thinkin
                                      reaskable=SC.ReaskableError)
                 sp, _pst = PL.stand_plan(stand_id, units, launchers, standplan=SC.StandPlan, read_req=SC.ReadReq,
                                          runs=(leg,), campaign_seed=cfg.campaign_seed, unit_tokens=ut, medians={},
-                                         answer=answer, embed_tag=cfg.embed_tag, dated=True, points=lambda a: ("B",),
+                                         answer=answer, embed_tag=cfg.embed_tag, dated=True, points=points,
                                          k_at=PT.K_AT, smaps={u: m for u, m in su["smaps"].items() if u in unit_ids},
                                          truncate=deps.truncate, bodies_dir=h.run_dir)   # B-ABSMAP: the A/B's units only
                 hooks.bind(sched, sp)

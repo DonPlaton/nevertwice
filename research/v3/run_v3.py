@@ -24,7 +24,8 @@ A9).
   op_text: the bytes its writer is given), nevertwice's from WRITER_BOUNDS, mem0's from its probe record
   (writer_bound, M at 1 KiB [A-M0-1]) - and beside it an estimate that is not a bound, one method for every writer
   arm (writer_estimate, [A-EST-1]); stand_forecast() is the one the smoke and the A/B call (C3), each writer arm at
-  its bound in SmokeDeps.writer_bounds (writer_bounds_for: mem0's from --mem0-probe-run); hours are not forecast;
+  its bound in SmokeDeps.writer_bounds (writer_bounds_for: mem0's from --mem0-probe-run), each arm's reader once per
+  question and point - the points(arm) its plan reads with (B2); hours are not forecast;
 * WallCapGate, SMOKE_WALL_CAP_H (Q26): past the stand's 6 h wall ceiling no new unit starts;
 * run_smoke() (part 2b): the units, the forecast, the preflight, one Canaries object, the proxy, the hooks and the
   incident gate under the wall ceiling, the scheduler's stand, the gate and then the proxy stopped, the SMOKE_FIELDS
@@ -342,7 +343,8 @@ FORECAST_FORMULA = (
     "system prompt + the agent suffix + the user prompt's section constants and separators + 2 ISO days of 10 bytes + "
     "'[]' + last_k x (role + 2 + 4 x the truncation + 4) + [2 + top_k x (item + M) + 2 x (top_k - 1)] + role + 3, "
     "M = serialized bytes per existing memory, 1 KiB [A-M0-1]; "
-    "reader per question: requests <= 2, in <= 2 * (utf8_bytes(prompt without context) + 7000 * B) + 1024, "
+    "reader per read - a question at one of the arm's points, points(arm) reads per question [B2]: requests <= 2, "
+    "in <= 2 * (utf8_bytes(prompt without context) + 7000 * B) + 1024, "
     "out <= 2 * 1024 [B: the longest pinned cl100k token in bytes; A2: the re-ask carries the first reply, "
     "<= 1024 tokens]; "
     "per arm: x runs; usd = in * input_cache_miss.peak + out * output.peak, per 1M tokens; "
@@ -452,9 +454,10 @@ def writer_estimate(bound: Mapping[str, Any], texts: Sequence[str], *, ratio: fl
 
 def _per_arm(writers: Mapping[str, str | None], texts: Mapping[str, Sequence[str]], prompts: Mapping[tuple[str, str], str],
              bounds: Mapping[str, Mapping[str, Any]], *, runs: int, context_bytes: float, price: Mapping[str, Any],
-             ratios: Mapping[str, float] | None = None) -> tuple[dict, float]:
+             points: Mapping[str, Sequence[str]], ratios: Mapping[str, float] | None = None) -> tuple[dict, float]:
     """Each arm's requests, tokens and dollars: its writer at its bound (``ratios`` None) or at [A-EST-1]'s estimate
-    (``ratios``: each writer arm's measured bytes per token), its reader as every arm's."""
+    (``ratios``: each writer arm's measured bytes per token), its reader as every arm's - once per question and point
+    (``points``: arm -> its reader points, B2)."""
     per_arm: dict = {}
     total = 0.0
     for arm in sorted(writers):
@@ -468,8 +471,10 @@ def _per_arm(writers: Mapping[str, str | None], texts: Mapping[str, Sequence[str
                   "writer_out_tokens": runs * w["requests_per_op"] * len(t) * w["out_tokens"]}
         else:
             wr = writer_estimate(w, t, ratio=ratios[arm], out_tokens=PRE_PILOT_OUT_TOKENS, runs=runs)
-        rr = READER_REQUESTS * len(prompts)
-        r_in = sum(READER_REQUESTS * (len(p.encode("utf-8")) + context_bytes) + READER_OUT for p in prompts.values())
+        n_pts = len(points[arm])
+        rr = READER_REQUESTS * len(prompts) * n_pts
+        r_in = n_pts * sum(READER_REQUESTS * (len(p.encode("utf-8")) + context_bytes) + READER_OUT
+                           for p in prompts.values())
         r_out = rr * READER_OUT
         tin, tout = wr["writer_in_tokens"] + runs * r_in, wr["writer_out_tokens"] + runs * r_out
         usd = (tin * price["input_cache_miss"]["peak"] + tout * price["output"]["peak"]) / price["per_tokens"]
@@ -481,7 +486,8 @@ def _per_arm(writers: Mapping[str, str | None], texts: Mapping[str, Sequence[str
 
 def forecast_arms(writers: Mapping[str, str | None], op_texts: Mapping[str, Mapping[str, Sequence[str]]],
                   prompts: Mapping[tuple[str, str], str], *, runs: int, max_token_bytes: int,
-                  bounds: Mapping[str, Mapping[str, Any]], measured: Mapping[str, Any] | None = None,
+                  bounds: Mapping[str, Mapping[str, Any]], points: Mapping[str, Sequence[str]],
+                  measured: Mapping[str, Any] | None = None,
                   measured_ops: Mapping[str, Mapping[str, Any]] | None = None,
                   price: Mapping[str, Any] = DEEPSEEK_FLASH_PRICE) -> dict:
     """C2 (Q-C6-4, Q-C6-5): the forecast per arm, pure - written into the preflight record before the first spawn. Two
@@ -489,8 +495,10 @@ def forecast_arms(writers: Mapping[str, str | None], op_texts: Mapping[str, Mapp
     reader's bytes per cl100k token, with its "source") and ``measured_ops`` (each writer arm's, over its own op texts),
     [A-EST-1]'s estimate - NOT a bound. ``writers``: arm -> its writer LLM (None: no writer); ``op_texts``: writer arm ->
     unit -> its op texts (op_texts_for); ``bounds``: writer arm -> its bound (WRITER_BOUNDS, writer_bound); ``prompts``:
-    (unit, qid) -> the reader prompt with an empty context. Hours are not forecast (Q-A6-2): the stand's wall ceiling
-    bounds them. A writer arm without a bound or op texts, or on another model, refuses."""
+    (unit, qid) -> the reader prompt with an empty context; ``points``: arm -> the reader points the plan reads it at
+    (B2: one read per question and point - an S1 arm at B, K and V is read 3 times per question). Hours are not
+    forecast (Q-A6-2): the stand's wall ceiling bounds them. A writer arm without a bound or op texts, or on another
+    model, refuses; so does an arm without reader points."""
     for arm, llm in writers.items():
         if llm is not None and llm != price["model"]:
             raise CLIError(f"arm {arm}: its writer is {llm!r}, not {price['model']} - the price does not apply")
@@ -498,9 +506,13 @@ def forecast_arms(writers: Mapping[str, str | None], op_texts: Mapping[str, Mapp
             raise CLIError(f"arm {arm}: no upper bound for its writer's calls - no forecast, no smoke")
         if llm is not None and arm not in op_texts:
             raise CLIError(f"arm {arm}: no op texts for its writer - no forecast, no smoke")
+    unread = sorted(a for a in writers if not tuple(points.get(a) or ()))
+    if unread:
+        raise CLIError(f"arms {unread}: no reader points - each read is forecast per question and point (B2), none "
+                       "is assumed")
     texts = {a: [t for v in op_texts[a].values() for t in v] for a in writers if writers[a] is not None}
     per_arm, total = _per_arm(writers, texts, prompts, bounds, runs=runs,
-                              context_bytes=READER_CONTEXT_CL100K * max_token_bytes, price=price)
+                              context_bytes=READER_CONTEXT_CL100K * max_token_bytes, price=price, points=points)
     estimate = None
     if measured is not None:
         mo = dict(measured_ops or {})
@@ -510,7 +522,8 @@ def forecast_arms(writers: Mapping[str, str | None], op_texts: Mapping[str, Mapp
                            "([A-EST-1])")
         ratios = {a: mo[a]["ratio"] for a in sorted(texts)}
         est_arm, est_total = _per_arm(writers, texts, prompts, bounds, runs=runs,
-                                      context_bytes=READER_CONTEXT_CL100K * measured["ratio"], price=price, ratios=ratios)
+                                      context_bytes=READER_CONTEXT_CL100K * measured["ratio"], price=price,
+                                      points=points, ratios=ratios)
         estimate = {"note": "estimate, not a bound", "method": "[A-EST-1]", "bytes_per_cl100k_token": measured["ratio"],
                     "measured": {k: measured[k] for k in ("bytes", "tokens", "source") if k in measured},
                     "writer_ratios": ratios,
@@ -519,6 +532,8 @@ def forecast_arms(writers: Mapping[str, str | None], op_texts: Mapping[str, Mapp
                     "out_tokens_per_op": PRE_PILOT_OUT_TOKENS, "per_arm": est_arm, "usd_total": round(est_total, 4)}
     return {"note": "upper bound, not pilot medians", "formula": FORECAST_FORMULA, "runs": runs,
             "ops_per_run": {a: len(texts[a]) for a in sorted(texts)}, "questions_per_run": len(prompts),
+            "reader_points": {a: list(points[a]) for a in sorted(writers)},
+            "reads_per_run": {a: len(prompts) * len(points[a]) for a in sorted(writers)},
             "max_token_bytes": max_token_bytes, "writer_bounds": {a: dict(bounds[a]) for a in sorted(texts)},
             "price": dict(price), "per_arm": per_arm, "usd_total": round(total, 4), "estimate": estimate,
             "scheduler": "1 model probe (1 output token) before the stand; the gate's 1-token probes are counted after "
@@ -529,12 +544,13 @@ def forecast_arms(writers: Mapping[str, str | None], op_texts: Mapping[str, Mapp
 
 def stand_forecast(arms: Mapping[str, Any], units: Sequence[Any], *, smaps: Mapping[str, Mapping[str, str]],
                    prompts: Mapping[tuple[str, str], str], runs: int, count: Callable[[str], int], cl100k_source: str,
-                   max_token_bytes: int, writer_bounds: Mapping[str, Mapping[str, Any]], label: str,
-                   dated: bool = True) -> dict:
+                   max_token_bytes: int, writer_bounds: Mapping[str, Mapping[str, Any]],
+                   points: Callable[[str], Sequence[str]], label: str, dated: bool = True) -> dict:
     """C3: the forecast a stand writes into its preflight record - the one function the smoke and the A/B call. Each
     writer arm's op texts (op_texts_for) at its bound in ``writer_bounds`` (WRITER_BOUNDS', mem0's from
     writer_bounds_for); the reader's measured bytes per cl100k token over the units' session texts, each writer arm's
-    over its own op texts ([A-EST-1]); every ratio's source names the pin and ``label``."""
+    over its own op texts ([A-EST-1]); every ratio's source names the pin and ``label``. ``points``: the very
+    points(arm) the stand's plan reads with (B2) - the reader is forecast per question and point."""
     PL = load("run_v3_plan.py", smoke=True)
     writers = {a: ar.llm for a, ar in arms.items()}
     session = [PL.session_text(s) for u in units for s in u.sessions]
@@ -547,7 +563,13 @@ def stand_forecast(arms: Mapping[str, Any], units: Sequence[Any], *, smaps: Mapp
         measured_ops[a] = {**bytes_per_cl100k_token(flat, count),
                            "source": f"cl100k {cl100k_source[:12]} over {a}'s {len(flat)} op texts of {label}"}
     return forecast_arms(writers, op_texts, prompts, runs=runs, max_token_bytes=max_token_bytes, bounds=writer_bounds,
-                         measured=measured, measured_ops=measured_ops)
+                         points={a: tuple(points(a)) for a in writers}, measured=measured, measured_ops=measured_ops)
+
+
+def points_b_only(arm: str) -> tuple[str, ...]:
+    """The smoke's and the A/B's reader points: every arm at B alone - the one points(arm) their plan reads with and
+    their forecast counts (B2)."""
+    return ("B",)
 
 
 #: C3 (Q-C6-5): a probe run is named, never a path
@@ -762,9 +784,10 @@ def run_smoke(cfg: RunConfig, *, stand: str, arm_names: Sequence[str], runs: Seq
 
     # the forecast (Q-A6-2, Q-A6-3, C3) and the preflight (Q-A6-1): before STAND START and before any spawn
     prompts = {k: TP.render(t, {"context": "", "question": q}) for k, (t, q) in questions.items()}
+    points = points_b_only                             # B2: the plan reads at these points, the forecast counts them
     fc = stand_forecast(arms, units, smaps=su["smaps"], prompts=prompts, runs=len(runs), count=count,
                         cl100k_source=deps.cl100k_source, max_token_bytes=deps.max_token_bytes,
-                        writer_bounds=deps.writer_bounds, dated=True,
+                        writer_bounds=deps.writer_bounds, points=points, dated=True,
                         label=f"{stand_id}'s {len(units)} units, before the run")
     pf = preflight(c, L, arms, stand_id=stand_id, config_sha256=cfg.sha256, decl=deps.decl, now=deps.now_utc,
                    forecast=fc)
@@ -806,7 +829,7 @@ def run_smoke(cfg: RunConfig, *, stand: str, arm_names: Sequence[str], runs: Seq
                              reaskable=SC.ReaskableError)
         sp, _pst = PL.stand_plan(stand_id, units, launchers, standplan=SC.StandPlan, read_req=SC.ReadReq, runs=runs,
                                  campaign_seed=cfg.campaign_seed, unit_tokens=ut, medians={}, answer=answer,
-                                 embed_tag=cfg.embed_tag, dated=True, points=lambda a: ("B",), k_at=PT.K_AT,
+                                 embed_tag=cfg.embed_tag, dated=True, points=points, k_at=PT.K_AT,
                                  smaps=su["smaps"], truncate=deps.truncate, bodies_dir=h.run_dir)
         hooks.bind(sched, sp)
         model = hooks.model_probe()                    # the gate's expected model (the planner's O1 (a): one 1-token call)

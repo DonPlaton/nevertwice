@@ -92,8 +92,8 @@ check("an unknown tag refuses", "tag" in err(lambda: SC.ceiling_for("best", arm=
                                                                     medians=MED)))
 
 print("\n- T3/T4 project_hours and prefix_for -")
-HOPS = SC.HopStats(hop95_llm=2.0, hop95_embed=0.5, hop95_read=1.0, hop95_reader=3.0, embed_ceiling=10.0,
-                   judge_s_per_question=4.0)
+# hop95_llm, hop95_embed, hop95_read, hop95_reader, embed_ceiling and the judges' seconds per answer (R9), by position
+HOPS = SC.HopStats(2.0, 0.5, 1.0, 3.0, 10.0, 4.0)
 # one block: 2 units x 2 runs; unit u1 (run r1) is the slowest writer: 3 ops of (2 llm, 4 embed) = 3 x (4 + 2) = 18 s
 blk = SC.BlockLoad(block="b01", units=(
     SC.UnitLoad(run="r1", unit="u1", ops=((2, 4), (2, 4), (2, 4)), questions=(3, 3)),
@@ -104,8 +104,27 @@ pj = SC.project_hours(HOPS, [blk])
 check("write: the slowest (run, unit) at the p95 hops - 18 s, over the embed ceiling's 60/10 = 6 s",
       abs(pj.write_h - 18 / 3600) < 1e-12, str(pj))
 check("questions: the slowest (run, unit) - 9 points x (1 + 3) s = 36 s", abs(pj.question_h - 36 / 3600) < 1e-12, str(pj))
-check("judges: every question of every (run, unit) - 2 + 1 + 3 + 1 - x 4 s, computed apart",
-      abs(pj.judge_h - 7 * 4 / 3600) < 1e-12, str(pj))
+check("R9 judges: every answer - a question at each of its points - of every (run, unit), 6 + 1 + 9 + 1 = 17 x 4 s, "
+      "computed apart (the judges score each read's answer, not each question once)",
+      abs(pj.judge_h - 17 * 4 / 3600) < 1e-12, str(pj))
+check("R9: HopStats names the judges' seconds per answer, the unit its projection multiplies",
+      list(SC.HopStats.__dataclass_fields__)[-1] == "judge_s_per_answer"
+      and "judge_s_per_question" not in SC.HopStats.__dataclass_fields__, str(list(SC.HopStats.__dataclass_fields__)))
+try:
+    ul = SC.unit_load("r1", "u1", ops=((2, 4),), reads=[SC.ReadReq(qid=q, query="x", point=p, k=10)
+                                                          for q in ("q0", "q1") for p in ("B", "K", "V")])
+    ul_mixed = SC.unit_load("r1", "u2", ops=(), reads=[SC.ReadReq(qid="q0", query="x", point="B"),
+                                                       SC.ReadReq(qid="q1", query="y", point="B"),
+                                                       SC.ReadReq(qid="q0", query="x", point="K")])
+    ul_j = SC.project_hours(HOPS, [SC.BlockLoad(block="b09", units=(ul,))]).judge_h
+except Exception as e:  # noqa: BLE001 - the row FAILs by name
+    ul = ul_mixed = f"{type(e).__name__}: {e}"
+    ul_j = None
+check("R9 unit_load: a unit's load comes from its read plan - an S1 unit read at B, K and V counts 3 points for each "
+      "of its 2 questions (questions=(3, 3)), in the plan's question order, so its judges count 6 answers x 4 s",
+      getattr(ul, "questions", None) == (3, 3) and getattr(ul, "ops", None) == ((2, 4),)
+      and getattr(ul_mixed, "questions", None) == (2, 1) and ul_j is not None and abs(ul_j - 6 * 4 / 3600) < 1e-12,
+      f"{ul} {ul_mixed} {ul_j}")
 blk_e = SC.BlockLoad(block="b02", units=(SC.UnitLoad(run="r1", unit="u3", ops=((1, 1),), questions=(1,)),), embeds=1000)
 check("the embed ceiling bounds the write stage when it is slower (1000 embeds / 10 per s = 100 s)",
       abs(SC.project_hours(HOPS, [blk_e]).write_h - 100 / 3600) < 1e-12)

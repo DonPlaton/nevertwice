@@ -183,22 +183,32 @@ def ceiling_for(tag: str, *, arm: str, stand: str, unit_tokens: int,
 @dataclass(frozen=True)
 class HopStats:
     """One arm's pilot measurements on a stand (A9 publishes them): p95 seconds per sequential hop, the embed ceiling
-    in embeds per second, and the judges' seconds per question."""
+    in embeds per second, and the judges' seconds per answer - one read's answer, a question at one point (R9)."""
     hop95_llm: float
     hop95_embed: float
     hop95_read: float
     hop95_reader: float
     embed_ceiling: float
-    judge_s_per_question: float
+    judge_s_per_answer: float
 
 
 @dataclass(frozen=True)
 class UnitLoad:
-    """One (run, unit) of a block: its write ops as (llm_calls, embed_calls) and its questions as reader points."""
+    """One (run, unit) of a block: its write ops as (llm_calls, embed_calls) and, per question, its number of reader
+    points - each point one read and one answer the judges score (R9; unit_load builds it from the read plan)."""
     run: str
     unit: str
     ops: tuple = ()
     questions: tuple = ()
+
+
+def unit_load(run: str, unit: str, *, ops: tuple, reads: Sequence[Any]) -> UnitLoad:
+    """R9 (Row V): a unit's load from its read plan (run_v3_plan.read_plan: one ReadReq per question and point) - each
+    question's number of reads, in the plan's question order, so an S1 arm read at B, K and V counts 3 per question."""
+    per_q: dict[str, int] = {}
+    for r in reads:
+        per_q[r.qid] = per_q.get(r.qid, 0) + 1
+    return UnitLoad(run=run, unit=unit, ops=tuple(ops), questions=tuple(per_q.values()))
 
 
 @dataclass(frozen=True)
@@ -222,7 +232,8 @@ class Projection:
 
 def project_hours(stats: HopStats, loads: Sequence[BlockLoad]) -> Projection:
     """The D5 candidate: blocks run one after another (the S3 barrier); inside a block the units of every run go in
-    parallel, so a stage lasts as long as its slowest (run, unit)."""
+    parallel, so a stage lasts as long as its slowest (run, unit). The judges score every answer, a question at each of
+    its points (R9)."""
     if not (_real(stats.embed_ceiling) and stats.embed_ceiling > 0):
         raise SchedulerError("the embed ceiling is a measured rate > 0")
     w = q = j = 0.0
@@ -232,7 +243,7 @@ def project_hours(stats: HopStats, loads: Sequence[BlockLoad]) -> Projection:
         w += max(max(sum(llm * stats.hop95_llm + emb * stats.hop95_embed for llm, emb in u.ops) for u in b.units),
                  b.embeds / stats.embed_ceiling)
         q += max(sum(p * (stats.hop95_read + stats.hop95_reader) for p in u.questions) for u in b.units)
-        j += sum(len(u.questions) for u in b.units) * stats.judge_s_per_question
+        j += sum(sum(u.questions) for u in b.units) * stats.judge_s_per_answer
     return Projection(write_h=w / 3600, question_h=q / 3600, judge_h=j / 3600)
 
 
