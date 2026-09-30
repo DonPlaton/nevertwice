@@ -196,5 +196,15 @@ check("every name sandbox_guard closes is a name the pacer takes an Ollama host 
       set(sandbox_guard.CLOSED_OLLAMA) <= set(pacer._HOST_ENV_VARS),
       str(sorted(set(sandbox_guard.CLOSED_OLLAMA) - set(pacer._HOST_ENV_VARS))))
 
+print("\n- K2 condition (M31 part 1 checkable): the transport classes of httpx AND httpx2 are retryable -")
+k2c = {name: pacer._is_llm_retryable_transport_exc(exc) for name, exc in (
+    ("httpx.ConnectError", httpx.ConnectError("refused")), ("httpx.TimeoutException", httpx.TimeoutException("slow")),
+    ("httpx2.ConnectError", httpx2.ConnectError("refused")), ("httpx2.TimeoutException", httpx2.TimeoutException("slow")),
+    ("ValueError", ValueError("a programming error")))}
+check("K2c-P1: the pacer's transport check - its httpx and httpx2 imports literal, so M31 can read them - still counts "
+      "each library's ConnectError and TimeoutException as a retryable transport failure, and never a ValueError",
+      k2c == {"httpx.ConnectError": True, "httpx.TimeoutException": True, "httpx2.ConnectError": True,
+              "httpx2.TimeoutException": True, "ValueError": False}, str(k2c))
+
 print(f"\npacer k45: {PASSED} passed, {FAILED} failed")
 sys.exit(1 if FAILED else 0)

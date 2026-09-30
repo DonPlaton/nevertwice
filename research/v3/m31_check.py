@@ -5,7 +5,9 @@ module of the product its config selects must be provided by the very wheels the
 installed, run or unpacked; the result, m31.json, is written beside the download record and bound to it by sha256.
 
 * part 1 - the adapter and the files copied beside it (run_v3_plan.ARMS: adapter and code), read by AST: import, from
-  and importlib.import_module/__import__ with a literal (a non-literal one is listed as unresolved, by line);
+  and importlib.import_module/__import__ with a literal - a non-literal or a relative one there is listed as
+  unresolved AND is a problem by file and line (our code is checkable; the auditor's condition to K2), while in the
+  product's closure such an import stays an unresolved record for E5;
 * part 2 - each third-party top-level name to the distribution whose RECORD installs it, from the wheels themselves (read
   in the zip; every wheel checked against the lock's sha256 again first - a moved one refuses);
 * part 3 - the product's modules the adapter imports and those its config selects through the product's factories
@@ -244,9 +246,15 @@ def run_m31(*, venv_name: str, run: str, runs_root: Path, stdlib, stdlib_source:
         for fname, data, is_adapter in files:
             sites, unres = imports_of(data, fname)
             unresolved += [{"where": f"{fname}:{u['line']}", "why": u["why"]} for u in unres]
+            # the auditor's condition to K2: our own code is checkable - a non-literal or relative import in the
+            # adapter or a file beside it is a problem, not only unresolved (in the product's closure it stays a record)
+            problems += [f"part 1 {arm}: {fname}:{u['line']} {u['why']} - our adapter's imports are literal and "
+                         "absolute, or M31 cannot check them" for u in unres]
             for s in sites:
                 if s["level"]:
                     unresolved.append({"where": f"{fname}:{s['line']}", "why": f"a relative import (level {s['level']})"})
+                    problems.append(f"part 1 {arm}: {fname}:{s['line']} a relative import (level {s['level']}) - our "
+                                    "adapter's imports are literal and absolute, or M31 cannot check them")
                     continue
                 top = s["module"].split(".")[0]
                 if top in stdlib or top in beside or top == "__future__":

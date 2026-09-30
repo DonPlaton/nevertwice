@@ -461,12 +461,18 @@ def _is_llm_retryable_transport_exc(obj) -> bool:
     candidates = (obj, getattr(obj, "reason", None), getattr(obj, "__cause__", None),
                  getattr(obj, "__context__", None))
     types: tuple = (TimeoutError, ConnectionResetError, ConnectionRefusedError)
-    for lib in ("httpx", "httpx2"):          # (б) b-a: httpx2 raises its own, unrelated classes
-        try:
-            mod = __import__(lib)
-            types = types + (mod.TimeoutException, mod.ConnectError)
-        except (ImportError, AttributeError):
-            pass
+    # (б) b-a: httpx2 raises its own, unrelated classes. Each library imported by a literal name - never
+    # __import__(a variable) - so M31 can check this copy beside a competitor's adapter (the auditor's K2 condition)
+    try:
+        import httpx  # noqa: PLC0415
+        types = types + (httpx.TimeoutException, httpx.ConnectError)
+    except (ImportError, AttributeError):
+        pass
+    try:
+        import httpx2  # noqa: PLC0415
+        types = types + (httpx2.TimeoutException, httpx2.ConnectError)
+    except (ImportError, AttributeError):
+        pass
     return any(isinstance(c, types) for c in candidates if c is not None)
 
 

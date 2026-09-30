@@ -188,6 +188,45 @@ try:
           err2 is None and rec2["unprovided"] == [] and rec2["problems"] == [] and "lazydep" in names(rec2, "lazy_unprovided"),
           str(err2 or (rec2["unprovided"], rec2["problems"])))
 
+    print("\n- part 1 is checkable (the auditor's condition to K2, 2026-09-30): our imports are literal and absolute -")
+    ADAPTER_NL = ADAPTER + b"import importlib\ndef late(n):\n    return importlib.import_module(n)\n"
+    BESIDE_REL = {**BESIDE, "helper.py": b"from . import base\n"}
+    runs17, _b17 = world("part1", [W_PRODX, W_DEPA, W_OLLAMA, *W_ADD])
+    r17, e17 = holds(lambda: m31(runs17, arms_sources={"prodx-arm": {"adapter": ("arm_prodx.py", ADAPTER_NL),
+                                                                     "beside": BESIDE_REL}}))
+    p17 = (r17 or {}).get("problems") or []
+    u17 = [u.get("where", "") for u in (r17 or {}).get("unresolved") or []]
+    check("M3-17: a non-literal import_module in our adapter is a problem in m31.json by name (its file and line) - and "
+          "still listed as unresolved; our code must be checkable, so --install-from refuses it",
+          e17 is None and any("arm_prodx.py:16" in p and "non-literal" in p for p in p17) and "arm_prodx.py:16" in u17,
+          str(e17 or (p17, u17))[:400])
+    check("M3-18: a relative import in a file beside the adapter is a problem in m31.json by name (helper.py:1)",
+          e17 is None and any("helper.py:1" in p and "relative import" in p for p in p17), str(e17 or p17)[:400])
+    PRODX_NL = {**PRODX, "prodx/modlevel.py": "import modleveldep\nimport importlib\n\ndef g(n):\n"
+                                              "    return importlib.import_module(n)\n"}
+    runs19, _b19 = world("part3", [wheel("prodx", "1.0.0", PRODX_NL), W_DEPA, W_OLLAMA, *W_ADD])
+    r19, e19 = holds(lambda: m31(runs19))
+    check("M3-19: in the product's closure a non-literal import stays a record for E5 (unresolved) - never a problem: "
+          "the vendor's code is what it is",
+          e19 is None and r19["problems"] == [] and any("prodx/modlevel.py:5" in u.get("where", "") for u in r19["unresolved"]),
+          str(e19 or (r19["problems"], r19["unresolved"]))[:400])
+    real_part1 = {}
+    try:
+        _real_arms = sorted({a for v in M.VENV_ARMS.values() for a in v})
+        _real_src = M.load_arm_sources(_real_arms)
+        for a in _real_arms:
+            for fname, data in [_real_src[a]["adapter"], *sorted(_real_src[a]["beside"].items())]:
+                s_, un_ = M.imports_of(data, fname)
+                bad_ = [f"{fname}:{u['line']} {u['why']}" for u in un_] + [f"{fname}:{x['line']} relative"
+                                                                           for x in s_ if x["level"]]
+                if bad_:
+                    real_part1[a] = real_part1.get(a, []) + bad_
+    except Exception as e:  # noqa: BLE001 - the row FAILs by name
+        real_part1 = {"error": f"{type(e).__name__}: {e}"}
+    check("M3-20: the real adapters of VENV_ARMS and every file beside them import only literally and absolutely - "
+          "their M31 has no part-1 problem to refuse (the pacer's httpx/httpx2 imports are literal)",
+          real_part1 == {}, str(real_part1)[:400])
+
     print("\n- refusals: no verdict -")
     r3, e3 = holds(lambda: m31(world("probs", [W_PRODX], problems=["job 1 failed"])[0]))
     check("M3-8: a download with problems gets no verdict - refused by name, no m31.json",
