@@ -111,6 +111,7 @@ NOT_FROM_THREADS = {
     "research/v3/run_v3_proxy.py::_load": "build_config / build_secrets / start, the main thread",
     "research/v3/run_v3_smoke.py::_load": "summarize after the stand, the main thread",
     "research/v3/sched_ctl.py::_scheduler": "module level (STAGES), at import",
+    "research/v3/sm_bundle.py::_load": _CLI,
     "research/v3/status_log.py::_file_lock": "StatusLog.__init__, the main thread",
     "research/v3/templates.py::_cp": "stand_template / freeze_fragment, before the stand",
     "research/v3/templates.py::_locomo_category": "locomo_question, building the questions before the stand",
