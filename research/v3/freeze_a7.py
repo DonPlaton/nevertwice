@@ -6,7 +6,8 @@ A7's own lists and table:
 * windows: the A7 runs the auditor cleared himself (m6 --window PASS), each record file by its sha256 - a record that is
   missing or whose bytes moved stops the build, nothing is written; a cleared record WITH problems stops it unless its
   entry carries the ruling note, the problems verbatim and the excluded request (a7-npm-d d1: npm's 404 by construction);
-* failed_runs: the A7 runs that were not cleared, by sha256 and a one-line reason;
+* failed_runs: the runs that were not cleared, by sha256 and a one-line reason - A7's (FAILED_A7) and A8's (FAILED_A8,
+  the auditor 2026-09-30: an A8 window's failure is never an A7 list's), each with its stage (A8 for every a8- window);
 * issuers: every TLS issuer the records name is public (R-A3-7), every contacted host has one - contacted is what a
   record's catcher tunnelled (Q-DH-1 = O-a); a declared host never tunnelled is its window's declared_not_reached
   (a8-supermemory-bin b2: objects.githubusercontent.com);
@@ -119,6 +120,24 @@ FAILED_A7 = [
      "reason": "the e-print answered 301 to arxiv.org/src/2501.13956v1, not followed (0 redirects); its OAI part was "
                "read (CC BY-NC-SA 4.0, v1 only) and s3 reads it again - the auditor's Q-D8-6 = O-a"},
 ]
+#: The A8 runs that were NOT cleared (the auditor 2026-09-30 12:5x: FREEZE-V3 sees both with their reasons) - kept by
+#: sha256 with the reason, never used; their venvs moved to polygon\_failed.
+FAILED_A8 = [
+    {"window": "a8-pypi-scorer_v3", "run": "p1", "files": {
+        "_fetch/a8-pypi-scorer_v3/p1/record.json": "cca20df56fc66f680075eb22ff52e552a5d2cefa71ae7b227f15a9a7d6deb148",
+        "_install/a8-pypi-scorer_v3/p1/install_record.json":
+            "a041db3f0a5bf0fa1418941f7fb7760e550f0129de68073a33e8ae4b36da1a59"},
+     "reason": "site-packages held setuptools' distutils-precedence.pth, a site problem before the auditor's Q-SC-PTH "
+               "(which then allowed exactly that file by owner, version and sha256); the venv moved to "
+               "polygon\\_failed\\scorer_v3_p1 - p2 after the gate"},
+    {"window": "a8-pypi-mem0_v3", "run": "x", "files": {
+        "_fetch/a8-pypi-mem0_v3/x/record.json": "27df502d0565b05ee7cc8b94acff726d6e1df9684cec45ea9e09b546b614291a",
+        "_install/a8-pypi-mem0_v3/x/install_record.json":
+            "80a69f12f23c4d07970d3095847a569db7fe1d802ecfe92808839fdb7bfd74ca"},
+     "reason": "test-triggered window without GO (SP-7), 2026-09-30 09:49 - a unit row called lock_install.main() "
+               "unstubbed on the old code and it opened this window; never used, the venv moved to "
+               "polygon\\_failed\\mem0_v3_x, and run label x is never taken again"},
+]
 
 
 def _load(name: str, path: Path):
@@ -154,12 +173,15 @@ def build(runs_root: Path, *, pins: dict, filled: dict, prereg: dict, cleared: l
             raise FreezeRefused(f"the prereg section has no sha256 for {need}")
     try:
         out = F3.build(runs_root, pins=pins, filled=filled, cleared=CLEARED_A7 if cleared is None else cleared,
-                       failed=FAILED_A7 if failed is None else failed, unrecorded={} if unrecorded is None else unrecorded)
+                       failed=FAILED_A7 + FAILED_A8 if failed is None else failed,     # A7's, then A8's
+                       unrecorded={} if unrecorded is None else unrecorded)
     except FreezeRefused as e:
         if "not filled - A3 is not complete" in str(e):
             raise FreezeRefused(str(e).replace("A3 is not complete", "A7 is not complete (after its windows only)")) from None
         raise
     out.pop("prereg_rev1", None)                   # A3's own line; A7's prereg is the anchor's blobs
+    for f in out["failed_runs"]:                   # the auditor 2026-09-30: every failed run names its stage
+        f["stage"] = "A8" if f["window"].startswith("a8-") else "A7"
     out["prereg"] = dict(sorted(prereg.items()))
     return out
 

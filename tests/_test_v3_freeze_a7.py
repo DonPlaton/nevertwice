@@ -382,17 +382,17 @@ from types import SimpleNamespace as _NS  # noqa: E402
 
 main_out, main_err = None, None
 if F7 is not None and R is not None:
-    _saved = (F7._load, F7.CLEARED_A7, F7.FAILED_A7)
+    _saved = (F7._load, F7.CLEARED_A7, F7.FAILED_A7, getattr(F7, "FAILED_A8", None))
     try:
         F7._load = lambda name, path: {"v3_launch": _NS(Contract=_NS(default=lambda: _NS(runs_root=R))),
                                        "v3_corpus_pin_freeze_a7": _NS(PINS_A7=PINS7, FILLED_A7=FILLED7)}[name]
-        F7.CLEARED_A7, F7.FAILED_A7 = CL, FA
+        F7.CLEARED_A7, F7.FAILED_A7, F7.FAILED_A8 = CL, FA, []    # the fixture has no A8 records
         rc_ = F7.main(["--out", str(TMP / "freeze_a7_main.json")])
         main_out = (rc_, json.loads((TMP / "freeze_a7_main.json").read_bytes()))
     except Exception as e:  # noqa: BLE001
         main_err = f"{type(e).__name__}: {e}"
     finally:
-        F7._load, F7.CLEARED_A7, F7.FAILED_A7 = _saved
+        F7._load, F7.CLEARED_A7, F7.FAILED_A7, F7.FAILED_A8 = _saved
 try:
     head_ = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, check=True).stdout.decode().strip()
 except Exception as e:  # noqa: BLE001
@@ -418,6 +418,49 @@ check("F7-14: the A7 pin_fill shas CLEARED_A7 names are the committed evidence's
       f714[0] is True, str(f714[1]))
 check("F7-12: the same records give the same bytes (sorted JSON, LF)",
       ok(lambda: F7.render(OUT) == F7.render(json.loads(F7.render(OUT))) and b"\r\n" not in F7.render(OUT)), "")
+
+print("\n- A8's failed runs (the auditor 2026-09-30 12:5x): FREEZE-V3 sees them with their reasons -")
+WANT_A8 = {("a8-pypi-scorer_v3", "p1"): {
+               "_fetch/a8-pypi-scorer_v3/p1/record.json": "cca20df56fc66f680075eb22ff52e552a5d2cefa71ae7b227f15a9a7d6deb148",
+               "_install/a8-pypi-scorer_v3/p1/install_record.json":
+                   "a041db3f0a5bf0fa1418941f7fb7760e550f0129de68073a33e8ae4b36da1a59"},
+           ("a8-pypi-mem0_v3", "x"): {
+               "_fetch/a8-pypi-mem0_v3/x/record.json": "27df502d0565b05ee7cc8b94acff726d6e1df9684cec45ea9e09b546b614291a",
+               "_install/a8-pypi-mem0_v3/x/install_record.json":
+                   "80a69f12f23c4d07970d3095847a569db7fe1d802ecfe92808839fdb7bfd74ca"}}
+fa8 = getattr(F7, "FAILED_A8", None) or []
+r8 = {(e["window"], e["run"]): e.get("reason", "") for e in fa8}
+check("F7-18: FAILED_A8 holds A8's two failed runs by sha256 - a8-pypi-scorer_v3 p1 (setuptools' distutils-precedence.pth "
+      "before Q-SC-PTH, p2 after the gate) and a8-pypi-mem0_v3 x (the test-triggered window without GO, 09:49) - never in "
+      "FAILED_A7",
+      ok(lambda: {(e["window"], e["run"]): e["files"] for e in fa8} == WANT_A8
+         and "distutils-precedence.pth" in r8[("a8-pypi-scorer_v3", "p1")] and "Q-SC-PTH" in r8[("a8-pypi-scorer_v3", "p1")]
+         and "p2" in r8[("a8-pypi-scorer_v3", "p1")]
+         and "test-triggered window without GO (SP-7), 2026-09-30 09:49" in r8[("a8-pypi-mem0_v3", "x")]
+         and not any((e["window"], e["run"]) in WANT_A8 for e in F7.FAILED_A7)), str(sorted(r8))[:300])
+try:
+    FA8 = copy.deepcopy(fa8)
+    for e in FA8:
+        e["files"] = {rel: put(R, rel, {"window": e["window"], "run": e["run"], "problems": ["a site problem"]})
+                      for rel in e["files"]}
+    _saved8 = (F7.FAILED_A7, F7.FAILED_A8)
+    try:                                           # the default failed list: FAILED_A7, then FAILED_A8, at call time
+        F7.FAILED_A7, F7.FAILED_A8 = FA, FA8
+        OUT8 = F7.build(R, pins=PINS7, filled=FILLED7, prereg=PREREG, cleared=CL)
+    finally:
+        F7.FAILED_A7, F7.FAILED_A8 = _saved8
+    st8 = [(f["window"], f["run"], f.get("stage"), f.get("reason") == (r8.get((f["window"], f["run"]))
+                                                                        or next(e["reason"] for e in F7.FAILED_A7
+                                                                                if (e["window"], e["run"])
+                                                                                == (f["window"], f["run"]))))
+           for f in OUT8["failed_runs"]]
+except Exception as e:  # noqa: BLE001 - the row FAILs by name
+    st8 = f"{type(e).__name__}: {e}"
+check("F7-19: by default the fragment's failed_runs are FAILED_A7's then FAILED_A8's, each with its reason and its stage "
+      "- A8 for every a8- window (a8-supermemory-bin b1, a8-pypi-scorer_v3 p1, a8-pypi-mem0_v3 x), A7 for the rest",
+      st8 == [("a7-npm", "g1", "A7", True), ("a7-arxiv", "d1", "A7", True), ("a8-supermemory-bin", "b1", "A8", True),
+              ("a7-arxiv-src", "s1", "A7", True), ("a7-arxiv-src", "s2", "A7", True),
+              ("a8-pypi-scorer_v3", "p1", "A8", True), ("a8-pypi-mem0_v3", "x", "A8", True)], str(st8)[:500])
 check("no row's condition raised", RAISED == [], str(RAISED))
 shutil.rmtree(TMP, ignore_errors=True)
 print(f"\nv3 freeze a7: {PASSED} passed, {FAILED} failed")
