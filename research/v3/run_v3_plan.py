@@ -533,7 +533,9 @@ class PlanLauncher:
     ablation's window, Q14); ``extra``: the run config's values the arm needs (EXTRA_NEEDED) and nothing else;
     ``v_template``: Row V (Q4 = (a)) - the templates.Template of an arm whose V context is vendor-rendered
     (templates.arm_template, from its pinned source at launch), its sha256 the one points.V_DEFAULTS pins; it goes into
-    the arm's read spec on a V stand, never into a file of the repository."""
+    the arm's read spec on a V stand, never into a file of the repository. The auditor's Q9 = (a): a launcher may be
+    built unbound (``proxy`` None) - its points are checked before the forecast - and is bound ONCE to the run's proxy
+    by bind_proxy after the proxy starts; nothing is planned for a child before that."""
 
     def __init__(self, arm: str, *, stand: str, python: str | os.PathLike, proxy: Any, stager: CodeStager,
                  unit_block: Mapping[str, str], embed_tag: str, dated: bool, unit_chars: Mapping[str, int] | None = None,
@@ -568,6 +570,19 @@ class PlanLauncher:
                 raise PlanError(f"{arm}: the Point V template {getattr(v_template, 'sha256', None)} is not the pinned "
                                 f"one {e.get('template_sha256')} (points.V_DEFAULTS; its text hashed again)")
         self.copies: dict[tuple[str, str], tuple[Path, dict]] = {}
+
+    def bind_proxy(self, proxy: Any) -> None:
+        """The run's ProxyHandle, once (Q9 = (a)): a second bind, or a bind to no proxy, is refused by name."""
+        if proxy is None:
+            raise PlanError(f"{self.arm}: bind_proxy was given no proxy")
+        if self.proxy is not None:
+            raise PlanError(f"{self.arm}: its launcher is already bound to the run's proxy - bound once (Q9 = (a))")
+        self.proxy = proxy
+
+    def _bound(self) -> None:
+        if self.proxy is None:
+            raise PlanError(f"{self.arm}: its launcher is not bound to the run's proxy yet - bind_proxy after the proxy "
+                            "starts (Q9 = (a)); nothing is planned for a child before")
 
     def check_points(self, points: Sequence[str]) -> None:
         """Row V before the stand: an arm whose V context is rendered reads V only with its template (Q4 = (a))."""
@@ -605,6 +620,7 @@ class PlanLauncher:
 
     # the child
     def spec_for(self, stage: str, *, stand: str, run: str, unit: str, dirs: Any, write_dirs: Any) -> dict:
+        self._bound()
         check_ids((run,), (unit,))
         if stand != self.stand:
             raise PlanError(f"{self.arm}: its launcher is for {self.stand}, not {stand}")
@@ -658,6 +674,7 @@ class PlanLauncher:
 
     def declared(self) -> dict:
         """The arm's constant values: its proxy token under the one name its adapter checks."""
+        self._bound()
         n = self.token_name()
         if n is None:
             return {}
@@ -668,6 +685,7 @@ class PlanLauncher:
 
     def declared_for(self, stage: str, *, stand: str, run: str, unit: str, dirs: Any, write_dirs: Any) -> dict:
         """The values that name the unit (condition 2: the arm's own port, /u/<run>.<unit> of this unit)."""
+        self._bound()
         check_ids((run,), (unit,))
         if self.spec.adapter == "runner_nevertwice.py":
             llm = self.arm in RUNNER_LLM
@@ -739,6 +757,40 @@ class PlanLauncher:
 
 def _mod(name: str, rel: str):
     return _load(name, HERE / rel)
+
+
+def v_cut(got: Mapping[str, Any], text: str, kept: int, tokens_full: int) -> dict | str:
+    """M33 (the auditor's Q5 = (a)): a rendered V context's fact and entity lines against what the cap kept - a line is
+    whole when it ends within the kept characters, partial when the cut falls inside it, lost when it starts at or after
+    it; counts only, never text. The read's spans ({facts: [[a, b], ...], entities: [...]}, character offsets into the
+    rendered text, as many as its edges and nodes) are checked first: spans that cannot be trusted make the whole
+    measure "unmeasured: <reason>" - a named pilot problem - and never touch the answer."""
+    sp = got.get("v_spans")
+    if not isinstance(sp, Mapping):
+        return "unmeasured: the read carries no v_spans"
+    out: dict = {"tokens_full": tokens_full, "kept_chars": kept}
+    for kind, count_key in (("facts", "edges"), ("entities", "nodes")):
+        lines = sp.get(kind)
+        if not isinstance(lines, list):
+            return f"unmeasured: v_spans has no list of {kind}"
+        if got.get(count_key) != len(lines):
+            return f"unmeasured: {len(lines)} {kind} spans against the read's {got.get(count_key)!r} {count_key}"
+        whole = partial = lost = 0
+        for ln in lines:
+            if not (isinstance(ln, (list, tuple)) and len(ln) == 2 and all(isinstance(x, int) and not isinstance(x, bool)
+                                                                         for x in ln)):
+                return f"unmeasured: a {kind} span {ln!r} is not a pair of offsets"
+            a, b = ln
+            if not 0 <= a <= b <= len(text):
+                return f"unmeasured: a {kind} span {ln!r} is not inside the rendered text ({len(text)} characters)"
+            if b <= kept:
+                whole += 1
+            elif a < kept:
+                partial += 1
+            else:
+                lost += 1
+        out.update({kind: len(lines), f"{kind}_whole": whole, f"{kind}_partial": partial, f"{kind}_lost": lost})
+    return out
 
 
 class Answerer:
@@ -835,7 +887,7 @@ class Answerer:
                 fh.write(blob)
         except FileExistsError:
             raise PlanError(f"{f}: an answer for {req.qid!r} at point {req.point} was already written") from None
-        return {"qid": req.qid, "point": req.point, "k": getattr(req, "k", None), "shape": shape,
+        row = {"qid": req.qid, "point": req.point, "k": getattr(req, "k", None), "shape": shape,
                 "template_sha256": v_sha, "arm_items": got.get("items_returned"), "context_sha256": text_sha256(ctx.text),
                 "context_tokens": ctx.tokens, "items_offered": ctx.items_offered, "items_used": ctx.items_used,
                 "last_cut": ctx.last_cut, "prompt_sha256": text_sha256(prompt), "reply_sha256": text_sha256(res.text),
@@ -844,6 +896,9 @@ class Answerer:
                 "format_failure": res.format_failure, "overlong": res.overlong, "thinking_seen": res.thinking_seen,
                 "usage": dict(res.usage), "request_keys": keys, "text_file": str(f.relative_to(self.root.parent)),
                 "text_sha256": hashlib.sha256(blob).hexdigest()}
+        if shape == "rendered":                            # M33: the cap's cut of a rendered V, counted by its lines
+            row["v_cut"] = v_cut(got, texts[0], len(ctx.text), self.count(texts[0]))
+        return row
 
 
 # ── part 3: the stand plan ─────────────────────────────────────────────────────────────────────────────────────

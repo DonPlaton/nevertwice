@@ -827,6 +827,59 @@ try:
           and rowb.get("template_sha256") is None and rowb.get("k") == 200 and "hi from the store" not in json.dumps(rowb),
           str({k: rowb.get(k) for k in ("shape", "template_sha256", "k", "error")}))
 
+    print("\n- M33 (A2; Q5 = (a)): at a rendered V the Answerer counts each fact and entity line whole, partial or lost -")
+    VSP = spans(LONGV)
+    GOOD_SPANS = {"facts": [[VSP[0][0], VSP[2999][1]], [VSP[3000][0], VSP[7499][1]]],
+                  "entities": [[VSP[7500][0], VSP[8999][1]]]}
+
+    def vread(run, **over):
+        got = {"items": [zitem()], "items_returned": 1, "edges": 2, "nodes": 1, "v_spans": GOOD_SPANS}
+        got.update(over)
+        try:
+            return ansv("zep-graphiti", run, "u1", reqv, got)
+        except Exception as e:  # noqa: BLE001 - the row FAILs by name
+            return {"error": f"{type(e).__name__}: {e}"}
+
+    r4 = vread("m33a")
+    check("T-AN-V4 (M33): the cap cuts zep's rendered V after 7,000 of its 9,000 tokens - of its 2 fact lines one is kept "
+          "whole and one partial, its 1 entity line is lost; v_cut counts them (never text) beside tokens_full and "
+          "kept_chars", r4.get("v_cut") == {"tokens_full": 9000, "kept_chars": VSP[6999][1], "facts": 2,
+                                            "facts_whole": 1, "facts_partial": 1, "facts_lost": 0, "entities": 1,
+                                            "entities_whole": 0, "entities_partial": 0, "entities_lost": 1},
+          str(r4.get("v_cut") or r4.get("error"))[:400])
+    KEPT = VSP[6999][1]
+    r4b = vread("m33a2", v_spans={"facts": [[0, KEPT], [KEPT, VSP[7499][1]]], "entities": [[VSP[7500][0], VSP[8999][1]]]})
+    check("T-AN-V4b (M33, the boundary): a line that ends exactly where the cap cut is whole, a line that starts exactly "
+          "there is lost - never partial", (r4b.get("v_cut") or {}).get("facts_whole") == 1
+          and (r4b.get("v_cut") or {}).get("facts_partial") == 0 and (r4b.get("v_cut") or {}).get("facts_lost") == 1,
+          str(r4b.get("v_cut") or r4b.get("error"))[:300])
+    bad5 = {"beyond the text": vread("m33b", v_spans={**GOOD_SPANS, "entities": [[VSP[7500][0], len(LONGV) + 5]]}),
+            "an end before its start": vread("m33c", v_spans={**GOOD_SPANS, "facts": [[10, 5], GOOD_SPANS["facts"][1]]}),
+            "fewer fact spans than edges": vread("m33d", edges=3),
+            "no v_spans": vread("m33e", v_spans=None),
+            "not a pair": vread("m33f", v_spans={**GOOD_SPANS, "facts": [[0], GOOD_SPANS["facts"][1]]})}
+    keep = ("context_sha256", "context_tokens", "last_cut", "reply_sha256", "shape", "template_sha256")
+    check("T-AN-V5 (M33): spans the Answerer cannot trust - beyond the text, an end before its start, counts that are not "
+          "the read's edges and nodes, none at all, not a pair - make v_cut 'unmeasured: <reason>', and the answer is "
+          "untouched (the same context, cut and reply as a measured one)",
+          all(isinstance(v.get("v_cut"), str) and v["v_cut"].startswith("unmeasured:") for v in bad5.values())
+          and all({k: v.get(k) for k in keep} == {k: r4.get(k) for k in keep} for v in bad5.values()),
+          str({k: v.get("v_cut") or v.get("error") for k, v in bad5.items()})[:500])
+    SHORTV = "fact one\nfact two\nEntity: summary"
+    r6 = vread("m33g", items=[zitem(text=SHORTV)], v_spans={"facts": [[0, 8], [9, 17]], "entities": [[18, 33]]})
+    check("T-AN-V6 (M33, guard): a rendered V the cap does not cut keeps every line whole - none partial or lost",
+          r6.get("last_cut") is False and r6.get("v_cut") == {
+              "tokens_full": 6, "kept_chars": len(SHORTV), "facts": 2, "facts_whole": 2, "facts_partial": 0,
+              "facts_lost": 0, "entities": 1, "entities_whole": 1, "entities_partial": 0, "entities_lost": 0},
+          str(r6.get("v_cut") or r6.get("error"))[:300])
+    rb7 = {}
+    try:
+        rb7 = ansv("mem0", "m33h", "u1", SC.ReadReq(qid="u1:q1", query="q", point="B", k=200), READ)
+    except Exception as e:  # noqa: BLE001
+        rb7 = {"error": f"{type(e).__name__}: {e}"}
+    check("T-AN-V6b (M33, guard): an items read carries no v_cut at all", "v_cut" not in rb7 and "error" not in rb7,
+          str(rb7)[:200])
+
     print("\n- TR, SP: the truncation per arm-run, stand_plan -")
     trunc = TK.Truncator(spans, cap=9, specials=2)            # 7 words: the dated LME lines (5) fit, u5:1 (11) does not
     LONG = unit("u5", [("s1", "2023/05/20 (Sat) 02:21", [("u5:1", "one two three four five six seven", "user", None),
@@ -922,6 +975,27 @@ try:
                                             k_at=PT.K_AT))
     check("SP: an arm with no plan (cognee: no adapter, A8) and a dotted run id are refused by name",
           "no plan" in unk and "not [A-Za-z0-9_-]" in bad_run, f"{unk} | {bad_run}")
+
+    print("\n- A2 (Q9 = (a)): a launcher is built unbound, bound once to the run's proxy after it starts -")
+    ub = PL.PlanLauncher("mem0", stand="S4", python=PY, proxy=None, stager=stager, unit_block=UB,
+                         embed_tag="nvt3-bge-m3-d1:latest", dated=True, unit_chars={u: 5000 for u in UB})
+    unbound = {"spec_for": refused(lambda: ub.spec_for("write", stand="S4", run="rb1", unit="u1",
+                                                       dirs=dirs("mem0", "rb1", "u1"), write_dirs=None)),
+               "declared": refused(lambda: ub.declared()),
+               "declared_for": refused(lambda: ub.declared_for("write", stand="S4", run="rb1", unit="u1",
+                                                               dirs=dirs("mem0", "rb1", "u1"), write_dirs=None))}
+    bind1 = refused(lambda: ub.bind_proxy(PX))
+    after = refused(lambda: ub.spec_for("write", stand="S4", run="rb1", unit="u1", dirs=dirs("mem0", "rb1", "u1"),
+                                        write_dirs=None))
+    bind2 = refused(lambda: ub.bind_proxy(PX))
+    ub2 = PL.PlanLauncher("mem0", stand="S4", python=PY, proxy=None, stager=stager, unit_block=UB,
+                          embed_tag="nvt3-bge-m3-d1:latest", dated=True, unit_chars={u: 5000 for u in UB})
+    bind_none = refused(lambda: ub2.bind_proxy(None))
+    check("T-PL-V4 (Q9 = (a)): an unbound launcher refuses spec_for, declared and declared_for by name (not bound); "
+          "bind_proxy binds it once - then it plans - and a second bind, or a bind to no proxy, is refused by name",
+          all("not bound" in v for v in unbound.values()) and bind1 == "accepted" and after == "accepted"
+          and "bound" in bind2 and bind2 != "accepted" and "no proxy" in bind_none,
+          str({**unbound, "bind1": bind1, "after": after, "bind2": bind2, "none": bind_none})[:500])
 
     print("\n- PL-V (Row V): the plan reads V at each arm's own default, on S1 alone -")
 
