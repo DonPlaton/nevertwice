@@ -271,8 +271,10 @@ def _absolute_anywhere(path: str) -> bool:
 def fill(name: str, *, revision: str, sha256: str, size: int, licence_found: str | None, path: str | None = None,
          pins: dict | None = None) -> dict:
     """Fill a pin once, from a verified fetch record. A second fill, or a found licence that differs from the declared
-    one, is refused."""
+    one, is refused; so is a name the table does not hold (B-FILL-KEY)."""
     table = pins if pins is not None else PINS
+    if name not in table:
+        raise PinRefused(f"{name}: not a pin of this table")
     p = table[name]
     if p["sha256"] is not None:
         raise PinRefused(f"{name}: already pinned; a pin is filled once")

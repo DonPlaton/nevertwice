@@ -81,6 +81,16 @@ import re  # noqa: E402
 check("no v3 pin carries a sha256 or a size before its window - but the oracle, which is the v2 pin by value (Q-A3F-8)",
       all(p["sha256"] is None and p["bytes"] is None for n, p in v3_only.items() if n != "lme_oracle_cleaned"),
       str([n for n, p in v3_only.items() if p["sha256"] is not None]))
+_fk_value = {"revision": "r", "sha256": "0" * 64, "bytes": 1, "licence_found": "MIT", "from": "test"}
+check("FK-1 (B-FILL-KEY): fill() on a name outside its table is refused by name - never a KeyError",
+      refused(lambda: CP.fill("no_such_pin", revision="r", sha256="0" * 64, size=1, licence_found="MIT",
+                              pins=copy.deepcopy(CP.PINS_DECLARED)), CP.PinRefused, "no_such_pin: not a pin of this table")
+      and refused(lambda: CP.fill("lme_s_cleaned", revision="r", sha256="0" * 64, size=1, licence_found="MIT",
+                                  pins=copy.deepcopy(CP.PINS_A7_DECLARED)), CP.PinRefused,
+                  "lme_s_cleaned: not a pin of this table"))
+check("FK-2 (B-FILL-KEY): a FILLED_A7 block that names a pin PINS_A7 does not hold stops the import's apply by name",
+      refused(lambda: CP._apply_filled(copy.deepcopy(CP.PINS_A7_DECLARED), {"minilm_vocab_x": dict(_fk_value)}),
+              CP.PinRefused, "minilm_vocab_x: not a pin of this table"))
 check("Q-A3F-8: lme_oracle_cleaned is ONE pin - the v2 oracle's sha256 and size, marked as its alias, never filled again",
       (CP.PINS["lme_oracle_cleaned"]["sha256"], CP.PINS["lme_oracle_cleaned"]["bytes"])
       == (V2.CORPORA["longmemeval_oracle"]["sha256"], V2.CORPORA["longmemeval_oracle"]["bytes"])
