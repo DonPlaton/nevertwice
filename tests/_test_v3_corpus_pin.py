@@ -292,13 +292,14 @@ check("A7-1: PINS_A7 holds exactly the 62 pins the auditor fixed - the 17 of pha
 COG_FROM = "a7-cognee-tag d1 1b5d58bfb9f4"
 A7_FROM = "a7-github g1 pin_fill acae9e52bc93"       # the window run the auditor cleared (2026-09-30 03:0x)
 MINI_FROM = "a7-discovery d1 1689534abb10"
+HF_FROM = "a7-hf h1 pin_fill 449a89fca362"         # the window run the auditor cleared (2026-09-30 05:3x)
 check("A7-2: every GitHub pin of A7 is a file of the window a7-github, filled from its cleared run (a7-github g1, "
       "pin_fill acae9e52bc93: a 64-hex sha256 and a size), its revision from a discovery record that holds its tree - "
       "phase 2's from a3-discovery d1 or d2, cognee's from a7-cognee-tag d1; every MiniLM pin a file of a7-hf (hf-model), "
-      "unfilled until it, its revision from a7-discovery d1",
+      "filled from its cleared run (a7-hf h1, pin_fill 449a89fca362), its revision from a7-discovery d1",
       bool(A7) and all(
-          ((p["source"], p["window"], str(p["revision_from"]), p["sha256"], p["bytes"])
-           == ("hf-model", "a7-hf", MINI_FROM, None, None)) if n in MINILM else
+          ((p["source"], p["window"], str(p["revision_from"]), p.get("filled_from")) == ("hf-model", "a7-hf", MINI_FROM, HF_FROM)
+           and isinstance(p["sha256"], str) and len(p["sha256"]) == 64 and isinstance(p["bytes"], int)) if n in MINILM else
           (p["source"] == "github" and p["window"] == "a7-github" and p.get("filled_from") == A7_FROM
            and isinstance(p["sha256"], str) and len(p["sha256"]) == 64 and isinstance(p["bytes"], int)
            and (str(p["revision_from"]) == COG_FROM if n in COGNEE

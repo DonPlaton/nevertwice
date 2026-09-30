@@ -100,7 +100,11 @@ WANT_CLEARED = {
                          "_fetch/a7-arxiv/d2/d6_report.json": "9c93889a05577ce03e077e1b68e2f826e03f211b72f9b7e7a4023d5c11d3e638"},
     ("a8-supermemory-bin", "b2"): {
         "_fetch/a8-supermemory-bin/b2/record.json": "83b5bc3652ad1a4119fa29a6b93b181d5b05bc7894c664018a664603334cbc91",
-        "_install/a8-supermemory-bin/b2/bin_record.json": "6de665abf22c26c012c8aebc2588c71ea08ad1ab2559c128369277d7a8ad3b7d"}}
+        "_install/a8-supermemory-bin/b2/bin_record.json": "6de665abf22c26c012c8aebc2588c71ea08ad1ab2559c128369277d7a8ad3b7d"},
+    # the auditor's clearing of a7-hf h1 (2026-09-30 05:3x): the ten MiniLM files
+    ("a7-hf", "h1"): {"_fetch/a7-hf/h1/record.json": "970344e56358bcb3c137d2f8c5c7ab9aa855c792f434d9ef31d7c33adbfcdbd7",
+                      "_fetch/a7-hf/h1/place_record.json": "3aa4ab44d4d9d1e37249b57052f3405edafd1e8679ef3784010c10d81175ff48",
+                      "_fetch/a7-hf/h1/pin_fill.json": "449a89fca362ab4aa85d6408236cb8ba37ab56e04c2a6ddfeea75f59e8094afe"}}
 WANT_FAILED = {("a7-npm", "g1"): {"_fetch/a7-npm/g1/record.json": "fb4212e565e4233c86ef4432ec48a3e09d2bd031f6ffc84a875cc46e2ff84f8d"},
                ("a7-arxiv", "d1"): {"_fetch/a7-arxiv/d1/record.json": "854b13dd774ada2c5d94ef19ac4ba6b34685590ab293d49338c9f6eaa9ca11a6",
                                     "_fetch/a7-arxiv/d1/d6_report.json": "e3d01b8e784ba0af38c16df0632f98204ef6f9dc4e014b37b2e937deaddc36e4"},
@@ -111,8 +115,8 @@ NPM_PROBLEMS = ["job 0: the fetch child exited with 3", "job 0 request npm:packa
 PREREG = {"research/v3/PREREG-V3-rev1.md": "1" * 64, "research/v3/PREREG-V3-AMENDMENTS.md": "2" * 64}
 
 print("- the declared lists are the auditor's -")
-check("F7-1: CLEARED_A7 is exactly the auditor's eight runs - the four of Q-F7, a7-github g1, a7-hf-d d1, a7-arxiv d2 "
-      "and a8-supermemory-bin b2 - with their seventeen record files by sha256, and FAILED_A7 is a7-npm g1 (npm answers "
+check("F7-1: CLEARED_A7 is exactly the auditor's nine runs - the four of Q-F7, a7-github g1, a7-hf-d d1, a7-arxiv d2, "
+      "a8-supermemory-bin b2 and a7-hf h1 - with their twenty record files by sha256, and FAILED_A7 is a7-npm g1 (npm answers "
       "404; revision 1's channel, erratum A3 T32), a7-arxiv d1 (429, nothing read) and a8-supermemory-bin b1 (R-GHR-ISS, "
       "superseded by b2), each by its records' sha256 with the reason named",
       ok(lambda: {(e["window"], e["run"]): e["files"] for e in F7.CLEARED_A7} == WANT_CLEARED
@@ -166,6 +170,11 @@ def world(tag: str, *, npm_problems=NPM_PROBLEMS, gh_org="Sectigo Limited"):
                        "issuers": [["huggingface.co", "Amazon", "Amazon RSA 2048 M01"]]},
            "a7-arxiv": {"window": "a7-arxiv", "run": "d2", "problems": [], "hosts": ["export.arxiv.org"],
                         "issuers": [["export.arxiv.org", "Certainly", "Certainly Intermediate R1"]]},
+           "a7-hf": {"window": "a7-hf", "run": "h1", "problems": [], "hosts": ["huggingface.co", "us.aws.cdn.hf.co"],
+                     "catcher": [{"host": h, "port": 443, "tunnelled": True, "refused": False, "hop_status": 200}
+                                 for h in ("huggingface.co", "us.aws.cdn.hf.co")],
+                     "issuers": [["huggingface.co", "Amazon", "Amazon RSA 2048 M01"],
+                                 ["us.aws.cdn.hf.co", "Amazon", "Amazon RSA 2048 M04"]]},
            # b2's form: four declared hosts, its catcher tunnelled three (Q-DH-1: objects.githubusercontent.com never)
            "a8-supermemory-bin": {"window": "a8-supermemory-bin", "run": "b2", "problems": [],
                                   "hosts": ["api.github.com", "github.com", "objects.githubusercontent.com",
@@ -244,7 +253,8 @@ check("F7-4: its pins are PINS_A7 as filled - all 62 (a7-github's 52 and a7-hf's
                          and all(v["filled_from"] == "a7-github g1 pin_fill 0123456789ab" for v in OUT["pins"].values())
                          and sorted(OUT["issuers"]) == ["api.github.com", "export.arxiv.org", "github.com", "huggingface.co",
                                                         "raw.githubusercontent.com", "registry.npmjs.org",
-                                                        "release-assets.githubusercontent.com"]), str(oerr))
+                                                        "release-assets.githubusercontent.com", "us.aws.cdn.hf.co"]),
+      str(oerr))
 check("F7-5: the prereg section is the given revision 1 and amendments sha256 at the anchor - and nothing of A3's "
       "(no models, venvs, facts, d1_tag, prereg_rev1)", ok(lambda: OUT["prereg"] == PREREG and not set(OUT) & {
           "models", "venvs", "facts", "d1_tag", "local_v2", "prereg_rev1"}), str(sorted(OUT)))
@@ -341,7 +351,8 @@ try:
             for p_ in FIX7.rglob("pin_fill.json") if p_.relative_to(FIX7).parts[0].startswith("a7-")}
     decl7 = {rel.split("/", 2)[1] + "/" + rel.split("/")[2]: s for e in F7.CLEARED_A7 for rel, s in e["files"].items()
              if rel.endswith("/pin_fill.json")}
-    f714 = (fix7 == decl7 == {"a7-github/g1": "acae9e52bc935a5752f384fbcc0cd26521e20c97878056d3318963f782296472"}), None
+    f714 = (fix7 == decl7 == {"a7-github/g1": "acae9e52bc935a5752f384fbcc0cd26521e20c97878056d3318963f782296472",
+                              "a7-hf/h1": "449a89fca362ab4aa85d6408236cb8ba37ab56e04c2a6ddfeea75f59e8094afe"}), None
 except Exception as e:  # noqa: BLE001
     f714 = (False, f"{type(e).__name__}: {e}")
 check("F7-14: the A7 pin_fill shas CLEARED_A7 names are the committed evidence's (tests/fixtures/v3_pin_fill/a7-*)",

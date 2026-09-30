@@ -71,6 +71,11 @@ CLEARED_A7 = [
     {"window": "a8-supermemory-bin", "run": "b2", "kind": "binary", "files": {
         "_fetch/a8-supermemory-bin/b2/record.json": "83b5bc3652ad1a4119fa29a6b93b181d5b05bc7894c664018a664603334cbc91",
         "_install/a8-supermemory-bin/b2/bin_record.json": "6de665abf22c26c012c8aebc2588c71ea08ad1ab2559c128369277d7a8ad3b7d"}},
+    # all-MiniLM-L6-v2's ten files (BEAM's alignment, S5), after the auditor's m6/m5/secret_scan of the run (05:3x)
+    {"window": "a7-hf", "run": "h1", "kind": "fetch", "files": {
+        "_fetch/a7-hf/h1/record.json": "970344e56358bcb3c137d2f8c5c7ab9aa855c792f434d9ef31d7c33adbfcdbd7",
+        "_fetch/a7-hf/h1/place_record.json": "3aa4ab44d4d9d1e37249b57052f3405edafd1e8679ef3784010c10d81175ff48",
+        "_fetch/a7-hf/h1/pin_fill.json": "449a89fca362ab4aa85d6408236cb8ba37ab56e04c2a6ddfeea75f59e8094afe"}},
 ]
 #: The A7 runs that were NOT cleared - kept by sha256 with the reason, never used.
 FAILED_A7 = [
