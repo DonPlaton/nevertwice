@@ -11,6 +11,7 @@ A7's own lists and table:
   record's catcher tunnelled (Q-DH-1 = O-a); a declared host never tunnelled is its window's declared_not_reached
   (a8-supermemory-bin b2: objects.githubusercontent.com);
 * pins: PINS_A7 as filled (FILLED_A7) - every pin filled, or the build stops ("A7 is not complete");
+* binaries: supermemory-local's server from a8-supermemory-bin b2 (Q-BIN-1 = O-a), by freeze_a3's binaries section;
 * prereg: the sha256 of every research/v3/PREREG-V3*.md tracked at the anchor commit, by its git blob - revision 1 and
   the amendments at least - and the anchor itself; never the working copy.
 A window after these (a7-github, a7-arxiv, a8-supermemory-bin, a7-hf-d, a7-hf) joins CLEARED_A7 only as a line written

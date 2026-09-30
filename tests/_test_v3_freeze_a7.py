@@ -135,6 +135,21 @@ def put(root: Path, rel: str, obj: dict) -> str:
     return hashlib.sha256(raw).hexdigest()
 
 
+B2_SHA = "d8fb2ac0d52eeb230ad15dc8bf70dbc2ae481f0f8cfaeec70d97f7955ce71c47"
+
+
+def bin_rec(docs_sha: str) -> dict:
+    """a8-supermemory-bin b2's bin_record in its real shape - the fields the binaries section reads (Q-BIN-1 = O-a)."""
+    exe = "supermemory-server-windows-x64.exe"
+    return {"window": "a8-supermemory-bin", "run": "b2", "repo": "supermemoryai/supermemory", "tag": "server-v0.0.8",
+            "commit": "5d2b5855fe492a3682a1cde4a255e2db0c4db595", "version": "0.0.8", "sha256": B2_SHA,
+            "bytes": 291315712, "binary_started": False, "problems": [], "sums_line": {"name": exe, "sha256": B2_SHA},
+            "docs_record": {"path": "D:/Coding/_nevertwice_polygon/runs/v3/_fetch/a7-docs/d1/d4_report.json",
+                            "sha256": docs_sha},
+            "job": {"assets": [{"name": exe, "size": 291315712, "digest": "sha256:" + B2_SHA},
+                               {"name": exe + ".sha256", "size": 101, "digest": "sha256:" + "c4" * 32}]}}
+
+
 def world(tag: str, *, npm_problems=NPM_PROBLEMS, gh_org="Sectigo Limited"):
     """A fake runs tree shaped like the real one: (runs_root, cleared, failed), each file by its fake sha256."""
     r = TMP / tag / "runs"
@@ -161,11 +176,16 @@ def world(tag: str, *, npm_problems=NPM_PROBLEMS, gh_org="Sectigo Limited"):
                                   "issuers": [["api.github.com", "Sectigo Limited", "Sectigo Public Server Authentication CA DV E36"],
                                               ["github.com", "Sectigo Limited", "Sectigo Public Server Authentication CA DV E36"],
                                               ["release-assets.githubusercontent.com", "Let's Encrypt", "YR1"]]}}
-    cleared = []
+    cleared, shas = [], {}
     for e in copy.deepcopy(F7.CLEARED_A7):
         w = e["window"]
-        e["files"] = {rel: put(r, rel, rec[w] if rel.endswith("/record.json") else {"window": w, "problems": []})
-                      for rel in e["files"]}
+        files = {}
+        for rel in e["files"]:
+            obj = (rec[w] if rel.endswith("/record.json")
+                   else bin_rec(shas["_fetch/a7-docs/d1/d4_report.json"]) if rel.endswith("/bin_record.json")
+                   else {"window": w, "problems": []})
+            files[rel] = shas[rel] = put(r, rel, obj)
+        e["files"] = files
         cleared.append(e)
     failed = copy.deepcopy(F7.FAILED_A7)
     for e in failed:
@@ -201,6 +221,18 @@ check("F7-3: the fragment holds the four cleared runs and the failed one, each f
          and OUT["windows"][3]["problems"] == {k: (2 if k.endswith("record.json") else 0) for k in CL[3]["files"]}
          and [(f["window"], f["run"]) for f in OUT["failed_runs"]] == [("a7-npm", "g1"), ("a7-arxiv", "d1"),
                                                                         ("a8-supermemory-bin", "b1")]), str(oerr))
+check("F7-16: the fragment's binaries section pins supermemory-local's server (Q-BIN-1 = O-a) - a8-supermemory-bin b2: "
+      "server-v0.0.8 at 5d2b5855, the Windows asset, its sha256 = the release digest, its size, the a7-docs record it was "
+      "read from and its window record, each by sha256",
+      ok(lambda: oerr is None and OUT["binaries"] == {"a8-supermemory-bin": {
+          "run": "b2", "repo": "supermemoryai/supermemory", "tag": "server-v0.0.8",
+          "commit": "5d2b5855fe492a3682a1cde4a255e2db0c4db595", "asset": "supermemory-server-windows-x64.exe",
+          "sha256": B2_SHA, "bytes": 291315712, "digest": "sha256:" + B2_SHA,
+          "docs_record": {"path": "_fetch/a7-docs/d1/d4_report.json",
+                          "sha256": {r: s for e in CL for r, s in e["files"].items()}["_fetch/a7-docs/d1/d4_report.json"]},
+          "window_record": {"path": "_fetch/a8-supermemory-bin/b2/record.json",
+                            "sha256": {r: s for e in CL for r, s in e["files"].items()}[
+                                "_fetch/a8-supermemory-bin/b2/record.json"]}}}), str(oerr))
 check("F7-15: a8-supermemory-bin b2's window names objects.githubusercontent.com declared_not_reached (Q-DH-1 = O-a) - "
       "declared, never tunnelled, so no issuer is asked of it; no other window carries the list",
       ok(lambda: oerr is None and {w["window"]: w.get("declared_not_reached") for w in OUT["windows"]

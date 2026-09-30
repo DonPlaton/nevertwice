@@ -8,6 +8,9 @@
 * a record's contacted hosts are the ones its catcher tunnelled (Q-DH-1 = O-a): each needs its issuer, a declared host
   never tunnelled needs none and is named in its window's declared_not_reached; a catcher line that is neither a tunnel
   nor a refusal stops the build;
+* a cleared binary run is pinned in the binaries section (Q-BIN-1 = O-a) - refused by name when its bin_record or its
+  window record is missing, the binary ran, the record has problems, no asset is its checksum line's binary, its sha256
+  or size is not that asset's, or the docs record it was read from is not cleared; no binary run, no section;
 * every non-alias v3 pin is filled, or the build stops;
 * models, the D1 tag, the local-v2 places, the venvs and the facts record come from their cleared records;
 * the same records give the same bytes (sorted JSON, LF);
@@ -278,7 +281,7 @@ def dh(tag: str, lines: object, *, hosts: tuple = B2_HOSTS, issuers: list | None
     and its catcher lines."""
     r, cl, fl, pre = tree(tag)
     rel = "_fetch/a8-bin/b2/record.json"
-    cl.append({"window": "a8-bin", "run": "b2", "kind": "binary", "files": {rel: put(r, rel, {
+    cl.append({"window": "a8-bin", "run": "b2", "kind": "fetch", "files": {rel: put(r, rel, {
         "hosts": list(hosts), "issuers": B2_ISSUERS if issuers is None else issuers, "catcher": lines, "problems": []})}})
     return r, cl, fl, pre
 
@@ -329,6 +332,77 @@ check("DH-6: a window whose every declared host was tunnelled carries no declare
 fz_none, err_none = dh_build("dh_empty", [], issuers=[])
 check("DH-7: an empty catcher tunnelled nothing - no issuer is needed and every declared host is declared_not_reached",
       err_none is None and entry(fz_none, "a8-bin").get("declared_not_reached") == sorted(B2_HOSTS), str(err_none))
+
+print("\n- Q-BIN-1: a cleared binary run is pinned in the binaries section -")
+BSHA = "b" * 64
+
+
+def bin_tree(tag: str, *, bin_over: dict | None = None, files_drop: str | None = None, entry_over: dict | None = None):
+    """tree() and a cleared binary run in the shape of a8-supermemory-bin b2: its window record and its bin_record, which
+    names the cleared docs record it was read from."""
+    r, cl, fl, pre = tree(tag)
+    docs_rel = "_fetch/docs/d1/d4_report.json"
+    docs_sha = put(r, docs_rel, {"problems": []})     # the same bytes as facts j3's record: matched by path too
+    cl.append({"window": "docs", "run": "d1", "kind": "report", "files": {docs_rel: docs_sha}})
+    wrel, brel = "_fetch/bin-w/b2/record.json", "_install/bin-w/b2/bin_record.json"
+    b = {"window": "bin-w", "run": "b2", "repo": "o/r", "tag": "v1", "commit": "c" * 40, "sha256": BSHA, "bytes": 9,
+         "binary_started": False, "problems": [], "sums_line": {"name": "srv.exe", "sha256": BSHA},
+         "docs_record": {"path": "D:/polygon/runs/v3/_fetch/docs/d1/d4_report.json", "sha256": docs_sha},
+         "job": {"assets": [{"name": "srv.exe.sha256", "size": 70, "digest": "sha256:" + "d" * 64},
+                            {"name": "srv.exe", "size": 9, "digest": "sha256:" + BSHA}]}}
+    b.update(bin_over or {})
+    if b["docs_record"] == "AT ANOTHER PATH":           # the right bytes, named at a path no cleared file has
+        b["docs_record"] = {"path": "D:/polygon/runs/v3/_fetch/other/d1/d4_report.json", "sha256": docs_sha}
+    files = {wrel: put(r, wrel, {"hosts": [], "problems": []}), brel: put(r, brel, b)}
+    if files_drop:
+        files.pop(files_drop)
+    e = {"window": "bin-w", "run": "b2", "kind": "binary", "files": files}
+    e.update(entry_over or {})
+    cl.append(e)
+    return r, cl, fl, pre, files, docs_sha
+
+
+def bin_build(tag: str, **kw) -> tuple:
+    r, cl, fl, pre, files, dsha = bin_tree(tag, **kw)
+    try:
+        return F.build(r, pins=CP.PINS, cleared=cl, failed=fl, prereg=pre), None, files, dsha
+    except Exception as e:  # noqa: BLE001 - a refusal FAILs the row by name
+        return {}, f"{type(e).__name__}: {e}", files, dsha
+
+
+fz_bin, err_bin, files_b, dsha_b = bin_build("bin_ok")
+check("BIN-1: a cleared binary run is pinned by its window in binaries - its tag, commit, the asset named by its checksum "
+      "line, its sha256 (= the asset's digest), its size, the cleared docs record it was read from and its window record, "
+      "each by sha256", err_bin is None and fz_bin.get("binaries") == {"bin-w": {
+          "run": "b2", "repo": "o/r", "tag": "v1", "commit": "c" * 40, "asset": "srv.exe", "sha256": BSHA, "bytes": 9,
+          "digest": "sha256:" + BSHA, "docs_record": {"path": "_fetch/docs/d1/d4_report.json", "sha256": dsha_b},
+          "window_record": {"path": "_fetch/bin-w/b2/record.json", "sha256": files_b["_fetch/bin-w/b2/record.json"]}}},
+      str(err_bin or fz_bin.get("binaries")))
+check("BIN-2: a fragment without a binary run has no binaries section (freeze_a3.json stays byte for byte)",
+      "binaries" not in fz, str(sorted(fz)))
+PROB = "job 0: the fetch child exited with 3"
+bin_bad = {
+    "no bin_record": (dict(files_drop="_install/bin-w/b2/bin_record.json"), "names no bin_record.json"),
+    "its window record not cleared": (dict(files_drop="_fetch/bin-w/b2/record.json"),
+                                      "its window record _fetch/bin-w/b2/record.json is not among the cleared files"),
+    "binary_started True": (dict(bin_over={"binary_started": True}), "binary_started is True, not False"),
+    "binary_started missing": (dict(bin_over={"binary_started": None}), "binary_started is None, not False"),
+    "problems under a ruling note": (dict(bin_over={"problems": [PROB]}, entry_over={
+        "note": "n", "problems_verbatim": [PROB], "excluded": [{"job": 0, "requests": ["x:y"]}]}),
+        "its bin_record carries 1 problem"),
+    "no asset named as its checksum line's binary": (dict(bin_over={"sums_line": {"name": "other.exe", "sha256": BSHA}}),
+                                                     "no release asset is named as its checksum line's binary"),
+    "sha256 not the asset's digest": (dict(bin_over={"sha256": "e" * 64}), "is not the release asset's digest"),
+    "size not the asset's": (dict(bin_over={"bytes": 10}), "is not the release asset's size"),
+    "docs record not cleared": (dict(bin_over={"docs_record": {"path": "x", "sha256": "f" * 64}}),
+                                "its docs_record (ffffffffffff) is not a cleared file"),
+    "docs record at another path than its cleared file": (dict(bin_over={"docs_record": "AT ANOTHER PATH"}),
+                                                          "is not a cleared file"),
+}
+for i_, (label, (kw_, words)) in enumerate(bin_bad.items()):
+    _fz, err_x, _files, _d = bin_build(f"bin_bad_{i_}", **kw_)
+    check(f"BIN-3 ({label}): the build is refused by name", bool(err_x) and err_x.startswith("FreezeRefused")
+          and words in err_x, str(err_x))
 
 print("\n- the declared lists: exactly the auditor's verdicts -")
 got_cleared = sorted((e["window"], e["run"]) for e in F.CLEARED)

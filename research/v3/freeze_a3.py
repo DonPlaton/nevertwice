@@ -15,6 +15,13 @@ is missing or whose bytes moved stops the build (FreezeRefused), nothing is writ
   window's declared_not_reached (written only when there is one); a catcher line that is neither a tunnel nor a refusal
   stops the build. A record without a catcher (a tool record) contacted its request URLs' hosts;
 * pins: the v3 pin table as filled (research/v3/corpus_pin_v3.py) - every non-alias pin filled or the build stops;
+* binaries: every cleared binary run (kind "binary", the auditor's Q-BIN-1 = O-a: FREEZE-V3 3a pins the competitors'
+  versions explicitly) by its window - tag, commit, the asset its checksum line names, sha256, size, digest, the docs
+  record it was read from (its sha256 and its path) and its window record, each by sha256; the build stops by name
+  when the bin_record or the
+  window record is not among the entry's cleared files, the binary ran (binary_started not False), the record has
+  problems, no release asset is the checksum line's binary, the sha256 is not that asset's digest or the size its
+  size, or the docs record is not a cleared file; no binary run, no section;
 * models: the A3.h inventory's pinned models (digest and the 12-hex pin) and the Ollama version;
 * d1_tag: the D1 tag's digest, its base and its Modelfile sha256 (A3.i) - every embedding stand checks the tag at this
   digest before its first embed;
@@ -175,6 +182,43 @@ def _issuer_rows(rec: dict) -> list:
     return rows
 
 
+def _binary(e: dict, recs: dict, cleared: list) -> dict:
+    """The binaries section's entry of one cleared binary run (Q-BIN-1 = O-a); FreezeRefused names the first clause
+    that fails."""
+    w, r = e["window"], e["run"]
+    name = f"{w} {r}"
+    brel = next((rel for rel in e["files"] if rel.endswith("/bin_record.json")), None)
+    if brel is None:
+        raise FreezeRefused(f"{name}: the binary entry names no bin_record.json")
+    wrel = f"_fetch/{w}/{r}/record.json"
+    if wrel not in e["files"]:
+        raise FreezeRefused(f"{name}: its window record {wrel} is not among the cleared files")
+    b = recs[(w, r, brel)]
+    if b.get("problems"):
+        raise FreezeRefused(f"{name}: its bin_record carries {len(b['problems'])} problem(s)")
+    if b.get("binary_started") is not False:
+        raise FreezeRefused(f"{name}: binary_started is {b.get('binary_started')!r}, not False - the binary must not have "
+                            "run before the freeze")
+    exe = (b.get("sums_line") or {}).get("name")
+    asset = next((a for a in (b.get("job") or {}).get("assets") or [] if exe and a.get("name") == exe), None)
+    if asset is None:
+        raise FreezeRefused(f"{name}: no release asset is named as its checksum line's binary ({exe!r})")
+    if asset.get("digest") != f"sha256:{b.get('sha256')}":
+        raise FreezeRefused(f"{name}: its sha256 {str(b.get('sha256'))[:12]} is not the release asset's digest "
+                            f"{str(asset.get('digest'))[:19]}")
+    if asset.get("size") != b.get("bytes"):
+        raise FreezeRefused(f"{name}: its size {b.get('bytes')} is not the release asset's size {asset.get('size')}")
+    docs = b.get("docs_record") or {}
+    docs_sha, docs_path = docs.get("sha256"), str(docs.get("path") or "").replace("\\", "/")
+    drel = next((rel for c in cleared for rel, sha in c["files"].items()   # its bytes AND its place: never a twin's
+                 if docs_sha and sha == docs_sha and docs_path.endswith("/" + rel)), None)
+    if drel is None:
+        raise FreezeRefused(f"{name}: its docs_record ({str(docs_sha)[:12]}) is not a cleared file")
+    return {"run": r, "repo": b.get("repo"), "tag": b.get("tag"), "commit": b.get("commit"), "asset": asset["name"],
+            "sha256": b["sha256"], "bytes": b["bytes"], "digest": asset["digest"],
+            "docs_record": {"path": drel, "sha256": docs_sha}, "window_record": {"path": wrel, "sha256": e["files"][wrel]}}
+
+
 def build(runs_root: Path, *, pins: dict, filled: dict | None = None, cleared: list | None = None,
           failed: list | None = None, prereg: Path | None = None, unrecorded: dict | None = None) -> dict:
     """The freeze fragment from the cleared records (each by sha256); raises FreezeRefused before anything is written."""
@@ -270,6 +314,8 @@ def build(runs_root: Path, *, pins: dict, filled: dict | None = None, cleared: l
             "wheels": rec.get("wheels"), "installed_set_sha256": rec.get("installed_set_sha256"),
             "installed_files": rec.get("installed_files"), "tag": rec.get("tag"),
             "pip": {k: (rec.get("pip") or {}).get(k) for k in ("version", "certifi_sha256", "trust")}}
+    for e in by_kind.get("binary", []):
+        out.setdefault("binaries", {})[e["window"]] = _binary(e, recs, cleared)
     for e in by_kind.get("facts", []):
         rel, sha = next(iter(e["files"].items()))
         out["facts"] = {"run": e["run"], "record": rel, "sha256": sha,
