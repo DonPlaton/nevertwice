@@ -20,6 +20,7 @@ files.pythonhosted.org behind a fake hop and a local TLS server with a throwaway
 from __future__ import annotations
 
 import hashlib
+import json
 import importlib.util
 import io
 import os
@@ -154,10 +155,7 @@ def contract(tag):
                       system_dirs=(Path(sys.executable).parent,)), base
 
 
-def install(tag, routes, specs, imports, dists, parent_env=None):
-    srv = TF.TlsHttpServer(made[0], made[1], routes)
-    hop = TF.TunnelHop(srv.port)
-    c, base = contract(tag)
+def _link_base(c) -> None:
     # LI-1: the declared base is polygon/py312/python.exe - here a junction to this interpreter's directory, its version
     # this interpreter's (the test world's base; the real one is fetch_py_base's py-base-312). G2 (the auditor's gate):
     # off Windows the interpreter is not named python.exe (ae1ea4e's LI-1 refused ".../py312/python" on Linux), so
@@ -179,6 +177,29 @@ def install(tag, routes, specs, imports, dists, parent_env=None):
         target = os.path.realpath(own if own.exists() else (getattr(sys, "_base_executable", None) or sys.executable))
         for name in ("python.exe", "python", f"python{sys.version_info[0]}", f"python{mm}"):
             os.symlink(target, c.polygon_root / "py312" / name)
+
+
+def _unlink_base(c) -> None:
+    link = c.polygon_root / "py312"
+    if os.name == "nt":
+        if link.exists():
+            os.rmdir(link)                                     # the junction only, never its target
+    else:
+        for ln in (link.iterdir() if link.is_dir() else ()):
+            if ln.is_symlink():
+                ln.unlink()                                    # the links only, never the interpreter
+        if link.is_dir():
+            link.rmdir()
+
+
+BASES = {"py-base-312": {"version": platform.python_version(), "dest": "py312", "newest_of": None}}
+
+
+def install(tag, routes, specs, imports, dists, parent_env=None):
+    srv = TF.TlsHttpServer(made[0], made[1], routes)
+    hop = TF.TunnelHop(srv.port)
+    c, base = contract(tag)
+    _link_base(c)
     try:
         rec = LI.run_lock_install(c, L, F, python=c.polygon_root / "py312" / "python.exe",
                                   venv=c.polygon_root / "t_v3", venv_name="t_v3", base="py-base-312",
@@ -195,17 +216,54 @@ def install(tag, routes, specs, imports, dists, parent_env=None):
     finally:
         hop.close()
         srv.close()
-        link = c.polygon_root / "py312"
-        if os.name == "nt":
-            if link.exists():
-                os.rmdir(link)                                     # the junction only, never its target
-        else:
-            for ln in (link.iterdir() if link.is_dir() else ()):
-                if ln.is_symlink():
-                    ln.unlink()                                    # the links only, never the interpreter
-            if link.is_dir():
-                link.rmdir()
+        _unlink_base(c)
     return rec, c, base
+
+
+AFTER_DOWNLOAD: dict[str, dict] = {}
+
+
+def two_phase(tag, routes, specs, imports, dists, *, m31: dict | None = None):
+    """K1 (Q-SPLIT-1..6): --download-only through the window (a resolver venv in the run's directory, no product venv),
+    then an m31.json bound to that download (clean unless ``m31`` overrides), then --install-from offline as a product,
+    then a second --install-from. Returns (download record, install record, second attempt's refusal, c). What the
+    download alone left on the disk goes into AFTER_DOWNLOAD[tag], read before the install-from writes its own."""
+    srv = TF.TlsHttpServer(made[0], made[1], routes)
+    hop = TF.TunnelHop(srv.port)
+    c, base = contract(tag)
+    _link_base(c)
+    py = c.polygon_root / "py312" / "python.exe"
+    wit = dict(native=L.NativeEgressWitness(sampler=AnySampler(), tick_s=60, jobs=None),
+               fs=L.FsWitness([L.WatchSpec("watched", base / "watched")]))
+    rec_d = rec_i = {}
+    again = ""
+    try:
+        rec_d = LI.run_lock_download(c, L, F, python=py, venv_name="t_v3", run="d1", base="py-base-312", bases=BASES,
+                                     via_port=hop.port, parent_env=os.environ, specs=specs, imports=imports, dists=dists,
+                                     child_env_extra={"SSL_CERT_FILE": str(made[0]), "PIP_CERT": str(made[0])},
+                                     need_bytes=1, volume=TMP, **wit)
+        bd = c.runs_root / "_install" / "a8-pypi-t_v3" / "d1"
+        AFTER_DOWNLOAD[tag] = {"product_venv": (c.polygon_root / "t_v3").exists(),
+                               "install_record": (bd / "install_record.json").exists(),
+                               "download_record": (bd / "download_record.json").is_file()}
+        drs = hashlib.sha256((bd / "download_record.json").read_bytes()).hexdigest()
+        (bd / "m31.json").write_bytes(json.dumps({"venv": "t_v3", "run": "d1", "download_record_sha256": drs,
+                                                  "unprovided": [], "problems": [], **(m31 or {})}).encode())
+        kw = dict(python=py, venv=c.polygon_root / "t_v3", venv_name="t_v3", run="d1", parent_env=os.environ,
+                  base="py-base-312", bases=BASES, imports=imports, dists=dists, product=True, **wit)
+        rec_i = LI.run_lock_install_from(c, L, **kw)
+        try:
+            LI.run_lock_install_from(c, L, **kw)
+            again = "accepted"
+        except LI.LockRefused as e:
+            again = str(e)
+    except Exception as e:  # noqa: BLE001 - a crash fails the checks that follow, by their names
+        rec_i = {**rec_i, "problems": [f"crash: {type(e).__name__}: {e}"], "crashed": True}
+    finally:
+        hop.close()
+        srv.close()
+        _unlink_base(c)
+    return rec_d, rec_i, again, c
 
 
 A = wheel("nvt3a", "1.0.0", requires=("nvt3b>=0.1",))
@@ -301,6 +359,37 @@ rec5, C5, _ = install("pth", index({"nvt3d": [(fn5, buf5.getvalue())]}), ["nvt3d
 check("E5: a locked wheel that adds a .pth is a named site problem, and no interpreter starts in the venv (no import step)",
       any("nvt3d_hook.pth" in p and "every interpreter start" in p for p in rec5.get("problems") or [])
       and rec5.get("import_skipped") and "import_rc" not in rec5, str(rec5.get("problems"))[:400])
+
+print("\n- K1 (Q-SPLIT-1..6): a product in two phases, real pip -")
+if hasattr(LI, "run_lock_download") and hasattr(LI, "run_lock_install_from"):
+    rd, ri, again, CK = two_phase("split", index({"nvt3a": [A], "nvt3b": [B1, B2]}), ["nvt3a==1.0.0"], ["nvt3a", "nvt3b"],
+                                  ["nvt3a", "nvt3b"])
+else:
+    rd, ri, again, CK = {"problems": ["no two phases"]}, {"problems": ["no two phases"]}, "", contract("split")[0]
+BD = CK.runs_root / "_install" / "a8-pypi-t_v3" / "d1"
+check("SE-1 (Q-SPLIT-1 = P-a): --download-only resolves in a resolver venv inside the run's own directory, locks, downloads "
+      "and checks the wheels from the disk through the one window of the two index hosts - and makes NO product venv",
+      rd.get("problems") == [] and rd.get("phase") == "download" and rd.get("wheel_problems") == []
+      and [(e["name"], e["version"]) for e in rd.get("lock") or []] == [("nvt3a", "1.0.0"), ("nvt3b", "0.2.0")]
+      and rd.get("resolver") == str(BD / "resolver") and (BD / "resolver").is_dir() and rd.get("resolver_check") == CLEAN
+      and sorted((rd.get("window_record") or {}).get("tunnelled_hosts") or []) == [FILES, PY]
+      and AFTER_DOWNLOAD.get("split") == {"product_venv": False, "install_record": False, "download_record": True},
+      str({**{k: rd.get(k) for k in ("problems", "phase", "wheel_problems", "resolver_check")},
+           "lock": [(e.get("name"), e.get("version")) for e in rd.get("lock") or []],
+           "hosts": (rd.get("window_record") or {}).get("tunnelled_hosts"), "after_download": AFTER_DOWNLOAD.get("split")})[:600])
+check("SE-2: --install-from after a clean M31 of that download installs offline from its wheels: the venv's pip is the "
+      "resolver's, the imports give the locked versions, every step under a clean check; install_record.json beside the "
+      "download record names the download's and the M31's sha256",
+      ri.get("problems") == [] and ri.get("phase") == "install" and ri.get("pip") == rd.get("pip")
+      and (ri.get("import_versions") or {}).get("dists") == {"nvt3a": "1.0.0", "nvt3b": "0.2.0"}
+      and ri.get("venv_check") == ri.get("install_check") == ri.get("import_check") == CLEAN
+      and ri.get("download_record_sha256") == hashlib.sha256((BD / "download_record.json").read_bytes()).hexdigest()
+      if (BD / "download_record.json").is_file() else False, str({k: ri.get(k) for k in ("problems", "phase", "pip")})[:400])
+check("SE-2b: that install is offline - one pip spawn with no proxy variable, --no-index and the download's lock",
+      "--no-index" in (ri.get("install_argv") or []) and (ri.get("install_argv") or [""])[-1].endswith("lock.txt")
+      and (BD / "install_record.json").is_file(), str(ri.get("install_argv"))[:300])
+check("SE-3 (Q-SPLIT-6 = O-a): a second --install-from of the same download is refused by name - never twice",
+      "already installed" in again, again)
 
 shutil.rmtree(TMP, ignore_errors=True)
 print(f"\nv3 lock install e2e: {PASSED} passed, {FAILED} failed")

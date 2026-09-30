@@ -139,13 +139,26 @@ check("B-NLP: check_versions names a declared distribution that is not in the lo
       cvn == ["the declared distribution spacy is not in the lock"], str(cvn))
 import ast as _ast  # noqa: E402
 _tree = _ast.parse((ROOT / "research" / "v3" / "lock_install.py").read_text(encoding="utf-8"))
-_run = next(n for n in _tree.body if isinstance(n, _ast.FunctionDef) and n.name == "run_lock_install")
-_called = [c.func.id for c in _ast.walk(_run) if isinstance(c, _ast.Call) and isinstance(c.func, _ast.Name)]
+_fns = {n.name: n for n in _tree.body if isinstance(n, _ast.FunctionDef)}
+
+
+def _calls(name: str) -> list:
+    return [c.func.id for c in _ast.walk(_fns[name]) if isinstance(c, _ast.Call) and isinstance(c.func, _ast.Name)] \
+        if name in _fns else []
+
+
+_run = _fns.get("_window") or _fns["run_lock_install"]       # K1: the window's lock is built in _window, for both callers
+_called = _calls(_run.name)
 _kw = [k.arg for c in _ast.walk(_run) if isinstance(c, _ast.Call) and isinstance(c.func, _ast.Name)
        and c.func.id == "lock_step" for k in c.keywords]
-check("B-NLP: the window's lock is lock_step's, with the venv's declared distributions - run_lock_install never calls "
-      "lock_from_report itself (the real-pip case is _test_v3_lock_install_e2e's, under the lock)",
-      _called.count("lock_step") == 1 and "lock_from_report" not in _called and "dists" in _kw, str(_called))
+check("B-NLP: the window's lock is lock_step's, with the venv's declared distributions - the window (_window, which both "
+      "the one-call install and the download phase call, and nothing else builds a lock) never calls lock_from_report "
+      "itself (the real-pip case is _test_v3_lock_install_e2e's, under the lock)",
+      _called.count("lock_step") == 1 and "lock_from_report" not in _called and "dists" in _kw
+      and all(_calls(f).count("_window") == 1 and "lock_step" not in _calls(f)
+              for f in ("run_lock_install", "run_lock_download"))
+      and "lock_step" not in _calls("run_lock_install_from") and "_window" not in _calls("run_lock_install_from"),
+      str(_called))
 
 
 def bad(path, value):
@@ -495,6 +508,194 @@ IV._step(CS, Lseam, stand="_install.a8-pypi-mem0_v3", run="s1", arm="pip", argv=
 check("B-C4B-CWD seam (the auditor): the offline pip step - install_v3_data._step with lock_install's declared env - "
       "passes the contract's own spawn checks (a fresh EMPTY cwd, the env, the argv) with no reason",
       seam.get("reasons") == [] and seam.get("env", {}).get("PIP_CONFIG_FILE") == os.devnull, str(seam.get("reasons")))
+
+print("\n- K1 (the auditor's Q-SPLIT-1..6): a product venv in two phases, the install only after a clean M31 -")
+import contextlib  # noqa: E402
+import io  # noqa: E402
+
+
+class _Reached(Exception):
+    """The first step (a venv made by install_v3_data._step) was reached: every refusal before it passed."""
+
+
+REACHED: list = []
+
+
+def _reach(*a, **k):
+    REACHED.append(k.get("argv"))
+    raise _Reached(k.get("argv"))
+
+
+def reach(fn) -> str:
+    """"reached <argv>" when the call got to its first step, else its refusal (or another failure, named)."""
+    saved = IV._step
+    IV._step = _reach
+    try:
+        fn()
+        return "accepted"
+    except _Reached as e:
+        return f"reached {e.args[0]}"
+    except LI.LockRefused as e:
+        return str(e)
+    except Exception as e:  # noqa: BLE001
+        return f"not refused by name: {type(e).__name__}: {e}"
+    finally:
+        IV._step = saved
+
+
+def sha(b: bytes) -> str:
+    return hashlib.sha256(b).hexdigest()
+
+
+WHL = b"PK\x03\x04 a fake wheel"
+WFN = "mem0ai-2.2.0-py3-none-any.whl"
+ENTRY = {"name": "mem0ai", "version": "2.2.0", "filename": WFN, "url": f"{F}/{WFN}", "sha256": sha(WHL),
+         "requested": True, "licence": "Apache-2.0", "requested_extras": ["nlp"]}
+
+
+def dl_world(run: str, *, venv_name: str = "mem0_v3", problems=(), m31=True, lock_sha: str | None = None) -> Path:
+    """<runs>/_install/a8-pypi-<venv>/<run>: a download record (its wheel on the disk) and, unless m31 is None, an
+    m31.json bound to it - clean unless ``m31`` is a dict of fields to override."""
+    base = C.runs_root / "_install" / f"a8-pypi-{venv_name}" / run
+    wd = C.runs_root / f"_fetch.a8-pypi-{venv_name}" / run / "fetch" / "j1" / "wheels"
+    wd.mkdir(parents=True, exist_ok=True)
+    base.mkdir(parents=True, exist_ok=True)
+    (wd / WFN).write_bytes(WHL)
+    dr = {"window": f"a8-pypi-{venv_name}", "run": run, "phase": "download", "problems": list(problems),
+          "lock": [ENTRY], "lock_sha256": lock_sha or LI.lock_sha256([ENTRY]), "wheel_dir": str(wd),
+          "pip": {"version": "25.2", "args": []}, "specs": ["mem0ai[nlp]==2.2.0"]}
+    raw = (json.dumps(dr, indent=1, sort_keys=True) + "\n").encode()
+    (base / "download_record.json").write_bytes(raw)
+    if m31 is not None:
+        rec = {"venv": venv_name, "run": run, "download_record_sha256": sha(raw), "unprovided": [], "problems": []}
+        if isinstance(m31, dict):
+            rec.update(m31)
+        (base / "m31.json").write_bytes((json.dumps(rec, indent=1) + "\n").encode())
+    return base
+
+
+kwi = dict(python=TMP / "polygon" / "py312" / "python.exe", parent_env={})
+
+
+def install_from(run: str, venv_name: str = "mem0_v3", venv: Path | None = None) -> str:
+    fn = getattr(LI, "run_lock_install_from", None)
+    if fn is None:
+        return "not refused by name: no run_lock_install_from"
+    return reach(lambda: fn(C, Lspy, venv=venv or TMP / "polygon" / f"if_{run}", venv_name=venv_name, run=run, **kwi))
+
+
+REACHED.clear()
+p1 = reach(lambda: LI.run_lock_install(C, Lspy, Fake, venv=TMP / "polygon" / "p1_v3", venv_name="mem0_v3", run="p1", **kw))
+p2 = reach(lambda: LI.run_lock_install(C, Lspy, Fake, venv=TMP / "polygon" / "p2_v3", venv_name="scorer_v3", run="p2", **kw))
+check("SP-1 (Q-SPLIT-4 = O-a): one call installs only a venv that is no product - mem0_v3 is refused by name (two phases: "
+      "--download-only, M31, --install-from) before any directory or step; scorer_v3, no product, reaches its first step",
+      "two phases" in p1 and not (C.runs_root / "_install" / "a8-pypi-mem0_v3" / "p1").exists()
+      and not (TMP / "polygon" / "p1_v3").exists() and p2.startswith("reached"), f"{p1} | {p2}")
+dlf = getattr(LI, "run_lock_download", None)
+d1 = reach(lambda: dlf(C, Lspy, Fake, venv_name="mem0_v3", run="d1", **kw)) if dlf else "no run_lock_download"
+d1_base = C.runs_root / "_install" / "a8-pypi-mem0_v3" / "d1"
+check("SP-2 (Q-SPLIT-1 = P-a): --download-only makes no product venv - its first step is the resolver's venv inside the "
+      "run's own directory (<runs>/_install/a8-pypi-mem0_v3/d1/resolver), isolated and without bytecode",
+      d1.startswith("reached") and bool(REACHED) and (REACHED[-1] or [""])[-1] == os.fspath(d1_base / "resolver")
+      and "-I" in (REACHED[-1] or []) and "-B" in (REACHED[-1] or []), f"{d1} {REACHED[-1:]}")
+d2 = reach(lambda: dlf(C, Lspy, Fake, venv_name="mem0_v3", run="d1", **kw)) if dlf else "no run_lock_download"
+d3 = reach(lambda: dlf(C, Lspy, Fake, venv_name="nope_v3", run="d9", **kw)) if dlf else "no run_lock_download"
+check("SP-3: --download-only on a used run label, or of an undeclared venv, is refused by name before any step",
+      "used before" in d2 and "declares no specs" in d3, f"{d2} | {d3}")
+
+print("  (--install-from: each refusal before the venv is made, nothing reached)")
+REACHED.clear()
+rows = {}
+rows["no download record"] = (install_from("i0"), "no download record")
+dl_world("i1", problems=["job 1: a wheel failed"])
+rows["a download with problems"] = (install_from("i1"), "problems")
+dl_world("i2", m31=None)
+rows["a product without m31.json"] = (install_from("i2"), "m31.json")
+dl_world("i3", m31={"download_record_sha256": "0" * 64})
+rows["an m31.json of another download"] = (install_from("i3"), "not this download")
+dl_world("i4", m31={"unprovided": ["langchain_ollama"]})
+rows["an M31 with unprovided names"] = (install_from("i4"), "langchain_ollama")
+dl_world("i5", m31={"problems": ["part 3: a factory not found"]})
+rows["an M31 with problems"] = (install_from("i5"), "a factory not found")
+b6 = dl_world("i6")
+(b6 / "install_record.json").write_bytes(b"{}\n")
+rows["a download already installed from"] = (install_from("i6"), "already installed")
+dl_world("i7")
+(TMP / "polygon" / "taken_i7").mkdir(parents=True, exist_ok=True)
+rows["an existing venv"] = (install_from("i7", venv=TMP / "polygon" / "taken_i7"), "already exists")
+dl_world("i8")
+(C.runs_root / "_fetch.a8-pypi-mem0_v3" / "i8" / "fetch" / "j1" / "wheels" / WFN).write_bytes(WHL + b"!")
+rows["a wheel changed since the download"] = (install_from("i8"), WFN)
+dl_world("i9", lock_sha="1" * 64)
+rows["a record whose lock is not its lock_sha256"] = (install_from("i9"), "lock_sha256")
+for label, (got, words) in rows.items():
+    check(f"SP-4 --install-from refuses {label}, by name, before the venv",
+          words in got and not got.startswith(("reached", "not refused")), got)
+check("SP-5: none of those refusals made a venv or reached a step", REACHED == [] and len(rows) == 10
+      and all(not got.startswith(("not refused", "reached", "accepted")) for got, _w in rows.values())
+      and not any((TMP / "polygon" / f"if_i{n}").exists() for n in range(10)), str(REACHED[:2]))
+dl_world("c1")
+c1 = install_from("c1")
+dl_world("c2", venv_name="scorer_v3", m31=None)
+c2 = install_from("c2", venv_name="scorer_v3")
+check("SP-6: a clean download with a clean M31 of it reaches the install's first step - the product venv itself; the "
+      "scorer (no product: its import probe is its check) needs no M31",
+      c1.startswith("reached") and bool(REACHED) and (REACHED[0] or [""])[-1] == os.fspath(TMP / "polygon" / "if_c1")
+      and c2.startswith("reached"), f"{c1} | {c2}")
+m_rc = {}
+# main() never reaches the real contract here: a stub launch module (a temporary polygon, no hop) - on code that does not
+# refuse first, main stops at "no declared hop", never at a real window (the old K1 run reached the polygon's mem0_v3)
+_real_load = LI._load
+_stub_l = SimpleNamespace(Contract=SimpleNamespace(default=lambda: SimpleNamespace(polygon_root=TMP / "sp7",
+                                                                                    runs_root=TMP / "sp7" / "runs")),
+                          network_via_port=lambda c_: None)
+LI._load = lambda name, path: _stub_l if name == "v3_launch" else SimpleNamespace()
+try:
+    for label, argv in (("both flags", ["--venv", "mem0_v3", "--run", "x", "--download-only", "--install-from", "x"]),
+                        ("a product in one call", ["--venv", "mem0_v3", "--run", "x"])):
+        err = io.StringIO()
+        try:
+            with contextlib.redirect_stderr(err):
+                m_rc[label] = (LI.main(argv), err.getvalue())
+        except SystemExit as e:
+            m_rc[label] = (f"exit {e.code}", err.getvalue())
+        except Exception as e:  # noqa: BLE001 - a row, never the suite
+            m_rc[label] = (f"crash {type(e).__name__}: {e}", err.getvalue())
+finally:
+    LI._load = _real_load
+check("SP-7: main() refuses --download-only with --install-from, and a product without either (two phases), rc 2 - "
+      "before any contract or window", m_rc["both flags"][0] == 2 and m_rc["a product in one call"][0] == 2
+      and "two phases" in m_rc["a product in one call"][1], str(m_rc))
+
+dl_world("c8")
+STEPS: list = []
+saved8 = {k: getattr(IV, k) for k in ("_step", "check_summary", "check_problems", "pip_facts")}
+
+
+def _venv_step(c_, L_, **k):
+    STEPS.append(k.get("arm"))
+    if k.get("arm") == "venv":
+        vp = IV.venv_python(Path(k["argv"][-1]))
+        vp.parent.mkdir(parents=True, exist_ok=True)
+        vp.write_bytes(b"MZ")
+    return 0, b"", b"", None
+
+
+IV._step, IV.check_summary, IV.check_problems = _venv_step, (lambda chk: {"complete": True}), (lambda key, s: [])
+IV.pip_facts = lambda venv: {"version": "99.0", "args": []}
+try:
+    r8 = LI.run_lock_install_from(C, Lspy, venv=TMP / "polygon" / "if_c8", venv_name="mem0_v3", run="c8", **kwi) \
+        if hasattr(LI, "run_lock_install_from") else {"problems": []}
+    e8 = None
+except Exception as e:  # noqa: BLE001
+    r8, e8 = {}, f"{type(e).__name__}: {e}"
+finally:
+    for k_, v_ in saved8.items():
+        setattr(IV, k_, v_)
+check("SP-8 (Q-SPLIT-1 = P-a): an install venv whose pip is not the resolver's (99.0 against the download's 25.2) is a "
+      "named problem, and pip never runs in it - the lock is resolved and installed by the same pip",
+      e8 is None and any("not the resolver's" in p for p in r8.get("problems") or []) and STEPS == ["venv"]
+      and (C.runs_root / "_install" / "a8-pypi-mem0_v3" / "c8" / "install_record.json").is_file(), f"{e8} {r8.get('problems')} {STEPS}")
 
 shutil.rmtree(TMP, ignore_errors=True)
 print(f"\nv3 lock install: {PASSED} passed, {FAILED} failed")
