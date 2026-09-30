@@ -22,7 +22,9 @@ instrument did not measure is refused, not zeroed):
 * yield_block(): K76 - retrievable_unit_share and coverage over evaluation units; labels only on scored runs;
 * run_record(): the per-run file an END line names (out=), stamped inside its START..END (ruling Q2, m2_v3 S4);
 * build(): the aggregate - input_sha256 = sha256 of the canonical input_manifest, run_files {status_id: {path,
-  sha256}}, measured_at {commit, dirty, utc} taken at assembly, after the last END (m2_v3 S4);
+  sha256}}, measured_at {commit, dirty, utc} taken at assembly, after the last END (m2_v3 S4); declared_axes exactly
+  as the point declares them (B and K none, V k - rev1 :1338), Row V as S1's product artifact alone, and at V a V≡
+  arm's row is only {equivalent_to: B | K} - a pointer to the read its default is, never a copy of its numbers;
 * p0_flags() / p0_root_flags(): the P0 a-j clauses readable from an artifact and its context, one function each;
   p0j holds K87 checks 1-2 inside the row's reconciliation branch (the auditor's B-DUP ruling: accounting.py only
   computes the numbers).
@@ -41,6 +43,12 @@ from typing import Callable, Iterable, Mapping, Sequence
 
 SCHEMA = "nvt3-artifact-1"
 POINTS = ("B", "K", "V")
+#: Row V (rev1 §5.2 :1337-1338; the auditor 2026-09-30 10:39) - a mirror of points.py's DECLARED_AXES, V_STANDS and
+#: each V≡ (v_equivalent), compared there by ART-V3 so the two cannot drift: the axes each point declares, the stands
+#: V is read on, and the arms whose V is their B or K read (a V row that only points to it, no numbers of its own)
+DECLARED_AXES = {"B": (), "K": (), "V": ("k",)}
+V_STANDS = ("S1",)
+V_EQUIVALENT = {"mem0": "B", "langmem": "K"}
 TIERS = ("product", "retrieval")
 EVAL_UNITS = ("haystack", "conversation", "row", "trajectory", "question")
 CONFIG_RE = re.compile(r"^(vendor-default|vendor-recommended:\S+|ours:\S+)$")
@@ -420,9 +428,11 @@ def build(*, stand: str, point: str, tier: str, arms: Mapping[str, Mapping], bra
     if "embedder" in declared_axes:
         raise ArtifactRefused("declared_axes: there is no embedder axis (PREREG-V3 rev1 §5.1) - every arm embeds on "
                               "the one pinned tag, so an embedder that differs is an asymmetry, never an axis")
-    bad_axes = [a for a in declared_axes if a not in ("k", "budget")]
-    if bad_axes:
-        raise ArtifactRefused(f"declared_axes {bad_axes} are not §5.2 axes")
+    if tuple(declared_axes) != DECLARED_AXES[point]:
+        raise ArtifactRefused(f"declared_axes {list(declared_axes)} at {point}: the point declares "
+                              f"{list(DECLARED_AXES[point])} (rev1 §2.3 'only as §5.2 lists it', :1338)")
+    if point == "V" and (stand not in V_STANDS or tier != "product"):
+        raise ArtifactRefused(f"Row V is S1's product artifact alone (rev1 :1337) - not {stand}/{tier}")
     if sensitivity not in (None, "temperature-0"):
         raise ArtifactRefused(f"sensitivity {sensitivity!r}: only the all-0 row is pre-declared")
     if brackets is not None and (point != "B" or tier != "product"):
@@ -434,6 +444,16 @@ def build(*, stand: str, point: str, tier: str, arms: Mapping[str, Mapping], bra
         if row.get("blocked"):
             if set(row) - {"blocked", "note"}:
                 raise ArtifactRefused(f"blocked arm {name} carries more than its reason - no numbers (P3)")
+            continue
+        if "equivalent_to" in row:
+            eq = row["equivalent_to"]
+            if point != "V":
+                raise ArtifactRefused(f"arm {name}: equivalent_to only at V (the V≡ rule), not at {point}")
+            if V_EQUIVALENT.get(name) != eq:
+                raise ArtifactRefused(f"arm {name} is not V≡{eq} (V_EQUIVALENT: {V_EQUIVALENT})")
+            if set(row) - {"equivalent_to", "note"}:
+                raise ArtifactRefused(f"arm {name} (V≡{eq}) carries more than the pointer - its numbers are its {eq} "
+                                      "read's, never copied")
             continue
         d = row.get("arm_decl") or {}
         if d.get("input_sha256") != isha:

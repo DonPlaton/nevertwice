@@ -7,6 +7,10 @@
   budget: the budget is a constant of the point, not a parameter.
 * the points: B asks every arm for up to 200 ranked items, K for 10 (claude-code-memory is
   competitor-lacks-capability:k).
+* Row V (rev1 §5.2 :1337-1347; the auditor 2026-09-30: Q1..Q6 = (a), the V≡ rule): S1 only, secondary, never a
+  headline; declared_axes ["k"]; each product's documented retrieval (V_DEFAULTS), under the same 7,000-token cap. An
+  arm whose V row cannot be built yet is refused by its own name; an arm whose vendor default IS its B or K read (the
+  same k, the same shape, the same cap) is not read again - V≡B / V≡K, and the artifact names it equivalent_to.
 * Claude Code's reads (Q-47-4, Q28): R-all is MEMORY.md, then every other file of the memory directory in
   lexicographic order of its relative path, each file one item; R-index (the V row) is MEMORY.md's first 200 lines or
   25 KB, whichever ends first - a line ends at LF only. A symlink, a non-file or a file that is not UTF-8 text refuses by name - the reader never
@@ -29,6 +33,33 @@ R_INDEX_BYTES = 25 * 1024
 MEMORY_INDEX = "MEMORY.md"
 CC_LACKS_K = "competitor-lacks-capability:k"
 
+#: Row V: S1 alone (rev1 :1337), never in a headline (the headline point is B); the axes each point declares (:1338)
+V_STANDS = ("S1",)
+HEADLINE_POINT = "B"
+DECLARED_AXES = {"B": (), "K": (), "V": ("k",)}
+#: Zep's Point V template (templates.ARM_TEMPLATES["zep-graphiti:V"]): the sha256 of its text, which is never committed
+ZEP_V_TEMPLATE_SHA256 = "1f38010000254c1fcdc7bf2a64b88326023c1094eea6ac6fe2446d263193a9b7"
+#: Row V, one entry per rev1 row (:1339-1347): k, shape ("items", or one vendor-"rendered" item - Q1 = (a)), the
+#: parameters, and either the refusal an arm carries until its row can be built, or the point its default equals (V≡)
+V_DEFAULTS = {
+    "nevertwice": {"k": 3, "shape": "items", "params": {"xrerank": "off"}, "rev1": ":1347 PROMPT_RECALL_K"},
+    "mem0": {"k": 200, "shape": "items", "params": {"top_k": 200, "threshold": 0.1}, "equivalent_to": "B",
+             "rev1": ":1339"},
+    "zep-graphiti": {"k": 20, "shape": "rendered", "params": {"edges": 20, "nodes": 20, "template": "zep-graphiti:V"},
+                     "template_sha256": ZEP_V_TEMPLATE_SHA256, "rev1": ":1340"},
+    "supermemory-local": {"k": 30, "shape": "items", "params": {"limit": 30, "threshold": 0.3},
+                          "refused": "V:no-adapter (A8)", "rev1": ":1341"},
+    "cognee": {"k": 20, "shape": "rendered", "params": {"chunks": 20, "entities": 20}, "refused": "V:no-adapter (A8)",
+               "rev1": ":1342"},
+    "langmem": {"k": 10, "shape": "items", "params": {"limit": 10}, "equivalent_to": "K", "rev1": ":1343"},
+    "a-mem": {"k": 10, "shape": "items", "params": {"retrieve_k": 10, "output": "search_agentic whole"},
+              "refused": "V:adapter", "rev1": ":1344"},
+    "letta": {"k": None, "shape": "items", "params": {"core": "all blocks", "archival": "its default page"},
+              "refused": "V:page-size-unpinned (Q-47-8h)", "rev1": ":1345"},
+    "claude-code-memory": {"k": None, "shape": "rendered", "params": {"read": "R-index"},
+                           "refused": "V:no-adapter (A8)", "rev1": ":1346"},
+}
+
 
 class PointError(ValueError):
     """A context that cannot be built as the preregistration says."""
@@ -44,8 +75,37 @@ class Context:
     budget: int = BUDGET
 
 
-def k_for(point: str, arm: str) -> int:
-    """The k an arm is asked for at a point; Claude Code has no k (it reads R-all at B)."""
+def v_equivalent(arm: str, *, defaults: dict | None = None) -> str | None:
+    """V≡ (the auditor, 2026-09-30): the point whose read an arm's V default is - its declared equivalent_to, held
+    only while the k is that point's and the shape is items (the cap is one constant); a declaration that does not
+    hold refuses by name. None: the arm has its own V read (or none)."""
+    e = (V_DEFAULTS if defaults is None else defaults).get(arm) or {}
+    eq = e.get("equivalent_to")
+    if eq is None:
+        return None
+    if eq not in K_AT or e.get("k") != K_AT[eq] or e.get("shape") != "items":
+        raise PointError(f"{arm}: V is declared equivalent to {eq} but is not equivalent (k {e.get('k')} against "
+                         f"{K_AT.get(eq)}, shape {e.get('shape')!r} against 'items') - neither read nor borrowed")
+    return eq
+
+
+def k_for(point: str, arm: str, *, defaults: dict | None = None) -> int:
+    """The k an arm is asked for at a point; Claude Code has no k (it reads R-all at B). At V, the arm's documented
+    default (V_DEFAULTS) - refused by the arm's own name while its row cannot be built, and by V≡B / V≡K when its
+    default is that read."""
+    if point == "V":
+        table = V_DEFAULTS if defaults is None else defaults
+        e = table.get(arm)
+        if e is None:
+            raise PointError(f"{arm}: no Row V - rev1 §5.2 (:1339-1347) gives a vendor default to each product, not to "
+                             "it")
+        if e.get("refused"):
+            raise PointError(f"{arm}: {e['refused']}")
+        eq = v_equivalent(arm, defaults=table)
+        if eq is not None:
+            raise PointError(f"{arm}: V≡{eq} - its vendor default is its {eq} read (k {e['k']}, the same shape and cap), "
+                             f"so V is not read again; the artifact names it equivalent_to {eq}")
+        return e["k"]
     if point not in K_AT:
         raise PointError(f"point {point!r} has no k (B or K; V is each arm's vendor default)")
     if arm == "claude-code-memory" and point == "K":

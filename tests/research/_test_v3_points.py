@@ -164,7 +164,93 @@ check("B asks every arm for 200, K for 10", PT.k_for("B", "mem0") == 200 and PT.
       and PT.k_for("B", "claude-code-memory") == 200)
 check("claude-code-memory has no k at K (competitor-lacks-capability:k)",
       raises(lambda: PT.k_for("K", "claude-code-memory"), PT.PointError, "competitor-lacks-capability:k"))
-check("V has no k here (each arm's vendor default)", raises(lambda: PT.k_for("V", "mem0"), PT.PointError))
+
+print("\n- Row V (rev1 §5.2 :1337-1347; the auditor 2026-09-30 10:39: Q1..Q6 = (a), the V≡ rule) -")
+
+
+def kv(arm: str, **kw) -> object:
+    """k_for at V, or the refusal as text - a raise never takes the suite down."""
+    try:
+        return PT.k_for("V", arm, **kw)
+    except PT.PointError as e:
+        return f"PointError: {e}"
+    except Exception as e:  # noqa: BLE001 - the row FAILs by name
+        return f"{type(e).__name__}: {e}"
+
+
+def attr(name: str, default=None):
+    return getattr(PT, name, default)
+
+
+check("PT-V1: V's k is each readable arm's documented default - ours 3 (PROMPT_RECALL_K, the shipped depth), "
+      "zep-graphiti 20 (20 edges + 20 nodes)", kv("nevertwice") == 3 and kv("zep-graphiti") == 20,
+      str({a: kv(a) for a in ("nevertwice", "zep-graphiti")}))
+REFUSED_V = {"a-mem": "V:adapter", "letta": "V:page-size-unpinned (Q-47-8h)", "cognee": "V:no-adapter (A8)",
+             "supermemory-local": "V:no-adapter (A8)", "claude-code-memory": "V:no-adapter (A8)"}
+NO_ROW_V = ("bm25-floor", "nevertwice-ablation", "nevertwice-rawtext", "nevertwice-ranker", "chroma-store",
+            "mem0-store", "langmem-store")
+check("PT-V2: an arm whose V row cannot be built yet is refused by its own name - a-mem V:adapter, letta "
+      "V:page-size-unpinned (Q-47-8h), cognee, supermemory-local and claude-code-memory V:no-adapter (A8); an arm "
+      "with no rev1 V row (bm25-floor, our variants, the stores) is refused as having none",
+      all(isinstance(kv(a), str) and w in kv(a) for a, w in REFUSED_V.items())
+      and all(isinstance(kv(a), str) and "no Row V" in kv(a) for a in NO_ROW_V),
+      str({a: kv(a) for a in (*REFUSED_V, *NO_ROW_V)})[:600])
+ast_k = None
+try:
+    import ast  # noqa: E402
+    _cfg = ast.parse((ROOT / "nevertwice" / "_engine_config.py").read_text(encoding="utf-8"))
+    for _n in ast.walk(_cfg):
+        if isinstance(_n, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "PROMPT_RECALL_K" for t in _n.targets):
+            ast_k = ast.literal_eval(_n.value.args[1])
+except Exception as e:  # noqa: BLE001 - the row FAILs by name
+    ast_k = f"{type(e).__name__}: {e}"
+check("PT-V3: ours' V k is the literal default of PROMPT_RECALL_K in _engine_config.py (read by ast, the environment "
+      "never consulted) - rev1 :1347 'the shipped depth'", ast_k == 3 and kv("nevertwice") == ast_k, str(ast_k))
+VD = attr("V_DEFAULTS", {})
+WANT_V = {"nevertwice": (3, "items", {"xrerank": "off"}),
+          "mem0": (200, "items", {"top_k": 200, "threshold": 0.1}),
+          "zep-graphiti": (20, "rendered", {"edges": 20, "nodes": 20, "template": "zep-graphiti:V"}),
+          "supermemory-local": (30, "items", {"limit": 30, "threshold": 0.3}),
+          "cognee": (20, "rendered", {"chunks": 20, "entities": 20}),
+          "langmem": (10, "items", {"limit": 10}),
+          "a-mem": (10, "items", {"retrieve_k": 10, "output": "search_agentic whole"}),
+          "letta": (None, "items", {"core": "all blocks", "archival": "its default page"}),
+          "claude-code-memory": (None, "rendered", {"read": "R-index"})}
+check("PT-V4: V_DEFAULTS holds exactly rev1's nine V rows (:1339-1347), each with its k, its shape (Q1 = (a): a "
+      "vendor-rendered context is one 'rendered' item) and its parameters",
+      set(VD) == set(WANT_V) and all((VD[a].get("k"), VD[a].get("shape"), VD[a].get("params")) == w
+                                     for a, w in WANT_V.items()),
+      str({a: (VD.get(a) or {}).get("k") for a in WANT_V}))
+check("PT-V5: DECLARED_AXES - B and K declare none, V only k (rev1 :1338); Row V is S1's alone and never a headline "
+      "(the headline point is B)",
+      attr("DECLARED_AXES") == {"B": (), "K": (), "V": ("k",)} and attr("V_STANDS") == ("S1",)
+      and attr("HEADLINE_POINT") == "B", str((attr("DECLARED_AXES"), attr("V_STANDS"), attr("HEADLINE_POINT"))))
+veq = attr("v_equivalent")
+check("PT-V6 (V≡): mem0 V≡B and langmem V≡K - the same k (200, 10), the same shape and the same cap - so neither is "
+      "read at V: k_for refuses by the name V≡B / V≡K, v_equivalent names the point; a V-read arm has none",
+      callable(veq) and veq("mem0") == "B" and veq("langmem") == "K" and veq("nevertwice") is None
+      and veq("zep-graphiti") is None and "V≡B" in str(kv("mem0")) and "V≡K" in str(kv("langmem")),
+      str((kv("mem0"), kv("langmem"))))
+bad_eq = {**VD, "langmem": {**VD.get("langmem", {}), "k": 12}} if VD else {}
+bad_shape = {**VD, "mem0": {**VD.get("mem0", {}), "shape": "rendered"}} if VD else {}
+eq_err = [kv(a, defaults=d) for a, d in (("langmem", bad_eq), ("mem0", bad_shape))]
+check("PT-V7 (V≡): a declared equivalence whose k or shape differs from its point's is refused by name - V is then "
+      "neither read nor borrowed", all(isinstance(e, str) and "not equivalent" in e for e in eq_err), str(eq_err))
+zep_consts = {}
+try:
+    for _n in ast.parse((ROOT / "research" / "v3" / "arms" / "arm_graphiti.py").read_text(encoding="utf-8")).body:
+        if isinstance(_n, ast.Assign):                  # V_EDGES = V_NODES = 20 is one Assign with two targets
+            for t in _n.targets:
+                if isinstance(t, ast.Name) and t.id in ("V_TEMPLATE_SHA256", "V_EDGES", "V_NODES"):
+                    zep_consts[t.id] = ast.literal_eval(_n.value)
+except Exception as e:  # noqa: BLE001 - the row FAILs by name
+    zep_consts = {"error": f"{type(e).__name__}: {e}"}
+zv = VD.get("zep-graphiti") or {}
+check("PT-V8: zep-graphiti's V entry is its adapter's - the template sha256 the adapter pins, 20 edges and 20 nodes "
+      "(arm_graphiti's constants, read by ast)",
+      zv.get("template_sha256") == attr("ZEP_V_TEMPLATE_SHA256") == zep_consts.get("V_TEMPLATE_SHA256")
+      and zv.get("params", {}).get("edges") == zep_consts.get("V_EDGES") == 20
+      and zv.get("params", {}).get("nodes") == zep_consts.get("V_NODES") == 20, str(zep_consts))
 
 print("\n- Claude Code: R-all and R-index -")
 TMP = Path(tempfile.mkdtemp(prefix="v3points_"))

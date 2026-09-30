@@ -360,11 +360,53 @@ with tempfile.TemporaryDirectory(prefix="v3art_") as td:
           "every arm embeds on the one pinned tag - alone or beside k",
           all(refused(lambda ax=ax: A.build(**{**kw, "declared_axes": ax}), "no embedder axis")
               for ax in (["embedder"], ["k", "embedder"])))
+
+    # Row V (the auditor 2026-09-30 10:39; rev1 §5.2 :1337-1338, §2.3 "declared_axes, only as §5.2 lists it")
+    def at(point, tier="product", names=("mem0", "nevertwice"), rows=None):
+        src = rows or arms
+        return {n: {**src[n], "arm_decl": {**src[n]["arm_decl"], "point": point, "tier": tier}} for n in names}
+
+    kw_v = {**kw, "stand": "S1", "point": "V", "brackets": None, "arms": at("V"), "declared_axes": ["k"]}
     try:
-        axes_kb = A.build(**{**kw, "declared_axes": ["k", "budget"]})["declared_axes"]
+        v_axes = A.build(**kw_v)["declared_axes"]
     except Exception as e:  # noqa: BLE001 - the row FAILs by name
-        axes_kb = repr(e)
-    check("B3: the §5.2 axes k and budget are still declared and kept", axes_kb == ["k", "budget"], str(axes_kb))
+        v_axes = repr(e)
+    v_refusals = {
+        "V with none": refused(lambda: A.build(**{**kw_v, "declared_axes": []}), "the point declares"),
+        "B with k": refused(lambda: A.build(**{**kw, "declared_axes": ["k"]}), "the point declares"),
+        "B with k and budget": refused(lambda: A.build(**{**kw, "declared_axes": ["k", "budget"]}), "the point declares"),
+        "V on S4": refused(lambda: A.build(**{**kw_v, "stand": "S4"}), "Row V is S1's product artifact"),
+        "V retrieval": refused(lambda: A.build(**{**kw_v, "tier": "retrieval", "arms": at("V", "retrieval")}),
+                               "Row V is S1's product artifact")}
+    check("ART-V1: Row V builds as S1's product artifact with declared_axes ['k'] and only so - V declaring none, B "
+          "declaring k (or k and budget), V on S4 and V in the retrieval tier are each refused by name",
+          v_axes == ["k"] and all(v_refusals.values()), f"{v_axes} {v_refusals}")
+    eq_rows = {**at("V"), "langmem": {"equivalent_to": "K"}, "mem0": {"equivalent_to": "B"}}
+    try:
+        v_eq = A.build(**{**kw_v, "arms": eq_rows})["arms"]
+        v_eq = {n: v_eq[n] for n in ("mem0", "langmem")}
+    except Exception as e:  # noqa: BLE001 - the row FAILs by name
+        v_eq = repr(e)
+    eq_refusals = {
+        "mem0 as K": refused(lambda: A.build(**{**kw_v, "arms": {**eq_rows, "mem0": {"equivalent_to": "K"}}}),
+                             "not V≡K"),
+        "ours as B": refused(lambda: A.build(**{**kw_v, "arms": {**eq_rows, "nevertwice": {"equivalent_to": "B"}}}),
+                             "not V≡B"),
+        "numbers": refused(lambda: A.build(**{**kw_v, "arms": {**eq_rows, "mem0": {"equivalent_to": "B", "calls": 3}}}),
+                           "carries more than"),
+        "at B": refused(lambda: A.build(**{**kw, "arms": {**arms, "mem0": {"equivalent_to": "B"}}}), "only at V")}
+    check("ART-V2 (V≡): at V, mem0 is {equivalent_to: B} and langmem {equivalent_to: K} - a pointer to the read V "
+          "equals, no numbers of its own; another point, another arm, a row with numbers, or equivalent_to off V are "
+          "each refused by name", v_eq == {"mem0": {"equivalent_to": "B"}, "langmem": {"equivalent_to": "K"}}
+          and all(eq_refusals.values()), f"{v_eq} {eq_refusals}")
+    PTS = _load("v3_points_for_artifact_t", ROOT / "research" / "v3" / "points.py")
+    check("ART-V3: the artifact's Row V rules are points.py's - the axes per point, V's stands and each V≡ (a mirror, "
+          "compared here so the two cannot drift)",
+          getattr(A, "DECLARED_AXES", None) == getattr(PTS, "DECLARED_AXES", 0)
+          and getattr(A, "V_STANDS", None) == getattr(PTS, "V_STANDS", 0)
+          and getattr(A, "V_EQUIVALENT", None) == {a: PTS.v_equivalent(a) for a, e in getattr(PTS, "V_DEFAULTS", {}).items()
+                                                   if e.get("equivalent_to")},
+          str((getattr(A, "DECLARED_AXES", None), getattr(A, "V_EQUIVALENT", None))))
     out = A.write(doc, d / "results")
     raw = out.read_bytes()
     check("write: <stand>_<point>_<tier>.json, LF, sorted keys, and never overwritten",
