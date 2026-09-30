@@ -52,7 +52,7 @@ from typing import Any, Callable, Iterable, Mapping, Sequence
 
 HERE = Path(__file__).resolve().parent
 SCORING = frozenset({"score_v3.py", "fafr_probe.py"})
-SMOKE_STANDS = ("S4",)                  # templates.PENDING holds S1, S5, S7; S6 is refused by the plan (§5.6)
+SMOKE_STANDS = ("S4",)                  # templates.PENDING holds S1, S3, S7; S6 is refused by the plan (§5.6)
 
 
 class CLIError(ValueError):

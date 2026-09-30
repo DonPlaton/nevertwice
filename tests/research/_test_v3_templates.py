@@ -159,7 +159,7 @@ try:
     params = inspect.signature(TP.stand_template).parameters
     check("Q-48-6 stand_template takes the stand (and where the pins are) - never an arm, a bracket or **kwargs",
           list(params) == ["stand", "pins_root"] and all(p.kind != p.VAR_KEYWORD for p in params.values()), str(list(params)))
-    for s in ("S1", "S3", "S5", "S6", "S6L", "S7"):
+    for s in ("S1", "S3", "S7"):
         e = err(lambda s=s: TP.stand_template(s, pins_root=TMP))
         check(f"{s} is pending with its named reason, never guessed", "no template yet" in e and "A7" in e or "as S" in e, e)
     check("a stand without a reader template refuses", "not a stand" in err(lambda: TP.stand_template("S2", pins_root=TMP)))
@@ -179,8 +179,37 @@ def ask(qa):
 ''')
     gf = TMP / "gpt_utils.py"
     gf.write_bytes(GPT)
+    #: BEAM's src/prompts.py and MAB's utils/templates.py in their shapes (made up here; the vendors' texts are not
+    #: committed, Q-A3-6): another constant with the same markers, the dict of query templates by agent
+    BEAM = (b'nugget_prompt = """Judge <context> against <question>."""\n'
+            b'answer_generation_for_rag = """\nAnswer ONLY from the context below.\n\nCONTEXT:\n<context>\n\nQUESTION:\n'
+            b'<question>\n\nANSWER REQUIREMENTS:\n- Be concise \n\nRESPONSE:\n"""\n')
+    BEAM2 = BEAM.replace(b"Answer ONLY from the context below.", b"Answer ONLY from <context> below.")
+    MAB_Q = ("Pretend you are a knowledge management system. Answer from the pool. \n\nFor example:\n Question: who? "
+             "\nAnswer: Someone \n\n Now Answer the Question: Based on the provided Knowledge Pool, {question} \nAnswer:")
+    MAB_A = MAB_Q.replace("the pool", "the Archival Memory")
+
+    def mab_src(long_q: str) -> bytes:
+        return ("SYSTEM_MESSAGE = 'You are a helpful assistant.'\nBASE_TEMPLATES = {'factconsolidation': {"
+                "'system': SYSTEM_MESSAGE, 'query': {'long_context_agent': %s, 'rag_agent': %s, "
+                "'agentic_memory_agent': %s}}}\n" % (json.dumps(long_q), json.dumps(MAB_Q), json.dumps(MAB_A))).encode()
+    MAB = mab_src(MAB_Q)
+    bf, mf = TMP / "prompts.py", TMP / "templates_mab.py"
+    bf.write_bytes(BEAM)
+    mf.write_bytes(MAB)
+
+    def fakes(**over):
+        """_pinned for the test: each pin its own made-up file, by name (``over``: pin -> bytes)."""
+        files = {"locomo_answer_prompt": gf, "beam_prompts": bf, "mab_templates": mf}
+        def pinned(pin, root):
+            if pin in over:
+                f_ = TMP / f"over_{pin}.py"
+                f_.write_bytes(over[pin])
+                return f_, hashlib.sha256(over[pin]).hexdigest()
+            return files[pin], hashlib.sha256(files[pin].read_bytes()).hexdigest()
+        return pinned
     real_pinned = TP._pinned
-    TP._pinned = lambda pin, root: (gf, hashlib.sha256(GPT).hexdigest())
+    TP._pinned = fakes()
     try:
         blank = TP.Template("x", "", "", "", "", ())
         s4 = safe(lambda: TP.stand_template("S4", pins_root=TMP), blank)
@@ -192,6 +221,36 @@ def ask(qa):
         check("S4-cat5 = the same with LoCoMo's own 'No information available' line before the SHORT ANSWER line",
               s5c.text == want.replace("Question: {question}\n", "Question: {question}\n" + TP.LOCOMO_NO_INFO + "\n"),
               repr(s5c.text))
+        s5 = safe(lambda: TP.stand_template("S5", pins_root=TMP), blank)
+        s5f = safe(lambda: TP.stand_template("S5-full", pins_root=TMP), blank)
+        want5 = ("\nAnswer ONLY from the context below.\n\nCONTEXT:\n{context}\n\nQUESTION:\n{question}\n\n"
+                 "ANSWER REQUIREMENTS:\n- Be concise \n" + TP.SHORT_ANSWER + "\n\nRESPONSE:\n")
+        check("T5-1 (Q-TPL-2): S5 = BEAM's own answer_generation_for_rag (never another constant with the same markers), "
+              "its <context> and <question> the slots, the SHORT ANSWER line before RESPONSE: - the short-answer abilities",
+              s5.text == want5 and s5.slots == ("context", "question"), repr(s5.text))
+        check("T5-2 (§8.4): S5-full = the same without the SHORT ANSWER line - long form and event ordering",
+              s5f.text == want5.replace(TP.SHORT_ANSWER + "\n", "") and s5f.slots == ("context", "question"), repr(s5f.text))
+        TP._pinned = fakes(beam_prompts=BEAM2)
+        check("T5-3: a BEAM prompt whose <context> occurs twice is refused by name - each marker becomes a slot exactly once",
+              "2 times" in err(lambda: TP.stand_template("S5", pins_root=TMP))
+              and "2 times" in err(lambda: TP.stand_template("S5-full", pins_root=TMP)))
+        TP._pinned = fakes()
+        s6 = safe(lambda: TP.stand_template("S6", pins_root=TMP), blank)
+        s6l = safe(lambda: TP.stand_template("S6L", pins_root=TMP), blank)
+        want6 = "{context}\n" + MAB_Q.replace("{question} \nAnswer:", "{question} \n" + TP.SHORT_ANSWER + "\nAnswer:")
+        check("T6-1 (Q-TPL-3): S6 = MAB's BASE_TEMPLATES[factconsolidation][query][rag_agent], the arm's block and a "
+              "newline before it as the driver joins them (agent.py:317), the SHORT ANSWER line before the last 'Answer:'",
+              s6.text == want6 and s6.slots == ("context", "question"), repr(s6.text))
+        check("T6-2: S6L = S6, read from long_context_agent - S6 and S6L never differ",
+              s6l.text == s6.text == want6 and s6l.slots == s6.slots and s6l.sha256 == s6.sha256, repr(s6l.text))
+        TP._pinned = fakes(mab_templates=mab_src(MAB_Q.replace("Answer from the pool.", "Answer from the long pool.")))
+        e6l = err(lambda: TP.stand_template("S6L", pins_root=TMP))
+        check("T6-3: when long_context_agent is not rag_agent's text, S6L is refused by name - S6 still builds",
+              "S6L" in e6l and "rag_agent" in e6l and safe(lambda: TP.stand_template("S6", pins_root=TMP), blank).text == want6, e6l)
+        TP._pinned = fakes()
+        r6 = safe(lambda: TP.render(s6, {"context": "Memory 1:\nfact {x}", "question": "who?"}))
+        check("T6-4: rendered, the arm's block comes first, verbatim, then a newline and the benchmark's query",
+              r6.startswith("Memory 1:\nfact {x}\nPretend you are a knowledge management system.") and "who? \n" in r6, repr(r6[:120]))
         check("the SHORT ANSWER instruction is rev1 §8.1's", TP.SHORT_ANSWER.endswith("SHORT ANSWER: <at most 15 words>"))
         rendered = safe(lambda: TP.render(s4, {"context": "- item one\n- item {two}", "question": "Where?"}))
         check("rendered: the block verbatim where the conversation stood", rendered.startswith("- item one\n- item {two}\n\n\nBased"))
@@ -216,6 +275,12 @@ def ask(qa):
               and fr["templates"]["S4"].get("slots") == ["context", "question"] and "text" not in fr["templates"]["S4"]
               and "write a short phrase" not in committed and "Use exact words" not in committed
               and set(fr["pending"]) == set(TP.PENDING), committed[:300])
+        check("T6-5: the FREEZE fragment names, for S6 and S6L, the system message the MAB driver sends and the stand's reader "
+              "does not (SYSTEM_MESSAGE); S4 carries no note; S5, S5-full, S6 and S6L are built, S1, S3 and S7 pending",
+              all("SYSTEM_MESSAGE" in fr["templates"].get(s, {}).get("note", "") for s in ("S6", "S6L"))
+              and "note" not in fr["templates"].get("S4", {})
+              and {"S5", "S5-full", "S6", "S6L"} <= set(fr["templates"]) and set(fr["pending"]) == {"S1", "S3", "S7"},
+              str({s: fr["templates"].get(s, {}).get("note") for s in ("S4", "S6", "S6L")}))
         texts = json.loads(tf.read_bytes()) if tf.is_file() else {}
         check("the full texts go to the runs-tree file, whose sha256 the fragment records",
               texts.get("templates", {}).get("S4", {}).get("text") == s4.text
@@ -246,6 +311,14 @@ def ask(qa):
               real.text.startswith("{context}\n\n\nBased on the above context") and real.text.endswith(TP.SHORT_ANSWER + "\n")
               and real.slots == ("context", "question") and "Short answer:" not in real.text)
         check("local: the build is deterministic (the same sha256 twice)", TP.stand_template("S4", pins_root=REAL).sha256 == real.sha256)
+        r5, r5f, r6_, r6l = (safe(lambda s=s: TP.stand_template(s, pins_root=REAL), None) for s in ("S5", "S5-full", "S6", "S6L"))
+        check("local: S5 and S5-full build from the real beam_prompts pin - two slots, no '<context>' left, the SHORT ANSWER line "
+              "only in S5", r5 is not None and r5f is not None and r5.slots == r5f.slots == ("context", "question")
+              and "<context>" not in r5.text and TP.SHORT_ANSWER in r5.text and TP.SHORT_ANSWER not in r5f.text)
+        check("local: S6 and S6L build from the real mab_templates pin and are one text - the block first, the SHORT ANSWER "
+              "line before the last 'Answer:'", r6_ is not None and r6l is not None and r6_.text == r6l.text
+              and r6_.text.startswith("{context}\nPretend you are a knowledge management system.")
+              and r6_.text.endswith(TP.SHORT_ANSWER + "\nAnswer:"))
 finally:
     shutil.rmtree(TMP, ignore_errors=True)
 

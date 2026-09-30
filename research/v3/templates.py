@@ -177,12 +177,25 @@ LOCOMO_NO_INFO = "If no information is available to answer the question, write '
 _LOCOMO_BASE = (("\nBased on the above context", "{context}\n\n\nBased on the above context"),)
 
 
+#: Q-48-4 (Q-TPL-2 = O-a): BEAM's own RAG answer prompt; its "<context>" and "<question>" markers become the slots.
+_BEAM_SLOTS = (("<context>", "{context}"), ("<question>", "{question}"))
+#: Q-48-3 (Q-TPL-3 = O-a): the MAB driver joins the context block, a newline and its query (agent.py:317); the query
+#: template's last "Answer:" gets the SHORT ANSWER line before it (its example has an "Answer:" of its own).
+_MAB_QUERY = ("factconsolidation", "query", "rag_agent")
+_MAB_BASE = (("Pretend you are a knowledge management system.", "{context}\nPretend you are a knowledge management system."),
+             ("{question} \nAnswer:", "{question} \n" + SHORT_ANSWER + "\nAnswer:"))
+MAB_NOTE = ("the MAB driver sends its SYSTEM_MESSAGE (a name in the pinned file, not a constant) as a system turn; the "
+            "stand's reader sends no system message (Q-TPL-3)")
+
+
 @dataclass(frozen=True)
 class StandSpec:
     source: Source
     replacements: tuple
     slots: tuple
     must_occur: tuple = ()           # committed text that must occur verbatim in the pinned file (its provenance)
+    same_as: Source | None = None    # another constant of the same file whose text must be the source's (S6L = S6)
+    note: str = ""                   # what FREEZE-V3 names beside the template (a difference from the vendor's run)
 
 
 STANDS = {
@@ -193,15 +206,22 @@ STANDS = {
                          _LOCOMO_BASE + (("Question: {} Short answer:",
                                           "Question: {question}\n" + LOCOMO_NO_INFO + "\n" + SHORT_ANSWER),),
                          ("context", "question"), must_occur=(LOCOMO_NO_INFO,)),
+    "S5": StandSpec(Source("beam_prompts", "answer_generation_for_rag"),
+                    _BEAM_SLOTS + (("\n\nRESPONSE:\n", "\n" + SHORT_ANSWER + "\n\nRESPONSE:\n"),), ("context", "question")),
+    #: rev1 §8.4: long form and event ordering are judged or scored on the full answer - no SHORT ANSWER line
+    "S5-full": StandSpec(Source("beam_prompts", "answer_generation_for_rag"), _BEAM_SLOTS, ("context", "question")),
+    "S6": StandSpec(Source("mab_templates", "BASE_TEMPLATES", _MAB_QUERY), _MAB_BASE, ("context", "question"),
+                    note=MAB_NOTE),
+    "S6L": StandSpec(Source("mab_templates", "BASE_TEMPLATES", ("factconsolidation", "query", "long_context_agent")),
+                     _MAB_BASE, ("context", "question"), same_as=Source("mab_templates", "BASE_TEMPLATES", _MAB_QUERY),
+                     note=MAB_NOTE),
 }
 #: Stands whose template waits for a pin (the auditor's Q-48): named, never guessed.
 PENDING = {
-    "S1": "LME's cot setting comes from its pinned README (Q-48-1; the A7 window)",
+    "S1": "LME's cot setting: how README's READING_METHOD maps to --cot/--con (Q-48-1, Q-TPL-1 = O-b; the A7 window "
+          "a7-github-2 pins run_generation.sh)",
     "S3": "as S1 (the oracle bracket reads S1's template)",
-    "S5": "BEAM's answer prompt, if its pinned repository has one (Q-48-4; the A7 window)",
-    "S6": "the MAB driver's context insertion point (Q-48-3; the A7 window)",
-    "S6L": "as S6",
-    "S7": "AMA's answer prompt, if one exists (Q17, Q-48-5; the A7 window)",
+    "S7": "which of AMA's two answer templates its code chooses (Q17, Q-TPL-4; the A7 window a7-github-2 pins it)",
 }
 #: Text the stand appends to a LoCoMo cat-2 question: the pinned file's own constant, found by it.
 LOCOMO_CAT2 = Source("locomo_answer_prompt", None, marker="Use DATE of CONVERSATION")
@@ -234,7 +254,11 @@ def stand_template(stand: str, *, pins_root: Path) -> Template:
     spec = STANDS[stand]
     path, pin_sha = _pinned(spec.source.pin, pins_root)
     tpl = build(stand, path, pin_sha, spec.source, spec.replacements, spec.slots)
-    text = Path(path).read_bytes().decode("utf-8")
+    raw = Path(path).read_bytes()
+    text = raw.decode("utf-8")
+    if spec.same_as is not None and extract(raw, spec.same_as) != extract(raw, spec.source):
+        raise TemplateError(f"{stand}: its base text is not the one {'/'.join(spec.same_as.path)} gives - the two "
+                            "stands would read different templates")
     for s in spec.must_occur:
         if s not in text:
             raise TemplateError(f"{stand}: the committed text {s[:50]!r} does not occur in the pinned file")
@@ -284,6 +308,8 @@ def freeze_fragment(*, pins_root: Path, texts_path: Path) -> dict:
         committed[stand] = {"source_pin": t.source_pin, "source_path": f"{pin['repo']}@{pin['revision']}:{pin['path']}",
                             "source_sha256": t.source_sha256, "replacements": [list(r) for r in spec.replacements],
                             "must_occur": list(spec.must_occur), "slots": list(t.slots), "sha256": t.sha256}
+        if spec.note:
+            committed[stand]["note"] = spec.note
         texts[stand] = {"text": t.text, "sha256": t.sha256}
     raw = (json.dumps({"templates": texts}, ensure_ascii=False, sort_keys=True, indent=1) + "\n").encode("utf-8")
     Path(texts_path).parent.mkdir(parents=True, exist_ok=True)
