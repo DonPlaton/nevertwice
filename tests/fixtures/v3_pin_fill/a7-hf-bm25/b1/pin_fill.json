@@ -1,0 +1,237 @@
+{
+ "pins": {
+  "bm25_arabic": {
+   "bytes": 6348,
+   "licence_found": "apache-2.0",
+   "licence_source": "a7d2 card Qdrant/bm25",
+   "revision": "22b8d2af71a76161e18dd432d2cee0eefa66e412",
+   "sha256": "0df01c0a184d8c15077c6f0ee70e25e0c0308d827b92b14a19f5f819a0c465d0"
+  },
+  "bm25_azerbaijani": {
+   "bytes": 967,
+   "licence_found": "apache-2.0",
+   "licence_source": "a7d2 card Qdrant/bm25",
+   "revision": "22b8d2af71a76161e18dd432d2cee0eefa66e412",
+   "sha256": "79fa359ae8c021f86c6fe6e56853396da7be9c8c7a30de45cda311ed199b26ae"
+  },
+  "bm25_basque": {
+   "bytes": 2202,
+   "licence_found": "apache-2.0",
+   "licence_source": "a7d2 card Qdrant/bm25",
+   "revision": "22b8d2af71a76161e18dd432d2cee0eefa66e412",
+   "sha256": "6285e4424de3fd2791dbbe2bc3ff23ed009bac3bfced3ea4b927b5b63d246bf0"
+  },
+  "bm25_bengali": {
+   "bytes": 5443,
+   "licence_found": "apache-2.0",
+   "licence_source": "a7d2 card Qdrant/bm25",
+   "revision": "22b8d2af71a76161e18dd432d2cee0eefa66e412",
+   "sha256": "98b5906451961ef0118dcf9d99e6e7351266126bcc36789b17070decd394591b"
+  },
+  "bm25_catalan": {
+   "bytes": 1558,
+   "licence_found": "apache-2.0",
+   "licence_source": "a7d2 card Qdrant/bm25",
+   "revision": "22b8d2af71a76161e18dd432d2cee0eefa66e412",
+   "sha256": "4749664544c92acea8dbb9db108830effcb2863e1b7761ae366ffb7683d96c07"
+  },
+  "bm25_chinese": {
+   "bytes": 5560,
+   "licence_found": "apache-2.0",
+   "licence_source": "a7d2 card Qdrant/bm25",
+   "revision": "22b8d2af71a76161e18dd432d2cee0eefa66e412",
+   "sha256": "1d4460e24f29b27460a845ead1652bac94d10c4fc2d26926e615e6a715f177ce"
+  },
+  "bm25_config": {
+   "bytes": 2,
+   "licence_found": "apache-2.0",
+   "licence_source": "a7d2 card Qdrant/bm25",
+   "revision": "22b8d2af71a76161e18dd432d2cee0eefa66e412",
+   "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+  },
+  "bm25_danish": {
+   "bytes": 424,
+   "licence_found": "apache-2.0",
+   "licence_source": "a7d2 card Qdrant/bm25",
+   "revision": "22b8d2af71a76161e18dd432d2cee0eefa66e412",
+   "sha256": "1bedc9cf5a8830dacf8c4ee0d8b301f0801861756ad0d504431d01047f961b0c"
+  },
+  "bm25_dutch": {
+   "bytes": 453,
+   "licence_found": "apache-2.0",
+   "licence_source": "a7d2 card Qdrant/bm25",
+   "revision": "22b8d2af71a76161e18dd432d2cee0eefa66e412",
+   "sha256": "e5a2a7c390fe3ad0c0a132586ed11492b635d66a1f426cd89677f80b07bc76a6"
+  },
+  "bm25_english": {
+   "bytes": 936,
+   "licence_found": "apache-2.0",
+   "licence_source": "a7d2 card Qdrant/bm25",
+   "revision": "22b8d2af71a76161e18dd432d2cee0eefa66e412",
+   "sha256": "019f104ba2ed07436d05f9cdd3383034ad66014edc27fc651f837e1a038b6451"
+  },
+  "bm25_finnish": {
+   "bytes": 1579,
+   "licence_found": "apache-2.0",
+   "licence_source": "a7d2 card Qdrant/bm25",
+   "revision": "22b8d2af71a76161e18dd432d2cee0eefa66e412",
+   "sha256": "952af766edc9b8e7ddc877fc464cbd94b91754b5621fdfdd7020568fd4813fcd"
+  },
+  "bm25_french": {
+   "bytes": 813,
+   "licence_found": "apache-2.0",
+   "licence_source": "a7d2 card Qdrant/bm25",
+   "revision": "22b8d2af71a76161e18dd432d2cee0eefa66e412",
+   "sha256": "58ac7f7c074b70dc0fc86f6fcf40b2c227e9f95627e90e57971d5cce1e30e2e9"
+  },
+  "bm25_german": {
+   "bytes": 1362,
+   "licence_found": "apache-2.0",
+   "licence_source": "a7d2 card Qdrant/bm25",
+   "revision": "22b8d2af71a76161e18dd432d2cee0eefa66e412",
+   "sha256": "f0c25acd7ec02a31f6679d9664ec5222ca846fdbc58db96160f4e7c0ddb0f7ea"
+  },
+  "bm25_gitattributes": {
+   "bytes": 1519,
+   "licence_found": "apache-2.0",
+   "licence_source": "a7d2 card Qdrant/bm25",
+   "revision": "22b8d2af71a76161e18dd432d2cee0eefa66e412",
+   "sha256": "11ad7efa24975ee4b0c3c3a38ed18737f0658a5f75a0a96787b576a78a023361"
+  },
+  "bm25_greek": {
+   "bytes": 2167,
+   "licence_found": "apache-2.0",
+   "licence_source": "a7d2 card Qdrant/bm25",
+   "revision": "22b8d2af71a76161e18dd432d2cee0eefa66e412",
+   "sha256": "7a97c6dc81144f7e8fcfe976025954ca3731f78a75d1fd86aa87f261fd195dae"
+  },
+  "bm25_hebrew": {
+   "bytes": 1836,
+   "licence_found": "apache-2.0",
+   "licence_source": "a7d2 card Qdrant/bm25",
+   "revision": "22b8d2af71a76161e18dd432d2cee0eefa66e412",
+   "sha256": "aa52b26f09363630dba725eceb6a8348bea30c05be69a084ec2b58d79bab3c5a"
+  },
+  "bm25_hinglish": {
+   "bytes": 5958,
+   "licence_found": "apache-2.0",
+   "licence_source": "a7d2 card Qdrant/bm25",
+   "revision": "22b8d2af71a76161e18dd432d2cee0eefa66e412",
+   "sha256": "0c88c0952998450c27270ea9c9a55f3f0d1fa787236212ce69a8fcc7bae1389d"
+  },
+  "bm25_hungarian": {
+   "bytes": 1227,
+   "licence_found": "apache-2.0",
+   "licence_source": "a7d2 card Qdrant/bm25",
+   "revision": "22b8d2af71a76161e18dd432d2cee0eefa66e412",
+   "sha256": "64a68b5ebaa616b25bd976ac915c326f2ea8cce8b59a0ac8c5728b980ae4fb0c"
+  },
+  "bm25_indonesian": {
+   "bytes": 6446,
+   "licence_found": "apache-2.0",
+   "licence_source": "a7d2 card Qdrant/bm25",
+   "revision": "22b8d2af71a76161e18dd432d2cee0eefa66e412",
+   "sha256": "127b5c39ef7456965b15905277e49a8936e39b3c0d67ceda1b7757ea4d913b57"
+  },
+  "bm25_italian": {
+   "bytes": 1654,
+   "licence_found": "apache-2.0",
+   "licence_source": "a7d2 card Qdrant/bm25",
+   "revision": "22b8d2af71a76161e18dd432d2cee0eefa66e412",
+   "sha256": "293d7841f198e4012f49e8e5653c3bfd073a58cea1259fa2c0fcec894167b628"
+  },
+  "bm25_kazakh": {
+   "bytes": 3880,
+   "licence_found": "apache-2.0",
+   "licence_source": "a7d2 card Qdrant/bm25",
+   "revision": "22b8d2af71a76161e18dd432d2cee0eefa66e412",
+   "sha256": "a74c693991e04a54eec6a03dbc4338080fecb62ca2a087d62659fed71bbb6410"
+  },
+  "bm25_nepali": {
+   "bytes": 3610,
+   "licence_found": "apache-2.0",
+   "licence_source": "a7d2 card Qdrant/bm25",
+   "revision": "22b8d2af71a76161e18dd432d2cee0eefa66e412",
+   "sha256": "866321e2fe1bcf7d34814464e25eaf365e70b0de40aebee98d761b78b7936b3d"
+  },
+  "bm25_norwegian": {
+   "bytes": 851,
+   "licence_found": "apache-2.0",
+   "licence_source": "a7d2 card Qdrant/bm25",
+   "revision": "22b8d2af71a76161e18dd432d2cee0eefa66e412",
+   "sha256": "f7e5b42208ccf1b1f282f9e0f8570e464272762bda5718b6b26750f510a688dc"
+  },
+  "bm25_portuguese": {
+   "bytes": 1286,
+   "licence_found": "apache-2.0",
+   "licence_source": "a7d2 card Qdrant/bm25",
+   "revision": "22b8d2af71a76161e18dd432d2cee0eefa66e412",
+   "sha256": "6e7b98378c6b728266a83ebf035d927abf16b9e0d815d6204d81d90d896bcc9b"
+  },
+  "bm25_readme": {
+   "bytes": 1462,
+   "licence_found": "apache-2.0",
+   "licence_source": "a7d2 card Qdrant/bm25",
+   "revision": "22b8d2af71a76161e18dd432d2cee0eefa66e412",
+   "sha256": "66fd97da4cab0fc112ab9724dbeaa0bc7ded6788fef21c6c4d200a779b93fee0"
+  },
+  "bm25_romanian": {
+   "bytes": 1910,
+   "licence_found": "apache-2.0",
+   "licence_source": "a7d2 card Qdrant/bm25",
+   "revision": "22b8d2af71a76161e18dd432d2cee0eefa66e412",
+   "sha256": "0ab53d21cbde00c6bf367706a0243c646140ba564cce7e83ac33d80f8923e957"
+  },
+  "bm25_russian": {
+   "bytes": 1235,
+   "licence_found": "apache-2.0",
+   "licence_source": "a7d2 card Qdrant/bm25",
+   "revision": "22b8d2af71a76161e18dd432d2cee0eefa66e412",
+   "sha256": "1743191192b4a4f77fcc216499455dc00c1b8626fdd407076a8deefff80e3d59"
+  },
+  "bm25_slovene": {
+   "bytes": 15980,
+   "licence_found": "apache-2.0",
+   "licence_source": "a7d2 card Qdrant/bm25",
+   "revision": "22b8d2af71a76161e18dd432d2cee0eefa66e412",
+   "sha256": "65d95c97bdddaf5c719c8069eb242cccdf135826ad2e676038ade33835b50042"
+  },
+  "bm25_spanish": {
+   "bytes": 2176,
+   "licence_found": "apache-2.0",
+   "licence_source": "a7d2 card Qdrant/bm25",
+   "revision": "22b8d2af71a76161e18dd432d2cee0eefa66e412",
+   "sha256": "6125eadf28ba664a60bf4296147bcbd40b80be93670056fdb229960ac15e2310"
+  },
+  "bm25_stopwords": {
+   "bytes": 936,
+   "licence_found": "apache-2.0",
+   "licence_source": "a7d2 card Qdrant/bm25",
+   "revision": "22b8d2af71a76161e18dd432d2cee0eefa66e412",
+   "sha256": "019f104ba2ed07436d05f9cdd3383034ad66014edc27fc651f837e1a038b6451"
+  },
+  "bm25_swedish": {
+   "bytes": 559,
+   "licence_found": "apache-2.0",
+   "licence_source": "a7d2 card Qdrant/bm25",
+   "revision": "22b8d2af71a76161e18dd432d2cee0eefa66e412",
+   "sha256": "2a9d9d756bc4257d49329994f805c712cd5ab6746162e2082752238766c1c0c8"
+  },
+  "bm25_tajik": {
+   "bytes": 1818,
+   "licence_found": "apache-2.0",
+   "licence_source": "a7d2 card Qdrant/bm25",
+   "revision": "22b8d2af71a76161e18dd432d2cee0eefa66e412",
+   "sha256": "9fb8e95452b1ca28f77d4779e0705eccd681dc6e51e5216002a42129cd9a4238"
+  },
+  "bm25_turkish": {
+   "bytes": 260,
+   "licence_found": "apache-2.0",
+   "licence_source": "a7d2 card Qdrant/bm25",
+   "revision": "22b8d2af71a76161e18dd432d2cee0eefa66e412",
+   "sha256": "f2c7f0c2bd3dba42da700776266831853a3b5f1207fada5c15207334109abb57"
+  }
+ },
+ "run": "b1",
+ "window": "a7-hf-bm25"
+}

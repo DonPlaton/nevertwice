@@ -258,6 +258,13 @@ check("BM-PIN-2: the window a7-hf-bm25 - huggingface.co alone, one redirect (eve
       and W_BM.get("hosts_from_record") == "5b0640777aef83d5d25a50deaee72cb10e8dae10cc83df26b59d89c14fbba20b"
       and getattr(CP, "A7_DISCOVERY2_D1_REPORT", None) == "5b0640777aef83d5d25a50deaee72cb10e8dae10cc83df26b59d89c14fbba20b" and sorted(W_BM.get("pins") or []) == sorted(BM25_WANT),
       str(W_BM)[:300])
+check("BM-PIN-4 (the auditor, 2026-09-30 18:1x): each of the 33 bm25 pins is filled from its cleared run - a7-hf-bm25 "
+      "b1, pin_fill 4a6bd27ec107 - with a 64-hex sha256, a size and the licence the card names (apache-2.0)",
+      len(bm) == 33 and all(p_.get("filled_from") == "a7-hf-bm25 b1 pin_fill 4a6bd27ec107"
+                            and isinstance(p_.get("sha256"), str) and len(p_["sha256"]) == 64
+                            and isinstance(p_.get("bytes"), int) and p_.get("licence_found") == "apache-2.0"
+                            for p_ in bm.values()),
+      str(sorted({str(p_.get("filled_from")) for p_ in bm.values()})))
 check("BM-PIN-3: no file of Qdrant/bm25 is pinned twice across PINS and PINS_A7 (english.txt and stopwords.txt share a "
       "blob, not a path)", CP.pinned_twice() == [], str(CP.pinned_twice())[:300])
 

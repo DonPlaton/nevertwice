@@ -102,6 +102,16 @@ CLEARED_A7 = [
     {"window": "a7-docs-2", "run": "d1", "kind": "report", "files": {
         "_fetch/a7-docs-2/d1/record.json": "2ccb013fb8ab955950f8b3ece6eded5eba4a12bbf592392a09cadecc3cc9513c",
         "_fetch/a7-docs-2/d1/d4_report.json": "66f2d8daf1ec89a2f729e2616ed885f46a230f5383f1bb0a5d7f4ebf714e635b"}},
+    # Qdrant/bm25's 33 files for mem0's BM25 (T34), after the auditor's m6 --window / --placed / --pins-rev, m5, secret_scan
+    # (2026-09-30 18:1x)
+    {"window": "a7-hf-bm25", "run": "b1", "kind": "fetch", "files": {
+        "_fetch/a7-hf-bm25/b1/record.json": "002a602dfac249ea0d1b9ffa13b194bba3e473456623d096e410a78384afac97",
+        "_fetch/a7-hf-bm25/b1/place_record.json": "c32c89cb15e0c5adbcb57f40a7d02ba377373fb2f5483124e409fe72229b410f",
+        "_fetch/a7-hf-bm25/b1/pin_fill.json": "4a6bd27ec10792cf7c875b26058b189b0b1a0d8df7b0ebd632599d17d8cc5d07"}},
+    # supermemory's tree at server-v0.0.8's 5d2b585 (Q-A8S-SRC = c): no self-hosted server source in it - an E5 line
+    {"window": "a8-sm-tag", "run": "t1", "kind": "report", "files": {
+        "_fetch/a8-sm-tag/t1/record.json": "5abc32092c0b3f46820b605a99ee7f4869671675c009726f3985171728399117",
+        "_fetch/a8-sm-tag/t1/d5_report.json": "5aee333ac338250c4e43abbb287545133356827cd1ba83e3afc8f4645083bc8c"}},
 ]
 #: The A7 runs that were NOT cleared - kept by sha256 with the reason, never used.
 FAILED_A7 = [
