@@ -108,6 +108,11 @@ FAILED_A7 = [
         "_fetch/a7-arxiv-src/s1/d8_report.json": "98c828f16e0e88d2821c084ce9f0a973736bf5cf14803ef22200944412ae8803"},
      "reason": "export.arxiv.org answered the OAI request with 301 to oaipmh.arxiv.org (not followed: no redirect was "
                "declared); the e-print was not asked for - the auditor's Q-D8-5 = O-b"},
+    {"window": "a7-arxiv-src", "run": "s2", "files": {
+        "_fetch/a7-arxiv-src/s2/record.json": "d53ebd4c2f6e868b16aa04285eec65a950a81a58b510cb5fea712d6f509337c6",
+        "_fetch/a7-arxiv-src/s2/d8_report.json": "71381d3cf47e30e49e081f6d812676274283ab82f5cb7a598595717109866fa8"},
+     "reason": "the e-print answered 301 to arxiv.org/src/2501.13956v1, not followed (0 redirects); its OAI part was "
+               "read (CC BY-NC-SA 4.0, v1 only) and s3 reads it again - the auditor's Q-D8-6 = O-a"},
 ]
 
 

@@ -118,7 +118,9 @@ WANT_FAILED = {("a7-npm", "g1"): {"_fetch/a7-npm/g1/record.json": "fb4212e565e42
                    "_fetch/a8-supermemory-bin/b1/record.json": "f8680bc9a89083539d36335958ad89c7508856133eb903513e964d54429316db",
                    "_install/a8-supermemory-bin/b1/bin_record.json": "2151a437255987690da9c1831877ed1d06bb23c40c3c3f7bbea3567b7b0dd817"},
                ("a7-arxiv-src", "s1"): {"_fetch/a7-arxiv-src/s1/record.json": "88e21cb00817182c538bed636ea8f748714f43f2ed49740b647b3c776d013d29",
-                                        "_fetch/a7-arxiv-src/s1/d8_report.json": "98c828f16e0e88d2821c084ce9f0a973736bf5cf14803ef22200944412ae8803"}}
+                                        "_fetch/a7-arxiv-src/s1/d8_report.json": "98c828f16e0e88d2821c084ce9f0a973736bf5cf14803ef22200944412ae8803"},
+               ("a7-arxiv-src", "s2"): {"_fetch/a7-arxiv-src/s2/record.json": "d53ebd4c2f6e868b16aa04285eec65a950a81a58b510cb5fea712d6f509337c6",
+                                        "_fetch/a7-arxiv-src/s2/d8_report.json": "71381d3cf47e30e49e081f6d812676274283ab82f5cb7a598595717109866fa8"}}
 NPM_PROBLEMS = ["job 0: the fetch child exited with 3", "job 0 request npm:package-document: Refused: status 404"]
 PREREG = {"research/v3/PREREG-V3-rev1.md": "1" * 64, "research/v3/PREREG-V3-AMENDMENTS.md": "2" * 64}
 
@@ -127,14 +129,15 @@ check("F7-1: CLEARED_A7 is exactly the auditor's eleven runs - the four of Q-F7,
       "a8-supermemory-bin b2, a7-hf h1, py-base-312 p1 and a7-github-2 g1 - with their twenty-four record files by sha256, "
       "and FAILED_A7 is "
       "a7-npm g1 (npm answers 404; revision 1's channel, erratum A3 T32), a7-arxiv d1 (429, nothing read), "
-      "a8-supermemory-bin b1 (R-GHR-ISS, superseded by b2) and a7-arxiv-src s1 (301 to oaipmh.arxiv.org, the e-print not "
-      "asked for), each by its records' sha256 with the reason named",
+      "a8-supermemory-bin b1 (R-GHR-ISS, superseded by b2), a7-arxiv-src s1 (301 to oaipmh.arxiv.org, the e-print not "
+      "asked for) and a7-arxiv-src s2 (the e-print's 301 to /src/, not followed), each by its records' sha256 with the "
+      "reason named",
       ok(lambda: {(e["window"], e["run"]): e["files"] for e in F7.CLEARED_A7} == WANT_CLEARED
          and {(e["window"], e["run"]): e["files"] for e in F7.FAILED_A7} == WANT_FAILED
          and "404" in F7.FAILED_A7[0]["reason"] and "T32" in F7.FAILED_A7[0]["reason"]
          and "429" in F7.FAILED_A7[1]["reason"] and "R-GHR-ISS" in F7.FAILED_A7[2]["reason"]
          and "superseded by b2" in F7.FAILED_A7[2]["reason"] and "oaipmh.arxiv.org" in F7.FAILED_A7[3]["reason"]
-         and "not asked for" in F7.FAILED_A7[3]["reason"]),
+         and "not asked for" in F7.FAILED_A7[3]["reason"] and "/src/2501.13956v1" in F7.FAILED_A7[4]["reason"]),
       str([(e["window"], e["run"]) for e in getattr(F7, "CLEARED_A7", [])]))
 check("F7-2: a7-npm-d d1 is cleared by its ruling note - its two problems verbatim, the one excluded request its 404",
       ok(lambda: (npm := next(e for e in F7.CLEARED_A7 if e["window"] == "a7-npm-d"))["problems_verbatim"] == NPM_PROBLEMS
@@ -259,7 +262,8 @@ check("F7-3: the fragment holds the four cleared runs and the failed one, each f
          and OUT["windows"][3]["problems"] == {k: (2 if k.endswith("record.json") else 0) for k in CL[3]["files"]}
          and [(f["window"], f["run"]) for f in OUT["failed_runs"]] == [("a7-npm", "g1"), ("a7-arxiv", "d1"),
                                                                         ("a8-supermemory-bin", "b1"),
-                                                                        ("a7-arxiv-src", "s1")]), str(oerr))
+                                                                        ("a7-arxiv-src", "s1"),
+                                                                        ("a7-arxiv-src", "s2")]), str(oerr))
 check("F7-16: the fragment's binaries section pins supermemory-local's server (Q-BIN-1 = O-a) - a8-supermemory-bin b2: "
       "server-v0.0.8 at 5d2b5855, the Windows asset, its sha256 = the release digest, its size, the a7-docs record it was "
       "read from and its window record, each by sha256",

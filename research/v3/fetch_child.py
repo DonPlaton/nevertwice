@@ -69,7 +69,9 @@ from pathlib import Path, PurePosixPath
 _LOOPBACK_PROXY = re.compile(r"http://127\.0\.0\.1:(\d{1,5})/?")
 CHUNK = 1 << 20
 RAW_ENCODINGS = frozenset({"gzip", "x-gzip"})    # a request's raw_encoding: the only encodings it may keep as sent
-_EPRINT = re.compile(r"https://arxiv\.org/e-print/[0-9]{4}\.[0-9]{4,5}v[0-9]{1,3}")   # the only URL that may carry it
+#: the only URLs that may carry raw_encoding: an arXiv e-print, or its source path /src/ (Q-D8-6 = O-a: a7-arxiv-src
+#: s2's record gave it as the e-print's redirect)
+_EPRINT = re.compile(r"https://arxiv\.org/(?:e-print|src)/[0-9]{4}\.[0-9]{4,5}v[0-9]{1,3}")
 
 
 class Refused(Exception):

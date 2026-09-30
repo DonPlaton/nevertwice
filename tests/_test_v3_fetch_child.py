@@ -118,6 +118,7 @@ ROUTES = {
     "/gzraw.bin": (200, [("Content-Encoding", "x-gzip"), ("Content-Type", "application/x-eprint-tar")], GZ),
     "/e-print/2501.00001v1": (200, [("Content-Encoding", "x-gzip"), ("Content-Type", "application/x-eprint-tar")], GZ),
     "/e-print/2501.00002v1": (200, [("Content-Encoding", "br")], DATA),
+    "/src/2501.00001v1": (200, [("Content-Encoding", "x-gzip"), ("Content-Type", "application/gzip")], GZ),
     "/closing": (301, [("Location", f"https://{CDN}/blob/data.json?X-Sig=secret"), ("Connection", "close")], b""),
     "/closing200": (200, [("Connection", "close")], DATA),
     "/big.bin": (200, [], BIG),
@@ -275,8 +276,10 @@ check("RE-3: a raw_encoding other than a non-empty list of gzip / x-gzip is refu
 elsewhere: dict = {}
 for label, req in (("a file on huggingface.co", {"url": f"https://{HF}/gzraw.bin"}),
                    ("a HEAD of the e-print", {"url": EP1, "method": "HEAD"}),
-                   ("another path on arxiv.org", {"url": f"https://{AX}/src/2501.00001v1"}),
-                   ("an e-print URL with a query", {"url": EP1 + "?x=1"})):
+                   ("another path on arxiv.org", {"url": f"https://{AX}/abs/2501.00001v1"}),
+                   ("an e-print URL with a query", {"url": EP1 + "?x=1"}),
+                   ("a source URL with a query", {"url": f"https://{AX}/src/2501.00001v1?x=1"}),
+                   ("a HEAD of the source", {"url": f"https://{AX}/src/2501.00001v1", "method": "HEAD"})):
     before = len(srv.heads)
     (r_y,), cwd_y = job([{"id": "y", "save": "raw/y.bin", "max_bytes": 1 << 20, "raw_encoding": ["x-gzip"], **req}],
                         hosts=(HF, AX), cwd_name=f"raw_else_{len(elsewhere)}")
@@ -284,6 +287,11 @@ for label, req in (("a file on huggingface.co", {"url": f"https://{HF}/gzraw.bin
                         and len(srv.heads) == before and not any(p.is_file() for p in cwd_y.rglob("*")), r_y.get("error"))
 check("RE-5: raw_encoding on anything but a GET of an arXiv e-print URL is refused by name before anything is sent - "
       + ", ".join(elsewhere), all(v[0] for v in elsewhere.values()), str(elsewhere))
+(r_src,), cwd_src = job([{"id": "src", "url": f"https://{AX}/src/2501.00001v1", "save": "raw/s.bin", "max_bytes": 1 << 20,
+                          "raw_encoding": ["gzip", "x-gzip"]}], hosts=(AX,), cwd_name="raw_src")
+check("RE-6 (Q-D8-6 = O-a): the source URL /src/<id>v<n> (a7-arxiv-src s2's redirect_path) takes raw_encoding as the "
+      "e-print URL does - saved as sent, its Content-Encoding recorded",
+      r_src["ok"] and (cwd_src / "raw" / "s.bin").read_bytes() == GZ and r_src.get("content_encoding") == "x-gzip", str(r_src))
 check("RE-4: a request without raw_encoding keeps its summary's keys (no content_encoding, no content_type) - every other "
       "window's record reads as before", r_meta["ok"] and "content_encoding" not in r_meta and "content_type" not in r_meta
       and "content_encoding" not in r_file, str(sorted(r_meta)))

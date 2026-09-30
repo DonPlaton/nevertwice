@@ -119,6 +119,12 @@ def mutated(name, **change):
     return pins
 
 
+check("LIC-NCSA (Q-D8-7 = O-a; T30: a licence per stand, no ND): CC-BY-NC-SA-4.0 is on the list and a pin declared "
+      "without a licence takes it at fetch; it is no ND",
+      "CC-BY-NC-SA-4.0" in CP.LICENCES and not CP._ND.search("CC-BY-NC-SA-4.0")
+      and not refused(lambda: CP.fill("locomo_j_prompt", revision="r", sha256="0" * 64, size=1,
+                                      licence_found="CC-BY-NC-SA-4.0", pins=mutated("locomo_j_prompt", licence=None)),
+                      CP.PinRefused), str(sorted(CP.LICENCES)))
 check("an ND licence is refused - by the ND rule itself, declared or found",
       refused(lambda: CP.check_rules(mutated("lme_s_cleaned", licence="CC-BY-NC-ND-4.0")), CP.PinRefused, "an ND licence")
       and refused(lambda: CP.check_rules(mutated("lme_s_cleaned", licence_found="CC-BY-ND-4.0")), CP.PinRefused, "an ND licence"))

@@ -32,7 +32,9 @@ REPO = HERE.parent.parent
 ROLES = ("evaluation", "bracket", "smoke", "tokenizer", "prompt", "scoring", "arm-source", "licence-evidence")
 SOURCES = ("hf-dataset", "hf-model", "url", "github", "git", "local-v2")
 #: The licences the declared pins may carry (§3.1). Anything with ND is refused wherever it appears.
-LICENCES = frozenset({"MIT", "Apache-2.0", "CC-BY-4.0", "CC-BY-SA-4.0", "CC-BY-NC-4.0", "BSD-3-Clause",
+#: CC-BY-NC-SA-4.0: Zep's paper (the auditor's Q-D8-7 = O-a - T30 asks a licence per stand and no ND; its text and the
+#: template drawn from it are never committed or published, FREEZE-V3 holds their sha256 only).
+LICENCES = frozenset({"MIT", "Apache-2.0", "CC-BY-4.0", "CC-BY-SA-4.0", "CC-BY-NC-4.0", "CC-BY-NC-SA-4.0", "BSD-3-Clause",
                       "CC-BY-SA-4.0 (data); MIT (code)"})
 #: The single licences a fetch may find on a pin that declares none (P6: anything else is refused).
 SINGLE_LICENCES = frozenset(x for x in LICENCES if "(" not in x)

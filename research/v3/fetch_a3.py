@@ -1087,7 +1087,8 @@ def d8_decl(manifest: dict) -> dict:
 def d8_jobs(decl: dict, *, sleep=time.sleep) -> list:
     """Job 0: the OAI-PMH GetRecord of the paper in the arXivRaw format (its licence and every version) from
     export.arxiv.org, following one redirect, to oaipmh.arxiv.org only, at the path the server gives (Q-D8-5 = O-b).
-    Job 1, only when that answer came: after D8_PAUSE_S, the e-print of the declared version from arxiv.org, saved as
+    Job 1, only when that answer came: after D8_PAUSE_S, the e-print of the declared version from arxiv.org - at its
+    source path /src/<id>v<n>, which a7-arxiv-src s2's record gave as /e-print/'s redirect (Q-D8-6 = O-a) - saved as
     sent (raw_encoding: a gzip-encoded body is never decoded), no redirect followed."""
     aid, ver = decl["arxiv_id"], decl["version"]
     oai = {"hosts": D8_OAI_HOSTS, "max_redirects": 1, "requests": [
@@ -1101,7 +1102,7 @@ def d8_jobs(decl: dict, *, sleep=time.sleep) -> list:
         sleep(D8_PAUSE_S)
         return {"hosts": ["arxiv.org"], "max_redirects": 0, "requests": [
             {"id": f"eprint:{aid}v{ver}", "save": "eprint.bin", "max_bytes": decl["max_bytes"],
-             "raw_encoding": ["gzip", "x-gzip"], "url": f"https://arxiv.org/e-print/{aid}v{ver}"}]}
+             "raw_encoding": ["gzip", "x-gzip"], "url": f"https://arxiv.org/src/{aid}v{ver}"}]}
     return [oai, eprint]
 
 

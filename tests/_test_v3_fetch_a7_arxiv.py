@@ -334,7 +334,7 @@ try:
     OAI_Q = f"/oai2?verb=GetRecord&identifier=oai:arXiv.org:{ID8}&metadataPrefix=arXivRaw"
     OAI_Q2 = f"/oai?verb=GetRecord&identifier=oai:arXiv.org:{ID8}&metadataPrefix=arXivRaw"   # the moved endpoint's path
     MOVED = (301, [("Location", "https://oaipmh.arxiv.org" + OAI_Q2), ("Connection", "close")], b"")
-    EP_Q = f"/e-print/{ID8}v1"
+    EP_Q = f"/src/{ID8}v1"                      # Q-D8-6 = O-a: the path a7-arxiv-src s2's record gave
     LIC = "http://creativecommons.org/licenses/by/4.0/"
 
     def oai(*, versions=("v1",), licence=LIC, rid=ID8) -> bytes:
