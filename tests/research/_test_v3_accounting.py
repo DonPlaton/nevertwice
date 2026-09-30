@@ -760,11 +760,17 @@ with tempfile.TemporaryDirectory(prefix="v3acct_e2e_") as td:
                                      "positive_hits": 0, "raised": 0},
                   "results_bm25_positive": 0, "reads_bm25_positive": 0,
                   # BC2 (Q-BM25-MOCK): the unit's bm25 copy, honest - declared, offline, refs/main the pinned commit,
-                  # the markers present, the encoder's model dir the pinned snapshot
+                  # the markers present, the encoder's model dir the pinned snapshot; B-M36B-FIX: every file fastembed
+                  # 0.8.1's offline check requires, 19 names at the pinned sizes, as a real child reports them
                   "cache": {"names": {}, "declared": True, "offline": "1", "language": "english", "stopwords": 179,
                             "model_dir_rel": f"models--Qdrant--bm25/snapshots/{A.BM25_COMMIT}",
                             "refs_main": {"bytes": 40, "hex40": True, "commit": A.BM25_COMMIT},
-                            "required": {"mock.file": 0, "english.txt": 1283, "tamil.txt": 0}}},
+                            "required": {"mock.file": 0, "arabic.txt": 6348, "danish.txt": 424, "dutch.txt": 453,
+                                         "english.txt": 936, "finnish.txt": 1579, "french.txt": 813,
+                                         "german.txt": 1362, "greek.txt": 2167, "hungarian.txt": 1227,
+                                         "italian.txt": 1654, "norwegian.txt": 851, "portuguese.txt": 1286,
+                                         "romanian.txt": 1910, "russian.txt": 1235, "spanish.txt": 2176,
+                                         "swedish.txt": 559, "tamil.txt": 0, "turkish.txt": 260}}},
          "nlp": {"names": {}, "module": True, "nlp_full": True, "nlp_lemma": True, "failed_full": False,
                  "failed_lemma": False, "is_package": True}}
         for u in ("u0", "u1") for st in ("write", "read")]

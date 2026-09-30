@@ -129,6 +129,13 @@ def decl(system: str, **over) -> dict:
 
 M35_LINES = ("fastembed not installed", "Failed to load BM25 encoder", "predates v3 hybrid search")
 BM25_REV = "22b8d2af71a76161e18dd432d2cee0eefa66e412"
+#: B-M36B-FIX (the auditor, 2026-09-30): what a real child reports - every file fastembed 0.8.1's offline check requires
+#: (model_file "mock.file" and the 18 supported languages' <lang>.txt, bm25.py:25-57), each its size in the placed copy:
+#: the pinned ones as a7-hf-bm25 pins them, the two markers 0 bytes - never a subset (m5's M36b wants all 19)
+REQ = {"mock.file": 0, "arabic.txt": 6348, "danish.txt": 424, "dutch.txt": 453, "english.txt": 936, "finnish.txt": 1579,
+       "french.txt": 813, "german.txt": 1362, "greek.txt": 2167, "hungarian.txt": 1227, "italian.txt": 1654,
+       "norwegian.txt": 851, "portuguese.txt": 1286, "romanian.txt": 1910, "russian.txt": 1235, "spanish.txt": 2176,
+       "swedish.txt": 559, "tamil.txt": 0, "turkish.txt": 260}
 
 
 def cache_block(**over) -> dict:
@@ -137,7 +144,7 @@ def cache_block(**over) -> dict:
     two markers 0 bytes), the encoder's model dir the pinned snapshot inside the copy."""
     c_ = {"names": {}, "declared": True, "offline": "1", "model_dir_rel": f"models--Qdrant--bm25/snapshots/{BM25_REV}",
           "language": "english", "stopwords": 179, "refs_main": {"bytes": 40, "hex40": True, "commit": BM25_REV},
-          "required": {"mock.file": 0, "english.txt": 1283, "tamil.txt": 0}}
+          "required": dict(REQ)}
     c_.update(over)
     return c_
 
@@ -792,7 +799,12 @@ check("BC-HARNESS-0: the artifact's pinned bm25 snapshot is the pins' - BM25_COM
 #: keyword_search never answering - the fault's consequences, never listed beside the harness's line
 FAILED_BY_CACHE = {"encoder": "failed", "lines": {**{x: 0 for x in M35_LINES}, "Failed to load BM25 encoder": 1},
                    "keyword_search": {"calls": 3, "not_none": 0, "hits": 0, "positive_hits": 0, "raised": 0}}
-REQ = {"mock.file": 0, "english.txt": 1283, "tamil.txt": 0}
+_req_want = {getattr(BCM, "FASTEMBED_MODEL_FILE", None): 0,
+             **{f"{x}.txt": getattr(BCM, "BM25_BLOBS", {}).get(f"{x}.txt", (None, 0))[1]
+                for x in getattr(BCM, "FASTEMBED_LANGUAGES", [])}}
+check("B-M36B-FIX: the honest fixtures' required files are what a real child reports - fastembed 0.8.1's model_file and "
+      "its 18 language files, 19 names, each the pinned size (the markers 0 bytes)",
+      REQ == _req_want and len(REQ) == 19, str(sorted(set(REQ) ^ set(_req_want)) or _req_want)[:300])
 H_CASES = {    # label: (the cache block, the product's consequences shown, stage, the fact the harness line names)
     "mock.file missing": (cache_block(required={**REQ, "mock.file": None}), True, "read", "mock.file missing"),
     "tamil.txt missing": (cache_block(required={**REQ, "tamil.txt": None}), True, "read", "tamil.txt missing"),
