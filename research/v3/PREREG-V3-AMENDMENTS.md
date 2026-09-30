@@ -120,3 +120,48 @@ offline (HF_HUB_OFFLINE=1); a unit scored twice gives the same bytes.
 - **§13, trap closure, the new line:**
 
 | T33 the scorer's packages | §2.2 | scorer_v3: the 11 versions of window a8-pypi-d p1; the lock's wheels by sha256; CPU, one thread, offline |
+
+## A5 - T34: mem0_v3 carries what its selected paths import - ollama and fastembed
+
+- **Trap:** T34 Mem0 without its Ollama client and without BM25.
+- **Date:** 2026-09-30.
+- **Ruling:** the auditor's Q-M0-OLLAMA = (a) and Q-M0-FE = (a) (2026-09-30), from M31 of the download a8-pypi-mem0_v3 d1
+  (download_record.json e082e3952561adf70fa53204647825a2584d73b945a88b56a5a350d560ffc86c, m31.json
+  ff00d5e8546ba888efea5bb0be7eb7cf9c91393386eff7993a9dfab43de38bc0: unprovided fastembed and ollama, both blocking).
+- **Reason:** mem0ai[nlp]==2.2.0 provides neither. `ollama` is imported at module level by mem0/embeddings/ollama.py:7
+  (the embedder of both arms) and mem0/llms/ollama.py:5 (mem0-store's LLM): without it the arm does not start. The
+  vendor declares it as `ollama>=0.3.0; extra == 'llms'`. `fastembed` is imported by mem0/vector_stores/qdrant.py:97 for
+  the `Qdrant/bm25` sparse encoder; without it mem0 2.2.0 logs a warning and drops BM25 from its hybrid score
+  (mem0/utils/scoring.py: semantic + BM25 + entity, at most 2.5; without BM25, 1.5) - the product would run degraded
+  and nothing would fail. The vendor declares it as `fastembed>=0.3.1; extra == 'extras'`. T22 gave Mem0 its spaCy for
+  the same reason: the product runs as designed on the paths our config selects.
+- **Rejected:** the vendor's whole extras `[llms]` and `[extras]` - they add litellm, groq, google-genai,
+  google-generativeai, vertexai, together, boto3, elasticsearch, opensearch-py, langchain, langchain-core,
+  langchain-community, sentence-transformers and transformers, integrations our config never selects, and they would
+  turn the lazy langchain_core import at mem0/memory/main.py:3695 from unprovided into a live path no probe has run.
+  Running without fastembed - a silent bias against the competitor (§3.4).
+- **§2.2, the mem0 row becomes:**
+
+| mem0 | product | mem0ai, latest stable at freeze, with `[nlp]` (T22); 2.2.0 on 2026-09-23; with ollama==0.6.3 and fastembed==0.8.1 (T34) | 3.12, fresh venv mem0_v3 | vendor-recommended:https://github.com/mem0ai/memory-benchmarks | to install |
+
+- **§2.2, after the arm table, the new paragraph:**
+
+Mem0's venv mem0_v3 holds, beside mem0ai[nlp]==2.2.0, exactly the two distributions the code its config selects imports
+and the extra `[nlp]` does not bring: ollama==0.6.3 (the Ollama client of its embedder and of mem0-store's LLM; the
+vendor's floor ollama>=0.3.0) and fastembed==0.8.1 (the BM25 encoder of its Qdrant store; the vendor's floor
+fastembed>=0.3.1) - each the newest stable release, read by the auditor at pypi.org on 2026-09-30 (ollama 0.6.3 uploaded
+2026-09-29, fastembed 0.8.1 uploaded 2026-09-22, neither yanked). Every further package the lock resolves is recorded
+with its wheel's sha256 by the lock window. The files of the Hugging Face model Qdrant/bm25 that fastembed loads are
+pinned by a window at revision 22b8d2af71a76161e18dd432d2cee0eefa66e412 and read offline (HF_HUB_OFFLINE=1) from a
+unit-local copy. A mem0 unit counts its BM25: the encoder loaded, the collection has its `bm25` sparse slot,
+keyword_search returned a result (not None) at least once, and none of the lines "fastembed not installed", "Failed to
+load BM25 encoder" or "predates v3 hybrid search" in its log; a unit without all four is a failed unit, never a scored
+one. The unit also counts its results with a BM25 score above zero; that count is published, never a reason to fail a
+unit (a query can share no term with any memory). The vendor's own harness (mem0ai/memory-benchmarks at 4b61c5d)
+installs mem0ai from a branch, feat/v3-pipeline, that no longer exists, and no fastembed; whether the vendor's published
+numbers had BM25 is not known. Ours run release 2.2.0 as its code is built: a fresh collection with the `bm25` slot and
+the encoder its warning asks for.
+
+- **§13, trap closure, the new line:**
+
+| T34 Mem0 without its Ollama client and without BM25 | §2.2 | mem0_v3 += ollama==0.6.3, fastembed==0.8.1; Qdrant/bm25 at 22b8d2af by windows, offline; a unit without BM25 fails |
