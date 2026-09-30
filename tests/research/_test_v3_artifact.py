@@ -356,6 +356,15 @@ with tempfile.TemporaryDirectory(prefix="v3art_") as td:
           refused(lambda: A.build(**{**kw, "arms": {**arms, "mem0": bad_in}}), "was fed"))
     check("build refuses a sensitivity id other than the pre-declared all-0 row",
           refused(lambda: A.build(**{**kw, "sensitivity": "temperature-1"}), "sensitivity"))
+    check("B3 (rev1 §5.1 :1308, Row V's plan): declared_axes 'embedder' is refused by name - there is no embedder axis, "
+          "every arm embeds on the one pinned tag - alone or beside k",
+          all(refused(lambda ax=ax: A.build(**{**kw, "declared_axes": ax}), "no embedder axis")
+              for ax in (["embedder"], ["k", "embedder"])))
+    try:
+        axes_kb = A.build(**{**kw, "declared_axes": ["k", "budget"]})["declared_axes"]
+    except Exception as e:  # noqa: BLE001 - the row FAILs by name
+        axes_kb = repr(e)
+    check("B3: the §5.2 axes k and budget are still declared and kept", axes_kb == ["k", "budget"], str(axes_kb))
     out = A.write(doc, d / "results")
     raw = out.read_bytes()
     check("write: <stand>_<point>_<tier>.json, LF, sorted keys, and never overwritten",

@@ -417,7 +417,10 @@ def build(*, stand: str, point: str, tier: str, arms: Mapping[str, Mapping], bra
         raise ArtifactRefused("input_manifest needs dataset_sha256, list_sha256 and split")
     if not {"response_model", "changelog_newest"} <= set(model_version):
         raise ArtifactRefused("model_version needs response_model and changelog_newest")
-    bad_axes = [a for a in declared_axes if a not in ("k", "budget", "embedder")]
+    if "embedder" in declared_axes:
+        raise ArtifactRefused("declared_axes: there is no embedder axis (PREREG-V3 rev1 §5.1) - every arm embeds on "
+                              "the one pinned tag, so an embedder that differs is an asymmetry, never an axis")
+    bad_axes = [a for a in declared_axes if a not in ("k", "budget")]
     if bad_axes:
         raise ArtifactRefused(f"declared_axes {bad_axes} are not §5.2 axes")
     if sensitivity not in (None, "temperature-0"):
