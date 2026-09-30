@@ -285,8 +285,12 @@ print("\n- and the inventory is pinned, so new pins cannot arrive unnoticed -")
 #: the manifest's windows.a7-docs-2.commit (the tag server-v0.0.8's commit) and windows.a7-docs-2.head (the head the
 #: discovery found), both foreign (the entry names its repo, so neither is cat-filed here) - a7-docs' own two, for the
 #: API reference. The auditor's census on c7e66f0: 308 kinds over 393 values (196 artifacts, 306 -> 308).
+#: 2026-09-30, PREREG-V3 A8 a8-sm-tag (the auditor's Q-A8S-SRC = c, plan d5 by window): no artifact, +1 kind, gained -
+#: the manifest's windows.a8-sm-tag.commit (the commit supermemory's tag server-v0.0.8 names), foreign (its entry names
+#: the repo). Diffed with this file's own walk() against the manifest before it: none lost (196 artifacts, 308 -> 309
+#: kinds over 394 values).
 check("the number of pinned artifacts has not moved", len(artifacts) == 196, str(len(artifacts)))
-check("and the number of pin KINDS has not moved", len(kinds) == 308,
+check("and the number of pin KINDS has not moved", len(kinds) == 309,
       f"{len(kinds)} kinds over {len(pins)} values")
 
 print(f"\n{'ALL OK' if not FAILS else f'{FAILS} FAILED'}")

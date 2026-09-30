@@ -231,7 +231,8 @@ check("the window hosts are the declared exact names",
           "a8-spacy-model": ["api.github.com", "github.com", "objects.githubusercontent.com", "raw.githubusercontent.com",
                              "release-assets.githubusercontent.com"],
           "a8-supermemory-bin": ["api.github.com", "github.com", "objects.githubusercontent.com",
-                                 "release-assets.githubusercontent.com"]})
+                                 "release-assets.githubusercontent.com"],
+          "a8-sm-tag": ["api.github.com"]})
 check("a7-hf's hosts come from a7-hf-d d1's report (d7_report.json 2ec9f5f2...) - huggingface.co and the CDN host it "
       "recorded, no other - with one redirect", MAN["windows"].get("a7-hf", {}).get("hosts_from_record")
       == "2ec9f5f251e755860f5cc6ea887766f939a8fe2d93b6d7a3ba165220c69c6ca4"

@@ -98,6 +98,27 @@ for label, entry in bad_cases.items():
 check("DF: an entry with anything but the declared shape is refused by name (D5ManifestError) - "
       + ", ".join(bad_cases), all(refused.values()), str([k for k, v in refused.items() if not v]))
 
+print("\n- the manifest's a8-sm-tag entry (the auditor's Q-A8S-SRC = c: is the server's source public at its tag?) -")
+SMT = MANI["windows"].get("a8-sm-tag") or {}
+sdecl, sderr = holds(lambda: F.d5_decl(MANI, "a8-sm-tag"))
+check("SMT-1: the manifest declares a8-sm-tag as plan d5 reads it: api.github.com only, no redirect, "
+      "supermemoryai/supermemory at the release tag server-v0.0.8, the commit 5d2b5855 the release names, the "
+      "selection .github/, apps/, packages/ and the root's package.json and turbo.json - metadata only",
+      sderr is None and sdecl["hosts"] == ["api.github.com"] and sdecl["max_redirects"] == 0
+      and sdecl["repo"] == "supermemoryai/supermemory" and sdecl["tag"] == "server-v0.0.8"
+      and sdecl["commit"] == "5d2b5855fe492a3682a1cde4a255e2db0c4db595"
+      and sdecl["prefixes"] == [".github/", "apps/", "packages/"] and sdecl["files"] == ["package.json", "turbo.json"],
+      str(sderr or sdecl))
+cdecl, cderr = holds(lambda: F.d5_decl(MANI))
+_x, oerr = holds(lambda: F.d5_decl(MANI, "a7-docs"))
+_y, serr = holds(lambda: F.d5_decl({"windows": {"a8-sm-tag": {**SMT, "hosts": ["api.github.com", "github.com"]}}},
+                                   "a8-sm-tag"))
+check("SMT-2: each plan d5 window is read from its own entry - by default a7-cognee-tag's, unchanged; a window that "
+      "is not a plan d5 window, and an a8-sm-tag entry of another shape, are refused by name (D5ManifestError)",
+      cderr is None and cdecl["repo"] == "topoteretes/cognee" and bool(oerr) and oerr.startswith("D5ManifestError")
+      and "a7-docs" in oerr and bool(serr) and serr.startswith("D5ManifestError") and "a8-sm-tag" in serr,
+      f"{cderr} {oerr} {serr}")
+
 TMP = Path(tempfile.mkdtemp(prefix="nvt3_d5_"))
 GH = "api.github.com"
 made = TF.make_test_cert(TMP / "cert", GH, org="Sectigo Limited")
@@ -213,7 +234,8 @@ try:
     class _WouldSpawn(Exception):
         pass
 
-    def run_main(argv, manifest):
+    def run_main(argv, manifest, seen=None):
+        """main() on ``manifest`` with every spawn stubbed; ``seen`` (a dict) gets the window's kwargs it reached."""
         mp = TMP / "manifest_main.json"
         mp.write_text(json.dumps(manifest), encoding="utf-8")
         saved = (F._load, F.MANIFEST, F.run_child_window)
@@ -223,6 +245,9 @@ try:
         F.MANIFEST = mp
 
         def no_spawn(*a_, **k_):
+            if seen is not None:
+                seen.update(window=k_.get("window"), hosts=k_.get("hosts"),
+                            first=[r.get("url") for r in ((k_.get("jobs") or [{}])[0] or {}).get("requests", [])])
             raise _WouldSpawn("main reached the window")
         F.run_child_window = no_spawn
         err = io.StringIO()
@@ -248,6 +273,15 @@ try:
     m4 = run_main(["--window", "a7-cognee-tag", "--plan", "d5", *tail], MANI)
     check("D5-9: a manifest whose a7-cognee-tag entry is not the declared shape is refused (rc 2, named); the real one "
           "gets to the window", m3[0] == 2 and "a7-cognee-tag" in m3[1] and m4[0] == "spawned", f"{m3} {m4}")
+    seen_sm: dict = {}
+    s1 = run_main(["--window", "a8-sm-tag", "--plan", "d4", *tail], MANI)
+    s2 = run_main(["--window", "a8-sm-tag", "--plan", "d5", *tail], MANI, seen_sm)
+    check("SMT-3: main runs plan d5 in window a8-sm-tag on that window's own entry - its first job asks which commit "
+          "supermemory's server-v0.0.8 names, on api.github.com only - and refuses that window with another plan (rc 2)",
+          s1[0] == 2 and "plan d5 runs in window" in s1[1] and s2[0] == "spawned" and seen_sm.get("window") == "a8-sm-tag"
+          and seen_sm.get("hosts") == ["api.github.com"]
+          and seen_sm.get("first") == ["https://api.github.com/repos/supermemoryai/supermemory/commits/server-v0.0.8"],
+          f"{s1} {s2} {seen_sm}")
 finally:
     shutil.rmtree(TMP, ignore_errors=True)
 
