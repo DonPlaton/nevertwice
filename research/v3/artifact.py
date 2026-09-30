@@ -720,7 +720,8 @@ def p0k(row: Mapping, ctx: P0Context, arm: str) -> list[str]:
     """The auditor's Q-M35-FAIL = (d): a mem0 / mem0-store row is invalid by name when a unit it scores fails one of
     A5's four BM25 conditions (M35) or spaCy's state (M29) at either stage - "P0k: M35|M29: <status_id>/<unit>:
     <stage>: ...". A row without unit counters is not measured; a unit missing a stage is not measured there;
-    a run whose counters cover fewer units than the stand scores is flagged. A unit the stand dropped (units_dropped,
+    a run whose counters cover fewer units than the stand scores is flagged, and with no stand unit count in the
+    context (stand_units 0) the row is not measured. A unit the stand dropped (units_dropped,
     P0c's) is not judged here. Other arms and a blocked row are not P0k's."""
     if arm not in MEM0_ARMS or row.get("blocked"):
         return []
@@ -754,6 +755,9 @@ def p0k(row: Mapping, ctx: P0Context, arm: str) -> list[str]:
             got = len({u for (s_, u) in by if s_ == sid})
             if got != want:
                 out.append(f"P0k: M35: run {sid}: counters for {got} units, the stand scores {want}")
+    else:                               # the auditor's note on C7: no count, no coverage - never a silent pass
+        out.append("P0k: M35: not measured - the stand's unit count is unknown (P0Context.stand_units), so a unit with "
+                   "no counters at all could not be seen")
     return out
 
 

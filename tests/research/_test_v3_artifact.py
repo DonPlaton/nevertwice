@@ -677,18 +677,18 @@ K_CASES = {
     "no nlp block after the adds": (dict(stage="write", drop=("nlp",)), "M29", "not measured"),
 }
 k_bad = []
-for label, (kw, code, word) in K_CASES.items():
-    got_ = k_flags(lambda r, kw=kw: uc_set(r, **kw))
+for label, (kw_, code, word) in K_CASES.items():      # kw_: the module's kw is the m5 block's build arguments
+    got_ = k_flags(lambda r, kw_=kw_: uc_set(r, **kw_))
     want_key = f"{sids[0]}/u03"
     if not (got_ and all(x.startswith(f"P0k: {code}: {want_key}") for x in got_) and any(word in x for x in got_)):
         k_bad.append((label, got_))
 check("P0K-2: each broken condition of one unit is a P0k flag by name - \"P0k: M35|M29: <status_id>/<unit>: ...\" - "
       "and only that unit's: " + ", ".join(K_CASES), k_bad == [], str(k_bad)[:700])
 ks_bad = []
-for label, (kw, code, word) in {"mem0-store: the lemma model not loaded": (dict(stage="write", nlp={"nlp_lemma": False}),
+for label, (kw_, code, word) in {"mem0-store: the lemma model not loaded": (dict(stage="write", nlp={"nlp_lemma": False}),
                                                                            "M29", "nlp_lemma"),
                                 "mem0-store: no bm25 slot": (dict(stage="write", bm25={"slot": False}), "M35", "slot")}.items():
-    got_ = k_flags(lambda r, kw=kw: uc_set(r, **kw), arm="mem0-store", base=clean_store)
+    got_ = k_flags(lambda r, kw_=kw_: uc_set(r, **kw_), arm="mem0-store", base=clean_store)
     if not any(x.startswith(f"P0k: {code}: ") and word in x for x in got_):
         ks_bad.append((label, got_))
 check("P0K-3: mem0-store is judged the same way (both arms run mem0's Qdrant store and spaCy) - its full spaCy model "
@@ -718,6 +718,39 @@ check("P0K-7 (Q-M29-READ = (a)): at the read stage both spaCy models must be loa
       all(any(x.startswith(f"P0k: M29: {sids[0]}/u03: read:") and "nlp_full" in x for x in f7[a_])
           for a_ in ("mem0", "mem0-store"))
       and any("M29" in x and "read" in x and "not measured" in x for x in f7["missing"]), str(f7)[:500])
+f8 = [x for x in A.p0_flags(clean, A.P0Context(**{**CTX.__dict__, "stand_units": 0}), "mem0") if x.startswith("P0k:")]
+f8s = [x for x in A.p0_flags(clean_store, A.P0Context(), "mem0-store") if x.startswith("P0k:")]
+check("P0K-8 (the auditor's note on C7): with the stand's unit count unknown (P0Context.stand_units 0, the default) the "
+      "coverage cannot be checked - a mem0 and a mem0-store row are not measured by name, never passed: a unit with no "
+      "counters at all would go unseen", any("M35: not measured" in x and "unit count is unknown" in x for x in f8)
+      and any("M35: not measured" in x and "unit count is unknown" in x for x in f8s), str((f8, f8s))[:400])
+def dup_failed(r):
+    """u04's write entry failed (no slot), then an honest duplicate of the same stage after it (B-C7-DUP)."""
+    uc = r["unit_counters"]
+    i = next(n for n, e in enumerate(uc) if (e["status_id"], e["unit"], e["stage"]) == (sids[0], "u04", "write"))
+    bad = copy.deepcopy(uc[i])
+    bad["bm25"] = {**bad["bm25"], "slot": False}
+    uc.insert(i, bad)
+
+
+f9 = k_flags(dup_failed)
+check("P0K-9 (B-C7-DUP): two entries of one unit's stage - a failed one followed by an honest one - are a P0k flag by "
+      "name; the honest duplicate never hides the failed entry",
+      any(x.startswith(f"P0k: M35: {sids[0]}/u04") and "two write entries" in x for x in f9), str(f9)[:400])
+
+
+def unreadable_unit(r):
+    """Every entry of u05 in the first run unreadable (a stage that is none of write and read)."""
+    for e in r["unit_counters"]:
+        if (e["status_id"], e["unit"]) == (sids[0], "u05"):
+            e["stage"] = "bogus"
+
+
+f10 = k_flags(unreadable_unit)
+check("P0K-10 (the auditor's note on C7): a unit whose every entry is unreadable is named unreadable, and the run's "
+      "coverage misses it by count (19 of the stand's 20 units) - with stand_units > 0 it never passes",
+      any("unreadable unit counters entry" in x for x in f10)
+      and any(x.startswith(f"P0k: M35: run {sids[0]}:") and "19 units" in x and "20" in x for x in f10), str(f10)[:500])
 other = row("nevertwice", sid=sids[2:4])
 check("P0K-6: other arms and a blocked mem0 row are not P0k's: no unit counters there is no flag",
       [x for x in A.p0_flags(other, CTX, "nevertwice") if x.startswith("P0k:")] == []
