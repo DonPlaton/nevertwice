@@ -747,44 +747,107 @@ class SmokeDeps:
     err: Callable[[str], None] = field(default=lambda s: sys.stderr.write(s + "\n"))
     writer_bounds: Mapping[str, Mapping[str, Any]] = field(      # C3: mem0's from writer_bounds_for
         default_factory=lambda: {a: dict(b) for a, b in WRITER_BOUNDS.items()})
+    # A4 (the auditor's Q9 = (a), B3): (arm, ArmRun, *, stand_id, unit_block, unit_chars, v_template) -> an UNBOUND plan
+    # launcher (check_points, bind_proxy, launcher, record); None - make_launcher, through the same order (_Deferred)
+    make_plan_launcher: Callable[..., Any] | None = None
 
 
-def run_smoke(cfg: RunConfig, *, stand: str, arm_names: Sequence[str], runs: Sequence[str], deps: SmokeDeps) -> int:
-    """One smoke stand end to end (rev1 §9.4, Q-12-7): the units, the forecast, the preflight, one Canaries object for
-    the homes, the scheduler and the proxy, the proxy, the hooks and the incident gate under the stand's wall ceiling,
-    the scheduler's stand, then the gate and the proxy stopped (in that order: the gate's last poll may probe), the
-    summary printed as SMOKE_FIELDS lines and written under <runs>/<stand id>/_smoke/ (summary.json, and run.json with
-    each arm-run's P0h counters, the proxy's flags by arm and kind, and every problem). 0 only when the stand completed,
-    no failure counter (run_v3_smoke.iter_problems), no P0h counter and no proxy flag (B-SMOKE-FLAGS: every
-    zero-tolerance kind - model_mismatch, tool_violation, canary, owner_marker, thinking_call, unparsable,
-    home_canary_missing) is above 0, the proxy stopped by itself and STATUS self-checks clean; every problem goes to
-    stderr by name."""
+@dataclass(frozen=True)
+class StandInputs:
+    """One stand's inputs to _drive_stand (A4): its id and order, the units with their smaps and item texts, each unit's
+    tokens, the questions ((unit, qid) -> (template, question[, the template's further values])), the points each arm
+    is read at (the plan's own points(arm), given to the forecast and the plan alike) and each rendered-V arm's
+    template. The stand is dated (S4 and S1 alike)."""
+    stand_id: str
+    order: int
+    units: Sequence[Any]
+    smaps: Mapping[str, Mapping[str, str]]
+    item_texts: Mapping[str, Any]
+    unit_tokens: Mapping[str, int]
+    questions: Mapping[tuple[str, str], tuple]
+    points: Callable[[str], tuple[str, ...]]
+    v_templates: Mapping[str, Any] = field(default_factory=dict)
+
+
+def empty_prompts(questions: Mapping[tuple[str, str], tuple], *, render: Callable[..., str]) -> dict:
+    """The forecast's prompts (B2): each question's template with an empty context - its question and, for a 3-tuple
+    (S1's question_date), each further slot of the template from the entry's own values; a slot with no value is
+    refused by name, never forecast blank."""
+    out = {}
+    for key, entry in questions.items():
+        t, q = entry[0], entry[1]
+        extra = entry[2] if len(entry) > 2 else {}
+        values = {"context": "", "question": q}
+        for slot in t.slots:
+            if slot not in values:
+                v = extra.get(slot) if isinstance(extra, Mapping) else None
+                if not isinstance(v, str) or not v:
+                    raise CLIError(f"{key}: the question carries no {slot} for its template's slot - never forecast "
+                                   "with a blank (B2)")
+                values[slot] = v
+        out[key] = render(t, values)
+    return out
+
+
+class _Deferred:
+    """A deps without make_plan_launcher (a test's fakes, the A/B's legs): its make_launcher run at launcher(), after
+    bind_proxy - the same order as a plan launcher's (Q9 = (a)); no points of its own to check."""
+
+    def __init__(self, make: Callable[..., Any], arm: str, ar: Any, **kw: Any) -> None:
+        self.make, self.arm, self.ar, self.kw, self.proxy = make, arm, ar, kw, None
+
+    def check_points(self, points: Sequence[str]) -> None:
+        return None
+
+    def bind_proxy(self, proxy: Any) -> None:
+        self.proxy = proxy
+
+    def launcher(self, _cls: Any) -> Any:
+        return self.make(self.arm, self.ar, proxy=self.proxy, **self.kw)
+
+    def record(self, **_kw: Any) -> dict:
+        return {"arm": self.arm}
+
+
+def _drive_stand(cfg: RunConfig, inp: StandInputs, arms: Mapping[str, ArmRun], runs: Sequence[str], deps: SmokeDeps,
+                 *, kind: str, post: Callable[..., list]) -> int:
+    """One stand end to end (A4, run_smoke's orchestration): the plan launchers built unbound and their points checked
+    (a refused plan refuses the stand - no forecast, preflight, proxy or child), the forecast, the preflight, one
+    Canaries object for the homes, the scheduler and the proxy, the proxy, the launchers bound to it, the hooks and the
+    incident gate under the stand's wall ceiling, the scheduler's stand, then the gate and the proxy stopped (in that
+    order: the gate's last poll may probe), and the record written under <runs>/<stand id>/<kind>/<attempt>/run.json
+    with every problem - ``post(res=, log=, answer=, run_dir=, out_dir=, plans=)`` adds the stand's own outputs and
+    returns their problems. 0 only when the stand completed, no failure, no P0h counter or proxy flag, the proxy
+    stopped by itself and STATUS self-checks clean; every problem goes to stderr by name."""
     c, L = deps.contract, deps.L
-    if stand not in SMOKE_STANDS:
-        raise CLIError(f"a smoke of {stand} is not possible yet - only {SMOKE_STANDS} (templates.PENDING, §5.6)")
-    unknown = sorted(set(arm_names) - set(cfg.arms))
-    if unknown or not arm_names:
-        raise CLIError(f"arms {unknown or list(arm_names)} are not in the run config's arms {sorted(cfg.arms)}")
-    arms = {a: cfg.arms[a] for a in arm_names}
     SC, PL, P = load("scheduler.py", smoke=True), load("run_v3_plan.py", smoke=True), load("run_v3_proxy.py", smoke=True)
     H, G, IN = load("run_v3_hooks.py", smoke=True), load("run_v3_gate.py", smoke=True), load("incidents.py", smoke=True)
-    SL, AC, SM = load("status_log.py", smoke=True), load("accounting.py", smoke=True), load("run_v3_smoke.py", smoke=True)
-    TP, PT = load("templates.py", smoke=True), load("points.py", smoke=True)
-    PL.check_ids(runs, ())
-    stand_id, n = next_smoke_id(deps.status_path, stand)
-
-    # the units, their tokens and questions (part 1)
-    order = s1_order(deps.lists_dir, expected_sha256=deps.s1_sha256)
-    su = s4_smoke_units(deps.lme_records(), order, stand_id=stand_id)
-    units = su["units"]
+    SL, AC, TP = load("status_log.py", smoke=True), load("accounting.py", smoke=True), load("templates.py", smoke=True)
+    PT = load("points.py", smoke=True)
+    stand_id, n, units, points = inp.stand_id, inp.order, inp.units, inp.points
     count, cut = deps.cl100k
-    ut = unit_tokens(units, count)
-    t4, t4c5 = deps.templates
-    questions = questions_for(units, template=t4, template_abstain=t4c5, locomo_question=deps.locomo_question)
+    su = {"smaps": inp.smaps, "item_texts": inp.item_texts}
+    ut, questions = inp.unit_tokens, inp.questions
+
+    # the plan launchers, unbound, and each arm's points checked - before the forecast (Q9 = (a))
+    blocks = PL.blocks_for(stand_id, [u.unit_id for u in units], block_plan=SC.BlockPlan)
+    unit_block = {u: bp.block for bp in blocks for u in bp.units}
+    unit_chars = {u.unit_id: u.chars for u in units}
+    plans = {}
+    for a, ar in arms.items():
+        try:
+            if deps.make_plan_launcher is not None:
+                plans[a] = deps.make_plan_launcher(a, ar, stand_id=stand_id, unit_block=unit_block,
+                                                   unit_chars=unit_chars, v_template=inp.v_templates.get(a))
+            else:
+                plans[a] = _Deferred(deps.make_launcher, a, ar, stand_id=stand_id, unit_block=unit_block,
+                                     unit_chars=unit_chars)
+            plans[a].check_points(points(a))
+        except PL.PlanError as e:
+            raise CLIError(f"{stand_id}: the plan refuses {a}: {e}") from None
 
     # the forecast (Q-A6-2, Q-A6-3, C3) and the preflight (Q-A6-1): before STAND START and before any spawn
-    prompts = {k: TP.render(t, {"context": "", "question": q}) for k, (t, q) in questions.items()}
-    points = points_b_only                             # B2: the plan reads at these points, the forecast counts them
+    prompts = empty_prompts(questions, render=TP.render)
     fc = stand_forecast(arms, units, smaps=su["smaps"], prompts=prompts, runs=len(runs), count=count,
                         cl100k_source=deps.cl100k_source, max_token_bytes=deps.max_token_bytes,
                         writer_bounds=deps.writer_bounds, points=points, dated=True,
@@ -799,7 +862,7 @@ def run_smoke(cfg: RunConfig, *, stand: str, arm_names: Sequence[str], runs: Seq
     env = dict(deps.environ)
     wiring = boundary_canaries(L, c, env)
     W = L.Witnesses(c, native=deps.native, fs=deps.fs, canaries=wiring["canaries"])
-    smoke_dir = Path(c.runs_root) / stand_id / "_smoke" / attempt
+    smoke_dir = Path(c.runs_root) / stand_id / kind / attempt
     pcfg = P.build_config({a: {"llm": ar.llm, "llm_transport": ar.llm_transport,
                                "embeds_via_ollama": ar.embeds_via_ollama, "reader": True} for a, ar in arms.items()},
                           run_dir=Path(c.runs_root) / stand_id / "_proxy" / attempt, **dict(deps.proxy_route),
@@ -818,10 +881,9 @@ def run_smoke(cfg: RunConfig, *, stand: str, arm_names: Sequence[str], runs: Seq
                              parent_env=env, catcher_url=P.catcher_url(h), hooks=hooks,
                              canaries=wiring["scheduler"]["canaries"],
                              home_canaries=wiring["scheduler"]["home_canaries"])
-        blocks = PL.blocks_for(stand_id, [u.unit_id for u in units], block_plan=SC.BlockPlan)
-        unit_block = {u: bp.block for bp in blocks for u in bp.units}
-        launchers = {a: deps.make_launcher(a, ar, stand_id=stand_id, proxy=h, unit_block=unit_block,
-                                           unit_chars={u.unit_id: u.chars for u in units}) for a, ar in arms.items()}
+        for a, pl in plans.items():                   # Q9 = (a): bound once, now that the run's proxy is up
+            pl.bind_proxy(h)
+        launchers = {a: pl.launcher(SC.ChildArmLauncher) for a, pl in plans.items()}
         answer = PL.Answerer(stand_id, questions=questions,
                              reader=lambda arm, run, unit: (h.ports["arms"][arm]["reader"],
                                                             f"/u/{run}.{unit}/v1/chat/completions", h.tokens[arm]),
@@ -882,15 +944,9 @@ def run_smoke(cfg: RunConfig, *, stand: str, arm_names: Sequence[str], runs: Seq
     problems += boundary_problems(boundary, flags, runs)
     if res is not None and answer is not None and "blocks" in res:
         try:
-            summ = SM.summarize(res, log, stand=stand_id, key_question=answer.key_question,
-                                item_texts=su["item_texts"], run_dir=h.run_dir,
-                                no_writer=[a for a, ar in arms.items() if ar.llm is None])
-            for line in SM.render(summ).splitlines():
-                deps.out(line)
-            SM.write(summ, smoke_dir / "summary.json")
-            problems += [f"smoke: {p}" for p in SM.iter_problems(summ)]     # its failures by name (the exit code's)
+            problems += post(res=res, log=log, answer=answer, run_dir=h.run_dir, out_dir=smoke_dir, plans=plans)
         except Exception as e:  # noqa: BLE001 - named; the record below still says what the stand did
-            problems.append(f"no smoke summary: {type(e).__name__}: {e}")
+            problems.append(f"no {kind.strip('_')} summary: {type(e).__name__}: {e}")
     checks = smoke_checks(res)                       # Q3: the witnesses - the tree checks' too - are the verdict
     record["witness_checks"] = [{"window": w, **(ch if isinstance(ch, Mapping) else {"check": ch})} for w, ch in checks]
     problems += [p for _w, ch in checks for p in witness_problems(ch)]
@@ -903,16 +959,73 @@ def run_smoke(cfg: RunConfig, *, stand: str, arm_names: Sequence[str], runs: Seq
     return 0 if not problems else 1
 
 
+
+
+def run_smoke(cfg: RunConfig, *, stand: str, arm_names: Sequence[str], runs: Sequence[str], deps: SmokeDeps) -> int:
+    """One smoke stand end to end (rev1 §9.4, Q-12-7) through _drive_stand: S4's units, questions and points (B only),
+    the summary printed as SMOKE_FIELDS lines and written under <runs>/<stand id>/_smoke/ (summary.json, and run.json
+    with each arm-run's P0h counters, the proxy's flags by arm and kind, and every problem). 0 only when the stand
+    completed, no failure counter (run_v3_smoke.iter_problems), no P0h counter and no proxy flag (B-SMOKE-FLAGS: every
+    zero-tolerance kind - model_mismatch, tool_violation, canary, owner_marker, thinking_call, unparsable,
+    home_canary_missing) is above 0, the proxy stopped by itself and STATUS self-checks clean; every problem goes to
+    stderr by name."""
+    if stand not in SMOKE_STANDS:
+        raise CLIError(f"a smoke of {stand} is not possible yet - only {SMOKE_STANDS} (templates.PENDING, §5.6)")
+    unknown = sorted(set(arm_names) - set(cfg.arms))
+    if unknown or not arm_names:
+        raise CLIError(f"arms {unknown or list(arm_names)} are not in the run config's arms {sorted(cfg.arms)}")
+    arms = {a: cfg.arms[a] for a in arm_names}
+    PL, SM = load("run_v3_plan.py", smoke=True), load("run_v3_smoke.py", smoke=True)
+    PL.check_ids(runs, ())
+    stand_id, n = next_smoke_id(deps.status_path, stand)
+
+    # the units, their tokens and questions (part 1)
+    order = s1_order(deps.lists_dir, expected_sha256=deps.s1_sha256)
+    su = s4_smoke_units(deps.lme_records(), order, stand_id=stand_id)
+    units = su["units"]
+    count, _cut = deps.cl100k
+    t4, t4c5 = deps.templates
+    inp = StandInputs(stand_id=stand_id, order=n, units=units, smaps=su["smaps"], item_texts=su["item_texts"],
+                      unit_tokens=unit_tokens(units, count),
+                      questions=questions_for(units, template=t4, template_abstain=t4c5,
+                                              locomo_question=deps.locomo_question),
+                      points=points_b_only)            # B2: the plan reads at these points, the forecast counts them
+
+    def post(*, res, log, answer, run_dir, out_dir, plans):
+        summ = SM.summarize(res, log, stand=stand_id, key_question=answer.key_question, item_texts=su["item_texts"],
+                            run_dir=run_dir, no_writer=[a for a, ar in arms.items() if ar.llm is None])
+        for line in SM.render(summ).splitlines():
+            deps.out(line)
+        SM.write(summ, out_dir / "summary.json")
+        return [f"smoke: {p}" for p in SM.iter_problems(summ)]      # its failures by name (the exit code's)
+    return _drive_stand(cfg, inp, arms, runs, deps, kind="_smoke", post=post)
+
+
 def plan_launcher_factory(cfg: RunConfig, c: Any) -> Callable[..., Any]:
-    """main()'s make_launcher: run_v3_plan.PlanLauncher per arm, one CodeStager for the stand."""
-    PL, SC = load("run_v3_plan.py", smoke=True), load("scheduler.py", smoke=True)
+    """main()'s make_plan_launcher (B3): run_v3_plan.PlanLauncher per arm, built UNBOUND - its points are checked before
+    the forecast and it is bound to the run's proxy once it starts (Q9 = (a)) - with the arm's Point V template when its V
+    context is rendered; one CodeStager for the stand."""
+    PL = load("run_v3_plan.py", smoke=True)
     stager = PL.CodeStager(c.runs_root)
+
+    def make(arm: str, ar: ArmRun, *, stand_id: str, unit_block: Mapping[str, str], unit_chars: Mapping[str, int],
+             v_template: Any = None) -> Any:
+        return PL.PlanLauncher(arm, stand=stand_id, python=ar.python, proxy=None, stager=stager,
+                               unit_block=unit_block, embed_tag=cfg.embed_tag, dated=True, unit_chars=unit_chars,
+                               extra=ar.extra, v_template=v_template)
+    return make
+
+
+def child_launcher_factory(cfg: RunConfig, c: Any) -> Callable[..., Any]:
+    """The A/B harness's make_launcher: a plan launcher bound to the proxy (view) it is given, as the scheduler's
+    ChildArmLauncher."""
+    SC, make_plan = load("scheduler.py", smoke=True), plan_launcher_factory(cfg, c)
 
     def make(arm: str, ar: ArmRun, *, stand_id: str, proxy: Any, unit_block: Mapping[str, str],
              unit_chars: Mapping[str, int]) -> Any:
-        return PL.PlanLauncher(arm, stand=stand_id, python=ar.python, proxy=proxy, stager=stager,
-                               unit_block=unit_block, embed_tag=cfg.embed_tag, dated=True, unit_chars=unit_chars,
-                               extra=ar.extra).launcher(SC.ChildArmLauncher)
+        pl = make_plan(arm, ar, stand_id=stand_id, unit_block=unit_block, unit_chars=unit_chars)
+        pl.bind_proxy(proxy)
+        return pl.launcher(SC.ChildArmLauncher)
     return make
 
 
@@ -956,7 +1069,7 @@ def real_smoke_deps(c: Any, cfg: RunConfig, *, writer_bounds: Mapping[str, Mappi
         truncate=TK.Truncator(TK.bge_m3_spans(bge, expected_sha256=CP.PINS["bge_m3_tokenizer_json"]["sha256"])).cut,
         templates=(TP.stand_template("S4", pins_root=pins), TP.stand_template("S4-cat5", pins_root=pins)),
         locomo_question=lambda q, cat: TP.locomo_question(q, cat, pins_root=pins), decl=PL.python_decl,
-        make_launcher=plan_launcher_factory(cfg, c),
+        make_launcher=child_launcher_factory(cfg, c), make_plan_launcher=plan_launcher_factory(cfg, c),
         start_proxy=lambda c_, **kw: P.start(c_, spawn=L.spawn_proxy, **kw), stop_proxy=P.stop, post=P.post,
         proxy_route={"via_port": L.network_via_port(c)},
         embed_tokenizer={"path": str(bge), "sha256": CP.PINS["bge_m3_tokenizer_json"]["sha256"]},

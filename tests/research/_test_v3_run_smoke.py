@@ -279,6 +279,14 @@ def make_launcher_factory(leak: set, misbehave: set = frozenset(), touch: set = 
     return make
 
 
+def err_of(fn) -> str:
+    """The call's return value as text, or its exception named - a raise FAILs the row that reached it."""
+    try:
+        return str(fn())
+    except Exception as e:  # noqa: BLE001
+        return f"{type(e).__name__}: {e}"
+
+
 def deps_for(up, *, leak: set, out: list, err: list, misbehave: set = frozenset(), touch: set = frozenset()):
     return RV.SmokeDeps(
         contract=C, L=L, native=L.NativeEgressWitness(sampler=Quiet(), tick_s=60, jobs=None),
@@ -479,6 +487,61 @@ try:
           and len(fs5) >= 1 and "['watched']" in fs5[0]
           and any((w.get("fs") or {}).get("fs_hits") for w in run5.get("witness_checks") or []),
           f"{crash5} {rc5} {err5[:4]} {[(w.get('check_id'), w.get('fs')) for w in run5.get('witness_checks') or []][:2]}")
+
+    print("\n- A4 (Q9 = (a)): the plan launchers' points before the forecast, bound once after the proxy starts -")
+    EV: list = []
+
+    def plan_factory(refuse: bool = False):
+        inner = make_launcher_factory(set())
+
+        class Rec:
+            def __init__(self, arm, ar, *, stand_id, unit_block, unit_chars, v_template=None):
+                self.arm, self.ar, self.kw, self.proxy = arm, ar, dict(stand_id=stand_id, unit_block=unit_block,
+                                                                         unit_chars=unit_chars), None
+
+            def check_points(self, points):
+                EV.append((self.arm, "check_points", tuple(points), len(PROXIES)))
+                if refuse:
+                    raise RV.load("run_v3_plan.py", smoke=True).PlanError(f"{self.arm}: a refused plan (test)")
+
+            def bind_proxy(self, h):
+                EV.append((self.arm, "bind_proxy", h is not None, len(PROXIES)))
+                if self.proxy is not None:
+                    raise RuntimeError("bound twice")
+                self.proxy = h
+
+            def launcher(self, cls):
+                EV.append((self.arm, "launcher", self.proxy is not None, len(PROXIES)))
+                return inner(self.arm, self.ar, proxy=self.proxy, **self.kw)
+
+            def record(self, **kw):
+                return {"arm": self.arm}
+        return Rec
+
+    st_before = (TMP / "STATUS").read_text(encoding="utf-8") if (TMP / "STATUS").exists() else ""
+    plog = C.runs_root / "_launch" / "preflight.jsonl"
+    pf_before = plog.read_text(encoding="utf-8") if plog.exists() else ""
+    n_px = len(PROXIES)
+    d7 = deps_for(up, leak=set(), out=[], err=[])
+    d7.make_plan_launcher = plan_factory(refuse=True)
+    EV.clear()
+    ref7 = err_of(lambda: RV.run_smoke(CFG, stand="S4", arm_names=["bm25-floor"], runs=["r1"], deps=d7))
+    check("T-RV-3 (Q9 = (a)): a plan launcher that refuses its points refuses the stand by name (CLIError) before the "
+          "forecast - no preflight record, no STATUS line, no proxy, no child",
+          "a refused plan" in ref7 and ref7.startswith("CLIError") and len(PROXIES) == n_px
+          and ((TMP / "STATUS").read_text(encoding="utf-8") if (TMP / "STATUS").exists() else "") == st_before
+          and (plog.read_text(encoding="utf-8") if plog.exists() else "") == pf_before
+          and [e[1] for e in EV] == ["check_points"], f"{ref7} {EV}")
+    d8 = deps_for(up, leak=set(), out=[], err=[])
+    d8.make_plan_launcher = plan_factory()
+    EV.clear()
+    rc8 = err_of(lambda: RV.run_smoke(CFG, stand="S4", arm_names=["bm25-floor"], runs=["r1"], deps=d8))
+    check("T-RV-4 (Q9 = (a)): through the plan launchers the stand runs - points checked (B) while no proxy runs, then "
+          "bound once to the started proxy, then the scheduler's launcher built on it - and exits 0",
+          rc8 == "0" and [(e[0], e[1]) for e in EV] == [("bm25-floor", "check_points"), ("bm25-floor", "bind_proxy"),
+                                                         ("bm25-floor", "launcher")]
+          and EV[0][2] == ("B",) and EV[0][3] == n_px and EV[1][2] is True and EV[1][3] == n_px + 1 and EV[2][2] is True,
+          f"{rc8} {EV}")
 finally:
     up.close()
     shutil.rmtree(TMP, ignore_errors=True)

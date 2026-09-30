@@ -866,7 +866,7 @@ try:
                                                                                      "forecast_arms")
                 and ast.unparse(n.func) != "self.forecast"]
 
-    rs_calls = forecast_calls((ROOT / "research" / "v3" / "run_v3.py").read_text(encoding="utf-8"), "run_smoke")
+    rs_calls = forecast_calls((ROOT / "research" / "v3" / "run_v3.py").read_text(encoding="utf-8"), "_drive_stand")
     ab_calls = forecast_calls(ABSRC, "run_ab")
     check("C3: run_smoke and the A/B harness forecast through stand_forecast only, at deps.writer_bounds, dated - their "
           "children suites run it under the lock",
@@ -887,7 +887,7 @@ try:
         return out
 
     pa = {f: c2val(lambda s=s, f=f: points_args(s, f), {}) for f, s in (
-        ("run_smoke", (ROOT / "research" / "v3" / "run_v3.py").read_text(encoding="utf-8")), ("run_ab", ABSRC))}
+        ("_drive_stand", (ROOT / "research" / "v3" / "run_v3.py").read_text(encoding="utf-8")), ("run_ab", ABSRC))}
     check("B2-4: run_smoke and the A/B harness forecast the very points they read - one name passed as points= to "
           "stand_forecast and to stand_plan, never two literals that can drift apart",
           all(len(v.get("stand_forecast", [])) == 1 and v.get("stand_forecast") == v.get("stand_plan")
@@ -936,7 +936,43 @@ try:
                                                                                                   ".read_bytes", ".open")))
                  and "key_file" in ast.unparse(x)]
     check("CLI-key-by-path: nothing in run_v3 opens or reads the key file - it is handed to the proxy by path",
-          reads_key == [] and "key_file=cfg.key_file" in ast.unparse(fns["run_smoke"]), str(reads_key))
+          reads_key == [] and "key_file=cfg.key_file" in ast.unparse(fns.get("_drive_stand", fns["run_smoke"])),
+          str(reads_key))
+
+    print("\n- A4: the forecast's prompts, the plan launcher, the stand's order -")
+    TPm = RV.load("templates.py", smoke=True)
+    T3 = TPm.Template(stand="S1", text="On {question_date}. Context: {context} Q: {question}", sha256="3" * 64,
+                      source_pin="t", source_sha256="t", slots=("question_date", "context", "question"))
+    T2 = TPm.Template(stand="S4", text="Context: {context} Q: {question}", sha256="2" * 64, source_pin="t",
+                      source_sha256="t", slots=("context", "question"))
+    ep = getattr(RV, "empty_prompts", None)
+    ep1 = c2val(lambda: ep({("u1", "q1"): (T3, "what?", {"question_date": "2023/05/20 (Sat) 10:00"}),
+                            ("u2", "q2"): (T2, "who?")}, render=TPm.render)) if ep else None
+    ep_miss = err(lambda: ep({("u1", "q1"): (T3, "what?", {})}, render=TPm.render)) if ep else "no empty_prompts"
+    check("T-RV-1 (B2): the forecast's prompts are each question's template with an empty context - a 3-tuple's further "
+          "slots (S1's question_date) from its own values, a 2-tuple as before; a slot with no value is refused by name",
+          ep1 == {("u1", "q1"): "On 2023/05/20 (Sat) 10:00. Context:  Q: what?", ("u2", "q2"): "Context:  Q: who?"}
+          and "question_date" in ep_miss, str((ep1, ep_miss))[:300])
+    PLm = RV.load("run_v3_plan.py", smoke=True)
+    fac = c2val(lambda: RV.plan_launcher_factory(RV.RunConfig(
+        proxy_python=Path(sys.executable), key_file=TMP / "k", git=Path("git"), campaign_seed=1, embed_tag="t:latest",
+        ollama_url="http://127.0.0.1:11434", arms={}, sha256="c" * 64),
+        __import__("types").SimpleNamespace(runs_root=TMP / "pl_runs")))
+    ar_bm = RV.ArmRun(python=Path(sys.executable), llm=None, llm_transport=None, embeds_via_ollama=False)
+    ar_zep = RV.ArmRun(python=Path(sys.executable), llm="deepseek-flash", llm_transport="cloud:deepseek",
+                       embeds_via_ollama=True, extra={"falkor_host": "127.0.0.1", "falkor_port": 6380})
+    pl_bm = c2val(lambda: fac("bm25-floor", ar_bm, stand_id="S1-smoke-1", unit_block={"u1": "b01"},
+                              unit_chars={"u1": 10})) if callable(fac) else None
+    pl_bad = err(lambda: fac("zep-graphiti", ar_zep, stand_id="S1-smoke-1", unit_block={"u1": "b01"},
+                             unit_chars={"u1": 10}, v_template=T2)) if callable(fac) else "no factory"
+    pl_zep = c2val(lambda: fac("zep-graphiti", ar_zep, stand_id="S1-smoke-1", unit_block={"u1": "b01"},
+                               unit_chars={"u1": 10})) if callable(fac) else None
+    zep_v = err(lambda: pl_zep.check_points(("B", "K", "V"))) if pl_zep is not None else "no launcher"
+    check("T-RV-2 (B3): plan_launcher_factory's product is the plan's own PlanLauncher, built unbound (no proxy yet) for "
+          "its stand id - the Point V template it is given reaches it (a template that is not the pinned one is "
+          "refused there), and a rendered-V arm without its template is refused at check_points",
+          isinstance(pl_bm, PLm.PlanLauncher) and pl_bm.proxy is None and pl_bm.stand == "S1-smoke-1"
+          and "not the pinned" in pl_bad and "no Point V template" in zep_v, str((type(pl_bm).__name__, pl_bad, zep_v))[:400])
 
     print("\n- the command line -")
     base = ["stand", "--arms", "bm25-floor", "--runs", "r1", "--config", str(cf)]
