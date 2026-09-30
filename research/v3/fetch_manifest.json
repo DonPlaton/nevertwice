@@ -99,6 +99,14 @@
    "max_results": 50,
    "max_redirects": 0
   },
+  "a7-arxiv-src": {
+   "hosts": ["export.arxiv.org", "arxiv.org"],
+   "purpose": "the chosen paper's source (the auditor's Q-D8-1..3 = O-a, plan d8): Zep's paper, arXiv 2501.13956 v1 (his choice from a7-arxiv d2's report) - its OAI-PMH arXivRaw record (licence, versions) from export.arxiv.org, then after a pause of 3 s its e-print of v1 from arxiv.org, kept as sent (sha256, size; never decoded or unpacked) for the offline reading of its LME template; no redirect followed",
+   "arxiv_id": "2501.13956",
+   "version": 1,
+   "max_bytes": 67108864,
+   "max_redirects": 0
+  },
   "a7-hf-d": {
    "hosts": ["huggingface.co"],
    "purpose": "metadata only (the auditor's Q-A7-P3 = O-a, plan d7): one HEAD on the resolve URL of all-MiniLM-L6-v2's model.safetensors at the revision a7-discovery d1 found - the redirect's host recorded, never followed, nothing downloaded; a7-hf then declares huggingface.co and that host",

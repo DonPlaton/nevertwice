@@ -68,6 +68,8 @@ from pathlib import Path, PurePosixPath
 
 _LOOPBACK_PROXY = re.compile(r"http://127\.0\.0\.1:(\d{1,5})/?")
 CHUNK = 1 << 20
+RAW_ENCODINGS = frozenset({"gzip", "x-gzip"})    # a request's raw_encoding: the only encodings it may keep as sent
+_EPRINT = re.compile(r"https://arxiv\.org/e-print/[0-9]{4}\.[0-9]{4,5}v[0-9]{1,3}")   # the only URL that may carry it
 
 
 class Refused(Exception):
@@ -113,6 +115,12 @@ def run_request(req: dict, *, hosts: frozenset, max_redirects: int, port: int, c
     try:
         if method not in ("GET", "HEAD"):
             raise Refused("only GET and HEAD")
+        # plan d8's e-print: a body the server sends gzip-encoded is kept as sent - never decoded, hashed as it came
+        raw_enc = req.get("raw_encoding")
+        if raw_enc is not None and not (isinstance(raw_enc, list) and raw_enc and set(raw_enc) <= RAW_ENCODINGS):
+            raise Refused(f"raw_encoding names only {sorted(RAW_ENCODINGS)}")
+        if raw_enc is not None and not (method == "GET" and _EPRINT.fullmatch(str(req.get("url")))):
+            raise Refused("raw_encoding is for an arXiv e-print GET only")
         rel = _safe_rel(req["save"]) if req.get("save") else None
         host, path = _check_url(req["url"], hosts)
         hops = 0
@@ -143,7 +151,10 @@ def run_request(req: dict, *, hosts: frozenset, max_redirects: int, port: int, c
                     raise Refused(f"rate-limited: status {r.status}")
                 if r.status != 200:
                     raise Refused(f"status {r.status}")
-                if (r.getheader("Content-Encoding") or "identity").lower() != "identity":
+                enc = (r.getheader("Content-Encoding") or "identity").lower()
+                if raw_enc is not None:
+                    out["content_encoding"], out["content_type"] = r.getheader("Content-Encoding"), r.getheader("Content-Type")
+                if enc != "identity" and enc not in (raw_enc or ()):
                     raise Refused("an encoded body")
                 if method == "HEAD":
                     out["ok"] = True

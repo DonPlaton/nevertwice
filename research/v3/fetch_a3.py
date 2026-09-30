@@ -26,7 +26,9 @@ each text is checked against the git blob its answer names before it is written.
 auditor's R2) asks which commit a tag names and, only when it is the declared one, reads that commit's tree.
 `a7-arxiv` (plan d6, the auditor's R3) asks the arXiv API one declared query and lists what it finds, as text.
 `a7-hf-d` (plan d7, the auditor's Q-A7-P3 = O-a) sends one HEAD to a model file's resolve URL at its declared revision
-and records the redirect's host, following none - the host a7-hf then declares.
+and records the redirect's host, following none - the host a7-hf then declares. `a7-arxiv-src` (plan d8, the
+auditor's Q-D8-1..3 = O-a) reads the chosen paper's OAI-PMH arXivRaw record (licence, versions) from export.arxiv.org
+and, after a pause, its e-print of the declared version from arxiv.org, kept as sent - never decoded or unpacked.
 
     python research/v3/fetch_a3.py --window a3-discovery --run d1 --python D:\\Coding\\_nevertwice_polygon\\py314\\python.exe
 """
@@ -1034,6 +1036,202 @@ def d7_report(record: dict, decl: dict) -> dict:
     return out
 
 
+# ── a7-arxiv-src plan d8 (the auditor's Q-D8-1..3 = O-a: the chosen paper's licence, versions and LaTeX source) ──
+
+D8_WINDOW = "a7-arxiv-src"
+D8_HOSTS = ["export.arxiv.org", "arxiv.org"]
+D8_KEYS = frozenset({"hosts", "purpose", "arxiv_id", "version", "max_bytes", "max_redirects"})
+D8_MAX_BYTES = 64 * 1024 * 1024                  # the bound the manifest may declare for the e-print
+D8_OAI_MAX = 1024 * 1024                         # one arXivRaw record
+D8_PAUSE_S = 3.0                                 # between the OAI request and the e-print (arXiv's own guidance)
+D8_PEEK = 64 * 1024                              # the first bytes read to name the source's kind
+D8_PEEK_OUT = 512                                # a gzip's output read in memory, never more (a bomb stays shut)
+_D8_ID = re.compile(r"[0-9]{4}\.[0-9]{4,5}")
+_OAI = {"o": "http://www.openarchives.org/OAI/2.0/", "r": "http://arxiv.org/OAI/arXivRaw/"}
+
+
+class D8ManifestError(ValueError):
+    """The manifest does not declare a7-arxiv-src as plan d8 reads it."""
+
+
+def d8_decl(manifest: dict) -> dict:
+    """The manifest's a7-arxiv-src entry - the window's single source: exactly D8_KEYS; export.arxiv.org and arxiv.org,
+    no redirect; a new-style arXiv id without its version, the version apart (an integer from 1), and a byte bound of
+    at most 64 MB. Anything else is refused by name before any spawn."""
+    w = (manifest.get("windows") or {}).get(D8_WINDOW)
+    if not isinstance(w, dict) or set(w) != D8_KEYS:
+        raise D8ManifestError(f"the manifest's {D8_WINDOW} entry must have exactly the keys {sorted(D8_KEYS)}")
+    probs = []
+    if w["hosts"] != D8_HOSTS:
+        probs.append(f"its hosts {w['hosts']} are not {D8_HOSTS}")
+    if isinstance(w["max_redirects"], bool) or w["max_redirects"] != 0:
+        probs.append("its max_redirects is not 0")
+    if not (isinstance(w["arxiv_id"], str) and _D8_ID.fullmatch(w["arxiv_id"])):
+        probs.append(f"its arxiv_id {w['arxiv_id']!r} is not a new-style arXiv id without its version")
+    v = w["version"]
+    if isinstance(v, bool) or not isinstance(v, int) or v < 1:
+        probs.append(f"its version {v!r} is not an integer from 1")
+    n = w["max_bytes"]
+    if isinstance(n, bool) or not isinstance(n, int) or not 1 <= n <= D8_MAX_BYTES:
+        probs.append(f"its max_bytes {n!r} is not 1 to {D8_MAX_BYTES}")
+    if probs:
+        raise D8ManifestError(f"the manifest's {D8_WINDOW} entry: " + "; ".join(probs))
+    return dict(w)
+
+
+def d8_jobs(decl: dict, *, sleep=time.sleep) -> list:
+    """Job 0: the OAI-PMH GetRecord of the paper in the arXivRaw format (its licence and every version) from
+    export.arxiv.org. Job 1, only when that answer came: after D8_PAUSE_S, the e-print of the declared version from
+    arxiv.org, saved as sent (raw_encoding: a gzip-encoded body is never decoded). No redirect is followed."""
+    aid, ver = decl["arxiv_id"], decl["version"]
+    oai = {"hosts": ["export.arxiv.org"], "max_redirects": 0, "requests": [
+        {"id": f"oai:{aid}", "save": "oai_record.xml", "max_bytes": D8_OAI_MAX,
+         "url": f"https://export.arxiv.org/oai2?verb=GetRecord&identifier=oai:arXiv.org:{aid}&metadataPrefix=arXivRaw"}]}
+
+    def eprint(results):
+        first = next((s for r in results if r.get("index") == 0 for s in r.get("summary") or []), None)
+        if not (isinstance(first, dict) and first.get("ok")):
+            return None                                  # a 429 or any failure: nothing more is sent
+        sleep(D8_PAUSE_S)
+        return {"hosts": ["arxiv.org"], "max_redirects": 0, "requests": [
+            {"id": f"eprint:{aid}v{ver}", "save": "eprint.bin", "max_bytes": decl["max_bytes"],
+             "raw_encoding": ["gzip", "x-gzip"], "url": f"https://arxiv.org/e-print/{aid}v{ver}"}]}
+    return [oai, eprint]
+
+
+def _summary_of(record: dict, job_index: int) -> dict | None:
+    job = next((j for j in record.get("jobs") or [] if j.get("index") == job_index), None)
+    s = ((job or {}).get("summary") or [None])[0]
+    return s if isinstance(s, dict) else None
+
+
+def _request_problem(what: str, summ: dict | None, host: str) -> str | None:
+    """The one problem a failed request names: its 429, its redirect (host named, not followed), or its error."""
+    if summ is None:
+        return f"the {what} request left no summary"
+    if summ.get("ok"):
+        return None
+    if summ.get("rate_limited") or summ.get("status") == 429:
+        return f"{host} answered 429 to the {what} request (rate-limited): nothing more was sent"
+    if summ.get("redirect_host"):
+        return f"the {what} request was redirected to {summ['redirect_host']} - not followed (no redirect is declared)"
+    return f"the {what} failed: {summ.get('error')}"
+
+
+def _source_kind(head: bytes) -> dict:
+    """The e-print's kind from its first bytes only: a PDF, a tar, or a gzip - for a gzip, at most D8_PEEK_OUT bytes of
+    its output, decompressed in memory in one call (no loop over the stream), tell a tar from one file (the header's
+    file name - text, never a path - and the first line then named). Nothing is unpacked or written."""
+    import zlib  # noqa: PLC0415
+
+    if head.startswith(b"%PDF-"):
+        return {"kind": "pdf"}
+    if head[257:262] == b"ustar":
+        return {"kind": "tar"}
+    if head[:2] != b"\x1f\x8b":
+        return {"kind": "unknown", "first_bytes": head[:8].hex()}
+    try:
+        peek = zlib.decompressobj(16 + zlib.MAX_WBITS).decompress(head, D8_PEEK_OUT)
+    except zlib.error as e:
+        return {"kind": "unknown", "first_bytes": head[:8].hex(), "gzip_error": str(e)[:80]}
+    if peek[257:262] == b"ustar":
+        return {"kind": "tar.gz", "peek_bytes": len(peek)}
+    name = None
+    if len(head) > 10 and head[3] & 0x08:                # FNAME, after FEXTRA when present
+        at = 10 + (2 + int.from_bytes(head[10:12], "little") if head[3] & 0x04 else 0)
+        end = head.find(b"\0", at)
+        name = head[at:end].decode("latin-1")[:120] if end > at else None
+    line = peek.split(b"\n", 1)[0][:120].decode("utf-8", "replace")
+    return {"kind": "gzip", "gzip_name": name, "first_line": line, "peek_bytes": len(peek)}
+
+
+def d8_report(record: dict, decl: dict) -> dict:
+    """The OAI record's licence, versions and title, and the e-print's status, sha256, size, encoding and kind - for the
+    auditor, who reads it before the source is pinned. Problems by name: a failed or rate-limited or redirected
+    request; an answer that declares a DOCTYPE (never expanded), does not parse, is not OAI-PMH or is an OAI error; a
+    record of another paper, with no licence, or whose versions are not the declared one alone; an e-print not asked
+    for, whose saved bytes are not its summary's, that is a PDF only (no LaTeX source), or of no known kind."""
+    import xml.etree.ElementTree as ET  # noqa: PLC0415
+
+    aid, ver = decl["arxiv_id"], decl["version"]
+    problems: list[str] = []
+    oai: dict = {"status": None, "licence": None, "versions": [], "title": None}
+    s0 = _summary_of(record, 0)
+    oai["status"] = (s0 or {}).get("status")
+    p = _request_problem("OAI", s0, "export.arxiv.org")
+    if p:
+        problems.append(p)
+    u0 = _unit_of(record.get("jobs") or [], 0)
+    f0 = u0 / "oai_record.xml" if u0 is not None else None
+    raw = f0.read_bytes() if f0 is not None and f0.is_file() else None
+    if raw is None:
+        if not p:
+            problems.append("no OAI answer saved")
+    elif b"<!doctype" in raw.lower():
+        problems.append("the OAI answer declares a DOCTYPE - refused, no entity is expanded")
+    else:
+        try:
+            root = ET.fromstring(raw)
+        except ET.ParseError as e:
+            problems.append(f"the OAI answer does not parse ({e})")
+            root = None
+        if root is not None and root.tag != "{%s}OAI-PMH" % _OAI["o"]:
+            problems.append(f"the answer is not an OAI-PMH answer (its root is {root.tag[:80]!r})")
+        elif root is not None:
+            err = root.find("o:error", _OAI)
+            rec = root.find("o:GetRecord/o:record/o:metadata/r:arXivRaw", _OAI)
+            if err is not None:
+                problems.append(f"OAI error {err.get('code')}: {' '.join((err.text or '').split())[:120]}")
+            elif rec is None:
+                problems.append("the OAI answer holds no arXivRaw record")
+            else:
+                rid = (rec.findtext("r:id", default="", namespaces=_OAI) or "").strip()
+                if rid != aid:
+                    problems.append(f"the record names {rid[:40]!r}, not {aid}")
+                lic = (rec.findtext("r:license", default="", namespaces=_OAI) or "").strip()
+                oai["licence"] = lic or None
+                if not lic:
+                    problems.append("the record names no licence")
+                oai["versions"] = [{"version": v.get("version"),
+                                    "date": (v.findtext("r:date", namespaces=_OAI) or "").strip() or None,
+                                    "size": (v.findtext("r:size", namespaces=_OAI) or "").strip() or None,
+                                    "source_type": (v.findtext("r:source_type", namespaces=_OAI) or "").strip() or None}
+                                   for v in rec.findall("r:version", _OAI)]
+                names = [v["version"] for v in oai["versions"]]
+                if names != [f"v{ver}"]:
+                    problems.append(f"v{ver} is not the only version: {names}")
+                oai["title"] = " ".join((rec.findtext("r:title", default="", namespaces=_OAI) or "").split()) or None
+    ep: dict = {"status": None, "sha256": None, "bytes": None, "content_encoding": None, "content_type": None,
+                "kind": None}
+    s1 = _summary_of(record, 1)
+    if s1 is None and _unit_of(record.get("jobs") or [], 1) is None:
+        problems.append("the e-print was not asked for: the OAI request did not answer")
+    else:
+        ep.update({k: (s1 or {}).get(k) for k in ("status", "sha256", "bytes", "content_encoding", "content_type")})
+        p1 = _request_problem("e-print", s1, "arxiv.org")
+        u1 = _unit_of(record.get("jobs") or [], 1)
+        f1 = u1 / "eprint.bin" if u1 is not None else None
+        if p1:
+            problems.append(p1)
+        elif f1 is None or not f1.is_file():
+            problems.append("no e-print saved")
+        else:
+            whole = hashlib.sha256()
+            with open(f1, "rb") as fh:
+                head = fh.read(D8_PEEK)
+                whole.update(head)
+                for block in iter(lambda: fh.read(1 << 20), b""):
+                    whole.update(block)
+            if whole.hexdigest() != (s1 or {}).get("sha256") or f1.stat().st_size != (s1 or {}).get("bytes"):
+                problems.append("the saved e-print's sha256 or size is not the one its summary names")
+            ep.update(_source_kind(head))
+            if ep["kind"] == "pdf":
+                problems.append(f"arXiv serves only a PDF for v{ver} - no LaTeX source")
+            elif ep["kind"] == "unknown":
+                problems.append(f"the e-print is neither a gzip, a tar nor a PDF (first bytes {ep.get('first_bytes')})")
+    return {"arxiv_id": aid, "version": ver, "oai": oai, "eprint": ep, "problems": problems}
+
+
 # ── the command line ──────────────────────────────────────────────────────
 
 def _load(name: str, path: Path):
@@ -1049,13 +1247,14 @@ def _load(name: str, path: Path):
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="the A3 fetch windows (children under the contract)")
     ap.add_argument("--window", required=True, choices=["a3-discovery", "a7-discovery", D4_WINDOW, D5_WINDOW, D6_WINDOW,
-                                                          D7_WINDOW])
-    ap.add_argument("--plan", default="d1", choices=["d1", "d2", "d3", "d4", "d5", "d6", "d7"],
+                                                          D7_WINDOW, D8_WINDOW])
+    ap.add_argument("--plan", default="d1", choices=["d1", "d2", "d3", "d4", "d5", "d6", "d7", "d8"],
                     help="d1: the full discovery; d2: the P1/P10 follow-up; d3: the A7 discovery (window a7-discovery); "
                          "d4: supermemory's self-hosting documentation at the release tag (window a7-docs); "
                          "d5: cognee's tree at the tag the pinned product carries (window a7-cognee-tag); "
                          "d6: the arXiv entries a declared query finds (window a7-arxiv); "
-                         "d7: a model file's CDN host, one HEAD (window a7-hf-d)")
+                         "d7: a model file's CDN host, one HEAD (window a7-hf-d); "
+                         "d8: a paper's arXivRaw record and e-print (window a7-arxiv-src)")
     ap.add_argument("--run", required=True)
     ap.add_argument("--python", required=True, help="the polygon's py314 interpreter")
     args = ap.parse_args(argv)
@@ -1067,15 +1266,15 @@ def main(argv: list[str] | None = None) -> int:
     if via is None:
         print("no declared hop (network.json)", file=sys.stderr)
         return 2
-    for plan, window in (("d7", D7_WINDOW), ("d6", D6_WINDOW), ("d5", D5_WINDOW), ("d4", D4_WINDOW), ("d3", "a7-discovery")):
+    for plan, window in (("d8", D8_WINDOW), ("d7", D7_WINDOW), ("d6", D6_WINDOW), ("d5", D5_WINDOW), ("d4", D4_WINDOW), ("d3", "a7-discovery")):
         if (args.plan == plan) != (args.window == window):
             print(f"plan {plan} runs in window {window}, and only it", file=sys.stderr)
             return 2
     decl = None
-    if args.plan in ("d4", "d5", "d6", "d7"):
+    if args.plan in ("d4", "d5", "d6", "d7", "d8"):
         try:
-            decl = {"d4": d4_decl, "d5": d5_decl, "d6": d6_decl, "d7": d7_decl}[args.plan](manifest)
-        except (D4ManifestError, D5ManifestError, D6ManifestError, D7ManifestError) as e:
+            decl = {"d4": d4_decl, "d5": d5_decl, "d6": d6_decl, "d7": d7_decl, "d8": d8_decl}[args.plan](manifest)
+        except (D4ManifestError, D5ManifestError, D6ManifestError, D7ManifestError, D8ManifestError) as e:
             print(str(e), file=sys.stderr)
             return 2
     win = manifest["windows"][args.window]
@@ -1084,9 +1283,10 @@ def main(argv: list[str] | None = None) -> int:
         print(f"the manifest's a7-discovery hosts {win['hosts']} are not the plan's {D3_HOSTS}", file=sys.stderr)
         return 2
     hosts = {"d1": win["hosts"], "d2": D2_HOSTS, "d3": D3_HOSTS, "d4": D4_HOSTS, "d5": D5_HOSTS, "d6": D6_HOSTS,
-             "d7": D7_HOSTS}[args.plan]
+             "d7": D7_HOSTS, "d8": D8_HOSTS}[args.plan]
     jobs = (discovery_jobs(CP.PINS) if args.plan == "d1" else d2_jobs() if args.plan == "d2"
-            else d3_jobs() if args.plan == "d3" else {"d4": d4_jobs, "d5": d5_jobs, "d6": d6_jobs, "d7": d7_jobs}[args.plan](decl))
+            else d3_jobs() if args.plan == "d3"
+            else {"d4": d4_jobs, "d5": d5_jobs, "d6": d6_jobs, "d7": d7_jobs, "d8": d8_jobs}[args.plan](decl))
     rec = run_child_window(c, L, window=args.window, hosts=hosts, jobs=jobs,
                            python=Path(args.python), via_port=via, run=args.run, parent_env=os.environ,
                            need_bytes=floor, volume=Path("D:/"))
@@ -1106,8 +1306,8 @@ def main(argv: list[str] | None = None) -> int:
             dst.write_bytes(data)
         (out / "d4_report.json").write_bytes((json.dumps(report, indent=1, sort_keys=True) + "\n").encode("utf-8"))
         print(json.dumps(report, indent=1))
-    if args.plan in ("d5", "d6", "d7"):
-        report = {"d5": d5_report, "d6": d6_report, "d7": d7_report}[args.plan](rec, decl)
+    if args.plan in ("d5", "d6", "d7", "d8"):
+        report = {"d5": d5_report, "d6": d6_report, "d7": d7_report, "d8": d8_report}[args.plan](rec, decl)
         (c.runs_root / "_fetch" / args.window / args.run / f"{args.plan}_report.json").write_bytes(
             (json.dumps(report, indent=1, sort_keys=True) + "\n").encode("utf-8"))
         print(json.dumps(report, indent=1))

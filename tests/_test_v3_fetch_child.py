@@ -17,12 +17,17 @@ cdn-lfs.hf.co (a throwaway certificate made at test time):
 * its own main(), with the default TLS context, refuses the untrusted test certificate: nothing is saved;
 * a rate limit stops the job (the auditor's ruling): a 429 from any host, or a 403 from api.github.com, marks the
   request rate-limited and every later request is recorded as not sent - the server sees none of them; a 403 from
-  another host is an ordinary refusal and the job goes on.
+  another host is an ordinary refusal and the job goes on;
+* raw_encoding (plan d8's e-print): a request that names gzip / x-gzip keeps a body the server sent so encoded as it
+  came - never decoded, its sha256 and size of those bytes, its Content-Encoding and Content-Type recorded; any other
+  encoding is still refused, a raw_encoding other than a non-empty list of those two, or on anything but a GET of an
+  arXiv e-print URL, is refused before anything is sent, and a request without it keeps its summary's keys.
 
     python tests/_test_v3_fetch_child.py
 """
 from __future__ import annotations
 
+import gzip
 import hashlib
 import importlib.util
 import json
@@ -69,6 +74,7 @@ def check(name: str, cond: bool, detail: str = "") -> None:
 
 TMP = Path(tempfile.mkdtemp(prefix="nvt3_fetch_child_"))
 HF, CDN = "huggingface.co", "cdn-lfs.hf.co"
+AX = "arxiv.org"
 DIALS: list[tuple] = []
 _real_connect = socket.create_connection
 
@@ -90,8 +96,9 @@ def blob_sha1(data: bytes) -> str:
 META = json.dumps({"sha": "0123456789abcdef0123456789abcdef01234567", "cardData": {"license": "mit"}}).encode()
 DATA = b'{"question": "synthetic", "answer": "synthetic"}\n' * 200
 BIG = b"x" * 5000
+GZ = gzip.compress(DATA, mtime=0)
 GHAPI = "api.github.com"
-made = TF.make_test_cert(TMP / "cert", HF, extra_hosts=(CDN, "evil.example", GHAPI))
+made = TF.make_test_cert(TMP / "cert", HF, extra_hosts=(CDN, "evil.example", GHAPI, AX))
 if made is None:
     print("  SKIP the fetch child checks: neither cryptography nor openssl is available (not passed)")
     sys.exit(0 if FAILED == 0 else 1)
@@ -104,6 +111,9 @@ ROUTES = {
     "/datasets/x/resolve/0123/away.json": (302, [("Location", "https://evil.example/blob/data.json")], b""),
     "/chunked.json": (200, [("Transfer-Encoding", "chunked")], DATA),
     "/gz.json": (200, [("Content-Encoding", "gzip")], DATA),
+    "/gzraw.bin": (200, [("Content-Encoding", "x-gzip"), ("Content-Type", "application/x-eprint-tar")], GZ),
+    "/e-print/2501.00001v1": (200, [("Content-Encoding", "x-gzip"), ("Content-Type", "application/x-eprint-tar")], GZ),
+    "/e-print/2501.00002v1": (200, [("Content-Encoding", "br")], DATA),
     "/big.bin": (200, [], BIG),
     "/limited": (429, [("Retry-After", "60")], b""),
     "/repos/o/r": (403, [], b'{"message": "API rate limit exceeded"}'),
@@ -116,7 +126,7 @@ cfg = P.ProxyConfig(arms=[P.ArmConfig(arm="fetch", mode="catch")], run_dir=TMP /
 px = P.Proxy(cfg, None, log=lambda m: None)
 ports = px.start()
 CATCHER = ports["arms"]["fetch"]["catcher"]
-px.windows["a3-test"] = {"hosts": frozenset({HF, CDN, GHAPI}), "arms": frozenset({"fetch"})}
+px.windows["a3-test"] = {"hosts": frozenset({HF, CDN, GHAPI, AX}), "arms": frozenset({"fetch"})}
 
 
 def settled_log(want_tunnelled=frozenset(), wait_s: float = 10.0) -> list[dict]:
@@ -216,6 +226,43 @@ check("no request ever reached evil.example through the catcher",
       not any(r.get("host") == "evil.example" and r.get("tunnelled")
               for r in settled_log()))
 
+print("\n- raw_encoding: a body kept as the server encoded it (plan d8's e-print) -")
+EP1 = f"https://{AX}/e-print/2501.00001v1"
+(r_raw,), cwd_raw = job([{"id": "raw", "url": EP1, "save": "raw/e.bin", "max_bytes": 1 << 20,
+                          "raw_encoding": ["gzip", "x-gzip"]}], hosts=(AX,), cwd_name="raw")
+check("RE-1: with raw_encoding a body the server sent as x-gzip is saved as sent, never decoded - its sha256 and size are "
+      "of the bytes that came, and the request records their Content-Encoding and Content-Type",
+      r_raw["ok"] and (cwd_raw / "raw" / "e.bin").read_bytes() == GZ and r_raw["sha256"] == hashlib.sha256(GZ).hexdigest()
+      and r_raw["bytes"] == len(GZ) and r_raw.get("content_encoding") == "x-gzip"
+      and r_raw.get("content_type") == "application/x-eprint-tar", str(r_raw))
+(r_br,), cwd_br = job([{"id": "br", "url": f"https://{AX}/e-print/2501.00002v1", "save": "raw/b.bin",
+                        "max_bytes": 1 << 20, "raw_encoding": ["gzip", "x-gzip"]}], hosts=(AX,), cwd_name="raw_br")
+check("RE-2: raw_encoding takes only the encodings it names - a br body is still refused, nothing written",
+      not r_br["ok"] and "encoded" in (r_br["error"] or "") and not any(p.is_file() for p in cwd_br.rglob("*")), str(r_br))
+bad_raw: dict = {}
+for label, val in (("br", ["br"]), ("an empty list", []), ("a string", "gzip"), ("gzip and deflate", ["gzip", "deflate"])):
+    before = len(srv.heads)
+    (r_x,), _ = job([{"id": "x", "url": EP1, "save": "raw/x.bin", "max_bytes": 1 << 20,
+                      "raw_encoding": val}], hosts=(AX,), cwd_name=f"raw_bad_{len(bad_raw)}")
+    bad_raw[label] = (not r_x["ok"] and "raw_encoding" in (r_x["error"] or "") and len(srv.heads) == before, r_x.get("error"))
+check("RE-3: a raw_encoding other than a non-empty list of gzip / x-gzip is refused by name before anything is sent - "
+      + ", ".join(bad_raw), all(v[0] for v in bad_raw.values()), str(bad_raw))
+elsewhere: dict = {}
+for label, req in (("a file on huggingface.co", {"url": f"https://{HF}/gzraw.bin"}),
+                   ("a HEAD of the e-print", {"url": EP1, "method": "HEAD"}),
+                   ("another path on arxiv.org", {"url": f"https://{AX}/src/2501.00001v1"}),
+                   ("an e-print URL with a query", {"url": EP1 + "?x=1"})):
+    before = len(srv.heads)
+    (r_y,), cwd_y = job([{"id": "y", "save": "raw/y.bin", "max_bytes": 1 << 20, "raw_encoding": ["x-gzip"], **req}],
+                        hosts=(HF, AX), cwd_name=f"raw_else_{len(elsewhere)}")
+    elsewhere[label] = (not r_y["ok"] and "raw_encoding is for an arXiv e-print GET only" in (r_y["error"] or "")
+                        and len(srv.heads) == before and not any(p.is_file() for p in cwd_y.rglob("*")), r_y.get("error"))
+check("RE-5: raw_encoding on anything but a GET of an arXiv e-print URL is refused by name before anything is sent - "
+      + ", ".join(elsewhere), all(v[0] for v in elsewhere.values()), str(elsewhere))
+check("RE-4: a request without raw_encoding keeps its summary's keys (no content_encoding, no content_type) - every other "
+      "window's record reads as before", r_meta["ok"] and "content_encoding" not in r_meta and "content_type" not in r_meta
+      and "content_encoding" not in r_file, str(sorted(r_meta)))
+
 print("\n- a rate limit stops the job -")
 for label, first_url in (("a 429", f"https://{HF}/limited"), ("a 403 from api.github.com", f"https://{GHAPI}/repos/o/r")):
     before = len(srv.heads)
@@ -242,9 +289,9 @@ for label, env in (("unset", {}), ("another host", {"HTTPS_PROXY": "http://10.0.
     except FC.Refused:
         check(f"HTTPS_PROXY {label} is refused", True)
 check("the loopback catcher is accepted", FC.catcher_port({"HTTPS_PROXY": f"http://127.0.0.1:{CATCHER}"}) == CATCHER)
-log = settled_log({HF, CDN, GHAPI})
+log = settled_log({HF, CDN, GHAPI, AX})
 check("every fetch was a catcher tunnel through the hop, recorded", all(r["via"] == f"127.0.0.1:{hop.port}" for r in log)
-      and {r["host"] for r in log if r["tunnelled"]} == {HF, CDN, GHAPI}, str({(r["host"], r["tunnelled"]) for r in log}))
+      and {r["host"] for r in log if r["tunnelled"]} == {HF, CDN, GHAPI, AX}, str({(r["host"], r["tunnelled"]) for r in log}))
 check("nothing dialled a host directly", [d for d in DIALS if d[0] not in ("127.0.0.1", "localhost", "::1")] == [])
 
 print("\n- its own main(): the default TLS context -")
