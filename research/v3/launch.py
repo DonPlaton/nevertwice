@@ -85,6 +85,11 @@ TELEMETRY_OFF = {
     "LANGSMITH_TRACING": "false",
     "NEXT_TELEMETRY_DISABLED": "1",
     "DO_NOT_TRACK": "1",
+    # A7 (T36): supermemory-local's own switches - no telemetry, no update check, no browser; "1" is what the
+    # pinned bundle's comparisons accept (sm_bundle.SPAWN_ENV, its facts telemetry/update/browser_switch)
+    "SUPERMEMORY_DISABLE_TELEMETRY": "1",
+    "SUPERMEMORY_NO_UPDATE_CHECK": "1",
+    "SUPERMEMORY_NO_OPEN": "1",
 }
 
 #: §2.6.2 "never present", by exact name (any case).

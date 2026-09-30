@@ -118,7 +118,7 @@ check("no hostile value reaches the child under any name", not carried, str(carr
 check("the proxies are the loopback catcher, not the inherited ones",
       ENV.get("HTTP_PROXY") == CATCHER and ENV.get("HTTPS_PROXY") == CATCHER and "https_proxy" not in ENV)
 check("the telemetry list is exact", all(ENV.get(k) == v for k, v in L.TELEMETRY_OFF.items())
-      and len(L.TELEMETRY_OFF) == 14, str({k: ENV.get(k) for k in L.TELEMETRY_OFF}))
+      and len(L.TELEMETRY_OFF) == 17, str({k: ENV.get(k) for k in L.TELEMETRY_OFF}))
 check("PYTHONPYCACHEPREFIX points into the runs tree",
       "PYTHONPYCACHEPREFIX" in ENV and L._inside(ENV["PYTHONPYCACHEPREFIX"], C.runs_root), ENV.get("PYTHONPYCACHEPREFIX"))
 check("HOME / USERPROFILE / TEMP are the fake home, not the owner's",
@@ -134,6 +134,48 @@ try:
     check("a declared variable cannot override a contract variable", False)
 except L.ContractViolation:
     check("a declared variable cannot override a contract variable", True)
+
+print("\n- A7 (T36): supermemory-local's three vendor switches are in the fixed list for every child -")
+
+
+def _raised(fn) -> tuple[bool, str]:
+    """A row's condition: an exception fails that row by name, never the suite."""
+    try:
+        return bool(fn()), ""
+    except Exception as e:  # noqa: BLE001
+        return False, f"RAISED {type(e).__name__}: {e}"
+
+
+def _sm_bundle():
+    spec = importlib.util.spec_from_file_location("v3_sm_bundle_for_launch_env", ROOT / "research" / "v3" / "sm_bundle.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+#: A7 (T36): the three switches and the value each one's comparison in the pinned bundle accepts
+SMSW = {"SUPERMEMORY_DISABLE_TELEMETRY": "1", "SUPERMEMORY_NO_UPDATE_CHECK": "1", "SUPERMEMORY_NO_OPEN": "1"}
+ok_, why_ = _raised(lambda: _sm_bundle().SPAWN_ENV == SMSW
+                    and all(L.TELEMETRY_OFF.get(k) == v and ENV.get(k) == v for k, v in SMSW.items()))
+check("LE-SMSW-1: TELEMETRY_OFF carries A7's three supermemory switches at the values the bundle's comparisons accept "
+      "(sm_bundle.SPAWN_ENV), so every child's environment has them", ok_,
+      why_ or str({k: (L.TELEMETRY_OFF.get(k), ENV.get(k)) for k in SMSW}))
+
+
+def _clash(name: str, unit: str) -> str:
+    """build_env with one declared name, once per unit (a unit directory is fresh once): the refusal as text."""
+    try:
+        L.build_env(C, parent_env=HOSTILE, unit=fresh(unit), path_dirs=[], declared={name: "0"}, catcher_url=CATCHER)
+        return "no clash"
+    except L.ContractViolation as e:
+        return str(e)
+    except Exception as e:  # noqa: BLE001 - the row FAILs by name
+        return f"RAISED {type(e).__name__}: {e}"
+
+
+clash_ = {n: _clash(n, u) for n, u in (("SUPERMEMORY_NO_OPEN", "u-smsw1"), ("supermemory_no_open", "u-smsw2"))}
+check("LE-SMSW-2: a declared SUPERMEMORY_NO_OPEN (any case) is a clash with the contract, never a way to turn a switch "
+      "back on", all("overrides a contract variable" in m and n in m for n, m in clash_.items()), str(clash_))
 
 print("\n- the assertion refuses what §2.6.2 forbids -")
 

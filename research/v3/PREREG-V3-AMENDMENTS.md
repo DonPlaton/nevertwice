@@ -186,3 +186,25 @@ declared line of the report beside its K and V numbers - never discovered afterw
 - **§13, trap closure, the new line:**
 
 | T35 read order within a unit | §5.2 | B, K, V in one read child, the same for every arm; M34 digest before/after; a store changed by reads is decided before the campaign |
+
+## A7 - T36: supermemory-local's telemetry, update check and browser are off, as §2.6 sets for every child
+
+- **Trap:** T36 supermemory-local reports and calls out.
+- **Date:** 2026-09-30.
+- **Ruling:** the auditor's Q-C1-AMD = (a) (2026-09-30), from the facts the reader sm_bundle takes from the pinned binary's
+  bundle (a8-supermemory-bin b2, sha256 d8fb2ac0...; Q-A8S-SRC = (c)).
+- **Reason:** A3 left the server's telemetry at the vendor's default ("telemetry unset"). The pinned binary shows what that
+  default does: a PostHog heartbeat at start and every six hours, and, while its telemetry is on, the memory agent's
+  model input and output - the ingested documents' text - sent to us.i.posthog.com; an update check against GitHub at
+  start and daily; and a browser opened at start. §2.6 already sets telemetry and auto-update off for every child; the
+  vendor's own switches do it for this server, and none of them changes what the server stores, retrieves or asks its
+  model.
+- **§2.6, the fixed list of "Telemetry and auto-update off" gains:** SUPERMEMORY_DISABLE_TELEMETRY=1,
+  SUPERMEMORY_NO_UPDATE_CHECK=1, SUPERMEMORY_NO_OPEN=1 - set for every child like the rest of the list, each the value the
+  server's own comparison accepts (the bundle's facts telemetry_switch, update_switch, browser_switch).
+- **A3, the supermemory-local defaults:** "telemetry unset" is replaced by "telemetry, the update check and the browser off
+  through §2.6's fixed list (A7)"; SUPERMEMORY_EMBEDDING_RAM_LIMIT and SUPERMEMORY_INGEST_CONCURRENCY stay the vendor's.
+
+- **§13, trap closure, the new line:**
+
+| T36 supermemory-local reports and calls out | §2.6 | SUPERMEMORY_DISABLE_TELEMETRY=1, SUPERMEMORY_NO_UPDATE_CHECK=1, SUPERMEMORY_NO_OPEN=1 in the fixed list for every child; the values the binary's own comparisons accept |
