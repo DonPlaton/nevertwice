@@ -618,6 +618,92 @@ def fill_inputs(plan: Plan, placed: dict, pins: dict) -> tuple[dict, list[str]]:
     return (inputs if not problems else {}), problems
 
 
+# ── A7: an e-print pin from a cleared d8 run (the auditor's Q-ZT-1 = O-a, 2026-09-30) ──────────────────────────
+
+#: The arXivRaw record's licence URL -> the pin table's licence: a fixed map, the table's own names; any other URL is
+#: refused by name (never mapped by guess) - arXiv's non-exclusive licence and every ND licence among them.
+ARXIV_LICENCES = {"http://creativecommons.org/licenses/by/4.0/": "CC-BY-4.0",
+                  "http://creativecommons.org/licenses/by-sa/4.0/": "CC-BY-SA-4.0",
+                  "http://creativecommons.org/licenses/by-nc/4.0/": "CC-BY-NC-4.0",
+                  "http://creativecommons.org/licenses/by-nc-sa/4.0/": "CC-BY-NC-SA-4.0"}
+
+
+def place_d8_eprint(runs_root: Path, *, window: str, run: str, pin: str, pins: dict, cleared: list, pins_root: Path,
+                    polygon_root: Path, hf_hub: Path, manifest: dict | None = None,
+                    issuer_orgs=PUBLIC_ISSUER_ORGS) -> dict:
+    """A url pin of PINS_A7 from the e-print of a d8 run (fetch_a3 plan d8) the auditor cleared, offline: the run must
+    be in ``cleared`` (freeze_a7.CLEARED_A7) with each listed file at its sha256; its report clean; the pin a url pin
+    of that window, unfilled, whose path is the report's own e-print URL; the licence the arXivRaw record's licence URL
+    by ARXIV_LICENCES. Then this module's own placement (place_window: the record's precheck, _place_one re-hashing
+    the file against the report and the child's summary and moving it to <pins_root>/url/<sha256>/<basename>) and
+    fill_inputs; pin_fill.json only when nothing is wrong. The d8 request eprint:<id>v<n> IS the pin's request: it is
+    read under the id pin:<pin> in a copy of the record, and the place record names the record file and the request.
+    A run already placed from (its place record or pin_fill exists) is refused before anything is rewritten."""
+    runs_root = Path(runs_root)
+    manifest = manifest if manifest is not None else MANIFEST     # the window's hosts: the manifest's own
+    base = runs_root / "_fetch" / window / run
+    out: dict = {"window": window, "run": run, "pin": pin, "problems": []}
+
+    def stop(msg: str) -> dict:
+        out["problems"].append(msg)
+        return out
+    entry = next((e for e in cleared if e.get("window") == window and e.get("run") == run), None)
+    if entry is None:
+        return stop(f"S13 {window} {run}: not cleared - an e-print is placed only from a run in the cleared list")
+    rec_rel, rep_rel = f"_fetch/{window}/{run}/record.json", f"_fetch/{window}/{run}/d8_report.json"
+    if rec_rel not in entry["files"] or rep_rel not in entry["files"]:
+        return stop(f"S13 {window} {run}: the cleared entry does not list its record.json and d8_report.json")
+    for rel, want in sorted(entry["files"].items()):
+        f = runs_root.joinpath(*rel.split("/"))
+        got = hashlib.sha256(f.read_bytes()).hexdigest() if f.is_file() else None
+        if got != want:
+            return stop(f"S13 {rel}: sha256 {str(got)[:12]} is not the cleared {want[:12]}")
+    for side in ("place_record.json", "pin_fill.json"):
+        if (base / side).exists():
+            return stop(f"S18 {window} {run}: already placed from ({side} exists) - never rewritten")
+    record, report = json.loads((base / "record.json").read_bytes()), json.loads((base / "d8_report.json").read_bytes())
+    if report.get("problems") != []:
+        return stop(f"S14 {window} {run}: the d8 report has problems: {report.get('problems')}")
+    p = pins.get(pin)
+    if p is None or p.get("window") != window or p.get("source") != "url":
+        return stop(f"S8 {pin}: not a url pin of {window}")
+    if p.get("sha256") is not None:
+        return stop(f"S15 {pin}: already filled - a pin is filled once")
+    ep_url = f"https://arxiv.org/src/{report.get('arxiv_id')}v{report.get('version')}"
+    if p.get("path") != ep_url:
+        return stop(f"S16 {pin}: its path {p.get('path')} is not the report's e-print {ep_url}")
+    ep = report.get("eprint") or {}
+    if ep.get("status") != 200 or not re.fullmatch(r"[0-9a-f]{64}", str(ep.get("sha256"))) \
+            or not isinstance(ep.get("bytes"), int) or isinstance(ep.get("bytes"), bool):
+        return stop(f"S14 {window} {run}: the report names no e-print read (status {ep.get('status')})")
+    lic_url = (report.get("oai") or {}).get("licence")
+    lic = ARXIV_LICENCES.get(lic_url)
+    if lic is None:
+        return stop(f"F1 {pin}: licence_unknown: the arXivRaw record's licence {lic_url!r} is not in the fixed table")
+    eid = f"eprint:{report['arxiv_id']}v{report['version']}"
+    view = json.loads(json.dumps(record))
+    hits = [(j, r) for j in view.get("jobs") or [] for r in j.get("summary") or [] if r.get("id") == eid]
+    saves = [q.get("save") for j, _r in hits for q in (j.get("job") or {}).get("requests") or [] if q.get("id") == eid]
+    if len(hits) != 1:
+        return stop(f"S17 {eid}: the record holds {len(hits)} such requests, not one")
+    hits[0][1]["id"] = f"pin:{pin}"
+    item = Item(names=[pin], url=ep_url, save=saves[0] if len(saves) == 1 else "eprint.bin",
+                expect={"sha256": ep["sha256"], "size": ep["bytes"]}, max_bytes=ep["bytes"],
+                dest=CP.location(pin, hf_hub=hf_hub, pins_root=pins_root, sha256=ep["sha256"], pins=pins))
+    plan = Plan(window, list(manifest["windows"][window]["hosts"]), "fetch", [item], [], ep["bytes"],
+                need_bytes(ep["bytes"]), {pin: (lic, f"the arXivRaw record's licence {lic_url} ({window} {run} d8_report.json)")})
+    placed = place_window(view, plan, pins=pins, polygon_root=polygon_root, hf_hub=hf_hub, pins_root=pins_root,
+                          place_path=base / "place_record.json", issuer_orgs=issuer_orgs)
+    placed["source_record"] = {"path": "record.json", "sha256": entry["files"][rec_rel], "request": eid}
+    _write_json(base / "place_record.json", placed)
+    inputs, problems = fill_inputs(plan, placed, pins)
+    out["problems"] = problems
+    if not problems:
+        _write_json(base / "pin_fill.json", {"window": window, "run": run, "pins": inputs})
+        out["pin_fill"] = str(base / "pin_fill.json")
+    return out
+
+
 # ── A3.g: the A-MEM source through a git child (Q-A3F-1..3) ─────────────────────────────────────────────
 
 GIT_EXE = Path(r"C:\Program Files\Git\cmd\git.exe")
@@ -877,15 +963,29 @@ TIKTOKEN_METADATA = Path(r"D:\Coding\_nevertwice_polygon\mem0_eval\.venv\Lib\sit
 def main(argv: list[str] | None = None) -> int:
     import argparse  # noqa: PLC0415
     ap = argparse.ArgumentParser(description="one pin window (a3-hf, a3-github, a3-tiktoken, a3-git; A7's a7-github), "
-                                             "then place and fill")
+                                             "then place and fill; or, offline, an e-print pin from a cleared d8 run")
     ap.add_argument("--window", required=True, choices=["a3-hf", "a3-github", "a3-tiktoken", "a3-git", "a7-github", "a7-hf",
-                                                          "a7-github-2"])
+                                                          "a7-github-2", "a7-arxiv-src"])
     ap.add_argument("--run", required=True)
-    ap.add_argument("--python", required=True, help="the polygon's py314 interpreter")
+    ap.add_argument("--python", help="the polygon's py314 interpreter (a window's)")
+    ap.add_argument("--place-d8", metavar="PIN", help="offline (Q-ZT-1 = O-a): place PIN from the cleared a7-arxiv-src run "
+                                                      "--run and write its pin_fill - no window, no network")
     args = ap.parse_args(argv)
+    if (args.window == "a7-arxiv-src") != bool(args.place_d8) or (not args.place_d8 and not args.python):
+        print("--place-d8 is a7-arxiv-src's, and only its; a window needs --python", file=sys.stderr)
+        return 2
     L = _load("v3_launch", HERE / "launch.py")
-    F = _load("v3_fetch_a3", HERE / "fetch_a3.py")
     c = L.Contract.default()
+    if args.place_d8:
+        F7 = _load("v3_freeze_a7_fpa3", HERE / "freeze_a7.py")
+        F3 = _load("v3_freeze_a3_fpa3", HERE / "freeze_a3.py")
+        res = place_d8_eprint(c.runs_root, window=args.window, run=args.run, pin=args.place_d8,
+                              pins=CP.table_for(args.window), cleared=F7.CLEARED_A7, pins_root=c.runs_root / "_pins",
+                              polygon_root=c.polygon_root, hf_hub=c.polygon_root / "hf_cache" / "hub",
+                              issuer_orgs=F3.PUBLIC_ISSUER_ORGS)   # the FREEZE's own list: arXiv's CA (Certainly) in it
+        print(json.dumps(res, indent=1, default=str))
+        return 0 if not res["problems"] else 1
+    F = _load("v3_fetch_a3", HERE / "fetch_a3.py")
     via = L.network_via_port(c)
     if via is None:
         print("no declared hop (network.json)", file=sys.stderr)

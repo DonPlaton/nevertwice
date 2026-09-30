@@ -318,10 +318,14 @@ GH2 = {"lme_run_generation_sh": (LME_G, LME_R, "src/generation/run_generation.sh
            ("ama_method_longcontext", "src/method/longcontext.py"),
            ("ama_method_register", "src/method_register.py"),)}}
 WANT_A7.update(GH2)
-check("A7-1: PINS_A7 holds exactly the 74 pins the auditor fixed - the 17 of phase 2, the 35 cognee files, the 10 "
-      "MiniLM files and a7-github-2's 12 - each its repository, commit, path and role",
+#: the auditor's Q-ZT-1 = O-a (2026-09-30): Zep's e-print from a7-arxiv-src s3, a url pin - its revision is its sha256
+#: once filled (fill_inputs' rule for url pins), so the table's own value is compared, never a literal guessed here
+WANT_A7["zep_paper_src"] = (None, A7.get("zep_paper_src", {}).get("revision"), "https://arxiv.org/src/2501.13956v1",
+                            "arm-source")
+check("A7-1: PINS_A7 holds exactly the 75 pins the auditor fixed - the 17 of phase 2, the 35 cognee files, the 10 "
+      "MiniLM files, a7-github-2's 12 and Zep's e-print - each its repository, commit, path and role",
       {n: (p["repo"], p["revision"], p["path"], p["role"]) for n, p in A7.items()}
-      == WANT_A7 and len(WANT_A7) == 74 and len(COGNEE) == 35 and len(MINILM) == 10 and len(GH2) == 12
+      == WANT_A7 and len(WANT_A7) == 75 and len(COGNEE) == 35 and len(MINILM) == 10 and len(GH2) == 12
       and [sum(r == x for _p, r in COGNEE.values()) for x in ("arm-source", "prompt", "scoring")] == [17, 15, 3],
       str(sorted(set(A7) ^ set(WANT_A7))))
 COG_FROM = "a7-cognee-tag d1 1b5d58bfb9f4"
@@ -339,11 +343,20 @@ check("A7-2: every GitHub pin of A7 is a file of the window a7-github, filled fr
            and isinstance(p["sha256"], str) and len(p["sha256"]) == 64 and isinstance(p["bytes"], int)
            and (str(p["revision_from"]) == COG_FROM if n in COGNEE
                 else str(p["revision_from"]).startswith(("a3-discovery d1 ", "a3-discovery d2 ")))) for n, p in A7.items()
-          if n not in GH2)
+          if n not in GH2 and n != "zep_paper_src")
       and {n for n, p in A7.items() if p["revision_from"] == COG_FROM} == set(COGNEE)
       and {n for n, p in A7.items() if p["revision_from"] == MINI_FROM} == set(MINILM),
       str([(n, p["source"], p["window"], p.get("filled_from"), p["revision_from"]) for n, p in A7.items()
            if (n in MINILM) != (p["window"] == "a7-hf") or (n in COGNEE) != (p["revision_from"] == COG_FROM)][:4]))
+ZEP = A7.get("zep_paper_src") or {}
+check("A7-ZEP (Q-ZT-1 = O-a): zep_paper_src is Zep's e-print - a url pin of a7-arxiv-src (the arXiv source URL of v1), "
+      "arm-source for S1-S3 under CC-BY-NC-SA-4.0, rev1 row 334 - declared and not yet filled: its value comes only "
+      "from place_d8_eprint's pin_fill of the cleared run a7-arxiv-src s3, through pins_apply",
+      (ZEP.get("source"), ZEP.get("window"), ZEP.get("path"), ZEP.get("role"), ZEP.get("licence"), ZEP.get("prereg"),
+       tuple(ZEP.get("stands") or ())) == ("url", "a7-arxiv-src", "https://arxiv.org/src/2501.13956v1", "arm-source",
+                                          "CC-BY-NC-SA-4.0", 334, ("S1", "S2", "S3"))
+      and ZEP.get("sha256") is None and ZEP.get("filled_from") is None and "zep_paper_src" not in CP.FILLED_A7,
+      str(ZEP))
 check("A7-2d: a7-github-2's 12 pins are GitHub files of that window, filled from its cleared run (a7-github-2 g1, "
       "pin_fill fa5375b66785: a 64-hex sha256 and a size), each at its discovery commit - LME's run_generation.sh from "
       "a3-discovery d1 for S1-S3, AMA's method code from a3-discovery d2 for S7 - under MIT",
@@ -432,10 +445,11 @@ check("A7-4c: an honest neighbour - the same source, repository and path at ANOT
       "a file pinned twice: pinned_twice() names nothing and the table's own command passes (a commit is part of a file's "
       "identity)", nb is not None and nb == ([], 0, True), str(nberr or nb))
 check("A7-5: the table's rules hold for PINS_A7, and its fragment files the 57 prompt and scoring pins (the MiniLM "
-      "ten and a7-github-2's twelve among them) under prompt_files and the 17 cognee arm-source pins under arm_sources, nothing elsewhere",
+      "ten and a7-github-2's twelve among them) under prompt_files and the 17 cognee arm-source pins and Zep's e-print "
+      "under arm_sources, nothing elsewhere",
       fr is not None and sorted(fr["prompt_files"]) == sorted(n for n, v in WANT_A7.items() if v[3] in ("prompt", "scoring"))
       and len(fr["prompt_files"]) == 57 and set(MINILM) <= set(fr["prompt_files"]) and set(GH2) <= set(fr["prompt_files"])
-      and sorted(fr["arm_sources"]) == sorted(n for n, (_p, r) in COGNEE.items() if r == "arm-source")
+      and sorted(fr["arm_sources"]) == sorted([n for n, (_p, r) in COGNEE.items() if r == "arm-source"] + ["zep_paper_src"])
       and not any(fr[g] for g in fr if g not in ("prompt_files", "arm_sources")),
       str(frerr or {g: sorted(v) for g, v in (fr or {}).items()}))
 

@@ -1050,7 +1050,9 @@ def d7_report(record: dict, decl: dict) -> dict:
 D8_WINDOW = "a7-arxiv-src"
 D8_HOSTS = ["export.arxiv.org", "oaipmh.arxiv.org", "arxiv.org"]    # Q-D8-5 = O-b: s1 found OAI moved to oaipmh
 D8_OAI_HOSTS = ["export.arxiv.org", "oaipmh.arxiv.org"]              # the OAI request's one redirect: there only
-D8_KEYS = frozenset({"hosts", "purpose", "arxiv_id", "version", "max_bytes", "max_redirects"})
+#: "pins": the table's pins this window's record fills (one pin, one window - the manifest lists each pin in its
+#: window, Q-A7-P2-1 (1); the auditor's Q-ZT-1 = O-a: zep_paper_src from the e-print, never by the plan itself)
+D8_KEYS = frozenset({"hosts", "purpose", "arxiv_id", "version", "max_bytes", "max_redirects", "pins"})
 D8_MAX_BYTES = 64 * 1024 * 1024                  # the bound the manifest may declare for the e-print
 D8_OAI_MAX = 1024 * 1024                         # one arXivRaw record
 D8_PAUSE_S = 3.0                                 # between the OAI request and the e-print (arXiv's own guidance)
@@ -1085,6 +1087,9 @@ def d8_decl(manifest: dict) -> dict:
     n = w["max_bytes"]
     if isinstance(n, bool) or not isinstance(n, int) or not 1 <= n <= D8_MAX_BYTES:
         probs.append(f"its max_bytes {n!r} is not 1 to {D8_MAX_BYTES}")
+    pins = w["pins"]
+    if not (isinstance(pins, list) and all(isinstance(x, str) and x for x in pins) and len(set(pins)) == len(pins)):
+        probs.append(f"its pins {pins!r} are not a list of distinct pin names")
     if probs:
         raise D8ManifestError(f"the manifest's {D8_WINDOW} entry: " + "; ".join(probs))
     return dict(w)

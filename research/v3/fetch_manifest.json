@@ -116,7 +116,8 @@
    "arxiv_id": "2501.13956",
    "version": 1,
    "max_bytes": 67108864,
-   "max_redirects": 1
+   "max_redirects": 1,
+   "pins": ["zep_paper_src"]
   },
   "a7-hf-d": {
    "hosts": ["huggingface.co"],

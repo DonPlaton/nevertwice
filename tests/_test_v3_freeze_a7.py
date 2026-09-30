@@ -107,6 +107,9 @@ WANT_CLEARED = {
                       "_fetch/a7-hf/h1/pin_fill.json": "449a89fca362ab4aa85d6408236cb8ba37ab56e04c2a6ddfeea75f59e8094afe"},
     # the auditor's clearing of W2 py-base-312 p1 (2026-09-30 06:4x): the product venvs' base
     ("py-base-312", "p1"): {"_tools/py-base-312/py-base-312.json": "52d4aeae4c3701b098ed1dacbc5ba04c0181c13a06abf580d5442b0772846862"},
+    # the auditor's clearing of a7-arxiv-src s3 (2026-09-30 09:2x): Zep's arXivRaw record and e-print (Q-ZT-1)
+    ("a7-arxiv-src", "s3"): {"_fetch/a7-arxiv-src/s3/record.json": "8d298d088a29a7f55e70e808184b6be23dfbf2b9f2527b44c549c42e6d2bb847",
+                             "_fetch/a7-arxiv-src/s3/d8_report.json": "8870d618f48874fe6244b74845bed011c2f882d319ce41f58a93afff31e195e4"},
     # the auditor's clearing of a7-github-2 g1 (2026-09-30 07:5x): LME's run_generation.sh and AMA's method code
     ("a7-github-2", "g1"): {"_fetch/a7-github-2/g1/record.json": "ad6ff8fb61bc456db6c30c5d1aef03382580cdfc792f3565beaf2a288ebd4272",
                             "_fetch/a7-github-2/g1/place_record.json": "aedefc7e632e9a46101287b47ad0f82629e184047db0a4a88cb8d55c64be9f9c",
@@ -125,8 +128,9 @@ NPM_PROBLEMS = ["job 0: the fetch child exited with 3", "job 0 request npm:packa
 PREREG = {"research/v3/PREREG-V3-rev1.md": "1" * 64, "research/v3/PREREG-V3-AMENDMENTS.md": "2" * 64}
 
 print("- the declared lists are the auditor's -")
-check("F7-1: CLEARED_A7 is exactly the auditor's eleven runs - the four of Q-F7, a7-github g1, a7-hf-d d1, a7-arxiv d2, "
-      "a8-supermemory-bin b2, a7-hf h1, py-base-312 p1 and a7-github-2 g1 - with their twenty-four record files by sha256, "
+check("F7-1: CLEARED_A7 is exactly the auditor's twelve runs - the four of Q-F7, a7-github g1, a7-hf-d d1, a7-arxiv d2, "
+      "a8-supermemory-bin b2, a7-hf h1, py-base-312 p1, a7-github-2 g1 and a7-arxiv-src s3 - with their twenty-six "
+      "record files by sha256, "
       "and FAILED_A7 is "
       "a7-npm g1 (npm answers 404; revision 1's channel, erratum A3 T32), a7-arxiv d1 (429, nothing read), "
       "a8-supermemory-bin b1 (R-GHR-ISS, superseded by b2), a7-arxiv-src s1 (301 to oaipmh.arxiv.org, the e-print not "
@@ -197,6 +201,13 @@ def world(tag: str, *, npm_problems=NPM_PROBLEMS, gh_org="Sectigo Limited"):
                        "issuers": [["huggingface.co", "Amazon", "Amazon RSA 2048 M01"]]},
            "a7-arxiv": {"window": "a7-arxiv", "run": "d2", "problems": [], "hosts": ["export.arxiv.org"],
                         "issuers": [["export.arxiv.org", "Certainly", "Certainly Intermediate R1"]]},
+           # s3's form: the three declared hosts, each tunnelled, each issued by Certainly (Fastly)
+           "a7-arxiv-src": {"window": "a7-arxiv-src", "run": "s3", "problems": [],
+                            "hosts": ["export.arxiv.org", "oaipmh.arxiv.org", "arxiv.org"],
+                            "catcher": [{"host": h, "port": 443, "tunnelled": True, "refused": False, "hop_status": 200}
+                                        for h in ("export.arxiv.org", "oaipmh.arxiv.org", "arxiv.org")],
+                            "issuers": [[h, "Certainly", "Certainly Intermediate R1"]
+                                        for h in ("arxiv.org", "export.arxiv.org", "oaipmh.arxiv.org")]},
            "a7-github-2": {"window": "a7-github-2", "run": "g1", "problems": [], "hosts": ["raw.githubusercontent.com"],
                            "catcher": [{"host": "raw.githubusercontent.com", "port": 443, "tunnelled": True, "refused": False,
                                         "hop_status": 200}],
@@ -291,13 +302,14 @@ check("F7-15: a8-supermemory-bin b2's window names objects.githubusercontent.com
       ok(lambda: oerr is None and {w["window"]: w.get("declared_not_reached") for w in OUT["windows"]
                                    if "declared_not_reached" in w} == {"a8-supermemory-bin": ["objects.githubusercontent.com"]}
          and "objects.githubusercontent.com" not in OUT["issuers"]), str(oerr))
-check("F7-4: its pins are PINS_A7 as filled - all 74 (a7-github's 52, a7-hf's 10 and a7-github-2's 12), each with where "
+check("F7-4: its pins are PINS_A7 as filled - all 75 (a7-github's 52, a7-hf's 10, a7-github-2's 12 and Zep's e-print), "
+      "each with where "
       "it came from - "
       "and its issuers the public ones the records name",
-      ok(lambda: sorted(OUT["pins"]) == sorted(CP.PINS_A7_DECLARED) and len(OUT["pins"]) == 74
+      ok(lambda: sorted(OUT["pins"]) == sorted(CP.PINS_A7_DECLARED) and len(OUT["pins"]) == 75
                          and all(v["filled_from"] == "a7-github g1 pin_fill 0123456789ab" for v in OUT["pins"].values())
-                         and sorted(OUT["issuers"]) == ["api.github.com", "api.nuget.org", "export.arxiv.org", "github.com",
-                                                        "huggingface.co",
+                         and sorted(OUT["issuers"]) == ["api.github.com", "api.nuget.org", "arxiv.org", "export.arxiv.org",
+                                                        "github.com", "huggingface.co", "oaipmh.arxiv.org",
                                                         "raw.githubusercontent.com", "registry.npmjs.org",
                                                         "release-assets.githubusercontent.com", "us.aws.cdn.hf.co"]),
       str(oerr))

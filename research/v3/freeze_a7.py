@@ -87,6 +87,11 @@ CLEARED_A7 = [
     # sha256 and sha512, python.exe, 3.12.10 the newest 3.12, m5 PASS, secret_scan 0)
     {"window": "py-base-312", "run": "p1", "kind": "base", "files": {
         "_tools/py-base-312/py-base-312.json": "52d4aeae4c3701b098ed1dacbc5ba04c0181c13a06abf580d5442b0772846862"}},
+    # Zep's paper's arXivRaw record (CC BY-NC-SA 4.0, v1 only) and e-print (tar.gz, 22911 bytes, d98c3a61...), the
+    # auditor's clearing (2026-09-30 09:2x: m6 --window PASS, m5 PASS, secret_scan 0) - the source of pin zep_paper_src
+    {"window": "a7-arxiv-src", "run": "s3", "kind": "report", "files": {
+        "_fetch/a7-arxiv-src/s3/record.json": "8d298d088a29a7f55e70e808184b6be23dfbf2b9f2527b44c549c42e6d2bb847",
+        "_fetch/a7-arxiv-src/s3/d8_report.json": "8870d618f48874fe6244b74845bed011c2f882d319ce41f58a93afff31e195e4"}},
 ]
 #: The A7 runs that were NOT cleared - kept by sha256 with the reason, never used.
 FAILED_A7 = [

@@ -298,13 +298,17 @@ try:
     decl8, derr8 = holds(lambda: F.d8_decl(MANI))
     check("D8-M1: the manifest declares a7-arxiv-src as plan d8 reads it: export.arxiv.org, oaipmh.arxiv.org and "
           "arxiv.org, one redirect (the OAI request's, Q-D8-5 = O-b), arXiv 2501.13956 (the auditor's choice from a7-arxiv "
-          "d2's report) at version 1, at most 64 MB",
+          "d2's report) at version 1, at most 64 MB - and it lists the one pin its record fills, zep_paper_src (Q-ZT-1)",
           derr8 is None and decl8["hosts"] == ["export.arxiv.org", "oaipmh.arxiv.org", "arxiv.org"]
           and decl8["max_redirects"] == 1
-          and decl8["arxiv_id"] == "2501.13956" and decl8["version"] == 1 and decl8["max_bytes"] == 64 * 1024 * 1024,
+          and decl8["arxiv_id"] == "2501.13956" and decl8["version"] == 1 and decl8["max_bytes"] == 64 * 1024 * 1024
+          and decl8.get("pins") == ["zep_paper_src"],
           str(derr8 or decl8))
     bad8 = {
         "an extra key": {**REAL8, "search_query": "ti:zep"},
+        "pins that are one name, not a list": {**REAL8, "pins": "zep_paper_src"},
+        "a pin named twice": {**REAL8, "pins": ["zep_paper_src", "zep_paper_src"]},
+        "a pin that is no name": {**REAL8, "pins": [""]},
         "a missing key": {k: v for k, v in REAL8.items() if k != "version"},
         "a fourth host": {**REAL8, "hosts": ["export.arxiv.org", "oaipmh.arxiv.org", "arxiv.org", "evil.example"]},
         "the old two hosts": {**REAL8, "hosts": ["export.arxiv.org", "arxiv.org"]},

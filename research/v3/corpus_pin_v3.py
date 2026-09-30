@@ -508,6 +508,14 @@ PINS_A7: dict[str, dict] = {
                        ("tokenizer_config", "tokenizer_config.json"), ("vocab", "vocab.txt"),
                        ("special_tokens", "special_tokens_map.json"), ("pooling", "1_Pooling/config.json"),
                        ("safetensors", "model.safetensors"))},
+    # Zep's paper (R3: arXiv 2501.13956 v1), its e-print from a7-arxiv-src s3 (the auditor's Q-ZT-1 = O-a): the source of
+    # zep-graphiti's Point V template on the LME stands (row 334 of revision 1; Q-46b-4: 20 edges + 20 nodes in it) -
+    # the paper's one context string template (Q-ZT-2 = C1), read offline from the archive; its text is never
+    # committed (Q-D8-7: CC BY-NC-SA 4.0, no ND). Filled only through fetch_pins_a3.place_d8_eprint's pin_fill.
+    "zep_paper_src": _pin("arm-source", ["S1", "S2", "S3"], "url", None, "https://arxiv.org/src/2501.13956v1",
+                          "CC-BY-NC-SA-4.0", "a7-arxiv-src", 334,
+                          note="Q-46b-4, Q-ZT-1: zep-graphiti's Point V context string template, the paper's "
+                               "(main.tex, Q-ZT-2 = C1)"),
 }
 #: The values the windows a7-github and a7-hf found, written by research/v3/pins_apply.py between these markers, never
 #: by hand.
