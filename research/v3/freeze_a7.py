@@ -89,10 +89,14 @@ CLEARED_A7 = [
     {"window": "py-base-312", "run": "p1", "kind": "base", "files": {
         "_tools/py-base-312/py-base-312.json": "52d4aeae4c3701b098ed1dacbc5ba04c0181c13a06abf580d5442b0772846862"}},
     # Zep's paper's arXivRaw record (CC BY-NC-SA 4.0, v1 only) and e-print (tar.gz, 22911 bytes, d98c3a61...), the
-    # auditor's clearing (2026-09-30 09:2x: m6 --window PASS, m5 PASS, secret_scan 0) - the source of pin zep_paper_src
+    # auditor's clearing (2026-09-30 09:2x: m6 --window PASS, m5 PASS, secret_scan 0) - the source of pin zep_paper_src;
+    # its offline placement (Z1b, the auditor's GO 13:5x: --place-d8 zep_paper_src, verified-placed) - place_record and
+    # the pin_fill pins_apply wrote FILLED_A7's zep_paper_src from
     {"window": "a7-arxiv-src", "run": "s3", "kind": "report", "files": {
         "_fetch/a7-arxiv-src/s3/record.json": "8d298d088a29a7f55e70e808184b6be23dfbf2b9f2527b44c549c42e6d2bb847",
-        "_fetch/a7-arxiv-src/s3/d8_report.json": "8870d618f48874fe6244b74845bed011c2f882d319ce41f58a93afff31e195e4"}},
+        "_fetch/a7-arxiv-src/s3/d8_report.json": "8870d618f48874fe6244b74845bed011c2f882d319ce41f58a93afff31e195e4",
+        "_fetch/a7-arxiv-src/s3/place_record.json": "add814183b51ce647e344b9b0714df39081a4dd48843423d05220343ce5b0fc6",
+        "_fetch/a7-arxiv-src/s3/pin_fill.json": "164e66a42a1eb4b96294ce9f6fb2237084b18959db82be475de2474d5946f78a"}},
 ]
 #: The A7 runs that were NOT cleared - kept by sha256 with the reason, never used.
 FAILED_A7 = [

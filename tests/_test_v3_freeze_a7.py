@@ -107,9 +107,12 @@ WANT_CLEARED = {
                       "_fetch/a7-hf/h1/pin_fill.json": "449a89fca362ab4aa85d6408236cb8ba37ab56e04c2a6ddfeea75f59e8094afe"},
     # the auditor's clearing of W2 py-base-312 p1 (2026-09-30 06:4x): the product venvs' base
     ("py-base-312", "p1"): {"_tools/py-base-312/py-base-312.json": "52d4aeae4c3701b098ed1dacbc5ba04c0181c13a06abf580d5442b0772846862"},
-    # the auditor's clearing of a7-arxiv-src s3 (2026-09-30 09:2x): Zep's arXivRaw record and e-print (Q-ZT-1)
+    # the auditor's clearing of a7-arxiv-src s3 (2026-09-30 09:2x): Zep's arXivRaw record and e-print (Q-ZT-1); its offline
+    # placement (Z1b, the auditor's GO 13:5x): the place record and the pin_fill of zep_paper_src
     ("a7-arxiv-src", "s3"): {"_fetch/a7-arxiv-src/s3/record.json": "8d298d088a29a7f55e70e808184b6be23dfbf2b9f2527b44c549c42e6d2bb847",
-                             "_fetch/a7-arxiv-src/s3/d8_report.json": "8870d618f48874fe6244b74845bed011c2f882d319ce41f58a93afff31e195e4"},
+                             "_fetch/a7-arxiv-src/s3/d8_report.json": "8870d618f48874fe6244b74845bed011c2f882d319ce41f58a93afff31e195e4",
+                             "_fetch/a7-arxiv-src/s3/place_record.json": "add814183b51ce647e344b9b0714df39081a4dd48843423d05220343ce5b0fc6",
+                             "_fetch/a7-arxiv-src/s3/pin_fill.json": "164e66a42a1eb4b96294ce9f6fb2237084b18959db82be475de2474d5946f78a"},
     # the auditor's clearing of a7-github-2 g1 (2026-09-30 07:5x): LME's run_generation.sh and AMA's method code
     ("a7-github-2", "g1"): {"_fetch/a7-github-2/g1/record.json": "ad6ff8fb61bc456db6c30c5d1aef03382580cdfc792f3565beaf2a288ebd4272",
                             "_fetch/a7-github-2/g1/place_record.json": "aedefc7e632e9a46101287b47ad0f82629e184047db0a4a88cb8d55c64be9f9c",
@@ -129,7 +132,7 @@ PREREG = {"research/v3/PREREG-V3-rev1.md": "1" * 64, "research/v3/PREREG-V3-AMEN
 
 print("- the declared lists are the auditor's -")
 check("F7-1: CLEARED_A7 is exactly the auditor's twelve runs - the four of Q-F7, a7-github g1, a7-hf-d d1, a7-arxiv d2, "
-      "a8-supermemory-bin b2, a7-hf h1, py-base-312 p1, a7-github-2 g1 and a7-arxiv-src s3 - with their twenty-six "
+      "a8-supermemory-bin b2, a7-hf h1, py-base-312 p1, a7-github-2 g1 and a7-arxiv-src s3 - with their twenty-eight "
       "record files by sha256, "
       "and FAILED_A7 is "
       "a7-npm g1 (npm answers 404; revision 1's channel, erratum A3 T32), a7-arxiv d1 (429, nothing read), "
@@ -411,7 +414,8 @@ try:
              if rel.endswith("/pin_fill.json")}
     f714 = (fix7 == decl7 == {"a7-github/g1": "acae9e52bc935a5752f384fbcc0cd26521e20c97878056d3318963f782296472",
                               "a7-hf/h1": "449a89fca362ab4aa85d6408236cb8ba37ab56e04c2a6ddfeea75f59e8094afe",
-                              "a7-github-2/g1": "fa5375b6678530c023ec875bed830accd447e6e132abf5aec167207e6b3a28b7"}), None
+                              "a7-github-2/g1": "fa5375b6678530c023ec875bed830accd447e6e132abf5aec167207e6b3a28b7",
+                              "a7-arxiv-src/s3": "164e66a42a1eb4b96294ce9f6fb2237084b18959db82be475de2474d5946f78a"}), None
 except Exception as e:  # noqa: BLE001
     f714 = (False, f"{type(e).__name__}: {e}")
 check("F7-14: the A7 pin_fill shas CLEARED_A7 names are the committed evidence's (tests/fixtures/v3_pin_fill/a7-*)",

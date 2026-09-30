@@ -1,0 +1,13 @@
+{
+ "pins": {
+  "zep_paper_src": {
+   "bytes": 22911,
+   "licence_found": "CC-BY-NC-SA-4.0",
+   "licence_source": "the arXivRaw record's licence http://creativecommons.org/licenses/by-nc-sa/4.0/ (a7-arxiv-src s3 d8_report.json)",
+   "revision": "d98c3a619caf66173e92e9a21829b32312db83156e30ede9e6bb45c1c6016d51",
+   "sha256": "d98c3a619caf66173e92e9a21829b32312db83156e30ede9e6bb45c1c6016d51"
+  }
+ },
+ "run": "s3",
+ "window": "a7-arxiv-src"
+}

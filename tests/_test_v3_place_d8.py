@@ -22,6 +22,7 @@ import json
 import shutil
 import sys
 import tempfile
+import types
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -160,9 +161,11 @@ try:
           and pf["pins"][PIN]["bytes"] == len(EPRINT) and pf["pins"][PIN]["licence_found"] == "CC-BY-NC-SA-4.0"
           and NC_SA in pf["pins"][PIN]["licence_source"], str(pf))
     got, perr = holds(lambda: PA.plan_values([(PA.read_fill(pf_path, sha(pf_path.read_bytes())), sha(pf_path.read_bytes()))],
-                                             CP, table="PINS_A7"))
+                                             types.SimpleNamespace(PINS_A7=CP.PINS_A7_DECLARED, fill=CP.fill,
+                                                                   PinRefused=CP.PinRefused), table="PINS_A7"))
     check("PD8-3: pins_apply takes that pin_fill as it takes a window's (read_fill beside a clean record and place record, "
-          "plan_values through fill() on a copy of PINS_A7) - one value, from a7-arxiv-src s9",
+          "plan_values through fill() on a copy of the declared PINS_A7 - the real table has zep_paper_src filled now, "
+          "a pin is filled once) - one value, from a7-arxiv-src s9",
           perr is None and list(got[0]) == [PIN] and got[0][PIN]["sha256"] == sha(EPRINT)
           and got[0][PIN]["from"].startswith(f"{W} s9 pin_fill"), str(perr or got))
     first = {n: (wd["base"] / n).read_bytes() for n in ("place_record.json", "pin_fill.json") if (wd["base"] / n).is_file()}

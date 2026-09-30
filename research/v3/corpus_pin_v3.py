@@ -595,6 +595,7 @@ FILLED_A7: dict[str, dict] = {
     "minilm_tokenizer": {"revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41", "sha256": "be50c3628f2bf5bb5e3a7f17b1f74611b2561a3a27eeab05e5aa30f411572037", "bytes": 466247, "licence_found": "apache-2.0", "licence_source": "a7d1 card sentence-transformers/all-MiniLM-L6-v2", "from": "a7-hf h1 pin_fill 449a89fca362"},
     "minilm_tokenizer_config": {"revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41", "sha256": "acb92769e8195aabd29b7b2137a9e6d6e25c476a4f15aa4355c233426c61576b", "bytes": 350, "licence_found": "apache-2.0", "licence_source": "a7d1 card sentence-transformers/all-MiniLM-L6-v2", "from": "a7-hf h1 pin_fill 449a89fca362"},
     "minilm_vocab": {"revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41", "sha256": "07eced375cec144d27c900241f3e339478dec958f92fddbc551f295c992038a3", "bytes": 231508, "licence_found": "apache-2.0", "licence_source": "a7d1 card sentence-transformers/all-MiniLM-L6-v2", "from": "a7-hf h1 pin_fill 449a89fca362"},
+    "zep_paper_src": {"revision": "d98c3a619caf66173e92e9a21829b32312db83156e30ede9e6bb45c1c6016d51", "sha256": "d98c3a619caf66173e92e9a21829b32312db83156e30ede9e6bb45c1c6016d51", "bytes": 22911, "licence_found": "CC-BY-NC-SA-4.0", "licence_source": "the arXivRaw record's licence http://creativecommons.org/licenses/by-nc-sa/4.0/ (a7-arxiv-src s3 d8_report.json)", "from": "a7-arxiv-src s3 pin_fill 164e66a42a1e"},
 }
 # <<< A7 FILLED
 PINS_A7_DECLARED = __import__("copy").deepcopy(PINS_A7)

@@ -350,12 +350,14 @@ check("A7-2: every GitHub pin of A7 is a file of the window a7-github, filled fr
            if (n in MINILM) != (p["window"] == "a7-hf") or (n in COGNEE) != (p["revision_from"] == COG_FROM)][:4]))
 ZEP = A7.get("zep_paper_src") or {}
 check("A7-ZEP (Q-ZT-1 = O-a): zep_paper_src is Zep's e-print - a url pin of a7-arxiv-src (the arXiv source URL of v1), "
-      "arm-source for S1-S3 under CC-BY-NC-SA-4.0, rev1 row 334 - declared and not yet filled: its value comes only "
-      "from place_d8_eprint's pin_fill of the cleared run a7-arxiv-src s3, through pins_apply",
+      "arm-source for S1-S3 under CC-BY-NC-SA-4.0, rev1 row 334 - filled only from place_d8_eprint's pin_fill of the "
+      "cleared run a7-arxiv-src s3 (164e66a42a1e), through pins_apply: the e-print's 22,911 bytes, d98c3a61...",
       (ZEP.get("source"), ZEP.get("window"), ZEP.get("path"), ZEP.get("role"), ZEP.get("licence"), ZEP.get("prereg"),
        tuple(ZEP.get("stands") or ())) == ("url", "a7-arxiv-src", "https://arxiv.org/src/2501.13956v1", "arm-source",
                                           "CC-BY-NC-SA-4.0", 334, ("S1", "S2", "S3"))
-      and ZEP.get("sha256") is None and ZEP.get("filled_from") is None and "zep_paper_src" not in CP.FILLED_A7,
+      and ZEP.get("sha256") == ZEP.get("revision") == "d98c3a619caf66173e92e9a21829b32312db83156e30ede9e6bb45c1c6016d51"
+      and ZEP.get("bytes") == 22911 and ZEP.get("filled_from") == "a7-arxiv-src s3 pin_fill 164e66a42a1e"
+      and CP.FILLED_A7.get("zep_paper_src", {}).get("licence_found") == "CC-BY-NC-SA-4.0",
       str(ZEP))
 check("A7-2d: a7-github-2's 12 pins are GitHub files of that window, filled from its cleared run (a7-github-2 g1, "
       "pin_fill fa5375b66785: a 64-hex sha256 and a size), each at its discovery commit - LME's run_generation.sh from "

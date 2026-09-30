@@ -146,8 +146,10 @@ for (w, r), sha in CLEARED_FILES.items():
 #: m6 --window, m6 --pins-rev, m5 --launch-dir --set-aside, secret_scan 0 on each)
 A7_CLEARED_FILES = {("a7-github", "g1"): "acae9e52bc935a5752f384fbcc0cd26521e20c97878056d3318963f782296472",
                     ("a7-hf", "h1"): "449a89fca362ab4aa85d6408236cb8ba37ab56e04c2a6ddfeea75f59e8094afe",
-                    ("a7-github-2", "g1"): "fa5375b6678530c023ec875bed830accd447e6e132abf5aec167207e6b3a28b7"}
-check("FD4: the fixtures are exactly the four cleared A3 files and the three cleared A7 ones",
+                    ("a7-github-2", "g1"): "fa5375b6678530c023ec875bed830accd447e6e132abf5aec167207e6b3a28b7",
+                    # Zep's e-print placed offline from the cleared a7-arxiv-src s3 (Z1b, the auditor's GO 2026-09-30 13:5x)
+                    ("a7-arxiv-src", "s3"): "164e66a42a1eb4b96294ce9f6fb2237084b18959db82be475de2474d5946f78a"}
+check("FD4: the fixtures are exactly the four cleared A3 files and the four cleared A7 ones",
       sorted(p_.relative_to(FIX).as_posix() for p_ in FIX.rglob("*") if p_.is_file())
       == sorted(f"{w}/{r}/pin_fill.json" for w, r in {**CLEARED_FILES, **A7_CLEARED_FILES}), str(sorted(FIX.rglob("*"))))
 KEYS_ = ("revision", "sha256", "bytes", "licence_found", "licence_source")
@@ -175,28 +177,30 @@ try:
 except Exception as e:  # noqa: BLE001 - a missing fixture FAILs the rows below by name
     ev7err = f"{type(e).__name__}: {e}"
 FILLED_A7 = getattr(CP, "FILLED_A7", {})
-check("FD4-A7-1: the fixtures a7-github/g1, a7-hf/h1 and a7-github-2/g1 pin_fill.json are the cleared files, by their "
-      "full sha256, each of its own window run", ev7err is None and len(ev7) == 3
+check("FD4-A7-1: the fixtures a7-github/g1, a7-hf/h1, a7-github-2/g1 and a7-arxiv-src/s3 pin_fill.json are the cleared "
+      "files, by their full sha256, each of its own window run", ev7err is None and len(ev7) == 4
       and all(got == sha and (d["window"], d["run"]) == wr for d, sha, got, wr in ev7.values()),
       str(ev7err or [got[:12] for _d, _s, got, _wr in ev7.values()]))
 gh7 = sorted(n for n, p in getattr(CP, "PINS_A7_DECLARED", {}).items() if p["window"] == "a7-github")
 hf7 = sorted(n for n, p in getattr(CP, "PINS_A7_DECLARED", {}).items() if p["window"] == "a7-hf")
 g27 = sorted(n for n, p in getattr(CP, "PINS_A7_DECLARED", {}).items() if p["window"] == "a7-github-2")
+zp7 = sorted(n for n, p in getattr(CP, "PINS_A7_DECLARED", {}).items() if p["window"] == "a7-arxiv-src")
 check("FD4-A7-2: FILLED_A7 holds every A7 pin, each from its own window's cleared run by its pin_fill sha256 - the 52 of "
       "a7-github from g1 (acae9e52bc93), the 10 MiniLM files of a7-hf from h1 (449a89fca362), a7-github-2's 12 from its g1 "
-      "(fa5375b66785)",
-      sorted(FILLED_A7) == sorted(gh7 + hf7 + g27) and len(gh7) == 52 and len(hf7) == 10 and len(g27) == 12
+      "(fa5375b66785), Zep's e-print from a7-arxiv-src s3 (164e66a42a1e)",
+      sorted(FILLED_A7) == sorted(gh7 + hf7 + g27 + zp7) and len(gh7) == 52 and len(hf7) == 10 and len(g27) == 12
+      and zp7 == ["zep_paper_src"] and FILLED_A7["zep_paper_src"]["from"] == "a7-arxiv-src s3 pin_fill 164e66a42a1e"
       and all(FILLED_A7[n]["from"] == "a7-github-2 g1 pin_fill fa5375b66785" for n in g27)
       and all(FILLED_A7[n]["from"] == "a7-github g1 pin_fill acae9e52bc93" for n in gh7)
       and all(FILLED_A7[n]["from"] == "a7-hf h1 pin_fill 449a89fca362" for n in hf7)
-      and all(CP.PINS_A7[n]["sha256"] is not None and CP.PINS_A7[n]["bytes"] is not None for n in gh7 + hf7 + g27),
+      and all(CP.PINS_A7[n]["sha256"] is not None and CP.PINS_A7[n]["bytes"] is not None for n in gh7 + hf7 + g27 + zp7),
       str((len(FILLED_A7), sorted({v.get("from") for v in FILLED_A7.values()}))))
 try:
     _declared7 = types.SimpleNamespace(PINS_A7=CP.PINS_A7_DECLARED, fill=CP.fill, PinRefused=CP.PinRefused)
     rederived7, realiases7 = A.plan_values([(d, sha) for d, sha, _g, _wr in ev7.values()], _declared7, table="PINS_A7")
 except Exception as e:  # noqa: BLE001
     rederived7, realiases7 = {"refused": f"{type(e).__name__}: {e}"}, ["?"]
-check("FD4-A7-3: FILLED_A7 is exactly what pins_apply derives from those three files on the declared A7 table - no alias",
+check("FD4-A7-3: FILLED_A7 is exactly what pins_apply derives from those four files on the declared A7 table - no alias",
       bool(FILLED_A7) and FILLED_A7 == rederived7 and realiases7 == [],
       str(sorted(set(FILLED_A7) ^ set(rederived7))[:3] or [n for n in FILLED_A7 if FILLED_A7[n] != rederived7.get(n)][:3]))
 
