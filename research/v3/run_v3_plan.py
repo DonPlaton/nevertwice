@@ -740,7 +740,9 @@ class Answerer:
         check_ids((run,), (unit,))
         if (unit, req.qid) not in self.questions:
             raise PlanError(f"{self.stand}/{unit}: question {req.qid!r} is not in the plan")
-        template, question = self.questions[(unit, req.qid)]
+        entry = self.questions[(unit, req.qid)]
+        template, question = entry[0], entry[1]
+        extra = entry[2] if len(entry) > 2 else {}          # B1: the template's further slots (S1's question_date)
         items = got.get("items") if isinstance(got, Mapping) else None
         texts = [it.get("text") for it in items] if isinstance(items, list) and all(
             isinstance(it, Mapping) for it in items) else None
@@ -750,7 +752,15 @@ class Answerer:
         rj = _mod("v3_reader_judge_for_plan", "reader_judge.py")
         request_key = _load("v3_llm_proxy_for_plan", HERE.parent / "_llm_proxy.py").request_key
         ctx = pts.fill(texts, count=self.count, cut=self.cut)
-        prompt = tpl.render(template, {"context": ctx.text, "question": question})
+        values = {"context": ctx.text, "question": question}
+        for slot in template.slots:
+            if slot not in values:
+                v = extra.get(slot) if isinstance(extra, Mapping) else None
+                if not isinstance(v, str) or not v:
+                    raise PlanError(f"{self.stand}/{unit}: question {req.qid!r} carries no {slot} for its template's "
+                                    f"slot (B1) - never rendered with a blank")
+                values[slot] = v
+        prompt = tpl.render(template, values)
         port, path, token = self.reader(arm, run, unit)
         keys: list[str] = []
 

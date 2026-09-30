@@ -194,6 +194,15 @@ try:
           "benchmark asks it, the category as the loader keeps it", qs == {("conv-1", "conv-1:q0"): ("T4", "when?|2"),
                                                                             ("conv-1", "conv-1:q1"): ("T4c5", "who?|5")},
           str(qs))
+    lq = getattr(RV, "lme_questions_for", None)
+    u_d = LD._lme_unit("S1", dict(lme_rec(1), haystack_session_ids=["s1", "s2"], question_date="2023/05/30 (Tue) 23:40"))
+    u_n = LD._lme_unit("S1", dict(lme_rec(2), haystack_session_ids=["s1", "s2"]))
+    got_d = lq([u_d], template="T1") if lq else None
+    e_n = err(lambda: lq([u_n], template="T1")) if lq else "no lme_questions_for"
+    check("B1-5 (the auditor, 2026-09-30): S1/S3's questions carry their question_date as the third element - the "
+          "template's {question_date} (the vendor's 'Current Date'); a question without one is refused by name",
+          got_d == {("q001", "q001"): ("T1", "what about 1?", {"question_date": "2023/05/30 (Tue) 23:40"})}
+          and "question_date" in e_n and "q002" in e_n and not e_n.startswith(("accepted", "not refused")), f"{got_d} | {e_n}")
 
     print("\n- the gate's probe -")
     sent = []

@@ -133,15 +133,28 @@ def slots_of(text: str) -> tuple:
     return tuple(out)
 
 
+def name_slots(text: str, names: Sequence[str], *, stand: str = "") -> str:
+    """B1 (the auditor, 2026-09-30): the template's positional slots named in order - the i-th '{}' becomes '{name_i}';
+    refused unless the text holds exactly len(names) slots and every one of them is a bare '{}'."""
+    n = text.count("{}")
+    if n != len(names) or slots_of(text) != ("",) * len(names):
+        raise TemplateError(f"{stand}: the template holds {n} '{{}}' slots (fields {list(slots_of(text))}), not the "
+                            f"{len(names)} its declared naming names")
+    parts = text.split("{}")
+    return parts[0] + "".join("{" + name + "}" + part for name, part in zip(names, parts[1:]))
+
+
 def build(stand: str, pinned: Path, pin_sha256: str, spec: Source, replacements: Sequence[tuple[str, str]],
-          slots: Sequence[str], base_of=None) -> Template:
-    """The stand's template from its pinned file: the pin checked, the base extracted, the transform applied, the slots
-    required to be exactly the declared ones."""
+          slots: Sequence[str], base_of=None, named: Sequence[str] = ()) -> Template:
+    """The stand's template from its pinned file: the pin checked, the base extracted, the transform applied, the
+    positional slots named when ``named`` declares them (B1), the slots required to be exactly the declared ones."""
     raw = Path(pinned).read_bytes()
     got = hashlib.sha256(raw).hexdigest()
     if got != pin_sha256:
         raise TemplateError(f"{stand}: the pinned file {Path(pinned).name} is {got}, not the pin {pin_sha256}")
     text = transform(base_of(raw) if base_of is not None else extract(raw, spec), replacements, stand=stand)
+    if named:
+        text = name_slots(text, named, stand=stand)
     found = slots_of(text)
     if found != tuple(slots):
         raise TemplateError(f"{stand}: the template's slots are {list(found)}, not the declared {list(slots)}")
@@ -269,6 +282,7 @@ class StandSpec:
     note: str = ""                   # what FREEZE-V3 names beside the template (a difference from the vendor's run)
     evidence: tuple = ()             # (pin, text): text that must occur verbatim in another pinned file (the choice's basis)
     compose: str | None = None       # a composer of the base text from the pinned file, instead of one constant
+    named: tuple = ()                # B1: the positional slots' names, in order (the vendor's '{}' slots)
 
 
 STANDS = {
@@ -291,7 +305,8 @@ STANDS = {
     "S1": StandSpec(Source("lme_answer_prompt", "answer_prompt_template",
                            marker="relevant chat history. Answer the question step by step"),
                     (("\nAnswer (step by step):", "\n" + LME_UNANSWERABLE + "\n" + SHORT_ANSWER + "\nAnswer (step by step):"),),
-                    ("", "", ""), note=LME_NOTE, evidence=LME_EVIDENCE),
+                    ("context", "question_date", "question"), note=LME_NOTE, evidence=LME_EVIDENCE,
+                    named=("context", "question_date", "question")),
     "S7": StandSpec(Source("ama_method_longcontext", None), (("Answer[1]: [your answer here]", SHORT_ANSWER),),
                     ("context", "question"), note=AMA_NOTE, compose="ama_list"),
 }
@@ -339,7 +354,7 @@ def stand_template(stand: str, *, pins_root: Path) -> Template:
     spec = STANDS[stand]
     path, pin_sha = _pinned(spec.source.pin, pins_root)
     tpl = build(stand, path, pin_sha, spec.source, spec.replacements, spec.slots,
-                base_of=COMPOSERS[spec.compose] if spec.compose else None)
+                base_of=COMPOSERS[spec.compose] if spec.compose else None, named=spec.named)
     raw = Path(path).read_bytes()
     text = raw.decode("utf-8")
     for pin, s in spec.evidence:                         # the choice's basis, in its own pinned file
@@ -508,6 +523,7 @@ def freeze_fragment(*, pins_root: Path, texts_path: Path) -> dict:
         pin = _table(spec.source.pin)[spec.source.pin]
         committed[stand] = {"source_pin": t.source_pin, "source_path": f"{pin['repo']}@{pin['revision']}:{pin['path']}",
                             "source_sha256": t.source_sha256, "replacements": [list(r) for r in spec.replacements],
+                            "named": list(spec.named),
                             "must_occur": list(spec.must_occur), "slots": list(t.slots), "sha256": t.sha256}
         if spec.note:
             committed[stand]["note"] = spec.note

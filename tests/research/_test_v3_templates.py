@@ -345,11 +345,13 @@ def ask(qa):
         s1 = safe(lambda: TP.stand_template("S1", pins_root=TMP), blank)
         s3 = safe(lambda: TP.stand_template("S3", pins_root=TMP), blank)
         want1 = ("I will give you chats. Please answer based on the relevant chat history. Answer the question step by step: "
-                 "extract, then reason.\n\n\nHistory Chats:\n\n{}\n\nCurrent Date: {}\nQuestion: {}\n" + getattr(TP, "LME_UNANSWERABLE", "(missing)")
-                 + "\n" + TP.SHORT_ANSWER + "\nAnswer (step by step):")
-        check("T1-1 (Q-TPL-1): S1 = LME's cot template (none merge) - the documented command's READING_METHOD 'con' passes "
-              "--cot true; three slots (the arm's block, the date, the question); the unanswerable line and the SHORT "
-              "ANSWER line before 'Answer (step by step):'", s1.text == want1 and s1.slots == ("", "", ""), repr(s1.text))
+                 "extract, then reason.\n\n\nHistory Chats:\n\n{context}\n\nCurrent Date: {question_date}\nQuestion: {question}\n"
+                 + getattr(TP, "LME_UNANSWERABLE", "(missing)") + "\n" + TP.SHORT_ANSWER + "\nAnswer (step by step):")
+        check("T1-1 (Q-TPL-1; B1, the auditor 2026-09-30): S1 = LME's cot template (none merge) - the documented command's "
+              "READING_METHOD 'con' passes --cot true; its three positional slots named in order by the declared naming "
+              "(the arm's block {context}, the date {question_date}, the question {question}) - the vendor's text otherwise "
+              "byte for byte, no '{}' left; the unanswerable line and the SHORT ANSWER line before 'Answer (step by step):'",
+              s1.text == want1 and s1.slots == ("context", "question_date", "question") and "{}" not in s1.text, repr(s1.text))
         check("T1-2: S3 (the oracle bracket) reads S1's template", s3.text == s1.text == want1 and s3.sha256 == s1.sha256, repr(s3.text[:80]))
         TP._pinned = fakes(lme_run_generation_sh=LMESH.replace(b'reading_flags="--cot true"\nelif', b'reading_flags="--cot false"\nelif'))
         e1 = err(lambda: TP.stand_template("S1", pins_root=TMP))
@@ -362,6 +364,11 @@ def ask(qa):
                                                           b"relevant chat history. Answer"))
         check("T1-5: two constants carrying S1's marker are refused by name - exactly one is its source",
               "exactly one" in err(lambda: TP.stand_template("S1", pins_root=TMP)))
+        TP._pinned = fakes(lme_answer_prompt=LMEF.replace(b"\\n\\nCurrent Date: {}\\nQuestion: {}\\nAnswer (step by step):",
+                                                          b"\\n\\nQuestion: {}\\nAnswer (step by step):"))
+        e1c = err(lambda: TP.stand_template("S1", pins_root=TMP))
+        check("B1-2: a pinned S1 template with other than exactly three '{}' is refused by name - the naming fits the "
+              "vendor's three positional slots or nothing", "S1" in e1c and "3" in e1c and "{}" in e1c, e1c)
         TP._pinned = fakes()
         s7 = safe(lambda: TP.stand_template("S7", pins_root=TMP), blank)
         want7 = ("{context}\n\n## Questions\n" + INTRO + "\n\nQuestion 1: {question}\n\n## Instructions\n" + INSTR + "\n\n"
@@ -530,7 +537,7 @@ def ask(qa):
         r1, r3, r7_ = (safe(lambda s=s: TP.stand_template(s, pins_root=REAL), None) for s in ("S1", "S3", "S7"))
         check("local: S1 and S3 build from the real pins (run_generation.py's cot line, run_generation.sh's 'con' mapping) and "
               "are one text - three slots, 'Answer (step by step):' last",
-              r1 is not None and r3 is not None and r1.text == r3.text and r1.slots == ("", "", "")
+              r1 is not None and r3 is not None and r1.text == r3.text and r1.slots == ("context", "question_date", "question") and "{}" not in r1.text
               and r1.text.endswith(TP.SHORT_ANSWER + "\nAnswer (step by step):"))
         check("local: S7 builds from the real longcontext.py pin - the block first, the vendor's questions section, the "
               "SHORT ANSWER line last", r7_ is not None and r7_.slots == ("context", "question")

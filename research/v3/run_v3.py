@@ -223,6 +223,19 @@ def questions_for(units: Sequence[Any], *, template: Any, template_abstain: Any,
     return out
 
 
+def lme_questions_for(units: Sequence[Any], *, template: Any) -> dict[tuple[str, str], tuple[Any, str, dict]]:
+    """S1/S3 (LME, B1): {(unit, qid): (the stand's template, the question as written, {"question_date": its date})} -
+    the date fills the template's {question_date} (the vendor's 'Current Date'); a question without one is refused by
+    name, never asked without its date."""
+    out = {}
+    for u in units:
+        for q in u.questions:
+            if not isinstance(q.question_date, str) or not q.question_date:
+                raise CLIError(f"{u.unit_id}/{q.qid}: an LME question without its question_date (B1)")
+            out[(u.unit_id, q.qid)] = (template, q.text, {"question_date": q.question_date})
+    return out
+
+
 # ── the gate's probe (Q25-INC) ─────────────────────────────────────────────────────────────────────────────────
 
 def probe(post: Callable[..., tuple[int | None, Any]], port: int, token: str, *, timeout: float = 60.0) -> Callable[[], dict]:

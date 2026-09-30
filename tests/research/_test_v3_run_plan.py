@@ -635,6 +635,26 @@ try:
     req1 = SC.ReadReq(qid="u1:q1", query="what did I say?", point="B", k=200)
     row = ans("mem0", "r1", "u1", req1, READ)
     port_, path_, body_, tok_ = calls[0]
+    # B1 (the auditor, 2026-09-30): S1's template names its three slots {context}, {question_date}, {question}; the
+    # question carries its date as a third element - the Answerer renders it end to end, and refuses a missing date
+    T1TEXT = ("History Chats:\n\n{context}\n\nCurrent Date: {question_date}\nQuestion: {question}\n"
+              + RJ.SHORT_ANSWER_INSTRUCTION)
+    T1 = TPL.Template(stand="S1", text=T1TEXT, sha256=hashlib.sha256(T1TEXT.encode()).hexdigest(), source_pin="p",
+                      source_sha256="0" * 64, slots=("context", "question_date", "question"))
+    QS1 = {("u9", "u9"): (T1, "what did I buy?", {"question_date": "2023/05/30 (Tue) 23:40"}),
+           ("u8", "u8"): (T1, "no date here?")}
+    ans1 = PL.Answerer("S1", questions=QS1, reader=reader, post=fake_post, count=wcount, cut=wcut,
+                       answers_root=TMP / "ans1", reaskable=SC.ReaskableError)
+    n_calls = len(calls)
+    b13 = refused(lambda: ans1("mem0", "r1", "u9", SC.ReadReq(qid="u9", query="q", point="B", k=200), READ))
+    p1 = calls[n_calls][2]["messages"][0]["content"] if len(calls) > n_calls else ""
+    check("B1-3: S1 renders through the Answerer end to end - the arm's items as {context}, the question's own date as "
+          "{question_date}, the question as {question}; no '{}' is left",
+          "Current Date: 2023/05/30 (Tue) 23:40\nQuestion: what did I buy?" in p1 and "hi from the store" in p1
+          and "{" not in p1.split(RJ.SHORT_ANSWER_INSTRUCTION)[0], f"{b13[:120]} | {p1[:200]}")
+    b14 = refused(lambda: ans1("mem0", "r1", "u8", SC.ReadReq(qid="u8", query="q", point="B", k=200), READ))
+    check("B1-4: a question whose template asks a slot it does not carry (S1 without its date) is refused by name - "
+          "never rendered with a blank", "question_date" in b14 and "u8" in b14 and not b14.startswith(("accepted", "not refused")), b14)
     check("AN: the reader request is READER_PARAMS exactly, the arm's reader port and token, /u/<run>.<unit>",
           body_ == RJ.reader_request(body_["messages"][0]["content"]) and body_["model"] == "deepseek-flash"
           and {k: body_[k] for k in RJ.READER_PARAMS} == RJ.READER_PARAMS and port_ == 45000
