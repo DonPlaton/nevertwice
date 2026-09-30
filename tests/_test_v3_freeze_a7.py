@@ -95,21 +95,31 @@ WANT_CLEARED = {
                           "_fetch/a7-github/g1/place_record.json": "41a809505ec2f4bddf1ba5c6a09d729c0544dfee1a99bb18829e70a95c6ffcef",
                           "_fetch/a7-github/g1/pin_fill.json": "acae9e52bc935a5752f384fbcc0cd26521e20c97878056d3318963f782296472"},
     ("a7-hf-d", "d1"): {"_fetch/a7-hf-d/d1/record.json": "8a6f7663317561f82842637334e1701a3769ba498c194912d52185b10cc4ed82",
-                        "_fetch/a7-hf-d/d1/d7_report.json": "2ec9f5f251e755860f5cc6ea887766f939a8fe2d93b6d7a3ba165220c69c6ca4"}}
+                        "_fetch/a7-hf-d/d1/d7_report.json": "2ec9f5f251e755860f5cc6ea887766f939a8fe2d93b6d7a3ba165220c69c6ca4"},
+    ("a7-arxiv", "d2"): {"_fetch/a7-arxiv/d2/record.json": "8ec76a098a21ce6d2f82ca1baf7c7900363f252b712d1b17d11387309fedb3c5",
+                         "_fetch/a7-arxiv/d2/d6_report.json": "9c93889a05577ce03e077e1b68e2f826e03f211b72f9b7e7a4023d5c11d3e638"},
+    ("a8-supermemory-bin", "b2"): {
+        "_fetch/a8-supermemory-bin/b2/record.json": "83b5bc3652ad1a4119fa29a6b93b181d5b05bc7894c664018a664603334cbc91",
+        "_install/a8-supermemory-bin/b2/bin_record.json": "6de665abf22c26c012c8aebc2588c71ea08ad1ab2559c128369277d7a8ad3b7d"}}
 WANT_FAILED = {("a7-npm", "g1"): {"_fetch/a7-npm/g1/record.json": "fb4212e565e4233c86ef4432ec48a3e09d2bd031f6ffc84a875cc46e2ff84f8d"},
                ("a7-arxiv", "d1"): {"_fetch/a7-arxiv/d1/record.json": "854b13dd774ada2c5d94ef19ac4ba6b34685590ab293d49338c9f6eaa9ca11a6",
-                                    "_fetch/a7-arxiv/d1/d6_report.json": "e3d01b8e784ba0af38c16df0632f98204ef6f9dc4e014b37b2e937deaddc36e4"}}
+                                    "_fetch/a7-arxiv/d1/d6_report.json": "e3d01b8e784ba0af38c16df0632f98204ef6f9dc4e014b37b2e937deaddc36e4"},
+               ("a8-supermemory-bin", "b1"): {
+                   "_fetch/a8-supermemory-bin/b1/record.json": "f8680bc9a89083539d36335958ad89c7508856133eb903513e964d54429316db",
+                   "_install/a8-supermemory-bin/b1/bin_record.json": "2151a437255987690da9c1831877ed1d06bb23c40c3c3f7bbea3567b7b0dd817"}}
 NPM_PROBLEMS = ["job 0: the fetch child exited with 3", "job 0 request npm:package-document: Refused: status 404"]
 PREREG = {"research/v3/PREREG-V3-rev1.md": "1" * 64, "research/v3/PREREG-V3-AMENDMENTS.md": "2" * 64}
 
 print("- the declared lists are the auditor's -")
-check("F7-1: CLEARED_A7 is exactly the auditor's six runs - the four of Q-F7, a7-github g1 and a7-hf-d d1 - with "
-      "their thirteen record files by sha256, and FAILED_A7 is a7-arxiv d1 (429, nothing read) and "
-      "a7-npm g1 by its record's sha256 with the reason named (npm answers 404; revision 1's channel, erratum A3 T32)",
+check("F7-1: CLEARED_A7 is exactly the auditor's eight runs - the four of Q-F7, a7-github g1, a7-hf-d d1, a7-arxiv d2 "
+      "and a8-supermemory-bin b2 - with their seventeen record files by sha256, and FAILED_A7 is a7-npm g1 (npm answers "
+      "404; revision 1's channel, erratum A3 T32), a7-arxiv d1 (429, nothing read) and a8-supermemory-bin b1 (R-GHR-ISS, "
+      "superseded by b2), each by its records' sha256 with the reason named",
       ok(lambda: {(e["window"], e["run"]): e["files"] for e in F7.CLEARED_A7} == WANT_CLEARED
          and {(e["window"], e["run"]): e["files"] for e in F7.FAILED_A7} == WANT_FAILED
          and "404" in F7.FAILED_A7[0]["reason"] and "T32" in F7.FAILED_A7[0]["reason"]
-         and "429" in F7.FAILED_A7[1]["reason"]),
+         and "429" in F7.FAILED_A7[1]["reason"] and "R-GHR-ISS" in F7.FAILED_A7[2]["reason"]
+         and "superseded by b2" in F7.FAILED_A7[2]["reason"]),
       str([(e["window"], e["run"]) for e in getattr(F7, "CLEARED_A7", [])]))
 check("F7-2: a7-npm-d d1 is cleared by its ruling note - its two problems verbatim, the one excluded request its 404",
       ok(lambda: (npm := next(e for e in F7.CLEARED_A7 if e["window"] == "a7-npm-d"))["problems_verbatim"] == NPM_PROBLEMS
@@ -138,7 +148,15 @@ def world(tag: str, *, npm_problems=NPM_PROBLEMS, gh_org="Sectigo Limited"):
            "a7-github": {"window": "a7-github", "run": "g1", "problems": [], "hosts": ["raw.githubusercontent.com"],
                          "issuers": [["raw.githubusercontent.com", "Let's Encrypt", "YR1"]]},
            "a7-hf-d": {"window": "a7-hf-d", "run": "d1", "problems": [], "hosts": ["huggingface.co"],
-                       "issuers": [["huggingface.co", "Amazon", "Amazon RSA 2048 M01"]]}}
+                       "issuers": [["huggingface.co", "Amazon", "Amazon RSA 2048 M01"]]},
+           "a7-arxiv": {"window": "a7-arxiv", "run": "d2", "problems": [], "hosts": ["export.arxiv.org"],
+                        "issuers": [["export.arxiv.org", "Certainly", "Certainly Intermediate R1"]]},
+           # b2's three tunnelled hosts (its fourth declared host, objects.githubusercontent.com, is Q-DH-1's)
+           "a8-supermemory-bin": {"window": "a8-supermemory-bin", "run": "b2", "problems": [],
+                                  "hosts": ["api.github.com", "github.com", "release-assets.githubusercontent.com"],
+                                  "issuers": [["api.github.com", "Sectigo Limited", "Sectigo Public Server Authentication CA DV E36"],
+                                              ["github.com", "Sectigo Limited", "Sectigo Public Server Authentication CA DV E36"],
+                                              ["release-assets.githubusercontent.com", "Let's Encrypt", "YR1"]]}}
     cleared = []
     for e in copy.deepcopy(F7.CLEARED_A7):
         w = e["window"]
@@ -177,13 +195,15 @@ except Exception as e:  # noqa: BLE001
 check("F7-3: the fragment holds the four cleared runs and the failed one, each file by sha256 with its problem count",
       ok(lambda: oerr is None and [(w["window"], w["run"]) for w in OUT["windows"]] == [(e["window"], e["run"]) for e in CL]
          and OUT["windows"][3]["problems"] == {k: (2 if k.endswith("record.json") else 0) for k in CL[3]["files"]}
-         and [(f["window"], f["run"]) for f in OUT["failed_runs"]] == [("a7-npm", "g1"), ("a7-arxiv", "d1")]), str(oerr))
+         and [(f["window"], f["run"]) for f in OUT["failed_runs"]] == [("a7-npm", "g1"), ("a7-arxiv", "d1"),
+                                                                        ("a8-supermemory-bin", "b1")]), str(oerr))
 check("F7-4: its pins are PINS_A7 as filled - all 62 (a7-github's 52 and a7-hf's 10), each with where it came from - "
       "and its issuers the public ones the records name",
       ok(lambda: sorted(OUT["pins"]) == sorted(CP.PINS_A7_DECLARED) and len(OUT["pins"]) == 62
                          and all(v["filled_from"] == "a7-github g1 pin_fill 0123456789ab" for v in OUT["pins"].values())
-                         and sorted(OUT["issuers"]) == ["api.github.com", "huggingface.co", "raw.githubusercontent.com",
-                                                        "registry.npmjs.org"]), str(oerr))
+                         and sorted(OUT["issuers"]) == ["api.github.com", "export.arxiv.org", "github.com", "huggingface.co",
+                                                        "raw.githubusercontent.com", "registry.npmjs.org",
+                                                        "release-assets.githubusercontent.com"]), str(oerr))
 check("F7-5: the prereg section is the given revision 1 and amendments sha256 at the anchor - and nothing of A3's "
       "(no models, venvs, facts, d1_tag, prereg_rev1)", ok(lambda: OUT["prereg"] == PREREG and not set(OUT) & {
           "models", "venvs", "facts", "d1_tag", "local_v2", "prereg_rev1"}), str(sorted(OUT)))

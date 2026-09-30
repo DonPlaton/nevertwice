@@ -60,6 +60,14 @@ CLEARED_A7 = [
     {"window": "a7-hf-d", "run": "d1", "kind": "report", "files": {
         "_fetch/a7-hf-d/d1/record.json": "8a6f7663317561f82842637334e1701a3769ba498c194912d52185b10cc4ed82",
         "_fetch/a7-hf-d/d1/d7_report.json": "2ec9f5f251e755860f5cc6ea887766f939a8fe2d93b6d7a3ba165220c69c6ca4"}},
+    # Zep's paper (R3: arXiv 2501.13956 v1, the auditor's choice from this report), after his checks of the run
+    {"window": "a7-arxiv", "run": "d2", "kind": "report", "files": {
+        "_fetch/a7-arxiv/d2/record.json": "8ec76a098a21ce6d2f82ca1baf7c7900363f252b712d1b17d11387309fedb3c5",
+        "_fetch/a7-arxiv/d2/d6_report.json": "9c93889a05577ce03e077e1b68e2f826e03f211b72f9b7e7a4023d5c11d3e638"}},
+    # supermemory-local's server binary (T32), re-run after R-GHR-ISS with every request's issuer recorded
+    {"window": "a8-supermemory-bin", "run": "b2", "kind": "binary", "files": {
+        "_fetch/a8-supermemory-bin/b2/record.json": "83b5bc3652ad1a4119fa29a6b93b181d5b05bc7894c664018a664603334cbc91",
+        "_install/a8-supermemory-bin/b2/bin_record.json": "6de665abf22c26c012c8aebc2588c71ea08ad1ab2559c128369277d7a8ad3b7d"}},
 ]
 #: The A7 runs that were NOT cleared - kept by sha256 with the reason, never used.
 FAILED_A7 = [
@@ -72,6 +80,10 @@ FAILED_A7 = [
         "_fetch/a7-arxiv/d1/d6_report.json": "e3d01b8e784ba0af38c16df0632f98204ef6f9dc4e014b37b2e937deaddc36e4"},
      "reason": "export.arxiv.org answered 429 to the one request (rate-limited, not retried): nothing was read - the "
                "auditor's Q-ARX-1, a new run after a pause"},
+    {"window": "a8-supermemory-bin", "run": "b1", "files": {
+        "_fetch/a8-supermemory-bin/b1/record.json": "f8680bc9a89083539d36335958ad89c7508856133eb903513e964d54429316db",
+        "_install/a8-supermemory-bin/b1/bin_record.json": "2151a437255987690da9c1831877ed1d06bb23c40c3c3f7bbea3567b7b0dd817"},
+     "reason": "TLS issuer not recorded by gh_release (R-GHR-ISS); superseded by b2; bytes identical"},
 ]
 
 
