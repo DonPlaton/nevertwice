@@ -25,10 +25,16 @@ rev1 §2.2, as the auditor's Q-46b-1..4 read it:
   the first search;
 * read (Q-46b-4): EDGE_HYBRID_SEARCH_RRF then NODE_HYBRID_SEARCH_RRF, each with limit = k; at Point K the first k of
   "edges, then nodes", at Point B all of them (the harness's budget cuts); edges render as the fact, with its validity
-  on a dated stand, nodes as "name: summary". Point V has no zep row until the Zep LME template is pinned (A7).
+  on a dated stand, nodes as "name: summary".
+* Point V (the auditor's Q-V-1 = O-a; rev1 :334, :1337): 20 edges + 20 nodes in Zep's paper's context string template -
+  only with that template in the spec (v_template: its text and sha256, built by the harness from the pin
+  zep_paper_src; the text is never committed) and its sha256 the pinned one (V_TEMPLATE_SHA256, FREEZE's
+  arm_templates); the facts one per line, "FACT (Date range: from - to)" with the K/B dates on a dated stand and the
+  fact alone on an undated one (Q-ZT-7), the entities "name: summary", each block inserted verbatim; the answer is one
+  item of kind "rendered" with the template's sha256 (Row V's Q1 = (a)). Without the template, Point V is refused by name as before.
 
 The spec: arm ("zep-graphiti"), stage, stand, run, unit, unit_dir, port, embed_tag, ollama_url, falkor_host,
-falkor_port, dated, record_path.
+falkor_port, dated, record_path; optionally v_template (SPEC_OPTIONAL).
 """
 from __future__ import annotations
 
@@ -57,6 +63,12 @@ DEEPSEEK_MODEL = "deepseek-flash"
 EMBED_DIMS = 1024
 TOKEN_NAME = "DEEPSEEK_API_KEY"
 POINTS = ("K", "B")
+#: Q-V-1 = O-a: Point V's reads (rev1 :334) and Zep's template, by the sha256 FREEZE records for "zep-graphiti:V" (the
+#: text built from the pin zep_paper_src - Q-ZT-3a; the auditor chose it from the survey of a7-arxiv-src s3)
+V_EDGES = V_NODES = 20
+V_TEMPLATE_SHA256 = "1f38010000254c1fcdc7bf2a64b88326023c1094eea6ac6fe2446d263193a9b7"
+V_SLOTS = ("{facts}", "{entities}")
+SPEC_OPTIONAL = ("v_template",)
 COUNT_CYPHER = {"nodes": "MATCH (n:Entity {group_id: $gid}) RETURN count(n) AS c",
                 "edges": "MATCH ()-[e:RELATES_TO {group_id: $gid}]->() RETURN count(e) AS c",
                 "episodes": "MATCH (n:Episodic {group_id: $gid}) RETURN count(n) AS c"}
@@ -70,7 +82,7 @@ class Refused(RuntimeError):
 def load_spec(path: str | os.PathLike) -> dict:
     spec = json.loads(Path(path).read_bytes().decode("utf-8"))
     missing = [k for k in SPEC_KEYS if k not in spec]
-    extra = sorted(set(spec) - set(SPEC_KEYS))
+    extra = sorted(set(spec) - set(SPEC_KEYS) - set(SPEC_OPTIONAL))
     if missing or extra:
         raise Refused(f"the spec lacks {missing} or carries unknown keys {extra}")
     if spec["arm"] != ARM or spec["stage"] not in STAGES:
@@ -80,6 +92,33 @@ def load_spec(path: str | os.PathLike) -> dict:
     if not isinstance(spec["port"], int):
         raise Refused("zep-graphiti writes through its proxy port")
     return spec
+
+
+def v_template_text(t, *, pinned: str = V_TEMPLATE_SHA256) -> str:
+    """Point V's template from the spec (Q-V-1 = O-a): refused by name when absent, when its sha256 is not the pinned
+    one, when its text is not its sha256, or when a slot is not there exactly once."""
+    if not isinstance(t, Mapping) or not isinstance(t.get("text"), str):
+        raise ValueError("point is K or B; Point V has no zep row until the Zep LME template is pinned (Q-46b-4)")
+    if t.get("sha256") != pinned:
+        raise Refused(f"Point V: the template's sha256 {str(t.get('sha256'))[:12]} is not the pinned template's "
+                      f"{pinned[:12]} (Q-V-1)")
+    if B.text_sha256(t["text"]) != t["sha256"]:
+        raise Refused("Point V: the template's text is not its sha256")
+    for slot in V_SLOTS:
+        n = t["text"].count(slot)
+        if n != 1:
+            raise Refused(f"Point V: the template holds {slot} {n} times, not exactly once")
+    return t["text"]
+
+
+def render_v(template: str, facts: str, entities: str) -> str:
+    """The template with its two slots filled, each value inserted verbatim - a fact holding "{entities}" is text."""
+    at = sorted((template.index(slot), slot, value) for slot, value in zip(V_SLOTS, (facts, entities)))
+    out, pos = [], 0
+    for i, slot, value in at:
+        out += [template[pos:i], value]
+        pos = i + len(slot)
+    return "".join(out + [template[pos:]])
 
 
 def proxy_base(spec: Mapping[str, Any]) -> str:
@@ -94,7 +133,8 @@ def declared(spec: Mapping[str, Any]) -> dict:
     return {"date_route": "field:reference_time" if spec["dated"] else "none (wall clock, strictly increasing; no "
                                                                       "validity rendered)",
             "renderer": {"name": "edges then nodes: fact [validity on dated stands]; name: summary"},
-            "threshold": "n/a", "limit": "k per recipe; Point K the first k of edges-then-nodes, Point B all",
+            "threshold": "n/a", "limit": "k per recipe; Point K the first k of edges-then-nodes, Point B all; Point V "
+                                        "20 edges + 20 nodes in Zep's context string template (Q-V-1)",
             "namespace": "group_id = unit id; one FalkorDB graph per unit in the (arm, run, block) server",
             "write_granularity": "one EpisodeType.message episode per message, sequential",
             "llm_params": {"temperature": "product default (value in effect: the proxy capture, §5.5)",
@@ -261,15 +301,39 @@ class Handler:
         return {"footprint": {"retrievable": counts["edges"] + counts["nodes"], **counts}, "seal": seal, "t0": t0,
                 "t1": time.time()}
 
-    def _render_edge(self, e) -> str:
-        if not self.spec["dated"]:
-            return e.fact
+    def _range(self, e) -> str:
         va = _iso(e.valid_at)[:10] if e.valid_at else "?"
         ia = _iso(e.invalid_at)[:10] if e.invalid_at else "present"
-        return f"{e.fact} ({va} - {ia})"
+        return f"{va} - {ia}"
+
+    def _render_edge(self, e) -> str:
+        return e.fact if not self.spec["dated"] else f"{e.fact} ({self._range(e)})"
+
+    def _fact_v(self, e) -> str:
+        """Q-ZT-4/7: the paper's 'FACT (Date range: from - to)' with the K/B dates on a dated stand; the fact alone else."""
+        return e.fact if not self.spec["dated"] else f"{e.fact} (Date range: {self._range(e)})"
+
+    def _read_v(self, qid: str, query: str) -> dict:
+        template = v_template_text(self.spec.get("v_template"))
+        from graphiti_core.search.search_config_recipes import EDGE_HYBRID_SEARCH_RRF, NODE_HYBRID_SEARCH_RRF  # noqa
+        t0 = time.time()
+        ecfg, ncfg = EDGE_HYBRID_SEARCH_RRF.model_copy(deep=True), NODE_HYBRID_SEARCH_RRF.model_copy(deep=True)
+        ecfg.limit, ncfg.limit = V_EDGES, V_NODES
+        er = self.loop.run_until_complete(self.g.search_(query, config=ecfg, group_ids=[self.unit]))
+        nr = self.loop.run_until_complete(self.g.search_(query, config=ncfg, group_ids=[self.unit]))
+        text = render_v(template, "\n".join(self._fact_v(e) for e in er.edges),
+                        "\n".join(f"{n.name}: {n.summary}" for n in nr.nodes))
+        self.reads["reads"] += 1
+        self.reads["items_returned"] += 1
+        item = {"kind": "rendered", "text": text, "rank": 1, "template_sha256": self.spec["v_template"]["sha256"]}
+        return {"qid": qid, "items": [item], "items_returned": 1,
+                "k": {"edges": V_EDGES, "nodes": V_NODES}, "edges": len(er.edges), "nodes": len(nr.nodes), "point": "V",
+                "template_sha256": self.spec["v_template"]["sha256"], "t0": t0, "t1": time.time()}
 
     def read(self, qid: str, query: str, k: int, point: str | None = None) -> dict:
         self._stage("read", "read")
+        if point == "V":
+            return self._read_v(qid, query)
         if point not in POINTS:
             raise ValueError("point is K or B; Point V has no zep row until the Zep LME template is pinned (Q-46b-4)")
         from graphiti_core.search.search_config_recipes import EDGE_HYBRID_SEARCH_RRF, NODE_HYBRID_SEARCH_RRF  # noqa

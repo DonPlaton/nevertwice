@@ -295,6 +295,44 @@ try:
           crr.get("reranker_calls") == 2, str(crr)[:200])
     c.close()
 
+    print("\n- Point V (Q-V-1 = O-a): 20 edges + 20 nodes in Zep's context string template, only when pinned -")
+    # our own test template - never the paper's text (Q-D8-7); the arm takes its render slots {facts} and {entities}
+    VT = "OUR TEST TEMPLATE\n\n<FACTS>\n\n{facts}\n\n</FACTS>\n\nENTITIES\n\n<ENTITIES>\n\n{entities}\n\n</ENTITIES>"
+    VT_SHA = hashlib.sha256(VT.encode()).hexdigest()
+    _pinned_v = next((n.value.value for n in ast.walk(ast.parse(ADAPTER.read_text(encoding="utf-8")))
+                      if isinstance(n, ast.Assign) and any(getattr(t, "id", None) == "V_TEMPLATE_SHA256" for t in n.targets)
+                      and isinstance(n.value, ast.Constant)), None)
+    check("V-1: the adapter pins Zep's template by the sha256 FREEZE records for zep-graphiti:V (1f380100...a9b7, Q-ZT-3a)",
+          _pinned_v == "1f38010000254c1fcdc7bf2a64b88326023c1094eea6ac6fe2446d263193a9b7", str(_pinned_v))
+
+    def v_dir(name: str) -> Path:
+        """An arm directory whose adapter pins OUR test template's sha256 instead (the render rows only)."""
+        d = arm_dir(name)
+        f = d / "arm_graphiti.py"
+        s_ = f.read_text(encoding="utf-8")
+        if _pinned_v and s_.count(_pinned_v) == 1:
+            f.write_text(s_.replace(_pinned_v, VT_SHA), encoding="utf-8")
+        return d
+
+    c, _ = start("rv0", dict(spec_for("rv0", "read", "u1"), v_template={"text": VT, "sha256": VT_SHA}))
+    check("V-2: the real adapter refuses a template that is not the pinned one (its sha256), by name - no V row",
+          raises(lambda: c.request("read", qid="q", query="x", k=20, point="V"), B.ArmError, "not the pinned template"))
+    c.close()
+    c, _ = start("rv1", dict(spec_for("rv1", "read", "u1"), v_template={"text": VT, "sha256": VT_SHA}), adir=v_dir("rv1"))
+    rv = safely(lambda: c.request("read", qid="q", query="Caroline dog", k=2, point="V"), {})
+    sv = logged("search_")[-2:]
+    facts_v = "\n".join(x["text"].replace(" (", " (Date range: ", 1) for x in rb.get("items") or [] if x["kind"] == "edge")
+    ents_v = "\n".join(x["text"] for x in rb.get("items") or [] if x["kind"] == "node")
+    want_v = VT.replace("{facts}", facts_v).replace("{entities}", ents_v)
+    check("V-3 (rev1 :334, Q-ZT-4): at Point V the edge recipe and the node recipe each read 20 (whatever k the request "
+          "carries), and the answer is ONE context string - the template with the facts one per line as 'FACT (Date "
+          "range: from - to)' (the K/B dates) and the entities as 'name: summary', the template's sha256 named",
+          [(s_.get("kind"), s_.get("limit")) for s_ in sv] == [("edge", 20), ("node", 20)]
+          and [x.get("kind") for x in rv.get("items") or []] == ["rendered"] and (rv.get("items") or [{}])[0].get("template_sha256") == VT_SHA and (rv.get("items") or [{}])[0].get("text") == want_v
+          and rv.get("k") == {"edges": 20, "nodes": 20} and rv.get("template_sha256") == VT_SHA
+          and "Date range: 2023-05-20 - present" in facts_v, f"{sv} {str(rv)[:300]}")
+    c.close()
+
     print("\n- an undated stand: the wall clock, strictly increasing, no validity rendered -")
     c, _ = start("w2", spec_for("w2", "write", "u2", dated=False))
     w2 = [safely(lambda m=m: c.request("write", item=dict(m, item_id="u2:" + m["item_id"][-1])), {}) for m in MSGS]
@@ -308,10 +346,31 @@ try:
     check("no validity is rendered on an undated stand", all("(" not in x["text"] for x in r2.get("items") or [])
           and r2.get("items"), str(r2.get("items"))[:200])
     c.close()
+    c, _ = start("rv2", dict(spec_for("rv2", "read", "u2", dated=False), v_template={"text": VT, "sha256": VT_SHA}),
+                 adir=v_dir("rv2"))
+    rv2 = safely(lambda: c.request("read", qid="q", query="dog", k=5, point="V"), {})
+    vtext2 = (rv2.get("items") or [{}])[0].get("text", "")
+    check("V-4 (Q-ZT-7 = O-a): on an undated stand each fact is rendered alone - no date range - while the template's own "
+          "text is unchanged", bool(vtext2) and "Date range" not in vtext2.replace(VT.split("{facts}")[0], "")
+          and vtext2.startswith(VT.split("{facts}")[0]) and vtext2.endswith(VT.split("{entities}")[1])
+          and all(x["text"] in vtext2 for x in r2.get("items") or []), vtext2[:300])
+    c.close()
     sys.path.insert(0, str(ARMS_DIR))
     _aspec = importlib.util.spec_from_file_location("v3_arm_graphiti_inproc", ADAPTER)
     AG = importlib.util.module_from_spec(_aspec)
     _aspec.loader.exec_module(AG)
+    vt_fn, rv_fn = getattr(AG, "v_template_text", None), getattr(AG, "render_v", None)
+    bad_text = {"text": VT + " tampered", "sha256": VT_SHA}
+    VT2 = VT.replace("</FACTS>", "{facts} </FACTS>")
+    check("V-5: a template whose text is not its sha256, or that holds a slot other than once, is refused by name",
+          vt_fn is not None and raises(lambda: vt_fn(bad_text, pinned=VT_SHA), AG.Refused, "not its sha256")
+          and raises(lambda: vt_fn({"text": VT2, "sha256": hashlib.sha256(VT2.encode()).hexdigest()},
+                                   pinned=hashlib.sha256(VT2.encode()).hexdigest()), AG.Refused, "2 times")
+          and raises(lambda: vt_fn(None, pinned=VT_SHA), ValueError, "Point V has no zep row"))
+    check("V-6: the facts and entities are inserted verbatim - a fact that itself holds '{entities}' or '{facts}' is never "
+          "taken for a slot", rv_fn is not None and rv_fn(VT, "a {entities} b {facts}", "E") == (
+              VT.split("{facts}")[0] + "a {entities} b {facts}" + VT.split("{facts}")[1].split("{entities}")[0] + "E"
+              + VT.split("{entities}")[1]), "")
     hh = AG.Handler(dict(spec_for("inp", "write", "u9", dated=False)), {"g": None, "loop": None, "tally": {},
                                                                        "pacer": None}, {})
     hh.last_ref = datetime.now(timezone.utc) + timedelta(hours=1)
