@@ -95,6 +95,7 @@ NOT_FROM_THREADS = {
     "research/v3/lock_install.py::_fpb": _CLI,
     "research/v3/lock_install.py::_load": _CLI,
     "research/v3/ls1.py::_load": _CLI,
+    "research/v3/m31_check.py::_load": _CLI,
     "research/v3/model_install.py::_load": _CLI,
     "research/v3/ollama_inventory.py::main": _CLI,
     "research/v3/pins_apply.py::_load_table": _CLI,
