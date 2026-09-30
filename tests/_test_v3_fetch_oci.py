@@ -181,6 +181,21 @@ TMP = Path(tempfile.mkdtemp(prefix="nvt3_fetch_oci_"))
 RAISED: list = []
 
 
+class PeerWire:
+    """A wire that, like tunnel_send, says after each call which issuer its peer had (R-GHR-ISS) - one per host here,
+    so an entry that took another request's issuer, or none, shows."""
+
+    def __init__(self, send, issuers: dict):
+        self._send, self._iss, self.peer = send, issuers, None
+
+    def __call__(self, method, host, path, headers, *, max_bytes, save_to=None):
+        self.peer = None
+        r = self._send(method, host, path, headers, max_bytes=max_bytes, save_to=save_to)
+        o, cn = self._iss[host]
+        self.peer = {"host": host, "issuer_o": o, "issuer_cn": cn}
+        return r
+
+
 def run(tag, job=None, **knobs):
     """C4A-8: oci_job promises never to raise - a raise is recorded against its row (whose ok is then None, so the row
     FAILs by name) and against the census row at the end, never a crash of the whole suite."""
@@ -346,7 +361,21 @@ check("release_tags: the largest ^v?X.Y.Z$ by the numbers, with every tag that n
       and FC.release_tags(["latest", "nightly"]) is None)
 
 print("\n- C4A-1: the real wire, tunnel_send, through a loopback tunnel to a local TLS server -")
-made = TF.make_test_cert(TMP / "cert", REG)
+ISS_OC = {REG: ("Amazon", "Amazon RSA 2048 M02"), AUTH: ("Amazon", "Amazon RSA 2048 M03"),
+          CDN: ("Google Trust Services", "WE1")}
+cwi = TMP / "issuers"
+cwi.mkdir()
+try:
+    oi = FC.oci_job(copy.deepcopy(JOB), send=PeerWire(Registry().send, ISS_OC), cwd=cwi)
+except Exception as e:  # noqa: BLE001
+    RAISED.append(f"issuers: {type(e).__name__}: {e}")
+    oi = {}
+check("OCI-ISS (R-GHR-ISS): every request entry of the image job carries the issuer its own host's peer had - the "
+      "CDN's its CDN's, the token's the auth host's - never the first request's",
+      oi.get("ok") is True and len(oi.get("requests") or []) > 3
+      and {r["host"] for r in oi["requests"]} >= {REG, AUTH, CDN}
+      and all((r.get("issuer_o"), r.get("issuer_cn")) == ISS_OC[r["host"]] for r in oi["requests"]), str(oi.get("requests"))[:300])
+made = TF.make_test_cert(TMP / "cert", REG, org="Amazon")
 if made is None:
     print("  SKIP the wire checks: neither cryptography nor openssl is available (not passed)")
 else:
@@ -391,6 +420,13 @@ else:
     check("C4A-1: a HEAD and a non-200 come back with their status and no body, nothing saved",
           err is None and got[0] == 200 and got[2] == b"" and got[3] is None and err2 is None and got2[0] == 404
           and got2[2] == b"" and not (wd / "nf.bin").exists(), f"{got} {got2}")
+    got, err = attempt("GET", REG, "/ok", {}, max_bytes=100)
+    peer1 = dict(getattr(send, "peer", None) or {})
+    got2, err2 = attempt("GET", REG, "/nf", {}, max_bytes=100)
+    peer2 = dict(getattr(send, "peer", None) or {})
+    check("ISS-1 (R-GHR-ISS): the real wire says, after each call, its peer's host and certificate issuer (O, CN) - "
+          "on a 200 and on a non-200 alike", err is None and err2 is None
+          and peer1 == peer2 == {"host": REG, "issuer_o": "Amazon", "issuer_cn": REG}, f"{peer1} {peer2}")
     srv.close(), hop.close()
 
 check("C4A-8: oci_job raised on no row - every failure came back as ok False with an error", RAISED == [], str(RAISED))

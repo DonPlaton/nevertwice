@@ -185,6 +185,22 @@ def judge(record: dict) -> list[str]:
     return problems
 
 
+def record_issuers(results: list) -> list:
+    """(host, issuer O, issuer CN) of every request that says one: a flat request summary (run_job's) by its final host,
+    and each nested request of a gh_release, gh_model or oci job by its own host (R-GHR-ISS). One with none adds none."""
+    rows = set()
+    for j in results:
+        for r in j.get("summary") or []:
+            if not isinstance(r, dict):
+                continue
+            if r.get("issuer_cn"):
+                rows.add((r.get("final_host"), r.get("issuer_o"), r.get("issuer_cn")))
+            for q in r.get("requests") or []:
+                if isinstance(q, dict) and q.get("issuer_cn"):
+                    rows.add((q.get("host"), q.get("issuer_o"), q.get("issuer_cn")))
+    return sorted(rows)
+
+
 def run_child_window(c, L, *, window: str, hosts: list[str], jobs: list, python: Path, via_port: int, run: str,
                      parent_env, native=None, fs=None, child_env_extra: dict | None = None, need_bytes: int = 0,
                      volume: Path | None = None, job_timeout: float = 3600.0, arm: str = ARM) -> dict:
@@ -287,8 +303,7 @@ def run_child_window(c, L, *, window: str, hosts: list[str], jobs: list, python:
     record = {"window": window, "run": run, "arm": arm, "hosts": list(hosts), "via": {"host": "127.0.0.1", "port": via_port},
               "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "error": error, "jobs": results,
               "catcher": _jsonl(pdir / "catcher.jsonl", log_bad), "windows_proxy": _jsonl(pdir / "windows_proxy.jsonl", log_bad),
-              "issuers": sorted({(r.get("final_host"), r.get("issuer_o"), r.get("issuer_cn")) for j in results
-                                 for r in j["summary"] if r.get("issuer_cn")}),
+              "issuers": record_issuers(results),
               "check": {"id": check_id, "complete": chk.get("complete"), "native_hits": native_rec.get("hits"),
                         "loopback_hits": native_rec.get("loopback_hits"), "fs_hits": (chk.get("fs") or {}).get("fs_hits"),
                         "window_hosts": sorted(native_rec["window_hosts"]) if "window_hosts" in native_rec else None}}

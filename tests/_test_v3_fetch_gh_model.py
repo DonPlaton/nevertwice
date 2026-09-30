@@ -138,6 +138,21 @@ TMP = Path(tempfile.mkdtemp(prefix="nvt3_fetch_gh_"))
 atexit.register(shutil.rmtree, TMP, True)
 
 
+class PeerWire:
+    """A wire that, like tunnel_send, says after each call which issuer its peer had (R-GHR-ISS) - one per host here,
+    so an entry that took another request's issuer, or none, shows."""
+
+    def __init__(self, send, issuers: dict):
+        self._send, self._iss, self.peer = send, issuers, None
+
+    def __call__(self, method, host, path, headers, *, max_bytes, save_to=None):
+        self.peer = None
+        r = self._send(method, host, path, headers, max_bytes=max_bytes, save_to=save_to)
+        o, cn = self._iss[host]
+        self.peer = {"host": host, "issuer_o": o, "issuer_cn": cn}
+        return r
+
+
 def run(tag, job=None, **knobs):
     cwd = TMP / tag
     cwd.mkdir()
@@ -258,6 +273,21 @@ except Exception as e:  # noqa: BLE001
     ob = {}
 check("a network error is the job's summary (ok False, the error named), never a raise",
       ok(lambda: ob.get("ok") is False and "OSError" in (ob.get("error") or "")), str(ob))
+ISS_GM = {RAW: ("DigiCert Inc", "DigiCert Global G2 TLS RSA SHA256 2020 CA1"),
+          API: ("Sectigo Limited", "Sectigo Public Server Authentication CA DV E36"),
+          WEB: ("Sectigo Limited", "Sectigo ECC Domain Validation Secure Server CA"),
+          CDN1: ("Let's Encrypt", "R11"), CDN2: ("Let's Encrypt", "R11")}
+cwi = TMP / "issuers"
+cwi.mkdir()
+try:
+    oi = FC.gh_model_job(copy.deepcopy(JOB), send=PeerWire(GitHub().send, ISS_GM), cwd=cwi)
+except Exception as e:  # noqa: BLE001
+    RAISED.append(f"issuers: {type(e).__name__}: {e}")
+    oi = {}
+check("GM-ISS (R-GHR-ISS): every request entry of the model job carries the issuer its own host's peer had - never "
+      "the first request's", ok(lambda: oi.get("ok") is True and len(oi["requests"]) == 4
+                                and all((r.get("issuer_o"), r.get("issuer_cn")) == ISS_GM[r["host"]] for r in oi["requests"])),
+      str(oi.get("requests"))[:300])
 check("no row's condition, and no job, raised", RAISED == [], str(RAISED))
 print(f"\nv3 fetch gh_model: {PASSED} passed, {FAILED} failed")
 sys.exit(1 if FAILED else 0)

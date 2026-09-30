@@ -159,6 +159,21 @@ TMP = Path(tempfile.mkdtemp(prefix="nvt3_fetch_ghr_"))
 atexit.register(shutil.rmtree, TMP, True)
 
 
+class PeerWire:
+    """A wire that, like tunnel_send, says after each call which issuer its peer had (R-GHR-ISS) - one per host here,
+    so an entry that took another request's issuer, or none, shows."""
+
+    def __init__(self, send, issuers: dict):
+        self._send, self._iss, self.peer = send, issuers, None
+
+    def __call__(self, method, host, path, headers, *, max_bytes, save_to=None):
+        self.peer = None
+        r = self._send(method, host, path, headers, max_bytes=max_bytes, save_to=save_to)
+        o, cn = self._iss[host]
+        self.peer = {"host": host, "issuer_o": o, "issuer_cn": cn}
+        return r
+
+
 def run(tag, job=None, **knobs):
     cwd = TMP / tag
     cwd.mkdir()
@@ -311,6 +326,44 @@ except Exception as e:  # noqa: BLE001
     ob = {}
 check("GR-11: a network error is the job's summary (ok False, the error named), never a raise",
       ok(lambda: ob.get("ok") is False and "OSError" in (ob.get("error") or "")), str(ob))
+ISS_GR = {API: ("Sectigo Limited", "Sectigo Public Server Authentication CA DV E36"),
+          WEB: ("Sectigo Limited", "Sectigo ECC Domain Validation Secure Server CA"),
+          CDN1: ("DigiCert Inc", "DigiCert Global G2 TLS RSA SHA256 2020 CA1"),
+          CDN2: ("DigiCert Inc", "DigiCert Global G2 TLS RSA SHA256 2020 CA1")}
+cwi = TMP / "issuers"
+cwi.mkdir()
+try:
+    oi = FC.gh_release_job(copy.deepcopy(JOB), send=PeerWire(GitHub().send, ISS_GR), cwd=cwi)
+except Exception as e:  # noqa: BLE001
+    RAISED.append(f"issuers: {type(e).__name__}: {e}")
+    oi = {}
+check("GR-14 (R-GHR-ISS): every request entry carries the issuer its own host's peer had - the CDN's its CDN's, never "
+      "the first request's; the job's hosts all have one",
+      ok(lambda: oi.get("ok") is True and len(oi["requests"]) == 6
+         and all((r.get("issuer_o"), r.get("issuer_cn")) == ISS_GR[r["host"]] for r in oi["requests"])), str(oi.get("requests"))[:300])
+class _StaleWire(PeerWire):
+    """A wire whose peer names another host than the one just reached."""
+
+    def __call__(self, method, host, path, headers, *, max_bytes, save_to=None):
+        r = super().__call__(method, host, path, headers, max_bytes=max_bytes, save_to=save_to)
+        self.peer = {**self.peer, "host": "elsewhere.example"}
+        return r
+
+
+cws2 = TMP / "issuers_stale"
+cws2.mkdir()
+try:
+    os2 = FC.gh_release_job(copy.deepcopy(JOB), send=_StaleWire(GitHub().send, ISS_GR), cwd=cws2)
+except Exception as e:  # noqa: BLE001
+    RAISED.append(f"issuers_stale: {type(e).__name__}: {e}")
+    os2 = {}
+check("GR-16: a peer the wire names for another host than the one just reached is not taken - the entry's issuer stays "
+      "None", ok(lambda: os2.get("ok") is True and all(r.get("issuer_o") is None and r.get("issuer_cn") is None
+                                                        for r in os2["requests"])), str(os2.get("requests"))[:200])
+o_plain, _g, _c = run("issuers_plain")
+check("GR-15: a wire that says no issuer leaves the entries' issuer None - never guessed",
+      ok(lambda: o_plain.get("ok") is True and all(r.get("issuer_o") is None and r.get("issuer_cn") is None
+                                                  for r in o_plain["requests"])), str(o_plain.get("requests"))[:200])
 check("no row's condition, and no job, raised", RAISED == [], str(RAISED))
 print(f"\nv3 fetch gh_release: {PASSED} passed, {FAILED} failed")
 sys.exit(1 if FAILED else 0)

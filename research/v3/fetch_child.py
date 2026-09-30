@@ -278,14 +278,21 @@ def _next_link(value: str | None, registry: str, repo: str) -> str | None:
 def tunnel_send(port: int, ctx: ssl.SSLContext | None = None, timeout: float = 300.0):
     """The wire of an OCI job: one request through the catcher's tunnel, TLS verified end to end. A redirect, a HEAD or
     a non-200 answer comes back with no body; a 200 body is streamed to ``save_to`` (via .partial) or kept in memory,
-    never past ``max_bytes``, identity encoding only. Returns (status, lower-case headers, body, sha256 hex, bytes)."""
+    never past ``max_bytes``, identity encoding only. Returns (status, lower-case headers, body, sha256 hex, bytes).
+    R-GHR-ISS (the auditor's Q-ISS-1): after each call ``send.peer`` says the peer it reached - {host, issuer_o,
+    issuer_cn} of that host's certificate (R-A3-7: the catcher relays ciphertext, only the child sees it) - and a job's
+    entry for the call carries it."""
     ctx = ctx or ssl.create_default_context()
 
     def send(method: str, host: str, path: str, headers: dict, *, max_bytes: int, save_to: Path | None = None):
+        send.peer = None
         conn = _open(host, port, ctx, timeout)
         try:
             conn.request(method, path, headers={"User-Agent": "nvt3-fetch/1", "Accept-Encoding": "identity", **headers})
             r = conn.getresponse()
+            if isinstance(conn.sock, ssl.SSLSocket):     # this call's own peer: the host just reached, never an earlier one
+                issuer = dict(x[0] for x in conn.sock.getpeercert().get("issuer", ()))
+                send.peer = {"host": host, "issuer_o": issuer.get("organizationName"), "issuer_cn": issuer.get("commonName")}
             hdrs = {k.lower(): v for k, v in r.getheaders()}
             if method == "HEAD" or r.status != 200:
                 r.read(65536)
@@ -322,7 +329,16 @@ def tunnel_send(port: int, ctx: ssl.SSLContext | None = None, timeout: float = 3
             return 200, hdrs, b"".join(keep), h.hexdigest(), total
         finally:
             conn.close()
+    send.peer = None
     return send
+
+
+def _peer_of(send, host: str) -> dict:
+    """The issuer fields of the call just made on ``send`` - its peer's when the wire says one for that host, else None
+    (a wire that says nothing: never guessed)."""
+    peer = getattr(send, "peer", None) or {}
+    ok = peer.get("host") == host
+    return {"issuer_o": peer.get("issuer_o") if ok else None, "issuer_cn": peer.get("issuer_cn") if ok else None}
 
 
 def _blob(call, *, registry: str, repo: str, digest: str, size, authz: dict, cdn: frozenset, dest: Path, blob_max: int,
@@ -370,7 +386,7 @@ def oci_job(job: dict, *, send, cwd: Path) -> dict:
 
         def call(method, host, path, headers, *, max_bytes=meta_max, save_to=None, tolerate=False):
             st, h, body, sha, n = send(method, host, path, dict(headers), max_bytes=max_bytes, save_to=save_to)
-            out["requests"].append({"method": method, "host": host, "status": st,
+            out["requests"].append({**_peer_of(send, host), "method": method, "host": host, "status": st,
                                     "path": path.split("?", 1)[0] if host in cdn else path})
             if st == 429 and not tolerate:
                 out["rate_limited"] = True
@@ -502,7 +518,7 @@ def gh_model_job(job: dict, *, send, cwd: Path) -> dict:
 
         def call(method, host, path, headers, *, max_bytes=meta_max, save_to=None):
             st, h, body, sha, n = send(method, host, path, dict(headers), max_bytes=max_bytes, save_to=save_to)
-            out["requests"].append({"method": method, "host": host, "status": st,
+            out["requests"].append({**_peer_of(send, host), "method": method, "host": host, "status": st,
                                     "path": path.split("?", 1)[0] if host in cdn else path})
             return st, h, body, sha, n
 
@@ -622,7 +638,7 @@ def gh_release_job(job: dict, *, send, cwd: Path) -> dict:
 
         def call(method, host, path, headers, *, max_bytes=meta_max, save_to=None):
             st, h, body, sha, n = send(method, host, path, dict(headers), max_bytes=max_bytes, save_to=save_to)
-            entry = {"method": method, "host": host, "status": st, "path": path}
+            entry = {**_peer_of(send, host), "method": method, "host": host, "status": st, "path": path}
             if host in cdn:                      # a signed URL: its host and path, and its query only as a sha256
                 bare, _, query = path.partition("?")
                 entry.update(path=bare, query_sha256=hashlib.sha256(query.encode("utf-8")).hexdigest())

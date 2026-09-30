@@ -172,6 +172,22 @@ check("the window log names the hop and the hosts; the catcher window opened and
       and F._jsonl(C.runs_root / "_launch" / "windows.jsonl")[0]["via"] == f"127.0.0.1:{hop.port}"
       and [w["event"] for w in rec["windows_proxy"]] == ["open", "close"] and rec["windows_proxy"][0]["arms"] == ["fetch"])
 check("the issuers are recorded per host", {i[0] for i in rec["issuers"]} == {HF, GH}, str(rec["issuers"]))
+RES_ISS = [{"summary": [{"final_host": "flat.example", "issuer_o": "Amazon", "issuer_cn": "M01"},
+                        {"final_host": "none.example", "issuer_o": None, "issuer_cn": None}]},
+           {"summary": [{"kind": "gh_release", "requests": [
+               {"host": "api.github.com", "issuer_o": "Sectigo Limited", "issuer_cn": "E36"},
+               {"host": "release-assets.githubusercontent.com", "issuer_o": "DigiCert Inc", "issuer_cn": "G2"},
+               {"host": "github.com", "issuer_o": None, "issuer_cn": None}]}]},
+           {"summary": []}]
+try:
+    got_iss, iss_err = F.record_issuers(RES_ISS), None
+except Exception as e:  # noqa: BLE001
+    got_iss, iss_err = None, f"{type(e).__name__}: {e}"
+check("ISS-3 (R-GHR-ISS): the record's issuers are collected from flat request summaries AND from the nested requests "
+      "of the gh_release, gh_model and oci jobs; an entry with no issuer adds none",
+      iss_err is None and got_iss == sorted({("flat.example", "Amazon", "M01"), ("api.github.com", "Sectigo Limited", "E36"),
+                                            ("release-assets.githubusercontent.com", "DigiCert Inc", "G2")}),
+      str(iss_err or got_iss))
 wit = json.loads((C.runs_root / "_witness" / "fetch-a3-discovery-d1.json").read_bytes())
 check("the window's witness record names its window, run and arm", wit["tags"] == {"window": "a3-discovery", "run": "d1",
                                                                                    "arm": "fetch"}, str(wit.get("tags")))
