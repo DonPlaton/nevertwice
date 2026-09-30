@@ -220,6 +220,7 @@ check("the window hosts are the declared exact names",
           "a7-arxiv": ["export.arxiv.org"], "a7-arxiv-src": ["arxiv.org", "export.arxiv.org", "oaipmh.arxiv.org"],
           "a7-github-2": ["raw.githubusercontent.com"], "a8-pypi-d": ["pypi.org"],
           "a7-hf-d": ["huggingface.co"], "a7-hf": ["huggingface.co", "us.aws.cdn.hf.co"],
+          "a7-hf-bm25": ["huggingface.co"],
           "py-base-312": ["api.nuget.org"], "a8-pypi-mem0_v3": ["files.pythonhosted.org", "pypi.org"],
           "a8-pypi-graphiti_v3": ["files.pythonhosted.org", "pypi.org"],
           "a8-pypi-langmem_v3": ["files.pythonhosted.org", "pypi.org"],
@@ -237,6 +238,27 @@ check("a7-hf's hosts come from a7-hf-d d1's report (d7_report.json 2ec9f5f2...) 
       and MAN["windows"]["a7-hf"]["hosts"] == ["huggingface.co", "us.aws.cdn.hf.co"] and MAN["windows"]["a7-hf"]["max_redirects"] == 1)
 check("a3-hf's hosts come from the discovery record d1; discovery follows no redirect",
       MAN["windows"]["a3-hf"]["hosts_from_record"] == CP.DISCOVERY_D1 and MAN["windows"]["a3-discovery"]["max_redirects"] == 0)
+
+print("\n- T34 (the auditor, 2026-09-30): Qdrant/bm25's 33 files for mem0's BM25, the window a7-hf-bm25 -")
+BM25_WANT = {"bm25_arabic": "arabic.txt", "bm25_azerbaijani": "azerbaijani.txt", "bm25_basque": "basque.txt", "bm25_bengali": "bengali.txt", "bm25_catalan": "catalan.txt", "bm25_chinese": "chinese.txt", "bm25_config": "config.json", "bm25_danish": "danish.txt", "bm25_dutch": "dutch.txt", "bm25_english": "english.txt", "bm25_finnish": "finnish.txt", "bm25_french": "french.txt", "bm25_german": "german.txt", "bm25_gitattributes": ".gitattributes", "bm25_greek": "greek.txt", "bm25_hebrew": "hebrew.txt", "bm25_hinglish": "hinglish.txt", "bm25_hungarian": "hungarian.txt", "bm25_indonesian": "indonesian.txt", "bm25_italian": "italian.txt", "bm25_kazakh": "kazakh.txt", "bm25_nepali": "nepali.txt", "bm25_norwegian": "norwegian.txt", "bm25_portuguese": "portuguese.txt", "bm25_readme": "README.md", "bm25_romanian": "romanian.txt", "bm25_russian": "russian.txt", "bm25_slovene": "slovene.txt", "bm25_spanish": "spanish.txt", "bm25_stopwords": "stopwords.txt", "bm25_swedish": "swedish.txt", "bm25_tajik": "tajik.txt", "bm25_turkish": "turkish.txt"}
+bm = {n: p_ for n, p_ in getattr(CP, "PINS_A7", {}).items() if p_.get("repo") == "Qdrant/bm25"}
+check("BM-PIN-1: PINS_A7 pins exactly the 33 files of Qdrant/bm25's tree in a7-discovery-2 d1 (the record ecd33f77...) - "
+      "each at 22b8d2af, an hf-model pin of the window a7-hf-bm25, its revision from that record, apache-2.0, row 226 "
+      "(the mem0 row A5 amends)",
+      {n: p_.get("path") for n, p_ in bm.items()} == BM25_WANT
+      and getattr(CP, "A7_DISCOVERY2_D1", None) == "ecd33f770ba45be0820b03941b23b273507e227f445c8fee7ae85e4e50a8bdb8"
+      and all(p_["revision"] == "22b8d2af71a76161e18dd432d2cee0eefa66e412" and p_["source"] == "hf-model" and p_["window"] == "a7-hf-bm25"
+              and p_["revision_from"] == "a7-discovery-2 d1 ecd33f770ba4" and p_["licence"] == "Apache-2.0"
+              and p_["prereg"] == 226 for p_ in bm.values()), str(sorted(bm))[:300])
+W_BM = MAN["windows"].get("a7-hf-bm25") or {}
+check("BM-PIN-2: the window a7-hf-bm25 - huggingface.co alone, one redirect (every file 307 to itself in the listing's "
+      "report, d10_report.json 5b064077...), its hosts from that report, its pins exactly the 33",
+      W_BM.get("hosts") == ["huggingface.co"] and W_BM.get("max_redirects") == 1
+      and W_BM.get("hosts_from_record") == "5b0640777aef83d5d25a50deaee72cb10e8dae10cc83df26b59d89c14fbba20b"
+      and getattr(CP, "A7_DISCOVERY2_D1_REPORT", None) == "5b0640777aef83d5d25a50deaee72cb10e8dae10cc83df26b59d89c14fbba20b" and sorted(W_BM.get("pins") or []) == sorted(BM25_WANT),
+      str(W_BM)[:300])
+check("BM-PIN-3: no file of Qdrant/bm25 is pinned twice across PINS and PINS_A7 (english.txt and stopwords.txt share a "
+      "blob, not a path)", CP.pinned_twice() == [], str(CP.pinned_twice())[:300])
 
 print("\n- A7 phase 2 (the auditor's Q-A7-P2-1 O-a): PINS_A7, a table of its own for the window a7-github -")
 LME_R, MAB_R = "9e0b455f4ef0e2ab8f2e582289761153549043fc", "538026089d1a8a8eff05121d0db89b388f360eba"
@@ -323,10 +345,14 @@ WANT_A7.update(GH2)
 #: once filled (fill_inputs' rule for url pins), so the table's own value is compared, never a literal guessed here
 WANT_A7["zep_paper_src"] = (None, A7.get("zep_paper_src", {}).get("revision"), "https://arxiv.org/src/2501.13956v1",
                             "arm-source")
-check("A7-1: PINS_A7 holds exactly the 75 pins the auditor fixed - the 17 of phase 2, the 35 cognee files, the 10 "
-      "MiniLM files, a7-github-2's 12 and Zep's e-print - each its repository, commit, path and role",
+#: T34 (the auditor, 2026-09-30 16:1x): Qdrant/bm25's 33 files from a7-discovery-2 d1's listing - arm-source pins of
+#: the window a7-hf-bm25 (mem0's BM25), unfilled until that window runs
+BM25 = dict(BM25_WANT)
+WANT_A7.update({n: ("Qdrant/bm25", "22b8d2af71a76161e18dd432d2cee0eefa66e412", path, "arm-source") for n, path in BM25.items()})
+check("A7-1: PINS_A7 holds exactly the 108 pins the auditor fixed - the 17 of phase 2, the 35 cognee files, the 10 "
+      "MiniLM files, a7-github-2's 12, Zep's e-print and Qdrant/bm25's 33 - each its repository, commit, path and role",
       {n: (p["repo"], p["revision"], p["path"], p["role"]) for n, p in A7.items()}
-      == WANT_A7 and len(WANT_A7) == 75 and len(COGNEE) == 35 and len(MINILM) == 10 and len(GH2) == 12
+      == WANT_A7 and len(WANT_A7) == 108 and len(COGNEE) == 35 and len(MINILM) == 10 and len(GH2) == 12 and len(BM25) == 33
       and [sum(r == x for _p, r in COGNEE.values()) for x in ("arm-source", "prompt", "scoring")] == [17, 15, 3],
       str(sorted(set(A7) ^ set(WANT_A7))))
 COG_FROM = "a7-cognee-tag d1 1b5d58bfb9f4"
@@ -344,7 +370,7 @@ check("A7-2: every GitHub pin of A7 is a file of the window a7-github, filled fr
            and isinstance(p["sha256"], str) and len(p["sha256"]) == 64 and isinstance(p["bytes"], int)
            and (str(p["revision_from"]) == COG_FROM if n in COGNEE
                 else str(p["revision_from"]).startswith(("a3-discovery d1 ", "a3-discovery d2 ")))) for n, p in A7.items()
-          if n not in GH2 and n != "zep_paper_src")
+          if n not in GH2 and n not in BM25 and n != "zep_paper_src")
       and {n for n, p in A7.items() if p["revision_from"] == COG_FROM} == set(COGNEE)
       and {n for n, p in A7.items() if p["revision_from"] == MINI_FROM} == set(MINILM),
       str([(n, p["source"], p["window"], p.get("filled_from"), p["revision_from"]) for n, p in A7.items()
@@ -448,11 +474,12 @@ check("A7-4c: an honest neighbour - the same source, repository and path at ANOT
       "a file pinned twice: pinned_twice() names nothing and the table's own command passes (a commit is part of a file's "
       "identity)", nb is not None and nb == ([], 0, True), str(nberr or nb))
 check("A7-5: the table's rules hold for PINS_A7, and its fragment files the 57 prompt and scoring pins (the MiniLM "
-      "ten and a7-github-2's twelve among them) under prompt_files and the 17 cognee arm-source pins and Zep's e-print "
-      "under arm_sources, nothing elsewhere",
+      "ten and a7-github-2's twelve among them) under prompt_files and the 17 cognee arm-source pins, Zep's e-print and "
+      "Qdrant/bm25's 33 under arm_sources, nothing elsewhere",
       fr is not None and sorted(fr["prompt_files"]) == sorted(n for n, v in WANT_A7.items() if v[3] in ("prompt", "scoring"))
       and len(fr["prompt_files"]) == 57 and set(MINILM) <= set(fr["prompt_files"]) and set(GH2) <= set(fr["prompt_files"])
-      and sorted(fr["arm_sources"]) == sorted([n for n, (_p, r) in COGNEE.items() if r == "arm-source"] + ["zep_paper_src"])
+      and sorted(fr["arm_sources"]) == sorted([n for n, (_p, r) in COGNEE.items() if r == "arm-source"] + ["zep_paper_src"]
+                                              + list(BM25))
       and not any(fr[g] for g in fr if g not in ("prompt_files", "arm_sources")),
       str(frerr or {g: sorted(v) for g, v in (fr or {}).items()}))
 

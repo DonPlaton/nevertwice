@@ -1021,10 +1021,13 @@ COG_NAMES = sorted(n for n, p_ in getattr(P.CP, "PINS_A7", {}).items() if p_["re
 a710, a710err = _try(lambda: dcerr is None and DC.reports["cogtag"]["commit"] == COG_R and "a7d1" in DC.records
                     and getattr(P, "A7_SHAS", None) == {
                         "a7d1": "1689534abb103971d502774dfd2a4566d6947c3efaeda552dbe3704b72ed037e",
-                        "cogtag": "1b5d58bfb9f484249ba0ac32f14c673c0db27f140a0f07825426ae34934e6620"}
-                    == {"a7d1": getattr(P.CP, "A7_DISCOVERY_D1", None), "cogtag": getattr(P.CP, "COGNEE_TAG_D1", None)})
+                        "cogtag": "1b5d58bfb9f484249ba0ac32f14c673c0db27f140a0f07825426ae34934e6620",
+                        "a7d2": "ecd33f770ba45be0820b03941b23b273507e227f445c8fee7ae85e4e50a8bdb8"}
+                    == {"a7d1": getattr(P.CP, "A7_DISCOVERY_D1", None), "cogtag": getattr(P.CP, "COGNEE_TAG_D1", None),
+                        "a7d2": getattr(P.CP, "A7_DISCOVERY2_D1", None)})
 check("A7-10: the cognee tag report and the a7-discovery record load when their sha256 are the pinned ones; the real "
-      "tool pins exactly the auditor's two (d5_report.json 1b5d58bf...6620, record.json 1689534a...037e)",
+      "tool pins exactly the auditor's three (d5_report.json 1b5d58bf...6620, record.json 1689534a...037e and "
+      "a7-discovery-2 d1's record.json ecd33f77...bdb8, T34)",
       a710 is True, str(dcerr or a710err))
 bn7 = TMP / "disc_cog_none"
 CSN = fake_discovery(bn7)
@@ -1143,6 +1146,64 @@ except Exception as e:  # noqa: BLE001
 check("A7-18: a7-hf's plan from PINS_A7 and the real manifest - huggingface.co and us.aws.cdn.hf.co only, one redirect, "
       "the 10 files at 1110a243 into the hub's snapshot, the card's licence", a718 is True, str(phferr or (phf and phf.hosts)))
 check("A7-19: the command takes the window a7-hf", '"a7-hf"' in __import__("inspect").getsource(P.main))
+print("\n- T34: Qdrant/bm25 from a7-discovery-2 d1, the window a7-hf-bm25 -")
+BM_REPO, BM_REV = "Qdrant/bm25", "22b8d2af71a76161e18dd432d2cee0eefa66e412"
+BM_FILES = {".gitattributes": ["a6344aac8c09253b3b630fb776ae94478aa0275b", 1519], "README.md": ["88423dc762fcd807f1a4e0e408bc5891e969294f", 1462], "arabic.txt": ["ee3a26e793f8ab69a44b30332708cc122b258b51", 6348], "azerbaijani.txt": ["27bf2940fe608d8a0698a7b896cd1fd22ad64ac9", 967], "basque.txt": ["3b84c32419b346f0606212affb50f08f3d226194", 2202], "bengali.txt": ["9dc1bfcb2a87c09952a3e61c4c365612c4adccd2", 5443], "catalan.txt": ["cdba332cb94448bf8b93d41e5d58e2b6f447211f", 1558], "chinese.txt": ["0873a9033a24948ae253085187c882418b5b3aaa", 5560], "config.json": ["9e26dfeeb6e641a33dae4961196235bdb965b21b", 2], "danish.txt": ["d3edc6757912e3d83acfa241859c4a1bdb6005ad", 424], "dutch.txt": ["cafa0324b53763f7efadda5b0f3d0321ffa7ab38", 453], "english.txt": ["1280aa3b08d64b846272b2d23314377200db36e9", 936], "finnish.txt": ["47ee200f6781ddfdb31af37e317e1f05d10a04ff", 1579], "french.txt": ["00af58791541ed63f33c98207199f6b32727f571", 813], "german.txt": ["c2241d0ee7bbc192abe3b56efffb75f29a29e185", 1362], "greek.txt": ["9d08b144659c4ae804bb84a624e1248bb2b90e40", 2167], "hebrew.txt": ["8ac778585f3d9b71c5a6d1e4fc9afb83eb4e691a", 1836], "hinglish.txt": ["de0654e211e01952c3f38c78d370739e7c71d2e2", 5958], "hungarian.txt": ["94e9f9a0b07a68aeff30605fc445db71f63be630", 1227], "indonesian.txt": ["bf88a458130df5ab852fb1656a8157a00ec355e9", 6446], "italian.txt": ["6ee02b51fb1711625c1de28595615cdecba4de7c", 1654], "kazakh.txt": ["ebb9fc1bdc99fa06919ad03c1f5ac6a44695e111", 3880], "nepali.txt": ["b2e4d34709f5573aa7a19009dc8732db43f9fd6f", 3610], "norwegian.txt": ["9ac1abbb6cba1fb3159caa6d88b25543b9080031", 851], "portuguese.txt": ["eb53a8fc2544b16d2a849d98e26c6e34bf07bdb0", 1286], "romanian.txt": ["45651c90ec7ea5b26c51ea9a11fddafb00652190", 1910], "russian.txt": ["ecb83d4a7f393b67b054b44e337d683b2ff2d973", 1235], "slovene.txt": ["eb4d1bcf28f31cb48ffa1e1d7b8fddc60f0fbd32", 15980], "spanish.txt": ["6a7d50cc633609c8bc2da53c3dac9a015c248b62", 2176], "stopwords.txt": ["1280aa3b08d64b846272b2d23314377200db36e9", 936], "swedish.txt": ["742bb6263b99fb2ea6e1e3624a65eb2799a1e24c", 559], "tajik.txt": ["898614a0210a2f4cd74deed295978c04a19bbf37", 1818], "turkish.txt": ["5a48ccce0737bb38cb99cafa1f8d3d0ce34e7488", 260]}
+
+
+def bm_disc(base: Path, *, rev_echo=BM_REV, tree_rev=BM_REV, drop=None, licence="apache-2.0"):
+    """A Discovery whose a7d2 record holds Qdrant/bm25 as a7-discovery-2 d1 (plan d10) saved it: job 0's revision and
+    tree."""
+    safe = BM_REPO.replace("/", "__")
+    j0 = base / "a7d2" / "j0"
+    write(j0 / f"meta/models/{safe}/revision.json", {"sha": rev_echo, "cardData": {"license": licence}})
+    write(j0 / f"meta/models/{safe}/tree.json", [{"type": "file", "path": pth, "oid": oid, "size": sz}
+                                                  for pth, (oid, sz) in BM_FILES.items() if pth != drop])
+    req = {"id": f"tree:models:{BM_REPO}", "url": f"https://huggingface.co/api/models/{BM_REPO}/tree/{tree_rev}?recursive=true"}
+    return P.Discovery({"a7d2": {"jobs": [{"index": 0, "unit": str(j0), "job": {"requests": [req]}, "summary": []}]}})
+
+
+BM_NAMES = sorted(n for n, p_ in getattr(P.CP, "PINS_A7", {}).items() if p_["repo"] == BM_REPO)
+DB = bm_disc(TMP / "disc_bm25")
+exb, exberr = _try(lambda: {n: P.expectation(DB, P.CP.PINS_A7[n]) for n in BM_NAMES})
+check("BM-FP-1: each of the 33 bm25 pins is expected from a7-discovery-2 d1's tree at 22b8d2af by its git blob and size "
+      "(none is LFS), the licence the card's", exberr is None and len(BM_NAMES) == 33 and exb == {
+          n: {"git_blob_sha1": BM_FILES[P.CP.PINS_A7[n]["path"]][0], "size": BM_FILES[P.CP.PINS_A7[n]["path"]][1]}
+          for n in BM_NAMES} and {P.licence_found(DB, P.CP.PINS_A7[n]) for n in BM_NAMES} == {
+          ("apache-2.0", f"a7d2 card {BM_REPO}")}, str(exberr or exb)[:300])
+bm_pin = getattr(P.CP, "PINS_A7", {}).get("bm25_english")
+bm_stops = {}
+if bm_pin is not None:
+    for label, disc_kw, pin_over, code in (
+            ("the revision answer names another commit", {"rev_echo": "f" * 40}, {}, "S4"),
+            ("the tree was read at another revision", {"tree_rev": "f" * 40}, {}, "S4"),
+            ("the file is not in the tree", {"drop": "english.txt"}, {}, "S2"),
+            ("the pin names another a7-discovery-2 record", {}, {"revision_from": "a7-discovery-2 d1 000000000000"}, "S1")):
+        Dx = bm_disc(TMP / f"disc_bm25_{len(bm_stops)}", **disc_kw)
+        bm_stops[label] = stopped(lambda Dx=Dx, po=pin_over: P.expectation(Dx, {**bm_pin, **po}), code)
+    bm_stops["no a7-discovery-2 record loaded"] = stopped(lambda: P.expectation(P.Discovery({}), bm_pin), "S1",
+                                                          "a7-discovery-2 d1")
+check("BM-FP-2: a bm25 pin stops by name when its record is not the pin's - " + ", ".join(bm_stops or ["(no pins)"]),
+      bool(bm_stops) and all(bm_stops.values()), str([k for k, v in bm_stops.items() if not v]))
+check("BM-FP-3: the third A7 record is read only at its pinned sha256 - a7-discovery-2 d1's record.json ecd33f77...",
+      getattr(P, "A7_SHAS", {}).get("a7d2") == "ecd33f770ba45be0820b03941b23b273507e227f445c8fee7ae85e4e50a8bdb8"
+      and getattr(P, "A7_FILES", {}).get("a7d2") == ("a7-discovery-2", "d1", "record.json"), str(getattr(P, "A7_SHAS", None)))
+try:                                          # plan_window touches no disk: short roots (h, p, u), never TMP
+    pbm, pbmerr = P.plan_window("a7-hf-bm25", disc=DB, pins=P.CP.PINS_A7, manifest=REAL_MANI, hf_hub=Path("h"),
+                                pins_root=Path("p"), unit_root=Path("u")), None
+except Exception as e:  # noqa: BLE001
+    pbm, pbmerr = None, f"{type(e).__name__}: {e}"
+try:
+    bfp4 = (pbmerr is None and pbm.hosts == ["huggingface.co"] and len(pbm.items) == 33
+            and all(j.get("max_redirects") == 1 for j in pbm.jobs)
+            and {it.url for it in pbm.items} == {f"https://huggingface.co/{BM_REPO}/resolve/{BM_REV}/{pth}" for pth in BM_FILES}
+            and {Path(it.dest).as_posix() for it in pbm.items} == {f"h/models--Qdrant--bm25/snapshots/{BM_REV}/{pth}"
+                                                                for pth in BM_FILES})
+except Exception as e:  # noqa: BLE001
+    bfp4, pbmerr = False, f"{type(e).__name__}: {e}"
+check("BM-FP-4: a7-hf-bm25's plan from PINS_A7 and the real manifest - huggingface.co alone, one redirect, the 33 files "
+      "at 22b8d2af into the hub's snapshot layout", bfp4 is True, str(pbmerr or (pbm and pbm.hosts)))
+check("BM-FP-5: the command takes the window a7-hf-bm25", '"a7-hf-bm25"' in __import__("inspect").getsource(P.main))
 check("nothing here touches the real A7 table", getattr(P.CP, "PINS_A7", {}) == A7_BEFORE)
 
 import inspect  # noqa: E402

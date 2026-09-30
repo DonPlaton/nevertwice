@@ -57,12 +57,16 @@ DISCOVERY_SHAS = {"d1": CP.DISCOVERY_D1, "d2": CP.DISCOVERY_D2}
 #: A7's two records (the auditor's fixing of cognee's pins, 2026-09-30): the tag report a7-cognee-tag d1 (the tree at the
 #: tag v1.6.1's commit, the files selected from it) and a7-discovery d1's record (cognee's repository and licence). Each
 #: is read only when its sha256 is the pinned one; with none on the disk the A3 windows plan as before.
-A7_SHAS = {"a7d1": CP.A7_DISCOVERY_D1, "cogtag": CP.COGNEE_TAG_D1}
-A7_FILES = {"a7d1": ("a7-discovery", "d1", "record.json"), "cogtag": ("a7-cognee-tag", "d1", "d5_report.json")}
+A7_SHAS = {"a7d1": CP.A7_DISCOVERY_D1, "cogtag": CP.COGNEE_TAG_D1, "a7d2": CP.A7_DISCOVERY2_D1}
+A7_FILES = {"a7d1": ("a7-discovery", "d1", "record.json"), "cogtag": ("a7-cognee-tag", "d1", "d5_report.json"),
+            "a7d2": ("a7-discovery-2", "d1", "record.json")}
 COGNEE_FROM = f"a7-cognee-tag d1 {CP.COGNEE_TAG_D1[:12]}"
 #: an HF pin whose revision a7-discovery d1 declares (MiniLM, Q-A7-P3): its revision answer in that record's job 1, its
 #: tree in job 3 - a3-discovery d1 kept them in jobs 0 and 1
 A7D1_FROM = f"a7-discovery d1 {CP.A7_DISCOVERY_D1[:12]}"
+#: an HF pin whose revision a7-discovery-2 d1 declares (Qdrant/bm25, T34): its revision answer and its tree both in that
+#: record's job 0 (plan d10's first job)
+A7D2_FROM = f"a7-discovery-2 d1 {CP.A7_DISCOVERY2_D1[:12]}"
 _SHA40 = re.compile(r"[0-9a-f]{40}")
 
 #: Where each GitHub repository's tree at its pinned commit was saved, when not d1's phase 4 (the auditor's B3:
@@ -141,6 +145,10 @@ def _hf_record(pin: dict) -> tuple[str, int, int]:
     """(record, the job of its revision answer, the job of its tree) for an HF pin: a7-discovery d1's for a pin that names
     it - exactly the pinned record, else S1 - a3-discovery d1's for every other."""
     rf = str(pin.get("revision_from") or "")
+    if rf.startswith("a7-discovery-2 "):
+        if rf != A7D2_FROM:
+            raise Stop("S1", "a7-discovery-2 d1", f"{_subject(pin)} names {rf!r}, not the pinned {A7D2_FROM!r}")
+        return "a7d2", 0, 0
     if not rf.startswith("a7-discovery "):
         return "d1", 0, 1
     if rf != A7D1_FROM:
@@ -199,7 +207,8 @@ def expectation(disc: Discovery, pin: dict) -> dict:
     rec, job, rel = tree_source(pin)
     subj = _subject(pin)
     if rec not in disc.records:
-        raise Stop("S1", "a7-discovery d1" if rec == "a7d1" else f"a3-discovery {rec}", f"the record is missing - {subj} has no tree")
+        raise Stop("S1", {"a7d1": "a7-discovery d1", "a7d2": "a7-discovery-2 d1"}.get(rec, f"a3-discovery {rec}"),
+                   f"the record is missing - {subj} has no tree")
     tree = disc.read(rec, job, rel)
     if tree is None:
         raise Stop("S2", subj, f"no tree saved at {rec} j{job} {rel}")
@@ -965,7 +974,7 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="one pin window (a3-hf, a3-github, a3-tiktoken, a3-git; A7's a7-github), "
                                              "then place and fill; or, offline, an e-print pin from a cleared d8 run")
     ap.add_argument("--window", required=True, choices=["a3-hf", "a3-github", "a3-tiktoken", "a3-git", "a7-github", "a7-hf",
-                                                          "a7-github-2", "a7-arxiv-src"])
+                                                          "a7-github-2", "a7-arxiv-src", "a7-hf-bm25"])
     ap.add_argument("--run", required=True)
     ap.add_argument("--python", help="the polygon's py314 interpreter (a window's)")
     ap.add_argument("--place-d8", metavar="PIN", help="offline (Q-ZT-1 = O-a): place PIN from the cleared a7-arxiv-src run "

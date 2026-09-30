@@ -77,9 +77,15 @@ REV_D2 = {"gh_mem0": "b3ede5b7c0ac0e847b03786a603c107ac943b3ee", "gh_ama": "ddfd
 #: licence (a7-discovery d1, record.json), which also holds all-MiniLM-L6-v2's revision, card and tree (its jobs 1 and 3).
 COGNEE_TAG, COGNEE_TAG_D1 = "v1.6.1", "1b5d58bfb9f484249ba0ac32f14c673c0db27f140a0f07825426ae34934e6620"
 A7_DISCOVERY_D1 = "1689534abb103971d502774dfd2a4566d6947c3efaeda552dbe3704b72ed037e"
-REV_A7 = {"gh_cognee": "eb90d03740755f5252b8b12cce91fd09970f2d81", "hf_minilm": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41"}
+#: T34 (the auditor, 2026-09-30): the metadata window a7-discovery-2 d1 (plan d10) listed Qdrant/bm25 - mem0's BM25
+#: model - at the revision A5 pins: its record (the revision, the tree, the card; apache-2.0) and its report, whose
+#: redirect hosts the window a7-hf-bm25 takes.
+A7_DISCOVERY2_D1, A7_DISCOVERY2_D1_REPORT = "ecd33f770ba45be0820b03941b23b273507e227f445c8fee7ae85e4e50a8bdb8", "5b0640777aef83d5d25a50deaee72cb10e8dae10cc83df26b59d89c14fbba20b"
+REV_A7 = {"gh_cognee": "eb90d03740755f5252b8b12cce91fd09970f2d81", "hf_minilm": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+          "hf_bm25": "22b8d2af71a76161e18dd432d2cee0eefa66e412"}
 _RECORDS = {"d1": ("a3-discovery d1", DISCOVERY_D1), "d2": ("a3-discovery d2", DISCOVERY_D2),
-            "cognee-tag": ("a7-cognee-tag d1", COGNEE_TAG_D1), "a7-discovery": ("a7-discovery d1", A7_DISCOVERY_D1)}
+            "cognee-tag": ("a7-cognee-tag d1", COGNEE_TAG_D1), "a7-discovery": ("a7-discovery d1", A7_DISCOVERY_D1),
+            "a7-discovery-2": ("a7-discovery-2 d1", A7_DISCOVERY2_D1)}
 
 
 def _at(pin: dict, revision: str, path: str | None = None, *, record: str = "d1") -> dict:
@@ -97,6 +103,10 @@ GH_LME, GH_LOCOMO, GH_MAB = "xiaowu0162/LongMemEval", "snap-research/locomo", "H
 GH_MEM0, GH_AMA, GH_BEAM = "mem0ai/mem0", "AMA-Bench/AMA-Bench", "mohammadtavakoli78/BEAM"
 GH_COGNEE = "topoteretes/cognee"
 HF_MINILM = "sentence-transformers/all-MiniLM-L6-v2"
+HF_BM25 = "Qdrant/bm25"
+#: the 33 files of Qdrant/bm25 at 22b8d2af (a7-discovery-2 d1's tree; none of them LFS): the stop-word lists fastembed's
+#: Bm25 reads by language, its config, the card and .gitattributes - every file, pinned by its git blob and size
+BM25_FILES = ('.gitattributes', 'README.md', 'arabic.txt', 'azerbaijani.txt', 'basque.txt', 'bengali.txt', 'catalan.txt', 'chinese.txt', 'config.json', 'danish.txt', 'dutch.txt', 'english.txt', 'finnish.txt', 'french.txt', 'german.txt', 'greek.txt', 'hebrew.txt', 'hinglish.txt', 'hungarian.txt', 'indonesian.txt', 'italian.txt', 'kazakh.txt', 'nepali.txt', 'norwegian.txt', 'portuguese.txt', 'romanian.txt', 'russian.txt', 'slovene.txt', 'spanish.txt', 'stopwords.txt', 'swedish.txt', 'tajik.txt', 'turkish.txt')
 BEAM_LIC = "CC-BY-SA-4.0 (data); MIT (code)"
 PINS: dict[str, dict] = {
     # ── evaluation and bracket data (§3.1, lines 814-823) ──
@@ -508,6 +518,14 @@ PINS_A7: dict[str, dict] = {
                        ("tokenizer_config", "tokenizer_config.json"), ("vocab", "vocab.txt"),
                        ("special_tokens", "special_tokens_map.json"), ("pooling", "1_Pooling/config.json"),
                        ("safetensors", "model.safetensors"))},
+    # Qdrant/bm25 for mem0's BM25 (A5 - T34, the auditor 2026-09-30): the files fastembed loads for mem0's Qdrant store,
+    # at the revision A5 pins, read offline from a unit-local copy; mem0 and mem0-store run on every stand they are read
+    # on. Row 226 of revision 1 (the mem0 row A5 amends).
+    **{"bm25_" + (p_.lstrip(".").rsplit(".", 1)[0] if p_.lstrip(".").rsplit(".", 1)[-1] in ("txt", "md", "json")
+                  else p_.lstrip(".")).lower():
+       _at(_pin("arm-source", ["S1", "S2", "S4", "S5", "S6", "S6L", "S7", "S8", "S9", "S10"], "hf-model", HF_BM25, None,
+                "Apache-2.0", "a7-hf-bm25", 226, note=f"T34, A5: {p_}"), REV_A7["hf_bm25"], p_, record="a7-discovery-2")
+       for p_ in BM25_FILES},
     # Zep's paper (R3: arXiv 2501.13956 v1), its e-print from a7-arxiv-src s3 (the auditor's Q-ZT-1 = O-a): the source of
     # zep-graphiti's Point V template on the LME stands (row 334 of revision 1; Q-46b-4: 20 edges + 20 nodes in it) -
     # the paper's one context string template (Q-ZT-2 = C1), read offline from the archive; its text is never
