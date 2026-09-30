@@ -65,6 +65,13 @@
    "purpose": "metadata only (.loop/A7-PLAN-2026-09-27.md phase 1, plan d3): supermemoryai/supermemory, topoteretes/cognee and getzep/zep-papers - repository, head, recursive tree, and for the first two tags and releases; sentence-transformers/all-MiniLM-L6-v2 - revision and tree; no link followed",
    "max_redirects": 1
   },
+  "a7-discovery-2": {
+   "hosts": ["huggingface.co"],
+   "purpose": "metadata only (the auditor's Q-BM25-FILES, T34, plan d10): Qdrant/bm25 - mem0's BM25 model, which fastembed loads - at the revision the A5 amendment pins: the revision, the recursive tree, the card with its licence, and one HEAD on each listed file's resolve URL, the redirect's host recorded and never followed, nothing downloaded; PINS_A7 and the window a7-hf-bm25 are then declared from its record",
+   "repo": "Qdrant/bm25",
+   "revision": "22b8d2af71a76161e18dd432d2cee0eefa66e412",
+   "max_redirects": 0
+  },
   "a7-docs": {
    "hosts": ["api.github.com"],
    "purpose": "text and metadata only (the auditor's Q-A8-10, plan d4): supermemory's self-hosting documentation and README through the contents API at the commit of the tag server-v0.0.8 - a path the tag answers 404 for is read at the head the discovery found, and marked; the release server-v0.0.8's metadata (asset names, sizes, digests); no asset downloaded, no link followed",

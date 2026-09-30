@@ -1521,6 +1521,186 @@ def d9_report(record: dict, decl: dict) -> dict:
     return {"target": D9_TARGET, "packages": packages, "deps": deps_block, "problems": problems}
 
 
+# ── a7-discovery-2 plan d10 (the auditor's Q-BM25-FILES, 2026-09-30: the files of mem0's BM25 model, metadata only) ──
+
+D10_WINDOW = "a7-discovery-2"
+D10_HOSTS = ["huggingface.co"]
+D10_KEYS = frozenset({"hosts", "purpose", "repo", "revision", "max_redirects"})
+#: One HEAD per listed file; more files than this are named and a problem - the plan never asks without bound.
+D10_HEAD_CAP = 200
+D10_CARD_MAX = 1024 * 1024                          # a model card is text
+
+
+class D10ManifestError(ValueError):
+    """The manifest does not declare a7-discovery-2 as plan d10 reads it."""
+
+
+def d10_decl(manifest: dict) -> dict:
+    """The manifest's a7-discovery-2 entry - the window's single source: exactly D10_KEYS; huggingface.co only, no
+    redirect; a repository owner/name and a 40-hex revision. Anything else is refused by name before any spawn."""
+    w = (manifest.get("windows") or {}).get(D10_WINDOW)
+    if not isinstance(w, dict) or set(w) != D10_KEYS:
+        raise D10ManifestError(f"the manifest's {D10_WINDOW} entry must have exactly the keys {sorted(D10_KEYS)}")
+    probs = []
+    if w["hosts"] != D10_HOSTS:
+        probs.append(f"its hosts {w['hosts']} are not {D10_HOSTS}")
+    if isinstance(w["max_redirects"], bool) or w["max_redirects"] != 0:
+        probs.append("its max_redirects is not 0")
+    if not (isinstance(w["repo"], str) and _D7_REPO.fullmatch(w["repo"]) and ".." not in w["repo"]):
+        probs.append(f"its repo {w['repo']!r} is not owner/name")
+    if not (isinstance(w["revision"], str) and _D7_REV.fullmatch(w["revision"])):
+        probs.append(f"its revision {w['revision']!r} is not a 40-hex commit")
+    if probs:
+        raise D10ManifestError(f"the manifest's {D10_WINDOW} entry: " + "; ".join(probs))
+    return dict(w)
+
+
+def _d10_meta(decl: dict) -> str:
+    return f"meta/models/{_safe(decl['repo'])}"
+
+
+def d10_path_ok(path: object) -> bool:
+    """A listed file path the plan may put into a resolve URL: relative, no empty, '.' or '..' segment, no backslash, no
+    control character, no query, fragment or percent sign (the path is quoted by the plan, never pre-quoted)."""
+    if not isinstance(path, str) or not path or len(path) > 512 or path.startswith("/"):
+        return False
+    if any(ch in path for ch in "\\?#%") or any(ord(ch) < 32 or ord(ch) == 127 for ch in path):
+        return False
+    return all(seg not in ("", ".", "..") for seg in path.split("/"))
+
+
+def d10_phase_a(decl: dict) -> dict:
+    """The revision, the recursive tree at it - strictly the form m6's discovery index reads (_HF_TREE) - and the card."""
+    repo, rev, meta = decl["repo"], decl["revision"], _d10_meta(decl)
+    return {"hosts": D10_HOSTS, "max_redirects": 0, "requests": [
+        {"id": f"rev:models:{repo}", "url": f"https://huggingface.co/api/models/{repo}/revision/{rev}",
+         "save": f"{meta}/revision.json", "max_bytes": META_MAX},
+        {"id": f"tree:models:{repo}", "url": f"https://huggingface.co/api/models/{repo}/tree/{rev}?recursive=true",
+         "save": f"{meta}/tree.json", "max_bytes": META_MAX},
+        {"id": f"card:models:{repo}", "url": f"https://huggingface.co/{repo}/raw/{rev}/README.md",
+         "save": f"{meta}/README.md", "max_bytes": D10_CARD_MAX}]}
+
+
+def _d10_files(tree) -> tuple[list[dict], list[str]]:
+    """(the listed files whose path the plan may ask for, in the tree's order; the refused paths)."""
+    ok, refused = [], []
+    for e in tree if isinstance(tree, list) else []:
+        if not (isinstance(e, dict) and e.get("type") == "file"):
+            continue
+        if d10_path_ok(e.get("path")):
+            ok.append(e)
+        else:
+            refused.append(str(e.get("path")))
+    return ok, refused
+
+
+def d10_phase_b(decl: dict):
+    """One HEAD on each listed file's resolve URL at the revision (at most D10_HEAD_CAP): fetch_child records a
+    redirect's host and never follows it. No tree, no job."""
+    def build(results):
+        tree = _read_prev(results, 0, f"{_d10_meta(decl)}/tree.json")
+        if not isinstance(tree, list):
+            return None
+        files, _refused = _d10_files(tree)
+        reqs = [{"id": f"head:models:{decl['repo']}:{e['path']}", "method": "HEAD", "save": None, "max_bytes": 65536,
+                 "url": f"https://huggingface.co/{decl['repo']}/resolve/{decl['revision']}/"
+                        f"{urllib.parse.quote(e['path'], safe='/')}"} for e in files[:D10_HEAD_CAP]]
+        return {"hosts": D10_HOSTS, "max_redirects": 0, "requests": reqs} if reqs else None
+    return build
+
+
+def d10_jobs(decl: dict) -> list:
+    return [d10_phase_a(decl), d10_phase_b(decl)]
+
+
+_D10_FM_LICENCE = re.compile(r"^license:[ \t]*[\"']?([^\"'\r\n#]+?)[\"']?[ \t]*$", re.M)
+
+
+def _d10_front_matter_licence(card: bytes | None) -> str | None:
+    """The card's YAML front matter 'license:' value (the Hub's model-card metadata), read as text - no YAML parser."""
+    text = (card or b"").decode("utf-8", errors="replace").replace("\r\n", "\n")
+    if not text.startswith("---\n"):
+        return None
+    end = text.find("\n---", 4)
+    m = _D10_FM_LICENCE.search(text[4:end] if end != -1 else "")
+    return m.group(1).strip() if m else None
+
+
+def d10_report(record: dict, decl: dict) -> dict:
+    """Names only, every value data from the answers: the revision the answer gives, every listed file with its size,
+    object id and LFS sha256, each file's HEAD status and redirect host, the redirect hosts as a set, the licence from
+    the card data, the tags and the card's front matter, the tree against the revision's siblings. A failed request, a
+    revision answer naming another commit, a refused path, a file with no HEAD answer, a redirect with no host, no
+    licence or two different ones, a tree missing a sibling, more files than D10_HEAD_CAP - each a problem by name."""
+    jobs = record.get("jobs") or []
+    meta = _d10_meta(decl)
+    summ = {r.get("id"): r for j in jobs for r in j.get("summary") or []}
+    problems: list[str] = []
+    repo = decl["repo"]
+    for kind, what in (("rev", "revision"), ("tree", "tree"), ("card", "card")):
+        s = summ.get(f"{kind}:models:{repo}")
+        if not (isinstance(s, dict) and s.get("ok")):
+            problems.append(f"the {what} request failed: {(s or {}).get('error') or 'no answer'}")
+    rev = _read_prev(jobs, 0, f"{meta}/revision.json")
+    rev = rev if isinstance(rev, dict) else {}
+    tree = _read_prev(jobs, 0, f"{meta}/tree.json")
+    unit_a = _unit_of(jobs, 0)
+    card_p = unit_a / meta / "README.md" if unit_a is not None else None
+    card = card_p.read_bytes() if card_p is not None and card_p.is_file() else None
+    if rev and rev.get("sha") != decl["revision"]:
+        problems.append(f"the revision answer names {rev.get('sha')!r}, not the declared revision {decl['revision']}")
+    files, refused = _d10_files(tree)
+    if refused:
+        problems.append(f"{len(refused)} listed path(s) refused, never asked for: {refused}")
+    if len(files) > D10_HEAD_CAP:
+        problems.append(f"the tree lists {len(files)} files, more than D10_HEAD_CAP {D10_HEAD_CAP}: "
+                        f"{[e['path'] for e in files[D10_HEAD_CAP:]]} not asked")
+    out_files = []
+    for i, e in enumerate(files):
+        lfs = e.get("lfs") if isinstance(e.get("lfs"), dict) else {}
+        row = {"path": e["path"], "size": e.get("size"), "oid": e.get("oid"), "lfs_sha256": lfs.get("oid"),
+               "lfs_size": lfs.get("size"), "head_status": None, "redirect_host": None}
+        if i < D10_HEAD_CAP:
+            h = summ.get(f"head:models:{repo}:{e['path']}")
+            if not isinstance(h, dict):
+                problems.append(f"{e['path']}: no HEAD answer")
+            else:
+                row.update(head_status=h.get("status"), redirect_host=h.get("redirect_host"))
+                if not h.get("ok"):
+                    problems.append(f"{e['path']}: the HEAD failed: {h.get('error')} (status {h.get('status')})")
+                elif h.get("status") in (301, 302, 303, 307, 308) and not h.get("redirect_host"):
+                    problems.append(f"{e['path']}: a {h.get('status')} with no redirect host to record")
+        out_files.append(row)
+    if tree is not None and not isinstance(tree, list):
+        problems.append("the tree answer is not a list")
+    sib = rev.get("siblings")
+    if isinstance(sib, list):
+        want = sorted(str(x.get("rfilename")) for x in sib if isinstance(x, dict))
+        listed = sorted([e["path"] for e in files] + refused)
+        tvs = "equal" if want == listed else (f"differs: siblings not listed {sorted(set(want) - set(listed))}, "
+                                                f"listed not siblings {sorted(set(listed) - set(want))}")
+        if want != listed:
+            problems.append(f"the tree {tvs}")
+    else:
+        tvs = "no siblings in the revision answer - the tree is not checked against them"
+    card_data = rev.get("cardData") if isinstance(rev.get("cardData"), dict) else {}
+    licence = {"card_data": card_data.get("license"),
+               "tags": [t.split(":", 1)[1] for t in rev.get("tags") or [] if isinstance(t, str) and t.startswith("license:")],
+               "front_matter": _d10_front_matter_licence(card)}
+    named = {x for x in [licence["card_data"], *licence["tags"], licence["front_matter"]] if x}
+    if not named:
+        problems.append("no licence named: not in the card data, the tags or the card's front matter")
+    elif len(named) > 1:
+        problems.append(f"the licence is named differently: {sorted(named)}")
+    cs = summ.get(f"card:models:{repo}") or {}
+    return {"repo": repo, "revision": decl["revision"], "revision_answer": rev.get("sha"), "licence": licence,
+            "card": {"status": cs.get("status"), "bytes": len(card) if card is not None else None,
+                     "sha256": hashlib.sha256(card).hexdigest() if card is not None else None},
+            "tree_vs_siblings": tvs, "files": out_files, "refused_paths": refused,
+            "redirect_hosts": sorted({f["redirect_host"] for f in out_files if f["redirect_host"]}),
+            "problems": problems}
+
+
 # ── the command line ──────────────────────────────────────────────────────
 
 def _load(name: str, path: Path):
@@ -1536,8 +1716,8 @@ def _load(name: str, path: Path):
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="the A3 fetch windows (children under the contract)")
     ap.add_argument("--window", required=True, choices=["a3-discovery", "a7-discovery", *D4_WINDOWS, D5_WINDOW, D6_WINDOW,
-                                                          D7_WINDOW, D8_WINDOW, D9_WINDOW])
-    ap.add_argument("--plan", default="d1", choices=["d1", "d2", "d3", "d4", "d5", "d6", "d7", "d8", "d9"],
+                                                          D7_WINDOW, D8_WINDOW, D9_WINDOW, D10_WINDOW])
+    ap.add_argument("--plan", default="d1", choices=["d1", "d2", "d3", "d4", "d5", "d6", "d7", "d8", "d9", "d10"],
                     help="d1: the full discovery; d2: the P1/P10 follow-up; d3: the A7 discovery (window a7-discovery); "
                          "d4: supermemory's documentation at the release tag (window a7-docs: self-hosting; a7-docs-2: the API "
                          "reference); "
@@ -1545,7 +1725,8 @@ def main(argv: list[str] | None = None) -> int:
                          "d6: the arXiv entries a declared query finds (window a7-arxiv); "
                          "d7: a model file's CDN host, one HEAD (window a7-hf-d); "
                          "d8: a paper's arXivRaw record and e-print (window a7-arxiv-src); "
-                         "d9: the scorer venv's PyPI metadata (window a8-pypi-d)")
+                         "d9: the scorer venv's PyPI metadata (window a8-pypi-d); "
+                         "d10: a model's revision, tree, card and one HEAD per file (window a7-discovery-2)")
     ap.add_argument("--run", required=True)
     ap.add_argument("--python", required=True, help="the polygon's py314 interpreter")
     args = ap.parse_args(argv)
@@ -1557,16 +1738,19 @@ def main(argv: list[str] | None = None) -> int:
     if via is None:
         print("no declared hop (network.json)", file=sys.stderr)
         return 2
-    for plan, windows in (("d9", (D9_WINDOW,)), ("d8", (D8_WINDOW,)), ("d7", (D7_WINDOW,)), ("d6", (D6_WINDOW,)),
+    for plan, windows in (("d10", (D10_WINDOW,)), ("d9", (D9_WINDOW,)), ("d8", (D8_WINDOW,)), ("d7", (D7_WINDOW,)),
+                          ("d6", (D6_WINDOW,)),
                           ("d5", (D5_WINDOW,)), ("d4", D4_WINDOWS), ("d3", ("a7-discovery",))):
         if (args.plan == plan) != (args.window in windows):
             print(f"plan {plan} runs in window {' or '.join(windows)}, and only it", file=sys.stderr)
             return 2
     decl = None
-    if args.plan in ("d4", "d5", "d6", "d7", "d8", "d9"):
+    if args.plan in ("d4", "d5", "d6", "d7", "d8", "d9", "d10"):
         try:
-            decl = {"d4": lambda m: d4_decl(m, args.window), "d5": d5_decl, "d6": d6_decl, "d7": d7_decl, "d8": d8_decl, "d9": d9_decl}[args.plan](manifest)
-        except (D4ManifestError, D5ManifestError, D6ManifestError, D7ManifestError, D8ManifestError, D9ManifestError) as e:
+            decl = {"d4": lambda m: d4_decl(m, args.window), "d5": d5_decl, "d6": d6_decl, "d7": d7_decl, "d8": d8_decl,
+                    "d9": d9_decl, "d10": d10_decl}[args.plan](manifest)
+        except (D4ManifestError, D5ManifestError, D6ManifestError, D7ManifestError, D8ManifestError, D9ManifestError,
+                D10ManifestError) as e:
             print(str(e), file=sys.stderr)
             return 2
     win = manifest["windows"][args.window]
@@ -1575,10 +1759,11 @@ def main(argv: list[str] | None = None) -> int:
         print(f"the manifest's a7-discovery hosts {win['hosts']} are not the plan's {D3_HOSTS}", file=sys.stderr)
         return 2
     hosts = {"d1": win["hosts"], "d2": D2_HOSTS, "d3": D3_HOSTS, "d4": D4_HOSTS, "d5": D5_HOSTS, "d6": D6_HOSTS,
-             "d7": D7_HOSTS, "d8": D8_HOSTS, "d9": D9_HOSTS}[args.plan]
+             "d7": D7_HOSTS, "d8": D8_HOSTS, "d9": D9_HOSTS, "d10": D10_HOSTS}[args.plan]
     jobs = (discovery_jobs(CP.PINS) if args.plan == "d1" else d2_jobs() if args.plan == "d2"
             else d3_jobs() if args.plan == "d3"
-            else {"d4": d4_jobs, "d5": d5_jobs, "d6": d6_jobs, "d7": d7_jobs, "d8": d8_jobs, "d9": d9_jobs}[args.plan](decl))
+            else {"d4": d4_jobs, "d5": d5_jobs, "d6": d6_jobs, "d7": d7_jobs, "d8": d8_jobs, "d9": d9_jobs,
+                  "d10": d10_jobs}[args.plan](decl))
     rec = run_child_window(c, L, window=args.window, hosts=hosts, jobs=jobs,
                            python=Path(args.python), via_port=via, run=args.run, parent_env=os.environ,
                            need_bytes=floor, volume=Path("D:/"))
@@ -1598,8 +1783,9 @@ def main(argv: list[str] | None = None) -> int:
             dst.write_bytes(data)
         (out / "d4_report.json").write_bytes((json.dumps(report, indent=1, sort_keys=True) + "\n").encode("utf-8"))
         print(json.dumps(report, indent=1))
-    if args.plan in ("d5", "d6", "d7", "d8", "d9"):
-        report = {"d5": d5_report, "d6": d6_report, "d7": d7_report, "d8": d8_report, "d9": d9_report}[args.plan](rec, decl)
+    if args.plan in ("d5", "d6", "d7", "d8", "d9", "d10"):
+        report = {"d5": d5_report, "d6": d6_report, "d7": d7_report, "d8": d8_report, "d9": d9_report,
+                  "d10": d10_report}[args.plan](rec, decl)
         (c.runs_root / "_fetch" / args.window / args.run / f"{args.plan}_report.json").write_bytes(
             (json.dumps(report, indent=1, sort_keys=True) + "\n").encode("utf-8"))
         print(json.dumps(report, indent=1))
