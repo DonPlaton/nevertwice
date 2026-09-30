@@ -555,12 +555,35 @@ check("the ops are declared data: role user or assistant, a speaker, a text, a d
       ok(lambda: len(P.M0_OPS) == 3 and all(o["item"]["role"] in ("user", "assistant") and o["item"]["speaker"]
                                             and o["item"]["text"] and o["date"][:10] == "2026-03-02" for o in P.M0_OPS)
          and len({o["item"]["item_id"] for o in P.M0_OPS}) == 3))
+AR = _load("v3_artifact_for_a8_pb_t", ROOT / "research" / "v3" / "artifact.py")
+PB_REV = "22b8d2af71a76161e18dd432d2cee0eefa66e412"
+#: every file fastembed 0.8.1's offline check requires, at the pinned sizes (B-M36B-FIX: what a real child reports)
+PB_REQ = {"mock.file": 0, "arabic.txt": 6348, "danish.txt": 424, "dutch.txt": 453, "english.txt": 936,
+          "finnish.txt": 1579, "french.txt": 813, "german.txt": 1362, "greek.txt": 2167, "hungarian.txt": 1227,
+          "italian.txt": 1654, "norwegian.txt": 851, "portuguese.txt": 1286, "romanian.txt": 1910, "russian.txt": 1235,
+          "spanish.txt": 2176, "swedish.txt": 559, "tamil.txt": 0, "turkish.txt": 260}
+PB_LINES0 = {x: 0 for x in ("fastembed not installed", "Failed to load BM25 encoder", "predates v3 hybrid search")}
+
+
+def pb_block(cache=None, **over) -> dict:
+    """The write child's bm25 block after the adds (arm_mem0.bm25_state), honest unless changed (Q-PB)."""
+    c_ = {"names": {}, "declared": True, "offline": "1", "language": "english", "stopwords": 179,
+          "model_dir_rel": f"models--Qdrant--bm25/snapshots/{PB_REV}",
+          "refs_main": {"bytes": 40, "hex40": True, "commit": PB_REV}, "required": dict(PB_REQ)}
+    b_ = {"names": {}, "encoder": "loaded", "slot": True, "log_watched": True, "lines": dict(PB_LINES0),
+          "keyword_search": {"calls": 0, "not_none": 0, "hits": 0, "positive_hits": 0, "raised": 0},
+          "results_bm25_positive": 0, "reads_bm25_positive": 0, "cache": {**c_, **(cache or {})}}
+    b_.update(over)
+    return b_
+
+
 START = {"ok": True, "llm_usage": P.M0_USAGE_SOURCE}
 NLP_ON = {"names": {"full": "_nlp_full", "lemma": "_nlp_lemma", "failed_full": "_load_failed_full",
                     "failed_lemma": "_load_failed_lemma", "model": "en_core_web_sm"}, "module": True, "nlp_full": True,
           "nlp_lemma": True, "failed_full": False, "failed_lemma": False, "is_package": True}
 C3 = [line(prompt=1000 + i, completion=10 + i, temperature=0.3) for i in range(3)]
-CNT = {"llm_usage": {"calls": 3, "failed": 0, "no_usage": 0, "prompt_tokens": 3003, "completion_tokens": 33}, "nlp": NLP_ON}
+CNT = {"llm_usage": {"calls": 3, "failed": 0, "no_usage": 0, "prompt_tokens": 3003, "completion_tokens": 33}, "nlp": NLP_ON,
+       "bm25": pb_block()}
 F = S.mem0_fields(start=START, counters=CNT, calls=C3, catcher_lines=0, facts=SF, install_record=INST, run="r1", unit="u1",
                   adds=3)
 check("the fields in their declared order, every one from its own inputs - and together they pass",
@@ -568,9 +591,9 @@ check("the fields in their declared order, every one from its own inputs - and t
          and P.verdict(F, problems=[], checks=[("probe", CLEAN)], catcher_lines=0)[0] == "pass"),
       str({k: (v.get("ok"), v.get("rule_failed")) for k, v in F.items()} if isinstance(F, dict) else F)[:400])
 check("the declared order, written out: the pin first (not installed outranks everything), the client, the usage, the "
-      "bound, the sent fields, the timestamp, the nlp check, then the information",
+      "bound, the sent fields, the timestamp, the nlp check, the bm25 check (Q-PB), then the information",
       list(P.M0_FIELDS) == ["m0_pin", "m0_client", "m0_usage", "m0_calls_per_add", "m0_temperature", "m0_thinking",
-                            "m0_format_tools", "m0_timestamp", "m0_nlp_active", "m0_nlp"], str(P.M0_FIELDS))
+                            "m0_format_tools", "m0_timestamp", "m0_nlp_active", "m0_bm25", "m0_nlp"], str(P.M0_FIELDS))
 F2 = S.mem0_fields(start=START, counters=CNT, calls=C3, catcher_lines=1, facts=SF, install_record=INST, run="r1", unit="u1",
                    adds=3)
 check("the catcher lines reach m0_nlp_active (a run-time download is blocked:nlp-off)",
@@ -594,6 +617,122 @@ check("the calls reach m0_temperature under the right unit (0.9 against the sour
       ok(lambda: F6["m0_temperature"]["ok"] is False and F6["m0_usage"]["ok"] is True), str(F6.get("m0_temperature")))
 check("m0_nlp is information: the imports listed, never failing the probe", ok(lambda: F["m0_nlp"]["ok"] is True
       and [x["value"] for x in F["m0_nlp"]["value"]] == ["entity_extraction", "lemmatization"]), str(F.get("m0_nlp")))
+
+print("\n- Q-PB (the auditor, 2026-09-30 19:1x): mem0's BM25 after the adds - the harness's copy, or the product's -")
+PB_FAILED = {"encoder": "failed", "lines": {**PB_LINES0, "Failed to load BM25 encoder": 1}}
+r_pb = S.m0_bm25(pb_block())
+check("PB-1: an honest write stage - A5's conditions hold (artifact._m35 empty) and the encoder loaded from the unit's "
+      "copy (its model dir BM25_MODEL_DIR) - passes, no blocked reason, no harness mark",
+      ok(lambda: r_pb["ok"] is True and "blocked" not in r_pb and not r_pb.get("harness")
+         and (r_pb.get("value") or {}).get("model_dir_rel") == AR.BM25_MODEL_DIR), str(r_pb))
+PB_HARNESS = {
+    "mock.file missing": (pb_block({"required": {**PB_REQ, "mock.file": None}}, **PB_FAILED), "mock.file missing"),
+    "tamil.txt missing": (pb_block({"required": {**PB_REQ, "tamil.txt": None}}, **PB_FAILED), "tamil.txt missing"),
+    "refs/main with a newline": (pb_block({"refs_main": {"bytes": 41, "hex40": False, "commit": None}}, **PB_FAILED),
+                                 "refs/main is not 40 hex bytes"),
+    "HF_HUB_OFFLINE unset": (pb_block({"offline": None}), "HF_HUB_OFFLINE is None"),
+    "the encoder loaded from outside the copy": (pb_block({"model_dir_rel": "(outside the cache)"}),
+                                                 "model dir is '(outside the cache)'"),
+    "no cache block": ({k: v for k, v in pb_block().items() if k != "cache"}, "no cache block"),
+    "no bm25 block at all": (None, "no bm25 block"),
+}
+pb_bad = []
+for label, (blk_, word) in PB_HARNESS.items():
+    r_ = S.m0_bm25(blk_)
+    if not (r_.get("ok") is False and "blocked" not in r_ and r_.get("harness") is True
+            and word in str(r_.get("rule_failed")) and "harness: bm25 cache - " in str(r_.get("rule_failed"))):
+        pb_bad.append((label, r_))
+check("PB-2 (M-PB1): a fault in the unit's copy is the HARNESS's - the field fails with \"harness: bm25 cache - <fact>\", "
+      "marked harness, and never carries a blocked reason (fixed before the pilot, never a product property): "
+      + ", ".join(PB_HARNESS), pb_bad == [], str(pb_bad)[:700])
+PB_PRODUCT = {
+    "the encoder failed with the copy intact": (pb_block(**PB_FAILED), "encoder is 'failed'"),
+    "no bm25 slot": (pb_block(slot=False, lines={**PB_LINES0, "predates v3 hybrid search": 1}), "slot"),
+    "the encoder never tried after the adds": (pb_block(encoder="not-tried", cache={"model_dir_rel": None}),
+                                               "not-tried"),
+    "fastembed not installed": (pb_block(encoder="failed", cache={"model_dir_rel": None, "required": None},
+                                         lines={**PB_LINES0, "fastembed not installed": 1}), "fastembed not installed"),
+}
+pp_bad = []
+for label, (blk_, word) in PB_PRODUCT.items():
+    r_ = S.m0_bm25(blk_)
+    if not (r_.get("ok") is False and r_.get("blocked") == "blocked:bm25-off" and not r_.get("harness")
+            and word in str(r_.get("rule_failed")) and "harness" not in str(r_.get("rule_failed"))):
+        pp_bad.append((label, r_))
+check("PB-3 (M-PB2): with the copy intact, BM25 off is the PRODUCT's - blocked:bm25-off by name (an E5 line): "
+      + ", ".join(PB_PRODUCT), pp_bad == [], str(pp_bad)[:700])
+F_h = {**F, "m0_bm25": S.m0_bm25(PB_HARNESS["mock.file missing"][0]),
+       "m0_nlp_active": {**F["m0_nlp_active"], "ok": False, "blocked": "blocked:nlp-off", "rule_failed": "nlp off"}}
+F_p = {**F, "m0_bm25": S.m0_bm25(PB_PRODUCT["the encoder failed with the copy intact"][0])}
+v_h = S.verdict(F_h, problems=[], checks=[("probe", CLEAN)], catcher_lines=0)
+v_p = S.verdict(F_p, problems=[], checks=[("probe", CLEAN)], catcher_lines=0)
+v_ok = S.verdict({**F, "m0_bm25": S.m0_bm25(pb_block())}, problems=[], checks=[("probe", CLEAN)], catcher_lines=0)
+check("PB-4 (M-PB3): a harness fault makes the probe \"fail\" whatever else is blocked (the harness first - no product "
+      "outcome is read through a broken copy), its reason named; BM25 off alone is blocked:bm25-off; an honest one "
+      "passes", v_h[0] == "fail" and any("harness: bm25 cache - mock.file missing" in x for x in v_h[1])
+      and v_p[0] == "blocked:bm25-off" and v_ok[0] == "pass", str((v_h, v_p[0], v_ok[0]))[:500])
+F_b = S.mem0_fields(start=START, counters={**CNT, "bm25": PB_HARNESS["mock.file missing"][0]}, calls=C3, catcher_lines=0,
+                    facts=SF, install_record=INST, run="r1", unit="u1", adds=3)
+check("PB-5: mem0_fields reads m0_bm25 from the write child's counters (\"bm25\") - after m0_nlp_active in the declared "
+      "order", ok(lambda: F_b["m0_bm25"].get("harness") is True and F["m0_bm25"]["ok"] is True
+                  and list(P.M0_FIELDS).index("m0_bm25") == list(P.M0_FIELDS).index("m0_nlp_active") + 1),
+      str((F_b.get("m0_bm25"), F.get("m0_bm25"), P.M0_FIELDS))[:400])
+
+FE_DIR = ROOT / "tests" / "fixtures" / "v3_fake_products"
+FE_LANGS = ["arabic", "danish", "dutch", "english", "finnish", "french", "german", "greek", "hungarian", "italian",
+            "norwegian", "portuguese", "romanian", "russian", "spanish", "swedish", "tamil", "turkish"]
+
+
+def fake_bm25(cache: Path, env: dict):
+    """The fake fastembed's SparseTextEmbedding under the given env, imported from the fixtures and dropped after (the
+    fake's own offline rule, as fastembed 0.8.1's); (encoder, None) or (None, the exception named)."""
+    saved = {k: os.environ.get(k) for k in ("FASTEMBED_CACHE_PATH", "HF_HUB_OFFLINE")}
+    sys.path.insert(0, str(FE_DIR))
+    try:
+        for k in saved:
+            os.environ.pop(k, None)
+        os.environ.update({**env, "FASTEMBED_CACHE_PATH": str(cache)})
+        from fastembed import SparseTextEmbedding  # noqa: PLC0415
+        return SparseTextEmbedding(model_name="Qdrant/bm25"), None
+    except Exception as e:  # noqa: BLE001 - the row reads it
+        return None, f"{type(e).__name__}: {e}"
+    finally:
+        sys.path.remove(str(FE_DIR))
+        for m in [m for m in sys.modules if m == "fastembed" or m.startswith("fastembed.")]:
+            del sys.modules[m]
+        for k, v in saved.items():
+            os.environ.pop(k, None)
+            if v is not None:
+                os.environ[k] = v
+
+
+def fe_copy(name: str, *, drop=(), refs: bytes = PB_REV.encode()) -> Path:
+    """A unit copy as bm25_cache lays it out, with every file fastembed 0.8.1's offline check requires unless dropped."""
+    c_ = TMP / name / "fastembed_cache"
+    repo = c_ / "models--Qdrant--bm25"
+    (repo / "refs").mkdir(parents=True)
+    (repo / "refs" / "main").write_bytes(refs)
+    snap = repo / "snapshots" / PB_REV
+    snap.mkdir(parents=True)
+    for n in ["mock.file", *(f"{x}.txt" for x in FE_LANGS)]:
+        if n not in drop:
+            (snap / n).write_bytes(b"a\nthe\n" if n == "english.txt" else b"")
+    return c_
+
+
+fe_ok, e_ok = fake_bm25(fe_copy("fe_ok"), {"HF_HUB_OFFLINE": "1"})
+fe_bad = {}
+for lab, (c_, env_) in {"no mock.file": (fe_copy("fe_nm", drop=("mock.file",)), {"HF_HUB_OFFLINE": "1"}),
+                        "no tamil.txt": (fe_copy("fe_nt", drop=("tamil.txt",)), {"HF_HUB_OFFLINE": "1"}),
+                        "refs with a newline": (fe_copy("fe_nl", refs=PB_REV.encode() + b"\n"), {"HF_HUB_OFFLINE": "1"}),
+                        "not offline": (fe_copy("fe_on"), {})}.items():
+    fe_bad[lab] = fake_bm25(c_, env_)[1]
+check("PB-FAKE: the fake fastembed keeps fastembed 0.8.1's offline rule - from the unit's copy it loads (its Bm25 under "
+      ".model, _model_dir the pinned snapshot, the english stopwords); without mock.file, without tamil.txt, with a "
+      "refs/main that ends in a newline, or not offline it refuses, as the real one does",
+      e_ok is None and fe_ok is not None and Path(fe_ok.model._model_dir).parts[-2:] == ("snapshots", PB_REV)
+      and fe_ok.model.stopwords == {"a", "the"} and all(isinstance(v, str) and "ValueError" in v for v in fe_bad.values())
+      and "no network" in str(fe_bad["not offline"]), str((e_ok, fe_bad))[:600])
 print("\n- C6 C1: the source facts of mem0's writer bound, declared before any read of 2.2.0 -")
 M3 = TMP / "site_bound"
 SYS_PROMPT = "You extract memories. \u00e9" * 3

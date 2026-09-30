@@ -110,6 +110,9 @@ VENV = POLY / "mem0_v3"
 subprocess.run([str(ARM_PY), "-m", "venv", "--without-pip", str(VENV)], check=True, capture_output=True, timeout=300)
 SITE = next(s for s in VENV.rglob("site-packages") if s.is_dir())
 shutil.copytree(ROOT / "tests" / "fixtures" / "v3_fake_products" / "mem0", SITE / "mem0")
+# Q-PB: the fake fastembed beside it - the fake mem0 builds its BM25 encoder through it, under fastembed 0.8.1's offline
+# rule, from the copy the unit's placement puts in its home
+shutil.copytree(ROOT / "tests" / "fixtures" / "v3_fake_products" / "fastembed", SITE / "fastembed")
 for rel, data in {
         "mem0/memory/main.py": (b"class Memory:\n    def add(self, messages, timestamp=None):\n        if timestamp is not None:\n"
                                 b"            raise ValueError(get_temporal_feature_error_message(\"sync\", \"add\", \"timestamp\"))\n\n"
@@ -236,6 +239,12 @@ check("E3: the adapter's counters carry spaCy's state, read: the fake has no spa
                                                                 and "module" in F["m0_nlp_active"]["rule_failed"]
                                                                 and rec["outcome"] == "blocked:nlp-off"),
       f"{rec.get('outcome')} {(F.get('m0_nlp_active') or {}).get('rule_failed')}")
+check("E-PB (Q-PB): the write child's BM25 reaches the probe - m0_bm25 passes, the encoder loaded from the unit's own "
+      "placed copy (its model dir the pinned snapshot, artifact.BM25_MODEL_DIR), no harness mark, no blocked reason",
+      ok(lambda: F["m0_bm25"]["ok"] is True and not F["m0_bm25"].get("harness") and "blocked" not in F["m0_bm25"]
+         and F["m0_bm25"]["value"]["encoder"] == "loaded"
+         and F["m0_bm25"]["value"]["model_dir_rel"] == f"models--Qdrant--bm25/snapshots/{BCM.COMMIT}"),
+      str(F.get("m0_bm25"))[:400])
 ds, ol = SEEN.get("ds"), SEEN.get("ol")
 oll = [json.loads(x) for x in (proxy_dir / "ollama.jsonl").read_text(encoding="utf-8").splitlines()] \
     if (proxy_dir / "ollama.jsonl").is_file() else []

@@ -138,6 +138,19 @@ PROXY = Server([])
 OLLAMA = Server([TAG])
 LOG = TMP / "fake_calls.jsonl"
 children: list = []
+#: Q-PB (the auditor, 2026-09-30): the fake mem0 builds its encoder through the fake fastembed (fastembed 0.8.1's
+#: offline rule), so every child gets its own copy, placed by the real bm25_cache from a synthetic hub (the pins' bytes
+#: are the polygon's, never read here), and HF_HUB_OFFLINE=1 - as the scheduler's prepare and launch give a unit
+_bcs = importlib.util.spec_from_file_location("v3_bm25_cache_for_mem0", ROOT / "research" / "v3" / "bm25_cache.py")
+BCM = importlib.util.module_from_spec(_bcs)
+_bcs.loader.exec_module(BCM)
+SYN = {p_: f"{p_} synthetic\n".encode() for p_ in BCM.BM25_BLOBS}
+SYN_BLOBS = {p_: (BCM._git_blob(d_), len(d_)) for p_, d_ in SYN.items()}
+SYN_SHAS = {p_: hashlib.sha256(d_).hexdigest() for p_, d_ in SYN.items()}
+SYN_HUB = TMP / "syn_hub"
+for p_, d_ in SYN.items():
+    (SYN_HUB / "models--Qdrant--bm25" / "snapshots" / BCM.COMMIT / p_).parent.mkdir(parents=True, exist_ok=True)
+    (SYN_HUB / "models--Qdrant--bm25" / "snapshots" / BCM.COMMIT / p_).write_bytes(d_)
 
 
 def arm_dir(name: str) -> Path:
@@ -149,11 +162,17 @@ def arm_dir(name: str) -> Path:
     return d
 
 
-def child_env(*, token: str | None = TOKEN, extra: dict | None = None) -> dict:
+def child_env(*, token: str | None = TOKEN, extra: dict | None = None, fe_drop: tuple = ()) -> dict:
+    """A child's environment: its own home, and in it its own placed fastembed copy (``fe_drop``: files removed from
+    the placed copy - a harness fault the child must report, never repair)."""
     env = {k: os.environ[k] for k in ("SystemRoot", "SystemDrive", "windir", "ComSpec", "PATHEXT",
                                        "NUMBER_OF_PROCESSORS", "PROCESSOR_ARCHITECTURE", "OS") if k in os.environ}
     home = TMP / "homes" / uuid.uuid4().hex[:8]
     (home / "Temp").mkdir(parents=True)
+    placed = BCM.place_unit_cache(home, hub=SYN_HUB, blobs=SYN_BLOBS, shas=SYN_SHAS)
+    for f_ in fe_drop:
+        (Path(placed["path"]) / "models--Qdrant--bm25" / "snapshots" / BCM.COMMIT / f_).unlink()
+    env.update({"FASTEMBED_CACHE_PATH": placed["path"], "HF_HUB_OFFLINE": "1"})
     env.update({"PATH": os.pathsep.join([str(Path(sys.executable).parent)] + (
                     [os.path.join(os.environ.get("SystemRoot", r"C:\Windows"), "System32")] if os.name == "nt"
                     else ["/usr/bin", "/bin"])),
@@ -354,7 +373,34 @@ try:
           and cb.get("lines") == {x: 0 for x in LINES3} and cb.get("keyword_search", {}).get("calls") == 1
           and cb["keyword_search"].get("not_none") == 1 and cb.get("results_bm25_positive", 0) >= 1
           and ksr and ksr[-1].get("filters") == {"user_id": "u1"}, str(cb)[:400])
+    cc_ = cb.get("cache") or {}
+    check("Q-PB: the loaded encoder is the fake fastembed's, from the child's own placed copy - its model dir the pinned "
+          "snapshot inside FASTEMBED_CACHE_PATH, HF_HUB_OFFLINE '1', refs/main the commit's 40 bytes, every file the "
+          "offline check requires present",
+          cc_.get("model_dir_rel") == f"models--Qdrant--bm25/snapshots/{BCM.COMMIT}" and cc_.get("declared") is True
+          and cc_.get("offline") == "1" and (cc_.get("refs_main") or {}).get("commit") == BCM.COMMIT
+          and isinstance(cc_.get("required"), dict) and len(cc_["required"]) == 19
+          and all(v is not None for v in cc_["required"].values()), str(cc_)[:400])
     c.close()
+
+    print("\n- Q-PB: a broken copy is the harness's fault, reported by the child and never repaired -")
+    UH = TMP / "runs" / "s1" / "r1" / "mem0" / "uharness"
+    UH.mkdir(parents=True)
+    c, _ = start("wharness", spec_for("wharness", "mem0", "write", UH, unit="uharness"),
+                 env=child_env(fe_drop=("mock.file",)))
+    safely(lambda: c.request("write", item={"item_id": "uharness:0", "session_id": "0", "role": "user",
+                                            "speaker": "Caroline", "text": "I went hiking on Sunday"},
+                             date="2023-05-20T10:00:00"), {})
+    hb_ = safely(lambda: c.request("counters"), {}).get("bm25") or {}
+    safely(lambda: c.request("end_write"), {})
+    c.close()
+    herr_ = (TMP / "wharness.err.txt").read_text(encoding="utf-8", errors="replace") \
+        if (TMP / "wharness.err.txt").is_file() else ""
+    check("Q-PB: a placed copy without mock.file - the fake fastembed refuses it as 0.8.1 does, the child reads the "
+          "encoder 'failed' with its 'Failed to load BM25 encoder' line, and its cache block names mock.file missing",
+          hb_.get("encoder") == "failed" and hb_.get("lines", {}).get("Failed to load BM25 encoder") == 1
+          and ((hb_.get("cache") or {}).get("required") or {}).get("mock.file", "absent") is None
+          and "Could not find model in cache_dir" in herr_, str(hb_)[:400])
 
     print("\n- M35: a store whose BM25 is off is counted so (the verdict is artifact.p0k's) -")
     off = {}

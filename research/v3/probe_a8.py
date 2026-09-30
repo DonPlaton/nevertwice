@@ -23,6 +23,10 @@ This part (C5a) holds the verdicts; they read records, never a product:
   checks for are source facts (``nlp_facts``); ``m0_nlp_active`` reads what the adapter saw after the adds - the model
   installed, both models loaded, no failed flag, by exactly those names, no catcher line - never loading anything
   itself; anything else is blocked:nlp-off;
+* Q-PB (the auditor, 2026-09-30): ``m0_bm25`` reads mem0's BM25 after the adds from the write child's counters by the
+  artifact's own rule (artifact._m35, write stage) and wants the encoder loaded from the unit's pinned copy (its model
+  dir artifact.BM25_MODEL_DIR); a fault in the copy is the harness's - "harness: bm25 cache - ...", never blocked, the
+  verdict "fail" - and BM25 off with the copy intact is the product's, blocked:bm25-off;
 * C6 C1 (the auditor's Q-C6-1..7): the source facts of mem0's writer bound are declared in M0_BOUND_SOURCE (from 2.0.19
   and its openai SDK): the SDK's own retries and that the DeepSeek client keeps them, max_tokens and its send line, the
   system prompt's bytes (literal_bytes), the user prompt's sections (prompt_parts: constant bytes, fields declared in
@@ -257,7 +261,7 @@ M0_OPS = [
 M0_SCRIPT_TEXT = "Alice lives in Lisbon and works at a bakery"
 #: the probe's fields, in their declared order (the verdict takes the first blocked reason in this order)
 M0_FIELDS = ("m0_pin", "m0_client", "m0_usage", "m0_calls_per_add", "m0_temperature", "m0_thinking", "m0_format_tools",
-             "m0_timestamp", "m0_nlp_active", "m0_nlp")
+             "m0_timestamp", "m0_nlp_active", "m0_bm25", "m0_nlp")
 WITNESS_SCOPE = ("the boundary checks cover the product child's tree only; the probe proxy's own spawn is unwitnessed "
                  "by design (launch.spawn_proxy) - R-C5-9")
 
@@ -1338,6 +1342,37 @@ def m0_nlp_active(state: Mapping | None, facts: Mapping[str, Mapping], *, catche
     return _field(value, rule=rule, ok=not bad, failed="; ".join(bad), blocked="blocked:nlp-off" if bad else None)
 
 
+def m0_bm25(block: Mapping | None) -> dict:
+    """Q-PB (the auditor, 2026-09-30): mem0's BM25 after the adds, from the write child's counters "bm25"
+    (arm_mem0.bm25_state), by the artifact's own rule (artifact._m35 at the write stage), and the encoder loaded - from
+    the unit's pinned copy, its model dir artifact.BM25_MODEL_DIR (the artifact's harness check). A fault in the
+    unit's copy, or no block at all, is the HARNESS's: the field fails with "harness: bm25 cache - <facts>", marked
+    harness and never blocked (fixed before the pilot, never a product property; the verdict reads "fail"). With the
+    copy intact, BM25 off - the encoder failed or never tried, no bm25 slot, one of A5's lines - is the product's:
+    blocked:bm25-off (an E5 line)."""
+    rule = ("after the adds: A5's BM25 conditions at the write stage hold (artifact._m35) and the encoder loaded "
+            "from the unit's pinned copy")
+    if not isinstance(block, Mapping):
+        out = _field(None, rule=rule, ok=False,
+                     failed="harness: bm25 cache - not measured: no bm25 block from the adapter")
+        out["harness"] = True
+        return out
+    A = _mod("v3_artifact_for_a8", "artifact.py")
+    faults = list(A._m35(block, "write"))
+    cache = block.get("cache") if isinstance(block.get("cache"), Mapping) else {}
+    enc = block.get("encoder")
+    value = {"encoder": enc, "model_dir_rel": cache.get("model_dir_rel"), "slot": block.get("slot"),
+             "language": cache.get("language"), "stopwords": cache.get("stopwords")}
+    if any(f.startswith("harness: bm25 cache") for f in faults):
+        out = _field(value, rule=rule, ok=False, failed="; ".join(faults))
+        out["harness"] = True
+        return out
+    if enc not in ("loaded", "failed"):
+        faults.append(f"the BM25 encoder is {enc!r} after the adds, not loaded")
+    return _field(value, rule=rule, ok=not faults, failed="; ".join(faults),
+                  blocked="blocked:bm25-off" if faults else None)
+
+
 def mem0_source_facts(site: Path) -> dict:
     """Every declared M0_SOURCE fact, read from the installed mem0's site-packages as data (C5a-2c)."""
     out: dict = {}
@@ -1384,6 +1419,7 @@ def mem0_fields(*, start: Mapping | None, counters: Mapping, calls: Iterable[Map
         "m0_format_tools": m0_format_tools(facts["m0_format"], calls, run=run, unit=unit),
         "m0_timestamp": m0_timestamp(facts["m0_timestamp"]),
         "m0_nlp_active": m0_nlp_active(counters.get("nlp"), facts["nlp"], catcher_lines=catcher_lines),
+        "m0_bm25": m0_bm25(counters.get("bm25")),
         "m0_nlp": nlp_info,
     }
     return {k: out[k] for k in M0_FIELDS}
@@ -1653,7 +1689,8 @@ def _check_problems(step: str, summary: Mapping) -> list[str]:
 def verdict(fields: Mapping[str, Mapping], *, problems: Sequence[str], checks: Sequence[tuple[str, Mapping]],
             catcher_lines: int) -> tuple[str, list[str]]:
     """(outcome, reasons): "pass" only with every field ok, no problem, every check complete with 0/0 and no catcher
-    line; else the first blocked reason (fields in their order, then the problems), else "fail"."""
+    line; else "fail" when a failed field is the harness's (Q-PB: no product outcome is read through a broken copy),
+    else the first blocked reason (fields in their order, then the problems), else "fail"."""
     reasons = [f"{name}: {f.get('rule_failed') or 'not ok'}" for name, f in fields.items() if not f.get("ok")]
     reasons += list(problems)
     for step, summary in checks:
@@ -1662,6 +1699,8 @@ def verdict(fields: Mapping[str, Mapping], *, problems: Sequence[str], checks: S
         reasons.append(f"{catcher_lines} catcher line(s) of the arm")
     if not reasons:
         return "pass", []
+    if any(f.get("harness") for f in fields.values() if not f.get("ok")):
+        return "fail", reasons
     blocked = [f["blocked"] for f in fields.values() if f.get("blocked")]
     blocked += [p.split(" ", 1)[0] for p in problems if str(p).startswith("blocked:")]
     return (blocked[0] if blocked else "fail"), reasons

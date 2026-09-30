@@ -98,8 +98,17 @@ class _FakeQdrant:
             if os.environ.get("NVT3_FAKE_BM25") == "noencoder":
                 _QLOG.warning("Failed to load BM25 encoder: %s", "the fake has no model files")
                 self._bm25_encoder = False
-            else:
-                self._bm25_encoder = object()
+            else:                    # qdrant.py:93-107, through the fake fastembed (its offline rule, Q-PB)
+                try:
+                    from fastembed import SparseTextEmbedding  # noqa: PLC0415
+                    self._bm25_encoder = SparseTextEmbedding(model_name="Qdrant/bm25")
+                except ImportError:
+                    _QLOG.warning("fastembed not installed - BM25 keyword search disabled. Install it with: "
+                                  'pip install "mem0ai[extras]"')
+                    self._bm25_encoder = False
+                except Exception as e:  # noqa: BLE001 - the product's own catch-all, sticky
+                    _QLOG.warning(f"Failed to load BM25 encoder: {e}")
+                    self._bm25_encoder = False
         return self._bm25_encoder if self._bm25_encoder is not False else None
 
     def keyword_search(self, query, top_k=5, filters=None):

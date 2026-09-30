@@ -85,6 +85,20 @@ SPM = (b"_nlp_full = None\n_nlp_lemma = None\n_load_failed_full = False\n_load_f
 NLP_ON = {"names": {"full": "_nlp_full", "lemma": "_nlp_lemma", "failed_full": "_load_failed_full",
                     "failed_lemma": "_load_failed_lemma", "model": "en_core_web_sm"}, "module": True, "nlp_full": True,
           "nlp_lemma": True, "failed_full": False, "failed_lemma": False, "is_package": True}
+BCM = _load("v3_bm25_cache_for_drv_t", ROOT / "research" / "v3" / "bm25_cache.py")
+_PINNED = {Path(k).name: size for k, (_blob, size) in BCM.BM25_BLOBS.items()}
+#: Q-PB: the write child's bm25 block after the adds as arm_mem0.bm25_state reports it from an intact unit copy - the
+#: pinned commit's model dir, HF_HUB_OFFLINE=1, fastembed 0.8.1's 19 required files at the pinned sizes (the markers
+#: mock.file and tamil.txt 0 bytes), the encoder loaded
+BM25_ON = {"names": {}, "encoder": "loaded", "slot": True, "log_watched": True,
+           "lines": {"fastembed not installed": 0, "Failed to load BM25 encoder": 0, "predates v3 hybrid search": 0},
+           "keyword_search": {"calls": 0, "not_none": 0, "hits": 0, "positive_hits": 0, "raised": 0},
+           "results_bm25_positive": 0, "reads_bm25_positive": 0,
+           "cache": {"names": {}, "declared": True, "offline": "1", "language": "english", "stopwords": 179,
+                     "model_dir_rel": f"models--Qdrant--bm25/snapshots/{BCM.COMMIT}",
+                     "refs_main": {"bytes": 40, "hex40": True, "commit": BCM.COMMIT},
+                     "required": {n: _PINNED.get(n, 0) for n in [BCM.FASTEMBED_MODEL_FILE]
+                                  + [f"{lang}.txt" for lang in BCM.FASTEMBED_LANGUAGES]}}}
 
 
 def world(tag, *, install=True, model=True, d1=True, spm=SPM, main=MAIN, d1_record=None):
@@ -239,7 +253,8 @@ class World:
                     cn.getresponse().read()
                     cn.close()
                 counters = world_.counters or {"llm_usage": {"calls": 3, "failed": 0, "no_usage": 0, "prompt_tokens": 3003,
-                                                             "completion_tokens": 33}, "nlp": NLP_ON}
+                                                             "completion_tokens": 33}, "nlp": NLP_ON,
+                                                  "bm25": BM25_ON}
                 ops = [{"ok": True}] * 2 + [{"ok": not world_.failed_op, "error": "boom" if world_.failed_op else None}]
                 return {(kw["runs"][0], "u1"): SimpleNamespace(aborted=world_.aborted, error=None, ops=ops, counters=counters,
                                                                dirs=SimpleNamespace(home=home))}
