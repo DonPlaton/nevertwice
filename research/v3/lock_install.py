@@ -86,8 +86,13 @@ _HEX64 = re.compile(r"[0-9a-f]{64}")
 #: Q-A8-4 applies only if a version does not install. Q-C5e-2 = O-a (T31): graphiti WITH its [falkordb] extra - the
 #: client its FalkorDB driver imports - so falkordb and the driver are imported and falkordb version-checked. langgraph
 #: has no spec of its own: langmem's resolution pins it, the lock records it and the import check reads its version.
-VENVS = {"mem0_v3": {"base": "py-base-312", "specs": ["mem0ai[nlp]==2.2.0"], "imports": ["mem0", "spacy"],
-                     "dists": ["mem0ai", "spacy"]},
+VENVS = {"mem0_v3": {"base": "py-base-312",
+                     # A5 (T34, the auditor's Q-M0-OLLAMA/Q-M0-FE = (a)): what mem0's selected paths import and [nlp]
+                     # does not bring - the Ollama client of its embedder and mem0-store's LLM, the BM25 encoder of its
+                     # Qdrant store
+                     "specs": ["mem0ai[nlp]==2.2.0", "ollama==0.6.3", "fastembed==0.8.1"],
+                     "imports": ["mem0", "spacy", "ollama", "fastembed"],
+                     "dists": ["mem0ai", "spacy", "ollama", "fastembed"]},
          "graphiti_v3": {"base": "py-base-312", "specs": ["graphiti-core[falkordb]==0.30.2"],
                          "imports": ["graphiti_core", "falkordb", "graphiti_core.driver.falkordb_driver"],
                          "dists": ["graphiti-core", "falkordb"]},
@@ -111,9 +116,12 @@ VENVS = {"mem0_v3": {"base": "py-base-312", "specs": ["mem0ai[nlp]==2.2.0"], "im
 #: Q-C5e-3: revision 1 is frozen, an amended row lives in the amendments file beside it): its distribution, extras,
 #: version and base - a suite row checks every VENVS spec against it.
 _REV1, _AMENDMENTS = "research/v3/PREREG-V3-rev1.md", "research/v3/PREREG-V3-AMENDMENTS.md"
-PREREG_22 = {"mem0_v3": {"row": "| mem0 | product | mem0ai, latest stable at freeze, with `[nlp]` (T22); 2.2.0 on "
-                                "2026-09-23 | 3.12, fresh venv mem0_v3 |",
-                         "source": _REV1, "dist": "mem0ai", "extras": ["nlp"], "version": "2.2.0", "base": "py-base-312"},
+PREREG_22 = {"mem0_v3": {"row": ("| mem0 | product | mem0ai, latest stable at freeze, with `[nlp]` (T22); 2.2.0 on "
+                                 "2026-09-23; with ollama==0.6.3 and fastembed==0.8.1 (T34) | 3.12, fresh venv mem0_v3 | "
+                                 "vendor-recommended:https://github.com/mem0ai/memory-benchmarks | to install |"),
+                         "source": _AMENDMENTS, "dist": "mem0ai", "extras": ["nlp"], "version": "2.2.0",
+                         "pins": [("mem0ai", ["nlp"], "2.2.0"), ("ollama", [], "0.6.3"), ("fastembed", [], "0.8.1")],
+                         "base": "py-base-312"},
              "graphiti_v3": {"row": "| zep-graphiti | product | graphiti-core, latest stable at freeze (0.30.2 read "
                                     "2026-09-26); with `[falkordb]` (T31); FalkorDB image by digest | 3.12, fresh venv "
                                     "graphiti_v3 | vendor-recommended:https://github.com/getzep/graphiti | to install, to "

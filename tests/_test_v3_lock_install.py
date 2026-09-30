@@ -315,10 +315,13 @@ check("LN6 (the auditor): an answer without dists, or with dists that are not a 
       "never a crash, never a pass", len(no_dists) == 1 and len(list_dists) == 1
       and all("not {python, dists}" in x[0] for x in (no_dists, list_dists)), f"{no_dists} | {list_dists}")
 check("... and takes plain names only", "not a plain name" in refusal(lambda: LI.version_probe(["os; import x"], ["a"])))
-check("the declared venvs: mem0_v3 = mem0ai[nlp] 2.2.0 (PREREG §2.2, T22 - B-NLP) on the declared base py-base-312 "
-      "(LI-1); its imports and distributions prove the extra landed (mem0 and spacy)",
-      LI.VENVS.get("mem0_v3") == {"base": "py-base-312", "specs": ["mem0ai[nlp]==2.2.0"], "imports": ["mem0", "spacy"],
-                                  "dists": ["mem0ai", "spacy"]}, str(LI.VENVS))
+check("the declared venvs: mem0_v3 = mem0ai[nlp] 2.2.0 (PREREG §2.2, T22 - B-NLP) with ollama 0.6.3 and fastembed "
+      "0.8.1 (A5, T34: what its selected paths import) on the declared base py-base-312 (LI-1); its imports and "
+      "distributions prove each landed (mem0, spacy, ollama, fastembed)",
+      LI.VENVS.get("mem0_v3") == {"base": "py-base-312",
+                                  "specs": ["mem0ai[nlp]==2.2.0", "ollama==0.6.3", "fastembed==0.8.1"],
+                                  "imports": ["mem0", "spacy", "ollama", "fastembed"],
+                                  "dists": ["mem0ai", "spacy", "ollama", "fastembed"]}, str(LI.VENVS.get("mem0_v3")))
 check("B-NLP (the auditor's method rule): every VENVS spec is its PREREG §2.2 row - the distribution, its extras and "
       "its version, quoted in PREREG_22 - and every venv has that row",
       set(LI.PREREG_22) == set(LI.VENVS) and all(
@@ -352,7 +355,16 @@ check("Q-C5e-3: graphiti's quote is the amendments file's row, and that row is r
       "text - nothing else of the row drifts in by the amendment; revision 1 still holds its own row, unchanged",
       LI.PREREG_22.get("graphiti_v3", {}).get("source") == AMD and _amd_g.count(_ins) == 1
       and _amd_g.replace(_ins, "", 1) == _rev1_g and _SRC[REV1].count(_rev1_g) == 1 and _ins not in _SRC[REV1]
-      and all(LI.PREREG_22[v]["source"] == REV1 for v in LI.PREREG_22 if v not in ("graphiti_v3", "scorer_v3")), _amd_g[:200])
+      and all(LI.PREREG_22[v]["source"] == REV1 for v in LI.PREREG_22 if v not in ("graphiti_v3", "scorer_v3", "mem0_v3")),
+      _amd_g[:200])
+check("T34-1 (A5): mem0_v3's PREREG_22 row is A5's section 2.2 line in the amendments file, once - mem0ai[nlp]==2.2.0, "
+      "ollama==0.6.3 and fastembed==0.8.1 as its three pins",
+      LI.PREREG_22.get("mem0_v3", {}).get("source") == "research/v3/PREREG-V3-AMENDMENTS.md"
+      and LI.PREREG_22["mem0_v3"].get("pins") == [("mem0ai", ["nlp"], "2.2.0"), ("ollama", [], "0.6.3"),
+                                                   ("fastembed", [], "0.8.1")]
+      and LI.PREREG_22["mem0_v3"].get("row", "").replace("; with ollama==0.6.3 and fastembed==0.8.1 (T34)", "", 1)
+      == next((ln for ln in _SRC[REV1].splitlines() if ln.startswith("| mem0 | product |")), "\x00")
+      and _SRC[AMD].count(LI.PREREG_22["mem0_v3"]["row"]) == 1, str(LI.PREREG_22.get("mem0_v3"))[:300])
 check("Q-C5e-3: the amendment carries its id, trap, date, ruling, reason and its trap-closure line",
       all(s in _SRC[AMD] for s in ("## A1 - T31", "**Date:** 2026-09-28", "Q-C5e-2 (2026-09-28, 11:13)",
                                    "the client its FalkorDB driver imports (arm_graphiti.py:162)",

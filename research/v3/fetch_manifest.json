@@ -160,7 +160,7 @@
    "install": "A8 C2 (the auditor's Q-A8-1 O-a): lock_install - pip's own dry-run report (wheels only, attempt 1) into a hashed lock, the wheels fetched against the index's sha256, then pip offline --require-hashes --no-deps --no-index from the lock",
    "venv": "mem0_v3",
    "base": "py-base-312",
-   "specs": ["mem0ai[nlp]==2.2.0"],
+   "specs": ["mem0ai[nlp]==2.2.0", "ollama==0.6.3", "fastembed==0.8.1"],
    "max_redirects": 0
   },
   "a8-pypi-graphiti_v3": {
