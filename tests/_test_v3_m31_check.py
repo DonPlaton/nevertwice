@@ -206,10 +206,32 @@ try:
                                               "    return importlib.import_module(n)\n"}
     runs19, _b19 = world("part3", [wheel("prodx", "1.0.0", PRODX_NL), W_DEPA, W_OLLAMA, *W_ADD])
     r19, e19 = holds(lambda: m31(runs19))
-    check("M3-19: in the product's closure a non-literal import stays a record for E5 (unresolved) - never a problem: "
-          "the vendor's code is what it is",
-          e19 is None and r19["problems"] == [] and any("prodx/modlevel.py:5" in u.get("where", "") for u in r19["unresolved"]),
+    check("M3-19 (R-M31-UNRES, the auditor 2026-09-30): a non-literal import in the product's closure that no "
+          "M31_FACTORIES record explains is a problem by name (its file and line) - and still listed as unresolved; a "
+          "next product's factory would otherwise pass unseen",
+          e19 is None and any("prodx/modlevel.py:5" in p_ and "R-M31-UNRES" in p_ for p_ in r19["problems"])
+          and any("prodx/modlevel.py:5" in u.get("where", "") for u in r19["unresolved"]),
           str(e19 or (r19["problems"], r19["unresolved"]))[:400])
+    FAC_EX = {"prodx-arm": {**FACTORIES["prodx-arm"], "explains": {"prodx/modlevel.py:5": "select"}}}
+    r24, e24 = holds(lambda: m31(runs19, factories=FAC_EX))
+    check("M3-24 (R-M31-UNRES): the same import explained by the arm's declared record (file:line -> its factories) is no "
+          "problem - a record for E5, named with what explains it",
+          e24 is None and r24["problems"] == [] and any("prodx/modlevel.py:5" in u.get("where", "") for u in r24["unresolved"])
+          and (r24.get("explained") or {}).get("prodx/modlevel.py:5") == "select",
+          str(e24 or (r24["problems"], r24.get("explained")))[:400])
+    r25, e25 = holds(lambda: m31(runs19, factories={"prodx-arm": {**FAC_EX["prodx-arm"],
+                                                                  "explains": {"prodx/modlevel.py:5": "select",
+                                                                               "prodx/core.py:3": "select"}}}))
+    check("M3-25 (R-M31-UNRES): a declared explanation of a line that is no unresolved import of the download's closure "
+          "is a problem by name - the declaration is exact, fixed through a gate",
+          e25 is None and any("prodx/core.py:3" in p_ and "explains" in p_ for p_ in r25["problems"]),
+          str(e25 or r25["problems"])[:300])
+    r26, e26 = holds(lambda: m31(runs19, factories={"prodx-arm": {**FACTORIES["prodx-arm"],
+                                                                  "explains": {"prodx/modlevel.py:5": "configs"}}}))
+    check("M3-26 (R-M31-UNRES): an explanation by a kind the arm does not declare (configs, with none) explains nothing - "
+          "a problem by name",
+          e26 is None and any("prodx/modlevel.py:5" in p_ and "configs" in p_ for p_ in r26["problems"]),
+          str(e26 or r26["problems"])[:300])
     real_part1 = {}
     try:
         _real_arms = sorted({a for v in M.VENV_ARMS.values() for a in v})
@@ -308,6 +330,12 @@ try:
           "non-literal import - mem0/vector_stores/configs.py:49 __import__(mem0.configs.vector_stores.<provider>): "
           "qdrant's, for both arms", cfgs == {"mem0": ("mem0.configs.vector_stores.qdrant",),
                                               "mem0-store": ("mem0.configs.vector_stores.qdrant",)}, str(cfgs))
+    exs = {a: dict((FA.get(a) or {}).get("explains") or {}) for a in ("mem0", "mem0-store")}
+    check("M3-27 (R-M31-UNRES): M31_FACTORIES explains exactly the two unresolved imports of mem0 2.2.0's closure M31 d1 "
+          "recorded - utils/factory.py:31 (import_module of a factory's class path: the selections) and "
+          "vector_stores/configs.py:49 (__import__ of a provider's config: the configs) - for both arms",
+          exs == {a: {"mem0/utils/factory.py:31": "select", "mem0/vector_stores/configs.py:49": "configs"}
+                  for a in ("mem0", "mem0-store")}, str(exs))
     print("\n- the base's standard library (Q-SPLIT-2 = O-a) -")
     if M is not None:
         IV = LI._iv()

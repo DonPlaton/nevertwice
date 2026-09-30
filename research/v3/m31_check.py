@@ -7,7 +7,8 @@ installed, run or unpacked; the result, m31.json, is written beside the download
 * part 1 - the adapter and the files copied beside it (run_v3_plan.ARMS: adapter and code), read by AST: import, from
   and importlib.import_module/__import__ with a literal - a non-literal or a relative one there is listed as
   unresolved AND is a problem by file and line (our code is checkable; the auditor's condition to K2), while in the
-  product's closure such an import stays an unresolved record for E5;
+  product's closure such an import is an unresolved record for E5 only when a declared M31_FACTORIES record explains it
+  (file:line -> the arm's factories or configs) - otherwise it is a problem by name (R-M31-UNRES);
 * part 2 - each third-party top-level name to the distribution whose RECORD installs it, from the wheels themselves (read
   in the zip; every wheel checked against the lock's sha256 again first - a moved one refuses);
 * part 3 - the product's modules the adapter imports and those its config selects through the product's factories
@@ -52,10 +53,15 @@ VENV_ARMS = {"mem0_v3": ("mem0", "mem0-store"), "graphiti_v3": ("zep-graphiti",)
 #: arm_mem0.mem0_config names LLM deepseek (mem0) or NO_LLM's ollama (mem0-store), embedder ollama, vector store qdrant.
 #: "configs" (B-M31-CFG, the auditor 2026-09-30): the config module of a selected provider that the product loads only
 #: by a non-literal import - mem0/vector_stores/configs.py:49 __import__(f"mem0.configs.vector_stores.{provider}") - an
-#: entry of the closure like a factory's target, so its imports are checked too
+#: entry of the closure like a factory's target, so its imports are checked too.
+#: "explains" (R-M31-UNRES, the auditor 2026-09-30): each unresolved import of the product's closure, by file:line, and
+#: what covers it - "select" (the factories' targets above) or "configs"; mem0 2.2.0 has exactly the two M31 d1
+#: recorded: utils/factory.py:31 (import_module of a factory's class path) and vector_stores/configs.py:49 (__import__
+#: of a provider's config). An unexplained one is a problem; so is an explanation of a line that is no such import.
 M31_FACTORIES = {arm: {"file": "mem0/utils/factory.py",
                        "select": {"LlmFactory": (llm,), "EmbedderFactory": ("ollama",), "VectorStoreFactory": ("qdrant",)},
-                       "configs": ("mem0.configs.vector_stores.qdrant",)}
+                       "configs": ("mem0.configs.vector_stores.qdrant",),
+                       "explains": {"mem0/utils/factory.py:31": "select", "mem0/vector_stores/configs.py:49": "configs"}}
                  for arm, llm in (("mem0", "deepseek"), ("mem0-store", "ollama"))}
 OPTIONAL_EXC = frozenset({"ImportError", "ModuleNotFoundError", "Exception", "BaseException"})
 _RECORD = re.compile(r"[^/]+\.dist-info/RECORD")
@@ -243,7 +249,7 @@ def run_m31(*, venv_name: str, run: str, runs_root: Path, stdlib, stdlib_source:
     stdlib = frozenset(stdlib)
     sources = arms_sources if arms_sources is not None else load_arm_sources(arms)
     products = wh.product_tops()
-    part1, part3, unresolved, problems, entries = [], [], [], [], {}
+    part1, part3, unresolved, problems, entries, closure_unres = [], [], [], [], {}, []
     for arm in arms:
         src = sources[arm]
         beside = {Path(n).stem for n in src["beside"]}
@@ -301,6 +307,7 @@ def run_m31(*, venv_name: str, run: str, runs_root: Path, stdlib, stdlib_source:
         path, data, is_pkg = got
         sites, unres = imports_of(data, path)
         unresolved += [{"where": f"{path}:{u['line']}", "why": u["why"]} for u in unres]
+        closure_unres += [{"where": f"{path}:{u['line']}", "why": u["why"]} for u in unres]
         entry = dotted in entries
         for s in sites:
             target = _target(s, dotted, is_pkg)
@@ -314,6 +321,22 @@ def run_m31(*, venv_name: str, run: str, runs_root: Path, stdlib, stdlib_source:
                           "where": f"{path}:{s['line']}", "lazy": s["lazy"], "optional": s["optional"],
                           "blocking": entry or not (s["lazy"] or s["optional"]),
                           "provided_by": sorted(wh.provides.get(top, ()))})
+    # R-M31-UNRES: the closure's unresolved imports against what the arms declare explains them
+    explained: dict = {}
+    for arm in arms:
+        fac = factories.get(arm) or {}
+        for where, kind in sorted((fac.get("explains") or {}).items()):
+            if kind not in ("select", "configs") or not fac.get(kind):
+                problems.append(f"part 3 {arm}: M31_FACTORIES explains {where} by {kind!r}, which the arm does not "
+                                "declare - it explains nothing (R-M31-UNRES)")
+            else:
+                explained.setdefault(where, kind)
+    found = {u["where"]: u["why"] for u in closure_unres}
+    problems += [f"part 3: {where} {why} in the product's closure - no M31_FACTORIES record explains it (R-M31-UNRES; "
+                 "declared before the install, fixed through a gate)" for where, why in sorted(found.items())
+                 if where not in explained]
+    problems += [f"part 3: M31_FACTORIES explains {where}, which is no unresolved import of the download's closure "
+                 "(R-M31-UNRES; the declaration is exact)" for where in sorted(set(explained) - set(found))]
     sites = part1 + part3
     unprovided = sorted({s["name"] for s in sites if s["blocking"] and not s["provided_by"]})
     lazy_unprovided = sorted({s["name"] for s in sites if not s["blocking"] and not s["provided_by"]} - set(unprovided))
@@ -324,7 +347,8 @@ def run_m31(*, venv_name: str, run: str, runs_root: Path, stdlib, stdlib_source:
               "factories": {a: factories[a] for a in arms if a in factories}, "entries": entries,
               "parts": {"1": part1, "2": {s["name"]: s["provided_by"] for s in sorted(sites, key=lambda x: x["name"])},
                         "3": part3},
-              "closure": sorted(seen), "unresolved": unresolved, "unprovided": unprovided,
+              "closure": sorted(seen), "unresolved": unresolved,
+              "explained": {w: k for w, k in sorted(explained.items()) if w in found}, "unprovided": unprovided,
               "lazy_unprovided": lazy_unprovided, "problems": problems,
               "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
     (base_dir / "m31.json").write_bytes((json.dumps(record, indent=1, sort_keys=True, default=list) + "\n").encode("utf-8"))
