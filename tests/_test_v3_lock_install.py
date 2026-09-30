@@ -321,7 +321,9 @@ check("the declared venvs: mem0_v3 = mem0ai[nlp] 2.2.0 (PREREG §2.2, T22 - B-NL
       LI.VENVS.get("mem0_v3") == {"base": "py-base-312",
                                   "specs": ["mem0ai[nlp]==2.2.0", "ollama==0.6.3", "fastembed==0.8.1"],
                                   "imports": ["mem0", "spacy", "ollama", "fastembed"],
-                                  "dists": ["mem0ai", "spacy", "ollama", "fastembed"]}, str(LI.VENVS.get("mem0_v3")))
+                                  "dists": ["mem0ai", "spacy", "ollama", "fastembed"],
+                                  "pth_allowed": [["pywin32", "pywin32.pth"], ["setuptools", "distutils-precedence.pth"]]},
+      str(LI.VENVS.get("mem0_v3")))
 check("B-NLP (the auditor's method rule): every VENVS spec is its PREREG §2.2 row - the distribution, its extras and "
       "its version, quoted in PREREG_22 - and every venv has that row",
       set(LI.PREREG_22) == set(LI.VENVS) and all(
@@ -773,9 +775,66 @@ g5, e5 = run_sc(pth_site("undeclared"), allowed=[])
 check("PTH-3: with no declaration the same file stays the site problem it was (every interpreter start)",
       e5 is None and any("distutils-precedence.pth" in x and "every interpreter start" in x for x in g5[0]) and g5[1] == [],
       str(e5 or g5))
-check("PTH-4: the declaration - scorer_v3 alone allows setuptools' distutils-precedence.pth; no product venv allows a .pth",
+check("PTH-4: the declaration - scorer_v3 allows setuptools' distutils-precedence.pth; mem0_v3 (T34) exactly the two .pth "
+      "files download a8-pypi-mem0_v3 d1's wheels carry, pywin32's pywin32.pth and setuptools' distutils-precedence.pth; "
+      "no other venv allows a .pth",
       LI.VENVS["scorer_v3"].get("pth_allowed") == [["setuptools", "distutils-precedence.pth"]]
-      and all(not LI.VENVS[v].get("pth_allowed") for v in LI.VENVS if v != "scorer_v3"), str(LI.VENVS["scorer_v3"])[:200])
+      and LI.VENVS["mem0_v3"].get("pth_allowed") == [["pywin32", "pywin32.pth"], ["setuptools", "distutils-precedence.pth"]]
+      and all(not LI.VENVS[v].get("pth_allowed") for v in LI.VENVS if v not in ("scorer_v3", "mem0_v3")),
+      str({v: LI.VENVS[v].get("pth_allowed") for v in LI.VENVS})[:300])
+PW = b"# .pth file for the PyWin32 extensions\nwin32\nwin32\\lib\nPythonwin\nimport pywin32_bootstrap\n"
+PWIN = {"name": "pywin32", "version": "312", "filename": "pywin32-312-cp312-cp312-win_amd64.whl", "sha256": "d" * 64}
+
+
+def pw_site(tag: str, *, version: str = "312", body: bytes = PW) -> Path:
+    site = pth_site(tag)
+    di = site / f"pywin32-{version}.dist-info"
+    di.mkdir()
+    (site / "pywin32.pth").write_bytes(body)
+    (di / "RECORD").write_text(f"pywin32.pth,{_rec_hash(PW)},{len(PW)}\npywin32-{version}.dist-info/RECORD,,\n",
+                               encoding="utf-8")
+    return site
+
+
+M0_ALLOW = [tuple(x) for x in LI.VENVS["mem0_v3"].get("pth_allowed") or []]
+g6, e6 = run_sc(pw_site("m0"), lock=(SETUP, PWIN), allowed=M0_ALLOW)
+why = getattr(LI, "PTH_WHY", {})
+check("PTH-5 (T34): on mem0_v3's declaration both files are allowed by name, owner (RECORD at the lock's version) and "
+      "sha - no site problem - and each allowed_pth record carries its own reason: pywin32's names portalocker (qdrant-"
+      "client's file lock on Windows), setuptools' names spacy and thinc; both under Q-SC-PTH",
+      e6 is None and g6[0] == [] and sorted(a["file"] for a in g6[1]) == ["distutils-precedence.pth", "pywin32.pth"]
+      and all("Q-SC-PTH" in a.get("reason", "") for a in g6[1])
+      and any(a["file"] == "pywin32.pth" and "portalocker" in a.get("reason", "") for a in g6[1])
+      and any(a["file"] == "distutils-precedence.pth" and "spacy" in a.get("reason", "") and "thinc" in a.get("reason", "")
+              for a in g6[1]), str(e6 or g6)[:500])
+g6b, e6b = run_sc(pw_site("m0-scorer"), lock=(SETUP, PWIN), allowed=ALLOW)
+g6c, e6c = run_sc(pw_site("m0-changed", body=PW + b"import evil\n"), lock=(SETUP, PWIN), allowed=M0_ALLOW)
+check("PTH-5b: the same pywin32.pth under scorer_v3's declaration, or with bytes that are not its RECORD's sha256, stays a "
+      "site problem by name (every interpreter start)",
+      e6b is None and any("pywin32.pth" in x for x in g6b[0]) and e6c is None
+      and any("pywin32.pth" in x and "RECORD" in x for x in g6c[0]), str((e6b or g6b[0], e6c or g6c[0]))[:400])
+declared = sorted({tuple(x) for v in LI.VENVS.values() for x in v.get("pth_allowed") or []})
+EV = b"import os\n"
+EVL = {"name": "evilpkg", "version": "1.0", "filename": "evilpkg-1.0-py3-none-any.whl", "sha256": "e" * 64}
+
+
+def ev_site(tag: str) -> Path:
+    site = pth_site(tag)
+    di = site / "evilpkg-1.0.dist-info"
+    di.mkdir()
+    (site / "evil.pth").write_bytes(EV)
+    (di / "RECORD").write_text(f"evil.pth,{_rec_hash(EV)},{len(EV)}\nevilpkg-1.0.dist-info/RECORD,,\n", encoding="utf-8")
+    return site
+
+
+g6d, e6d = run_sc(ev_site("nowhy"), lock=(SETUP, EVL), allowed=[("evilpkg", "evil.pth")] + ALLOW)
+check("PTH-6b: a (distribution, .pth) declared with no reason in PTH_WHY is never allowed - a site problem by name, even "
+      "when its owner's RECORD at the lock's version names its bytes",
+      e6d is None and any("evil.pth" in x and "PTH_WHY" in x for x in g6d[0])
+      and "evil.pth" not in [a_["file"] for a_ in g6d[1]], str(e6d or g6d)[:400])
+check("PTH-6: every declared (distribution, .pth) has its reason in PTH_WHY, and PTH_WHY names no other",
+      bool(declared) and sorted(why) == declared and all(isinstance(t, str) and t for t in why.values()),
+      str((declared, sorted(why)))[:300])
 
 shutil.rmtree(TMP, ignore_errors=True)
 print(f"\nv3 lock install: {PASSED} passed, {FAILED} failed")

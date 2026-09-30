@@ -72,9 +72,17 @@ HOSTS = [INDEX_HOST, FILES_HOST]
 REPORT = "report.json"
 WHEEL_MAX = 512 * (1 << 20)
 INDEX_PROBE_MAX = 16 * (1 << 20)                 # R-PIP-ISS: one /simple/ page, read for its TLS issuer
-PTH_REASON = ("Q-SC-PTH (the auditor, 2026-09-30): setuptools' distutils shim, pulled by torch on 3.12 - allowed by "
-              "name, by its owner's RECORD at the lock's version and by its bytes' sha256; the scorer never imports "
-              "distutils (an E5 line)")
+PTH_RULE = ("Q-SC-PTH (the auditor, 2026-09-30) - allowed by name, by its owner's RECORD at the lock's version and by its "
+            "bytes' sha256")
+#: Why each declared (distribution, .pth) is allowed - every pth_allowed pair of VENVS has its line here, and a declared
+#: file without one is never allowed. mem0_v3's two (T34: the auditor's order of 2026-09-30, pth allow by RECORD) are the
+#: .pth files download a8-pypi-mem0_v3 d1's wheels carry.
+PTH_WHY = {("setuptools", "distutils-precedence.pth"):
+           "setuptools' distutils shim - pulled on 3.12 by torch (scorer_v3; the scorer never imports distutils, an E5 "
+           "line) and by spacy and thinc (mem0_v3's [nlp])",
+           ("pywin32", "pywin32.pth"):
+           "pywin32's path and DLL bootstrap - pulled by portalocker, qdrant-client's file lock, on Windows (mem0_v3: "
+           "mem0's local Qdrant store)"}
 DISK_FLOOR = 100 * (1 << 30)                     # the auditor's Q-A3-2 floor (fetch_manifest.json "disk")
 _FILE = re.compile(r"[A-Za-z0-9._+-]{1,200}")
 _HEX64 = re.compile(r"[0-9a-f]{64}")
@@ -87,6 +95,9 @@ _HEX64 = re.compile(r"[0-9a-f]{64}")
 #: client its FalkorDB driver imports - so falkordb and the driver are imported and falkordb version-checked. langgraph
 #: has no spec of its own: langmem's resolution pins it, the lock records it and the import check reads its version.
 VENVS = {"mem0_v3": {"base": "py-base-312",
+                     # T34 (the auditor's order of 2026-09-30: pth allow by RECORD): the two .pth files of download d1's
+                     # wheels - pywin32 312 (portalocker's, qdrant-client's lock) and setuptools 84.0.0 (spacy's, thinc's)
+                     "pth_allowed": [["pywin32", "pywin32.pth"], ["setuptools", "distutils-precedence.pth"]],
                      # A5 (T34, the auditor's Q-M0-OLLAMA/Q-M0-FE = (a)): what mem0's selected paths import and [nlp]
                      # does not bring - the Ollama client of its embedder and mem0-store's LLM, the BM25 encoder of its
                      # Qdrant store
@@ -503,7 +514,11 @@ def site_check(site: Path, lock: list[dict], names: list, baseline: list, allowe
                     row = line.rsplit(",", 2)[1]
         want = IV._record_hash(row) if row else None
         got = hashlib.sha256(f.read_bytes()).hexdigest()
-        if want is None:
+        why = PTH_WHY.get((dist, fname))
+        if why is None:
+            problems.append(f"{fname}: declared for {dist} without its reason in PTH_WHY - never allowed; a .pth runs "
+                            f"code at every interpreter start")
+        elif want is None:
             problems.append(f"{fname}: no RECORD row of {dist} at the lock's version {v} lists it - not its declared owner's "
                             f"(Q-SC-PTH); a .pth runs code at every interpreter start")
         elif got != want:
@@ -511,7 +526,7 @@ def site_check(site: Path, lock: list[dict], names: list, baseline: list, allowe
                             f"code at every interpreter start")
         else:
             ok_names.append(fname)
-            records.append({"file": fname, "dist": dist, "version": v, "sha256": got, "reason": PTH_REASON})
+            records.append({"file": fname, "dist": dist, "version": v, "sha256": got, "reason": f"{why} - {PTH_RULE}"})
     return problems + IV.site_problems(site, names, list(baseline) + ok_names), records
 
 
