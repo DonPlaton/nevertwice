@@ -20,10 +20,17 @@ JavaScript as text, and that text is exactly the code a start would run.
    blocked:bind-not-loopback (Q-A8S-R8 = a: no start before the owner's inbound block rule for the binary). The
    spawn's vendor switches (SPAWN_ENV) must be values the bundle's own comparisons accept, else a problem by name.
    The auth facts (F6: how the server decides "localhost", the unkeyed local role, the key's file and form).
+5. SM3 (the auditor, 2026-09-30 17:4x): every env name the spawn may declare, with the server's own default
+   (Q-A8S-ENVN = a) - declared_problems refuses a name the server does not read, one the spawn never declares
+   (NOT_DECLARED) and another provider's; resolve() says what a spawn env resolves to and names each vendor default
+   it reaches. The workflow engine: on this win32 build with no WORKFLOW_ENGINE the default is direct, in process (no
+   Rivet child; its port formula is recorded as outside that default). The product's own local bge-m3 (an E5 line;
+   the stand's embedder is ours through the leg). F8: the memory agent's tools (names read from their definitions,
+   the definitions' sha256 - the proxy's baseline, Q-SM-TOOLS = a), its limits and its system text's sha256.
 
 The record: <runs>/_facts/a8-sm-bundle/<run>/bundle_facts.json.
 
-    python research/v3/sm_bundle.py --run f1
+    python research/v3/sm_bundle.py --run f2
 """
 from __future__ import annotations
 
@@ -88,8 +95,55 @@ FACTS: dict[str, bytes] = {
     "data_dir": rb'_\$=VY5\(process\.env\.SUPERMEMORY_DATA_DIR\?\?"([^"]+)"\)',
     "doc_limit": rb'var fQ=(1e4),X\$0=0',
     "embed_compat": rb'T=hl8\(\{name:"openai",(apiKey):u,baseURL:O\}\)\.embeddingModel\(e\)',
-    "workflow_default": rb'let z=await id8\(\);if\(z\)\{let e=globalThis;if\(!e\.(__SUPERMEMORY_RIVET_NAPI__)',
+    # SM3 (the auditor, 2026-09-30 17:4x): the Rivet branch - taken only where qd8 is false (workflow_direct_win32)
+    "workflow_rivet_branch": rb'let z=await id8\(\);if\(z\)\{let e=globalThis;if\(!e\.(__SUPERMEMORY_RIVET_NAPI__)',
+    # Q-A8S-ENVN = (a): every env name the spawn may declare, with the server's own defaults
+    "embed_provider": rb'let z=lV\("(SUPERMEMORY_EMBEDDING_PROVIDER)",\$\)\?\.toLowerCase\(\);switch\(z\)\{case void 0:'
+                      rb'case"(local)":return"local";case"openai":return"openai";case"(openai-compatible)":'
+                      rb'case"openai_compatible":return"openai-compatible";',
+    "embed_model": rb'function ef4\(\$,z\)\{if\(\$==="local"\)return lV\("(SUPERMEMORY_EMBEDDING_MODEL)",z\)\?\?'
+                   rb'lV\("(SUPERMEMORY_LOCAL_EMBEDDING_MODEL)",z\)\?\?"([^"]+)";return lV\("SUPERMEMORY_EMBEDDING_MODEL",z\)'
+                   rb'\?\?\(\$==="google"\?"gemini-embedding-001":"([^"]+)"\)\}',
+    "embed_base_url": rb'function vf4\(\$,z\)\{let e=lV\("(SUPERMEMORY_EMBEDDING_BASE_URL)",z\);'
+                      rb'if\(\$==="openai-compatible"\)\{let v=e\?\?lV\("(OPENAI_BASE_URL)",z\)',
+    "embed_dimensions": rb'function Tf4\(\$,z,e\)\{let v=lV\("(SUPERMEMORY_EMBEDDING_DIMENSIONS)",e\);',
+    "embed_api_key": rb'function Sp4\(\$\)\{let z=process\.env\.(SUPERMEMORY_EMBEDDING_API_KEY)\?\.trim\(\);if\(z\)return z;'
+                     rb'if\(\$==="google"\)\{let v=process\.env\.GEMINI_API_KEY\?\.trim\(\);if\(v\)return v;throw Error\([^)]*\)\}'
+                     rb'let e=process\.env\.(OPENAI_API_KEY)\?\.trim\(\);',
+    "embed_local_bge_m3": rb'"(Xenova/bge-m3)":(\d+),"Xenova/all-MiniLM-L6-v2"',
+    "embed_local_bge_m3_pooling": rb'Ul8=\{"Xenova/bge-m3":"([a-z]+)"\}',
+    "llm_openai_entry": rb'\{id:"(openai)",name:"OpenAI \(or OpenAI-compatible: Ollama, vLLM, LM Studio, etc\.\)",'
+                        rb'envVars:\["(OPENAI_API_KEY)"\]',
+    "llm_other_providers": rb'\{id:"(anthropic)",name:"Anthropic",envVars:\["(ANTHROPIC_API_KEY)"\],promptable:!0\},'
+                           rb'\{id:"(gemini)",name:"Gemini",envVars:\["(GEMINI_API_KEY)"\],promptable:!0\},'
+                           rb'\{id:"(groq)",name:"Groq",envVars:\["(GROQ_API_KEY)"\],promptable:!0\},'
+                           rb'\{id:"(workers-ai)",name:"Cloudflare Workers AI",envVars:\["(WORKERS_AI_API_KEY)",'
+                           rb'"(CLOUDFLARE_ACCOUNT_ID)"\],promptable:!1\},\{id:"(vertex)",name:"Vertex AI",'
+                           rb'envVars:\["(GOOGLE_VERTEX_PROJECT_ID)","(GOOGLE_VERTEX_LOCATION)"\]',
+    "llm_openai_client": rb'\$o=process\.env\.(OPENAI_API_KEY)\?process\.env\.(OPENAI_BASE_URL)\?hl8\(\{name:"openai",'
+                         rb'apiKey:process\.env\.OPENAI_API_KEY,baseURL:process\.env\.OPENAI_BASE_URL\}\)',
+    "llm_models": rb'z\$2=process\.env\.(OPENAI_FAST_MODEL)\?\?process\.env\.(OPENAI_MODEL)\?\?"([^"]+)",'
+                  rb'e\$2=process\.env\.(OPENAI_TEXT_MODEL)\?\?process\.env\.OPENAI_MODEL\?\?"([^"]+)",',
+    # the win32 build's default engine: qd8's default argument is the platform the build baked in
+    "workflow_direct_win32": rb'function qd8\(\$="([a-z0-9]+)",z=process\.env\.(WORKFLOW_ENGINE)\)\{if\(z\)return '
+                             rb'z\.trim\(\)\.toLowerCase\(\)==="direct";return \$==="win32"\}',
+    "workflow_direct_set": rb'if\(qd8\(\)\)return process\.env\.WORKFLOW_ENGINE="(direct)","direct";',
+    "rivet_port_formula": rb'async function Qs5\(\)\{let \$=(1e4)\+iX\*(3)%(50000);for\(let z=\$;z<\$\+(\d+);z\+=3\)',
+    # F8 (the auditor's Q-SM-TOOLS = a): a document is ingested by a tool-calling agent (AI SDK generateText) - its
+    # call, its system text, its tools' definitions and their input schemas
+    "memory_agent_call": rb'let c=await ky\(\{model:(wb)\(\),system:x,prompt:n,tools:(Z),stopWhen:hI8\((\d+)\),'
+                         rb'maxRetries:(\d+),maxOutputTokens:(\d+),experimental_telemetry:\{isEnabled:!(vH0)\(\),'
+                         rb'functionId:"([a-z-]+)"\}\}\)',
+    "memory_agent_system": rb'x="(You are a memory extraction agent\.[^"]*)"',
+    "memory_agent_tools": rb'Z=\{(searchMemories):TX\(\{description:.*?\}\)\},n=ng4\(',
+    "memory_agent_schema_create": rb'(O72)=p\.object\(\{(memory):p\.string\(\)\.min\(1\)\..*?temporalContext:(x78)\}\)',
+    "memory_agent_schema_relation": rb'(Cm0)=p\.enum\(\["(updates)","(extends)","(derives)"\]\),(x78)=p\.object\(\{'
+                                    rb'documentDate:p\.string\(\)\.nullable\(\)\.optional\(\),eventDate:p\.array\('
+                                    rb'p\.string\(\)\)\.nullable\(\)\.optional\(\)\}\)',
 }
+#: facts recorded for what they say, outside this build's default path
+FACT_NOTES = {"rivet_port_formula": "outside the win32 default (workflow_direct_win32: the engine is direct, in process)",
+              "workflow_rivet_branch": "taken only where qd8 is false - not on the win32 build with no WORKFLOW_ENGINE"}
 #: the switch -> the facts whose captured values are the values the bundle compares that variable with
 _SWITCH_FACTS = {"SUPERMEMORY_NO_UPDATE_CHECK": "update_switch", "SUPERMEMORY_DISABLE_TELEMETRY": "telemetry_switch",
                  "SUPERMEMORY_NO_OPEN": "browser_switch"}
@@ -214,6 +268,107 @@ def auth_facts(facts: dict) -> dict:
             "key_in_banner": facts["key_banner"]["values"] == ["api key"]}
 
 
+#: Q-A8S-ENVN: names the spawn never declares - the fast and text models fall back to OPENAI_MODEL, the engine stays
+#: the vendor's win32 default, the local model is not ours, the switches are TELEMETRY_OFF's (a declared one would
+#: clash, launch.build_env), the embedder's key is OPENAI_API_KEY (the arm's proxy token)
+NOT_DECLARED = frozenset({"OPENAI_FAST_MODEL", "OPENAI_TEXT_MODEL", "WORKFLOW_ENGINE", "SUPERMEMORY_LOCAL_EMBEDDING_MODEL",
+                          "SUPERMEMORY_EMBEDDING_API_KEY", *SPAWN_ENV})
+_ENV_NAME = re.compile(r"[A-Z0-9_]+")
+
+
+def workflow(facts: dict) -> dict:
+    """The build's default workflow engine: qd8 returns "direct" with no WORKFLOW_ENGINE exactly when its baked-in
+    platform is win32; the Rivet ports apply only where the default is rivet."""
+    platform, env = facts["workflow_direct_win32"]["values"]
+    default = "direct" if platform == "win32" and facts["workflow_direct_set"]["values"] == ["direct"] else "rivet"
+    base, step, mod, span = facts["rivet_port_formula"]["values"]
+    return {"platform": platform, "env": env, "default": default,
+            "rivet_ports": {"base": f"{base} + port*{step} % {mod}", "step": 3, "span": int(span),
+                            "applies_by_default": default == "rivet"}}
+
+
+def env_facts(facts: dict) -> dict:
+    """{"reads": {name: {fact, default}}, "must_be_absent": [...]} - every env name the server reads that the spawn may
+    touch, each with the fact that shows it and the server's own default (a name, when it falls back to another)."""
+    ep, em, eb = facts["embed_provider"]["values"], facts["embed_model"]["values"], facts["embed_base_url"]["values"]
+    lm, wf = facts["llm_models"]["values"], workflow(facts)
+    reads = {ep[0]: ("embed_provider", ep[1]), em[0]: ("embed_model", em[2]), em[1]: ("embed_model", em[2]),
+             eb[0]: ("embed_base_url", eb[1]), facts["embed_dimensions"]["values"][0]: ("embed_dimensions",
+                                                                                       "the model's native size"),
+             facts["embed_api_key"]["values"][0]: ("embed_api_key", facts["embed_api_key"]["values"][1]),
+             facts["llm_openai_client"]["values"][0]: ("llm_openai_client", None),
+             facts["llm_openai_client"]["values"][1]: ("llm_openai_client", None),
+             lm[1]: ("llm_models", lm[2]), lm[0]: ("llm_models", lm[1]), lm[3]: ("llm_models", lm[1]),
+             "PORT": ("port", "SUPERMEMORY_PORT"), "SUPERMEMORY_PORT": ("port", facts["port"]["values"][0]),
+             "SUPERMEMORY_DATA_DIR": ("data_dir", facts["data_dir"]["values"][0]),
+             wf["env"]: ("workflow_direct_win32", f"{wf['default']} ({wf['platform']})"),
+             **{k: (f, None) for k, f in _SWITCH_FACTS.items()}}
+    return {"reads": {k: {"fact": f, "default": d} for k, (f, d) in reads.items()},
+            "must_be_absent": [v for v in facts["llm_other_providers"]["values"] if _ENV_NAME.fullmatch(v)]}
+
+
+def declared_problems(declared: dict, env_rec: dict) -> list[str]:
+    """A problem for each name the spawn declares that it never may, that another provider owns, or that the server
+    does not read (a typo would leave the vendor's default on)."""
+    problems = []
+    for name in sorted(declared):
+        if name in NOT_DECLARED:
+            problems.append(f"declared {name}: the spawn never declares it (NOT_DECLARED)")
+        elif name in env_rec["must_be_absent"]:
+            problems.append(f"declared {name}: another provider's variable - it must be absent")
+        elif name not in env_rec["reads"]:
+            problems.append(f"declared {name}: the server reads no such variable (the bundle's facts)")
+    return problems
+
+
+def resolve(env: dict, env_rec: dict) -> dict:
+    """What a spawn env resolves to by the bundle's own rules, and each vendor default it reaches (never ours)."""
+    reads, defaults = env_rec["reads"], []
+    provider = (env.get("SUPERMEMORY_EMBEDDING_PROVIDER") or reads["SUPERMEMORY_EMBEDDING_PROVIDER"]["default"]).lower()
+    if provider == "local":
+        model = (env.get("SUPERMEMORY_EMBEDDING_MODEL") or env.get("SUPERMEMORY_LOCAL_EMBEDDING_MODEL")
+                 or reads["SUPERMEMORY_EMBEDDING_MODEL"]["default"])
+        defaults.append(f"embedding provider local ({model})")
+        embedding = {"provider": "local", "model": model, "base_url": None,
+                     "dimensions": env.get("SUPERMEMORY_EMBEDDING_DIMENSIONS") or "native"}
+    else:
+        model = env.get("SUPERMEMORY_EMBEDDING_MODEL")
+        if not model:
+            defaults.append("embedding model (the vendor's remote default)")
+        dims = env.get("SUPERMEMORY_EMBEDDING_DIMENSIONS")
+        if not dims:
+            defaults.append("embedding dimensions (the model's native size)")
+        embedding = {"provider": provider, "model": model, "base_url": env.get("SUPERMEMORY_EMBEDDING_BASE_URL")
+                     or env.get(reads["SUPERMEMORY_EMBEDDING_BASE_URL"]["default"]), "dimensions": dims}
+    llm = {}
+    for kind, name in (("fast", "OPENAI_FAST_MODEL"), ("text", "OPENAI_TEXT_MODEL")):
+        llm[kind] = env.get(name) or env.get(reads[name]["default"]) or reads["OPENAI_MODEL"]["default"]
+        if not (env.get(name) or env.get(reads[name]["default"])):
+            defaults.append(f"llm {kind} model {llm[kind]}")
+    llm["base_url"] = env.get("OPENAI_BASE_URL")
+    return {"embedding": embedding, "llm": llm, "vendor_defaults": defaults}
+
+
+_TOOL_NAME = re.compile(r"(\w+):TX\(\{description:")
+
+
+def _sha(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def tools(facts: dict) -> dict:
+    """F8: the memory agent's tools as the bundle defines them - the names read from the definitions, never from a
+    list, the definitions' sha256 (the baseline the proxy pins: the auditor's Q-SM-TOOLS = a), each input schema's
+    sha256, the call's limits, its telemetry gate and function id, the sha256 of its system text."""
+    call = facts["memory_agent_call"]["values"]
+    return {"names": _TOOL_NAME.findall(facts["memory_agent_tools"]["literal"]),
+            "sha256": _sha(facts["memory_agent_tools"]["literal"]), "max_steps": int(call[2]),
+            "max_output_tokens": int(call[4]), "max_retries": int(call[3]), "telemetry_gate": call[5],
+            "function_id": call[6], "schemas": {"CreateMemory": _sha(facts["memory_agent_schema_create"]["literal"]),
+                                                "relation": _sha(facts["memory_agent_schema_relation"]["literal"])},
+            "system_sha256": _sha(facts["memory_agent_system"]["values"][0])}
+
+
 def run_facts(runs_root: Path, *, run: str, record_sha256: str = BIN_RECORD_SHA256) -> dict:
     """The whole read (see the module docstring); a refusal writes nothing."""
     base = runs_root / "_facts" / READER / run
@@ -225,7 +380,11 @@ def run_facts(runs_root: Path, *, run: str, record_sha256: str = BIN_RECORD_SHA2
     r8, sw = r8_verdict(facts), switches(facts)
     record = {"reader": READER, "run": run, "network": False, "executed": False, "window_bytes": WINDOW_BYTES,
               "pin": pin, "bundle": {"section": ".bun", "offset": lo, "bytes": hi - lo}, "facts": facts, "r8": r8,
-              "switches": sw, "auth": auth_facts(facts), "problems": r8["problems"] + sw["problems"],
+              "switches": sw, "auth": auth_facts(facts), "env": env_facts(facts), "workflow": workflow(facts),
+              "embedding_local": {"model": facts["embed_local_bge_m3"]["values"][0],
+                                  "dimensions": int(facts["embed_local_bge_m3"]["values"][1]),
+                                  "pooling": facts["embed_local_bge_m3_pooling"]["values"][0]},
+              "tools": tools(facts), "notes": dict(FACT_NOTES), "problems": r8["problems"] + sw["problems"],
               "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
     base.mkdir(parents=True)
     (base / "bundle_facts.json").write_bytes((json.dumps(record, indent=1, sort_keys=True) + "\n").encode("utf-8"))

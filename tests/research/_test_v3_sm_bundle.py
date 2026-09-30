@@ -111,6 +111,55 @@ LITERALS = [
     b'T=hl8({name:"openai",apiKey:u,baseURL:O}).embeddingModel(e)',
     b'let z=await id8();if(z){let e=globalThis;if(!e.__SUPERMEMORY_RIVET_NAPI__',
 ]
+#: SM3 (the auditor, 2026-09-30 17:4x: Q-A8S-ENVN = a, the workflow engine on win32, Qs5): the env names the server
+#: reads with their defaults, the win32 default engine, the Rivet port formula - appended, the indices above kept.
+ENV_LITERALS = [
+    b'let z=lV("SUPERMEMORY_EMBEDDING_PROVIDER",$)?.toLowerCase();switch(z){case void 0:case"local":return"local";'
+    b'case"openai":return"openai";case"openai-compatible":case"openai_compatible":return"openai-compatible";',
+    b'function ef4($,z){if($==="local")return lV("SUPERMEMORY_EMBEDDING_MODEL",z)??'
+    b'lV("SUPERMEMORY_LOCAL_EMBEDDING_MODEL",z)??"Xenova/bge-base-en-v1.5";return lV("SUPERMEMORY_EMBEDDING_MODEL",z)??'
+    b'($==="google"?"gemini-embedding-001":"text-embedding-3-small")}',
+    b'function vf4($,z){let e=lV("SUPERMEMORY_EMBEDDING_BASE_URL",z);if($==="openai-compatible"){let v=e??'
+    b'lV("OPENAI_BASE_URL",z)',
+    b'function Tf4($,z,e){let v=lV("SUPERMEMORY_EMBEDDING_DIMENSIONS",e);',
+    b'function Sp4($){let z=process.env.SUPERMEMORY_EMBEDDING_API_KEY?.trim();if(z)return z;if($==="google"){let '
+    b'v=process.env.GEMINI_API_KEY?.trim();if(v)return v;throw Error("[embeddings] SUPERMEMORY_EMBEDDING_PROVIDER=google '
+    b'requires GEMINI_API_KEY or SUPERMEMORY_EMBEDDING_API_KEY.")}let e=process.env.OPENAI_API_KEY?.trim();',
+    b'"Xenova/bge-m3":1024,"Xenova/all-MiniLM-L6-v2"',
+    b'Ul8={"Xenova/bge-m3":"cls"}',
+    b'{id:"openai",name:"OpenAI (or OpenAI-compatible: Ollama, vLLM, LM Studio, etc.)",envVars:["OPENAI_API_KEY"]',
+    b'{id:"anthropic",name:"Anthropic",envVars:["ANTHROPIC_API_KEY"],promptable:!0},{id:"gemini",name:"Gemini",'
+    b'envVars:["GEMINI_API_KEY"],promptable:!0},{id:"groq",name:"Groq",envVars:["GROQ_API_KEY"],promptable:!0},'
+    b'{id:"workers-ai",name:"Cloudflare Workers AI",envVars:["WORKERS_AI_API_KEY","CLOUDFLARE_ACCOUNT_ID"],promptable:!1},'
+    b'{id:"vertex",name:"Vertex AI",envVars:["GOOGLE_VERTEX_PROJECT_ID","GOOGLE_VERTEX_LOCATION"]',
+    b'$o=process.env.OPENAI_API_KEY?process.env.OPENAI_BASE_URL?hl8({name:"openai",apiKey:process.env.OPENAI_API_KEY,'
+    b'baseURL:process.env.OPENAI_BASE_URL})',
+    b'z$2=process.env.OPENAI_FAST_MODEL??process.env.OPENAI_MODEL??"gpt-5.1",e$2=process.env.OPENAI_TEXT_MODEL??'
+    b'process.env.OPENAI_MODEL??"gpt-5.1",',
+    b'function qd8($="win32",z=process.env.WORKFLOW_ENGINE){if(z)return z.trim().toLowerCase()==="direct";'
+    b'return $==="win32"}',
+    b'if(qd8())return process.env.WORKFLOW_ENGINE="direct","direct";',
+    b'async function Qs5(){let $=1e4+iX*3%50000;for(let z=$;z<$+60;z+=3)',
+]
+#: F8 (the auditor's Q-SM-TOOLS = a): the memory agent - its call, its system text, its seven tools, their schemas
+TOOLS_LIT = (b'Z={searchMemories:TX({description:"Search related memories.",inputSchema:p.object({query:p.string()})}),'
+             b'readChunks:TX({description:`Read more chunks. There are ${O} total chunks available.`,'
+             b'inputSchema:p.object({start:p.number()})}),searchDocumentChunks:TX({description:"Search chunks.",'
+             b'inputSchema:p.object({query:p.string()})}),getMemoryDetails:TX({description:"Get a memory.",'
+             b'inputSchema:p.object({memoryId:p.string()})}),linkMemories:TX({description:"Link two.",'
+             b'inputSchema:p.object({relation:Cm0})}),forgetMemory:TX({description:"Forget one.",'
+             b'inputSchema:p.object({memoryId:p.string()})}),CreateMemory:TX({description:"Create a new memory.",'
+             b'inputSchema:O72,execute:(c)=>d("CreateMemory",c,async()=>{return{skipped:!0}})})},n=ng4(')
+AGENT_LITERALS = [
+    b'let c=await ky({model:wb(),system:x,prompt:n,tools:Z,stopWhen:hI8(40),maxRetries:2,maxOutputTokens:12000,'
+    b'experimental_telemetry:{isEnabled:!vH0(),functionId:"self-hosted-memory-agent"}})',
+    b'x="You are a memory extraction agent. Use tools to inspect context."',
+    TOOLS_LIT,
+    b'O72=p.object({memory:p.string().min(1).describe("The durable fact to remember."),temporalContext:x78})',
+    b'Cm0=p.enum(["updates","extends","derives"]),x78=p.object({documentDate:p.string().nullable().optional(),'
+    b'eventDate:p.array(p.string()).nullable().optional()})',
+]
+LITERALS += ENV_LITERALS + AGENT_LITERALS
 FILLER = b"\n;/* ---- */\n" + b"x" * 300 + b"\n"
 BUNDLE = FILLER.join(LITERALS) + FILLER + b"\n---- Bun! ----\n"
 
@@ -294,6 +343,103 @@ try:
                                           "key_headers_first": "x-supermemory-api-key", "key_file": "api-key",
                                           "key_mode": "0o600", "key_length": 64, "key_in_banner": True},
           str(err or (rec or {}).get("auth")))
+
+    print("\n- SM3: the env names the server reads, the win32 engine, the local bge-m3 (the auditor, 17:4x) -")
+    NEW3 = {"embed_provider", "embed_model", "embed_base_url", "embed_dimensions", "embed_api_key", "embed_local_bge_m3",
+            "embed_local_bge_m3_pooling", "llm_openai_entry", "llm_other_providers", "llm_openai_client", "llm_models",
+            "workflow_direct_win32", "workflow_direct_set", "rivet_port_formula", "workflow_rivet_branch"}
+    check("SMB-20: the SM3 facts are recorded once each, and the Rivet branch is named for what it is - "
+          "workflow_rivet_branch, no workflow_default",
+          err is None and NEW3 <= set(rec["facts"]) and "workflow_default" not in rec["facts"]
+          and rec["facts"]["llm_models"]["values"] == ["OPENAI_FAST_MODEL", "OPENAI_MODEL", "gpt-5.1", "OPENAI_TEXT_MODEL",
+                                                       "gpt-5.1"], str(err or sorted(NEW3 - set((rec or {}).get("facts", {})))))
+    WANT_READS = {
+        "SUPERMEMORY_EMBEDDING_PROVIDER": "local", "SUPERMEMORY_EMBEDDING_MODEL": "Xenova/bge-base-en-v1.5",
+        "SUPERMEMORY_LOCAL_EMBEDDING_MODEL": "Xenova/bge-base-en-v1.5", "SUPERMEMORY_EMBEDDING_BASE_URL": "OPENAI_BASE_URL",
+        "SUPERMEMORY_EMBEDDING_DIMENSIONS": "the model's native size", "SUPERMEMORY_EMBEDDING_API_KEY": "OPENAI_API_KEY",
+        "OPENAI_API_KEY": None, "OPENAI_BASE_URL": None, "OPENAI_MODEL": "gpt-5.1", "OPENAI_FAST_MODEL": "OPENAI_MODEL",
+        "OPENAI_TEXT_MODEL": "OPENAI_MODEL", "PORT": "SUPERMEMORY_PORT", "SUPERMEMORY_PORT": "6767",
+        "SUPERMEMORY_DATA_DIR": "./.supermemory", "WORKFLOW_ENGINE": "direct (win32)",
+        "SUPERMEMORY_NO_UPDATE_CHECK": None, "SUPERMEMORY_DISABLE_TELEMETRY": None, "SUPERMEMORY_NO_OPEN": None}
+    reads = (rec or {}).get("env", {}).get("reads", {})
+    check("SMB-21 (Q-A8S-ENVN): every env name the server reads is a fact with its default - the embedder's provider "
+          "(local), model, base URL (OPENAI_BASE_URL), dimensions, key (OPENAI_API_KEY); the LLM's key, base URL, model "
+          "(gpt-5.1) and the fast and text models (OPENAI_MODEL); the port, the data dir, the engine, the three switches; "
+          "the other providers' names must be absent",
+          err is None and {k: v["default"] for k, v in reads.items()} == WANT_READS
+          and all(v["fact"] in rec["facts"] for v in reads.values())
+          and rec["env"]["must_be_absent"] == ["ANTHROPIC_API_KEY", "GEMINI_API_KEY", "GROQ_API_KEY", "WORKERS_AI_API_KEY",
+                                               "CLOUDFLARE_ACCOUNT_ID", "GOOGLE_VERTEX_PROJECT_ID",
+                                               "GOOGLE_VERTEX_LOCATION"],
+          str(err or {k: v.get("default") for k, v in reads.items()}))
+    SPAWN = {"SUPERMEMORY_EMBEDDING_PROVIDER": "openai-compatible",
+             "SUPERMEMORY_EMBEDDING_BASE_URL": "http://127.0.0.1:47001/u/r1.u1/v1", "SUPERMEMORY_EMBEDDING_MODEL": "bge-m3@d1",
+             "SUPERMEMORY_EMBEDDING_DIMENSIONS": "1024", "OPENAI_API_KEY": "nvt3-token",
+             "OPENAI_BASE_URL": "http://127.0.0.1:47002/u/r1.u1/v1", "OPENAI_MODEL": "deepseek-flash", "PORT": "18123",
+             "SUPERMEMORY_DATA_DIR": "C:/u/sm_store"}
+    dp, dperr = _try(lambda: (SB.declared_problems(SPAWN, rec["env"]),
+                              SB.declared_problems({**SPAWN, "SUPERMEMORY_EMBEDDINGS_MODEL": "x"}, rec["env"])))
+    check("SMB-22 (Q-A8S-ENVN): the spawn's declared names are all names the server reads - a name it does not read "
+          "(SUPERMEMORY_EMBEDDINGS_MODEL, a typo that would leave the local embedder on) is a problem by name",
+          dperr is None and dp[0] == [] and any("SUPERMEMORY_EMBEDDINGS_MODEL" in p for p in dp[1]), str(dperr or dp))
+    fb, fberr = _try(lambda: [SB.declared_problems({**SPAWN, n: "x"}, rec["env"]) for n in SB.NOT_DECLARED])
+    check("SMB-22b: a name the spawn must never declare - OPENAI_FAST_MODEL, OPENAI_TEXT_MODEL, WORKFLOW_ENGINE, "
+          "SUPERMEMORY_LOCAL_EMBEDDING_MODEL, the three switches (theirs is TELEMETRY_OFF), "
+          "SUPERMEMORY_EMBEDDING_API_KEY (the embedder's key is OPENAI_API_KEY, the arm's proxy token) - is a problem "
+          "by name, each", fberr is None and len(fb) == 8 and all(len(p) == 1 for p in fb)
+          and sorted(SB.NOT_DECLARED) == sorted(["OPENAI_FAST_MODEL", "OPENAI_TEXT_MODEL", "WORKFLOW_ENGINE",
+                                                  "SUPERMEMORY_LOCAL_EMBEDDING_MODEL", "SUPERMEMORY_NO_UPDATE_CHECK",
+                                                  "SUPERMEMORY_DISABLE_TELEMETRY", "SUPERMEMORY_NO_OPEN",
+                                                  "SUPERMEMORY_EMBEDDING_API_KEY"]), str(fberr or fb))
+    rs, rserr = _try(lambda: (SB.resolve(SPAWN, rec["env"]), SB.resolve({}, rec["env"])))
+    check("SMB-23: what the declared env resolves to by the bundle's own rules - the embedder openai-compatible at the "
+          "leg with our tag and 1024 dimensions, the fast and text models both OPENAI_MODEL; no vendor default reached. "
+          "With nothing declared, every vendor default is named (local bge-base, gpt-5.1 twice)",
+          rserr is None and rs[0] == {"embedding": {"provider": "openai-compatible", "model": "bge-m3@d1",
+                                                     "base_url": "http://127.0.0.1:47001/u/r1.u1/v1", "dimensions": "1024"},
+                                       "llm": {"fast": "deepseek-flash", "text": "deepseek-flash",
+                                               "base_url": "http://127.0.0.1:47002/u/r1.u1/v1"},
+                                       "vendor_defaults": []}
+          and rs[1]["vendor_defaults"] == ["embedding provider local (Xenova/bge-base-en-v1.5)", "llm fast model gpt-5.1",
+                                           "llm text model gpt-5.1"], str(rserr or rs))
+    wf_win = (rec or {}).get("workflow")
+    rl, rlerr = _try(lambda: (lambda w: SB.run_facts(w[0], run="f1", record_sha256=w[1]))(
+        world(TMP / "linux", pe_file(BUNDLE.replace(b'function qd8($="win32"', b'function qd8($="linux"'))))["workflow"])
+    check("SMB-24: the workflow engine - on this build (qd8's platform win32) with no WORKFLOW_ENGINE the default is "
+          "direct, in process (no Rivet child); the Rivet port formula recorded as outside that default. A build whose "
+          "platform is not win32 defaults to rivet",
+          err is None and wf_win == {"platform": "win32", "env": "WORKFLOW_ENGINE", "default": "direct",
+                                     "rivet_ports": {"base": "1e4 + port*3 % 50000", "step": 3, "span": 60,
+                                                     "applies_by_default": False}}
+          and rlerr is None and rl["default"] == "rivet" and rl["rivet_ports"]["applies_by_default"] is True,
+          str(err or rlerr or (wf_win, rl)))
+    check("SMB-25: the product's own local bge-m3 (ONNX in process, 1024 dimensions, cls pooling) is recorded - an E5 "
+          "line; the stand's embedder is ours through the leg (the auditor: another runtime, other vectors, §3.4)",
+          err is None and (rec or {}).get("embedding_local") == {"model": "Xenova/bge-m3", "dimensions": 1024,
+                                                                  "pooling": "cls"},
+          str(err or (rec or {}).get("embedding_local")))
+
+    SEVEN = ["searchMemories", "readChunks", "searchDocumentChunks", "getMemoryDetails", "linkMemories", "forgetMemory",
+             "CreateMemory"]
+    sha = lambda x: hashlib.sha256(x).hexdigest()  # noqa: E731
+    check("SMB-26 (F8, Q-SM-TOOLS): the memory agent - its seven tools in order and the sha256 of their definitions "
+          "(the baseline the proxy will pin), each input schema's sha256 (CreateMemory's O72, the relation's Cm0), the "
+          "call's limits (40 steps, 12000 output tokens a step, 2 retries), its telemetry gate vH0 and its function id, "
+          "the sha256 of its system text",
+          err is None and (rec or {}).get("tools") == {
+              "names": SEVEN, "sha256": sha(TOOLS_LIT), "max_steps": 40, "max_output_tokens": 12000, "max_retries": 2,
+              "telemetry_gate": "vH0", "function_id": "self-hosted-memory-agent",
+              "schemas": {"CreateMemory": sha(AGENT_LITERALS[3]), "relation": sha(AGENT_LITERALS[4])},
+              "system_sha256": sha(b"You are a memory extraction agent. Use tools to inspect context.")},
+          str(err or (rec or {}).get("tools")))
+    eighth = TOOLS_LIT.replace(b'CreateMemory:TX(', b'runShell:TX({description:"Run.",inputSchema:p.object({})}),'
+                                                    b'CreateMemory:TX(')
+    t8, t8err = _try(lambda: (lambda w: SB.run_facts(w[0], run="f1", record_sha256=w[1]))(
+        world(TMP / "eighth", pe_file(BUNDLE.replace(TOOLS_LIT, eighth))))["tools"])
+    check("SMB-27 (F8): the tool names are read from the definitions, never from a list - an eighth tool in the bundle "
+          "is an eighth name and another sha256",
+          t8err is None and t8["names"] == SEVEN[:6] + ["runShell", "CreateMemory"] and t8["sha256"] == sha(eighth),
+          str(t8err or t8))
 
     print("\n- the run label -")
     check("SMB-19: a used run label is refused by name - a record is never overwritten",
