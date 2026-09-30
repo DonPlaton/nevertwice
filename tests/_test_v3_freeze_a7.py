@@ -104,26 +104,32 @@ WANT_CLEARED = {
     # the auditor's clearing of a7-hf h1 (2026-09-30 05:3x): the ten MiniLM files
     ("a7-hf", "h1"): {"_fetch/a7-hf/h1/record.json": "970344e56358bcb3c137d2f8c5c7ab9aa855c792f434d9ef31d7c33adbfcdbd7",
                       "_fetch/a7-hf/h1/place_record.json": "3aa4ab44d4d9d1e37249b57052f3405edafd1e8679ef3784010c10d81175ff48",
-                      "_fetch/a7-hf/h1/pin_fill.json": "449a89fca362ab4aa85d6408236cb8ba37ab56e04c2a6ddfeea75f59e8094afe"}}
+                      "_fetch/a7-hf/h1/pin_fill.json": "449a89fca362ab4aa85d6408236cb8ba37ab56e04c2a6ddfeea75f59e8094afe"},
+    # the auditor's clearing of W2 py-base-312 p1 (2026-09-30 06:4x): the product venvs' base
+    ("py-base-312", "p1"): {"_tools/py-base-312/py-base-312.json": "52d4aeae4c3701b098ed1dacbc5ba04c0181c13a06abf580d5442b0772846862"}}
 WANT_FAILED = {("a7-npm", "g1"): {"_fetch/a7-npm/g1/record.json": "fb4212e565e4233c86ef4432ec48a3e09d2bd031f6ffc84a875cc46e2ff84f8d"},
                ("a7-arxiv", "d1"): {"_fetch/a7-arxiv/d1/record.json": "854b13dd774ada2c5d94ef19ac4ba6b34685590ab293d49338c9f6eaa9ca11a6",
                                     "_fetch/a7-arxiv/d1/d6_report.json": "e3d01b8e784ba0af38c16df0632f98204ef6f9dc4e014b37b2e937deaddc36e4"},
                ("a8-supermemory-bin", "b1"): {
                    "_fetch/a8-supermemory-bin/b1/record.json": "f8680bc9a89083539d36335958ad89c7508856133eb903513e964d54429316db",
-                   "_install/a8-supermemory-bin/b1/bin_record.json": "2151a437255987690da9c1831877ed1d06bb23c40c3c3f7bbea3567b7b0dd817"}}
+                   "_install/a8-supermemory-bin/b1/bin_record.json": "2151a437255987690da9c1831877ed1d06bb23c40c3c3f7bbea3567b7b0dd817"},
+               ("a7-arxiv-src", "s1"): {"_fetch/a7-arxiv-src/s1/record.json": "88e21cb00817182c538bed636ea8f748714f43f2ed49740b647b3c776d013d29",
+                                        "_fetch/a7-arxiv-src/s1/d8_report.json": "98c828f16e0e88d2821c084ce9f0a973736bf5cf14803ef22200944412ae8803"}}
 NPM_PROBLEMS = ["job 0: the fetch child exited with 3", "job 0 request npm:package-document: Refused: status 404"]
 PREREG = {"research/v3/PREREG-V3-rev1.md": "1" * 64, "research/v3/PREREG-V3-AMENDMENTS.md": "2" * 64}
 
 print("- the declared lists are the auditor's -")
-check("F7-1: CLEARED_A7 is exactly the auditor's nine runs - the four of Q-F7, a7-github g1, a7-hf-d d1, a7-arxiv d2, "
-      "a8-supermemory-bin b2 and a7-hf h1 - with their twenty record files by sha256, and FAILED_A7 is a7-npm g1 (npm answers "
-      "404; revision 1's channel, erratum A3 T32), a7-arxiv d1 (429, nothing read) and a8-supermemory-bin b1 (R-GHR-ISS, "
-      "superseded by b2), each by its records' sha256 with the reason named",
+check("F7-1: CLEARED_A7 is exactly the auditor's ten runs - the four of Q-F7, a7-github g1, a7-hf-d d1, a7-arxiv d2, "
+      "a8-supermemory-bin b2, a7-hf h1 and py-base-312 p1 - with their twenty-one record files by sha256, and FAILED_A7 is "
+      "a7-npm g1 (npm answers 404; revision 1's channel, erratum A3 T32), a7-arxiv d1 (429, nothing read), "
+      "a8-supermemory-bin b1 (R-GHR-ISS, superseded by b2) and a7-arxiv-src s1 (301 to oaipmh.arxiv.org, the e-print not "
+      "asked for), each by its records' sha256 with the reason named",
       ok(lambda: {(e["window"], e["run"]): e["files"] for e in F7.CLEARED_A7} == WANT_CLEARED
          and {(e["window"], e["run"]): e["files"] for e in F7.FAILED_A7} == WANT_FAILED
          and "404" in F7.FAILED_A7[0]["reason"] and "T32" in F7.FAILED_A7[0]["reason"]
          and "429" in F7.FAILED_A7[1]["reason"] and "R-GHR-ISS" in F7.FAILED_A7[2]["reason"]
-         and "superseded by b2" in F7.FAILED_A7[2]["reason"]),
+         and "superseded by b2" in F7.FAILED_A7[2]["reason"] and "oaipmh.arxiv.org" in F7.FAILED_A7[3]["reason"]
+         and "not asked for" in F7.FAILED_A7[3]["reason"]),
       str([(e["window"], e["run"]) for e in getattr(F7, "CLEARED_A7", [])]))
 check("F7-2: a7-npm-d d1 is cleared by its ruling note - its two problems verbatim, the one excluded request its 404",
       ok(lambda: (npm := next(e for e in F7.CLEARED_A7 if e["window"] == "a7-npm-d"))["problems_verbatim"] == NPM_PROBLEMS
@@ -152,6 +158,19 @@ def bin_rec(docs_sha: str) -> dict:
                             "sha256": docs_sha},
             "job": {"assets": [{"name": exe, "size": 291315712, "digest": "sha256:" + B2_SHA},
                                {"name": exe + ".sha256", "size": 101, "digest": "sha256:" + "c4" * 32}]}}
+
+
+def base_rec() -> dict:
+    """W2 py-base-312 p1's record in its real shape - the fields the bases section and the issuers read."""
+    return {"window": "py-base-312", "version": "3.12.10", "sha512_verified": True,
+            "nupkg_sha256": "0eb85c2dfccccf1b17352de4c397f69194035b7d37149eacc16f1147d93de3b8",
+            "python_exe_sha256": "4d6f5f81a4bca11191c4c7c6b43632694d0a4ce74e068619d8fdc161d469859a",
+            "tools_tree_sha256": "41905088391907e4de849461bbeac119f1d1dd2c1a3ceacbcf202d15186ab017", "files": 1322,
+            "package": "https://api.nuget.org/v3-flatcontainer/python/3.12.10/python.3.12.10.nupkg",
+            "peer": {"issuer_o": "Microsoft Corporation", "issuer_cn": "Microsoft TLS G2 ECC CA OCSP 02",
+                     "subject_cn": "api.nuget.org"},
+            "checks": {"version_ok": True, "venv_ok": True, "tools_unchanged_by_checks": True},
+            "check": {"complete": True, "native_hits": 0, "fs_hits": 0}}
 
 
 def world(tag: str, *, npm_problems=NPM_PROBLEMS, gh_org="Sectigo Limited"):
@@ -192,6 +211,7 @@ def world(tag: str, *, npm_problems=NPM_PROBLEMS, gh_org="Sectigo Limited"):
         for rel in e["files"]:
             obj = (rec[w] if rel.endswith("/record.json")
                    else bin_rec(shas["_fetch/a7-docs/d1/d4_report.json"]) if rel.endswith("/bin_record.json")
+                   else base_rec() if rel.startswith("_tools/")
                    else {"window": w, "problems": []})
             files[rel] = shas[rel] = put(r, rel, obj)
         e["files"] = files
@@ -229,7 +249,8 @@ check("F7-3: the fragment holds the four cleared runs and the failed one, each f
       ok(lambda: oerr is None and [(w["window"], w["run"]) for w in OUT["windows"]] == [(e["window"], e["run"]) for e in CL]
          and OUT["windows"][3]["problems"] == {k: (2 if k.endswith("record.json") else 0) for k in CL[3]["files"]}
          and [(f["window"], f["run"]) for f in OUT["failed_runs"]] == [("a7-npm", "g1"), ("a7-arxiv", "d1"),
-                                                                        ("a8-supermemory-bin", "b1")]), str(oerr))
+                                                                        ("a8-supermemory-bin", "b1"),
+                                                                        ("a7-arxiv-src", "s1")]), str(oerr))
 check("F7-16: the fragment's binaries section pins supermemory-local's server (Q-BIN-1 = O-a) - a8-supermemory-bin b2: "
       "server-v0.0.8 at 5d2b5855, the Windows asset, its sha256 = the release digest, its size, the a7-docs record it was "
       "read from and its window record, each by sha256",
@@ -242,6 +263,16 @@ check("F7-16: the fragment's binaries section pins supermemory-local's server (Q
           "window_record": {"path": "_fetch/a8-supermemory-bin/b2/record.json",
                             "sha256": {r: s for e in CL for r, s in e["files"].items()}[
                                 "_fetch/a8-supermemory-bin/b2/record.json"]}}}), str(oerr))
+check("F7-17: the fragment's bases section pins W2's py-base-312 p1 - 3.12.10, the nupkg's, python.exe's and the tools "
+      "tree's sha256, 1322 files, its record by sha256 - where the product venvs' base lies in FREEZE-V3",
+      ok(lambda: oerr is None and OUT["bases"] == {"py-base-312": {
+          "run": "p1", "version": "3.12.10",
+          "nupkg_sha256": "0eb85c2dfccccf1b17352de4c397f69194035b7d37149eacc16f1147d93de3b8",
+          "python_exe_sha256": "4d6f5f81a4bca11191c4c7c6b43632694d0a4ce74e068619d8fdc161d469859a",
+          "tools_tree_sha256": "41905088391907e4de849461bbeac119f1d1dd2c1a3ceacbcf202d15186ab017", "files": 1322,
+          "record": {"path": "_tools/py-base-312/py-base-312.json",
+                     "sha256": {r: s for e in CL for r, s in e["files"].items()}["_tools/py-base-312/py-base-312.json"]}}}),
+      str(oerr))
 check("F7-15: a8-supermemory-bin b2's window names objects.githubusercontent.com declared_not_reached (Q-DH-1 = O-a) - "
       "declared, never tunnelled, so no issuer is asked of it; no other window carries the list",
       ok(lambda: oerr is None and {w["window"]: w.get("declared_not_reached") for w in OUT["windows"]
@@ -252,7 +283,8 @@ check("F7-4: its pins are PINS_A7 as filled - all 74 (a7-github's 52, a7-hf's 10
       "and its issuers the public ones the records name",
       ok(lambda: sorted(OUT["pins"]) == sorted(CP.PINS_A7_DECLARED) and len(OUT["pins"]) == 74
                          and all(v["filled_from"] == "a7-github g1 pin_fill 0123456789ab" for v in OUT["pins"].values())
-                         and sorted(OUT["issuers"]) == ["api.github.com", "export.arxiv.org", "github.com", "huggingface.co",
+                         and sorted(OUT["issuers"]) == ["api.github.com", "api.nuget.org", "export.arxiv.org", "github.com",
+                                                        "huggingface.co",
                                                         "raw.githubusercontent.com", "registry.npmjs.org",
                                                         "release-assets.githubusercontent.com", "us.aws.cdn.hf.co"]),
       str(oerr))

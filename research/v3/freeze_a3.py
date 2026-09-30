@@ -15,6 +15,10 @@ is missing or whose bytes moved stops the build (FreezeRefused), nothing is writ
   window's declared_not_reached (written only when there is one); a catcher line that is neither a tunnel nor a refusal
   stops the build. A record without a catcher (a tool record) contacted its request URLs' hosts;
 * pins: the v3 pin table as filled (research/v3/corpus_pin_v3.py) - every non-alias pin filled or the build stops;
+* bases: every cleared py-base run (kind "base", W2 onward) by its window - version, the nupkg's, python.exe's and the
+  tools tree's sha256, its file count and its record by sha256; the build stops by name unless its record is
+  _tools/<window>/<window>.json of that window and says the base was verified (sha512_verified, checks.version_ok,
+  checks.venv_ok, checks.tools_unchanged_by_checks, check.complete); no base run, no section;
 * binaries: every cleared binary run (kind "binary", the auditor's Q-BIN-1 = O-a: FREEZE-V3 3a pins the competitors'
   versions explicitly) by its window - tag, commit, the asset its checksum line names, sha256, size, digest, the docs
   record it was read from (its sha256 and its path) and its window record, each by sha256; the build stops by name
@@ -182,6 +186,26 @@ def _issuer_rows(rec: dict) -> list:
     return rows
 
 
+def _base(e: dict, recs: dict) -> dict:
+    """The bases section's entry of one cleared py-base run; FreezeRefused names what its record does not hold."""
+    w, r = e["window"], e["run"]
+    rel = f"_tools/{w}/{w}.json"
+    if rel not in e["files"]:
+        raise FreezeRefused(f"{w} {r}: the base entry names no {rel}")
+    b = recs[(w, r, rel)]
+    if b.get("window") != w:
+        raise FreezeRefused(f"{w} {r}: its record names the window {b.get('window')!r}")
+    missing = ([k for k in ("sha512_verified",) if b.get(k) is not True]
+               + [f"checks.{k}" for k in ("version_ok", "venv_ok", "tools_unchanged_by_checks")
+                  if (b.get("checks") or {}).get(k) is not True]
+               + (["check.complete"] if (b.get("check") or {}).get("complete") is not True else []))
+    if missing:
+        raise FreezeRefused(f"{w} {r}: its record does not hold {', '.join(missing)} - the base was not verified")
+    return {"run": r, **{k: b.get(k) for k in ("version", "nupkg_sha256", "python_exe_sha256", "tools_tree_sha256",
+                                               "files")},
+            "record": {"path": rel, "sha256": e["files"][rel]}}
+
+
 def _binary(e: dict, recs: dict, cleared: list) -> dict:
     """The binaries section's entry of one cleared binary run (Q-BIN-1 = O-a); FreezeRefused names the first clause
     that fails."""
@@ -314,6 +338,8 @@ def build(runs_root: Path, *, pins: dict, filled: dict | None = None, cleared: l
             "wheels": rec.get("wheels"), "installed_set_sha256": rec.get("installed_set_sha256"),
             "installed_files": rec.get("installed_files"), "tag": rec.get("tag"),
             "pip": {k: (rec.get("pip") or {}).get(k) for k in ("version", "certifi_sha256", "trust")}}
+    for e in by_kind.get("base", []):
+        out.setdefault("bases", {})[e["window"]] = _base(e, recs)
     for e in by_kind.get("binary", []):
         out.setdefault("binaries", {})[e["window"]] = _binary(e, recs, cleared)
     for e in by_kind.get("facts", []):

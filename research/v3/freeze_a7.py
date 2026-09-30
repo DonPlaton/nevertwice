@@ -12,6 +12,8 @@ A7's own lists and table:
   (a8-supermemory-bin b2: objects.githubusercontent.com);
 * pins: PINS_A7 as filled (FILLED_A7) - every pin filled, or the build stops ("A7 is not complete");
 * binaries: supermemory-local's server from a8-supermemory-bin b2 (Q-BIN-1 = O-a), by freeze_a3's binaries section;
+* bases: W2's py-base-312 p1 (the product venvs' base), by freeze_a3's bases section - A8's windows are cleared here
+  beside A7's (the supermemory binary already is), so FREEZE-V3 reads one fragment for both;
 * prereg: the sha256 of every research/v3/PREREG-V3*.md tracked at the anchor commit, by its git blob - revision 1 and
   the amendments at least - and the anchor itself; never the working copy.
 A window after these (a7-github, a7-arxiv, a8-supermemory-bin, a7-hf-d, a7-hf) joins CLEARED_A7 only as a line written
@@ -76,6 +78,10 @@ CLEARED_A7 = [
         "_fetch/a7-hf/h1/record.json": "970344e56358bcb3c137d2f8c5c7ab9aa855c792f434d9ef31d7c33adbfcdbd7",
         "_fetch/a7-hf/h1/place_record.json": "3aa4ab44d4d9d1e37249b57052f3405edafd1e8679ef3784010c10d81175ff48",
         "_fetch/a7-hf/h1/pin_fill.json": "449a89fca362ab4aa85d6408236cb8ba37ab56e04c2a6ddfeea75f59e8094afe"}},
+    # W2: the product venvs' base, CPython 3.12.10 from NuGet (the auditor's clearing, 2026-09-30 06:4x: the nupkg's
+    # sha256 and sha512, python.exe, 3.12.10 the newest 3.12, m5 PASS, secret_scan 0)
+    {"window": "py-base-312", "run": "p1", "kind": "base", "files": {
+        "_tools/py-base-312/py-base-312.json": "52d4aeae4c3701b098ed1dacbc5ba04c0181c13a06abf580d5442b0772846862"}},
 ]
 #: The A7 runs that were NOT cleared - kept by sha256 with the reason, never used.
 FAILED_A7 = [
@@ -92,6 +98,11 @@ FAILED_A7 = [
         "_fetch/a8-supermemory-bin/b1/record.json": "f8680bc9a89083539d36335958ad89c7508856133eb903513e964d54429316db",
         "_install/a8-supermemory-bin/b1/bin_record.json": "2151a437255987690da9c1831877ed1d06bb23c40c3c3f7bbea3567b7b0dd817"},
      "reason": "TLS issuer not recorded by gh_release (R-GHR-ISS); superseded by b2; bytes identical"},
+    {"window": "a7-arxiv-src", "run": "s1", "files": {
+        "_fetch/a7-arxiv-src/s1/record.json": "88e21cb00817182c538bed636ea8f748714f43f2ed49740b647b3c776d013d29",
+        "_fetch/a7-arxiv-src/s1/d8_report.json": "98c828f16e0e88d2821c084ce9f0a973736bf5cf14803ef22200944412ae8803"},
+     "reason": "export.arxiv.org answered the OAI request with 301 to oaipmh.arxiv.org (not followed: no redirect was "
+               "declared); the e-print was not asked for - the auditor's Q-D8-5 = O-b"},
 ]
 
 

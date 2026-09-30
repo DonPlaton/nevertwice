@@ -404,6 +404,60 @@ for i_, (label, (kw_, words)) in enumerate(bin_bad.items()):
     check(f"BIN-3 ({label}): the build is refused by name", bool(err_x) and err_x.startswith("FreezeRefused")
           and words in err_x, str(err_x))
 
+print("\n- W2: a cleared py-base run is pinned in the bases section -")
+
+
+def base_rec(**over) -> dict:
+    """py-base-312 p1's record in its real shape - the fields the bases section and the issuers read."""
+    r = {"window": "py-base-312", "version": "3.12.10", "sha512_verified": True, "nupkg_sha256": "a" * 64,
+         "python_exe_sha256": "b" * 64, "tools_tree_sha256": "c" * 64, "files": 1322,
+         "package": "https://api.nuget.org/v3-flatcontainer/python/3.12.10/python.3.12.10.nupkg",
+         "peer": {"issuer_o": "Microsoft Corporation", "issuer_cn": "Microsoft TLS G2 ECC CA OCSP 02",
+                  "subject_cn": "api.nuget.org"},
+         "checks": {"version_ok": True, "venv_ok": True, "tools_unchanged_by_checks": True},
+         "check": {"complete": True, "native_hits": 0, "fs_hits": 0}}
+    for k, v in over.items():
+        if "." in k:
+            a_, b_ = k.split(".")
+            r[a_] = {**r[a_], b_: v}
+        else:
+            r[k] = v
+    return r
+
+
+def base_build(tag: str, *, rel: str = "_tools/py-base-312/py-base-312.json", **over) -> tuple:
+    r, cl, fl, pre = tree(tag)
+    cl.append({"window": "py-base-312", "run": "p1", "kind": "base", "files": {rel: put(r, rel, base_rec(**over))}})
+    try:
+        return F.build(r, pins=CP.PINS, cleared=cl, failed=fl, prereg=pre), None, cl[-1]["files"]
+    except Exception as e:  # noqa: BLE001 - a refusal FAILs the row by name
+        return {}, f"{type(e).__name__}: {e}", cl[-1]["files"]
+
+
+fz_b, err_b, files_bb = base_build("base_ok")
+check("BASE-1: a cleared py-base run is pinned by its window in bases - its version, the nupkg's, python.exe's and the "
+      "tools tree's sha256, its file count, and its record by sha256; its peer's issuer is among the issuers",
+      err_b is None and fz_b.get("bases") == {"py-base-312": {
+          "run": "p1", "version": "3.12.10", "nupkg_sha256": "a" * 64, "python_exe_sha256": "b" * 64,
+          "tools_tree_sha256": "c" * 64, "files": 1322,
+          "record": {"path": "_tools/py-base-312/py-base-312.json", "sha256": files_bb["_tools/py-base-312/py-base-312.json"]}}}
+      and "api.nuget.org" in fz_b.get("issuers", {}), str(err_b or fz_b.get("bases")))
+check("BASE-2: a fragment without a base run has no bases section (freeze_a3.json stays byte for byte)",
+      "bases" not in fz, str(sorted(fz)))
+base_bad = {
+    "its record not at _tools/<window>/<window>.json": (dict(rel="_tools/py-base-312/other.json"), "names no _tools/py-base-312/py-base-312.json"),
+    "the package's sha512 not verified": (dict(sha512_verified=False), "sha512_verified"),
+    "the version not the declared one": ({"checks.version_ok": False}, "checks.version_ok"),
+    "no working venv": ({"checks.venv_ok": None}, "checks.venv_ok"),
+    "the tools changed by the checks": ({"checks.tools_unchanged_by_checks": False}, "checks.tools_unchanged_by_checks"),
+    "an incomplete check": ({"check.complete": False}, "check.complete"),
+    "a record of another window": (dict(window="py-base-314"), "names the window 'py-base-314'"),
+}
+for i_, (label, (kw_, words)) in enumerate(base_bad.items()):
+    _fz, err_x, _f = base_build(f"base_bad_{i_}", **kw_)
+    check(f"BASE-3 ({label}): the build is refused by name", bool(err_x) and err_x.startswith("FreezeRefused")
+          and words in err_x, str(err_x))
+
 print("\n- the declared lists: exactly the auditor's verdicts -")
 got_cleared = sorted((e["window"], e["run"]) for e in F.CLEARED)
 check("CLEARED names exactly the cleared runs (py-base b1, discovery d1/d2, pyarrow i1, hf h2, github g1, tiktoken t1, "
