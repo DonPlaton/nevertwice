@@ -165,3 +165,24 @@ the encoder its warning asks for.
 - **§13, trap closure, the new line:**
 
 | T34 Mem0 without its Ollama client and without BM25 | §2.2 | mem0_v3 += ollama==0.6.3, fastembed==0.8.1; Qdrant/bm25 at 22b8d2af by windows, offline; a unit without BM25 fails |
+
+## A6 - T35: the order of an arm's reads within an S1 unit
+
+- **Trap:** T35 read order within a unit.
+- **Date:** 2026-09-30.
+- **Ruling:** the auditor's Q3 = (a) on the S1 pilot driver plan (2026-09-30); rev1 §5.2 does not state the order.
+- **Reason:** S1 is read at three points (B, K and, where Row V gives it, V) from one store that the write stage built
+  once. The reads of one unit run in one read child after the write stage, in one declared order, the same for every
+  arm, so no arm's point sees a store another arm's point would not.
+- **§5.2, after the paragraph on the read stage, the new paragraph:**
+
+Within an S1 unit an arm's reads run in one read child, after its write stage, in the order B, K, V (V only where Row V
+reads it), the same for every arm. B, the headline point, reads the store exactly as the write stage left it; K reads
+it after B, and V after B and K. The pilot measures, for every arm, run and S1 unit, the store's digest before the
+unit's first read and after its last (M34); a product whose store changes under its own reads is named, and before the
+campaign either its points are read from a restored copy of the written store, one per point, or the change is a
+declared line of the report beside its K and V numbers - never discovered afterwards.
+
+- **§13, trap closure, the new line:**
+
+| T35 read order within a unit | §5.2 | B, K, V in one read child, the same for every arm; M34 digest before/after; a store changed by reads is decided before the campaign |
