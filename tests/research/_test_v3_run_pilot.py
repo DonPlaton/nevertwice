@@ -17,7 +17,10 @@ on a stand result built in this process.
 * T-PLT-6 (M33): a rendered V's v_cut summed per unit and per stand; an unmeasured one a problem by name;
 * T-PLT-7 (T-RV, the auditor): the artifacts are built on the base stand S1 from the stand id S1-smoke-1 - V's too - a
   V≡ arm is its pointer, a refused arm is in v_not_read;
-* T-PLT-8 (R7): an artifact target inside research/v3/results is refused;
+* T-PLT-8 (R7): an artifact target inside the results directory is refused - the row points the module's RESULTS_DIR at
+  a temporary directory, so even a broken guard never writes into research/v3/results (B-PLT8-TAMPER);
+* T-PLT-12: no LME sha256 is a problem by name; T-PLT-13: the model_version stand-ins are "pilot-placeholder";
+* T-PLT-14: research/v3/results holds the same files after the suite as before;
 * T-PLT-9: arms outside the run config, or a declared V≡ that does not hold, refuse the pilot by name before anything
   runs.
 
@@ -176,6 +179,18 @@ class Quiet:
 
 
 TMP = Path(tempfile.mkdtemp(prefix="nvt3_run_pilot_"))
+
+
+def _listing(root: Path) -> list:
+    """(relative path, size) of every file under ``root`` - research/v3/results before and after the suite."""
+    return sorted((p.relative_to(root).as_posix(), p.stat().st_size) for p in root.rglob("*") if p.is_file()) \
+        if root.is_dir() else []
+
+
+#: B-PLT8-TAMPER (the auditor, 2026-09-30 18:0x): research/v3/results is read by m5 and the anchor's checks - a row must
+#: never be able to write there, not even under a mutant that removes R7's guard
+RESULTS_REAL = ROOT / "research" / "v3" / "results"
+RESULTS_BEFORE = _listing(RESULTS_REAL)
 POLY = TMP / "polygon"
 ARM_PY = Path(getattr(sys, "_base_executable", None) or sys.executable)
 GIT = shutil.which("git")
@@ -449,15 +464,41 @@ try:
           set(got7[0]) == {"B", "K", "V"} and v7.get("stand") == "S1" and v7.get("arms", {}).get("mem0") == {
               "equivalent_to": "B"} and "letta" not in v7.get("arms", {}) and "refused" in (got7[1].get("letta") or {})
           and got7[2] == [], str((sorted(got7[0]), got7[1], got7[2]))[:400])
-    r8 = err_of(lambda: PI.pilot_artifacts(res7, inp=inp7, arms=["nevertwice"], out_dir=PI.RESULTS_DIR / "pilot-x",
-                                            runs_root=RR, lme_sha256="e" * 64, list_sha256="f" * 64, A=A,
-                                            PT=PT7)) if PI else PI_ERR
-    check("T-PLT-8 (R7): an artifact target inside research/v3/results is refused by name - a pilot is never a result",
-          r8.startswith("ValueError") and "research/v3/results" in r8 and not (PI and (PI.RESULTS_DIR / "pilot-x").exists()),
-          r8)
+    # B-PLT8-TAMPER: the module's RESULTS_DIR is a temporary directory for this row, so a broken guard writes into tmp
+    fake_results = TMP / "fake_research_v3_results"
+    fake_results.mkdir()
+    saved_rd = PI.RESULTS_DIR if PI else None
+    try:
+        if PI:
+            PI.RESULTS_DIR = fake_results
+        r8 = err_of(lambda: PI.pilot_artifacts(res7, inp=inp7, arms=["nevertwice"], out_dir=fake_results / "pilot-x",
+                                                runs_root=RR, lme_sha256="e" * 64, list_sha256="f" * 64, A=A,
+                                                PT=PT7)) if PI else PI_ERR
+        landed8 = (fake_results / "pilot-x").exists()
+    finally:
+        if PI:
+            PI.RESULTS_DIR = saved_rd
+    check("T-PLT-8 (R7): an artifact target inside the results directory is refused by name - a pilot is never a result "
+          "(the row points RESULTS_DIR at a temporary directory: B-PLT8-TAMPER)",
+          r8.startswith("ValueError") and "research/v3/results" in r8 and not landed8, r8)
+    got12 = val(lambda: PI.pilot_artifacts(res7, inp=inp7, arms=["nevertwice"], out_dir=TMP / "art12", runs_root=RR,
+                                            lme_sha256=None, list_sha256="f" * 64, A=A, PT=PT7),
+                ({}, {}, ["raised"])) if PI else ({}, {}, ["no module"])
+    b12 = jload(Path((got12[0].get("B") or {}).get("path", TMP / "none")), {})
+    check("T-PLT-12 (the auditor): with no LME sha256 the artifacts' input manifest says unknown AND the pilot names it "
+          "as a problem - never a silent unknown",
+          (b12.get("input_manifest") or {}).get("dataset_sha256") == "unknown"
+          and any("lme_sha256" in p_ and "unknown" in p_ for p_ in got12[2]), str(got12[2])[:300])
+    check("T-PLT-13 (the auditor): the pilot's model_version stand-ins are marked pilot-placeholder - response_model and "
+          "changelog_newest - so no reader takes them for measured values",
+          v7.get("model_version") == {"response_model": "pilot-placeholder", "changelog_newest": "pilot-placeholder"},
+          str(v7.get("model_version")))
 finally:
     up.close()
     shutil.rmtree(TMP, ignore_errors=True)
 
+check("T-PLT-14 (B-PLT8-TAMPER): research/v3/results holds exactly the files it held before the suite - no row wrote "
+      "there", _listing(RESULTS_REAL) == RESULTS_BEFORE,
+      str(sorted(set(_listing(RESULTS_REAL)) ^ set(RESULTS_BEFORE)))[:300])
 print(f"\nv3 run pilot: {PASSED} passed, {FAILED} failed")
 sys.exit(1 if FAILED else 0)

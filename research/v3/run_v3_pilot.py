@@ -33,6 +33,8 @@ HERE = Path(__file__).resolve().parent
 PILOT_STAND = "S1"
 KIND = "_pilot"
 RESULTS_DIR = HERE / "results"
+#: the pilot's artifacts carry no measured model version: its stand-ins are marked (the auditor, 2026-09-30 18:0x)
+MODEL_VERSION_PLACEHOLDER = {"response_model": "pilot-placeholder", "changelog_newest": "pilot-placeholder"}
 SPLIT = "smoke:481-500"
 POINT_ORDER = ("B", "K", "V")
 
@@ -224,10 +226,12 @@ def pilot_artifacts(res: Mapping[str, Any], *, inp: Any, arms: Sequence[str], ou
     if RESULTS_DIR.resolve() in (out_dir.resolve(), *out_dir.resolve().parents):
         raise ValueError(f"{out_dir}: a pilot artifact never lands in research/v3/results (R7)")
     recs = _records_of(runs_root, inp.stand_id)
+    written, v_not_read, problems = {}, {}, []
+    if not lme_sha256:                  # the auditor (2026-09-30 18:0x): never a silent unknown
+        problems.append("lme_sha256 is unknown: the artifacts' input manifest names no dataset sha256 (SmokeDeps)")
     man = {"dataset_sha256": lme_sha256 or "unknown", "list_sha256": list_sha256, "split": SPLIT}
     isha = A.sha256_of(man)
     tree = res.get("tree_start") or {}
-    written, v_not_read, problems = {}, {}, []
     for point in POINT_ORDER:
         rows, sids = {}, []
         for arm in arms:
@@ -249,8 +253,7 @@ def pilot_artifacts(res: Mapping[str, Any], *, inp: Any, arms: Sequence[str], ou
             continue
         try:
             doc = A.build(stand=PILOT_STAND, point=point, tier="product", arms=rows, brackets=None,
-                          input_manifest=man, model_version={"response_model": "the STATUS START line's model",
-                                                             "changelog_newest": "unread"},
+                          input_manifest=man, model_version=dict(MODEL_VERSION_PLACEHOLDER),
                           commit=str(tree.get("anchor") or ""), dirty=not bool(tree.get("clean")),
                           status_ids=sorted(set(sids)), run_files={s: recs[s] for s in sorted(set(sids))},
                           declared_axes=list(A.DECLARED_AXES[point]))
