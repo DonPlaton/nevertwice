@@ -750,6 +750,11 @@ class SmokeDeps:
     # A4 (the auditor's Q9 = (a), B3): (arm, ArmRun, *, stand_id, unit_block, unit_chars, v_template) -> an UNBOUND plan
     # launcher (check_points, bind_proxy, launcher, record); None - make_launcher, through the same order (_Deferred)
     make_plan_launcher: Callable[..., Any] | None = None
+    # A5 (the pilot): a stand's reader template by the stand, an arm's template by its key (zep-graphiti:V), the pin of
+    # the LME file the pilot reads (its artifact's dataset_sha256)
+    stand_templates: Callable[[str], Any] | None = None
+    arm_template: Callable[[str], Any] | None = None
+    lme_sha256: str | None = None
 
 
 @dataclass(frozen=True)
@@ -1070,6 +1075,8 @@ def real_smoke_deps(c: Any, cfg: RunConfig, *, writer_bounds: Mapping[str, Mappi
         templates=(TP.stand_template("S4", pins_root=pins), TP.stand_template("S4-cat5", pins_root=pins)),
         locomo_question=lambda q, cat: TP.locomo_question(q, cat, pins_root=pins), decl=PL.python_decl,
         make_launcher=child_launcher_factory(cfg, c), make_plan_launcher=plan_launcher_factory(cfg, c),
+        stand_templates=lambda s: TP.stand_template(s, pins_root=pins),
+        arm_template=lambda key: TP.arm_template(key, pins_root=pins), lme_sha256=CP.PINS["lme_s_cleaned"]["sha256"],
         start_proxy=lambda c_, **kw: P.start(c_, spawn=L.spawn_proxy, **kw), stop_proxy=P.stop, post=P.post,
         proxy_route={"via_port": L.network_via_port(c)},
         embed_tokenizer={"path": str(bge), "sha256": CP.PINS["bge_m3_tokenizer_json"]["sha256"]},

@@ -106,6 +106,8 @@ NOT_FROM_THREADS = {
     "research/v3/run_v3_gate.py::_load": "_incidents() in GateDriver.poll - the one gate thread, and stop() after its "
                                          "join: never two at once",
     "research/v3/run_v3_hooks.py::_load": "Hooks.tree_check / model_probe / preflight, the stand's main thread",
+    "research/v3/run_v3_pilot.py::_rv": "main, run_pilot's first line and s1_inputs - the pilot's main thread, before "
+                                        "_drive_stand starts the pools (post() and pilot_artifacts load nothing)",
     "research/v3/run_v3_proxy.py::_load": "build_config / build_secrets / start, the main thread",
     "research/v3/run_v3_smoke.py::_load": "summarize after the stand, the main thread",
     "research/v3/sched_ctl.py::_scheduler": "module level (STAGES), at import",
