@@ -129,7 +129,10 @@ class _Echo:
                     if line.lower().startswith(b"content-length:"):
                         length = int(line.split(b":", 1)[1])
                 while len(buf) < end + length:
-                    buf += c.recv(65536)
+                    chunk = c.recv(65536)
+                    if not chunk:
+                        return  # a truncated request has no body left to read
+                    buf += chunk
                 del buf[:end + length]
                 c.sendall(b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: "
                           + str(len(self.BODY)).encode() + b"\r\n\r\n" + self.BODY)
@@ -155,9 +158,32 @@ def _ttfb(port: int, token: str | None, n: int) -> list[float]:
             t0 = time.perf_counter()
             s.sendall(req)
             got = s.recv(65536)
-            out.append((time.perf_counter() - t0) * 1000)
-            while got.count(b"}") < 3 and not got.endswith(b'"deepseek-flash"}'):
-                got += s.recv(65536)
+            first_byte_ms = (time.perf_counter() - t0) * 1000
+            if not got:
+                raise ConnectionError("HOP-EOF: connection closed before response bytes")
+            out.append(first_byte_ms)
+            # TCP does not preserve send boundaries. Consume the complete Content-Length frame
+            # before another sample; braces inside the JSON body cannot delimit a response.
+            while b"\r\n\r\n" not in got:
+                chunk = s.recv(65536)
+                if not chunk:
+                    raise ConnectionError("HOP-EOF: connection closed during response headers")
+                got += chunk
+            end = got.index(b"\r\n\r\n") + 4
+            headers = got[:end].split(b"\r\n")
+            lengths = [line.split(b":", 1)[1].strip() for line in headers[1:]
+                       if line.lower().startswith(b"content-length:")]
+            if (not headers[0].startswith(b"HTTP/1.1 200 ") or len(lengths) != 1
+                    or not lengths[0].isdigit()):
+                raise ConnectionError("HOP-FRAME: expected one successful echo response length")
+            response_end = end + int(lengths[0])
+            while len(got) < response_end:
+                chunk = s.recv(65536)
+                if not chunk:
+                    raise ConnectionError("HOP-EOF: connection closed during the echo response")
+                got += chunk
+            if len(got) != response_end:
+                raise ConnectionError("HOP-FRAME: unexpected bytes after the echo response")
     finally:
         s.close()
     return out
@@ -171,25 +197,39 @@ def hop_benchmark(n: int = 200, proxy_module_path: Path | None = None) -> dict:
     sys.modules["v3_ab_proxy"] = P
     spec.loader.exec_module(P)
     import tempfile  # noqa: PLC0415
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+    import sandbox_guard  # noqa: PLC0415 - only freshly owned, drained directories
     tmp = Path(tempfile.mkdtemp(prefix="nvt3_hop_"))
-    (tmp / "k.env").write_bytes(b"DEEPSEEK_API_KEY=nvt3-hop-benchmark-not-a-key\n")
-    echo = _Echo()
+    echo = None
+    drained = True
     out = {}
     try:
+        (tmp / "k.env").write_bytes(b"DEEPSEEK_API_KEY=nvt3-hop-benchmark-not-a-key\n")
+        echo = _Echo()
         direct = _ttfb(echo.port, None, n)
         for mode in ("raw", "record"):
             arm = P.ArmConfig(arm="hop", mode=mode, token="nvt3-hop-token", pinned_model="deepseek-flash")
             cfg = P.ProxyConfig(arms=[arm], run_dir=tmp / mode, upstream_host="127.0.0.1", upstream_port=echo.port,
                                 upstream_tls=False, control_token="c")
             px = P.Proxy(cfg, P.read_key(tmp / "k.env"), log=lambda m: None)
-            ports = px.start()
-            via = _ttfb(ports["arms"]["hop"]["write"], "nvt3-hop-token", n)
-            px.stop()
+            drained = False
+            try:
+                ports = px.start()
+                via = _ttfb(ports["arms"]["hop"]["write"], "nvt3-hop-token", n)
+            finally:
+                left = px.stop()
+                if left:
+                    raise RuntimeError(f"HOP-DRAIN: unfinished requests {left}; retained {tmp}")
+                drained = True
             added = added_over(via, direct)
             out[mode] = {"p50_ms": round(percentile(added, 50), 3), "p95_ms": round(percentile(added, 95), 3), "n": n}
         out["direct_p50_ms"] = round(statistics.median(direct), 3)
     finally:
-        echo.close()
+        if echo is not None:
+            echo.close()
+        if drained:
+            # No proxy writer remains. An incomplete drain deliberately retains its evidence.
+            sandbox_guard.remove_at_exit(tmp)
     return out
 
 
