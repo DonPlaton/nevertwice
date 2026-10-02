@@ -33,6 +33,7 @@ import importlib.util
 import os
 import re
 import signal
+import stat
 import socket
 import subprocess
 import sys
@@ -437,10 +438,30 @@ def stop(child: Any, *, grace_s: float = STOP_GRACE_S, clock: Callable[[], float
 def data_digest(data_dir: str | os.PathLike) -> dict:
     """The data directory's files: {relative path: sha256}, links listed as "link" and never followed."""
     root, out = Path(data_dir), {}
-    for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
+    try:
+        if _is_link(root):
+            return {".": "link"}
+        root.lstat()
+        if not root.is_dir():
+            return {".": "unreadable: root-not-directory"}
+    except OSError as exc:
+        return {".": "unreadable: " + type(exc).__name__}
+
+    def walk_error(exc: OSError) -> None:
+        path = Path(exc.filename) if exc.filename else root
+        relative = path.relative_to(root).as_posix() if _inside(path, root) else "."
+        out[relative] = "unreadable: " + type(exc).__name__
+
+    for dirpath, dirnames, filenames in os.walk(root, followlinks=False, onerror=walk_error):
         for name in list(dirnames):
             p = Path(dirpath, name)
-            if _is_link(p):
+            try:
+                linked = _is_link(p)
+            except OSError as exc:
+                out[p.relative_to(root).as_posix()] = "unreadable: " + type(exc).__name__
+                dirnames.remove(name)
+                continue
+            if linked:
                 out[p.relative_to(root).as_posix()] = "link"
                 dirnames.remove(name)
         for name in filenames:
@@ -455,7 +476,12 @@ def data_digest(data_dir: str | os.PathLike) -> dict:
 # ── the key's traces ────────────────────────────────────────────────────
 
 def _is_link(p: Path) -> bool:
-    return p.is_symlink() or bool(getattr(os.path, "isjunction", lambda _: False)(p))
+    """Check every Windows reparse point without following it, including Python3.10."""
+    try:
+        metadata = p.lstat()
+    except FileNotFoundError:
+        return False
+    return stat.S_ISLNK(metadata.st_mode) or bool(getattr(metadata, "st_file_attributes", 0) & 0x400)
 
 
 def _inside(child: Path, root: Path) -> bool:
@@ -488,23 +514,44 @@ def key_search(roots: Mapping[str, str | os.PathLike], held: HeldKey, *, data_di
     out: dict = {"files": 0, "product_stored": [], "leaks": [], "unreadable": [], "links": []}
     for label, root in sorted(roots.items()):
         root = Path(root)
-        if _is_link(root):
-            out["links"].append({"root": label, "path": "."})
+        try:
+            if _is_link(root):
+                out["links"].append({"root": label, "path": "."})
+                continue
+            root.lstat()
+            if not root.is_dir():
+                out["unreadable"].append({"root": label, "path": ".", "error": "root-not-directory"})
+                continue
+        except OSError as exc:
+            out["unreadable"].append({"root": label, "path": ".", "error": type(exc).__name__})
             continue
-        for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
+
+        def walk_error(exc: OSError, *, root=root, label=label) -> None:
+            path = Path(exc.filename) if exc.filename else root
+            relative = path.relative_to(root).as_posix() if _inside(path, root) else "."
+            out["unreadable"].append({"root": label, "path": relative, "error": type(exc).__name__})
+
+        for dirpath, dirnames, filenames in os.walk(root, followlinks=False, onerror=walk_error):
             for name in list(dirnames):
                 p = Path(dirpath, name)
-                if _is_link(p):
+                try:
+                    linked = _is_link(p)
+                except OSError as exc:
+                    out["unreadable"].append({"root": label, "path": p.relative_to(root).as_posix(),
+                                              "error": type(exc).__name__})
+                    dirnames.remove(name)
+                    continue
+                if linked:
                     out["links"].append({"root": label, "path": p.relative_to(root).as_posix()})
                     dirnames.remove(name)
             for name in filenames:
                 p = Path(dirpath, name)
                 rel = p.relative_to(root).as_posix()
-                if _is_link(p):
-                    out["links"].append({"root": label, "path": rel})
-                    continue
-                out["files"] += 1
                 try:
+                    if _is_link(p):
+                        out["links"].append({"root": label, "path": rel})
+                        continue
+                    out["files"] += 1
                     enc = _scan(p, needles, opener)
                 except OSError as e:
                     out["unreadable"].append({"root": label, "path": rel, "error": type(e).__name__})

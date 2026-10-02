@@ -475,6 +475,83 @@ try:
           s5["how"] == "killed" and not s5["alive"] and not alive5 and s5["after_s"] >= 1.0
           and s6["how"] == "ctrl_break" and s6["exit_code"] == 0 and before6 and set(s6["outlived"]) == set(before6)
           and left6 == [], f"{s5} {s6} before={before6} left={left6}")
+    # Deferred C6a regressions, inside the existing owned TMP scope; no new child.
+    walk_root = TMP / "walk-error-owned"
+    walk_root.mkdir()
+    walk_error_sentinel = "OWNED_WALK_ERROR_SENTINEL_DO_NOT_PERSIST"
+
+    def walk_control(name, fn):
+        try:
+            good = fn() is True
+        except Exception as exc:
+            check(name, False, type(exc).__name__)
+        else:
+            check(name, good)
+
+    def empty_walk_positive():
+        value = SS.key_search({"owned": walk_root}, SS.HeldKey(KEY), data_dir=walk_root / "data")
+        return (SS.data_digest(walk_root) == {} and value["files"] == 0
+                and value["unreadable"] == [] and value["links"] == [] and value["leaks"] == [])
+    walk_control("SMS-WALK-EMPTY-POSITIVE-1: an existing empty owned directory remains a complete zero-file result", empty_walk_positive)
+
+    def injected_walk(root, *, followlinks=False, onerror=None):
+        if onerror is not None:
+            onerror(PermissionError(13, walk_error_sentinel, str(Path(root) / "unreadable-dir")))
+        return iter(())
+
+    def key_directory_error():
+        with mock.patch.object(SS.os, "walk", side_effect=injected_walk):
+            value = SS.key_search({"owned": walk_root}, SS.HeldKey(KEY), data_dir=walk_root / "data")
+        return (value["files"] == 0 and value["unreadable"] == [
+            {"root": "owned", "path": "unreadable-dir", "error": "PermissionError"}]
+            and value["leaks"] == [] and walk_error_sentinel not in json.dumps(value))
+    walk_control("SMS-KEY-DIRERR-1: an unreadable owned directory is named rather than silently passing an empty key search", key_directory_error)
+
+    def digest_directory_error():
+        with mock.patch.object(SS.os, "walk", side_effect=injected_walk):
+            value = SS.data_digest(walk_root)
+        return (value == {"unreadable-dir": "unreadable: PermissionError"}
+                and walk_error_sentinel not in json.dumps(value))
+    walk_control("SMS-DIGEST-DIRERR-1: the owned state digest records a directory walk failure without exception text", digest_directory_error)
+
+    def invalid_walk_roots():
+        missing = TMP / "never-created-walk-root"
+        missing_keys = SS.key_search({"owned": missing}, SS.HeldKey(KEY), data_dir=walk_root / "data")
+        missing_digest = SS.data_digest(missing)
+        ordinary_file = walk_root / "ordinary-owned-file"
+        ordinary_file.write_bytes(b"owned fixture, never a directory")
+        file_keys = SS.key_search({"owned": ordinary_file}, SS.HeldKey(KEY), data_dir=walk_root / "data")
+        file_digest = SS.data_digest(ordinary_file)
+        return (missing_keys["files"] == 0 and missing_keys["unreadable"] == [
+                {"root": "owned", "path": ".", "error": "FileNotFoundError"}]
+                and missing_digest == {".": "unreadable: FileNotFoundError"}
+                and file_keys["unreadable"] == [{"root": "owned", "path": ".", "error": "root-not-directory"}]
+                and file_digest == {".": "unreadable: root-not-directory"})
+    walk_control("SMS-WALK-ROOT-1: nonexistent and file roots cannot become successful empty searches or state seals", invalid_walk_roots)
+
+    def generic_reparse_control():
+        # Emulate a generic reparse point even where isjunction() is unavailable.
+        root = TMP / "generic-reparse-owned"
+        root.mkdir()
+        linked_dir = root / "nested"
+        linked_dir.mkdir()
+        linked_file = root / "owned-file"
+        linked_file.write_bytes(b"owned ordinary fixture")
+        original_lstat = Path.lstat
+        def reparse_lstat(path, *args, **kwargs):
+            metadata = original_lstat(path, *args, **kwargs)
+            if path in {linked_dir, linked_file}:
+                return type("OwnedReparseMetadata", (), {"st_mode": metadata.st_mode, "st_file_attributes": 0x400})()
+            return metadata
+        no_open = mock.Mock(side_effect=AssertionError("a reparse file must never be opened"))
+        with mock.patch.object(Path, "lstat", reparse_lstat):
+            value = SS.key_search({"owned": root}, SS.HeldKey(KEY), data_dir=root / "data", opener=no_open)
+            digest = SS.data_digest(root)
+        return (value["files"] == 0 and no_open.call_count == 0 and value["unreadable"] == []
+                and {row["path"] for row in value["links"]} == {"nested", "owned-file"}
+                and digest == {"nested": "link", "owned-file": "link"})
+    walk_control("SMS-REPARSE-1: generic directory/file reparse points are listed without traversal or open on Python3.10", generic_reparse_control)
+
 finally:
     shutil.rmtree(TMP, ignore_errors=True)
 
