@@ -22,6 +22,7 @@ import os
 import sys
 import urllib.request
 from pathlib import Path
+from unittest import mock
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
@@ -205,20 +206,35 @@ def test_async_stack_is_symmetric_with_a_real_fake_ollama() -> None:
         return
     saved_env = {k: os.environ.get(k) for k in _ENV_KEYS}
     server, port = probe.start_fake_ollama()
+    async_proxy_trap, proxy_port = probe.start_fake_ollama()
 
-    async def _async_stack(base_url: str, n: int) -> None:
-        client = httpx.AsyncClient(base_url=base_url)
+    async def _async_stack(base_url: str, n: int) -> dict:
+        # This fixture owns its loopback endpoint; system and environment proxies are unrelated.
+        client = httpx.AsyncClient(base_url=base_url, trust_env=False)
+        errors = 0
         try:
             for _i in range(n):
-                await client.get("/api/tags")
+                try:
+                    response = await client.get("/api/tags")
+                    response.raise_for_status()
+                    if not isinstance(response.json().get("models"), list):
+                        raise ValueError("response did not come from the fake tags endpoint")
+                except Exception:  # noqa: BLE001 - counted by the named assertions below
+                    errors += 1
         finally:
             await client.aclose()
+        return {"attempted": n, "errors": errors}
 
     def _drive_async(port_: int, n: int = 5) -> dict:
         import asyncio                                       # noqa: PLC0415
-        asyncio.run(_async_stack(f"http://127.0.0.1:{port_}", n))
-        return {"attempted": n, "errors": 0}
+        return asyncio.run(_async_stack(f"http://127.0.0.1:{port_}", n))
 
+    # HTTPX reads urllib.getproxies(), including Windows registry settings, but does not use
+    # urllib's registry bypass list. Force that input to an owned loopback trap: a client must
+    # still reach our fake endpoint directly. No real system proxy or external host is contacted.
+    proxy_input = mock.patch("httpx._utils.getproxies", return_value={
+        "http": f"http://127.0.0.1:{proxy_port}"})
+    proxy_input.start()
     try:
         probe._point_env_at(port)
         pacer.install()
@@ -261,8 +277,12 @@ def test_async_stack_is_symmetric_with_a_real_fake_ollama() -> None:
                   f"server={server_calls2} pacer={pacer_calls2}")
         finally:
             pacer.is_ollama_host = saved_is_ollama_host
+        check("ASYNC-PROXY: ambient proxy discovery receives none of this loopback test's requests",
+              _total(async_proxy_trap) == 0, str(_total(async_proxy_trap)))
     finally:
         pacer.uninstall()
+        proxy_input.stop()
+        probe.stop_fake_ollama(async_proxy_trap)
         probe.stop_fake_ollama(server)
         for k, v in saved_env.items():
             if v is None:
