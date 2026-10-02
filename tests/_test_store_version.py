@@ -43,6 +43,7 @@ ROOT = HERE.parent
 sys.path.insert(0, str(HERE))
 
 import _env_guard  # noqa: F401, E402 - must run before any project import
+import sandbox_guard  # noqa: E402 - fresh fixture backups only
 
 sys.path.insert(0, str(ROOT / "nevertwice"))
 import api                      # noqa: E402
@@ -200,6 +201,7 @@ def test_a_22_era_store_migrates_forward() -> None:
           "the Markdown is the source of truth and a migration must not touch it")
 
     backup_path = Path(result["backup"])
+    sandbox_guard.remove_at_exit(backup_path)
     check("a backup was taken before the first write", backup_path.is_dir(), str(backup_path))
     check("the backup holds the pre-migration guard ledger",
           "outcomes" not in (backup_path / "guards.json").read_text(encoding="utf-8"))
@@ -216,7 +218,7 @@ def test_a_22_era_store_migrates_forward() -> None:
     check("migrating an up-to-date store is a no-op", again["ok"] and again["backup"] is None,
           str(again))
     check("and it says so", "nothing to do" in again["detail"], again["detail"])
-    shutil.rmtree(backup_path, ignore_errors=True)
+    _rmtree(backup_path)
 
 
 def test_validation_reports_a_broken_store() -> None:
@@ -383,7 +385,8 @@ def test_the_migration_writes_the_ledger_the_way_the_ledger_is_read() -> None:
     check("the pre-migration ledger is kept as the rollback generation",
           prev.is_file() and "outcomes" not in prev.read_text(encoding="utf-8"),
           "present" if prev.is_file() else "no .prev was written")
-    _rmtree(result["backup"], ignore_errors=True)
+    sandbox_guard.remove_at_exit(result["backup"])
+    _rmtree(result["backup"])
 
 
 def test_a_rebuild_promises_only_what_it_rebuilds() -> None:

@@ -16,6 +16,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 PKG = ROOT / "nevertwice"
 PY = sys.executable
+sys.path.insert(0, str(ROOT))
+import sandbox_guard  # noqa: E402 - the demo owns only its fresh temporary root
 
 
 def say(msg):
@@ -36,6 +38,7 @@ def run(args):
 
 # throwaway store so the real vault is never touched
 _tmp = tempfile.mkdtemp(prefix="nevertwice-demo-")
+sandbox_guard.remove_at_exit(_tmp)
 ENV = {**os.environ, "NEVERTWICE_VAULT": str(Path(_tmp) / "store")}
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")

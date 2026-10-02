@@ -79,7 +79,9 @@ def refused(fn, words: str = "") -> bool:
     return False
 
 
+import sandbox_guard  # noqa: E402 - only fresh owned fixture cleanup
 TMP = Path(tempfile.mkdtemp(prefix="nvt3_freeze_a7_"))
+sandbox_guard.remove_at_exit(TMP)
 #: the auditor's list (2026-09-30 01:3x, m6 --window PASS on each), written here - independent of the code's
 WANT_CLEARED = {
     ("a7-discovery", "d1"): {"_fetch/a7-discovery/d1/record.json": "1689534abb103971d502774dfd2a4566d6947c3efaeda552dbe3704b72ed037e",

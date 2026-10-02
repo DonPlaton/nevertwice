@@ -564,8 +564,9 @@ def run_nevertwice(data, pool, toks, cap, *, groups: dict | None = None,
     already spent by the oracle corpus's first six rows, reading 0/420 for a reason that had
     nothing to do with code_sessions).
     """
-    m._rebase_vault(Path(tempfile.mkdtemp(
+    corpus_store = sandbox_guard.remove_at_exit(Path(tempfile.mkdtemp(
         prefix=f"nevertwice_tokenfloor_{corpus_name or 'run'}_")))
+    m._rebase_vault(corpus_store)
 
     if groups is None:
         # The oracle: one implicit project, same shape everywhere else in this function.

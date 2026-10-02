@@ -7,6 +7,7 @@ the switch turns all of it off at once, digits are never stemmed, and an index b
 other setting is rebuilt once rather than searched with stems against raw text.
 """
 import sys
+from contextlib import closing
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "nevertwice"))
@@ -83,7 +84,9 @@ check("MATCH terms go through the same tokenizer",
 check("the indexed text is stems", "spawn" in idx._fts_text(
     {"title": "oom", "desc": "subprocesses were spawned", "prevention": ""}, "s").split()
     and "were" not in idx._fts_text({"title": "", "desc": "subprocesses were spawned"}, "s"))
-if idx._fts_ok(idx._connect()):
+with closing(idx._connect()) as probe:
+    fts_available = idx._fts_ok(probe)
+if fts_available:
     hits = idx.iter_candidates("proj", query="spawning subprocesses", limit=1)
     check("the FTS5 prefilter finds the note through another inflection",
           len(hits) == 1 and hits[0][0].endswith("oom"), str([h[0] for h in hits]))

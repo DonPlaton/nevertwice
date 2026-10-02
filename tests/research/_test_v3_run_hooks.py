@@ -141,7 +141,9 @@ class Witnesses:
 
 
 GIT = shutil.which("git")
+import sandbox_guard  # noqa: E402 - only fresh owned fixture cleanup
 TMP = Path(tempfile.mkdtemp(prefix="nvt3_hooks_"))
+sandbox_guard.remove_at_exit(TMP)
 fake = None
 try:
     if not GIT:

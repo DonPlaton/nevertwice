@@ -70,7 +70,9 @@ def stopped(fn, code: str, words: str = "") -> bool:
     return False
 
 
+import sandbox_guard  # noqa: E402 - only fresh owned fixture cleanup
 TMP = Path(tempfile.mkdtemp(prefix="nvt3_fetchpins_"))
+sandbox_guard.remove_at_exit(TMP)
 REV_HF, REV_GH, REV_M0 = "a" * 40, "b" * 40, "c" * 40
 LFS_SHA, BLOB = "d" * 64, "e" * 40
 
