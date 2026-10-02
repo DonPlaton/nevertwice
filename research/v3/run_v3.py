@@ -310,6 +310,12 @@ DEEPSEEK_FLASH_PRICE = {
     "per_tokens": 1_000_000, "model": "deepseek-flash", "model_version": "DeepSeek-V4.1-Flash",
     "input_cache_hit": {"off_peak": 0.003, "peak": 0.006}, "input_cache_miss": {"off_peak": 0.15, "peak": 0.3},
     "output": {"off_peak": 0.6, "peak": 1.2}}
+#: deepseek-flash's documented output maximum - external DATA, the auditor's reading of the same URL on 2026-10-01
+#: (Q-BUD-2 (a)): "MAXIMUM: 384K", one figure with thinking and without; 384 x 1024, the larger reading of "384K". A
+#: request with no max_tokens is reserved at it (research/v3/budget.py, R-BUDGET-20).
+DEEPSEEK_FLASH_LIMITS = {
+    "url": "https://api-docs.deepseek.com/quick_start/pricing", "read": "2026-10-01", "model": "deepseek-flash",
+    "model_version": "DeepSeek-V4.1-Flash", "max_output": 393_216}
 
 #: The writer's bound per arm, read from the product's code (never measured). nevertwice under runner_nevertwice
 #: (CLOUD=deepseek, CLOUD_FALLBACK=0, EXTRACT_RETRY=0): one capture_session per session op makes one extraction
