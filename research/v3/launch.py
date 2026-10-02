@@ -1336,6 +1336,7 @@ class NativeEgressWitness(_Ticker):
         self.jobs = jobs or None
         self.tracked: dict[int, float] = {}          # pid -> create_time
         self.root_of: dict[int, int] = {}            # pid -> the root of its tree
+        self.registered_roots: dict[int, float] = {}  # immutable registration identity for this witness
         self.label_of: dict[int, str] = {}           # root pid -> its spawn id (W7's per-tree counters)
         self.allowed: dict[int, tuple[float, str]] = {}   # W7: listener pid -> (create_time, reason)
         self.allowed_ports: set[int] = set()         # W7: declared container gateway ports on loopback
@@ -1356,6 +1357,12 @@ class NativeEgressWitness(_Ticker):
         """Track a tree from its root. With job objects the root is assigned to its own job here (spawn creates it
         suspended first, so nothing escapes before). No identity, no tracking - never a wildcard (W2)."""
         with self._lock:
+            if pid in self.registered_roots:
+                current = self._identity(pid)
+                if current is not None and self._same(current, self.registered_roots[pid]):
+                    return True
+                self.result.unwitnessed_registrations += 1
+                return False  # do not overwrite a surviving job or transfer its window to a reused root
             ct = self.jobs.adopt(pid, handle) if self.jobs is not None else None
             if ct is None:
                 ct = self._identity(pid)
@@ -1365,6 +1372,7 @@ class NativeEgressWitness(_Ticker):
             self.tracked[pid] = ct
             self.root_of[pid] = pid
             self.label_of[pid] = label or str(pid)
+            self.registered_roots[pid] = ct
             return True
 
     def allow_listener(self, pid: int, reason: str) -> bool:
@@ -1461,6 +1469,9 @@ class NativeEgressWitness(_Ticker):
             try:
                 procs = self.sampler.processes()
                 ct_of = {pid: ct for pid, _pp, ct in procs}
+                for pid in [q for q, t in self.tracked.items() if q in ct_of and not self._same(ct_of[q], t)]:
+                    del self.tracked[pid]                # B-PID-REUSE: a tracked pid with another create time is a
+                    self.root_of.pop(pid, None)          # new process - adopted below only by the job or ppid rule
                 if self.jobs is not None:                # W1: the job is the tree, orphans included
                     for root in list(self.jobs.jobs):
                         for pid in self.jobs.members(root):
@@ -1468,7 +1479,7 @@ class NativeEgressWitness(_Ticker):
                                 ct = ct_of.get(pid) or self._identity(pid)
                                 if ct is not None:
                                     self.tracked[pid] = ct
-                                    self.root_of[pid] = self.root_of.get(root, root)
+                                    self.root_of[pid] = root  # the job key survives reuse of its original root PID
                 grew = True
                 while grew:                              # parent identity and birth order (all platforms)
                     grew = False

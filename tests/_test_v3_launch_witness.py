@@ -387,6 +387,112 @@ check("LW-DECL-6: with no inbound-blocking firewall rule - none, disabled, outbo
           == ["no inbound-blocking firewall rule"] and r.declared_listeners == [] for r, said in fw_got.values()),
       str(fw_view))
 
+print("\n- B-PID-REUSE: a tracked pid with another create time is a new process - adopted again or dropped -")
+EGRESS = [(0, "10.0.0.5", 50000, "93.184.216.34", 443, "ESTABLISHED")]      # pid 0 is replaced per row
+
+
+class FakeJobs:
+    """W1's job object for one tick: every root's members are what the row says; identity is the sampler's."""
+
+    def __init__(self, sampler: FakeSampler, members: dict):
+        self.s, self.jobs, self._members = sampler, {}, members
+
+    def adopt(self, pid, handle=None):
+        self.jobs[pid] = object()
+        return self.s.identity(pid)
+
+    def identity(self, pid):
+        return self.s.identity(pid)
+
+    def members(self, root):
+        return list(self._members.get(root, []))
+
+
+def reuse_tick(first, second, rows, *, members=None, declare=False):
+    """(the witness, its result) after two ticks of a tree rooted at SM_PID: ``first`` then ``second`` as the process
+    list, ``rows`` read in the second; ``members`` - the job's members (W1) or no job; ``declare`` - SM_PID declared
+    its listener on SM_PORT before the first tick. An exception is the row's named FAIL (None, repr)."""
+    try:
+        s = FakeSampler()
+        s.procs = list(first)
+        jobs = FakeJobs(s, {SM_PID: members}) if members is not None else None
+        w = L.NativeEgressWitness(sampler=s, tick_s=60, jobs=jobs)
+        w.register(SM_PID, label="spawn-sm")
+        if declare:
+            w.declare_listener(SM_PID, SM_PORT, SM_REASON, firewall=FW)
+        s.rows, s.listen = [], {}
+        w.sample()
+        s.procs, s.rows = list(second), rows
+        w.sample()
+        return w, w.result
+    except Exception as e:  # noqa: BLE001 - the row FAILs by name
+        return None, repr(e)
+
+
+def _egress(pid):
+    return [(pid, *EGRESS[0][1:])]
+
+
+def _read(r) -> bool:
+    return not isinstance(r, str) and r is not None and r.hits == 1 and r.hit_remotes == {"93.184.216.34:443"}
+
+
+_w1, r_pp = reuse_tick([(SM_PID, 1, 60.0), (SM_KID, SM_PID, 61.0)], [(SM_PID, 1, 60.0), (SM_KID, SM_PID, 99.0)],
+                       _egress(SM_KID))
+check("PR-1: a child's pid reused by a new child of the same live member (the ppid branch) is adopted again - its "
+      "connection is read, a hit", _read(r_pp), str(r_pp.as_record() if not isinstance(r_pp, str) else r_pp))
+JOB_KID = 700
+_w2, r_job = reuse_tick([(SM_PID, 1, 60.0), (JOB_KID, 1, 70.0)], [(SM_PID, 1, 60.0), (JOB_KID, 1, 99.0)],
+                        _egress(JOB_KID), members=[SM_PID, JOB_KID])
+check("PR-2: an orphan's pid reused by a new member of the same job (the job branch) is adopted again - its connection "
+      "is read, a hit", _read(r_job), str(r_job.as_record() if not isinstance(r_job, str) else r_job))
+_w3, r_sm = reuse_tick([(SM_PID, 1, 60.0), (SM_KID, SM_PID, 61.0)], [(SM_PID, SM_KID, 99.0), (SM_KID, SM_PID, 61.0)],
+                       _listen(SM_PID, "0.0.0.0"), declare=True)
+check("PR-3: the declared server's pid reused inside the tree (a child of its own child) listening on the declared "
+      "port is read and is a hit - the declaration was the old process's (LW-DECL-4's first scenario)",
+      not isinstance(r_sm, str) and r_sm is not None and r_sm.hits == 1 and r_sm.listen_nonloopback == 1
+      and r_sm.listen_declared == 0, str(r_sm.as_record() if not isinstance(r_sm, str) else r_sm))
+ok4 = {}
+for tag, second in (("a stranger's child", [(SM_PID, 1, 60.0), (SM_KID, 4242, 99.0)]),
+                    ("older than its parent", [(SM_PID, 1, 60.0), (SM_KID, SM_PID, 55.0)])):
+    w4_, r4_ = reuse_tick([(SM_PID, 1, 60.0), (SM_KID, SM_PID, 61.0)], second, _egress(SM_KID))
+    ok4[tag] = (w4_ is not None and r4_.hits == 0 and SM_KID not in w4_.tracked and SM_KID not in w4_.root_of
+                and SM_PID in w4_.tracked)
+check("PR-4: a tracked pid reused outside the tree - a stranger's child, or a 'child' older than its parent - is not "
+      "adopted: its connection is not read and the stale entry is dropped from tracked and root_of",
+      all(ok4.values()) and len(ok4) == 2, str(ok4))
+
+
+print("\n- PID reuse between two registered job trees -")
+try:
+    s_multi = FakeSampler()
+    s_multi.procs = [(600, 1, 60.0), (800, 1, 80.0), (801, 800, 81.0)]
+    jobs_multi = FakeJobs(s_multi, {600: [600], 800: [800, 801]})
+    w_multi = L.NativeEgressWitness(sampler=s_multi, tick_s=60, jobs=jobs_multi)
+    w_multi.register(600, label="old-job-a")
+    w_multi.register(800, label="job-b")
+    w_multi.sample()
+    s_multi.procs = [(600, 801, 99.0), (800, 1, 80.0), (801, 800, 81.0)]
+    jobs_multi._members = {600: [], 800: [800, 801, 600]}
+    w_multi.sample()
+    s_multi.procs.append((602, 1, 100.0))
+    jobs_multi._members[600] = [602]
+    w_multi.open_window("only-b", {800})
+    s_multi.rows = _egress(602)
+    w_multi.sample()
+    check("PR-5: an old job's new orphan keeps that job's identity after its root PID becomes another tree's child; it cannot borrow the other window",
+          w_multi.root_of.get(600) == 800 and w_multi.root_of.get(602) == 600
+          and w_multi.result.hits == 1 and w_multi.result.window_hosts == set(), str(w_multi.result.as_record()))
+    old_job = jobs_multi.jobs[600]
+    old_label = w_multi.label_of[600]
+    before_unseen = w_multi.result.unwitnessed_registrations
+    admitted = w_multi.register(600, label="replacement-root")
+    check("PR-6: a new root reusing a registered PID is refused before the old job/label can be overwritten",
+          admitted is False and jobs_multi.jobs[600] is old_job and w_multi.label_of[600] == old_label
+          and w_multi.result.unwitnessed_registrations == before_unseen + 1, str(admitted))
+except Exception as e:  # noqa: BLE001 - named failure, never a suite crash
+    check("PR-5/6: the multi-tree identity seam runs", False, repr(e))
+
 print("\n- the filesystem witness -")
 REPO = TMP / "repo"
 for d in (".git", ".loop", "research/v3/results", "pkg/__pycache__", ".claude/agents", "src", "src/SENTINEL_DIR_QXZ"):
