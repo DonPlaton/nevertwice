@@ -683,7 +683,7 @@ try:
                "NetSecurity.psd1';"),
            "reads only": not re.search(r"\b(?:Set|New|Remove|Enable|Disable|Rename|Copy|Add|Export|Invoke|Start|"
                                        r"Stop|Out|Register|Install|Update|Clear|Write)-", script),
-           "frozen literal": hashlib.sha256(script.encode("utf-8")).hexdigest() == "3552ba37ba95e1696b047433285223151947e9a42689219f57c2372d14837db5",
+           "frozen literal": hashlib.sha256(script.encode("utf-8")).hexdigest() == "c18069e4e81e976060d2bbe141d7135d906230a4087e612b5706ba0cf8410a78",
            "no double quote": '"' not in script, "json": script.endswith("-Depth 4 -Compress")}
 except AttributeError as e:
     fw6 = {"AttributeError": str(e)}
@@ -693,6 +693,21 @@ check("FWR-6: the reader is Windows PowerShell 5.1 of System32 with -NoLogo -NoP
       bool(fw6) and all(v is True for v in fw6.values()), str(fw6))
 
 
+
+
+# A no-profile reader with module autoload disabled must import its JSON dependency.
+# This is a static script dependency control; actual Windows serialization still
+# requires the separate witnessed dry run on the committed, fully gated source.
+try:
+    utility_import = ("Import-Module 'C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\Modules\\"
+                      "Microsoft.PowerShell.Utility\\Microsoft.PowerShell.Utility.psd1';")
+    script = L.FW_READ_SCRIPT
+    dependency_ok = (0 <= script.find("$PSModuleAutoLoadingPreference='None';")
+                     < script.find(utility_import) < script.index('ConvertTo-Json'))
+except (AttributeError, ValueError):
+    dependency_ok = False
+check("FWR-13: autoload-disabled readonly reader explicitly imports its JSON serializer from System32 before use",
+      dependency_ok)
 
 # The reserved executable stays role-bound even if a caller's contract grants a general binary exception.
 try:

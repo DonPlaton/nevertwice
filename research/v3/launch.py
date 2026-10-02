@@ -127,6 +127,7 @@ FW_READ_PROGRAM_ENV = "NVT3_FW_PROGRAM"
 FW_READ_SCRIPT = (
     "$ErrorActionPreference='Stop';$PSModuleAutoLoadingPreference='None';"
     "[Console]::OutputEncoding=[Text.Encoding]::UTF8;"
+    "Import-Module 'C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\Modules\\Microsoft.PowerShell.Utility\\Microsoft.PowerShell.Utility.psd1';"
     "Import-Module 'C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\Modules\\NetSecurity\\NetSecurity.psd1';"
     "$p=$env:NVT3_FW_PROGRAM;"
     "$rules=@(Get-NetFirewallApplicationFilter -PolicyStore ActiveStore|Where-Object{"
