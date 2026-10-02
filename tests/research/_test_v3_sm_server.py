@@ -180,7 +180,8 @@ try:
           and env["SUPERMEMORY_EMBEDDING_BASE_URL"] == KW["embed_base_url"]
           and env["OPENAI_BASE_URL"] == KW["llm_base_url"] and env["OPENAI_MODEL"] == "deepseek-flash"
           and env["SUPERMEMORY_PORT"] == "40123" and res["vendor_defaults"] == []
-          and res["llm"] == {"fast": "deepseek-flash", "text": "deepseek-flash", "base_url": KW["llm_base_url"]},
+          and res["llm"] == {"fast": "deepseek-flash", "text": "deepseek-flash", "base_url": KW["llm_base_url"],
+                             "client": "openai-compatible", "path": "/chat/completions"},
           str(err or bad or res))
     no_dims = json.loads(json.dumps(ENV_REC))
     del no_dims["reads"]["SUPERMEMORY_EMBEDDING_DIMENSIONS"]

@@ -141,6 +141,57 @@ FACTS: dict[str, bytes] = {
                                     rb'documentDate:p\.string\(\)\.nullable\(\)\.optional\(\),eventDate:p\.array\('
                                     rb'p\.string\(\)\)\.nullable\(\)\.optional\(\)\}\)',
 }
+
+# Client route literals witnessed in b2, read as data; no vendor binary execution.
+FACTS.update({
+    'client_compat_def': (
+        b'function\\ (hl8)\\(\\$\\)\\{let\\ z=xU\\(\\$\\.baseURL\\),e=\\$\\.name,v=\\{\\.\\.\\.\\$\\.apiKey\\&\\&\\{Authorizati'
+        b'on:`Bearer\\ \\$\\{\\$\\.apiKey\\}`\\},\\.\\.\\.\\$\\.headers\\},u=\\(\\)=>VO\\(v,`(ai-sdk/openai-compatible)/\\$'
+        b'\\{Ar4\\}`'
+    ),
+    'client_openai_def': (
+        b'function\\ (Gl)\\(\\$=\\{\\}\\)\\{var\\ z,e;let\\ v=\\(z=xU\\(wx\\(\\{settingValue:\\$\\.baseURL,environmentVar'
+        b'iableName:"(OPENAI_BASE_URL)"\\}\\)\\)\\)!=null\\?z:"(https://api\\.openai\\.com/v1)",[\\s\\S]{30}T=\\(\\)='
+        b'>VO\\(\\{Authorization:`Bearer\\ \\$\\{oa0\\(\\{apiKey:\\$\\.apiKey,environmentVariableName:"OPENAI_API_K'
+        b'EY",description:"OpenAI"\\}\\)\\}`,"OpenAI\\-Organization":\\$\\.organization,"OpenAI\\-Project":\\$\\.pr'
+        b'oject,\\.\\.\\.\\$\\.headers\\},`(ai-sdk/openai)/\\$\\{Ur4\\}`'
+    ),
+    'llm_client_branch': (
+        b'\\$o=process\\.env\\.OPENAI_API_KEY\\?process\\.env\\.(OPENAI_BASE_URL)\\?(hl8)\\(\\{name:"openai",apiKey'
+        b':process\\.env\\.OPENAI_API_KEY,baseURL:process\\.env\\.OPENAI_BASE_URL\\}\\):(Gl)\\(\\{apiKey:process\\.'
+        b'env\\.OPENAI_API_KEY\\}\\):null'
+    ),
+    'embed_base': (
+        b'function\\ CB0\\(\\$\\)\\{let\\ z=process\\.env\\.SUPERMEMORY_EMBEDDING_BASE_URL\\?\\.trim\\(\\);if\\(z\\)retu'
+        b'rn\\ z;if\\(\\$==="openai\\-compatible"\\)return\\ process\\.env\\.OPENAI_BASE_URL\\?\\.trim\\(\\)\\|\\|void\\ '
+        b'0;return\\}'
+    ),
+    'embed_client_branch': (
+        b'function\\ bU\\(\\)\\{if\\(Ld\\)return\\ Ld;let\\ \\$=r40\\(\\),\\{provider:z,modelId:e,dimensions:v\\}=\\$;if'
+        b'\\(z==="(local)"\\)return\\ Ld=\\{model:kp4\\(\\{modelId:e,dimensions:v,pooling:Ul8\\[e\\]\\?\\?"mean"\\}\\)'
+        b',dimensions:v,provider:z,modelId:e,isLocal:!0\\},Ld;let\\ u=Sp4\\(z\\),T;if\\(z==="(google)"\\)T=VU\\(\\'
+        b'{apiKey:u\\}\\)\\.embeddingModel\\(e\\);else\\ if\\(z==="(openai-compatible)"\\)\\{let\\ O=CB0\\("openai\\-c'
+        b'ompatible"\\);if\\(!O\\)throw\\ Error\\("\\[embeddings\\]\\ SUPERMEMORY_EMBEDDING_PROVIDER=openai\\-compa'
+        b'tible\\ requires\\ SUPERMEMORY_EMBEDDING_BASE_URL\\ \\(or\\ OPENAI_BASE_URL\\),\\ e\\.g\\.\\ http://localh'
+        b'ost:11434/v1\\ for\\ Ollama\\."\\);T=(hl8)\\(\\{name:"openai",apiKey:u,baseURL:O\\}\\)\\.embeddingModel\\('
+        b'e\\)\\}else\\{let\\ O=CB0\\("openai"\\);T=(Gl)\\(\\{apiKey:u,\\.\\.\\.O\\?\\{baseURL:O\\}:\\{\\}\\}\\)\\.embeddingM'
+        b'odel\\(e\\)'
+    ),
+    'agent_models': (
+        b'function\\ W3\\(\\)\\{return\\ u\\$2\\}function\\ \\$\\$\\(\\$\\)\\{let\\ z=W3\\(\\),e=z\\.services\\.backgroundTas'
+        b'ks\\(\\$\\.executionCtx\\),v=z\\.services\\.environment\\(\\$\\.env\\),u=z\\.services\\.extraction\\(\\)\\.pipe'
+        b'\\(le\\(v\\)\\),T=z\\.services\\.workflowTrigger\\(\\)\\.pipe\\(le\\(\\$O\\(e,v\\)\\)\\),O=z\\.services\\.vectordb'
+        b'\\(\\)\\.pipe\\(le\\(v\\)\\);return\\ \\$O\\(e,v,u,T,O\\)\\}var\\ u\\$2,(x_)\\=\\(\\)\\=>W3\\(\\)\\.models\\.(fast)\\(\\'
+        b'),(wb)\\=\\(\\)\\=>W3\\(\\)\\.models\\.(text)\\(\\)'
+    ),
+    'model_chain': (
+        b'(S55)=\\(\\)=>r90\\(\\[\\.\\.\\.\\$o\\?\\[(\\$o)\\((z\\$2)\\)\\]:\\[\\],\\.\\.\\.eo\\?\\[(eo)\\("(claude-haiku-4-5)"\\)\\'
+        b']:\\[\\],\\.\\.\\.sm\\?\\[(sm)\\("(gemini-3\\.1-flash-lite-preview)"\\)\\]:\\[\\],\\.\\.\\.jm\\?\\[(jm)\\("(gemini-'
+        b'3\\.1-flash-lite-preview)"\\)\\]:\\[\\],\\.\\.\\.zo\\?\\[(zo)\\("(openai/gpt-oss-20b)"\\)\\]:\\[\\],\\.\\.\\.vo\\?\\'
+        b'[(vo)\\.chat\\("(@cf/openai/gpt-oss-20b)"\\)\\]:\\[\\]\\]\\)'
+    ),
+})
+
 #: facts recorded for what they say, outside this build's default path
 FACT_NOTES = {"rivet_port_formula": "outside the win32 default (workflow_direct_win32: the engine is direct, in process)",
               "workflow_rivet_branch": "taken only where qd8 is false - not on the win32 build with no WORKFLOW_ENGINE"}
@@ -321,6 +372,120 @@ def declared_problems(declared: dict, env_rec: dict) -> list[str]:
     return problems
 
 
+"""Inserted into sm_bundle.py; static routing census for the already pinned binary."""
+CLIENT_PATHS = {"openai-compatible": "/chat/completions", "openai": "/responses"}
+# Verified on b2, not inferred from the synthetic fixture. Definitions count as sites.
+ROUTE_COUNTS = {"openai-compatible": (3, 0), "openai": (9, 0)}
+ROUTE_ARMS = {
+    "llm_client_branch": ("OPENAI_BASE_URL", "llm_openai_client", "OPENAI_BASE_URL must be nonempty"),
+    "embed_client_branch": ("SUPERMEMORY_EMBEDDING_PROVIDER", "embed_provider",
+                            "SUPERMEMORY_EMBEDDING_PROVIDER must be openai-compatible"),
+}
+_CLIENT_REF = re.compile(rb"(?<![A-Za-z0-9_$.])(?:Gl|hl8)(?![A-Za-z0-9_$])")
+# Exact resource spans and SHA256 from static b2 inspection (inclusive quote bytes).
+# The binary itself is pinned before any census; arbitrary quote-delimited code is never excluded.
+ROUTE_ASSETS = (
+    (116658319, 24703706, "332d11a88a290e2c347b5da883374ffd633d2ab27ecc8ce4ac538ade35ae4567"),
+    (271686999, 38372, "5288a14fd34647dc27ee77c36abb68535b4f0a0a6875015b224b33d5bcf3a39c"),
+)
+
+
+def _asset_span(sec: bytes, at: int, lo: int) -> tuple[int, int] | None:
+    """Only an exact independently witnessed resource span/digest can exclude a reference."""
+    for absolute, size, sha in ROUTE_ASSETS:
+        a, z = absolute - lo, absolute - lo + size
+        if 0 <= a <= at < z <= len(sec) and _sha256_bytes(sec[a:z]) == sha:
+            return a, z
+    return None
+
+
+def route(sec: bytes, lo: int, facts: dict) -> dict:
+    """Definitions, guarded branches, every bounded call/reference and external-branch findings.
+
+    Scope is exactly .bun. Member names and longer identifiers are distinct; only independently witnessed
+    encoded resource spans are excluded by exact offsets, lengths and digests.
+    No quote-boundary inference excludes code. Unexplained calls or aliases refuse the census.
+    """
+    problems, findings, ignored = [], [], {}
+    clients = {}
+    for client, fact in (("openai-compatible", "client_compat_def"), ("openai", "client_openai_def")):
+        f = facts[fact]
+        name, ua = f["values"][0], f["values"][-1]
+        clients[client] = {"name": name, "user_agent": ua, "path": CLIENT_PATHS[client],
+                           "definition": f["offset"] + f["literal"].index(name + "(")}
+        if client == "openai":
+            clients[client].update(base_url_env=f["values"][1], default_base_url=f["values"][2])
+        if name != ("hl8" if client == "openai-compatible" else "Gl") or ua != "ai-sdk/" + client:
+            problems.append(f"{fact}: unexpected client definition or user agent")
+    branches = {}
+    for fact, (env_name, env_fact, rule) in ROUTE_ARMS.items():
+        values = facts[fact]["values"]
+        names = values[-2:]
+        branches[fact] = {"env": env_name, "env_fact": env_fact,
+                          "arms": [{"client": "openai-compatible", "name": names[0], "excluded_by": None},
+                                   {"client": "openai", "name": names[1], "excluded_by": rule}]}
+        expected = ["OPENAI_BASE_URL", "hl8", "Gl"] if fact == "llm_client_branch" else ["local", "google", "openai-compatible", "hl8", "Gl"]
+        if values != expected:
+            problems.append(f"{fact}: unexpected condition or client arms {values}")
+        if env_name not in facts[env_fact]["values"]:
+            problems.append(f"{env_fact}: does not read {env_name} attributed to {fact}")
+    calls = {c: 0 for c in clients}
+    bare = {c: 0 for c in clients}
+    bare_offsets = {c: [] for c in clients}
+    by_name = {v["name"]: c for c, v in clients.items()}
+    for m in _CLIENT_REF.finditer(sec):
+        name = m.group().decode("ascii")
+        client = by_name.get(name)
+        if client is None:
+            problems.append(f"unknown client name {name}")
+            continue
+        after = sec[m.end():m.end()+1]
+        if after != b"(":
+            asset = _asset_span(sec, m.start(), lo)
+            if asset is not None:
+                if asset not in ignored:
+                    ignored[asset] = {"offset": lo + asset[0], "bytes": asset[1] - asset[0],
+                                      "sha256": _sha256_bytes(sec[asset[0]:asset[1]]), "references": []}
+                ignored[asset]["references"].append(lo + m.start())
+                continue
+            bare[client] += 1
+            bare_offsets[client].append(lo + m.start())
+            continue
+        calls[client] += 1
+        at = lo + m.start()
+        if at == clients[client]["definition"]:
+            continue
+        if any(facts[f]["offset"] <= at < facts[f]["offset"] + len(facts[f]["literal"].encode("utf-8")) for f in branches):
+            continue
+        findings.append({"client": client, "name": name, "offset": at,
+                         "finding": "call site outside the branch",
+                         "window_sha256": _sha256_bytes(sec[max(0, m.start()-WINDOW_BYTES):min(len(sec), m.start()+WINDOW_BYTES)])})
+    for client, (want_calls, want_bare) in ROUTE_COUNTS.items():
+        if (calls[client], bare[client]) != (want_calls, want_bare):
+            problems.append(f"{clients[client]['name']} has {calls[client]} call sites and {bare[client]} bare references; expected {want_calls} and {want_bare}")
+    chain = facts["model_chain"]["values"]
+    models = facts["agent_models"]["values"]
+    agent = facts["memory_agent_call"]["values"][0]
+    if models != ["x_", "fast", "wb", "text"] or agent != models[2]:
+        problems.append("agent_models: memory agent does not take the witnessed text model")
+    return {"clients": clients, "branches": branches, "calls": calls, "bare": bare, "bare_offsets": bare_offsets,
+            "scope": ".bun bounded identifiers; independently witnessed encoded resource spans excluded",
+            "ignored_assets": sorted(ignored.values(), key=lambda x: x["offset"]),
+            "findings": findings, "problems": problems,
+            "model_chain": {"name": chain[0], "ours": chain[1], "model": chain[2],
+                            "others": dict(zip(chain[3::2], chain[4::2])),
+                            "note": "S55 recorded; linkage from models.text to S55 versus Y55 is not statically established"},
+            "agent_models": {"fast": models[0], "text": models[2], "memory_agent": "text"}}
+
+
+def child_env_problems(env: dict, env_rec: dict) -> list[str]:
+    """No fallback provider is enabled, regardless of environment-name casing."""
+    forbidden = {name.upper() for name in env_rec["must_be_absent"]}
+    forbidden.update({"ANTHROPIC_API_KEY", "GROQ_API_KEY", "WORKERS_AI_API_KEY", "CLOUDFLARE_ACCOUNT_ID"})
+    return [f"child env {name}: another provider's variable must be absent" for name in sorted(env)
+            if name.upper() in forbidden or name.upper().startswith("GOOGLE_")]
+
+
 def resolve(env: dict, env_rec: dict) -> dict:
     """What a spawn env resolves to by the bundle's own rules, and each vendor default it reaches (never ours)."""
     reads, defaults = env_rec["reads"], []
@@ -346,6 +511,16 @@ def resolve(env: dict, env_rec: dict) -> dict:
         if not (env.get(name) or env.get(reads[name]["default"])):
             defaults.append(f"llm {kind} model {llm[kind]}")
     llm["base_url"] = env.get("OPENAI_BASE_URL")
+    if not env.get("OPENAI_API_KEY"):
+        llm.update(client=None, path=None)
+        defaults.append("$o is null: no OPENAI_API_KEY")
+    elif env.get("OPENAI_BASE_URL"):
+        llm.update(client="openai-compatible", path=CLIENT_PATHS["openai-compatible"])
+    else:
+        llm.update(client="openai", path=CLIENT_PATHS["openai"])
+        defaults.append("Gl at the vendor base URL: /responses (no OPENAI_BASE_URL)")
+    if provider not in {"local", "openai-compatible"}:
+        defaults.append(f"embedding provider {provider} (vendor route)")
     return {"embedding": embedding, "llm": llm, "vendor_defaults": defaults}
 
 
@@ -378,13 +553,15 @@ def run_facts(runs_root: Path, *, run: str, record_sha256: str = BIN_RECORD_SHA2
     lo, hi = bun_section(data)
     facts = read_facts(data, lo, hi)
     r8, sw = r8_verdict(facts), switches(facts)
+    rt = route(data[lo:hi], lo, facts)
     record = {"reader": READER, "run": run, "network": False, "executed": False, "window_bytes": WINDOW_BYTES,
               "pin": pin, "bundle": {"section": ".bun", "offset": lo, "bytes": hi - lo}, "facts": facts, "r8": r8,
               "switches": sw, "auth": auth_facts(facts), "env": env_facts(facts), "workflow": workflow(facts),
               "embedding_local": {"model": facts["embed_local_bge_m3"]["values"][0],
                                   "dimensions": int(facts["embed_local_bge_m3"]["values"][1]),
                                   "pooling": facts["embed_local_bge_m3_pooling"]["values"][0]},
-              "tools": tools(facts), "notes": dict(FACT_NOTES), "problems": r8["problems"] + sw["problems"],
+              "tools": tools(facts), "route": rt, "notes": dict(FACT_NOTES),
+              "problems": r8["problems"] + sw["problems"] + rt["problems"],
               "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
     base.mkdir(parents=True)
     (base / "bundle_facts.json").write_bytes((json.dumps(record, indent=1, sort_keys=True) + "\n").encode("utf-8"))

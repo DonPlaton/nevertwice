@@ -12,7 +12,10 @@ server's facts read from the pinned binary's embedded Bun bundle, with no networ
 * R8: clear only when the bound host is a loopback name and the serve call and the pre-bind listen use the bound
   constant; 0.0.0.0 is blocked:bind-all-interfaces, anything else blocked:bind-not-loopback;
 * the spawn's vendor switches (SUPERMEMORY_NO_UPDATE_CHECK, SUPERMEMORY_DISABLE_TELEMETRY, SUPERMEMORY_NO_OPEN) are
-  values the bundle's own comparisons accept, else a problem by name; the auth facts (F6) are recorded.
+  values the bundle's own comparisons accept, else a problem by name; the auth facts (F6) are recorded;
+* SBF (Q-C6-ROUTE = a): the two clients by their user agents, the branches choosing them linked by name to their env
+  facts, the census of every hl8( and Gl( call site (a site outside a branch is a finding, not a problem), the client
+  resolve() says the LLM takes, and F-SBF-2 - another provider's variable in the child env is a problem by name.
 
 No child process: every row runs in this process on files under a temporary directory.
 
@@ -28,6 +31,7 @@ import shutil
 import struct
 import sys
 import tempfile
+from unittest import mock
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -108,7 +112,13 @@ LITERALS = [
     b'$.set("org",e.org),$.set("memberRole","owner"),$.set("isRestricted",!1)',
     b'_$=VY5(process.env.SUPERMEMORY_DATA_DIR??"./.supermemory")',
     b'var fQ=1e4,X$0=0',
-    b'T=hl8({name:"openai",apiKey:u,baseURL:O}).embeddingModel(e)',
+    b'function bU(){if(Ld)return Ld;let $=r40(),{provider:z,modelId:e,dimensions:v}=$;if(z==="local")r'
+    b'eturn Ld={model:kp4({modelId:e,dimensions:v,pooling:Ul8[e]??"mean"}),dimensions:v,provider:z,mod'
+    b'elId:e,isLocal:!0},Ld;let u=Sp4(z),T;if(z==="google")T=VU({apiKey:u}).embeddingModel(e);else if('
+    b'z==="openai-compatible"){let O=CB0("openai-compatible");if(!O)throw Error("[embeddings] SUPERMEM'
+    b'ORY_EMBEDDING_PROVIDER=openai-compatible requires SUPERMEMORY_EMBEDDING_BASE_URL (or OPENAI_BASE'
+    b'_URL), e.g. http://localhost:11434/v1 for Ollama.");T=hl8({name:"openai",apiKey:u,baseURL:O}).em'
+    b'beddingModel(e)}else{let O=CB0("openai");T=Gl({apiKey:u,...O?{baseURL:O}:{}}).embeddingModel(e)',
     b'let z=await id8();if(z){let e=globalThis;if(!e.__SUPERMEMORY_RIVET_NAPI__',
 ]
 #: SM3 (the auditor, 2026-09-30 17:4x: Q-A8S-ENVN = a, the workflow engine on win32, Qs5): the env names the server
@@ -132,8 +142,9 @@ ENV_LITERALS = [
     b'envVars:["GEMINI_API_KEY"],promptable:!0},{id:"groq",name:"Groq",envVars:["GROQ_API_KEY"],promptable:!0},'
     b'{id:"workers-ai",name:"Cloudflare Workers AI",envVars:["WORKERS_AI_API_KEY","CLOUDFLARE_ACCOUNT_ID"],promptable:!1},'
     b'{id:"vertex",name:"Vertex AI",envVars:["GOOGLE_VERTEX_PROJECT_ID","GOOGLE_VERTEX_LOCATION"]',
-    b'$o=process.env.OPENAI_API_KEY?process.env.OPENAI_BASE_URL?hl8({name:"openai",apiKey:process.env.OPENAI_API_KEY,'
-    b'baseURL:process.env.OPENAI_BASE_URL})',
+    b'$o=process.env.OPENAI_API_KEY?process.env.OPENAI_BASE_URL?hl8({name:"openai",apiKey:process.env.'
+    b'OPENAI_API_KEY,baseURL:process.env.OPENAI_BASE_URL}):Gl({apiKey:process.env.OPENAI_API_KEY}):nul'
+    b'l',
     b'z$2=process.env.OPENAI_FAST_MODEL??process.env.OPENAI_MODEL??"gpt-5.1",e$2=process.env.OPENAI_TEXT_MODEL??'
     b'process.env.OPENAI_MODEL??"gpt-5.1",',
     b'function qd8($="win32",z=process.env.WORKFLOW_ENGINE){if(z)return z.trim().toLowerCase()==="direct";'
@@ -160,6 +171,45 @@ AGENT_LITERALS = [
     b'eventDate:p.array(p.string()).nullable().optional()})',
 ]
 LITERALS += ENV_LITERALS + AGENT_LITERALS
+#: SBF (Q-C6-ROUTE = a; the auditor's literals, sbf_literals_b2.json, 2026-10-01): the clients' definitions -
+#: hl8 (createOpenAICompatible by its user agent) and Gl (createOpenAI: its head, the 30 bytes he did not quote,
+#: its user agent) - the default instance Gr4, CB0, the two Gl sites outside the $o branch (qX0, jX0) and their
+#: uses, the three Workers clients (dX0, cy, vo: STAND-INS, their literals were not quoted), the model chain S55,
+#: the agent's models, and a harmless noise literal; b2 has zero bare code references
+GAP = b"/*" + b"-" * 26 + b"*/"
+ROUTE_LITERALS = [
+    b'function hl8($){let z=xU($.baseURL),e=$.name,v={...$.apiKey&&{Authorization:`Bearer ${$.apiKey}`'
+    b'},...$.headers},u=()=>VO(v,`ai-sdk/openai-compatible/${Ar4}`',
+    b'function Gl($={}){var z,e;let v=(z=xU(wx({settingValue:$.baseURL,environmentVariableName:"OPENAI'
+    b'_BASE_URL"})))!=null?z:"https://api.openai.com/v1",'
+    + GAP
+    + b'T=()=>VO({Authorization:`Bearer ${oa0({apiKey:$.apiKey,environmentVariableName:"OPENAI_API_KEY",'
+    + b'description:"OpenAI"})}`,"OpenAI-Organization":$.organization,"OpenAI-Project":$.project,...$.he'
+    + b'aders},`ai-sdk/openai/${Ur4}`'
+    ,
+    b'Gr4=Gl()',
+    b'function CB0($){let z=process.env.SUPERMEMORY_EMBEDDING_BASE_URL?.trim();if(z)return z;if($==="o'
+    b'penai-compatible")return process.env.OPENAI_BASE_URL?.trim()||void 0;return}',
+    b'qX0=X4.OPENAI_API_KEY?Gl({apiKey:X4.OPENAI_API_KEY}):null',
+    b'jX0=m4.OPENAI_API_KEY?Gl({apiKey:m4.OPENAI_API_KEY}):null',
+    b'...qX0?[qX0("gpt-5-nano")]:[]',
+    b'...jX0?[jX0("gpt-5-nano")]:[]',
+    b'dX0=X4.WORKERS_AI_API_KEY&&X4.CLOUDFLARE_ACCOUNT_ID?Gl({apiKey:X4.WORKERS_AI_API_KEY,'
+    b'baseURL:"https://workers.stand-in/ai/v1"}):null',
+    b'cy=m4.WORKERS_AI_API_KEY&&m4.CLOUDFLARE_ACCOUNT_ID?Gl({apiKey:m4.WORKERS_AI_API_KEY,'
+    b'baseURL:"https://workers.stand-in/ai/v1"}):null',
+    b'vo=process.env.WORKERS_AI_API_KEY&&process.env.CLOUDFLARE_ACCOUNT_ID?Gl({apiKey:process.env.'
+    b'WORKERS_AI_API_KEY,baseURL:"https://workers.stand-in/ai/v1"}):null',
+    b'S55=()=>r90([...$o?[$o(z$2)]:[],...eo?[eo("claude-haiku-4-5")]:[],...sm?[sm("gemini-3.1-flash-li'
+    b'te-preview")]:[],...jm?[jm("gemini-3.1-flash-lite-preview")]:[],...zo?[zo("openai/gpt-oss-20b")]'
+    b':[],...vo?[vo.chat("@cf/openai/gpt-oss-20b")]:[]])',
+    b'function W3(){return u$2}function $$($){let z=W3(),e=z.services.backgroundTasks($.executionCtx),'
+    b'v=z.services.environment($.env),u=z.services.extraction().pipe(le(v)),T=z.services.workflowTrigg'
+    b'er().pipe(le($O(e,v))),O=z.services.vectordb().pipe(le(v));return $O(e,v,u,T,O)}var u$2,x_=()=>W'
+    b'3().models.fast(),wb=()=>W3().models.text()',
+    b'var routeNoise="stand-in"',
+]
+LITERALS += ROUTE_LITERALS
 FILLER = b"\n;/* ---- */\n" + b"x" * 300 + b"\n"
 BUNDLE = FILLER.join(LITERALS) + FILLER + b"\n---- Bun! ----\n"
 
@@ -393,15 +443,19 @@ try:
                                                   "SUPERMEMORY_EMBEDDING_API_KEY"]), str(fberr or fb))
     rs, rserr = _try(lambda: (SB.resolve(SPAWN, rec["env"]), SB.resolve({}, rec["env"])))
     check("SMB-23: what the declared env resolves to by the bundle's own rules - the embedder openai-compatible at the "
-          "leg with our tag and 1024 dimensions, the fast and text models both OPENAI_MODEL; no vendor default reached. "
-          "With nothing declared, every vendor default is named (local bge-base, gpt-5.1 twice)",
+          "leg with our tag and 1024 dimensions, the fast and text models both OPENAI_MODEL, the client hl8; no vendor "
+          "default reached. With nothing declared, every vendor default is named (local bge-base, gpt-5.1 twice, $o null "
+          "with no OPENAI_API_KEY)",
           rserr is None and rs[0] == {"embedding": {"provider": "openai-compatible", "model": "bge-m3@d1",
                                                      "base_url": "http://127.0.0.1:47001/u/r1.u1/v1", "dimensions": "1024"},
                                        "llm": {"fast": "deepseek-flash", "text": "deepseek-flash",
-                                               "base_url": "http://127.0.0.1:47002/u/r1.u1/v1"},
+                                               "base_url": "http://127.0.0.1:47002/u/r1.u1/v1",
+                                               "client": "openai-compatible", "path": "/chat/completions"},
                                        "vendor_defaults": []}
-          and rs[1]["vendor_defaults"] == ["embedding provider local (Xenova/bge-base-en-v1.5)", "llm fast model gpt-5.1",
-                                           "llm text model gpt-5.1"], str(rserr or rs))
+          and rs[1]["vendor_defaults"][:3] == ["embedding provider local (Xenova/bge-base-en-v1.5)",
+                                               "llm fast model gpt-5.1", "llm text model gpt-5.1"]
+          and len(rs[1]["vendor_defaults"]) == 4 and "$o" in rs[1]["vendor_defaults"][3]
+          and "OPENAI_API_KEY" in rs[1]["vendor_defaults"][3] and rs[1]["llm"].get("client", "unset") is None, str(rserr or rs))
     wf_win = (rec or {}).get("workflow")
     rl, rlerr = _try(lambda: (lambda w: SB.run_facts(w[0], run="f1", record_sha256=w[1]))(
         world(TMP / "linux", pe_file(BUNDLE.replace(b'function qd8($="win32"', b'function qd8($="linux"'))))["workflow"])
@@ -440,6 +494,142 @@ try:
           "is an eighth name and another sha256",
           t8err is None and t8["names"] == SEVEN[:6] + ["runShell", "CreateMemory"] and t8["sha256"] == sha(eighth),
           str(t8err or t8))
+
+    print("\n- SBF: which client a model call takes (Q-C6-ROUTE = a, the auditor's literals of 2026-10-01) -")
+    rt = (rec or {}).get("route") or {}
+
+    def at(literal: bytes, name: bytes = b"Gl(") -> int:
+        return IMAGE.index(literal) + literal.index(name)
+    check("SMB-28 (Q-C6-ROUTE): the two clients by their definitions - hl8 is createOpenAICompatible by its user agent "
+          "(ai-sdk/openai-compatible: chat completions), Gl is createOpenAI (ai-sdk/openai: the Responses API) with its "
+          "base URL from OPENAI_BASE_URL, else the vendor's",
+          err is None and rt.get("clients") == {
+              "openai-compatible": {"name": "hl8", "user_agent": "ai-sdk/openai-compatible", "path": "/chat/completions",
+                                    "definition": at(ROUTE_LITERALS[0], b"hl8(")},
+              "openai": {"name": "Gl", "user_agent": "ai-sdk/openai", "path": "/responses",
+                         "definition": at(ROUTE_LITERALS[1]), "base_url_env": "OPENAI_BASE_URL",
+                         "default_base_url": "https://api.openai.com/v1"}}, str(err or rt.get("clients")))
+    br = rt.get("branches") or {}
+    arms = {k: [(a.get("client"), a.get("name"), a.get("excluded_by") is not None) for a in v.get("arms", [])]
+            for k, v in br.items()}
+    check("SMB-29 (Q-C6-ROUTE): each branch choosing a client, its arms in the order the literal calls them - $o: hl8 "
+          "with OPENAI_BASE_URL set, else Gl; bU: hl8 for provider openai-compatible, else Gl - linked by name to the env "
+          "fact that reads the variable deciding it; each Gl arm names the rule that keeps our spawn off it",
+          err is None and arms == {"llm_client_branch": [("openai-compatible", "hl8", False), ("openai", "Gl", True)],
+                                   "embed_client_branch": [("openai-compatible", "hl8", False), ("openai", "Gl", True)]}
+          and {k: (v.get("env"), v.get("env_fact")) for k, v in br.items()}
+          == {"llm_client_branch": ("OPENAI_BASE_URL", "llm_openai_client"),
+              "embed_client_branch": ("SUPERMEMORY_EMBEDDING_PROVIDER", "embed_provider")}, str(err or br))
+    wb = SB.WINDOW_BYTES
+    want_f = sorted(({"client": "openai", "name": "Gl", "offset": at(x), "finding": "call site outside the branch",
+                      "window_sha256": hashlib.sha256(IMAGE[max(LO, at(x) - wb):min(HI, at(x) + wb)]).hexdigest()}
+                     for x in (ROUTE_LITERALS[i] for i in (2, 4, 5, 8, 9, 10))), key=lambda f: f["offset"])
+    check("SMB-30 (the auditor's census L6): hl8 has 3 call sites and no bare reference, Gl 9 and 0 - each site a "
+          "definition, a branch's arm, or a finding 'call site outside the branch' with its offset and window (Gr4, qX0, "
+          "jX0, the Workers clients); a finding is recorded, never a problem - the clean read has none",
+          err is None and rt.get("calls") == {"openai-compatible": 3, "openai": 9}
+          and rt.get("bare") == {"openai-compatible": 0, "openai": 0}
+          and sorted(rt.get("findings") or [], key=lambda f: f["offset"]) == want_f
+          and rt.get("problems") == [] and rec["problems"] == [],
+          str(err or {k: rt.get(k) for k in ("calls", "bare", "problems")}))
+
+    def route_of(bundle: bytes, label: str) -> dict:
+        w = world(TMP / label, pe_file(bundle))
+        return SB.run_facts(w[0], run="f1", record_sha256=w[1])["route"]
+    noise = ROUTE_LITERALS[13]
+    r_more, e_more = _try(lambda: route_of(BUNDLE.replace(noise, noise + b';Kq=Gl({apiKey:"x"})'), "route_more"))
+    r_alias, e_alias = _try(lambda: route_of(BUNDLE.replace(noise, noise + b";let f=Gl;"), "route_alias"))
+    r_other, e_other = _try(lambda: route_of(BUNDLE.replace(noise, noise + b";x.Gl(1),WGl(2),$Gl(3),Glx(4)"),
+                                             "route_other"))
+    check("SMB-31 (the census): one more Gl call site, or one more bare Gl (an alias a call could hide behind), is a "
+          "problem naming the counts - never a silent pass; a member x.Gl(, WGl(, $Gl( or Glx( is another name",
+          e_more is None and any("Gl has 10 call sites and 0 bare" in x for x in r_more["problems"])
+          and e_alias is None and any("Gl has 9 call sites and 1 bare" in x for x in r_alias["problems"])
+          and e_other is None and r_other["problems"] == [], str(e_more or e_alias or e_other or (r_more, r_alias)))
+    def asset_pinned_route(bundle, label, literal, expected_sha=None):
+        lo = SB.bun_section(pe_file(bundle))[0]
+        pins = ((lo + bundle.index(literal), len(literal), expected_sha or hashlib.sha256(literal).hexdigest()),)
+        with mock.patch.object(SB, "ROUTE_ASSETS", pins, create=True):
+            return route_of(bundle, label)
+
+    asset_noise = b';let asset="' + b"A" * 140 + b"+Gl+" + b"A" * 140 + b'";'
+    algebra_noise = b';let algebra=' + b"A+" * 140 + b"Gl+" + b"A+" * 140 + b'1;'
+    r_asset, e_asset = _try(lambda: asset_pinned_route(BUNDLE.replace(noise, noise + asset_noise), "route_asset", asset_noise[len(b';let asset='):-1]))
+    r_algebra, e_algebra = _try(lambda: route_of(BUNDLE.replace(noise, noise + algebra_noise), "route_algebra"))
+    check("SMB-36: pure quoted base64 asset text is excluded with a span hash; an unquoted expression containing Gl remains a bare reference",
+          e_asset is None and r_asset["problems"] == [] and len(r_asset.get("ignored_assets", [])) == 1
+          and len(r_asset["ignored_assets"][0]["sha256"]) == 64
+          and e_algebra is None and any("Gl has 9 call sites and 1 bare" in problem for problem in r_algebra["problems"]),
+          str(e_asset or e_algebra or (r_asset.get("problems"), r_algebra.get("problems"))))
+
+    uri_noise = b';let image="data:image/png;base64,' + b"A" * 140 + b"+Gl+" + b"A" * 140 + b'";'
+    r_uri, e_uri = _try(lambda: asset_pinned_route(BUNDLE.replace(noise, noise + uri_noise), "route_data_uri", uri_noise[len(b';let image='):-1]))
+    check("SMB-37: a fully quoted base64 data URI is witnessed as an asset, not a bare client reference",
+          e_uri is None and r_uri["problems"] == [] and len(r_uri.get("ignored_assets", [])) == 1,
+          str(e_uri or r_uri.get("problems")))
+
+    braid = b';let a="x"+' + b"A+" * 70 + b"Gl+" + b"A+" * 70 + b'"y";'
+    r_braid, e_braid = _try(lambda: route_of(BUNDLE.replace(noise, noise + braid), "route_braid"))
+    check("SMB-38: code between closing and opening string quotes cannot masquerade as an ignored asset",
+          e_braid is None and any("Gl has 9 call sites and 1 bare" in x for x in r_braid["problems"]), str(e_braid or r_braid["problems"]))
+    quoted = asset_noise[len(b';let asset='):-1]
+    changed = quoted.replace(b"AAAA", b"BAAA", 1)
+    bad_asset = b';let asset=' + changed + b';'
+    r_changed, e_changed = _try(lambda: asset_pinned_route(BUNDLE.replace(noise, noise + bad_asset), "route_asset_changed",
+                                                         changed, hashlib.sha256(quoted).hexdigest()))
+    check("SMB-39: an encoded resource with a changed digest cannot hide a client identifier",
+          e_changed is None and any("Gl has 9 call sites and 1 bare" in x for x in r_changed["problems"]), str(e_changed or r_changed["problems"]))
+
+    sec = IMAGE[LO:HI]
+
+    def route_with(fact: str, values: list) -> dict:
+        facts = json.loads(json.dumps(rec["facts"]))
+        facts[fact]["values"] = values
+        return SB.route(sec, LO, facts)
+    sw2, sw2e = _try(lambda: (route_with("llm_client_branch", ["OPENAI_BASE_URL", "Gl", "hl8"]),
+                              route_with("embed_client_branch", ["local", "google", "openai-compatible", "hl8", "hl8"])))
+    check("SMB-32 (Q-C6-ROUTE): a branch whose arms call the clients otherwise - Gl with OPENAI_BASE_URL set, or hl8 on "
+          "both arms - is a problem naming the branch",
+          sw2e is None and any("llm_client_branch" in x for x in sw2[0]["problems"])
+          and any("embed_client_branch" in x for x in sw2[1]["problems"]), str(sw2e or sw2))
+    el, ele = _try(lambda: (route_with("llm_openai_client", ["OPENAI_API_KEY", "OPENAI_API_BASE"]),
+                            route_with("embed_provider", ["SUPERMEMORY_EMBEDDER", "local", "openai-compatible"])))
+    check("SMB-33 (the branch attributed to its env fact by name): an env fact that does not read the variable its "
+          "branch decides on - OPENAI_BASE_URL, SUPERMEMORY_EMBEDDING_PROVIDER - is a problem naming both",
+          ele is None and any("llm_openai_client" in x and "OPENAI_BASE_URL" in x for x in el[0]["problems"])
+          and any("embed_provider" in x and "SUPERMEMORY_EMBEDDING_PROVIDER" in x for x in el[1]["problems"]),
+          str(ele or el))
+    no_base = {k: v for k, v in SPAWN.items() if k != "OPENAI_BASE_URL"}
+    rv, rve = _try(lambda: [SB.resolve(e, rec["env"]) for e in (
+        SPAWN, no_base, {**SPAWN, "OPENAI_BASE_URL": ""}, {**SPAWN, "SUPERMEMORY_EMBEDDING_PROVIDER": "openai"},
+        {**SPAWN, "SUPERMEMORY_EMBEDDING_PROVIDER": "google"}, {**SPAWN, "OPENAI_API_KEY": ""})])
+    check("SMB-34 (Q-C6-ROUTE): resolve() says which client the LLM takes - with OPENAI_BASE_URL hl8, chat "
+          "completions; with none, or an empty one (the bundle's test is JavaScript truth), Gl and the Responses API "
+          "at the vendor's base URL, a vendor default by name; an empty OPENAI_API_KEY leaves $o null (no client, "
+          "a vendor default by name); an embedder provider other than openai-compatible or local (openai, google) is "
+          "a vendor default by name",
+          rve is None and rv[0]["llm"].get("client", "unset") == "openai-compatible" and rv[0]["llm"].get("path", "unset") == "/chat/completions"
+          and rv[0]["vendor_defaults"] == []
+          and all(r["llm"].get("client", "unset") == "openai" and r["llm"].get("path", "unset") == "/responses"
+                  and any("Gl" in d and "/responses" in d for d in r["vendor_defaults"]) for r in rv[1:3])
+          and all(any(f"embedding provider {v}" in d for d in r["vendor_defaults"])
+                  for v, r in (("openai", rv[3]), ("google", rv[4])))
+          and rv[5]["llm"].get("client", "unset") is None and rv[5]["llm"].get("path", "unset") is None
+          and any("$o" in d and "OPENAI_API_KEY" in d for d in rv[5]["vendor_defaults"]), str(rve or rv))
+    names = ("ANTHROPIC_API_KEY", "google_generative_ai_api_key", "Groq_Api_Key", "GOOGLE_CLOUD_PROJECT")
+    ce, cee = _try(lambda: (SB.child_env_problems(SPAWN, rec["env"]),
+                            SB.child_env_problems({**SPAWN, **{n: "x" for n in names}}, rec["env"])))
+    mc = rt.get("model_chain") or {}
+    check("SMB-35 (F-SBF-2): the model chain S55 holds $o (ours, the fast model z$2) and a model of every other "
+          "provider whose variable the child env holds - child_env_problems names each such variable, a must-be-absent "
+          "name or any GOOGLE_*, whatever its case; the spawn's env has none. The agent's models: x_ fast, wb text, the "
+          "memory agent's model wb",
+          cee is None and ce[0] == [] and len(ce[1]) == 4 and all(any(n in x for x in ce[1]) for n in names)
+          and mc.get("name") == "S55" and mc.get("ours") == "$o" and mc.get("model") == "z$2"
+          and rt.get("agent_models") == {"fast": "x_", "text": "wb", "memory_agent": "text"}
+          and mc.get("others") == {"eo": "claude-haiku-4-5", "sm": "gemini-3.1-flash-lite-preview",
+                                   "jm": "gemini-3.1-flash-lite-preview", "zo": "openai/gpt-oss-20b",
+                                   "vo": "@cf/openai/gpt-oss-20b"}, str(cee or ce or mc))
 
     print("\n- the run label -")
     check("SMB-19: a used run label is refused by name - a record is never overwritten",
