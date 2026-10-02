@@ -26,8 +26,9 @@ ROOT = HERE.parent.parent
 sys.path.insert(0, str(HERE.parent))
 
 import _env_guard  # noqa: F401,E402  hermetic: scrub store env before any project import
+import sandbox_guard  # noqa: E402 - register only freshly created test directories
 
-_TMP = Path(tempfile.mkdtemp(prefix="nevertwice_review_resume_"))
+_TMP = Path(str(sandbox_guard.remove_at_exit(tempfile.mkdtemp(prefix="nevertwice_review_resume_"))))
 os.environ["CODE_HELDOUT_DIR"] = str(_TMP)
 sys.path.insert(0, str(ROOT / "research"))
 import heldout_review as hr  # noqa: E402

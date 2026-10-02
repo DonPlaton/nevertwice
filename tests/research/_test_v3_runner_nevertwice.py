@@ -46,6 +46,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
 sys.path.insert(0, str(HERE.parent))
 import _env_guard  # noqa: F401,E402  hermetic: scrub store env before any project import
+import sandbox_guard  # noqa: E402 - register only freshly created test directories
 
 RUNNER = ROOT / "research" / "v3" / "arms" / "runner_nevertwice.py"
 _spec = importlib.util.spec_from_file_location("v3_runner_nevertwice", RUNNER)
@@ -173,7 +174,7 @@ def short_name(p) -> str | None:
     return s if s and os.path.normcase(s) != os.path.normcase(str(p)) else None
 
 
-TMP = Path(tempfile.mkdtemp(prefix="v3runner_"))
+TMP = Path(str(sandbox_guard.remove_at_exit(tempfile.mkdtemp(prefix="v3runner_"))))
 _SH = short_name(TMP)
 if _SH is None:
     print("       (no 8.3 name here - B-SEAL83's row runs where the volume makes one: Windows)")

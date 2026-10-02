@@ -117,8 +117,8 @@ def _summarise(samples: list[float]) -> dict:
 
 
 def main() -> None:
-    tmp = tempfile.mkdtemp()
-    empty_root = tempfile.mkdtemp()
+    tmp = str(sandbox_guard.remove_at_exit(tempfile.mkdtemp()))
+    empty_root = str(sandbox_guard.remove_at_exit(tempfile.mkdtemp()))
     env = {k: v for k, v in os.environ.items()
            if not any(s in k for s in ("CEREBRAS", "GROQ", "DEEPSEEK", "GEMINI",
                                        "OPENAI", "VOYAGE", "COHERE", "ANTHROPIC"))}

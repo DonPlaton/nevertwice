@@ -748,7 +748,7 @@ def run_bench(cases: list[dict], *, extractor_mode: str, dry: bool) -> dict:
         # THIS case's own pair leak) - a shared store would let one case's universal note
         # answer another case's query, which is a real thing A4 does on purpose but not what
         # "leak" is measuring here.
-        m._rebase_vault(Path(tempfile.mkdtemp(prefix="nevertwice_cpb_case_")))
+        m._rebase_vault(Path(str(sandbox_guard.remove_at_exit(tempfile.mkdtemp(prefix="nevertwice_cpb_case_")))))
         saved_embed = None
         if dry:
             saved_embed = m.embed_text

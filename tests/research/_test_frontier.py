@@ -15,6 +15,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import _env_guard  # noqa: E402,F401 - hermetic store before any project import
+import sandbox_guard  # noqa: E402 - register only freshly created test directories
 
 import json  # noqa: E402
 
@@ -218,7 +219,7 @@ def _one_context(k):
 
 print("\n- item 9B: a reader failure on ONE question makes the point (and the root) invalid, "
       "and row_refusal refuses a REAL claim pointer -")
-fe.DATA = Path(tempfile.mkdtemp(prefix="frontier_test_9b_"))
+fe.DATA = Path(str(sandbox_guard.remove_at_exit(tempfile.mkdtemp(prefix="frontier_test_9b_"))))
 try:
     with _isolated_pacer():
         _seed_ctx()
@@ -266,7 +267,7 @@ finally:
 
 print("\n- item 9B/K30: an unstamped (legacy) cached answer or verdict is not current - the "
       "point is invalid even though every question WAS answered -")
-fe.DATA = Path(tempfile.mkdtemp(prefix="frontier_test_9b_k30a_"))
+fe.DATA = Path(str(sandbox_guard.remove_at_exit(tempfile.mkdtemp(prefix="frontier_test_9b_k30a_"))))
 try:
     _seed_ctx()
     answers, verdicts = {}, {}
@@ -310,7 +311,7 @@ finally:
 
 print("\n- item 9B/K30: fresh stamps at HEAD are current, and a fresh answer with a STALE "
       "verdict under the SAME key is still invalid (both are checked independently) -")
-fe.DATA = Path(tempfile.mkdtemp(prefix="frontier_test_9b_k30b_"))
+fe.DATA = Path(str(sandbox_guard.remove_at_exit(tempfile.mkdtemp(prefix="frontier_test_9b_k30b_"))))
 try:
     _seed_ctx()
     head = fe.git_head()
@@ -360,7 +361,7 @@ finally:
 
 print("\n- item 9B/P0(f): a requested arm with no cached contexts is a NAMED refusal, never a "
       "vanished arm -")
-fe.DATA = Path(tempfile.mkdtemp(prefix="frontier_test_9b_noctx_"))
+fe.DATA = Path(str(sandbox_guard.remove_at_exit(tempfile.mkdtemp(prefix="frontier_test_9b_noctx_"))))
 try:
     with _isolated_pacer():
         urllib.request.urlopen = _fake_chat_factory()
@@ -387,7 +388,7 @@ finally:
 
 print("\n- item 9B/(в): an arm blocked on one answer_stage run is UNBLOCKED once a later run "
       "finds its contexts - _blocked_arms does not only grow -")
-fe.DATA = Path(tempfile.mkdtemp(prefix="frontier_test_9b_unblock_"))
+fe.DATA = Path(str(sandbox_guard.remove_at_exit(tempfile.mkdtemp(prefix="frontier_test_9b_unblock_"))))
 try:
     with _isolated_pacer():
         urllib.request.urlopen = _fake_chat_factory()
@@ -512,7 +513,7 @@ fe._fold_arm_context_provenance = saved_fold
 
 print("\n- item 9B/K25: a blocked `mem0` arm invalidates the WHOLE artifact at the root, so "
       "row_refusal refuses a claim pointer on a DIFFERENT, otherwise-clean arm too -")
-fe.DATA = Path(tempfile.mkdtemp(prefix="frontier_test_9b_rootprop_"))
+fe.DATA = Path(str(sandbox_guard.remove_at_exit(tempfile.mkdtemp(prefix="frontier_test_9b_rootprop_"))))
 saved_propagate = fe._propagate_root_invalidity
 try:
     with _isolated_pacer():
@@ -565,7 +566,7 @@ def _fake_run_nevertwice(data, pool):
 
 
 hh.run_nevertwice = _fake_run_nevertwice
-fake_emb = Path(tempfile.mkdtemp(prefix="frontier_test_x5_")) / "emb.json"
+fake_emb = Path(str(sandbox_guard.remove_at_exit(tempfile.mkdtemp(prefix="frontier_test_x5_")))) / "emb.json"
 fake_emb.write_text(json.dumps({
     "sessions": {}, "questions": {}, "valid": False,
     "invalid_reason": "3 embed call(s) failed", "ollama_transport": {"calls": 9},
@@ -592,7 +593,7 @@ check("X6: the arm's own node is marked invalid, naming the vector-cache reason"
 
 print("\n- item 9B/K36 X7: the answer/judge stage-level transport (answer_transport/"
       "judge_transport valid:false) marks the ROOT, not just itself -")
-fe.DATA = Path(tempfile.mkdtemp(prefix="frontier_test_x7_"))
+fe.DATA = Path(str(sandbox_guard.remove_at_exit(tempfile.mkdtemp(prefix="frontier_test_x7_"))))
 try:
     with _isolated_pacer():
         _seed_ctx()
@@ -610,7 +611,7 @@ finally:
     fe.DATA = saved_DATA
 
 print("\n- item 9B/K36 X8: the RN5 competitor_cache record is written for a non-engine arm -")
-fe.DATA = Path(tempfile.mkdtemp(prefix="frontier_test_x8_"))
+fe.DATA = Path(str(sandbox_guard.remove_at_exit(tempfile.mkdtemp(prefix="frontier_test_x8_"))))
 try:
     _seed_ctx("mem0")
     with _isolated_pacer():
@@ -627,7 +628,7 @@ finally:
 print("\n- item 9B/K36 X4 (direct, the auditor's request): a PARTIAL competitor cache - contexts for only "
       "some of the asked questions - is a mismatch, not 'present' (PREREG P0(f)), and row_refusal refuses "
       "the real pointer arms.mem0.1.accuracy -")
-fe.DATA = Path(tempfile.mkdtemp(prefix="frontier_test_x4_"))
+fe.DATA = Path(str(sandbox_guard.remove_at_exit(tempfile.mkdtemp(prefix="frontier_test_x4_"))))
 try:
     fe._save(fe._ctx_path("mem0"), {MINI_DATA[0]["question_id"]: [{"id": "s0", "text": "some context text"}]})
     with _isolated_pacer():
@@ -786,7 +787,7 @@ finally:
 
 print("\nK42: the store provenance reaches the ARTIFACT (competitor_cache[arm].store), where m2_check "
       "reads it -")
-fe.DATA = Path(tempfile.mkdtemp(prefix="frontier_test_k42fold_"))
+fe.DATA = Path(str(sandbox_guard.remove_at_exit(tempfile.mkdtemp(prefix="frontier_test_k42fold_"))))
 try:
     _ctx_fold = {q["question_id"]: [{"id": "s0", "text": "some context text"}] for q in MINI_DATA}
     _ctx_fold["_store_provenance"] = {"path": "P", "newest_file_mtime": 1.0, "n_items": 2,
@@ -807,7 +808,7 @@ finally:
 print("\nK43: a competitor arm the runner DECLARES blocked (its own pipeline blocked in b9) is printed "
       "'blocked (reason)' and leaves the run valid (P3); the same arm REQUESTED without contexts "
       "invalidates it (P0(f)) -")
-fe.DATA = Path(tempfile.mkdtemp(prefix="frontier_test_k43_"))
+fe.DATA = Path(str(sandbox_guard.remove_at_exit(tempfile.mkdtemp(prefix="frontier_test_k43_"))))
 try:
     with _isolated_pacer():
         _seed_ctx()

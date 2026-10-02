@@ -24,6 +24,7 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(ROOT / "nevertwice"))
 
 import _env_guard  # noqa: F401,E402  hermetic: scrub store env before the engine bakes its paths
+import sandbox_guard  # noqa: E402 - register only freshly created test directories
 import memory_hook as m  # noqa: E402
 
 from _sandbox import make_sandbox  # noqa: E402
@@ -57,7 +58,7 @@ check("_EXCLUDE_PREFIXES holds the sandbox", norm in m._EXCLUDE_PREFIXES)
 check("the pre-rebase store is gone from _EXCLUDE_PREFIXES",
       before != norm and before not in m._EXCLUDE_PREFIXES)
 
-other = Path(tempfile.mkdtemp(prefix="rebase_projects_"))
+other = Path(str(sandbox_guard.remove_at_exit(tempfile.mkdtemp(prefix="rebase_projects_"))))
 m.PROJECTS_ROOT = other
 m._rebase_vault(sandbox)
 check("_PROJECTS_ROOT_NORM follows PROJECTS_ROOT",
@@ -71,7 +72,7 @@ check("_PROJECTS_ROOT_NORM follows PROJECTS_ROOT",
 # against the old vault's embedding cache. Same incident shape as the two the docstring names,
 # one layer further in - the previous store's content is not this store's content.
 print("# the grounding caches are the store's content, and they move with it")
-first = Path(tempfile.mkdtemp(prefix="rebase_ground_a_"))
+first = Path(str(sandbox_guard.remove_at_exit(tempfile.mkdtemp(prefix="rebase_ground_a_"))))
 m._rebase_vault(first)
 for folder in ("Mistakes", "Patterns", "Decisions"):
     (first / folder).mkdir(parents=True, exist_ok=True)
@@ -92,7 +93,7 @@ check("the first store grounded the tag vocabulary",
 check("and the title window", any("only-in-the-first-store" in s
                                  for slugs in titles_a.values() for s in slugs))
 
-second = Path(tempfile.mkdtemp(prefix="rebase_ground_b_"))
+second = Path(str(sandbox_guard.remove_at_exit(tempfile.mkdtemp(prefix="rebase_ground_b_"))))
 for folder in ("Mistakes", "Patterns", "Decisions"):
     (second / folder).mkdir(parents=True, exist_ok=True)
 m._rebase_vault(second)

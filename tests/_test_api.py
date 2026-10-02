@@ -18,6 +18,7 @@ try:
 except Exception:
     pass
 import _env_guard  # noqa: F401  hermetic: scrub store env BEFORE package imports bake path constants (incidents 2026-08-13 / 2026-08-18)
+import sandbox_guard  # noqa: E402 - register only freshly created test directories
 import api
 import memory_hook as m
 import memory_search as ms
@@ -233,7 +234,7 @@ def test_capture_session_happy_path_summary():
                         "mistakes": 0, "decisions": 2})
         return True
 
-    tmp = Path(tempfile.mkdtemp())
+    tmp = Path(str(sandbox_guard.remove_at_exit(tempfile.mkdtemp())))
     with mock.patch.object(m, "llm_available", return_value=True), \
          mock.patch.object(m, "acquire_lock", return_value=True), \
          mock.patch.object(m, "release_lock"), \

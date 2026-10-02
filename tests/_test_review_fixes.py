@@ -32,6 +32,7 @@ except Exception:
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "nevertwice"))
 import _env_guard  # noqa: F401  hermetic: scrub store env BEFORE package imports bake path constants (incidents 2026-08-13 / 2026-08-18)
+import sandbox_guard  # noqa: E402 - register only freshly created test directories
 import memory_hook as m          # noqa: E402
 import ingest                    # noqa: E402
 import stats                     # noqa: E402
@@ -64,7 +65,7 @@ def sandbox():
 # ── 1. WATERMARK: delta-mining of growing transcripts ─────────────────────────
 print("fix 1 - watermark delta-mining (ingest_files)")
 d = sandbox()
-src = Path(tempfile.mkdtemp(prefix="revfix_src_"))
+src = Path(str(sandbox_guard.remove_at_exit(tempfile.mkdtemp(prefix="revfix_src_"))))
 f1 = src / "rollout.jsonl"
 
 

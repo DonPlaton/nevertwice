@@ -31,6 +31,7 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(ROOT / "tools"))
 
 import _env_guard  # noqa: F401,E402  hermetic: scrub store env before the engine bakes its paths
+import sandbox_guard  # noqa: E402 - register only freshly created test directories
 import check_campaign_commands as cc  # noqa: E402
 
 PASSED = FAILED = 0
@@ -46,7 +47,7 @@ def check(name: str, cond: bool, detail: str = "") -> None:
         print(f"  FAIL {name}" + (f" - {detail}" if detail else ""))
 
 
-TMP = Path(tempfile.mkdtemp(prefix="cmdcheck_"))
+TMP = Path(str(sandbox_guard.remove_at_exit(tempfile.mkdtemp(prefix="cmdcheck_"))))
 
 SCRIPTS = {
     "with_argparse.py": (

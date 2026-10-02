@@ -29,6 +29,7 @@ except Exception:
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "nevertwice"))
 import _env_guard  # noqa: F401  hermetic: scrub store env BEFORE package imports bake path constants (incidents 2026-08-13 / 2026-08-18)
+import sandbox_guard  # noqa: E402 - register only freshly created test directories
 import memory_hook as m          # noqa: E402
 import receipt as rc             # noqa: E402
 
@@ -117,7 +118,7 @@ def _emit(budget, receipt_on, n_facts=9, top_k=None):
     .bak in one call (review 2026-08: this exact harness poisoned a real deployment - the
     live cache was left holding the fixture entries and semantic recall served ~1% of the
     store until a rebuild). Mirrors tests/_test_memory_v3.py's sandbox()."""
-    d = tempfile.mkdtemp()
+    d = str(sandbox_guard.remove_at_exit(tempfile.mkdtemp()))
     _v, _pr = m.VAULT, m.PROMPT_RECALL_STATE_DIR
     _ec, _em, _lf = m.EMBED_CACHE, m.EMBED_META, m.LOG_FILE
     _b, _r = m.INJECT_BUDGET_CHARS, m.INJECT_RECEIPT

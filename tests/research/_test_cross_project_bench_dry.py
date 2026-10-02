@@ -20,6 +20,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import _env_guard  # noqa: E402,F401 - hermetic store before any project import
+import sandbox_guard  # noqa: E402 - register only freshly created test directories
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT / "research"))
@@ -89,7 +90,7 @@ long_desc = ("Splitting structural changes from large backfills in separate tran
             "contention that blocked other writers for several minutes during peak traffic.")
 check("fixture description is longer than the 220-char recall cap", len(long_desc) > 220,
       str(len(long_desc)))
-cpb.m._rebase_vault(Path(tempfile.mkdtemp(prefix="nevertwice_cpb_c2_")))
+cpb.m._rebase_vault(Path(str(sandbox_guard.remove_at_exit(tempfile.mkdtemp(prefix="nevertwice_cpb_c2_")))))
 stem = cpb.m.write_typed_note(cpb.m.TYPE_FOLDER["pattern"],
                               {"title": "long desc fixture", "description": long_desc,
                                "principle": "keep migrations idempotent."},

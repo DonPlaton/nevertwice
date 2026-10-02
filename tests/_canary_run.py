@@ -29,6 +29,8 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
+sys.path.insert(0, str(ROOT))
+import sandbox_guard  # noqa: E402 - own the copied package until its child exits
 
 
 def injected(src: str, func: str) -> str:
@@ -100,7 +102,7 @@ def main() -> int:
     func = positional[0]
     flag = next((a for a in sys.argv[1:] if a.startswith("--nudge")), None)
     epsilon = float(flag.split("=", 1)[1]) if flag and "=" in flag else 0.05
-    work = Path(tempfile.mkdtemp(prefix=f"canary_{func}_"))
+    work = Path(str(sandbox_guard.remove_at_exit(tempfile.mkdtemp(prefix=f"canary_{func}_"))))
     pkg = work / "nevertwice"
     pkg.mkdir(parents=True)
     for p in (ROOT / "nevertwice").glob("*.py"):

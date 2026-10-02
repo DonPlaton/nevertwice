@@ -9,6 +9,7 @@ it — went from ["architecture", "configuration", "qa"] to ["architecture",
 queries while no longer matching their own.
 """
 import _env_guard  # noqa: F401
+import sandbox_guard  # noqa: E402 - register only freshly created test directories
 import sys
 from pathlib import Path
 
@@ -68,7 +69,7 @@ print()
 print("- the vocabulary is the declared tags, not everything that starts with a hash -")
 import tempfile  # noqa: E402
 
-_d = Path(tempfile.mkdtemp(prefix="tagvocab_"))
+_d = Path(str(sandbox_guard.remove_at_exit(tempfile.mkdtemp(prefix="tagvocab_"))))
 _v, m.VAULT = m.VAULT, _d
 m._TAG_COUNTS, m._TAG_COUNTS_BY_PROJECT = None, {}
 try:

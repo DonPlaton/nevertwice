@@ -29,6 +29,7 @@ except Exception:
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "nevertwice"))
 import _env_guard  # noqa: F401  hermetic: scrub store env BEFORE package imports bake path constants (incidents 2026-08-13 / 2026-08-18)
+import sandbox_guard  # noqa: E402 - register only freshly created test directories
 import memory_hook as m          # noqa: E402
 
 _ROOT = r"D:\Projects" if os.name == "nt" else "/projects"
@@ -72,7 +73,7 @@ def emit(budget, n_facts=12, title_len=90, receipt=True, project="proj"):
     # Patches every vault-derived path constant (EMBED_CACHE/EMBED_META/LOG_FILE are
     # import-time constants - patching VAULT alone lets save_embed_cache clobber the LIVE
     # store's cache; review 2026-08). Mirrors _test_memory_v3.sandbox().
-    d = tempfile.mkdtemp()
+    d = str(sandbox_guard.remove_at_exit(tempfile.mkdtemp()))
     saved = (m.VAULT, m.PROMPT_RECALL_STATE_DIR, m.INJECT_BUDGET_CHARS, m.INJECT_RECEIPT,
              m.RETRIEVAL_TOP_K, m.is_tracked_project, m.derive_project_from_cwd, m.ollama_alive)
     saved_paths = (m.EMBED_CACHE, m.EMBED_META, m.LOG_FILE)

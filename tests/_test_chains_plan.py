@@ -33,6 +33,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
 sys.path.insert(0, str(HERE))
 import _env_guard  # noqa: F401,E402  hermetic like every suite
+import sandbox_guard  # noqa: E402 - register only freshly created test directories
 
 
 def _load(name: str, path: Path):
@@ -93,7 +94,7 @@ def commit(repo: Path, name: str, text: str = "x") -> str:
     return git(repo, "rev-parse", "HEAD")
 
 
-TMP = Path(tempfile.mkdtemp(prefix="nvt_chains_"))
+TMP = Path(str(sandbox_guard.remove_at_exit(tempfile.mkdtemp(prefix="nvt_chains_"))))
 try:
     R = TMP / "repo"
     R.mkdir()

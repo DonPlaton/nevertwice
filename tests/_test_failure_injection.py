@@ -11,6 +11,7 @@ try:
 except Exception:
     pass
 import _env_guard  # noqa: F401  hermetic: scrub store env BEFORE package imports bake path constants (incidents 2026-08-13 / 2026-08-18)
+import sandbox_guard  # noqa: E402 - register only freshly created test directories
 import memory_hook as m
 
 FAILS = []
@@ -21,7 +22,7 @@ def check(name, cond, detail=""):
     print(f"  [{tag}] {name}" + (f"  -- {detail}" if (detail and not cond) else ""))
 
 def fresh_vault():
-    d = Path(tempfile.mkdtemp(prefix="memfuzz_"))
+    d = Path(str(sandbox_guard.remove_at_exit(tempfile.mkdtemp(prefix="memfuzz_"))))
     m.VAULT = d
     m.PROCESSED_DB = d / ".processed_sessions.json"
     m.EMBED_CACHE = d / ".embeddings_cache.json"

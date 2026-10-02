@@ -17,6 +17,7 @@ except Exception:
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "nevertwice"))
 import _env_guard  # noqa: F401  hermetic: scrub store env BEFORE package imports bake path constants (incidents 2026-08-13 / 2026-08-18)
+import sandbox_guard  # noqa: E402 - register only freshly created test directories
 import memory_hook as m
 
 # The shipped default has NO configured project root (it relies on git-repo
@@ -490,7 +491,7 @@ check("each task points at a .bat wrapper", all(str(t["bat"]).endswith(".bat") f
 # wrappers are generated at install time, not shipped - point the specs at temp
 # files so the register-path checks below stay hermetic.
 import tempfile as _tf
-_wrapdir = Path(_tf.mkdtemp(prefix="anam_wrap_"))
+_wrapdir = Path(str(sandbox_guard.remove_at_exit(_tf.mkdtemp(prefix="anam_wrap_"))))
 _orig_bats = [t["bat"] for t in mt.TASKS]
 for t in mt.TASKS:
     t["bat"] = _wrapdir / (t["name"] + ".bat")
@@ -1044,7 +1045,7 @@ import interop
 import sync as sync_mod
 
 sandbox()   # dead store removed (d unused here)
-projdir = Path(tempfile.mkdtemp(prefix="proj_"))
+projdir = Path(str(sandbox_guard.remove_at_exit(tempfile.mkdtemp(prefix="proj_"))))
 (projdir / "src").mkdir()
 (projdir / "src" / "live.py").write_text("x", encoding="utf-8")
 s_live = m.write_typed_note("Patterns", {"title": "live ref",
@@ -1065,7 +1066,7 @@ m.write_typed_note("Decisions", {"title": "adopt cursor pagination", "descriptio
 blk = interop.agents_md_block("proj")
 check("M-13 AGENTS block has markers", interop.AGENTS_START in blk and interop.AGENTS_END in blk)
 check("M-13 AGENTS block carries the card", "adopt cursor pagination" in blk)
-tdir = Path(tempfile.mkdtemp(prefix="ag_"))
+tdir = Path(str(sandbox_guard.remove_at_exit(tempfile.mkdtemp(prefix="ag_"))))
 (tdir / "AGENTS.md").write_text("# My rules\nhand-written\n", encoding="utf-8")
 interop.write_agents_md("proj", tdir)
 interop.write_agents_md("proj", tdir)        # idempotent

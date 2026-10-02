@@ -15,6 +15,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import _env_guard  # noqa: E402,F401 - hermetic store before any project import
+import sandbox_guard  # noqa: E402 - register only freshly created test directories
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT / "research"))
@@ -43,7 +44,7 @@ def compliant(prompt: str, seed: int) -> dict:
     return {"transcript": "\n".join(lines) or "assistant: routine maintenance, nothing to record"}
 
 
-tmp = Path(tempfile.mkdtemp(prefix="codesess_test_"))
+tmp = Path(str(sandbox_guard.remove_at_exit(tempfile.mkdtemp(prefix="codesess_test_"))))
 cse.DATA = tmp
 cse._ctx_path = lambda arm: tmp / f"ctx_{arm}.json"
 cse._cache_path = lambda stage: tmp / f"{stage}.json"
@@ -195,7 +196,7 @@ _saved_ctx_path, _saved_cache_path = cse._ctx_path, cse._cache_path
 
 
 def _use_scratch(tag):
-    d = Path(tempfile.mkdtemp(prefix=f"codesess_test_9b_{tag}_"))
+    d = Path(str(sandbox_guard.remove_at_exit(tempfile.mkdtemp(prefix=f"codesess_test_9b_{tag}_"))))
     cse._ctx_path = lambda arm: d / f"ctx_{arm}.json"
     cse._cache_path = lambda stage: d / f"{stage}.json"
 

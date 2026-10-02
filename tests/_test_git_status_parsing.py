@@ -45,6 +45,7 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(ROOT / "tools"))
 
 import _env_guard  # noqa: F401,E402  hermetic: scrub store env before any project import
+import sandbox_guard  # noqa: E402 - register only freshly created test directories
 import git_status  # noqa: E402
 
 PASSED = 0
@@ -121,7 +122,7 @@ def test_paths_arrive_raw() -> None:
 def test_against_a_real_repository() -> None:
     """Synthetic records prove the parser; a real `git mv` proves the whole path to git."""
     print("\n- and against git itself -")
-    work = Path(tempfile.mkdtemp(prefix="git_status_"))
+    work = Path(str(sandbox_guard.remove_at_exit(tempfile.mkdtemp(prefix="git_status_"))))
     env = dict(os.environ, GIT_AUTHOR_NAME="t", GIT_AUTHOR_EMAIL="t@t",
                GIT_COMMITTER_NAME="t", GIT_COMMITTER_EMAIL="t@t")
     #: `--template=` is not decoration: this machine sets `init.templateDir` globally, so a plain

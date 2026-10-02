@@ -35,6 +35,7 @@ PKG = ROOT / "nevertwice"
 sys.path.insert(0, str(HERE))
 
 import _env_guard  # noqa: F401,E402  hermetic: scrub store env before the engine bakes its paths
+import sandbox_guard  # noqa: E402 - register only freshly created test directories
 
 PASSED = FAILED = 0
 
@@ -139,7 +140,7 @@ probe = (
     "                  'before': before, 'after': after}))\n"
 ) % (str(PKG), str(ROOT))
 env = dict(os.environ)
-store = tempfile.mkdtemp(prefix="lazyre_")
+store = str(sandbox_guard.remove_at_exit(tempfile.mkdtemp(prefix="lazyre_")))
 env.update({"NEVERTWICE_HOME": store, "NEVERTWICE_VAULT": store, "NEVERTWICE_CLOUD": "none"})
 r = subprocess.run([sys.executable, "-c", probe], capture_output=True, text=True, timeout=240,
                    env=env)

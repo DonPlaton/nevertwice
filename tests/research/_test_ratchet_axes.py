@@ -41,6 +41,7 @@ ROOT = HERE.parent
 sys.path.insert(0, str(HERE))
 
 import _env_guard  # noqa: F401,E402  hermetic: scrub store env before any project import
+import sandbox_guard  # noqa: E402 - only owned temporary source directories
 
 sys.path.insert(0, str(ROOT / "research" / "invariants_lab"))
 import complexity as C  # noqa: E402
@@ -66,10 +67,10 @@ def skip(name: str, why: str) -> None:
 
 
 def _write(source: str) -> Path:
-    fh = tempfile.NamedTemporaryFile("w", suffix=".py", delete=False, encoding="utf-8")
-    fh.write(source)
-    fh.close()
-    return Path(fh.name)
+    directory = sandbox_guard.remove_at_exit(tempfile.mkdtemp(prefix="nvt_ratchet_source_"))
+    path = directory / "probe.py"
+    path.write_text(source, encoding="utf-8", newline="")
+    return path
 
 
 def _ruff_available() -> bool:

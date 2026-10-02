@@ -27,6 +27,7 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(ROOT / "tools"))
 
 import _env_guard  # noqa: F401,E402  hermetic: scrub store env before anything reads it
+import sandbox_guard  # noqa: E402 - register only freshly created test directories
 
 import check_installed_engine as probe  # noqa: E402
 
@@ -92,7 +93,7 @@ print("- the census reads BOTH sides of the split, not one -")
 #: `sync_install.py --apply`, it printed "installed hook LAGS the repo on 11 feature(s)" with all
 #: eleven physically present beside the loader. Found by the auditing session; a check extended on
 #: one side of a seam is the split's own defect.
-_td2 = tempfile.mkdtemp()
+_td2 = str(sandbox_guard.remove_at_exit(tempfile.mkdtemp()))
 _dir = Path(_td2) / "scripts"
 _dir.mkdir(parents=True, exist_ok=True)
 (_dir / "memory_hook.py").write_text("import _engine  # loader only\n", encoding="utf-8")

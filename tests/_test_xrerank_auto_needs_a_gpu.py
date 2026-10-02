@@ -34,6 +34,7 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "nevertwice"))
 
 import _env_guard  # noqa: F401,E402  hermetic: scrub store env before the engine bakes its paths
+import sandbox_guard  # noqa: E402 - register only freshly created test directories
 import reranker_ce as r  # noqa: E402
 
 PASSED = FAILED = 0
@@ -51,7 +52,7 @@ def check(name: str, cond: bool, detail: str = "") -> None:
 
 def _fake_torch(cuda_line: str) -> Path:
     """A directory shaped like an installed torch, carrying only what the probe reads."""
-    d = Path(tempfile.mkdtemp(prefix="faketorch_")) / "torch"
+    d = Path(str(sandbox_guard.remove_at_exit(tempfile.mkdtemp(prefix="faketorch_")))) / "torch"
     d.mkdir(parents=True)
     (d / "__init__.py").write_text("", encoding="utf-8", newline="")
     (d / "version.py").write_text(

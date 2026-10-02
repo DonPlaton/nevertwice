@@ -45,6 +45,7 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(PKG))
 
 import _env_guard  # noqa: F401,E402  hermetic: scrub store env before the engine bakes its paths
+import sandbox_guard  # noqa: E402 - register only freshly created test directories
 import memory_hook as m  # noqa: E402
 
 P = F = 0
@@ -177,8 +178,8 @@ print("# every hook event behaves identically through either file")
 
 def drive(script: Path, evt: dict):
     """Run one hook event as the agent runs it and return its masked observable result."""
-    store = tempfile.mkdtemp(prefix="entry_")
-    proj = tempfile.mkdtemp(prefix="entryp_")
+    store = str(sandbox_guard.remove_at_exit(tempfile.mkdtemp(prefix="entry_")))
+    proj = str(sandbox_guard.remove_at_exit(tempfile.mkdtemp(prefix="entryp_")))
     env = {k: v for k, v in os.environ.items()
            if not any(s in k for s in ("CEREBRAS", "GROQ", "DEEPSEEK", "GEMINI", "OPENAI",
                                        "VOYAGE", "COHERE"))}
@@ -254,7 +255,7 @@ def load_in(pkg: Path, expr: str) -> subprocess.CompletedProcess:
                           env=env, timeout=240)
 
 
-cachedir = Path(tempfile.mkdtemp(prefix="bodycache_")) / "nevertwice"
+cachedir = Path(str(sandbox_guard.remove_at_exit(tempfile.mkdtemp(prefix="bodycache_")))) / "nevertwice"
 shutil.copytree(PKG, cachedir, ignore=shutil.ignore_patterns("__pycache__"))
 r = load_in(cachedir, "getattr(m, '_CACHE_PROBE', 'absent')")
 check("a cold copy loads and writes its cache", r.returncode == 0 and "absent" in r.stdout,
@@ -342,7 +343,7 @@ check("the freshness key is built from every part, in load order",
 print()
 print("# a missing engine is reported, not crashed")
 
-half = Path(tempfile.mkdtemp(prefix="halfinstall_"))
+half = Path(str(sandbox_guard.remove_at_exit(tempfile.mkdtemp(prefix="halfinstall_"))))
 (half / "memory_hook.py").write_bytes(entry.read_bytes())
 r = subprocess.run([sys.executable, str(half / "memory_hook.py")],
                    input=json.dumps({"hook_event_name": "PreToolUse", "session_id": "h",
@@ -357,7 +358,7 @@ check("the reason is printed", "_engine.py" in r.stderr and "missing" in r.stder
 # looks complete and imports nothing. That case has to degrade the same way, with the missing
 # file named, and it is the LAST part that is dropped here - a loader that checked only before
 # the loop would pass this while dying in the middle of the engine.
-partial = Path(tempfile.mkdtemp(prefix="partialinstall_")) / "nevertwice"
+partial = Path(str(sandbox_guard.remove_at_exit(tempfile.mkdtemp(prefix="partialinstall_")))) / "nevertwice"
 #: A whole install minus one part, not two files in an empty directory: the engine imports its
 #: siblings, so a bare pair fails on `config` long before it reaches a part and would report
 #: this closed on the wrong error.
@@ -387,7 +388,7 @@ check("and names the part that is missing", PARTS[-1].name in r.stderr,
 # event the hook is wired to is exercised here, for that reason.
 print("# a store that cannot be created is reported, not crashed - on every wired event")
 
-blocked = Path(tempfile.mkdtemp(prefix="blockedstore_"))
+blocked = Path(str(sandbox_guard.remove_at_exit(tempfile.mkdtemp(prefix="blockedstore_"))))
 (blocked / "afile").write_text("not a directory", encoding="utf-8")
 env = dict(os.environ)
 env.update({"NEVERTWICE_HOME": str(blocked / "afile" / "store"),
@@ -428,7 +429,7 @@ for event in ("SessionStart", "UserPromptSubmit", "PreToolUse", "SessionEnd", "P
 print()
 print("# a payload field of any JSON type costs memory, never the tool call")
 
-good = Path(tempfile.mkdtemp(prefix="payloadstore_"))
+good = Path(str(sandbox_guard.remove_at_exit(tempfile.mkdtemp(prefix="payloadstore_"))))
 genv = dict(os.environ)
 genv.update({"NEVERTWICE_HOME": str(good), "NEVERTWICE_VAULT": str(good),
              "NEVERTWICE_CLOUD": "none"})
