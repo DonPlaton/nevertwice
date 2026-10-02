@@ -21,6 +21,9 @@ record - names only, never values - is written before the process starts.
 * ``resolve_binary`` accepts an absolute path under the polygon, or exactly one of the contract's named
   exceptions (the system git and docker CLI), and records its sha256. For a venv launcher it follows pyvenv.cfg to
   the base interpreter, holds that to the same rules, and records its path, version and sha256 too.
+* The firewall reader (Q-C6-FW = a): Windows PowerShell 5.1 of System32 runs only as role ``fw-read`` and only as
+  ``[FW_READ_BINARY, *FW_READ_ARGV]`` - one constant script that reads the firewall and changes nothing - about the
+  program in ``NVT3_FW_PROGRAM``, an absolute path inside the polygon. The binary is that role's exception only.
 * Every path rule holds for the real path as well (a junction or link planted in the runs tree or under the
   polygon cannot redirect a binary or a cwd), and ``make_unit_dirs`` refuses a unit path with a link in it.
 * A read exception is scoped: to one variable name for the environment, to one argv index and one exact path for
@@ -111,6 +114,45 @@ POPEN_ALLOWED = frozenset({"stdin", "stdout", "stderr", "text", "encoding", "err
                            "universal_newlines"})
 CREATE_SUSPENDED = 0x00000004
 CREATE_BREAKAWAY_FROM_JOB = 0x01000000
+#: Q-C6-FW = a (the auditor, 2026-10-01): the firewall reader - role FW_READ_ROLE runs exactly [FW_READ_BINARY,
+#: *FW_READ_ARGV] and nothing else, and nothing else runs that binary: it is the role's exception, not the contract's.
+#: The script reads (NetSecurity by its full path, module autoload off, so no module path is searched), changes
+#: nothing, and asks about the program in FW_READ_PROGRAM_ENV - never an argument. Its output is one compact JSON
+#: object in UTF-8: the program's rules with their port and address filters and OverrideBlockRules, every rule that
+#: overrides block rules, and the three profiles. The property names are UNVERIFIED until one read-only dry run under
+#: the filesystem witness (the auditor's GO after this commit).
+FW_READ_ROLE = "fw-read"
+FW_READ_BINARY = r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
+FW_READ_PROGRAM_ENV = "NVT3_FW_PROGRAM"
+FW_READ_SCRIPT = (
+    "$ErrorActionPreference='Stop';$PSModuleAutoLoadingPreference='None';"
+    "[Console]::OutputEncoding=[Text.Encoding]::UTF8;"
+    "Import-Module 'C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\Modules\\NetSecurity\\NetSecurity.psd1';"
+    "$p=$env:NVT3_FW_PROGRAM;"
+    "$rules=@(Get-NetFirewallApplicationFilter -PolicyStore ActiveStore|Where-Object{"
+    "[Environment]::ExpandEnvironmentVariables([string]$_.Program) -eq $p}|ForEach-Object{"
+    "$r=$_|Get-NetFirewallRule;$f=$r|Get-NetFirewallPortFilter;$a=$r|Get-NetFirewallAddressFilter;"
+    "$s=$r|Get-NetFirewallSecurityFilter;"
+    "[ordered]@{name=[string]$r.Name;enabled=[string]$r.Enabled;direction=[string]$r.Direction;"
+    "action=[string]$r.Action;profile=[string]$r.Profile;protocol=[string]$f.Protocol;"
+    "local_port=@($f.LocalPort|ForEach-Object{[string]$_});"
+    "remote_address=@($a.RemoteAddress|ForEach-Object{[string]$_});"
+    "override_block=[string]$s.OverrideBlockRules}});"
+    "$over=@(Get-NetFirewallSecurityFilter -PolicyStore ActiveStore|Where-Object{$_.OverrideBlockRules -eq $true}|"
+    "ForEach-Object{$r=$_|Get-NetFirewallRule;[ordered]@{name=[string]$r.Name;enabled=[string]$r.Enabled;"
+    "direction=[string]$r.Direction;action=[string]$r.Action}});"
+    "$prof=@(Get-NetFirewallProfile -PolicyStore ActiveStore|ForEach-Object{[ordered]@{name=[string]$_.Name;"
+    "enabled=[string]$_.Enabled;default_inbound=[string]$_.DefaultInboundAction}});"
+    "ConvertTo-Json -InputObject ([ordered]@{program=$p;rules=$rules;override_allow=$over;profiles=$prof}) "
+    "-Depth 4 -Compress")
+FW_READ_ARGV = ("-NoLogo", "-NoProfile", "-NonInteractive", "-Command", FW_READ_SCRIPT)
+# Only the contract's ordinary environment and the queried program are admitted for this exception. In
+# particular, CLR profilers and AppDomain managers can execute before PowerShell evaluates -Command.
+FW_READ_ENV_NAMES = frozenset(name.upper() for name in {*WINDOWS_ESSENTIALS, *TELEMETRY_OFF, *PROXY_NAMES,
+    "PATH", "TEMP", "TMP", "HOME", "USERPROFILE", "APPDATA", "LOCALAPPDATA", "PYTHONPYCACHEPREFIX",
+    "NO_PROXY", "HF_HOME", "HF_HUB_CACHE", "TRANSFORMERS_CACHE", "SENTENCE_TRANSFORMERS_HOME",
+    "HF_HUB_OFFLINE", "TRANSFORMERS_OFFLINE", "MEM0_DIR", "GIT_CONFIG_GLOBAL", "GIT_CONFIG_SYSTEM",
+    FW_READ_PROGRAM_ENV})
 
 
 class ContractViolation(Exception):
@@ -583,8 +625,10 @@ def _venv_base(exe: Path) -> tuple[Path | None, str | None, bool]:
     return None, None, False
 
 
-def _binary_rules(c: Contract, exe: str | os.PathLike, what: str) -> tuple[str | None, list[str]]:
-    reason = next((r for p, r in c.binary_exceptions.items() if _norm(p) in (_norm(exe), _norm(_real(exe)))), None)
+def _binary_rules(c: Contract, exe: str | os.PathLike, what: str,
+                  role_exception: Mapping[str, str] | None = None) -> tuple[str | None, list[str]]:
+    named = {**c.binary_exceptions, **(role_exception or {})}
+    reason = next((r for p, r in named.items() if _norm(p) in (_norm(exe), _norm(_real(exe)))), None)
     if reason is not None:
         return reason, []
     out = []
@@ -595,13 +639,15 @@ def _binary_rules(c: Contract, exe: str | os.PathLike, what: str) -> tuple[str |
     return None, out
 
 
-def resolve_binary(c: Contract, exe: str | os.PathLike) -> ResolvedBinary:
+def resolve_binary(c: Contract, exe: str | os.PathLike, *,
+                   role_exception: Mapping[str, str] | None = None) -> ResolvedBinary:
     """§2.6.5: an absolute executable under the polygon (and under no denied root), or exactly a named exception -
     by its written path and by its real path. A venv launcher's base interpreter (pyvenv.cfg) is held to the same
-    rules and recorded: path, version, sha256 (B1: a venv whose base lives in the owner's home is refused)."""
+    rules and recorded: path, version, sha256 (B1: a venv whose base lives in the owner's home is refused).
+    ``role_exception`` adds exceptions for this one spawn's role (Q-C6-FW: the firewall reader's binary)."""
     if not os.path.isabs(os.fspath(exe)):
         raise ContractViolation(["executable is not an absolute path"])
-    reason, problems = _binary_rules(c, exe, "executable")
+    reason, problems = _binary_rules(c, exe, "executable", role_exception)
     if problems:
         raise ContractViolation(problems)
     if not os.path.isfile(exe):
@@ -636,6 +682,37 @@ def assert_argv(c: Contract, argv: Sequence[str], *, argv_exception: Mapping[int
             out.append(f"argument {i} holds a value shaped like a provider key")
     if any(_bypass_in(str(a)) for a in argv):
         out.append("argv names a bypass permission mode")          # §2.6.6: refused on every spawn, any case
+    return out
+
+
+def _fw_read_identity(executable: str | os.PathLike) -> bool:
+    """The reserved executable stays reserved through aliases, hard links and extended paths."""
+    if {_norm(executable), _norm(_real(executable))} & {_norm(FW_READ_BINARY), _norm(_real(FW_READ_BINARY))}:
+        return True
+    try:
+        return os.path.samefile(executable, FW_READ_BINARY)
+    except OSError:
+        # Missing stand-ins are still rejected by resolve_binary; no path is admitted here.
+        return False
+
+
+def fw_read_problems(c: Contract, argv: Sequence[str], env: Mapping[str, str]) -> list[str]:
+    """Q-C6-FW: a role fw-read spawn is exactly [FW_READ_BINARY, *FW_READ_ARGV], and the program it asks about is an
+    absolute path inside the polygon, in the env's FW_READ_PROGRAM_ENV."""
+    out = []
+    if [os.fspath(a) for a in argv] != [FW_READ_BINARY, *FW_READ_ARGV]:
+        out.append("role fw-read runs only FW_READ_BINARY with FW_READ_ARGV (Q-C6-FW)")
+    seen = set()
+    for name in env:
+        key = name.upper()
+        if key in seen:
+            out.append("fw-read environment name has multiple spellings (Q-C6-FW)")
+        seen.add(key)
+    out += [f"fw-read environment name is not allowed: {name} (Q-C6-FW)"
+            for name in sorted(env) if name.upper() not in FW_READ_ENV_NAMES]
+    prog = env.get(FW_READ_PROGRAM_ENV)
+    if not prog or not os.path.isabs(prog) or not _within(prog, c.polygon_root):
+        out.append(f"role fw-read: {FW_READ_PROGRAM_ENV} is not an absolute path inside the polygon (Q-C6-FW)")
     return out
 
 
@@ -783,8 +860,15 @@ def spawn(c: Contract, argv: Sequence[str], *, env: Mapping[str, str], cwd: str 
         reasons.append("an unwitnessed optional spawn needs a written reason")
     if int(popen_kw.get("creationflags") or 0) & CREATE_BREAKAWAY_FROM_JOB:
         reasons.append("creationflags ask to break away from the job")
+    fw_read = record.get("role") == FW_READ_ROLE
+    fw_identity = _fw_read_identity(argv[0])
+    if fw_identity and not fw_read:
+        reasons.append("PowerShell firewall-reader binary is reserved for role fw-read (Q-C6-FW)")
+    if fw_read:
+        reasons += fw_read_problems(c, argv, env)
     try:
-        binary = resolve_binary(c, argv[0])
+        binary = resolve_binary(c, argv[0], role_exception={FW_READ_BINARY: "the firewall reader (role fw-read, "
+                                                                           "Q-C6-FW)"} if fw_read else None)
     except ContractViolation as e:
         binary = None
         reasons += list(e.reasons)                 # added to, never replacing, the reasons already found
@@ -870,6 +954,10 @@ def spawn(c: Contract, argv: Sequence[str], *, env: Mapping[str, str], cwd: str 
                                                "exception": binary.exception, "base_path": binary.base_path,
                                                "base_version": binary.base_version,
                                                "base_sha256": binary.base_sha256},
+        **({"fw_read": {"argv_sha256": hashlib.sha256(json.dumps(list(argv), ensure_ascii=False,
+                            separators=(",", ":")).encode("utf-8")).hexdigest(),
+                        "script_sha256": hashlib.sha256(FW_READ_SCRIPT.encode("utf-8")).hexdigest()}}
+           if fw_read else {}),
         "cwd_rule": "fresh empty non-git unit directory under the runs root",
         "env_names": sorted(env), "refused": bool(reasons), "reasons": reasons,
         "env_exception": {k: [str(p) for p in v] for k, v in (env_exception or {}).items()},

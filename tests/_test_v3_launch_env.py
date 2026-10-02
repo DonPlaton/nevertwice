@@ -27,13 +27,16 @@ No network; a temporary polygon; the one real child is this interpreter, named a
 """
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
 import os
+import re
 import shutil
 import sys
 import tempfile
 from pathlib import Path
+from dataclasses import replace
 from unittest import mock
 
 HERE = Path(__file__).resolve().parent
@@ -611,6 +614,166 @@ r_out, _e_out = _uf_spawn("u-bm25-outside", offline=True, where="outside")
 check("BC-OFFLINE-3: ... and a FASTEMBED_CACHE_PATH outside the unit's fake home is refused by name",
       bool(r_out) and any("FASTEMBED_CACHE_PATH" in r for r in r_out), str(r_out))
 
+
+print("\n- Q-C6-FW: the firewall reader runs only as role fw-read, only as its constant argv -")
+#: a stand-in for Windows PowerShell 5.1: a file outside the polygon, so the binary is no general exception and the
+#: rows hold on any platform; the real path and argv are FWR-6's
+FW_STANDIN = TMP / "system32" / "powershell.exe"
+FW_STANDIN.parent.mkdir(parents=True, exist_ok=True)
+FW_STANDIN.write_bytes(b"MZ stand-in")
+FW_PROGRAM = POLY / "bin" / "supermemory-server.exe"
+
+
+def _fw_spawn(label: str, *, role: str = "fw-read", argv: list[str] | None = None, program: str | None = "poly", extra_env: dict[str, str] | None = None, contract_override=None):
+    """(the reasons the spawn was refused with or None, the last spawns.jsonl entry) - FW_READ_BINARY patched to the
+    stand-in; argv defaults to exactly [the stand-in, *FW_READ_ARGV]. Before C5b: an AttributeError, as a reason."""
+    try:
+        uf = fresh(label)
+        declared = {} if program is None else {
+            L.FW_READ_PROGRAM_ENV: str(FW_PROGRAM) if program == "poly" else program}
+        declared.update(extra_env or {})
+        fw_contract = C if contract_override is None else contract_override
+        env_f = L.build_env(fw_contract, parent_env=HOSTILE, unit=uf, path_dirs=[], declared=declared, catcher_url=CATCHER)
+        with mock.patch.object(L, "FW_READ_BINARY", str(FW_STANDIN)):
+            L.spawn(fw_contract, argv if argv is not None else [str(FW_STANDIN), *L.FW_READ_ARGV], env=env_f, cwd=uf.cwd,
+                    record={"role": role, "unit": label}, parent_env=HOSTILE, catcher_url=CATCHER, popen=_FakePopen,
+                    requirement="optional", unwitnessed_reason=OPTIONAL)
+        reasons = None
+    except L.ContractViolation as e:
+        reasons = e.reasons
+    except Exception as e:  # noqa: BLE001 - the row reads it
+        return [f"{type(e).__name__}: {e}"], {}
+    return reasons, json.loads(L.spawns_log(C).read_bytes().decode("utf-8").splitlines()[-1])
+
+
+r1, e1 = _fw_spawn("u-fw-ok")
+check("FWR-1: role fw-read running exactly FW_READ_BINARY with FW_READ_ARGV, the program an absolute path inside the "
+      "polygon in NVT3_FW_PROGRAM, is accepted - its record names the role and the binary's role-bound exception",
+      r1 is None and e1.get("role") == "fw-read" and "fw-read" in str((e1.get("binary") or {}).get("exception")),
+      f"{r1} {e1.get('binary')}")
+r2, _e2 = _fw_spawn("u-fw-server", role="server")
+check("FWR-2: the same binary and argv under any other role is refused like any binary outside the polygon - the "
+      "exception is the role's, never general",
+      bool(r2) and any("outside the polygon" in r for r in r2), str(r2))
+ok3 = []
+for tag, extra in (("an extra argument", ["-File", "x.ps1"]), ("another script", None)):
+    base = [str(FW_STANDIN)] + list(getattr(L, "FW_READ_ARGV", ()))
+    argv3 = base + extra if extra else base[:-1] + ["Get-Date"]
+    r3, _e3 = _fw_spawn(f"u-fw-argv-{len(ok3)}", argv=argv3)
+    ok3.append(bool(r3) and any("role fw-read runs only FW_READ_BINARY with FW_READ_ARGV" in r for r in r3))
+check("FWR-3: role fw-read with an extra argument, or with another script, is refused by name - the argv is the "
+      "constant, never a caller's", all(ok3) and len(ok3) == 2, str(ok3))
+r4, _e4 = _fw_spawn("u-fw-python", argv=[sys.executable, "-c", "pass"])
+check("FWR-4: role fw-read running another binary - even a named exception - is refused by the same name",
+      bool(r4) and any("role fw-read runs only FW_READ_BINARY with FW_READ_ARGV" in r for r in r4), str(r4))
+ok5 = {}
+for tag, prog in (("missing", None), ("outside the polygon", str(TMP / "elsewhere" / "tool.exe")),
+                  ("relative", "supermemory-server.exe")):
+    r5, _e5 = _fw_spawn(f"u-fw-prog-{len(ok5)}", program=prog)
+    ok5[tag] = bool(r5) and any("NVT3_FW_PROGRAM is not an absolute path inside the polygon" in r for r in r5)
+check("FWR-5: role fw-read with NVT3_FW_PROGRAM missing, outside the polygon or relative is refused by name - the "
+      "reader asks only about a polygon binary", all(ok5.values()) and len(ok5) == 3, str(ok5))
+try:
+    script = L.FW_READ_ARGV[-1]
+    fw6 = {"binary": L.FW_READ_BINARY == r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe",
+           "argv": tuple(L.FW_READ_ARGV[:-1]) == ("-NoLogo", "-NoProfile", "-NonInteractive", "-Command"),
+           "role": L.FW_READ_ROLE == "fw-read", "program": f"$env:{L.FW_READ_PROGRAM_ENV};" in script,
+           "module": 0 <= script.find("$PSModuleAutoLoadingPreference='None';") < script.find(
+               "Import-Module 'C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\Modules\\NetSecurity\\"
+               "NetSecurity.psd1';"),
+           "reads only": not re.search(r"\b(?:Set|New|Remove|Enable|Disable|Rename|Copy|Add|Export|Invoke|Start|"
+                                       r"Stop|Out|Register|Install|Update|Clear|Write)-", script),
+           "frozen literal": hashlib.sha256(script.encode("utf-8")).hexdigest() == "3552ba37ba95e1696b047433285223151947e9a42689219f57c2372d14837db5",
+           "no double quote": '"' not in script, "json": script.endswith("-Depth 4 -Compress")}
+except AttributeError as e:
+    fw6 = {"AttributeError": str(e)}
+check("FWR-6: the reader is Windows PowerShell 5.1 of System32 with -NoLogo -NoProfile -NonInteractive -Command and "
+      "one script that names NVT3_FW_PROGRAM, imports NetSecurity by its full path with autoload off, calls no verb "
+      "that changes anything, holds no double quote (the argv's quoting) and ends in compact JSON",
+      bool(fw6) and all(v is True for v in fw6.values()), str(fw6))
+
+
+
+# The reserved executable stays role-bound even if a caller's contract grants a general binary exception.
+try:
+    general_contract = replace(C, binary_exceptions={**C.binary_exceptions, str(FW_STANDIN): "custom contract exception"})
+    r7, _ = _fw_spawn("u-fw-general", role="server", contract_override=general_contract)
+    ok7 = bool(r7) and any("reserved for role fw-read" in r for r in r7)
+except Exception as e:  # noqa: BLE001 - named row
+    ok7, r7 = False, [type(e).__name__]
+check("FWR-7: a general contract exception cannot authorize the reserved PowerShell binary under another role",
+      ok7, str(r7))
+
+# No profiler, AppDomain manager, or other undeclared startup hook may run before the constant script.
+ok8 = []
+for hook in ("COR_ENABLE_PROFILING", "COR_PROFILER", "COR_PROFILER_PATH", "COR_PROFILER_PATH_32",
+             "COR_PROFILER_PATH_64", "COMPLUS_ApplicationMigrationRuntimeActivationConfigPath",
+             "APPDOMAIN_MANAGER_ASM", "APPDOMAIN_MANAGER_TYPE", "DEVPATH", "DOTNET_STARTUP_HOOKS",
+             "cor_enable_profiling", "NVT3_FUTURE_STARTUP_HOOK"):
+    with mock.patch.object(_FakePopen, "__init__", side_effect=AssertionError("Popen reached")) as spy:
+        r8, _ = _fw_spawn(f"u-fw-hook-{len(ok8)}", extra_env={hook: "1"})
+    ok8.append(bool(r8) and any("fw-read environment name is not allowed" in r for r in r8)
+               and spy.call_count == 0)
+check("FWR-8: undeclared runtime startup hooks are refused by name before Popen, in either case",
+      len(ok8) == 12 and all(ok8), str(ok8))
+
+try:
+    want_argv = hashlib.sha256(json.dumps([str(FW_STANDIN), *L.FW_READ_ARGV], ensure_ascii=False,
+                                         separators=(",", ":")).encode("utf-8")).hexdigest()
+    want_script = hashlib.sha256(L.FW_READ_SCRIPT.encode("utf-8")).hexdigest()
+    ok9 = e1.get("fw_read") == {"argv_sha256": want_argv, "script_sha256": want_script}
+except Exception as e:  # noqa: BLE001 - named row
+    ok9 = False
+check("FWR-9: accepted firewall-reader record pins both its actual argv and the constant script's UTF-8 bytes",
+      ok9, str(e1.get("fw_read")))
+
+# A polygon alias is checked by its real executable identity as well as its written path.
+try:
+    alias = str(POLY / "bin" / "fw-alias.exe")
+    Path(alias).parent.mkdir(parents=True, exist_ok=True)
+    Path(alias).write_bytes(FW_STANDIN.read_bytes())
+    alias_contract = replace(C, binary_exceptions={**C.binary_exceptions, alias: "custom alias exception"})
+    real_before = L._real
+    with mock.patch.object(L, "_real", side_effect=lambda path: str(FW_STANDIN) if str(path) == alias else real_before(path)):
+        r10, _ = _fw_spawn("u-fw-alias", role="server", argv=[alias, *getattr(L, "FW_READ_ARGV", ())], contract_override=alias_contract)
+    ok10 = bool(r10) and any("reserved for role fw-read" in r for r in r10)
+except Exception as e:  # noqa: BLE001 - named row
+    ok10, r10 = False, [type(e).__name__]
+check("FWR-10: another role cannot use a polygon alias resolving to the reserved PowerShell executable",
+      ok10, str(r10))
+
+# A different spelling or hard link cannot grant another role the same executable.
+try:
+    hardlink = POLY / "bin" / "fw-hardlink.exe"
+    os.link(FW_STANDIN, hardlink)
+    spellings = [str(hardlink)]
+    if os.name == "nt":
+        spellings.append(chr(92) * 2 + "?" + chr(92) + str(FW_STANDIN.resolve()))
+    identity_results = []
+    for index, spelling in enumerate(spellings):
+        scoped_contract = replace(C, binary_exceptions={**C.binary_exceptions, spelling: "custom spelling exception"})
+        with mock.patch.object(_FakePopen, "__init__", side_effect=AssertionError("Popen reached")) as spy:
+            reasons, _ = _fw_spawn(f"u-fw-samefile-{index}", role="server", argv=[spelling, *L.FW_READ_ARGV],
+                                  contract_override=scoped_contract)
+        identity_results.append(bool(reasons) and any("reserved for role fw-read" in why for why in reasons)
+                                and spy.call_count == 0)
+    identity_ok = len(identity_results) == (2 if os.name == "nt" else 1) and all(identity_results)
+except Exception as error:  # noqa: BLE001 - failure belongs to this named row
+    identity_ok, identity_results = False, [type(error).__name__]
+check("FWR-11: a hard link or Windows extended-path spelling of the reserved binary is refused under another role before Popen",
+      identity_ok, str(identity_results))
+
+try:
+    collision_contract = replace(C, case_insensitive_env=False)
+    with mock.patch.object(_FakePopen, "__init__", side_effect=AssertionError("Popen reached")) as spy:
+        collision_reasons, _ = _fw_spawn("u-fw-case-collision", contract_override=collision_contract,
+            extra_env={"nvt3_fw_program": str(TMP / "elsewhere" / "program.exe")})
+    collision_ok = bool(collision_reasons) and any("fw-read environment name has multiple spellings" in why
+                                                  for why in collision_reasons) and spy.call_count == 0
+except Exception as error:  # noqa: BLE001 - failure belongs to this named row
+    collision_ok, collision_reasons = False, [type(error).__name__]
+check("FWR-12: fw-read rejects case-colliding environment names even when the caller disables generic case-insensitive checks",
+      collision_ok, str(collision_reasons))
 
 print("\n- a real child does not inherit what this process holds -")
 os.environ["NVT3_TEST_DECOY_TOKEN"] = "decoy-token-value-0099"
