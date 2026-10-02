@@ -342,7 +342,7 @@ def _status(port: int, *, timeout: float) -> int | None:
 
 
 def tree(pid: int) -> list[dict]:
-    """SF9: the process tree under ``pid``, the root first - pid, parent, name, exe and its sha256 (None where psutil
+    """SF9: the process tree under ``pid``, the root first - pid, create_time, parent, name, exe and its sha256 (None where psutil
     cannot say; the error's type is kept)."""
     import psutil  # noqa: PLC0415 - scheduler.tree_kill_route requires it or a job object before any spawn
     try:
@@ -354,7 +354,7 @@ def tree(pid: int) -> list[dict]:
     for p in procs:
         row: dict = {"pid": p.pid}
         try:
-            row.update(ppid=p.ppid(), name=p.name(), exe=p.exe())
+            row.update(create_time=p.create_time(), ppid=p.ppid(), name=p.name(), exe=p.exe())
             row["sha256"] = _sha256_file(row["exe"]) if row["exe"] else None
         except (psutil.Error, OSError) as e:
             row["error"] = type(e).__name__
@@ -366,10 +366,36 @@ def stop(child: Any, *, grace_s: float = STOP_GRACE_S, clock: Callable[[], float
     """SF26: CTRL_BREAK to the server's process group (SIGTERM off Windows), ``grace_s`` for it to exit, then the
     whole tree killed (child.kill_tree: its job object, else psutil); the tree as it was before the stop is killed
     too where any of it outlived the server. {"how": "ctrl_break" | "killed", "exit_code", "after_s", "send_error",
-    "outlived", "alive"}"""
+    "outlived", "alive", "reused", "unverified"}. Already exited roots use only their retained job handle;
+    numeric PID fallback is unsafe after exit and the unavailable tree is recorded explicitly."""
     import psutil  # noqa: PLC0415
     p = child.process
-    before = [r["pid"] for r in tree(p.pid)[1:] if "error" not in r]
+    before, reused, unverified = [], [], []
+    initial_rc = p.poll()
+    if initial_rc is not None:
+        witness = getattr(child, "witness", None)
+        job_terminated = witness is not None and witness.kill_tree(p.pid)
+        return {"how": "already-exited", "exit_code": initial_rc, "after_s": 0.0, "send_error": None,
+                "outlived": [], "alive": False, "reused": [], "job_terminated": bool(job_terminated),
+                "unverified": [{"pid": p.pid, "error": "root-exited-before-snapshot"}]}
+    snapshot = tree(p.pid)
+    if not snapshot or snapshot[0].get("error"):
+        unverified.append({"pid": p.pid, "error": "tree:" + str(snapshot[0].get("error")
+                                                                  if snapshot else "empty")})
+    for row in snapshot[1:]:
+        pid = row["pid"]
+        try:
+            born = row.get("create_time")
+            if not isinstance(born, (int, float)) or isinstance(born, bool):
+                unverified.append({"pid": pid, "error": "identity-unmeasured"})
+                continue
+            process = psutil.Process(pid)
+            if process.create_time() != born:
+                reused.append(pid)
+                continue
+            before.append((process, born))
+        except psutil.Error as e:
+            unverified.append({"pid": pid, "error": type(e).__name__})
     t0, send_error, how = clock(), None, "ctrl_break"
     try:
         if os.name == "nt":
@@ -392,16 +418,20 @@ def stop(child: Any, *, grace_s: float = STOP_GRACE_S, clock: Callable[[], float
         except subprocess.TimeoutExpired:
             rc = None
     outlived = []
-    for pid in before:
+    for q, born in before:
         try:
-            q = psutil.Process(pid)
+            if psutil.Process(q.pid).create_time() != born:
+                reused.append(q.pid)
+                continue
             if q.is_running() and q.status() != psutil.STATUS_ZOMBIE:
-                outlived.append(pid)
-                q.kill()
-        except psutil.Error:
+                outlived.append(q.pid)
+                q.kill()  # the retained psutil object also checks its cached process identity
+        except psutil.NoSuchProcess:
             pass
+        except psutil.Error as e:
+            unverified.append({"pid": q.pid, "error": type(e).__name__})
     return {"how": how, "exit_code": rc, "after_s": round(clock() - t0, 3), "send_error": send_error,
-            "outlived": outlived, "alive": p.poll() is None}
+            "outlived": outlived, "alive": p.poll() is None, "reused": reused, "unverified": unverified}
 
 
 def data_digest(data_dir: str | os.PathLike) -> dict:

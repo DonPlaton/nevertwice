@@ -35,6 +35,7 @@ import sys
 import tempfile
 import time
 from pathlib import Path
+from unittest import mock
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
@@ -303,6 +304,95 @@ try:
           "key never reaches the file in two halves",
           p2.long_lines >= 2 and not window_leak(out2, KEY) and out2.count(marker) == 2
           and len(out2) == len(line) - 2 * len(KEY) + 2 * len(marker), f"long={p2.long_lines} len={len(out2)}")
+
+    print("\n- server stop: a reused descendant PID belongs to a different process -")
+
+    class IdentityProcess:
+        def __init__(self, pid, born):
+            self.pid, self.born = pid, born
+        def create_time(self):
+            return self.born
+        def is_running(self):
+            return True
+        def status(self):
+            return "running"
+        def kill(self):
+            identity_killed.append((self.pid, self.born))
+
+    class IdentityRoot:
+        pid = 91001
+        def poll(self):
+            return 0 if identity_after[0] else None
+        def wait(self, timeout):
+            identity_after[0] = True
+            return 0
+        def send_signal(self, sig):
+            pass
+
+    class IdentityChild:
+        process = IdentityRoot()
+        def kill_tree(self):
+            raise AssertionError("the root exits during its grace")
+
+    def process_identity(pid):
+        return IdentityProcess(pid, 20.0 if pid == 91002 and identity_after[0] else 10.0)
+
+    identity_killed, identity_after = [], [False]
+    try:
+        with mock.patch.object(SS, "tree", return_value=[{"pid": 91001, "create_time": 10.0},
+                                                        {"pid": 91002, "create_time": 10.0},
+                                                        {"pid": 91003, "create_time": 10.0}]), \
+             mock.patch.object(psutil, "Process", side_effect=process_identity), mock.patch.object(SS.os, "kill"):
+            identity_stop = SS.stop(IdentityChild(), grace_s=1)
+        check("SMS-STOP-ID-1: a descendant PID reused during grace is never killed; the original surviving sibling is",
+              identity_killed == [(91003, 10.0)] and identity_stop.get("reused") == [91002]
+              and identity_stop["outlived"] == [91003], str((identity_killed, identity_stop)))
+    except Exception as e:  # noqa: BLE001 - never hide the other server rows with a crash
+        check("SMS-STOP-ID-1: identity-bound cleanup runs", False, repr(e))
+
+    identity_after[0] = False
+    try:
+        with mock.patch.object(SS, "tree", return_value=[{"pid": 91001, "error": "AccessDenied"}]), \
+             mock.patch.object(SS.os, "kill"):
+            incomplete_stop = SS.stop(IdentityChild(), grace_s=1)
+        check("SMS-STOP-ID-2: failed root/children enumeration is recorded as unverified, never a clean empty tree",
+              incomplete_stop.get("unverified") == [{"pid": 91001, "error": "tree:AccessDenied"}], str(incomplete_stop))
+    except Exception as e:  # noqa: BLE001
+        check("SMS-STOP-ID-2: incomplete enumeration is reported", False, repr(e))
+
+    identity_after[0] = False
+    identity_killed.clear()
+    try:
+        with mock.patch.object(SS, "tree", return_value=[{"pid": 91001}, {"pid": 91002, "create_time": 10.0}]), \
+             mock.patch.object(psutil, "Process", side_effect=lambda pid: IdentityProcess(pid, 20.0)), mock.patch.object(SS.os, "kill"):
+            pre_reuse = SS.stop(IdentityChild(), grace_s=1)
+        check("SMS-STOP-ID-3: reuse between tree snapshot and identity capture is also skipped, never adopted as a descendant",
+              identity_killed == [] and pre_reuse.get("reused") == [91002], str(pre_reuse))
+    except Exception as e:  # noqa: BLE001
+        check("SMS-STOP-ID-3: pre-capture reuse is reported", False, repr(e))
+
+    identity_after[0] = True
+    try:
+        with mock.patch.object(SS, "tree", return_value=[] ) as looked_up, mock.patch.object(SS.os, "kill") as signalled:
+            exited_stop = SS.stop(IdentityChild(), grace_s=1)
+        check("SMS-STOP-ID-4: an already exited root's PID is neither looked up nor signalled; missing tree identity is explicit",
+              not looked_up.called and not signalled.called and exited_stop["exit_code"] == 0
+              and exited_stop.get("unverified") == [{"pid": 91001, "error": "root-exited-before-snapshot"}], str(exited_stop))
+    except Exception as e:  # noqa: BLE001
+        check("SMS-STOP-ID-4: an exited root is not touched by PID", False, repr(e))
+
+    original_job = mock.Mock()
+    original_job.kill_tree.return_value = True
+    exited_child = IdentityChild()
+    exited_child.witness = original_job
+    try:
+        with mock.patch.object(SS, "tree") as looked_up, mock.patch.object(SS.os, "kill") as signalled:
+            job_stop = SS.stop(exited_child, grace_s=1)
+        check("SMS-STOP-ID-5: an exited root's original job still terminates surviving descendants without numeric PID fallback",
+              original_job.kill_tree.call_args == mock.call(91001) and not looked_up.called and not signalled.called
+              and job_stop.get("job_terminated") is True, str(job_stop))
+    except Exception as e:  # noqa: BLE001
+        check("SMS-STOP-ID-5: original job cleanup survives root exit", False, repr(e))
 
     print("\n- the running server (the fake) -")
     ch, pump, port, sdata = start_fake("ready", {"key": KEY.decode(), "boot_503_s": 1.0, "stderr_key": True})
