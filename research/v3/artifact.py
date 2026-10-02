@@ -68,7 +68,7 @@ BLOCK_VOCAB = {
 #: rev1 P0(b)'s zero-tolerance counts, and background_writes - the auditor's R9 ruling (a rev2 erratum to the P0(b)
 #: list): a product's write-port call after its adapter's end_write, outside every question operation of the unit.
 CLOUD_ZERO = ("failed_outcomes", "fallback_local", "model_mismatch", "thinking_calls", "cloud_bypass", "tool_violation",
-              "background_writes")
+              "background_writes", "stop_refused")
 CLOUD_ALSO = ("transport_recovered", "transport_lost", "upstream_errors", "client_abandoned", "product_retries",
               "thinking_injected", "fingerprints_seen", "straddled_units", "empty_content", "json_invalid", "capped",
               "reasoning_tokens", "tokens", "incident_units")
@@ -560,9 +560,11 @@ def p0b(row: Mapping, ctx: P0Context, arm: str) -> list[str]:
     if not str(d.get("llm_transport") or "").startswith("cloud:"):
         return []
     ct = row.get("cloud_transport")
-    if not isinstance(ct, Mapping) or ct.get("calls", 0) == 0:
+    if not isinstance(ct, Mapping):
         return ["P0b: cloud_transport missing or calls == 0"]
     out = [f"P0b: {k} > 0" for k in CLOUD_ZERO if ct.get(k, 0) > 0]
+    if ct.get("calls", 0) == 0:
+        return ["P0b: cloud_transport missing or calls == 0", *out]
     if len(ct.get("models_seen") or []) != 1:
         out.append("P0b: models_seen is not exactly one model")
     if any(s in ctx.model_event_ids for s in _row_ids(row)):

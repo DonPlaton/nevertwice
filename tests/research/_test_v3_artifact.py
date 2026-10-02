@@ -556,6 +556,15 @@ check("R9: background_writes is a P0(b) zero-tolerance counter the builder requi
           {k: v for k, v in CLOUD.items() if k != "background_writes"}), "background_writes"))
 check("P0b: a model event inside the artifact's blocks",
       has(A.p0_flags(clean, A.P0Context(**{**CTX.__dict__, "model_event_ids": frozenset({sids[0]})}), "mem0"), "b"))
+check("STOP-ART-1: stop_refused is required, measured, and invalidates the cloud row by name",
+      "stop_refused" in A.CLOUD_ZERO and refused(lambda: A.cloud_transport(
+          {k: v for k, v in CLOUD.items() if k != "stop_refused"}), "stop_refused")
+      and "P0b: stop_refused > 0" in flags(lambda r: r["cloud_transport"].__setitem__("stop_refused", 1)))
+check("STOP-ART-3: a cloud row with only refusals still names stop_refused as P0(b)",
+      "P0b: stop_refused > 0" in flags(lambda r: r["cloud_transport"].update(calls=0, stop_refused=1)))
+check("STOP-ART-2: the honest row with zero stop refusals remains valid",
+      A.p0_flags(clean, CTX, "mem0") == [], str(A.p0_flags(clean, CTX, "mem0")))
+
 check("P0c: a run whose own failures dropped 2 of 20 units (10 %)",
       has(flags(lambda r: r["runs"][0].__setitem__("units_dropped_own", 2)), "c"))
 check("... 1 of 20 (5 %) is not P0c", not has(flags(lambda r: r["runs"][0].__setitem__("units_dropped_own", 1)), "c"))

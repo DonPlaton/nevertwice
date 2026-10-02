@@ -955,6 +955,42 @@ check("R-EMBED-PATH: an arm that embeds through Ollama (expected) with no answer
       "unmeasured, never 0; without the expectation it is simply 0 calls; an arm with calls passes either way",
       "unmeasured" in exp_none and plain == (0, 1), f"{exp_none} | {plain}")
 
+print("\n- Q-SD2-ACC: requests refused at proxy stop remain measured -")
+try:
+    stopped = [call("stop-a", refused="proxy stopping", status=503),
+               call("stop-b", unit="r1.u2", refused="proxy stopping", status=503),
+               call("other-arm", arm="zep", refused="proxy stopping", status=503),
+               call("other-run", unit="r2.u1", refused="proxy stopping", status=503)]
+    leg_stopped = [{"arm": "mem0", "unit": "r1.u2", "error": "refused:proxy-stopping"},
+                   {"arm": "zep", "unit": "r1.u2", "error": "refused:proxy-stopping"},
+                   {"arm": "mem0", "unit": "r2.u2", "error": "refused:proxy-stopping"}]
+    sc = AC.cloud_counters(stopped, arm="mem0", run="r1", stand="S1", cloud_bypass=0,
+                           background_writes=0, ollama=iter(leg_stopped))
+    check("STOP-ACC-1: both cloud and Ollama refusals count, attributed to their arm/run/unit, even though never forwarded",
+          sc.get("stop_refused") == 3 and sc.get("stop_refused_by_unit") == {
+              "u1": {"cloud": 1, "ollama": 0}, "u2": {"cloud": 1, "ollama": 1}} and sc["calls"] == 0, str(sc))
+    unknown = AC.cloud_counters([], arm="mem0", run="r1", stand="S1", cloud_bypass=0,
+                                background_writes=0, ollama=[{"arm": "mem0", "unit": None,
+                                                             "error": "refused:proxy-stopping"}])
+    check("STOP-ACC-4: an unscoped stop refusal stays visible in each run, as boundary accounting requires",
+          unknown.get("stop_refused") == 1 and unknown.get("stop_refused_by_unit") == {
+              "<unscoped>": {"cloud": 0, "ollama": 1}}, str(unknown))
+    pb_stop = AC.proxy_boundary_inputs([], [], arm="mem0", run="r1", ollama=leg_stopped)
+    check("STOP-ACC-2: the real leg's refused:proxy-stopping is a LEG_REFUSAL, visible to the boundary builder",
+          "refused:proxy-stopping" in AC.LEG_REFUSALS and pb_stop["ollama_refused"] == 1, str(pb_stop))
+    for label, calls_stop, legs_stop, expected in (("cloud", stopped[:1], [], 1), ("ollama", [], leg_stopped[:1], 1),
+                                                  ("honest", [], [], 0)):
+        measured = AC.cloud_counters([call("ok-stop-neighbour"), *calls_stop], arm="mem0", run="r1", stand="S1",
+                                     cloud_bypass=0, background_writes=0, ollama=legs_stop)
+        built = A.cloud_transport(measured)
+        verdict = A.p0b({"arm_decl": {"llm_transport": "cloud:deepseek"}, "cloud_transport": built},
+                        A.P0Context(), "mem0")
+        check(f"STOP-ACC-3-{label}: the real accounting output reaches artifact.P0b; zero stays valid",
+              built.get("stop_refused") == expected and
+              (("P0b: stop_refused > 0" in verdict) == bool(expected)), str(verdict))
+except Exception as e:  # noqa: BLE001 - a broken seam fails each new row by name
+    check("STOP-ACC-1/2/3: the producer-consumer seam runs", False, repr(e))
+
 print("\n- M-DUP: nothing here builds or judges -")
 gone = [n for n in ("cloud_transport", "m5_cloud_problems", "boundary", "boundary_problems", "ollama_transport",
                     "P1_BANDS", "ZERO_TOLERANCE", "p1", "yield_", "caches", "reconciliation") if hasattr(AC, n)]

@@ -237,7 +237,18 @@ def cloud_counters(calls: list, *, arm: str, run: str, stand: str, cloud_bypass:
     was ABORTed (B-REASK-HALT: the incident gate's halt ends a unit waiting to re-ask) - whose never-succeeded question
     keys are no product outcome: counted in unrecorded_keys (their units in unrecorded_units), beside failed_outcomes
     and never in it (the auditor's condition 2)."""
+    ollama = list(ollama)  # one-shot iterables also feed fallback and stop-refusal counts
     mine = _arm_run(calls, arm, run)
+    stopped: dict[str, dict[str, int]] = {}
+    for leg, records in (("cloud", [c for c in mine if c.get("refused") == "proxy stopping"]),
+                         ("ollama", [o for o in ollama if o.get("arm") == arm
+                                      and o.get("error") == "refused:proxy-stopping"
+                                      and (o.get("unit") is None or "." not in str(o.get("unit"))
+                                           or split_unit(o.get("unit"))[0] == run)])):
+        for record in records:
+            prefix = record.get("unit")
+            unit = split_unit(prefix)[1] if isinstance(prefix, str) and "." in prefix else "<unscoped>"
+            stopped.setdefault(unit, {"cloud": 0, "ollama": 0})[leg] += 1
     forwarded = [c for c in mine if not c.get("refused")]
     keys = classify_keys(mine)
     dropped = set(dropped)
@@ -290,6 +301,8 @@ def cloud_counters(calls: list, *, arm: str, run: str, stand: str, cloud_bypass:
         "thinking_calls": sum(1 for c in forwarded if c.get("thinking") and c.get("endpoint") in ("v1", "anthropic")),
         "cloud_bypass": cloud_bypass,
         "background_writes": background_writes,
+        "stop_refused": sum(sum(v.values()) for v in stopped.values()),
+        "stop_refused_by_unit": dict(sorted(stopped.items())),
         "tool_violation": sum(1 for c in mine if c.get("tool_violation")),
         "models_seen": sorted(models),
         "transport_recovered": sum(1 for _k, _v, e in eps if e == "recovered"),
@@ -394,7 +407,7 @@ def proxy_boundary_inputs(calls: Iterable[Mapping[str, Any]], catcher: Iterable[
 
 #: B-OLM-VIS (amendment A2): the Ollama leg's refusals of a path - the stand's, counted as ollama_refused. A refusal for
 #: a canary or an owner marker (Q4) is the product's leak: a canary_hits / owner_marker_hits count, never this one.
-LEG_REFUSALS = ("refused:path", "refused:encoded-target", "refused:model-store")
+LEG_REFUSALS = ("refused:path", "refused:encoded-target", "refused:model-store", "refused:proxy-stopping")
 
 
 #: TB7, the auditor's Q-12-6 and Q-A7-8: the provider's host (its /anthropic endpoint is on it too) and the SDK

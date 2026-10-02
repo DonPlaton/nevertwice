@@ -149,6 +149,21 @@ try:
           "- failures.background_writes (R9) - never a refusal, never a failed outcome",
           f_bg.get("background_writes") == 1 and f_bg.get("failed_outcomes") == 0
           and m["failures"].get("background_writes") == 0, f"{f_bg} {m['failures']}")
+    try:
+        log_stop = AC.ProxyLog(calls=[*LOG.calls, dict(call("gold-unit", "kstop", status=503),
+                                                      refused="proxy stopping")])
+        stopped = summary(log=log_stop)
+        sf = {r["arm"]: r for r in stopped["arm_runs"]}["mem0"]["failures"]
+        reread = SM.rows_from_lines(SM.render(stopped))
+        problems = list(SM.iter_problems(stopped))
+        check("SM-STOP-1: a legal unit ID resembling a score is diagnostic data, survives render/read, and names the refusal",
+              sf["stop_refused"] == 1 and sf["stop_refused_by_unit"] == [
+                  {"unit": "gold-unit", "cloud": 1, "ollama": 0}]
+              and any(r["failures"].get("stop_refused") == 1 for r in reread)
+              and any("stop_refused=1" in p for p in problems), str(sf))
+    except Exception as e:  # noqa: BLE001 - broken producer-consumer seam is a named FAIL
+        check("SM-STOP-1: diagnostic unit IDs survive the smoke schema", False, repr(e))
+
     log_h = AC.ProxyLog(calls=[*LOG.calls, call("u9", "k9", role="reader", stage="questions", status=402, t=22)])
     try:
         s_h = summary(log=log_h, key_question={**KQ, ("u9", "k9"): "u9:q1"})
