@@ -1627,12 +1627,13 @@ def allocate_sm_server_port(ports: Mapping[str, Any], allocate: Callable[[], int
         raise PreflightRefused('server-proxy-port-collision')
     return port
 
-def sm_port_refused(port: int, *, ceiling_s: float = 1.0,
+def sm_port_refused(port: int, *, ceiling_s: float = 5.0,
                     clock: Callable[[], float] = time.monotonic) -> bool:
     """Observe a loopback TCP refusal; timeout/unknown errors cannot prove absence."""
+    # Windows can defer WSAECONNREFUSED for about2s even on an owned closed loopback port.
     import errno
     _port(port)
-    if type(ceiling_s) not in {int, float} or not math.isfinite(ceiling_s) or not 0 < ceiling_s <= 1:
+    if type(ceiling_s) not in {int, float} or not math.isfinite(ceiling_s) or not 0 < ceiling_s <= 5:
         raise PreflightRefused('server-port-refusal-ceiling')
     until = clock() + ceiling_s
     try:
@@ -1705,7 +1706,7 @@ def run_sm_p4p5(contract: Any, launch: Any, server: Any, runtime: Any, static: M
     observed['first_seal'] = first['seal']
     boundary(boot, 'boot1')
     stop(boot)
-    observed['boot1_port_refused'] = runtime.port_refused(boot.port, ceiling_s=1.0) is True
+    observed['boot1_port_refused'] = runtime.port_refused(boot.port, ceiling_s=5.0) is True
     if not observed['boot1_port_refused']:
         raise PreflightRefused('restart-old-port-not-refused')
     owned_key_file(contract, launch, run=run, data_dir=static['data_dir'], held=key)

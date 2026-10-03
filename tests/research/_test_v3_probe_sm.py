@@ -3415,7 +3415,7 @@ def p4p5_port_refusal_controls():
         connection.__enter__.return_value = connection
         connection.connect.side_effect = error
         with mock.patch.object(P.socket, 'socket', return_value=connection):
-            if P.sm_port_refused(43199, clock=lambda: 0.0) is not expected:
+            if P.sm_port_refused(43199, ceiling_s=1.0, clock=lambda: 0.0) is not expected:
                 return False
         if connection.connect.call_args.args != (('127.0.0.1', 43199),) or connection.settimeout.call_args.args != (1.0,):
             return False
@@ -3427,9 +3427,9 @@ def p4p5_port_refusal_controls():
         raise ConnectionRefusedError(errno.ECONNREFUSED, 'owned late refusal')
     connection.connect.side_effect = late
     with mock.patch.object(P.socket, 'socket', return_value=connection):
-        if P.sm_port_refused(43199, clock=lambda: now[0]) is not False:
+        if P.sm_port_refused(43199, ceiling_s=1.0, clock=lambda: now[0]) is not False:
             return False
-        return refused(lambda: P.sm_port_refused(43199, ceiling_s=2), P.PreflightRefused)
+        return refused(lambda: P.sm_port_refused(43199, ceiling_s=6), P.PreflightRefused)
 
 
 def p4p5_parent_epoch_controls():
@@ -3454,6 +3454,45 @@ check('A8S-P4P5-FIRST-STOP-1: firewall gate port refusal incomplete or killed st
 check('A8S-P4P5-SECOND-BOUNDARY-1: second key listener tree or P5 firewall refusal retains both stop records', p4p5_second_boundary_controls)
 check('A8S-P4P5-PORT-REFUSAL-1: only timely explicit TCP refusal proves observed absence; live timeout or unknown error cannot', p4p5_port_refusal_controls)
 check('A8S-P4P5-PARENT-EPOCH-1: same-label FS baseline ticker and stop changes refuse across both boots and each state send', p4p5_parent_epoch_controls)
+
+
+def p4p5_windows_refusal_deadline_controls():
+    # The real owned socket126 returned WSAECONNREFUSED after2.034s, beyond the old1s limit.
+    now = [0.0]
+    connection = mock.MagicMock()
+    connection.__enter__.return_value = connection
+    def refusal(*args):
+        now[0] = 2.1
+        raise ConnectionRefusedError(10061, 'owned Windows refusal')
+    connection.connect.side_effect = refusal
+    with mock.patch.object(P.socket, 'socket', return_value=connection):
+        if P.sm_port_refused(43199, clock=lambda: now[0]) is not True:
+            return False
+        if connection.settimeout.call_args.args != (5.0,):
+            return False
+        now[0] = 0.0
+        if P.sm_port_refused(43199, ceiling_s=1.0, clock=lambda: now[0]) is not False:
+            return False
+        def late(*args):
+            now[0] = 5.0
+            raise ConnectionRefusedError(10061, 'owned late Windows refusal')
+        connection.connect.side_effect = late
+        now[0] = 0.0
+        if P.sm_port_refused(43199, clock=lambda: now[0]) is not False:
+            return False
+        return refused(lambda: P.sm_port_refused(43199, ceiling_s=6), P.PreflightRefused)
+
+check('A8S-P4P5-PORT-WINDOWS-1: explicit Windows refusal fits a bounded five-second deadline; timeout and late refusal never prove absence', p4p5_windows_refusal_deadline_controls)
+
+
+def p4p5_windows_refusal_caller_controls():
+    with tempfile.TemporaryDirectory(prefix='nvt-sm-p4p5-refusal-caller-') as directory:
+        f = p4p5_protocol_fixture(Path(directory).resolve())
+        result = f.f.run_probe()
+        return (result['restart']['complete'] is True and len(f.state['port_checks']) == 1
+                and f.state['port_checks'][0][1] == {'ceiling_s': 5.0})
+
+check('A8S-P4P5-PORT-CALLER-1: connected restart gives the actual refusal helper the bounded Windows allowance', p4p5_windows_refusal_caller_controls)
 
 failed = sum(not good for _, good in ROWS)
 print(f'v3 sm core: {len(ROWS) - failed} passed, {failed} failed')
