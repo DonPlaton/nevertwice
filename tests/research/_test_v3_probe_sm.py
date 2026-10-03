@@ -1340,6 +1340,85 @@ def runtime_factory_controls():
 
 check('A8S-RUNTIME-FACTORY-1: deferred production wiring keeps actual9 env/hl8/embed guard, pinned auth body, and authority refusal', runtime_factory_controls)
 
+
+def borrowed_firewall_fixture(*, changed=False, restarted=False, ended=False):
+    import io
+    binary = Path('D:/owned/borrowed-firewall/server.exe')
+    jobs = BootJobs()
+    jobs.live[81] = []
+    native = SimpleNamespace(jobs=jobs, registered_roots={701: 25.0})
+    native._thread = SimpleNamespace(is_alive=lambda: True)
+    native._stop, native._t0 = threading.Event(), 5.0
+    raw = json.dumps(fw_fixture(binary)).encode('utf-8')
+    process = SimpleNamespace(pid=701, stdout=io.BytesIO(raw), wait=lambda timeout: 0, poll=lambda: 0)
+    events, resources = [], []
+    witnesses = SimpleNamespace(native=native, containers=(), _check='owned-parent', _before={}, _before_rows={}, _tags={},
+        begin_check=lambda cid: events.append('begin:' + cid),
+        end_check=lambda cid: events.append('end:' + cid))
+    def spawn(build, **kwargs):
+        build(SimpleNamespace())
+        events.append('spawn')
+        if changed:
+            witnesses._check = 'unexpected-parent'
+        if restarted in {True, 'baseline'}:
+            witnesses._before = {}
+        if restarted in {True, 'thread'}:
+            native._thread = SimpleNamespace(is_alive=lambda: True)
+        if restarted == 'time':
+            native._t0 = 6.0
+        if ended:
+            native._stop.set()
+        return SimpleNamespace(process=process), SimpleNamespace()
+    scheduler = SimpleNamespace(witnesses=witnesses, spawn_child=spawn, launch=SimpleNamespace())
+    modules = SimpleNamespace(SC=SimpleNamespace(LaunchSpec=lambda **kwargs: SimpleNamespace(**kwargs)))
+    def invoke(**options):
+        return P.read_firewall_real(None, L, modules, scheduler, run='borrowed-control', unit='fw-p4',
+            binary=binary, resources=resources, **options)
+    return SimpleNamespace(**locals())
+
+
+def borrowed_firewall_controls():
+    f = borrowed_firewall_fixture()
+    result = f.invoke(parent_check='owned-parent')
+    if (result['complete'] is not True or result['check'] is not None or f.events != ['spawn']
+            or f.witnesses._check != 'owned-parent' or f.jobs.killed != [81]):
+        return False
+    if result['coverage'] != {'parent_check': 'owned-parent', 'pending_parent_verdict': True, 'complete': False}:
+        return False
+    return len(f.resources) == 1 and f.resources[0][2](f.resources[0][1]()) is True
+
+
+def borrowed_firewall_refusal_controls():
+    for bad in ('other-parent', '', True, 'x' * 257):
+        f = borrowed_firewall_fixture()
+        if not refused(lambda: f.invoke(parent_check=bad), P.PreflightRefused) or f.events or f.resources:
+            return False
+    f = borrowed_firewall_fixture()
+    f.native._stop.set()
+    if not refused(lambda: f.invoke(parent_check='owned-parent'), P.PreflightRefused) or f.events or f.resources:
+        return False
+    f = borrowed_firewall_fixture()
+    f.native._thread = SimpleNamespace(is_alive=lambda: False)
+    if not refused(lambda: f.invoke(parent_check='owned-parent'), P.PreflightRefused) or f.events or f.resources:
+        return False
+    f = borrowed_firewall_fixture()
+    if not refused(f.invoke, P.PreflightRefused) or f.events or f.resources:
+        return False
+    for options in ({'changed': True}, {'restarted': 'baseline'}, {'restarted': 'thread'},
+                    {'restarted': 'time'}, {'ended': True}):
+        f = borrowed_firewall_fixture(**options)
+        result = f.invoke(parent_check='owned-parent')
+        if not (result['complete'] is False and result['problems'] == ['firewall-parent-check-changed']
+                and result['check'] is None and result['coverage']['complete'] is False
+                and f.events == ['spawn'] and len(f.resources) == 1
+                and f.resources[0][2](f.resources[0][1]()) is True):
+            return False
+    return True
+
+
+check('A8S-RUNTIME-FW-PARENT-1: retained readonly helper borrows explicit parent without restarting or finalizing continuous coverage', borrowed_firewall_controls)
+check('A8S-RUNTIME-FW-PARENT-REFUSAL-1: wrong or changed parent refuses without I/O or manufactured complete coverage', borrowed_firewall_refusal_controls)
+
 def full_projection_controls():
     raw = {'complete': True, 'native': {name: 0 for name in
         ('hits', 'loopback_hits', 'listen_nonloopback', 'undetermined_loopback', 'process_errors')},
@@ -1499,25 +1578,46 @@ def owned_fake_controls():
     for kind in ('deepseek', 'ollama'):
         resources = []
         fake = P.OwnedUpstream(upstream, kind, resources=resources, tag='owned-tag', digest='a'*64)
-        stream = None
+        stream = sender = None
+        entered = threading.Event()
+        errors = []
+        original_body = upstream._Handler._body
+        def observed_body(handler):
+            entered.set()
+            return original_body(handler)
         try:
             if fake.host != '127.0.0.1' or len(resources) != 1:
                 return False
-            stream = socket.create_connection((fake.host, fake.port), timeout=1)
-            stream.sendall(b'POST /v1/embeddings HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Length: 100\r\n\r\n{')
-            until = time.monotonic() + 1
-            while not fake.workers and time.monotonic() < until:
-                time.sleep(0.005)
-            if not fake.workers or not fake.sockets:
-                return False
-            row = fake.close(drain_s=1.0)
+            with mock.patch.object(upstream._Handler, '_body', observed_body):
+                stream = socket.create_connection((fake.host, fake.port), timeout=1)
+                stream.sendall(b'POST /v1/embeddings HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Length: 1000000\r\n\r\n{')
+                def progress():
+                    # Keep the partial request active until cancellation starts,
+                    # preserving the actual handler timeout and blocking socket read.
+                    while not fake.stop_requested.wait(0.02):
+                        try:
+                            stream.sendall(b' ')
+                        except OSError as exc:
+                            if not fake.stop_requested.is_set():
+                                errors.append(type(exc).__name__)
+                            return
+                sender = threading.Thread(target=progress, name='sm-partial-body-client', daemon=True)
+                sender.start()
+                if not entered.wait(1) or not fake.workers or not fake.sockets:
+                    return False
+                row = fake.close(drain_s=1)
             if (row['complete'] is not True or row['active_sockets'] != 0 or row['live_workers'] != 0
-                    or any(worker.is_alive() for worker in fake.workers)):
+                    or any(worker.is_alive() for worker in fake.workers) or errors):
+                print('owned-drain-diagnostic', kind, row, errors)
                 return False
         finally:
+            fake.close(drain_s=1)
             if stream is not None:
                 stream.close()
-            fake.close(drain_s=1)
+            if sender is not None:
+                sender.join(1)
+                if sender.is_alive():
+                    raise AssertionError('owned partial-body sender must drain')
     return True
 
 

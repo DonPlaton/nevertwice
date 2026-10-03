@@ -2574,13 +2574,62 @@ class BoundedPipePump:
         return self.done.is_set()
 
 
+def firewall_parent_epoch(witnesses: Any, check_id: str) -> tuple:
+    """Capture the actual ticker generation and the original FS baseline, never a stale name alone."""
+    if (type(check_id) is not str or not check_id or len(check_id) > 256
+            or getattr(witnesses, '_check', None) != check_id
+            or not isinstance(getattr(witnesses, '_before', None), dict)
+            or not isinstance(getattr(witnesses, '_before_rows', None), dict)
+            or not isinstance(getattr(witnesses, '_tags', None), dict)):
+        raise PreflightRefused('firewall-parent-check')
+    tickers = (witnesses.native, *witnesses.containers)
+    if tickers[0] is None:
+        raise PreflightRefused('firewall-parent-check')
+    generation = []
+    for ticker in tickers:
+        if ticker is None:
+            continue
+        thread, stop, began = (getattr(ticker, name, None) for name in ('_thread', '_stop', '_t0'))
+        if (not callable(getattr(thread, 'is_alive', None)) or thread.is_alive() is not True
+                or not callable(getattr(stop, 'is_set', None)) or stop.is_set() is not False
+                or type(began) not in {int, float} or not math.isfinite(began)):
+            raise PreflightRefused('firewall-parent-check')
+        generation.append((ticker, thread, stop, began))
+    return (witnesses._before, witnesses._before_rows, witnesses._tags, tuple(generation))
+
+
+def same_firewall_parent_epoch(witnesses: Any, check_id: str, original: tuple) -> bool:
+    try:
+        current = firewall_parent_epoch(witnesses, check_id)
+    except PreflightRefused:
+        return False
+    return (all(current[index] is original[index] for index in range(3))
+            and len(current[3]) == len(original[3])
+            and all(all(left[index] is right[index] for index in range(3)) and left[3] == right[3]
+                    for left, right in zip(current[3], original[3])))
+
+
+def firewall_ticker_active(witnesses: Any) -> bool:
+    """Refuse an omitted parent if any real witness is still running."""
+    for ticker in (witnesses.native, *getattr(witnesses, 'containers', ())):
+        thread = getattr(ticker, '_thread', None)
+        if callable(getattr(thread, 'is_alive', None)) and thread.is_alive() is True:
+            return True
+    return False
+
+
 def read_firewall_real(contract: Any, launch: Any, modules: Any, scheduler: Any, *,
-                       run: str, unit: str, binary: Path, resources: list) -> dict:
+                       run: str, unit: str, binary: Path, resources: list,
+                       parent_check: str | None = None) -> dict:
     """Fresh required-Job readonly child and complete check; never modify policy."""
     witnesses = scheduler.witnesses
+    borrowed = parent_check is not None
+    epoch = firewall_parent_epoch(witnesses, parent_check) if borrowed else None
+    if not borrowed and firewall_ticker_active(witnesses):
+        raise PreflightRefused('firewall-parent-required')
     cid = 'a8-sm-' + run + '-' + unit
     boot = None
-    open_check = True
+    open_check = False
     facts, problems, check, rc = None, [], None, None
     output_meta = None
     cleanup_state = {'result': None}
@@ -2604,7 +2653,11 @@ def read_firewall_real(contract: Any, launch: Any, modules: Any, scheduler: Any,
         return modules.SC.LaunchSpec(argv=(launch.FW_READ_BINARY, *launch.FW_READ_ARGV),
             declared={launch.FW_READ_PROGRAM_ENV: str(binary)}, stdio='server', requirement='required')
     try:
-        witnesses.begin_check(cid)
+        if not borrowed:
+            open_check = True  # A partially opened standalone check still needs finalization.
+            witnesses.begin_check(cid)
+        elif not same_firewall_parent_epoch(witnesses, parent_check, epoch):
+            raise PreflightRefused('firewall-parent-check')
         child, dirs = scheduler.spawn_child(build,
             role=launch.FW_READ_ROLE, stand='_a8', run=run, arm='fw-read', unit=unit)
         if boot is None:
@@ -2649,8 +2702,12 @@ def read_firewall_real(contract: Any, launch: Any, modules: Any, scheduler: Any,
                     problems.append('firewall-witness-incomplete-or-hit')
             except Exception as exc:
                 problems.append('firewall-witness-finalization:' + type(exc).__name__)
+        if borrowed and not same_firewall_parent_epoch(witnesses, parent_check, epoch):
+            problems.append('firewall-parent-check-changed')
     return {'facts': facts, 'complete': not problems and isinstance(facts, dict), 'problems': problems,
             'rc': rc, 'output': output_meta, 'check': check,
+            'coverage': {'parent_check': parent_check, 'pending_parent_verdict': borrowed,
+                         'complete': not borrowed and check is not None and clean_check(c6_check_summary(check))},
             'script_sha256': hashlib.sha256(launch.FW_READ_SCRIPT.encode('utf-8')).hexdigest()}
 
 
@@ -2744,8 +2801,8 @@ def real_sm_deps(contract: Any, launch: Any, probe: Any, bundle: Any, server: An
             p3_enabled=True, rest=rest, model=modules.RP.PINNED_MODEL, prepare_routes=stage.prepare,
             observe_routes=observe_routes,
             scheduler_module=modules.SC, guarded=guarded, port=port,
-            read_firewall=lambda unit, binary: read_firewall_real(contract, launch, modules, scheduler,
-                run=run, unit=unit, binary=binary, resources=resources),
+            read_firewall=lambda unit, binary, parent_check=None: read_firewall_real(contract, launch, modules, scheduler,
+                run=run, unit=unit, binary=binary, resources=resources, parent_check=parent_check),
             policy_authority=lambda fw: False, declare_listener=declare,
             ready_ceiling_s=120.0, key_wait_s=10.0, request=sm_request,
             listeners=lambda boot: native_listeners(native, boot), tree=server.tree,
