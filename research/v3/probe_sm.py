@@ -1504,6 +1504,77 @@ def sm_p3_fields(measured: Mapping[str, Any]) -> dict:
         'sm_created_at': sm_field(measured['created_at'], ok=True),
     }
 
+def read_sm_restart_state(port: int, run: str, document_id: str, *, key: Any,
+                          request: Callable, admit: Callable, ceiling_s: float = 60.0,
+                          clock: Callable = time.monotonic) -> dict:
+    """Read one completed diagnostic state under a shared deadline; do not claim atomicity."""
+    port = _port(port)
+    document_target = sm_api_target('get_document', run, document_id=document_id)
+    if key is None:
+        raise SmApiRefused('held-key-required')
+    if not all(callable(value) for value in (request, admit, clock)):
+        raise SmApiRefused('restart-collaborator')
+    deadline = _SmReadDeadline(ceiling_s, clock)
+    held = key
+
+    def send(p, method, path, *, body=None, key=None, timeout_s=5.0):
+        if (p != port or key is not held or type(timeout_s) not in {int, float}
+                or not math.isfinite(timeout_s) or timeout_s <= 0):
+            raise SmApiRefused('keyed-sequence-target')
+        def bounded(p, method, path, **options):
+            options['timeout_s'] = min(options['timeout_s'], timeout_s)
+            return request(p, method, path, **options)
+        return deadline.send(port, (method, path, body), key=held, request=bounded, admit=admit)
+
+    method, path, body = document_target
+    document = sm_document_response(send(port, method, path, body=body, key=held), document_id=document_id)
+    if document['status'] != 'done':
+        raise SmApiRefused('restart-document-incomplete')
+    collection = collect_sm_memories(port, run, document_id, key=held, request=send, admit=lambda: True,
+        ceiling_s=min(60.0, deadline.remaining()), clock=clock)
+    if collection['memory_found'] is not True:
+        raise SmApiRefused('memory-agent-empty')
+    method, path, body = sm_api_target('search', run, query=SM_DIAGNOSTIC_QUERY)
+    search = sm_search_response(send(port, method, path, body=body, key=held), memories=collection['entries'])
+    selected_ids = {entry['id'] for entry in collection['selected']}
+    if not search['found'] or not any(row['id'] in selected_ids for row in search['results']):
+        raise SmApiRefused('blocked:search-shape')
+    created_at = sm_created_at(document)
+    state = {'documents': [document], 'memories': collection['entries'], 'search': search}
+    seal = sm_state_seal(**state)
+    deadline.remaining()
+    return {'complete': True, 'document_id': document_id, 'state': state, 'seal': seal,
+            'created_at': created_at, 'atomic_snapshot_proven': False, 'writers_quiescent_proven': False}
+
+
+def compare_sm_restart_states(first: Mapping[str, Any], second: Mapping[str, Any], *,
+                              ceiling_s: float = 5.0, clock: Callable = time.monotonic) -> dict:
+    """Recompute both observed state seals before reporting each restart comparison."""
+    deadline = _SmReadDeadline(ceiling_s, clock)
+    parts = {'documents', 'memories', 'search'}
+    seals = []
+    for measured in (first, second):
+        if (not isinstance(measured, Mapping) or measured.get('complete') is not True
+                or not isinstance(measured.get('state'), dict) or set(measured['state']) != parts
+                or not isinstance(measured.get('seal'), dict) or set(measured['seal']) != parts
+                or any(type(value) is not str or re.fullmatch(r'[0-9a-f]{64}', value) is None
+                       for value in measured['seal'].values())):
+            raise SmApiRefused('restart-state-shape')
+        state = measured['state']
+        if (not isinstance(state['documents'], list) or not state['documents']
+                or any(not isinstance(doc, Mapping) or doc.get('status') != 'done' for doc in state['documents'])):
+            raise SmApiRefused('restart-document-incomplete')
+        deadline.remaining()
+        actual = sm_state_seal(**state)
+        deadline.remaining()
+        if actual != measured['seal']:
+            raise SmApiRefused('restart-state-seal-mismatch')
+        seals.append(actual)
+    equal = {part: seals[0][part] == seals[1][part] for part in sorted(parts)}
+    deadline.remaining()
+    return {'equal': all(equal.values()), 'parts': equal,
+            'atomic_snapshot_proven': False, 'writers_quiescent_proven': False}
+
 EMBED_TAG = 'nvt3-bge-m3-d1:latest'
 EMBED_DIGEST = '561ce53b3730a15c5b08676cc985d4a0805d95353c6576e5ef982bc5cc3c5a65'
 

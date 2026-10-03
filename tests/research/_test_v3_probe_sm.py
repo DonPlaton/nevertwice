@@ -2958,6 +2958,112 @@ def declared_chat_policy_controls():
 check('A8S-P3-STAGE-1: actual control interface writes and resets stage including uncertain acknowledgment and pre-API refusal', owned_stage_controls)
 check('A8S-P3-SCRIPT-1: actual HTTP handler chooses declared CreateMemory with valid arguments independently of interleaved calls', declared_chat_policy_controls)
 
+def restart_read_fixture():
+    f = functional_fixture()
+    f.polls = 1  # The already completed diagnostic document; this is a read-only sequence.
+    def run(**changes):
+        options = {'key': f.key, 'request': f.request, 'admit': f.admit, 'clock': lambda: f.now}
+        options.update(changes)
+        return P.read_sm_restart_state(1234, 'unit', 'doc1', **options)
+    f.read = run
+    return f
+
+
+def restart_read_controls():
+    f = restart_read_fixture()
+    result = f.read()
+    expected = [('GET', '/v3/documents/doc1'), ('POST', '/v4/memories/list'), ('POST', '/v4/search')]
+    return ([(method, path) for _, method, path, _ in f.requests] == expected
+            and len(f.admissions) == 3 and all(options['key'] is f.key and 0 < options['timeout_s'] <= 5
+                for _, _, _, options in f.requests)
+            and result['complete'] is True and result['document_id'] == 'doc1'
+            and result['seal'] == P.sm_state_seal(**result['state'])
+            and set(result['seal']) == {'documents', 'memories', 'search'}
+            and result['atomic_snapshot_proven'] is False and result['writers_quiescent_proven'] is False)
+
+
+def restart_read_refusal_controls():
+    f = restart_read_fixture()
+    if not named_api_refusal(lambda: f.read(key=None), 'held-key-required') or f.requests:
+        return False
+    f = restart_read_fixture()
+    f.polls = 0
+    if not named_api_refusal(f.read, 'restart-document-incomplete') or len(f.requests) != 1:
+        return False
+    f = restart_read_fixture()
+    f.empty = True
+    if not named_api_refusal(f.read, 'memory-agent-empty') or len(f.requests) != 2:
+        return False
+    f = restart_read_fixture()
+    f.foreign_search = True
+    if not named_api_refusal(f.read, 'blocked:search-shape'):
+        return False
+    f = restart_read_fixture()
+    def late_admit():
+        f.now = 60
+        return True
+    if not named_api_refusal(lambda: f.read(admit=late_admit), 'state-read-deadline') or f.requests:
+        return False
+    f = restart_read_fixture()
+    original = P.sm_state_seal
+    def late_seal(**state):
+        seal = original(**state)
+        f.now = 60
+        return seal
+    with mock.patch.object(P, 'sm_state_seal', side_effect=late_seal):
+        return named_api_refusal(f.read, 'state-read-deadline')
+
+
+def restart_comparison_controls():
+    first = restart_read_fixture().read()
+    same = P.compare_sm_restart_states(first, copy.deepcopy(first))
+    if same['equal'] is not True or same['parts'] != {'documents': True, 'memories': True, 'search': True}:
+        return False
+    for part in ('documents', 'memories', 'search'):
+        second = copy.deepcopy(first)
+        if part == 'documents':
+            second['state']['documents'][0]['createdAt'] = '2026-10-03T12:00:01.123456789Z'
+        elif part == 'memories':
+            second['state']['memories'].append({'id': 'm2', 'memory': 'another memory', 'documentIds': []})
+        else:
+            second['state']['search']['results'][0]['similarity'] = 0.8
+        second['seal'] = P.sm_state_seal(**second['state'])
+        result = P.compare_sm_restart_states(first, second)
+        if result['equal'] is not False or result['parts'] != {name: name != part for name in ('documents', 'memories', 'search')}:
+            return False
+    stale = copy.deepcopy(first)
+    stale['state']['documents'][0]['createdAt'] = '2026-10-03T12:00:01.123456789Z'
+    if not named_api_refusal(lambda: P.compare_sm_restart_states(first, stale), 'restart-state-seal-mismatch'):
+        return False
+    incomplete = copy.deepcopy(first)
+    incomplete['complete'] = False
+    if not named_api_refusal(lambda: P.compare_sm_restart_states(first, incomplete), 'restart-state-shape'):
+        return False
+    missing = copy.deepcopy(first)
+    missing['seal'].pop('memories')
+    if not named_api_refusal(lambda: P.compare_sm_restart_states(first, missing), 'restart-state-shape'):
+        return False
+    processing = copy.deepcopy(first)
+    processing['state']['documents'][0]['status'] = 'processing'
+    # Retain the old seal: the completion guard must refuse before recomputation.
+    if not named_api_refusal(lambda: P.compare_sm_restart_states(first, processing), 'restart-document-incomplete'):
+        return False
+    now = [0.0]
+    original = P.sm_state_seal
+    def late(**state):
+        seal = original(**state)
+        now[0] = 5
+        return seal
+    with mock.patch.object(P, 'sm_state_seal', side_effect=late):
+        if not named_api_refusal(lambda: P.compare_sm_restart_states(first, first, clock=lambda: now[0]), 'state-read-deadline'):
+            return False
+    return same['atomic_snapshot_proven'] is False and same['writers_quiescent_proven'] is False
+
+
+check('A8S-RESTART-READ-1: three keyed reads use fresh admission complete memory and known search with exact state seals', restart_read_controls)
+check('A8S-RESTART-REFUSAL-1: missing key incomplete document empty memory foreign search and late parsing refuse', restart_read_refusal_controls)
+check('A8S-RESTART-COMPARE-1: recomputed document memory and search seals compare independently without claiming atomicity', restart_comparison_controls)
+
 failed = sum(not good for _, good in ROWS)
 print(f'v3 sm core: {len(ROWS) - failed} passed, {failed} failed')
 sys.exit(1 if failed else 0)
