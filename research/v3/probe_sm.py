@@ -462,6 +462,23 @@ class GuardedLaunch:
                 or any(type(value) is not str or not value for value in values.values())
                 for values in self.expected.values()):
             raise PreflightRefused('server-env-contract')
+        self._initial_expected = {unit: dict(values) for unit, values in self.expected.items()}
+
+    def declare_restart(self, port: int, *, occupied_ports: frozenset[int]) -> None:
+        """Declare one second boot with only its listening port changed."""
+        _port(port)
+        if (type(occupied_ports) is not frozenset or not 1 <= len(occupied_ports) <= 256
+                or any(type(value) is not int or not 1 <= value <= 65535 for value in occupied_ports)):
+            raise PreflightRefused('server-restart-port-inventory')
+        if (set(self._initial_expected) != {'u1'} or set(self.expected) != {'u1'}
+                or self.expected['u1'] != self._initial_expected['u1']):
+            raise PreflightRefused('server-restart-declaration-changed')
+        original = self._initial_expected['u1']
+        if port in occupied_ports or str(port) == original['SUPERMEMORY_PORT']:
+            raise PreflightRefused('server-proxy-port-collision')
+        restarted = dict(original)
+        restarted['SUPERMEMORY_PORT'] = str(port)
+        self.expected['u1-boot2'] = restarted
 
     def __getattr__(self, name: str) -> Any:
         return getattr(self.launch, name)
@@ -1574,6 +1591,41 @@ def compare_sm_restart_states(first: Mapping[str, Any], second: Mapping[str, Any
     deadline.remaining()
     return {'equal': all(equal.values()), 'parts': equal,
             'atomic_snapshot_proven': False, 'writers_quiescent_proven': False}
+
+def sm_proxy_port_inventory(ports: Mapping[str, Any]) -> frozenset[int]:
+    """Validate and collect every listener from the proxy's declared port table."""
+    if (not isinstance(ports, Mapping) or not {'arms', 'scheduler', 'control'} <= set(ports)
+            or not set(ports) <= {'arms', 'scheduler', 'control', 'j3'}):
+        raise PreflightRefused('server-proxy-port-inventory')
+    arms = ports['arms']
+    if not isinstance(arms, Mapping) or not 1 <= len(arms) <= 32 or ARM not in arms:
+        raise PreflightRefused('server-proxy-port-inventory')
+    values = [_port(value) for name, value in ports.items() if name != 'arms']
+    for arm, roles in arms.items():
+        if (type(arm) is not str or not arm or len(arm) > 100 or not isinstance(roles, Mapping)
+                or not roles or 'catcher' not in roles
+                or not set(roles) <= {'catcher', 'write', 'reader', 'ollama'}):
+            raise PreflightRefused('server-proxy-port-inventory')
+        values.extend(_port(value) for value in roles.values())
+    if len(values) > 256 or len(set(values)) != len(values):
+        raise PreflightRefused('server-proxy-port-inventory')
+    return frozenset(values)
+
+
+def allocate_sm_server_port(ports: Mapping[str, Any], allocate: Callable[[], int], *,
+                            prior_port: int | None = None) -> int:
+    """Refuse a collided or changed inventory; this does not reserve the socket."""
+    occupied = sm_proxy_port_inventory(ports)
+    if not callable(allocate):
+        raise PreflightRefused('server-port-allocator')
+    if prior_port is not None:
+        _port(prior_port)
+    port = _port(allocate())
+    if sm_proxy_port_inventory(ports) != occupied:
+        raise PreflightRefused('server-proxy-port-inventory-changed')
+    if port in occupied or port == prior_port:
+        raise PreflightRefused('server-proxy-port-collision')
+    return port
 
 EMBED_TAG = 'nvt3-bge-m3-d1:latest'
 EMBED_DIGEST = '561ce53b3730a15c5b08676cc985d4a0805d95353c6576e5ef982bc5cc3c5a65'
@@ -2823,10 +2875,7 @@ def real_sm_deps(contract: Any, launch: Any, probe: Any, bundle: Any, server: An
             unit=launch.make_unit_dirs(contract, '_a8', '_harness', 'proxy', run),
             parent_env=env, witnesses=witnesses,
             spawn=lambda *args, **options: spawn_sm_proxy(*args, launch=launch, resources=resources, **options))
-        port = _port(server.free_port())
-        ports = {proxy.ports['scheduler'], *(proxy.ports.get('arms', {}).get(ARM) or {}).values()}
-        if port in ports:
-            raise PreflightRefused('server-proxy-port-collision')
+        port = allocate_sm_server_port(proxy.ports, server.free_port)
         declared = server.server_env(static['bundle']['env'], port=port, data_dir=static['data_dir'],
             llm_base_url=modules.RP.url(proxy, ARM, run, 'u1', suffix='/v1'), llm_model=modules.RP.PINNED_MODEL,
             embed_base_url=modules.RP.url(proxy, ARM, run, 'u1', role='ollama', suffix='/v1'),
@@ -2868,10 +2917,14 @@ def real_sm_deps(contract: Any, launch: Any, probe: Any, bundle: Any, server: An
                     key=held, timeout_s=options['timeout_s']))
         held_control = SimpleNamespace(header=lambda: dict(proxy.control._auth))
         stage = OwnedProxyStage(proxy.ports['control'], held_control, resources)
+        def prepare_boot2() -> int:
+            restarted_port = allocate_sm_server_port(proxy.ports, server.free_port, prior_port=port)
+            guarded.declare_restart(restarted_port, occupied_ports=sm_proxy_port_inventory(proxy.ports))
+            return restarted_port
         return SimpleNamespace(gate=hooks.gate, witnesses=witnesses, scheduler=scheduler,
             p3_enabled=True, rest=rest, model=modules.RP.PINNED_MODEL, prepare_routes=stage.prepare,
             observe_routes=observe_routes,
-            scheduler_module=modules.SC, guarded=guarded, port=port,
+            scheduler_module=modules.SC, guarded=guarded, port=port, prepare_boot2=prepare_boot2,
             read_firewall=lambda unit, binary, parent_check=None: read_firewall_real(contract, launch, modules, scheduler,
                 run=run, unit=unit, binary=binary, resources=resources, parent_check=parent_check),
             policy_authority=lambda fw: False, declare_listener=declare,

@@ -1268,7 +1268,9 @@ def runtime_factory_controls():
             watched_set=lambda contract: [], Witnesses=lambda contract, **kwargs: SimpleNamespace(native=kwargs['native']),
             make_unit_dirs=L.make_unit_dirs, spawn_proxy=mock.Mock(side_effect=AssertionError('no actual spawn')))
         proxy = SimpleNamespace(control=SimpleNamespace(counters=lambda: {}, _auth={'Authorization': 'Bearer owned-control'}), run_dir=arm / '_proxy/run',
-            ports={'scheduler': 44010, 'control': 44015, 'arms': {P.ARM: {'write': 44011, 'reader': 44012, 'ollama': 44013}}},
+            ports={'scheduler': 44010, 'control': 44015, 'j3': 44016,
+                'arms': {P.ARM: {'write': 44011, 'reader': 44012, 'ollama': 44013, 'catcher': 44014},
+                         'owned-catcher': {'catcher': 44017}}},
             tokens={'scheduler': 'owned-scheduler-token', P.ARM: 'owned-proxy-token'})
         def config(arms, **kwargs):
             if kwargs['test_upstream']['host'] != '127.0.0.1' or kwargs['test_upstream']['tls'] is not False or kwargs['test_ollama_upstream'][0] != '127.0.0.1':
@@ -1329,6 +1331,13 @@ def runtime_factory_controls():
             if (runtime.auth_target() != ('POST', '/v4/memories/list',
                     {'containerTags': ['factory-control_u1'], 'limit': 1})
                     or runtime.version(None)['ok'] is not False):
+                return False
+            for collided in (*range(44010, 44018), 44020):
+                server.free_port = lambda: collided
+                if not refused(runtime.prepare_boot2, P.PreflightRefused) or set(runtime.guarded.expected) != {'u1'}:
+                    return False
+            server.free_port = lambda: 44021
+            if runtime.prepare_boot2() != 44021 or runtime.guarded.expected['u1-boot2'] != dict(declared, SUPERMEMORY_PORT='44021'):
                 return False
         finally:
             results = [accepted(close()) for _, close, accepted in reversed(resources)]
@@ -2999,6 +3008,19 @@ def restart_read_refusal_controls():
     if not named_api_refusal(f.read, 'blocked:search-shape'):
         return False
     f = restart_read_fixture()
+    original_request = f.request
+    unlinked = {'id': 'm2', 'memory': 'An unrelated memory.', 'documentIds': []}
+    def known_unlinked_request(port, method, path, **options):
+        reply = original_request(port, method, path, **options)
+        if path == '/v4/memories/list':
+            reply['json']['memoryEntries'].append(unlinked)
+            reply['json']['pagination']['totalItems'] = 2
+        if path == '/v4/search':
+            reply['json']['results'] = [{'id': 'm2', 'memory': unlinked['memory'], 'similarity': 0.9}]
+        return reply
+    if not named_api_refusal(lambda: f.read(request=known_unlinked_request), 'blocked:search-shape') or len(f.requests) != 3:
+        return False
+    f = restart_read_fixture()
     def late_admit():
         f.now = 60
         return True
@@ -3063,6 +3085,117 @@ def restart_comparison_controls():
 check('A8S-RESTART-READ-1: three keyed reads use fresh admission complete memory and known search with exact state seals', restart_read_controls)
 check('A8S-RESTART-REFUSAL-1: missing key incomplete document empty memory foreign search and late parsing refuse', restart_read_refusal_controls)
 check('A8S-RESTART-COMPARE-1: recomputed document memory and search seals compare independently without claiming atomicity', restart_comparison_controls)
+
+def boot2_ports_fixture():
+    return {'scheduler': 43101, 'control': 43102, 'j3': 43103,
+            'arms': {P.ARM: {'catcher': 43104, 'write': 43105, 'reader': 43106, 'ollama': 43107},
+                     'owned-catcher': {'catcher': 43108}}}
+
+
+def boot2_port_inventory_controls():
+    ports = boot2_ports_fixture()
+    expected = frozenset(range(43101, 43109))
+    if P.sm_proxy_port_inventory(ports) != expected:
+        return False
+    allocate = mock.Mock(return_value=43110)
+    negatives = [None, {}, dict(ports, control=True), dict(ports, control=43101),
+                 dict(ports, extra=43109), dict(ports, arms={}), dict(ports, arms=[])]
+    for roles in ({}, {'catcher': False}, {'catcher': 43108}, {'catcher': 43104, 'unknown': 43109}):
+        negatives.append(dict(ports, arms={**ports['arms'], P.ARM: roles}))
+    negatives.append(dict(ports, arms={**ports['arms'], '': {'catcher': 43111}}))
+    for changed in negatives:
+        if (not refused(lambda: P.allocate_sm_server_port(changed, allocate),
+                        (P.PreflightRefused, P.SmRequestRefused)) or allocate.called):
+            return False
+    return True
+
+
+def boot2_port_allocation_controls():
+    ports = boot2_ports_fixture()
+    for collided in (*range(43101, 43109), 43109):
+        allocator = mock.Mock(return_value=collided)
+        if not refused(lambda: P.allocate_sm_server_port(ports, allocator, prior_port=43109), P.PreflightRefused):
+            return False
+        if allocator.call_count != 1:
+            return False
+    allocator = mock.Mock(return_value=43110)
+    if P.allocate_sm_server_port(ports, allocator, prior_port=43109) != 43110:
+        return False
+    allocator.reset_mock()
+    if not refused(lambda: P.allocate_sm_server_port(ports, allocator, prior_port=True), P.SmRequestRefused) or allocator.called:
+        return False
+    def changed():
+        ports['control'] = 43110
+        return 43111
+    if not refused(lambda: P.allocate_sm_server_port(ports, changed), P.PreflightRefused):
+        return False
+    return refused(lambda: P.allocate_sm_server_port(boot2_ports_fixture(), None), P.PreflightRefused)
+
+
+def boot2_guard_fixture():
+    bundle = load('v3_sm_bundle_for_boot2_env_test', 'research/v3/sm_bundle.py')
+    defaults = {name: {'default': None} for name in P.SERVER_ENV_NAMES}
+    defaults.update({'SUPERMEMORY_EMBEDDING_PROVIDER': {'default': 'local'},
+        'SUPERMEMORY_EMBEDDING_BASE_URL': {'default': 'OPENAI_BASE_URL'},
+        'OPENAI_FAST_MODEL': {'default': 'OPENAI_MODEL'}, 'OPENAI_TEXT_MODEL': {'default': 'OPENAI_MODEL'},
+        'OPENAI_MODEL': {'default': 'gpt-5.1'}, 'PORT': {'default': 'SUPERMEMORY_PORT'}})
+    env_rec = {'reads': defaults, 'must_be_absent': ['ANTHROPIC_API_KEY', 'GROQ_API_KEY',
+        'WORKERS_AI_API_KEY', 'CLOUDFLARE_ACCOUNT_ID', 'GOOGLE_VERTEX_PROJECT_ID', 'GOOGLE_VERTEX_LOCATION', 'GEMINI_API_KEY']}
+    declared = SS.server_env(env_rec, port=43109, data_dir='D:/owned/data',
+        llm_base_url='http://127.0.0.1:43105/u/control.u1/v1', llm_model='deepseek-flash',
+        embed_base_url='http://127.0.0.1:43107/u/control.u1/v1', embed_model='nvt3-bge-m3', token='owned-proxy-token')
+    child = SimpleNamespace(spawn_id='owned-boot2-spawn')
+    spy = mock.Mock(return_value=child)
+    argv = ('D:/owned/never-executed.exe',)
+    guard = P.GuardedLaunch(SimpleNamespace(spawn=spy), bundle, env_rec,
+        run='control', argv=argv, expected_by_unit={'u1': declared})
+    return SimpleNamespace(**locals())
+
+
+def boot2_env_declaration_controls():
+    ports = frozenset(range(43101, 43109))
+    f = boot2_guard_fixture()
+    original = copy.deepcopy(f.declared)
+    f.guard.declare_restart(43110, occupied_ports=ports)
+    expected = dict(original, SUPERMEMORY_PORT='43110')
+    if f.guard.expected != {'u1': original, 'u1-boot2': expected} or f.declared != original:
+        return False
+    actual = {**expected, **f.bundle.SPAWN_ENV, 'HOME': 'owned-second-home'}
+    record = {'role': 'server', 'stand': '_a8', 'run': 'control', 'arm': P.ARM, 'unit': 'u1-boot2'}
+    if f.guard.spawn('owned-contract', f.argv, env=actual, record=record) is not f.child:
+        return False
+    if f.spy.call_args.kwargs['env'] is not actual or f.guard.observed[-1]['unit'] != 'u1-boot2':
+        return False
+    for name in P.SERVER_ENV_NAMES:
+        changed = dict(actual, **{name: 'owned-wrong-value'})
+        f.spy.reset_mock()
+        if not refused(lambda: f.guard.spawn('owned-contract', f.argv, env=changed, record=record), P.PreflightRefused) or f.spy.called:
+            return False
+    for change in (dict(record, unit='u1-boot3'), dict(record, run='other')):
+        if not refused(lambda: f.guard.spawn('owned-contract', f.argv, env=actual, record=change), P.PreflightRefused) or f.spy.called:
+            return False
+    if not refused(lambda: f.guard.declare_restart(43111, occupied_ports=ports), P.PreflightRefused):
+        return False
+    for occupied in (set(ports), frozenset(), frozenset({True}), frozenset({65536})):
+        f = boot2_guard_fixture()
+        before = copy.deepcopy(f.guard.expected)
+        if not refused(lambda: f.guard.declare_restart(43110, occupied_ports=occupied), P.PreflightRefused) or f.guard.expected != before:
+            return False
+    for collided in (*ports, 43109):
+        f = boot2_guard_fixture()
+        if not refused(lambda: f.guard.declare_restart(collided, occupied_ports=ports), P.PreflightRefused) or set(f.guard.expected) != {'u1'}:
+            return False
+    for name in P.SERVER_ENV_NAMES:
+        f = boot2_guard_fixture()
+        f.guard.expected['u1'][name] = 'owned-mutated-original'
+        if not refused(lambda: f.guard.declare_restart(43110, occupied_ports=ports), P.PreflightRefused) or 'u1-boot2' in f.guard.expected:
+            return False
+    return True
+
+
+check('A8S-BOOT2-PORT-INVENTORY-1: every special and arm listener is validated before allocating a server port', boot2_port_inventory_controls)
+check('A8S-BOOT2-PORT-ALLOCATE-1: collisions prior port and changed proxy inventory refuse without reusing a listener', boot2_port_allocation_controls)
+check('A8S-BOOT2-ENV-1: exactly one restart clones original data key models and logical unit routes with only a fresh port', boot2_env_declaration_controls)
 
 failed = sum(not good for _, good in ROWS)
 print(f'v3 sm core: {len(ROWS) - failed} passed, {failed} failed')
