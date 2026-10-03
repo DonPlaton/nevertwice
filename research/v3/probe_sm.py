@@ -1627,6 +1627,137 @@ def allocate_sm_server_port(ports: Mapping[str, Any], allocate: Callable[[], int
         raise PreflightRefused('server-proxy-port-collision')
     return port
 
+def sm_port_refused(port: int, *, ceiling_s: float = 1.0,
+                    clock: Callable[[], float] = time.monotonic) -> bool:
+    """Observe a loopback TCP refusal; timeout/unknown errors cannot prove absence."""
+    import errno
+    _port(port)
+    if type(ceiling_s) not in {int, float} or not math.isfinite(ceiling_s) or not 0 < ceiling_s <= 1:
+        raise PreflightRefused('server-port-refusal-ceiling')
+    until = clock() + ceiling_s
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as connection:
+            remaining = until - clock()
+            if not math.isfinite(remaining) or remaining <= 0:
+                return False
+            connection.settimeout(remaining)
+            connection.connect(('127.0.0.1', port))
+    except ConnectionRefusedError as exc:
+        return exc.errno in {errno.ECONNREFUSED, 10061} and clock() < until
+    except OSError:
+        return False
+    return False
+
+
+def run_sm_p4p5(contract: Any, launch: Any, server: Any, runtime: Any, static: Mapping, *,
+                run: str, boot: OwnedBoot, key: Any, document_id: str, parent_check: str, parent_epoch: tuple,
+                boots: list, stops: list, fields: dict, observed: dict) -> None:
+    """Connect two retained boots without claiming atomicity or WFP authority."""
+    def admission() -> bool:
+        if not same_firewall_parent_epoch(runtime.witnesses, parent_check, parent_epoch):
+            raise PreflightRefused('restart-witness-epoch')
+        if runtime.gate.admits_new_unit() is not True:
+            raise PreflightRefused('restart-incident-gate')
+        if not same_firewall_parent_epoch(runtime.witnesses, parent_check, parent_epoch):
+            raise PreflightRefused('restart-witness-epoch')
+        return True
+
+    def firewall(unit: str) -> dict:
+        admission()
+        fw = runtime.read_firewall(unit, static['binary'], parent_check=parent_check)
+        errors = firewall_problems(fw['facts'], program=static['binary'])
+        ok = fw.get('complete') is True and fw.get('problems') == [] and not errors
+        observed.setdefault('firewalls', {})[unit] = fw
+        fields['sm_firewall'] = sm_field({'p0': observed['p0_firewall'], **observed['firewalls']}, ok=ok)
+        if not ok or runtime.policy_authority(fw) is not True:
+            raise PreflightRefused('restart-firewall-evidence')
+        admission()
+        return fw
+
+    def boundary(owned: OwnedBoot, name: str) -> None:
+        admission()
+        listeners = runtime.listeners(owned)
+        tree = runtime.tree(owned.pid)
+        bind_errors = listener_problems(listeners, pid=owned.pid, port=owned.port)
+        tree_errors = tree_problems(tree, pid=owned.pid, birth_time=owned.birth_time, binary_sha256=BINARY_SHA256)
+        observed[name] = {'listeners': listeners, 'tree': tree, 'unit': owned.dirs.cwd.name}
+        fields['sm_bind'] = sm_field({label: row['listeners'] for label, row in observed.items()
+                                     if label in {'boot1', 'boot2'}}, ok=not bind_errors)
+        fields['sm_tree'] = sm_field({label: row['tree'] for label, row in observed.items()
+                                     if label in {'boot1', 'boot2'}}, ok=not tree_errors)
+        if bind_errors or tree_errors or not owned.identity_matches() or owned.child.process.poll() is not None:
+            raise PreflightRefused('restart-server-boundary')
+        admission()
+
+    def stop(owned: OwnedBoot) -> dict:
+        admission()
+        result = owned.close(server, graceful=True)
+        stops.append(result)
+        if result.get('complete') is not True or result.get('how') != 'ctrl_break':
+            raise PreflightRefused('restart-server-stop')
+        admission()
+        return result
+
+    fw4 = firewall('fw-p4')
+    first = read_sm_restart_state(boot.port, run, document_id, key=key, request=runtime.request,
+                                 admit=admission)
+    admission()
+    observed['first_seal'] = first['seal']
+    boundary(boot, 'boot1')
+    stop(boot)
+    observed['boot1_port_refused'] = runtime.port_refused(boot.port, ceiling_s=1.0) is True
+    if not observed['boot1_port_refused']:
+        raise PreflightRefused('restart-old-port-not-refused')
+    owned_key_file(contract, launch, run=run, data_dir=static['data_dir'], held=key)
+    admission()
+    port2 = _port(runtime.prepare_boot2())
+    if port2 == boot.port:
+        raise PreflightRefused('restart-old-port-reused')
+    admission()
+    boot2 = start_boot(contract, launch, server, runtime.scheduler_module, runtime.scheduler,
+        runtime.guarded, run=run, unit='u1-boot2', port=port2, data_dir=static['data_dir'], boots=boots)
+    if runtime.declare_listener(boot2, fw4) is not True:
+        raise PreflightRefused('restart-listener-declaration')
+    ready = ready_boot(boot2, ceiling_s=runtime.ready_ceiling_s, request=runtime.request)
+    fields['sm_runs'] = sm_field({'boot1': fields['sm_runs']['value'], 'boot2': ready}, ok=ready['ready'])
+    if not ready['ready']:
+        raise PreflightRefused('restart-server-not-ready')
+    boundary(boot2, 'boot2')
+    banner_seen = boot2.pump.key_seen.wait(runtime.key_wait_s)
+    banner_key = boot2.pump.key
+    key_match = banner_seen and banner_key is not None and banner_key == key
+    fields['sm_key_reprint'] = sm_field({'banner_seen': bool(banner_seen), 'matched_held_key': bool(key_match)}, ok=bool(key_match))
+    if not key_match:
+        raise PreflightRefused('restart-key-mismatch')
+    owned_key_file(contract, launch, run=run, data_dir=static['data_dir'], held=key)
+    method, path, body = runtime.auth_target()
+    replies = []
+    for options in ({'keyed': False}, {'keyed': False, 'foreign_host': True},
+                    {'key': server.HeldKey(b'sm_' + b'A' * 64)}, {'key': key}):
+        admission()
+        replies.append(runtime.request(boot2.port, method, path, body=body, timeout_s=1.0, **options))
+    statuses = [reply['status'] for reply in replies]
+    errors = auth_problems(*statuses)
+    fields['sm_auth'] = sm_field({'boot1': fields['sm_auth']['value'], 'boot2': {'statuses': statuses}}, ok=not errors)
+    if errors:
+        raise PreflightRefused('restart-auth-control')
+    second = read_sm_restart_state(boot2.port, run, document_id, key=key, request=runtime.request,
+                                  admit=admission)
+    admission()
+    observed['second_seal'] = second['seal']
+    comparison = compare_sm_restart_states(first, second)
+    observed['comparison'] = comparison
+    fields['sm_durability'] = sm_field(comparison, ok=comparison['equal'])
+    if not comparison['equal']:
+        raise PreflightRefused('restart-state-changed')
+    boundary(boot2, 'boot2')
+    stop(boot2)
+    firewall('fw-p5')  # Continuous parent remains active across both stops and this read.
+    admission()
+    observed['complete'] = True
+    observed['atomic_snapshot_proven'] = False
+    observed['writers_quiescent_proven'] = False
+
 EMBED_TAG = 'nvt3-bge-m3-d1:latest'
 EMBED_DIGEST = '561ce53b3730a15c5b08676cc985d4a0805d95353c6576e5ef982bc5cc3c5a65'
 
@@ -1746,6 +1877,7 @@ class OwnedBoot:
         self.pid = getattr(getattr(child, 'process', None), 'pid', None)
         self.birth_time, self.port, self.dirs = birth_time, port, dirs
         self.closed = False
+        self.stop_result: dict | None = None
 
     def identity_matches(self) -> bool:
         return (self.job is not None and self.birth_time is not None and self.job.same_binding()
@@ -1822,6 +1954,7 @@ class OwnedBoot:
             result['problems'].append('server-pump-drain:' + type(exc).__name__)
         self.closed = result['root_exited'] and result['members'] == [] and result['pump_drained']
         result['complete'] = self.closed and not result['problems']
+        self.stop_result = result  # Retain failures before a phase transition or later retry.
         return result
 
 
@@ -2025,9 +2158,10 @@ def run_sm_p0p2(contract: Any, launch: Any, bundle: Any, server: Any, *, run: st
         ('sm_switches', static['switches']), ('sm_workflow', {'engine': 'direct'}))}
     record = {'arm': ARM, 'run': run, 'fields': fields, 'embed_pin': static['embed'],
               'phase': 'P0-P2', 'authoritative': False}
-    problems, checks, boots, keys, resources = [], [], [], [], []
+    problems, checks, boots, keys, resources, stops = [], [], [], [], [], []
     runtime = None
     open_check = None
+    parent_epoch = None
     live_refusal = None
     catcher_lines = None
     consumed = False
@@ -2057,6 +2191,8 @@ def run_sm_p0p2(contract: Any, launch: Any, bundle: Any, server: Any, *, run: st
         cid = 'a8-sm-' + run + '-p1p2'
         open_check = cid  # Also finalize a partially opened check if begin_check fails.
         runtime.witnesses.begin_check(cid)
+        if getattr(runtime, 'p4_enabled', False) is True:
+            parent_epoch = firewall_parent_epoch(runtime.witnesses, cid)
         boot = start_boot(contract, launch, server, runtime.scheduler_module, runtime.scheduler,
                           runtime.guarded, run=run, unit='u1', port=runtime.port,
                           data_dir=static['data_dir'], boots=boots)
@@ -2109,6 +2245,14 @@ def run_sm_p0p2(contract: Any, launch: Any, bundle: Any, server: Any, *, run: st
             record['phase'] = 'P0-P3'
             record['functional'] = {'document_id': measured['document_id'], 'seal': measured['seal'],
                                     'atomic_snapshot_proven': False, 'writers_quiescent_proven': False}
+            if getattr(runtime, 'p4_enabled', False) is True:
+                record['phase'] = 'P0-P5-preparation'
+                record['restart'] = {'complete': False, 'p0_firewall': fw,
+                    'atomic_snapshot_proven': False, 'writers_quiescent_proven': False}
+                run_sm_p4p5(contract, launch, server, runtime, static, run=run, boot=boot, key=key,
+                    document_id=measured['document_id'], parent_check=cid, boots=boots, stops=stops,
+                    parent_epoch=parent_epoch,
+                    fields=fields, observed=record['restart'])
     except PreflightRefused as exc:
         live_refusal = str(exc)
     except SmApiRefused as exc:
@@ -2121,13 +2265,17 @@ def run_sm_p0p2(contract: Any, launch: Any, bundle: Any, server: Any, *, run: st
     except Exception as exc:
         problems.append('protocol-exception:' + type(exc).__name__)
     finally:
-        stops = []
         # Preserve banner keys even if a failure occurred before key-form inspection.
         for boot in boots:
             if boot.pump is not None and boot.pump.key is not None and not any(held == boot.pump.key for held in keys):
                 keys.append(boot.pump.key)
             try:
-                stops.append(boot.close(server, graceful=True))
+                if not boot.closed:
+                    stops.append(boot.close(server, graceful=True))
+                elif boot.stop_result is None:
+                    raise PreflightRefused('server-closed-without-stop-evidence')
+                elif not any(result is boot.stop_result for result in stops):
+                    stops.append(boot.stop_result)
             except Exception as exc:
                 problems.append('server-finalization:' + type(exc).__name__)
             if boot.pump is not None and boot.pump.key is not None and not any(held == boot.pump.key for held in keys):
@@ -2136,9 +2284,12 @@ def run_sm_p0p2(contract: Any, launch: Any, bundle: Any, server: Any, *, run: st
         problems.extend('server-stop:' + issue for stop in stops for issue in stop['problems'])
         if runtime is not None and open_check is not None:
             try:
+                parent_unchanged = (parent_epoch is None or same_firewall_parent_epoch(runtime.witnesses, open_check, parent_epoch))
+                if not parent_unchanged:
+                    problems.append('witness-parent-epoch-changed')
                 summary = c6_check_summary(runtime.witnesses.end_check(open_check))
                 checks.append((open_check, summary))
-                complete = clean_check(summary)
+                complete = clean_check(summary) and parent_unchanged
                 fields['sm_egress_boot'] = sm_field({'coverage': 'boot-auth-stop', 'check': summary}, ok=complete)
             except Exception as exc:
                 problems.append('witness-finalization:' + type(exc).__name__)
@@ -2922,7 +3073,8 @@ def real_sm_deps(contract: Any, launch: Any, probe: Any, bundle: Any, server: An
             guarded.declare_restart(restarted_port, occupied_ports=sm_proxy_port_inventory(proxy.ports))
             return restarted_port
         return SimpleNamespace(gate=hooks.gate, witnesses=witnesses, scheduler=scheduler,
-            p3_enabled=True, rest=rest, model=modules.RP.PINNED_MODEL, prepare_routes=stage.prepare,
+            p3_enabled=True, p4_enabled=True, port_refused=sm_port_refused,
+            rest=rest, model=modules.RP.PINNED_MODEL, prepare_routes=stage.prepare,
             observe_routes=observe_routes,
             scheduler_module=modules.SC, guarded=guarded, port=port, prepare_boot2=prepare_boot2,
             read_firewall=lambda unit, binary, parent_check=None: read_firewall_real(contract, launch, modules, scheduler,

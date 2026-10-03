@@ -3197,6 +3197,264 @@ check('A8S-BOOT2-PORT-INVENTORY-1: every special and arm listener is validated b
 check('A8S-BOOT2-PORT-ALLOCATE-1: collisions prior port and changed proxy inventory refuse without reusing a listener', boot2_port_allocation_controls)
 check('A8S-BOOT2-ENV-1: exactly one restart clones original data key models and logical unit routes with only a fresh port', boot2_env_declaration_controls)
 
+def p4p5_protocol_fixture(root, *, change=None, fail=None):
+    f = protocol_fixture(root)
+    diagnostic = functional_fixture(run='boot-control', embed_model='owned')
+    previous_setup = f.deps.setup
+    state = {'spawned': [], 'firewalls': [], 'port_checks': []}
+    def setup(*args):
+        runtime = previous_setup(*args)
+        owned = f.state['fixture']
+        state['owned'] = owned
+        native = owned.scheduler.witnesses.native
+        birth = {701: 25.0, 702: 26.0}
+        native._identity = lambda pid: birth.get(pid)
+        native.registered_roots[702] = 26.0
+        native._thread = SimpleNamespace(is_alive=lambda: True)
+        native._stop = threading.Event()
+        native._t0 = 0.0
+        runtime.witnesses.containers = []
+        runtime.witnesses._before, runtime.witnesses._before_rows, runtime.witnesses._tags = {}, {}, {}
+        second = SimpleNamespace(spawn_id='owned-second-spawn', process=SimpleNamespace(
+            pid=702, stdout=object(), poll=mock.Mock(return_value=None), wait=mock.Mock(return_value=0)))
+        original_spawn = owned.scheduler.spawn_child
+        def spawn(build, **who):
+            state['spawned'].append(who['unit'])
+            if who['unit'] == 'u1':
+                return original_spawn(build, **who)
+            if who['unit'] != 'u1-boot2' or owned.child.process.poll() is None or owned.job.live[81]:
+                raise AssertionError('second server precedes drained first server')
+            dirs = SimpleNamespace(home=owned.arm / 'u1-boot2.home', cwd=owned.arm / 'u1-boot2')
+            dirs.home.mkdir()
+            dirs.cwd.mkdir()
+            build(dirs)
+            owned.job.jobs[702], owned.job.live[82] = 82, [702]
+            owned.guard.children.append(second)
+            owned.guard.observed.append({'unit': 'u1-boot2', 'spawn_id': second.spawn_id})
+            state['dirs2'] = dirs
+            return second, dirs
+        owned.scheduler.spawn_child = spawn
+        previous_pump = owned.server.RedactingPump
+        class Pump(previous_pump):
+            def __init__(self, stream, path):
+                super().__init__(stream, path)
+                self.second = path.parent.name == 'u1-boot2.home'
+                self.joins = 0
+                if self.second and fail == 'key2':
+                    self.key = SS.HeldKey(b'sm_OWNED_TEST_KEY_OTHER123')
+            def start(self):
+                if not self.second:
+                    return super().start()
+                f.events.append('pump2')
+                if not owned.data.is_dir() or (owned.data / 'api-key').read_bytes() != b'sm_OWNED_TEST_KEY_123456\n':
+                    raise AssertionError('second server did not reuse original data/key')
+                return self
+            def join(self, timeout):
+                self.joins += 1
+                if fail == 'drain1' and not self.second and self.joins == 1:
+                    return False
+                return super().join(timeout)
+        owned.server.RedactingPump = Pump
+        def stopped(child):
+            if owned.scheduler.witnesses._check is None:
+                raise AssertionError('shutdown has no continuous witness')
+            f.events.append('stop:' + str(child.process.pid))
+            child.process.poll.return_value = 0
+            if not (fail == 'killed1' and child.process.pid == 701):
+                owned.job.live[owned.job.jobs[child.process.pid]] = []
+            if fail == 'epoch-stop1' and child.process.pid == 701:
+                native._thread = SimpleNamespace(is_alive=lambda: True)
+            return {'how': 'ctrl_break', 'alive': False, 'reused': [], 'unverified': []}
+        owned.server.stop = stopped
+        original_request = runtime.request
+        def request(port, method, path, **options):
+            if path in ('/', '/owned-pinned-auth-control'):
+                return original_request(port, method, path, **options)
+            reply = diagnostic.request(port, method, path, **options)
+            if fail == 'epoch-state1' and port == owned.port and 'fw-p4' in state['firewalls'] and not state.get('epoch_changed'):
+                runtime.witnesses._before = {}
+                state['epoch_changed'] = True
+            if fail == 'epoch-state2search' and port == 43200 and path == '/v4/search':
+                native._stop.set()
+            if port == 43200:
+                if change == 'documents' and path == '/v3/documents/doc1':
+                    reply['json']['createdAt'] = '2026-10-03T12:00:00.123456788Z'
+                if change == 'memories' and path == '/v4/memories/list':
+                    reply['json']['memoryEntries'].append({'id': 'm2', 'memory': 'Unrelated addition.', 'documentIds': []})
+                    reply['json']['pagination']['totalItems'] = 2
+                if change == 'search' and path == '/v4/search':
+                    reply['json']['results'][0]['similarity'] = 0.8
+            return reply
+        runtime.request, runtime.p3_enabled, runtime.p4_enabled, runtime.rest = request, True, True, REST_SM
+        runtime.model = 'deepseek-flash'
+        runtime.prepare_routes = lambda **options: True
+        runtime.observe_routes = lambda **options: diagnostic.witness
+        original_admit = runtime.gate.admits_new_unit
+        def admits():
+            if fail == 'gate1' and owned.child.process.poll() is not None:
+                return False
+            return original_admit()
+        runtime.gate.admits_new_unit = admits
+        def firewall(unit, binary, parent_check=None):
+            state['firewalls'].append(unit)
+            if unit != 'fw-p0':
+                if parent_check is None or parent_check != runtime.witnesses._check:
+                    raise AssertionError('phase firewall changed continuous parent')
+                if unit == 'fw-p5' and (owned.job.live[81] or owned.job.live.get(82)):
+                    raise AssertionError('P5 read precedes both drained servers')
+            if fail == 'epoch-fw5' and unit == 'fw-p5':
+                runtime.witnesses._tags = {}
+            return {'complete': not (fail == 'fw4' and unit == 'fw-p4' or fail == 'fw5' and unit == 'fw-p5'),
+                    'problems': [], 'facts': fw_fixture(binary)}
+        runtime.read_firewall = firewall
+        def prepare():
+            if owned.child.process.poll() is None or owned.job.live[81]:
+                raise AssertionError('new declaration precedes first stop')
+            owned.guard.expected['u1-boot2'] = {'SUPERMEMORY_PORT': '43200', 'SUPERMEMORY_DATA_DIR': str(owned.data)}
+            if fail == 'epoch-prepare2':
+                runtime.witnesses._before_rows = {}
+            return 43200
+        runtime.prepare_boot2 = prepare
+        def refused_port(port, **options):
+            state['port_checks'].append((port, options))
+            return fail != 'port1' and port == owned.port and owned.child.process.poll() is not None and not owned.job.live[81]
+        runtime.port_refused = refused_port
+        runtime.tree = lambda pid: [{'pid': pid, 'create_time': birth[pid] + (1 if fail == 'tree2' and pid == 702 else 0),
+                                    'sha256': P.BINARY_SHA256, 'exe': str(f.binary)}]
+        original_listeners = runtime.listeners
+        def listeners(boot):
+            rows = original_listeners(boot)
+            if fail == 'bind2' and boot.pid == 702:
+                rows.append({'pid': 999, 'host': '0.0.0.0', 'port': boot.port, 'complete': True})
+            return rows
+        runtime.listeners = listeners
+        return runtime
+    f.deps.setup = setup
+    return SimpleNamespace(**locals())
+
+
+def p4p5_connected_controls():
+    with tempfile.TemporaryDirectory(prefix='nvt-sm-p4p5-connected-') as directory:
+        f = p4p5_protocol_fixture(Path(directory).resolve())
+        result = f.f.run_probe()
+        fields = result['fields']
+        stops = fields['sm_stop']['value']
+        if (result['phase'] != 'P0-P5-preparation' or result['restart']['complete'] is not True
+                or f.state['spawned'] != ['u1', 'u1-boot2'] or f.state['firewalls'] != ['fw-p0', 'fw-p4', 'fw-p5']
+                or len(stops) != 2 or any(row['how'] != 'ctrl_break' or row['complete'] is not True for row in stops)
+                or fields['sm_stop']['ok'] is not True or fields['sm_key_search']['ok'] is not True):
+            return False
+        if (fields['sm_durability']['ok'] is not True or fields['sm_key_reprint']['ok'] is not True
+                or any(result['restart']['comparison']['parts'][part] is not True for part in ('documents', 'memories', 'search'))
+                or result['restart']['atomic_snapshot_proven'] is not False
+                or result['restart']['writers_quiescent_proven'] is not False):
+            return False
+        homes = f.state['owned'].home, f.state['dirs2'].home
+        return (homes[0] != homes[1] and f.state['owned'].cwd != f.state['dirs2'].cwd
+                and f.state['owned'].job.killed == [81, 82] and len(f.state['port_checks']) == 1
+                and result['outcome'] == 'fail' and fields['sm_schema']['ok'] is False
+                and not any('already-closed' in issue or 'server-finalization' in issue for issue in result['problems']))
+
+
+def p4p5_independent_state_controls():
+    for changed in ('documents', 'memories', 'search'):
+        with tempfile.TemporaryDirectory(prefix='nvt-sm-p4p5-state-') as directory:
+            f = p4p5_protocol_fixture(Path(directory).resolve(), change=changed)
+            result = f.f.run_probe()
+            comparison = result['restart'].get('comparison')
+            if (result['outcome'] != 'fail' or not comparison or comparison['equal'] is not False
+                    or comparison['parts'] != {part: part != changed for part in ('documents', 'memories', 'search')}
+                    or result['fields']['sm_durability']['ok'] is not False
+                    or result['restart']['complete'] is not False or 'fw-p5' in f.state['firewalls']
+                    or result['fields']['sm_stop']['ok'] is not True
+                    or len(result['fields']['sm_stop']['value']) != 2):
+                return False
+    return True
+
+
+def p4p5_first_stop_refusal_controls():
+    for failure in ('fw4', 'gate1', 'port1', 'drain1', 'killed1'):
+        with tempfile.TemporaryDirectory(prefix='nvt-sm-p4p5-first-stop-') as directory:
+            f = p4p5_protocol_fixture(Path(directory).resolve(), fail=failure)
+            result = f.f.run_probe()
+            stops = result['fields']['sm_stop']['value']
+            if (result['outcome'] != 'fail' or f.state['spawned'] != ['u1']
+                    or 'fw-p5' in f.state['firewalls'] or not stops
+                    or not any(reason.startswith('live-refusal:') for reason in result['reasons'])):
+                return False
+            if failure == 'drain1' and (stops[0]['complete'] is not False or result['fields']['sm_stop']['ok'] is not False
+                    or 'server-pump-not-complete' not in stops[0]['problems'] or stops[0]['pump_drained'] is not False
+                    or len(stops) < 2):
+                return False
+            if failure == 'killed1' and stops[0]['how'] != 'killed':
+                return False
+    return True
+
+
+def p4p5_second_boundary_controls():
+    for failure in ('key2', 'bind2', 'tree2', 'fw5'):
+        with tempfile.TemporaryDirectory(prefix='nvt-sm-p4p5-second-boundary-') as directory:
+            f = p4p5_protocol_fixture(Path(directory).resolve(), fail=failure)
+            result = f.f.run_probe()
+            if (result['outcome'] != 'fail' or f.state['spawned'] != ['u1', 'u1-boot2']
+                    or len(result['fields']['sm_stop']['value']) != 2
+                    or result['restart']['complete'] is not False
+                    or result['fields']['sm_stop']['ok'] is not True):
+                return False
+            field = {'key2': 'sm_key_reprint', 'bind2': 'sm_bind', 'tree2': 'sm_tree', 'fw5': 'sm_firewall'}[failure]
+            if result['fields'][field]['ok'] is not False:
+                return False
+    return True
+
+
+def p4p5_port_refusal_controls():
+    import errno
+    for error, expected in ((None, False), (ConnectionRefusedError(errno.ECONNREFUSED, 'owned refusal'), True),
+                            (TimeoutError('owned timeout'), False), (OSError('owned unknown error'), False)):
+        connection = mock.MagicMock()
+        connection.__enter__.return_value = connection
+        connection.connect.side_effect = error
+        with mock.patch.object(P.socket, 'socket', return_value=connection):
+            if P.sm_port_refused(43199, clock=lambda: 0.0) is not expected:
+                return False
+        if connection.connect.call_args.args != (('127.0.0.1', 43199),) or connection.settimeout.call_args.args != (1.0,):
+            return False
+    now = [0.0]
+    connection = mock.MagicMock()
+    connection.__enter__.return_value = connection
+    def late(*args):
+        now[0] = 1.0
+        raise ConnectionRefusedError(errno.ECONNREFUSED, 'owned late refusal')
+    connection.connect.side_effect = late
+    with mock.patch.object(P.socket, 'socket', return_value=connection):
+        if P.sm_port_refused(43199, clock=lambda: now[0]) is not False:
+            return False
+        return refused(lambda: P.sm_port_refused(43199, ceiling_s=2), P.PreflightRefused)
+
+
+def p4p5_parent_epoch_controls():
+    for failure in ('epoch-state1', 'epoch-stop1', 'epoch-prepare2', 'epoch-state2search', 'epoch-fw5'):
+        with tempfile.TemporaryDirectory(prefix='nvt-sm-p4p5-parent-epoch-') as directory:
+            f = p4p5_protocol_fixture(Path(directory).resolve(), fail=failure)
+            result = f.f.run_probe()
+            if (result['outcome'] != 'fail' or result['restart']['complete'] is not False
+                    or 'witness-parent-epoch-changed' not in result['problems']
+                    or result['fields']['sm_egress_boot']['ok'] is not False):
+                return False
+            if failure in {'epoch-state1', 'epoch-stop1', 'epoch-prepare2'} and f.state['spawned'] != ['u1']:
+                return False
+            if failure == 'epoch-state1' and any(path == '/v4/memories/list' for _, _, path, _ in f.diagnostic.requests[9:]):
+                return False  # The next keyed send refuses after the first changed-epoch response.
+    return True
+
+
+check('A8S-P4P5-CONTROLLER-1: two retained boots reuse data key and seals with continuous witnesses and preserved separate stops', p4p5_connected_controls)
+check('A8S-P4P5-STATE-1: changed document memory or search separately fails durability and both owned boots still drain', p4p5_independent_state_controls)
+check('A8S-P4P5-FIRST-STOP-1: firewall gate port refusal incomplete or killed stop forbids a second boot and retains failure', p4p5_first_stop_refusal_controls)
+check('A8S-P4P5-SECOND-BOUNDARY-1: second key listener tree or P5 firewall refusal retains both stop records', p4p5_second_boundary_controls)
+check('A8S-P4P5-PORT-REFUSAL-1: only timely explicit TCP refusal proves observed absence; live timeout or unknown error cannot', p4p5_port_refusal_controls)
+check('A8S-P4P5-PARENT-EPOCH-1: same-label FS baseline ticker and stop changes refuse across both boots and each state send', p4p5_parent_epoch_controls)
+
 failed = sum(not good for _, good in ROWS)
 print(f'v3 sm core: {len(ROWS) - failed} passed, {failed} failed')
 sys.exit(1 if failed else 0)
