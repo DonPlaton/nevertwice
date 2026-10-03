@@ -592,6 +592,310 @@ def sm_auth_target(run: str) -> tuple[str, str, dict]:
     """Use the pinned read-only memory-list operation with a schema-valid minimal body."""
     return 'POST', '/v4/memories/list', {'containerTags': [sm_container_tag(run)], 'limit': 1}
 
+# Source-backed operation declarations: offline025/026/038/039, all pinned f2.
+# Schema observation and processing completion do not admit the product or prove memory success.
+SM_API_OPERATIONS = {
+    'add_document': ('POST', '/v3/documents', ('content', 'containerTag'), ('id', 'status')),
+    'get_document': ('GET', '/v3/documents/{id}', (),
+                     ('id', 'status', 'createdAt', 'memories[].id', 'memories[].memory')),
+    'search': ('POST', '/v4/search', ('q', 'containerTags[]', 'limit'),
+               ('results[].id', 'results[].memory', 'results[].similarity', 'total', 'timing')),
+    'list_memories': ('POST', '/v4/memories/list', ('containerTags[]', 'limit', 'page'),
+                      ('memoryEntries[].id', 'memoryEntries[].memory', 'memoryEntries[].documentIds[]',
+                       'pagination.currentPage', 'pagination.limit', 'pagination.totalPages', 'pagination.totalItems')),
+}
+
+
+class SmApiRefused(RuntimeError):
+    """A declared operation, observed schema or processing response cannot be trusted."""
+
+
+def sm_api_calls(rest: Any) -> dict:
+    """Declare exactly the source-backed calls; never infer a replacement API version."""
+    return {name: rest.Call(method, path, body=body, response=response)
+            for name, (method, path, body, response) in SM_API_OPERATIONS.items()}
+
+
+def _sm_schema_node(node: Any, doc: dict, budget: list[int]) -> dict:
+    """Resolve bounded local reference chains; never fetch or accept opaque leaves."""
+    seen = set()
+    while True:
+        budget[0] -= 1
+        if budget[0] < 0 or not isinstance(node, dict):
+            raise ValueError('schema-opaque-or-limit')
+        if '$ref' not in node:
+            return node
+        ref = node['$ref']
+        if type(ref) is not str or not ref.startswith('#/') or ref in seen or len(seen) >= 32:
+            raise ValueError('schema-reference')
+        seen.add(ref)
+        # Structural $ref siblings need a combined proof. Fail closed instead of dropping them.
+        if set(node) - {'$ref', 'description', 'title', 'example', 'examples', 'deprecated'}:
+            raise ValueError('schema-reference-siblings')
+        node = doc
+        for part in ref[2:].split('/'):
+            part = part.replace('~1', '/').replace('~0', '~')
+            if not isinstance(node, dict) or part not in node:
+                raise ValueError('schema-reference')
+            node = node[part]
+
+
+def _sm_schema_types(node: Any, doc: dict, budget: list[int], depth: int = 0) -> set[str]:
+    """A bounded type proof only; value constraints remain explicitly unverified."""
+    if depth >= 32:
+        raise ValueError('schema-depth')
+    node = _sm_schema_node(node, doc, budget)
+    if any(name in node for name in ('not', 'if', 'then', 'else')):
+        raise ValueError('schema-unproved-composition')
+    declared = node.get('type')
+    types = None
+    if declared is not None:
+        declared = [declared] if type(declared) is str else declared
+        if (not isinstance(declared, list) or not declared
+                or any(type(value) is not str or value not in {'string', 'number', 'integer', 'boolean', 'null', 'array', 'object'} for value in declared)):
+            raise ValueError('schema-types')
+        types = {'number' if value == 'integer' else value for value in declared}
+    for keyword in ('allOf', 'anyOf', 'oneOf'):
+        if keyword not in node:
+            continue
+        branches = node[keyword]
+        if not isinstance(branches, list) or not branches:
+            raise ValueError('schema-composition')
+        members = [_sm_schema_types(branch, doc, budget, depth + 1) for branch in branches]
+        combined = set.intersection(*members) if keyword == 'allOf' else set.union(*members)
+        types = combined if types is None else types & combined
+    if not types:
+        raise ValueError('schema-unproved-type')
+    # OpenAPI3.0's nullable widens the declared type. Treat it conservatively in 3.1 too.
+    if 'nullable' in node and type(node['nullable']) is not bool:
+        raise ValueError('schema-nullable')
+    if node.get('nullable') is True:
+        types.add('null')
+    return types
+
+
+def _sm_schema_variants(node: Any, doc: dict, budget: list[int], depth: int = 0) -> list[dict]:
+    if depth >= 32:
+        raise ValueError('schema-depth')
+    node = _sm_schema_node(node, doc, budget)
+    result = [node]
+    for keyword in ('allOf', 'anyOf', 'oneOf'):
+        if keyword in node:
+            branches = node[keyword]
+            if not isinstance(branches, list) or not branches:
+                raise ValueError('schema-composition')
+            for branch in branches:
+                result.extend(_sm_schema_variants(branch, doc, budget, depth + 1))
+    return result
+
+
+def _sm_used_leaf_type(schema: Any, field: str, doc: dict, *, numeric_string: bool) -> None:
+    budget = [512]
+    current = [schema]
+    steps = field.replace('[]', '.[]').split('.')
+    for step in steps:
+        next_nodes = []
+        for node in current:
+            parent_types = _sm_schema_types(node, doc, budget)
+            if parent_types != {'array' if step == '[]' else 'object'}:
+                raise ValueError('schema-parent-type')
+            for variant in _sm_schema_variants(node, doc, budget):
+                if step == '[]' and 'items' in variant:
+                    next_nodes.append(variant['items'])
+                elif step != '[]':
+                    props = variant.get('properties', {})
+                    if not isinstance(props, dict):
+                        raise ValueError('schema-properties')
+                    if step in props:
+                        next_nodes.append(props[step])
+        if not next_nodes:
+            raise ValueError('schema-field')
+        current = next_nodes
+    numeric = steps[-1] in {'limit', 'page', 'currentPage', 'totalPages', 'totalItems', 'similarity', 'total', 'timing'}
+    expected = 'number' if numeric else 'string'
+    allowed = {expected, 'string'} if numeric and numeric_string else {expected}
+    for node in current:
+        types = _sm_schema_types(node, doc, budget)
+        if expected not in types or not types <= allowed:
+            raise ValueError('schema-used-leaf-type')
+
+
+def _sm_operation_types(call: Any, doc: dict) -> None:
+    op = doc['paths'][call.path][call.method.lower()]
+    if call.body:
+        body = _sm_schema_node(op['requestBody'], doc, [512])
+        schema = body['content']['application/json']['schema']
+        for field in call.body:
+            _sm_used_leaf_type(schema, field, doc, numeric_string=True)
+    response = _sm_schema_node(op['responses']['200'], doc, [512])
+    schema = response['content']['application/json']['schema']
+    for field in call.response:
+        _sm_used_leaf_type(schema, field, doc, numeric_string=False)
+    if call.params:
+        params = doc['paths'][call.path].get('parameters', []) + op.get('parameters', [])
+        params = [_sm_schema_node(value, doc, [512]) for value in params]
+        for name in call.params:
+            matches = [value for value in params if value.get('in') == 'path' and value.get('name') == name]
+            if len(matches) != 1 or _sm_schema_types(matches[0]['schema'], doc, [512]) != {'string'}:
+                raise ValueError('schema-path-parameter')
+
+
+def sm_openapi_contract(replies: Sequence[Mapping[str, Any]], rest: Any) -> dict:
+    """Check both observations against every used field and its closed leaf type.
+
+    Call conformance is the existing offline REST checker. It never resolves remote
+    references or connects. A separate bounded type proof rejects opaque/cyclic used
+    leaves. Numeric/string value constraints still need pinned source and runtime
+    evidence; this helper does not claim complete JSON Schema value validation.
+    """
+    if not isinstance(replies, (tuple, list)) or len(replies) != len(SM_OPENAPI_PATHS):
+        raise SmApiRefused('blocked:no-openapi')
+    calls = sm_api_calls(rest)
+    observed = []
+    for path, reply in zip(SM_OPENAPI_PATHS, replies):
+        if (not isinstance(reply, Mapping) or type(reply.get('status')) is not int
+                or reply['status'] != 200 or not isinstance(reply.get('json'), dict)):
+            raise SmApiRefused('blocked:no-openapi')
+        doc = reply['json']
+        if (type(doc.get('openapi')) is not str or not doc['openapi'].startswith('3.')
+                or not isinstance(doc.get('paths'), dict) or not doc['paths']):
+            raise SmApiRefused('blocked:no-openapi')
+        try:
+            # Each operation is checked alone so the refusal names the unavailable capability.
+            for name, call in calls.items():
+                try:
+                    # Resolve used schema types first: recursive compositions have a hard budget.
+                    _sm_operation_types(call, doc)
+                    issues = rest.conformance({name: call}, doc)
+                    if not isinstance(issues, list) or issues:
+                        raise ValueError('schema-conformance')
+                except (ValueError, TypeError, AttributeError, KeyError, RecursionError):
+                    raise SmApiRefused('blocked:schema-missing:' + name)
+            canonical = json.dumps(doc, sort_keys=True, separators=(',', ':'),
+                                   ensure_ascii=False, allow_nan=False).encode('utf-8')
+        except SmApiRefused:
+            raise
+        except (ValueError, TypeError, AttributeError, KeyError, RecursionError):
+            raise SmApiRefused('blocked:no-openapi') from None
+        raw_sha = reply.get('sha256')
+        if type(raw_sha) is not str or re.fullmatch(r'[0-9a-f]{64}', raw_sha) is None:
+            raise SmApiRefused('openapi-observation-hash')
+        observed.append({'path': path, 'raw_sha256': raw_sha,
+                         'canonical_sha256': hashlib.sha256(canonical).hexdigest()})
+    return {'observed': observed, 'operations': tuple(calls), 'conformant': True,
+            'value_constraints_verified': False, 'runtime_admission': False}
+
+
+def sm_api_target(name: str, run: str, *, content: str | None = None,
+                  document_id: str | None = None, query: str | None = None, page: int = 1) -> tuple:
+    """Construct a fresh schema-valid request; document IDs are one quoted path component."""
+    from urllib.parse import quote
+    if type(name) is not str or name not in SM_API_OPERATIONS:
+        raise SmApiRefused('undeclared-operation')
+    tag = sm_container_tag(run)
+    method, path, _, _ = SM_API_OPERATIONS[name]
+    if name == 'get_document':
+        # 255 is the probe's input ceiling, not a claimed vendor GET-id limit.
+        if (type(document_id) is not str or not 0 < len(document_id) <= 255
+                or document_id in {'.', '..'} or any(ord(c) < 32 or ord(c) == 127 for c in document_id)):
+            raise SmApiRefused('document-id')
+        return method, path.replace('{id}', quote(document_id, safe='')), None
+    if name == 'add_document':
+        if type(content) is not str or not content.strip():
+            raise SmApiRefused('document-content')
+        return method, path, {'content': content, 'containerTag': tag}
+    if name == 'search':
+        if type(query) is not str or not query.strip():
+            raise SmApiRefused('search-query')
+        return method, path, {'q': query.strip(), 'containerTags': [tag], 'limit': 10}
+    if type(page) is not int or not 1 <= page <= 1100:
+        raise SmApiRefused('memory-page')
+    return method, path, {'containerTags': [tag], 'limit': 10, 'page': page}
+
+
+def sm_document_response(reply: Mapping[str, Any], *, document_id: str | None = None) -> dict:
+    """Validate document identity/status; this alone never proves extracted memory exists."""
+    if (not isinstance(reply, Mapping) or type(reply.get('status')) is not int or reply['status'] != 200
+            or not isinstance(reply.get('json'), dict)):
+        raise SmApiRefused('document-response')
+    doc = reply['json']
+    if (type(doc.get('id')) is not str or not doc['id'] or type(doc.get('status')) is not str
+            or not doc['status'] or document_id is not None and doc['id'] != document_id):
+        raise SmApiRefused('document-response')
+    return doc
+
+
+def sm_memory_page(reply: Mapping[str, Any], *, document_id: str, page: int) -> dict:
+    """Read memory entries, not the document-list 'memories' array; preserve empty pages."""
+    if (not isinstance(reply, Mapping) or type(reply.get('status')) is not int or reply['status'] != 200
+            or not isinstance(reply.get('json'), dict) or type(page) is not int or page < 1
+            or type(document_id) is not str or not document_id):
+        raise SmApiRefused('memory-response')
+    data = reply['json']
+    entries, pagination = data.get('memoryEntries'), data.get('pagination')
+    if not isinstance(entries, list) or not isinstance(pagination, dict):
+        raise SmApiRefused('memory-response')
+    counts = {name: pagination.get(name) for name in ('currentPage', 'limit', 'totalItems', 'totalPages')}
+    if (any(type(value) is not int for value in counts.values()) or counts['currentPage'] != page
+            or not 1 <= counts['limit'] <= 1100 or counts['totalItems'] < 0 or counts['totalPages'] < 0
+            or len(entries) > counts['limit'] or len(entries) > counts['totalItems']
+            or counts['totalItems'] > 0 and not 1 <= page <= counts['totalPages']
+            or counts['totalItems'] == 0 and (counts['totalPages'] > 1 or page != 1 or entries)):
+        raise SmApiRefused('memory-pagination')
+    selected = []
+    identities = set()
+    for entry in entries:
+        if (not isinstance(entry, dict) or type(entry.get('id')) is not str or not entry['id']
+                or entry['id'] in identities or type(entry.get('memory')) is not str or not entry['memory'].strip()
+                or not isinstance(entry.get('documentIds'), list) or not entry['documentIds']
+                or any(type(value) is not str or not value for value in entry['documentIds'])):
+            raise SmApiRefused('memory-entry')
+        identities.add(entry['id'])
+        if document_id in entry['documentIds']:
+            selected.append(entry)
+    return {'entries': entries, 'selected': selected, 'pagination': pagination,
+            'memory_found': bool(selected)}
+
+
+def poll_sm_document(port: int, run: str, document_id: str, *, key: Any, request: Callable,
+                     admit: Callable, ceiling_s: float = 120.0, interval_s: float = 0.1,
+                     clock: Callable = time.monotonic, sleep: Callable = time.sleep) -> dict:
+    """Poll document completion under one deadline and fresh admission before every send."""
+    if (type(ceiling_s) not in {int, float} or not math.isfinite(ceiling_s) or not 0 < ceiling_s <= 300
+            or type(interval_s) not in {int, float} or not math.isfinite(interval_s) or not 0.01 <= interval_s <= 1):
+        raise SmApiRefused('document-poll-bounds')
+    method, path, body = sm_api_target('get_document', run, document_id=document_id)
+    start = clock()
+    if type(start) not in {int, float} or not math.isfinite(start):
+        raise SmApiRefused('document-poll-clock')
+    until, previous, polls = start + ceiling_s, start, 0
+
+    def remaining():
+        nonlocal previous
+        now = clock()
+        if type(now) not in {int, float} or not math.isfinite(now) or now < previous:
+            raise SmApiRefused('document-poll-clock')
+        previous = now
+        if now >= until:
+            raise SmApiRefused('document-poll-deadline')
+        return until - now
+
+    for _ in range(math.ceil(ceiling_s / interval_s) + 1):
+        remaining()
+        if admit() is not True:
+            raise SmApiRefused('incident-gate')
+        allowance = min(5.0, remaining())
+        reply = request(port, method, path, body=body, key=key, timeout_s=allowance)
+        polls += 1
+        remaining()  # A late 'done' response cannot turn the deadline into a pass.
+        doc = sm_document_response(reply, document_id=document_id)
+        if doc['status'] == 'done':
+            return {'document': doc, 'polls': polls, 'processing_complete': True, 'memory_success_proven': False}
+        if doc['status'] not in {'queued', 'processing'}:
+            raise SmApiRefused('document-processing-status')
+        sleep(min(interval_s, remaining()))
+    raise SmApiRefused('document-poll-deadline')
+
 EMBED_TAG = 'nvt3-bge-m3-d1:latest'
 EMBED_DIGEST = '561ce53b3730a15c5b08676cc985d4a0805d95353c6576e5ef982bc5cc3c5a65'
 

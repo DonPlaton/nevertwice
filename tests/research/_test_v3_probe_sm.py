@@ -1879,6 +1879,281 @@ def api_auth_body_controls():
 check('A8S-API-TAG-1: pinned paths and exact underscore tag limit refuse before input reads or labels', api_tag_controls)
 check('A8S-API-AUTH-BODY-1: pinned memory-list body has required containerTags and isolated numeric limit', api_auth_body_controls)
 
+REST_SM = load('v3_sm_operation_rest_under_test', 'research/v3/arms/_rest.py')
+
+
+def sm_operations_schema_fixture():
+    # Independent source-shaped OpenAPI fixture, not generated from the candidate declaration.
+    string = {'type': 'string'}
+    number = {'type': 'number'}
+    def obj(properties, required=()):
+        return {'type': 'object', 'properties': properties, 'required': list(required)}
+    def array(items):
+        return {'type': 'array', 'items': items}
+    def op(response, body=None, required=()):
+        value = {'responses': {'200': {'content': {'application/json': {'schema': response}}}}}
+        if body is not None:
+            value['requestBody'] = {'required': True, 'content': {'application/json': {'schema': obj(body, required)}}}
+        return value
+    pagination = obj({'currentPage': number, 'limit': number, 'totalItems': number, 'totalPages': number})
+    return {'openapi': '3.1.0', 'paths': {
+        '/v3/documents': {'post': op(obj({'id': string, 'status': string}),
+            {'content': string, 'containerTag': string}, ('content',))},
+        '/v3/documents/{id}': {'get': {**op(obj({'id': string, 'status': string, 'createdAt': string,
+            'memories': array(obj({'id': string, 'memory': string}))})),
+            'parameters': [{'name': 'id', 'in': 'path', 'required': True, 'schema': string}]}},
+        '/v4/search': {'post': op(obj({'results': array(obj({'id': string, 'memory': string, 'similarity': number})),
+            'total': number, 'timing': number}), {'q': string, 'containerTags': array(string), 'limit': number}, ('q',))},
+        '/v4/memories/list': {'post': op(obj({'memoryEntries': array(obj({'id': string, 'memory': string,
+            'documentIds': array(string)})), 'pagination': pagination}),
+            {'containerTags': array(string), 'limit': number, 'page': number}, ('containerTags',))},
+    }}
+
+
+def sm_operation_schema_replies(doc):
+    raw = json.dumps(doc, sort_keys=True, allow_nan=False).encode('utf-8')
+    return [{'status': 200, 'json': doc, 'sha256': hashlib.sha256(raw).hexdigest()} for _ in range(2)]
+
+
+def named_api_refusal(fn, reason):
+    try:
+        fn()
+    except P.SmApiRefused as exc:
+        return str(exc) == reason
+    return False
+
+
+def api_operation_declarations_controls():
+    calls = P.sm_api_calls(REST_SM)
+    if set(calls) != {'add_document', 'get_document', 'search', 'list_memories'}:
+        return False
+    signatures = {name: (c.method, c.path, c.body, c.response) for name, c in calls.items()}
+    expected = {
+        'add_document': ('POST', '/v3/documents', ('content', 'containerTag'), ('id', 'status')),
+        'get_document': ('GET', '/v3/documents/{id}', (), ('id', 'status', 'createdAt', 'memories[].id', 'memories[].memory')),
+        'search': ('POST', '/v4/search', ('q', 'containerTags[]', 'limit'),
+                   ('results[].id', 'results[].memory', 'results[].similarity', 'total', 'timing')),
+        'list_memories': ('POST', '/v4/memories/list', ('containerTags[]', 'limit', 'page'),
+            ('memoryEntries[].id', 'memoryEntries[].memory', 'memoryEntries[].documentIds[]',
+             'pagination.currentPage', 'pagination.limit', 'pagination.totalPages', 'pagination.totalItems')),
+    }
+    return signatures == expected and REST_SM.conformance(calls, sm_operations_schema_fixture()) == []
+
+
+def api_observed_schema_controls():
+    doc = sm_operations_schema_fixture()
+    replies = sm_operation_schema_replies(doc)
+    result = P.sm_openapi_contract(replies, REST_SM)
+    if (result.get('conformant') is not True or result.get('runtime_admission') is not False
+            or result.get('value_constraints_verified') is not False
+            or len(result['observed']) != 2 or result['observed'][0]['path'] != '/v3/openapi'
+            or result['observed'][1]['path'] != '/v4/openapi'):
+        return False
+    for count in (0, 1, 3):
+        if not named_api_refusal(lambda count=count: P.sm_openapi_contract(replies[:count] if count < 2 else replies + replies[:1], REST_SM), 'blocked:no-openapi'):
+            return False
+    for path, name in (('/v3/documents', 'add_document'), ('/v3/documents/{id}', 'get_document'),
+                       ('/v4/search', 'search'), ('/v4/memories/list', 'list_memories')):
+        changed = json.loads(json.dumps(doc))
+        del changed['paths'][path]
+        if not named_api_refusal(lambda: P.sm_openapi_contract(sm_operation_schema_replies(changed), REST_SM), 'blocked:schema-missing:' + name):
+            return False
+    changed = json.loads(json.dumps(doc))
+    schema = changed['paths']['/v3/documents']['post']['requestBody']['content']['application/json']['schema']
+    schema['required'].append('undeclared')
+    if not named_api_refusal(lambda: P.sm_openapi_contract(sm_operation_schema_replies(changed), REST_SM), 'blocked:schema-missing:add_document'):
+        return False
+    changed = json.loads(json.dumps(doc))
+    changed['components'] = {'schemas': {'LocalString': {'type': 'string'}}}
+    changed['paths']['/v3/documents']['post']['requestBody']['content']['application/json']['schema']['properties']['content'] = {'$ref': '#/components/schemas/LocalString'}
+    changed['paths']['/v4/memories/list']['post']['requestBody']['content']['application/json']['schema']['properties']['limit'] = {'anyOf': [{'type': 'string'}, {'type': 'integer'}]}
+    if P.sm_openapi_contract(sm_operation_schema_replies(changed), REST_SM)['conformant'] is not True:
+        return False
+    # A small repeated-reference DAG is larger to expand than to serialize. Budget it before the legacy checker.
+    changed = json.loads(json.dumps(doc))
+    original_body = changed['paths']['/v3/documents']['post']['requestBody']['content']['application/json']['schema']
+    branches = {'Branch0': original_body}
+    for index in range(1, 10):
+        ref = {'$ref': '#/components/schemas/Branch' + str(index - 1)}
+        branches['Branch' + str(index)] = {'type': 'object', 'allOf': [ref, dict(ref)]}
+    changed['components'] = {'schemas': branches}
+    changed['paths']['/v3/documents']['post']['requestBody']['content']['application/json']['schema'] = {'$ref': '#/components/schemas/Branch9'}
+    with mock.patch.object(REST_SM, 'conformance', side_effect=AssertionError('DAG exceeded the declared analysis budget')):
+        if not named_api_refusal(lambda: P.sm_openapi_contract(sm_operation_schema_replies(changed), REST_SM), 'blocked:schema-missing:add_document'):
+            return False
+    changed = json.loads(json.dumps(doc))
+    schema = changed['paths']['/v3/documents/{id}']['get']['responses']['200']['content']['application/json']['schema']
+    del schema['properties']['memories']
+    if not named_api_refusal(lambda: P.sm_openapi_contract(sm_operation_schema_replies(changed), REST_SM), 'blocked:schema-missing:get_document'):
+        return False
+    changed = json.loads(json.dumps(doc))
+    changed['paths']['/v4/search']['post']['requestBody']['content']['application/json']['schema'] = {'$ref': 'https://example.invalid/schema'}
+    if not named_api_refusal(lambda: P.sm_openapi_contract(sm_operation_schema_replies(changed), REST_SM), 'blocked:schema-missing:search'):
+        return False
+    changed = json.loads(json.dumps(doc))
+    pagination = changed['paths']['/v4/memories/list']['post']['responses']['200']['content']['application/json']['schema']['properties']['pagination']
+    del pagination['properties']['limit']
+    if not named_api_refusal(lambda: P.sm_openapi_contract(sm_operation_schema_replies(changed), REST_SM), 'blocked:schema-missing:list_memories'):
+        return False
+    for leaf in ({'type': 'boolean'}, {'$ref': 'https://example.invalid/leaf'}, {'$ref': '#/components/schemas/Cycle'}):
+        changed = json.loads(json.dumps(doc))
+        changed['components'] = {'schemas': {'Cycle': {'$ref': '#/components/schemas/Cycle'}}}
+        changed['paths']['/v3/documents']['post']['requestBody']['content']['application/json']['schema']['properties']['content'] = leaf
+        if not named_api_refusal(lambda: P.sm_openapi_contract(sm_operation_schema_replies(changed), REST_SM), 'blocked:schema-missing:add_document'):
+            return False
+    changed = json.loads(json.dumps(doc))
+    changed['paths']['/v3/documents']['post']['responses']['200']['content']['application/json']['schema']['properties']['id'] = {'type': 'object'}
+    if not named_api_refusal(lambda: P.sm_openapi_contract(sm_operation_schema_replies(changed), REST_SM), 'blocked:schema-missing:add_document'):
+        return False
+    changed = json.loads(json.dumps(doc))
+    changed['paths']['/v3/documents/{id}']['get']['parameters'][0]['schema'] = {'type': 'number'}
+    if not named_api_refusal(lambda: P.sm_openapi_contract(sm_operation_schema_replies(changed), REST_SM), 'blocked:schema-missing:get_document'):
+        return False
+    # A recursive allOf graph must be bounded before calling the legacy checker.
+    changed = json.loads(json.dumps(doc))
+    changed['components'] = {'schemas': {'Recursive': {'type': 'object', 'allOf': [{'$ref': '#/components/schemas/Recursive'}]}}}
+    changed['paths']['/v3/documents']['post']['requestBody']['content']['application/json']['schema'] = {'$ref': '#/components/schemas/Recursive'}
+    with mock.patch.object(REST_SM, 'conformance', side_effect=AssertionError('recursive graph reached unbounded checker')):
+        if not named_api_refusal(lambda: P.sm_openapi_contract(sm_operation_schema_replies(changed), REST_SM), 'blocked:schema-missing:add_document'):
+            return False
+    for invalid in ({'status': True, 'json': doc}, {'status': 404, 'json': doc}, {'status': 200, 'json': []}):
+        if not named_api_refusal(lambda invalid=invalid: P.sm_openapi_contract([invalid, replies[1]], REST_SM), 'blocked:no-openapi'):
+            return False
+    for path, field, name in (('/v3/documents', 'id', 'add_document'),
+                              ('/v4/memories/list', 'pagination', 'list_memories')):
+        changed = json.loads(json.dumps(doc))
+        changed['openapi'] = '3.0.3'
+        leaf = changed['paths'][path]['post']['responses']['200']['content']['application/json']['schema']['properties'][field]
+        if field == 'pagination':
+            leaf = leaf['properties']['limit']
+        leaf['nullable'] = True
+        if not named_api_refusal(lambda: P.sm_openapi_contract(sm_operation_schema_replies(changed), REST_SM), 'blocked:schema-missing:' + name):
+            return False
+    replies[0]['sha256'] = 'unobserved'
+    return named_api_refusal(lambda: P.sm_openapi_contract(replies, REST_SM), 'openapi-observation-hash')
+
+
+def api_operation_targets_controls():
+    if P.sm_api_target('add_document', 'unit', content='  kept content  ') != ('POST', '/v3/documents', {'content': '  kept content  ', 'containerTag': 'unit_u1'}):
+        return False
+    if P.sm_api_target('get_document', 'unit', document_id='a/b?c%20') != ('GET', '/v3/documents/a%2Fb%3Fc%2520', None):
+        return False
+    if P.sm_api_target('search', 'unit', query='  question  ') != ('POST', '/v4/search', {'q': 'question', 'containerTags': ['unit_u1'], 'limit': 10}):
+        return False
+    expected = ('POST', '/v4/memories/list', {'containerTags': ['unit_u1'], 'limit': 10, 'page': 2})
+    if P.sm_api_target('list_memories', 'unit', page=2) != expected:
+        return False
+    for bad in (None, True, {}, 'undeclared'):
+        if not named_api_refusal(lambda bad=bad: P.sm_api_target(bad, 'unit'), 'undeclared-operation'):
+            return False
+    for bad in (None, True, '', '.', '..', 'a\n', 'a\x00', 'a' * 256):
+        if not named_api_refusal(lambda bad=bad: P.sm_api_target('get_document', 'unit', document_id=bad), 'document-id'):
+            return False
+    for bad in (0, True, -1, 1101, 1.5):
+        if not named_api_refusal(lambda bad=bad: P.sm_api_target('list_memories', 'unit', page=bad), 'memory-page'):
+            return False
+    return named_api_refusal(lambda: P.sm_api_target('add_document', 'unit', content=' '), 'document-content') and named_api_refusal(lambda: P.sm_api_target('search', 'unit', query=' '), 'search-query')
+
+
+def api_memory_response_controls():
+    reply = {'status': 200, 'json': {'memoryEntries': [
+        {'id': 'memory1', 'memory': 'source-backed content', 'documentIds': ['doc1']}],
+        'pagination': {'currentPage': 1, 'limit': 10, 'totalItems': 1, 'totalPages': 1}}}
+    result = P.sm_memory_page(reply, document_id='doc1', page=1)
+    if result['memory_found'] is not True or len(result['selected']) != 1:
+        return False
+    if P.sm_memory_page(reply, document_id='foreign_doc', page=1)['memory_found'] is not False:
+        return False
+    empty = {'status': 200, 'json': {'memoryEntries': [], 'pagination': {'currentPage': 1, 'limit': 10, 'totalItems': 0, 'totalPages': 0}}}
+    if P.sm_memory_page(empty, document_id='doc1', page=1)['memory_found'] is not False:
+        return False
+    changed = json.loads(json.dumps(reply))
+    changed['json']['memories'] = changed['json'].pop('memoryEntries')
+    if not named_api_refusal(lambda: P.sm_memory_page(changed, document_id='doc1', page=1), 'memory-response'):
+        return False
+    for name, value in (('currentPage', True), ('currentPage', 2), ('limit', 0), ('limit', 1101), ('totalItems', 0), ('totalPages', 0)):
+        changed = json.loads(json.dumps(reply))
+        changed['json']['pagination'][name] = value
+        if not named_api_refusal(lambda: P.sm_memory_page(changed, document_id='doc1', page=1), 'memory-pagination'):
+            return False
+    for field, value in (('id', ''), ('memory', ' '), ('documentIds', []), ('documentIds', [True])):
+        changed = json.loads(json.dumps(reply))
+        changed['json']['memoryEntries'][0][field] = value
+        if not named_api_refusal(lambda: P.sm_memory_page(changed, document_id='doc1', page=1), 'memory-entry'):
+            return False
+    changed = json.loads(json.dumps(reply))
+    changed['json']['memoryEntries'] *= 2
+    changed['json']['pagination']['totalItems'] = 2
+    return named_api_refusal(lambda: P.sm_memory_page(changed, document_id='doc1', page=1), 'memory-entry')
+
+
+def api_document_poll_controls():
+    class Clock:
+        def __init__(self): self.now = 0.0
+        def __call__(self): return self.now
+        def sleep(self, seconds): self.now += seconds
+    clock = Clock()
+    replies = iter([{'status': 200, 'json': {'id': 'doc1', 'status': state}} for state in ('queued', 'processing', 'done')])
+    sends, admissions = [], []
+    key = object()
+    def request(*args, **kwargs):
+        sends.append((args, kwargs, clock.now))
+        clock.now += 0.1
+        return next(replies)
+    def admit():
+        admissions.append(clock.now)
+        return True
+    result = P.poll_sm_document(1234, 'unit', 'doc1', key=key, request=request, admit=admit,
+        ceiling_s=0.75, clock=clock, sleep=clock.sleep)
+    if result['polls'] != 3 or result['processing_complete'] is not True or result['memory_success_proven'] is not False:
+        return False
+    if len(admissions) != 3 or any(args != (1234, 'GET', '/v3/documents/doc1') or kwargs['key'] is not key
+        or kwargs['body'] is not None or not 0 < kwargs['timeout_s'] <= 0.75 - when for args, kwargs, when in sends):
+        return False
+    clock = Clock()
+    def late(*args, **kwargs):
+        clock.now = 1
+        return {'status': 200, 'json': {'id': 'doc1', 'status': 'done'}}
+    if not named_api_refusal(lambda: P.poll_sm_document(1234, 'unit', 'doc1', key=key, request=late, admit=lambda: True,
+            ceiling_s=0.5, clock=clock, sleep=clock.sleep), 'document-poll-deadline'):
+        return False
+    blocked_send = mock.Mock(side_effect=AssertionError('admission must precede request'))
+    clock = Clock()
+    if not named_api_refusal(lambda: P.poll_sm_document(1234, 'unit', 'doc1', key=key, request=blocked_send, admit=lambda: False,
+            clock=clock, sleep=clock.sleep), 'incident-gate') or blocked_send.called:
+        return False
+    # Admission itself consumes time; recompute the allowance before touching the socket.
+    clock = Clock()
+    def slow_admit():
+        clock.now = 1
+        return True
+    if not named_api_refusal(lambda: P.poll_sm_document(1234, 'unit', 'doc1', key=key, request=blocked_send,
+            admit=slow_admit, ceiling_s=0.5, clock=clock, sleep=clock.sleep), 'document-poll-deadline') or blocked_send.called:
+        return False
+    # No admission is consulted after the initial deadline has already elapsed.
+    ticks = iter((0.0, 1.0))
+    untouched_admission = mock.Mock(return_value=True)
+    if not named_api_refusal(lambda: P.poll_sm_document(1234, 'unit', 'doc1', key=key, request=blocked_send,
+            admit=untouched_admission, ceiling_s=0.5, clock=lambda: next(ticks)), 'document-poll-deadline'):
+        return False
+    if untouched_admission.called or blocked_send.called:
+        return False
+    for state in ('error', 'unknown'):
+        clock = Clock()
+        reply = {'status': 200, 'json': {'id': 'doc1', 'status': state}}
+        if not named_api_refusal(lambda: P.poll_sm_document(1234, 'unit', 'doc1', key=key, request=lambda *a, **k: reply,
+                admit=lambda: True, clock=clock, sleep=clock.sleep), 'document-processing-status'):
+            return False
+    reply = {'status': 200, 'json': {'id': 'foreign_doc', 'status': 'done'}}
+    return named_api_refusal(lambda: P.sm_document_response(reply, document_id='doc1'), 'document-response')
+
+
+check('A8S-API-CALLS-1: exactly four source-backed operation declarations carry used request and response fields', api_operation_declarations_controls)
+check('A8S-API-SCHEMA-1: both observed specs carry every declared field or name the blocked operation', api_observed_schema_controls)
+check('A8S-API-TARGETS-1: exact versioned targets, whole quoted ids, fresh tags and bounded inputs', api_operation_targets_controls)
+check('A8S-API-MEMORIES-1: only memory entries tied to the created document establish nonempty memory', api_memory_response_controls)
+check('A8S-API-POLL-1: each send has fresh admission and remaining deadline, late done cannot pass or prove memory', api_document_poll_controls)
+
 failed = sum(not good for _, good in ROWS)
 print(f'v3 sm core: {len(ROWS) - failed} passed, {failed} failed')
 sys.exit(1 if failed else 0)
