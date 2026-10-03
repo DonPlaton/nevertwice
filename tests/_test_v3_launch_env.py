@@ -683,7 +683,7 @@ try:
                "NetSecurity.psd1';"),
            "reads only": not re.search(r"\b(?:Set|New|Remove|Enable|Disable|Rename|Copy|Add|Export|Invoke|Start|"
                                        r"Stop|Out|Register|Install|Update|Clear|Write)-", script),
-           "frozen literal": hashlib.sha256(script.encode("utf-8")).hexdigest() == "c18069e4e81e976060d2bbe141d7135d906230a4087e612b5706ba0cf8410a78",
+           "frozen literal": hashlib.sha256(script.encode("utf-8")).hexdigest() == "56e630b6a76b040358629952efd92ab50c77828c588ad4fd5c8cd585ee6d2b6d",
            "no double quote": '"' not in script, "json": script.endswith("-Depth 4 -Compress")}
 except AttributeError as e:
     fw6 = {"AttributeError": str(e)}
@@ -708,6 +708,81 @@ except (AttributeError, ValueError):
     dependency_ok = False
 check("FWR-13: autoload-disabled readonly reader explicitly imports its JSON serializer from System32 before use",
       dependency_ok)
+
+# These controls protect collection, not the policy verdict or runtime serialization.
+# Each clause requires a rule-associated filter and its raw scope, without Any defaults.
+def _fw_scope_evidence(bindings, projections):
+    script = L.FW_READ_SCRIPT
+    return (all(script.count(binding) == 1 for binding in bindings)
+            and all(script.count(projection) == 1 for projection in projections)
+            and all(script.index(binding) < script.index(projection)
+                    for binding, projection in zip(bindings, projections)))
+
+try:
+    address_port_scope = _fw_scope_evidence(
+        ('$a=$r|Get-NetFirewallAddressFilter;', '$f=$r|Get-NetFirewallPortFilter;'),
+        ('local_address=@($a.LocalAddress|ForEach-Object{[string]$_});',
+         'remote_port=@($f.RemotePort|ForEach-Object{[string]$_});'))
+    dynamic_scope = ("dynamic_transport=[string]$pf['DynamicTransport'].Value;" in L.FW_READ_SCRIPT
+                     and "$pf=$f.PSBase.CimInstanceProperties;if($null -eq $pf['DynamicTransport']){throw 'fw-port-property-missing'};"
+                         in L.FW_READ_SCRIPT)
+except (AttributeError, ValueError):
+    address_port_scope = dynamic_scope = False
+check('FWR-14: associated address and port filters retain local address, remote port and dynamic transport scopes',
+      address_port_scope and dynamic_scope)
+
+try:
+    interface_service_scope = _fw_scope_evidence(
+        ('$i=$r|Get-NetFirewallInterfaceFilter;', '$t=$r|Get-NetFirewallInterfaceTypeFilter;',
+         '$v=$r|Get-NetFirewallServiceFilter;', '$app=$_;$r=$app|Get-NetFirewallRule;'),
+        ('interface_alias=@($i.InterfaceAlias|ForEach-Object{[string]$_});',
+         'interface_type=[string]$t.InterfaceType;', 'service=[string]$v.Service;', 'package=[string]$app.Package;'))
+except (AttributeError, ValueError):
+    interface_service_scope = False
+check('FWR-15: interface, interface type, service and package scopes remain associated with the same program rule',
+      interface_service_scope)
+
+try:
+    security_scope = ('$s=$r|Get-NetFirewallSecurityFilter;' in L.FW_READ_SCRIPT
+        and all(L.FW_READ_SCRIPT.count(name + '=[string]$s.' + member + ';') == 1
+                for name, member in (('authentication', 'Authentication'), ('encryption', 'Encryption'),
+                                    ('local_user', 'LocalUser'), ('remote_user', 'RemoteUser'), ('remote_machine', 'RemoteMachine')))
+        and L.FW_READ_SCRIPT.index('$s=$r|Get-NetFirewallSecurityFilter;')
+            < L.FW_READ_SCRIPT.index('authentication=[string]$s.Authentication;'))
+except (AttributeError, ValueError):
+    security_scope = False
+check('FWR-16: authentication, encryption and user or machine restrictions are raw security-filter evidence', security_scope)
+
+try:
+    enforcement_scope = ("enforcement=@($raw['EnforcementStatus'].Value|ForEach-Object{[int]$_});primary_status=[int]$raw['PrimaryStatus'].Value;" in L.FW_READ_SCRIPT
+                         and "$raw=$r.PSBase.CimInstanceProperties;" in L.FW_READ_SCRIPT
+                         and L.FW_READ_SCRIPT.index('$r=$app|Get-NetFirewallRule;')
+                             < L.FW_READ_SCRIPT.index('enforcement=@('))
+except (AttributeError, ValueError):
+    enforcement_scope = False
+check('FWR-17: rule evidence includes actual ActiveStore enforcement states rather than enabled alone', enforcement_scope)
+
+try:
+    script = L.FW_READ_SCRIPT
+    application_scope = ("foreach($n in @('EnforcementStatus','PrimaryStatus','Owner','Platforms','RemoteDynamicKeywordAddresses','PolicyAppId','PackageFamilyName'))"
+                         "{if($null -eq $raw[$n]){throw 'fw-rule-property-missing'}};" in script
+        and all(projection in script for projection in (
+            "owner=[string]$raw['Owner'].Value;",
+            "platforms=@(if($null -ne $raw['Platforms'].Value){$raw['Platforms'].Value|ForEach-Object{[string]$_}});",
+            "remote_dynamic_keyword_addresses=@(if($null -ne $raw['RemoteDynamicKeywordAddresses'].Value){$raw['RemoteDynamicKeywordAddresses'].Value|ForEach-Object{[string]$_}});",
+            "policy_app_id=[string]$raw['PolicyAppId'].Value;", "package_family_name=[string]$raw['PackageFamilyName'].Value;")))
+except (AttributeError, ValueError):
+    application_scope = False
+check('FWR-18: additional owner, platform, dynamic-address and application constraints are present raw rule properties', application_scope)
+
+try:
+    script = L.FW_READ_SCRIPT
+    nullable_arrays = all(script.count("if($null -ne $raw['" + member + "'].Value){$raw['" + member
+                                      + "'].Value|ForEach-Object{[string]$_}}") == 1
+                          for member in ('Platforms', 'RemoteDynamicKeywordAddresses'))
+except AttributeError:
+    nullable_arrays = False
+check('FWR-19: present-null unrestricted arrays emit no item while every non-null array element is preserved', nullable_arrays)
 
 # The reserved executable stays role-bound even if a caller's contract grants a general binary exception.
 try:

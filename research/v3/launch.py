@@ -118,7 +118,7 @@ CREATE_BREAKAWAY_FROM_JOB = 0x01000000
 #: *FW_READ_ARGV] and nothing else, and nothing else runs that binary: it is the role's exception, not the contract's.
 #: The script reads (NetSecurity by its full path, module autoload off, so no module path is searched), changes
 #: nothing, and asks about the program in FW_READ_PROGRAM_ENV - never an argument. Its output is one compact JSON
-#: object in UTF-8: the program's rules with their port and address filters and OverrideBlockRules, every rule that
+#: object in UTF-8: the program's rules with port/address/interface/service/security scopes and enforcement, every rule that
 #: overrides block rules, and the three profiles. The property names are UNVERIFIED until one read-only dry run under
 #: the filesystem witness (the auditor's GO after this commit).
 FW_READ_ROLE = "fw-read"
@@ -132,12 +132,27 @@ FW_READ_SCRIPT = (
     "$p=$env:NVT3_FW_PROGRAM;"
     "$rules=@(Get-NetFirewallApplicationFilter -PolicyStore ActiveStore|Where-Object{"
     "[Environment]::ExpandEnvironmentVariables([string]$_.Program) -eq $p}|ForEach-Object{"
-    "$r=$_|Get-NetFirewallRule;$f=$r|Get-NetFirewallPortFilter;$a=$r|Get-NetFirewallAddressFilter;"
-    "$s=$r|Get-NetFirewallSecurityFilter;"
+    "$app=$_;$r=$app|Get-NetFirewallRule;$f=$r|Get-NetFirewallPortFilter;$a=$r|Get-NetFirewallAddressFilter;"
+    "$s=$r|Get-NetFirewallSecurityFilter;$i=$r|Get-NetFirewallInterfaceFilter;"
+    "$t=$r|Get-NetFirewallInterfaceTypeFilter;$v=$r|Get-NetFirewallServiceFilter;"
+    "$raw=$r.PSBase.CimInstanceProperties;foreach($n in @('EnforcementStatus','PrimaryStatus','Owner','Platforms',"
+    "'RemoteDynamicKeywordAddresses','PolicyAppId','PackageFamilyName')){if($null -eq $raw[$n]){throw 'fw-rule-property-missing'}};"
+    "$pf=$f.PSBase.CimInstanceProperties;if($null -eq $pf['DynamicTransport']){throw 'fw-port-property-missing'};"
     "[ordered]@{name=[string]$r.Name;enabled=[string]$r.Enabled;direction=[string]$r.Direction;"
     "action=[string]$r.Action;profile=[string]$r.Profile;protocol=[string]$f.Protocol;"
     "local_port=@($f.LocalPort|ForEach-Object{[string]$_});"
     "remote_address=@($a.RemoteAddress|ForEach-Object{[string]$_});"
+    "local_address=@($a.LocalAddress|ForEach-Object{[string]$_});"
+    "remote_port=@($f.RemotePort|ForEach-Object{[string]$_});"
+    "icmp_type=@($f.IcmpType|ForEach-Object{[string]$_});dynamic_transport=[string]$pf['DynamicTransport'].Value;"
+    "interface_alias=@($i.InterfaceAlias|ForEach-Object{[string]$_});interface_type=[string]$t.InterfaceType;"
+    "service=[string]$v.Service;package=[string]$app.Package;"
+    "authentication=[string]$s.Authentication;encryption=[string]$s.Encryption;"
+    "local_user=[string]$s.LocalUser;remote_user=[string]$s.RemoteUser;remote_machine=[string]$s.RemoteMachine;"
+    "enforcement=@($raw['EnforcementStatus'].Value|ForEach-Object{[int]$_});primary_status=[int]$raw['PrimaryStatus'].Value;"
+    "owner=[string]$raw['Owner'].Value;platforms=@(if($null -ne $raw['Platforms'].Value){$raw['Platforms'].Value|ForEach-Object{[string]$_}});"
+    "remote_dynamic_keyword_addresses=@(if($null -ne $raw['RemoteDynamicKeywordAddresses'].Value){$raw['RemoteDynamicKeywordAddresses'].Value|ForEach-Object{[string]$_}});"
+    "policy_app_id=[string]$raw['PolicyAppId'].Value;package_family_name=[string]$raw['PackageFamilyName'].Value;"
     "override_block=[string]$s.OverrideBlockRules}});"
     "$over=@(Get-NetFirewallSecurityFilter -PolicyStore ActiveStore|Where-Object{$_.OverrideBlockRules -eq $true}|"
     "ForEach-Object{$r=$_|Get-NetFirewallRule;[ordered]@{name=[string]$r.Name;enabled=[string]$r.Enabled;"
