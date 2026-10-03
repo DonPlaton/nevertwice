@@ -132,6 +132,17 @@ for n, (mod, argv) in enumerate(MAINS):
     check(f"G-3 {label}: refused by name at the contract - no window, no run directory",
           got.startswith("refused:") and "test sandbox" in got and run_dirs() == before, got[:200])
 
+# The Supermemory CLI returns its explicit rc2 before production setup under the sandbox.
+sm_results = []
+if GUARD_OK:
+    SM = _load("v3_guard_probe_sm", V3 / "probe_sm.py")
+    sm_outcome = outcome(lambda: sm_results.append(SM.main([
+        "--run", "guardtest", "--go", "--proxy-python", PY])))
+else:
+    sm_outcome = "guard absent - main not called"
+check("G-3 probe_sm: explicit sandbox refusal rc2 precedes production setup and live labels",
+      GUARD_OK and sm_results == [2] and run_dirs() == before, sm_outcome)
+
 print("\n- G-4: the census - no test reaches the real Contract.default() -")
 hits = []
 for f in sorted((ROOT / "tests").rglob("*.py")):

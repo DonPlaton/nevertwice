@@ -101,6 +101,8 @@ NOT_FROM_THREADS = {
     "research/v3/pins_apply.py::_load_table": _CLI,
     "research/v3/place_local_v2.py::_load": _CLI,
     "research/v3/probe_a8.py::_mod": _CLI,
+    "research/v3/probe_sm.py::load": "main default-entry setup, before real_sm_deps/run_sm_p0p2 "
+                                      "and any runtime thread creation",
     "research/v3/run_v3.py::load": "run_smoke / main / probe() setup, the main thread before the pools and the gate "
                                    "thread start (probe's send() closure loads nothing)",
     "research/v3/run_v3_gate.py::_load": "_incidents() in GateDriver.poll - the one gate thread, and stop() after its "
