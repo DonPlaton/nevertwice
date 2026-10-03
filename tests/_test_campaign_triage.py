@@ -210,7 +210,8 @@ _src = [f for f in _tracked if f not in T.CLOSURE_EXCLUDED_FILES and T.MODEL_CAL
 #: upstream, the fake Ollama answers /api/generate as a TRAP (recorded, 403), and the suite posts to them only on
 #: 127.0.0.1 - nothing reaches a real endpoint. Caught this time by running this census on the candidate before it was
 #: reported.
-CENSUS_32 = {
+#: Connected Supermemory P3: + its diagnostic suite = 33. The HTTP calls target owned loopback fakes only.
+CENSUS_33 = {
     "nevertwice/_engine_config.py", "nevertwice/consolidate_memory.py", "research/_ollama_symmetry_probe.py",
     "research/embed_universal/gen_corpus.py", "research/embed_universal/gen_pairs.py", "research/frontier_eval.py",
     "research/gen_code_sessions.py", "research/invariants_lab/measure_coldstart.py",
@@ -224,10 +225,11 @@ CENSUS_32 = {
     "tests/research/_test_v3_runner_nevertwice.py",
     "research/v3/sched_ctl.py", "tests/research/_test_v3_sched_ctl.py",   # TB4.11a A3: the unload call (keep_alive 0)
     "research/v3/arms/runner_nevertwice.py",                                 # R-EMBED-PATH: the leg's OLLAMA_URL path
-    "research/v3/probe_upstream.py", "tests/research/_test_v3_probe_upstream.py"}   # A8 C5a-2b: the probes' fakes
-check("thirty-two tracked sources name a generation endpoint - exactly these, so the rule has a population",
-      set(_src) == CENSUS_32 and len(CENSUS_32) == 32,
-      f"added {sorted(set(_src) - CENSUS_32)}, gone {sorted(CENSUS_32 - set(_src))}")
+    "research/v3/probe_upstream.py", "tests/research/_test_v3_probe_upstream.py",
+    "tests/research/_test_v3_probe_sm.py"}   # A8: owned diagnostic fake HTTP calls
+check("thirty-three tracked sources name a generation endpoint - exactly these, so the rule has a population",
+      set(_src) == CENSUS_33 and len(CENSUS_33) == 33,
+      f"added {sorted(set(_src) - CENSUS_33)}, gone {sorted(CENSUS_33 - set(_src))}")
 check("and the generators it could not see before are among them",
       {"research/gen_code_sessions.py", "research/frontier_eval.py",
        "research/token_ab.py"} <= set(_src))

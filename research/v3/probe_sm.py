@@ -1057,6 +1057,453 @@ def sm_state_seal(*, documents: Sequence[Mapping[str, Any]], memories: Sequence[
         raise SmApiRefused('state-seal-json') from None
     return seal
 
+SM_LEG_HEADER_ALLOW = frozenset({'accept', 'accept-encoding', 'connection', 'content-length',
+                                 'content-type', 'host', 'user-agent'})
+SM_DIAGNOSTIC_DOCUMENT = 'Rina keeps the cobalt telescope in locker 42 at the Seoul observatory.'
+SM_DIAGNOSTIC_QUERY = 'Where does Rina keep the cobalt telescope?'
+
+
+class OwnedProxyStage:
+    """Retain a bounded stage reset before the first potentially effective mutation."""
+
+    def __init__(self, port: int, key: Any, resources: list, *, request: Callable = sm_request) -> None:
+        self.port, self.key, self.request = _port(port), key, request
+        self.touched, self.closed, self.result = False, False, None
+        resources.append(('proxy-stage', self.close,
+                          lambda row: isinstance(row, dict) and row.get('complete') is True))
+
+    def prepare(self, *, timeout_s: float) -> bool:
+        if self.closed or type(timeout_s) not in {int, float} or not math.isfinite(timeout_s) or not 0 < timeout_s <= 2:
+            raise SmApiRefused('proxy-stage-bounds')
+        self.touched = True  # A timeout can arrive after the proxy has already changed its stage.
+        reply = self.request(self.port, 'POST', '/stage', body={'block': '_a8/p0p2', 'stage': 'write'},
+                             key=self.key, timeout_s=timeout_s)
+        return (isinstance(reply, dict) and type(reply.get('status')) is int and reply['status'] == 200
+                and isinstance(reply.get('json'), dict) and reply['json'].get('ok') is True)
+
+    def close(self) -> dict:
+        if self.closed:
+            return self.result
+        problems = []
+        if self.touched:
+            try:
+                reply = self.request(self.port, 'POST', '/stage', body={'block': None, 'stage': None},
+                                     key=self.key, timeout_s=2.0)
+                if (not isinstance(reply, dict) or type(reply.get('status')) is not int or reply['status'] != 200
+                        or not isinstance(reply.get('json'), dict) or reply['json'].get('ok') is not True):
+                    problems.append('proxy-stage-reset')
+            except Exception as exc:
+                problems.append('proxy-stage-reset:' + type(exc).__name__)
+        self.closed = True
+        self.result = {'complete': not problems, 'problems': problems, 'reset_requested': self.touched}
+        return self.result
+
+
+def _sm_route_rows(rows: Any, run: str, unit: str) -> list[dict]:
+    """Select exactly one declared product unit; unknown product attribution refuses."""
+    sm_container_tag(run)
+    if unit != 'u1' or not isinstance(rows, (tuple, list)) or len(rows) > 2000:
+        raise SmApiRefused('route-input')
+    selected = []
+    for row in rows:
+        if not isinstance(row, dict) or type(row.get('arm')) is not str:
+            raise SmApiRefused('route-record')
+        if row['arm'] != ARM:
+            continue
+        if row.get('unit') != run + '.' + unit:
+            raise SmApiRefused('route-attribution')
+        selected.append(row)
+    return selected
+
+
+def sm_llm_route_fields(calls: Any, upstream_requests: Any, *, run: str, model: str, unit: str = 'u1') -> dict:
+    """Use actual existing proxy fields, not scheduler traffic or source-only parameters."""
+    if type(model) is not str or not model:
+        raise SmApiRefused('llm-model-input')
+    selected = _sm_route_rows(calls, run, unit)
+    if not selected:
+        raise SmApiRefused('blocked:no-llm-call')
+    if not isinstance(upstream_requests, (tuple, list)) or len(upstream_requests) > 2000:
+        raise SmApiRefused('llm-body-observation')
+    bodies = {}
+    for observed in upstream_requests:
+        if (not isinstance(observed, dict) or type(observed.get('path')) is not str
+                or observed['path'] not in {'/chat/completions', '/v1/chat/completions'}
+                or not isinstance(observed.get('body'), dict)):
+            raise SmApiRefused('llm-body-observation')
+        try:
+            raw = json.dumps(observed['body'], sort_keys=True, separators=(',', ':'), ensure_ascii=False, allow_nan=False).encode('utf-8')
+        except (ValueError, TypeError, RecursionError):
+            raise SmApiRefused('llm-body-observation') from None
+        digest = hashlib.sha256(raw + b'\0' + ARM.encode('utf-8')).hexdigest()
+        bodies.setdefault(digest, []).append(observed['body'])
+    params = []
+    agent_calls = 0
+    for row in selected:
+        if row.get('tool_violation') is True or row.get('refused') == 'tool_violation':
+            raise SmApiRefused('blocked:tools-refused')
+        if (row.get('port_role') != 'write' or row.get('endpoint') != 'v1' or row.get('method') != 'POST'
+                or row.get('stage') != 'write' or row.get('requested_model') != model
+                or row.get('response_model') != model or type(row.get('status')) is not int or row['status'] != 200
+                or row.get('complete') is not True or row.get('client_abandoned') is not False
+                or row.get('tool_violation') is not False or row.get('refused', 'missing') is not None
+                or row.get('upstream_error') is not None):
+            raise SmApiRefused('llm-route-record')
+        offered, called = row.get('tools_offered'), row.get('tools_called')
+        digest = row.get('request_key')
+        if type(digest) is not str or not re.fullmatch(r'[0-9a-f]{64}', digest) or not bodies.get(digest):
+            raise SmApiRefused('llm-body-observation')
+        body = bodies[digest].pop()
+        raw_tools = body.get('tools', [])
+        if (not isinstance(raw_tools, list) or any(not isinstance(tool, dict) or tool.get('type') != 'function'
+                or not isinstance(tool.get('function'), dict) or type(tool['function'].get('name')) is not str for tool in raw_tools)
+                or [tool['function']['name'] for tool in raw_tools] != offered):
+            raise SmApiRefused('llm-body-tools')
+        if (row.get('parse_ok') is not True or row.get('json_ok') is not None and row.get('json_ok') is not True
+                or row.get('content_empty') is not False):
+            raise SmApiRefused('llm-response-unusable')
+        if (not isinstance(offered, list) or any(type(value) is not str for value in offered)
+                or offered and (len(offered) != len(TOOLS) or set(offered) != set(TOOLS))
+                or not isinstance(called, list) or any(type(value) is not str or value not in TOOLS for value in called)):
+            raise SmApiRefused('llm-tools-baseline')
+        if ('temperature' not in row or 'max_tokens' not in row
+                or row['temperature'] is not None and (type(row['temperature']) not in {int, float} or not math.isfinite(row['temperature']))
+                or row['max_tokens'] is not None and (type(row['max_tokens']) is not int or row['max_tokens'] <= 0)):
+            raise SmApiRefused('llm-parameters')
+        if offered:
+            if 'temperature' in body or row['temperature'] is not None or row['max_tokens'] != 12000:
+                raise SmApiRefused('llm-parameters')
+            classification = 'observed-exact-seven-tool-set'
+            agent_calls += 1
+        else:
+            if called:
+                raise SmApiRefused('llm-tools-baseline')
+            classification = 'observed-tool-free-unclassified'
+        if row['temperature'] != body.get('temperature') or row['max_tokens'] != body.get('max_tokens'):
+            raise SmApiRefused('llm-body-parameters')
+        params.append({'model': model, 'max_tokens': row['max_tokens'], 'temperature': row['temperature'],
+                       'temperature_present': 'temperature' in body,
+                       'tools_offered': sorted(offered), 'tools_called': list(called),
+                       'classification': classification,
+                       'thinking_sent': row.get('thinking_sent'), 'thinking_injected': row.get('thinking_injected')})
+    if agent_calls == 0:
+        raise SmApiRefused('blocked:no-llm-call')
+    return {'source': 'calls.jsonl', 'unit': run + '.' + unit, 'calls': len(selected), 'parameters': params,
+            'memory_agent_candidates': agent_calls, 'trace_identity_proven': False,
+            'source_schema_pins': dict(SCHEMAS), 'runtime_schema_digests_observed': False}
+
+
+def sm_embed_route_fields(ollama: Any, upstream_requests: Any, *, run: str, embed_model: str,
+                          unit: str = 'u1') -> dict:
+    """Pair positive attributed leg calls with independently observed fake-upstream headers."""
+    if type(embed_model) is not str or not embed_model:
+        raise SmApiRefused('embed-model-input')
+    selected = _sm_route_rows(ollama, run, unit)
+    if not selected:
+        raise SmApiRefused('blocked:no-embed-call')
+    listing_paths = {'/api/tags', '/api/show', '/api/version', '/api/ps', '/v1/models'}
+    leg_counts, embedding_calls = {}, 0
+    for row in selected:
+        path = row.get('path')
+        listing = type(path) is str and path in listing_paths
+        if (path != '/v1/embeddings' and not listing or row.get('is_embed') is not (not listing)
+                or row.get('is_llm') is not False or row.get('fallback_local') is not False
+                or row.get('stage') not in ({None, 'write'} if listing else {'write'})
+                or row.get('client_auth') not in ({'none', 'bearer'} if listing else {'bearer'})
+                or type(row.get('status')) is not int or row['status'] != 200
+                or row.get('error', 'missing') is not None):
+            raise SmApiRefused('embed-route-record')
+        leg_counts[path] = leg_counts.get(path, 0) + 1
+        embedding_calls += not listing
+    if not embedding_calls:
+        raise SmApiRefused('blocked:no-embed-call')
+    if not isinstance(upstream_requests, (tuple, list)) or not 0 < len(upstream_requests) <= 2000:
+        raise SmApiRefused('embed-upstream-record')
+    embeds, names_seen, upstream_counts = 0, set(), {}
+    for row in upstream_requests:
+        if not isinstance(row, dict):
+            raise SmApiRefused('embed-upstream-record')
+        path = row.get('path')
+        listing = type(path) is str and path in listing_paths
+        method = 'POST' if type(path) is str and path in {'/api/show', '/v1/embeddings'} else 'GET'
+        if path != '/v1/embeddings' and not listing or row.get('method') != method:
+            raise SmApiRefused('embed-upstream-record')
+        names = row.get('header_names')
+        if (not isinstance(names, list) or any(type(name) is not str or not name or name != name.lower() for name in names)
+                or len(set(names)) != len(names) or not {'host', 'content-length'} <= set(names)
+                or not set(names) <= SM_LEG_HEADER_ALLOW):
+            raise SmApiRefused('embedding-header-boundary')
+        if not isinstance(row.get('body'), dict) or (not listing or path == '/api/show') and row['body'].get('model') != embed_model:
+            raise SmApiRefused('embed-upstream-model')
+        if not listing:
+            inputs = row['body'].get('input')
+            inputs = [inputs] if type(inputs) is str else inputs
+            if not isinstance(inputs, list) or not inputs or any(type(value) is not str or not value.strip() for value in inputs):
+                raise SmApiRefused('embed-upstream-input')
+            embeds += 1
+        upstream_counts[path] = upstream_counts.get(path, 0) + 1
+        names_seen.update(names)
+    if upstream_counts != leg_counts:
+        raise SmApiRefused('embed-witness-count')
+    return {'source': 'ollama.jsonl+fake-ollama-requests', 'unit': run + '.' + unit,
+            'calls': embedding_calls, 'upstream_calls': embeds, 'listing_calls': len(selected) - embedding_calls,
+            'model': embed_model,
+            'header_names': sorted(names_seen), 'auth_forwarded': False, 'fallback_local': False}
+
+
+def run_sm_p3(port: int, run: str, *, key: Any, rest: Any, request: Callable,
+              admit: Callable, prepare_routes: Callable, observe_routes: Callable, model: str, embed_model: str,
+              ceiling_s: float = 180.0, clock: Callable = time.monotonic,
+              sleep: Callable = time.sleep) -> dict:
+    """One keyed diagnostic sequence; later quiescence/restart and full admission remain separate."""
+    port = _port(port)
+    tag = sm_container_tag(run)
+    if key is None:
+        raise SmApiRefused('held-key-required')
+    if (not all(callable(value) for value in (request, admit, prepare_routes, observe_routes, clock, sleep))
+            or not callable(getattr(rest, 'conformance', None))
+            or type(model) is not str or not model or type(embed_model) is not str or not embed_model):
+        raise SmApiRefused('functional-collaborator')
+    deadline = _SmReadDeadline(ceiling_s, clock)
+
+    def send(p, method, path, *, body=None, key=None, timeout_s=5.0):
+        if p != port or key is not held or type(timeout_s) not in {int, float} or not math.isfinite(timeout_s) or timeout_s <= 0:
+            raise SmApiRefused('keyed-sequence-target')
+        def bounded(p, m, path, **options):
+            options['timeout_s'] = min(options['timeout_s'], timeout_s)
+            return request(p, m, path, **options)
+        return deadline.send(port, (method, path, body), key=held, request=bounded, admit=admit)
+
+    held = key
+    deadline.remaining()
+    if admit() is not True:
+        raise SmApiRefused('incident-gate')
+    if prepare_routes(timeout_s=min(2.0, deadline.remaining())) is not True:
+        raise SmApiRefused('proxy-write-stage')
+    deadline.remaining()
+    replies = [send(port, 'GET', path, key=held) for path in SM_OPENAPI_PATHS]
+    schema = sm_openapi_contract(replies, rest)
+    deadline.remaining()
+    dot_reply = send(port, 'POST', '/v4/memories/list', body={'containerTags': [run + '.u1'], 'limit': 1}, key=held)
+    if not isinstance(dot_reply, Mapping) or type(dot_reply.get('status')) is not int or dot_reply['status'] != 400:
+        raise SmApiRefused('container-tag-control')
+    method, path, body = sm_api_target('add_document', run, content=SM_DIAGNOSTIC_DOCUMENT)
+    added = sm_document_response(send(port, method, path, body=body, key=held))
+    doc_id = added['id']
+    completed = poll_sm_document(port, run, doc_id, key=held, request=send, admit=lambda: True,
+        ceiling_s=min(120.0, deadline.remaining()), clock=clock, sleep=sleep)
+    document = completed['document']
+    collection = collect_sm_memories(port, run, doc_id, key=held, request=send, admit=lambda: True,
+        ceiling_s=min(60.0, deadline.remaining()), clock=clock)
+    if collection['memory_found'] is not True:
+        # Preserve the named tools-refused outcome only when the proxy actually saw it.
+        witness = observe_routes(timeout_s=min(2.0, deadline.remaining()))
+        deadline.remaining()
+        if not isinstance(witness, dict) or witness.get('complete') is not True or witness.get('problems') != []:
+            raise SmApiRefused('route-observation-incomplete')
+        sm_llm_route_fields(witness['calls'], witness.get('chat_requests'), run=run, model=model)
+        raise SmApiRefused('memory-agent-empty')
+    method, path, body = sm_api_target('search', run, query=SM_DIAGNOSTIC_QUERY)
+    search = sm_search_response(send(port, method, path, body=body, key=held), memories=collection['entries'])
+    selected_ids = {entry['id'] for entry in collection['selected']}
+    if not search['found'] or not any(item['id'] in selected_ids for item in search['results']):
+        raise SmApiRefused('blocked:search-shape')
+    created_at = sm_created_at(document)
+    witness = observe_routes(timeout_s=min(2.0, deadline.remaining()))
+    deadline.remaining()
+    if (not isinstance(witness, dict) or witness.get('complete') is not True
+            or witness.get('problems') != []):
+        raise SmApiRefused('route-observation-incomplete')
+    llm = sm_llm_route_fields(witness.get('calls'), witness.get('chat_requests'), run=run, model=model)
+    embeds = sm_embed_route_fields(witness.get('ollama'), witness.get('upstream_requests'),
+                                    run=run, embed_model=embed_model)
+    seal = sm_state_seal(documents=[document], memories=collection['entries'], search=search)
+    deadline.remaining()  # All final parsing, route checks and hashing share this allowance.
+    return {'phase': 'P3', 'document_id': doc_id, 'schema': schema,
+            'container_tag': {'dot_status': dot_reply['status'], 'chosen': tag, 'fallback_observed': True},
+            'processing': {'polls': completed['polls'], 'status': document['status'],
+                           'memories': len(collection['selected'])},
+            'llm': llm, 'embeddings': embeds, 'created_at': created_at, 'search': search,
+            'state': {'documents': [document], 'memories': collection['entries'], 'search': search},
+            'seal': seal, 'atomic_snapshot_proven': False, 'writers_quiescent_proven': False,
+            'runtime_admission': False}
+
+
+SM_CHAT_SCRIPT = (
+    {'content': '{}'},
+    {'content': '', 'tool_calls': [{'id': 'sm-diagnostic-create', 'type': 'function', 'function': {
+        'name': 'CreateMemory', 'arguments': json.dumps({'memory': SM_DIAGNOSTIC_DOCUMENT, 'temporalContext': {}})}}]},
+    {'content': 'Diagnostic memory recorded.'},
+)
+SM_CHAT_POLICY = 'sm-p3-observed-tool-set-v1'
+
+
+def sm_chat_script_entry(script: Any, index: int, body: Mapping[str, Any]) -> dict:
+    """Declared body-based replies keep interleaved scheduler/gate calls independent."""
+    offered = body.get('tools')
+    if not isinstance(offered, list) or len(offered) != len(TOOLS):
+        return dict(script[0])
+    names = []
+    for tool in offered:
+        if (not isinstance(tool, dict) or tool.get('type') != 'function'
+                or not isinstance(tool.get('function'), dict) or type(tool['function'].get('name')) is not str):
+            return dict(script[0])
+        names.append(tool['function']['name'])
+    if set(names) != set(TOOLS):
+        return dict(script[0])
+    messages = body.get('messages')
+    if not isinstance(messages, list) or any(not isinstance(message, dict) for message in messages):
+        return dict(script[0])
+    completed = any(message.get('role') == 'tool' and message.get('tool_call_id') == 'sm-diagnostic-create'
+                    for message in messages)
+    return json.loads(json.dumps(script[2 if completed else 1]))
+
+
+def read_sm_routes(contract: Any, launch: Any, *, run: str, proxy_dir: Path, upstream: Any, chat_upstream: Any,
+                   control: Callable, timeout_s: float = 2.0,
+                   clock: Callable = time.monotonic, sleep: Callable = time.sleep) -> dict:
+    """Bounded owned logs between idle/stable proxy counter observations; no atomic-state claim."""
+    root = _existing_arm_path(contract, launch, run)
+    proxy_dir = Path(proxy_dir)
+    expected = root / '_proxy/run'
+    if (not proxy_dir.is_absolute() or proxy_dir != expected
+            or not launch._within(proxy_dir, root) or launch._link_in_chain(contract.runs_root, proxy_dir)):
+        raise SmApiRefused('route-log-path')
+    if type(timeout_s) not in {int, float} or not math.isfinite(timeout_s) or not 0 < timeout_s <= 2:
+        raise SmApiRefused('route-observation-bounds')
+    deadline = _SmReadDeadline(timeout_s, clock)
+    previous_records = -1
+
+    def counters():
+        nonlocal previous_records
+        reply = control(timeout_s=deadline.remaining())
+        deadline.remaining()
+        if (not isinstance(reply, dict) or type(reply.get('status')) is not int or reply['status'] != 200
+                or not isinstance(reply.get('json'), dict) or not isinstance(reply['json'].get(ARM), dict)):
+            raise SmApiRefused('route-counter-observation')
+        value = reply['json'][ARM]
+        if any(type(value.get(name)) is not int or value[name] < 0 for name in ('forward_open', 'records')):
+            raise SmApiRefused('route-counter-observation')
+        if value['records'] < previous_records:
+            raise SmApiRefused('route-counter-regressed')
+        previous_records = value['records']
+        return {'forward_open': value['forward_open'], 'records': value['records']}
+
+    def read(name):
+        path = proxy_dir / (name + '.jsonl')
+        if not launch._within(path, proxy_dir) or launch._link_in_chain(contract.runs_root, path):
+            raise SmApiRefused('route-log-path')
+        if not os.path.lexists(path):
+            return []
+        try:
+            with path.open('rb') as stream:
+                raw = stream.read((8 << 20) + 1)
+            if len(raw) > 8 << 20 or raw and not raw.endswith(b'\n'):
+                raise ValueError('size-or-unfinished-line')
+            lines = raw.splitlines()
+            if len(lines) > 2000:
+                raise ValueError('record-ceiling')
+            rows = [json.loads(line) for line in lines]
+            if any(not isinstance(row, dict) for row in rows):
+                raise ValueError('record-shape')
+            return rows
+        except (OSError, ValueError, RecursionError):
+            raise SmApiRefused('route-log-incomplete') from None
+
+    while True:
+        before = counters()
+        if before['forward_open']:
+            sleep(min(0.01, deadline.remaining()))
+            continue
+        calls, ollama = read('calls'), read('ollama')
+        requests = bounded_sm_upstream_snapshot(upstream, deadline)
+        chat_requests = bounded_sm_upstream_snapshot(chat_upstream, deadline)
+        after = counters()
+        if after['forward_open'] or after['records'] != before['records']:
+            sleep(min(0.01, deadline.remaining()))
+            continue
+        if sum(row.get('arm') == ARM for row in calls) != after['records']:
+            raise SmApiRefused('route-record-count')
+        deadline.remaining()
+        return {'complete': True, 'problems': [], 'calls': calls, 'ollama': ollama,
+                'upstream_requests': requests, 'chat_requests': chat_requests, 'proxy_idle_observed': True,
+                'writers_quiescent_proven': False, 'atomic_snapshot_proven': False}
+
+
+def bounded_sm_upstream_snapshot(upstream: Any, deadline: Any) -> list:
+    """Bound lock waiting and a conservative encoding size before allocating a JSON copy."""
+    acquired = upstream._lock.acquire(timeout=deadline.remaining())
+    if acquired is not True:
+        raise SmApiRefused('route-upstream-lock')
+    try:
+        deadline.remaining()
+        if upstream.closing or upstream.errors or upstream.traps or upstream.unknown:
+            raise SmApiRefused('route-upstream-incomplete')
+        if not isinstance(upstream.requests, list) or len(upstream.requests) > 2000:
+            raise SmApiRefused('route-upstream-ceiling')
+        budget, nodes, active = [8 << 20], [20000], set()
+        def size(value, depth=0):
+            nodes[0] -= 1
+            if depth > 32 or nodes[0] < 0 or budget[0] < 0:
+                raise SmApiRefused('route-upstream-ceiling')
+            if nodes[0] % 128 == 0:
+                deadline.remaining()
+            if type(value) is str:
+                budget[0] -= 6 * len(value) + 2
+            elif value is None or type(value) is bool:
+                budget[0] -= 5
+            elif type(value) is int:
+                budget[0] -= 2 + value.bit_length()  # Conservative decimal-byte upper bound.
+            elif type(value) is float and math.isfinite(value):
+                budget[0] -= 32
+            elif type(value) in {dict, list}:
+                if id(value) in active or len(value) > 2000:
+                    raise SmApiRefused('route-upstream-ceiling')
+                active.add(id(value))
+                budget[0] -= 2 + 2 * len(value)
+                try:
+                    if type(value) is dict:
+                        for key, item in value.items():
+                            if type(key) is not str:
+                                raise SmApiRefused('route-upstream-ceiling')
+                            size(key, depth + 1)
+                            size(item, depth + 1)
+                    else:
+                        for item in value:
+                            size(item, depth + 1)
+                finally:
+                    active.remove(id(value))
+            else:
+                raise SmApiRefused('route-upstream-ceiling')
+            if budget[0] < 0:
+                raise SmApiRefused('route-upstream-ceiling')
+        size(upstream.requests)
+        deadline.remaining()
+        raw = json.dumps(upstream.requests, ensure_ascii=False, allow_nan=False, separators=(',', ':')).encode('utf-8')
+        deadline.remaining()
+        return json.loads(raw)
+    finally:
+        upstream._lock.release()
+
+
+def sm_p3_fields(measured: Mapping[str, Any]) -> dict:
+    """Project measured P3 facts; never upgrade partial type proof to full value proof."""
+    schema = measured['schema']
+    return {
+        'sm_openapi': sm_field(schema['observed'], ok=True),
+        'sm_schema': sm_field(schema, ok=schema['value_constraints_verified'] is True),
+        'sm_ct_dot': sm_field(measured['container_tag'], ok=True),
+        'sm_conformance': sm_field({'operations': schema['operations'], 'field_types_conformant': True,
+                                    'runtime_admission': False}, ok=True),
+        'sm_statuses': sm_field(measured['processing'], ok=True),
+        'sm_llm_params': sm_field(measured['llm'], ok=True),
+        'sm_embed_route': sm_field(measured['embeddings'], ok=True),
+        'sm_leg_auth': sm_field({'header_names': measured['embeddings']['header_names'],
+                                 'auth_forwarded': False}, ok=True),
+        'sm_search': sm_field(measured['search'], ok=True),
+        'sm_created_at': sm_field(measured['created_at'], ok=True),
+    }
+
 EMBED_TAG = 'nvt3-bge-m3-d1:latest'
 EMBED_DIGEST = '561ce53b3730a15c5b08676cc985d4a0805d95353c6576e5ef982bc5cc3c5a65'
 
@@ -1531,8 +1978,23 @@ def run_sm_p0p2(contract: Any, launch: Any, bundle: Any, server: Any, *, run: st
             fields['sm_conformance'] = sm_field({'auth_control': statuses[-1]}, ok=False,
                                                 blocked='blocked:auth-control')
         problems.extend(boundary_errors)
+        if getattr(runtime, 'p3_enabled', False) is True and not errors:
+            measured = run_sm_p3(boot.port, run, key=key, rest=runtime.rest, request=runtime.request,
+                admit=runtime.gate.admits_new_unit, prepare_routes=runtime.prepare_routes, observe_routes=runtime.observe_routes,
+                model=runtime.model, embed_model=static['embed']['tag'])
+            fields.update(sm_p3_fields(measured))
+            record['phase'] = 'P0-P3'
+            record['functional'] = {'document_id': measured['document_id'], 'seal': measured['seal'],
+                                    'atomic_snapshot_proven': False, 'writers_quiescent_proven': False}
     except PreflightRefused as exc:
         live_refusal = str(exc)
+    except SmApiRefused as exc:
+        reason = str(exc)
+        record['functional_refusal'] = reason
+        if reason in BLOCKED_OUTCOMES:
+            fields['sm_conformance'] = sm_field({'functional': reason}, ok=False, blocked=reason)
+        else:
+            problems.append('functional-refusal:' + reason)
     except Exception as exc:
         problems.append('protocol-exception:' + type(exc).__name__)
     finally:
@@ -1590,7 +2052,7 @@ def run_sm_p0p2(contract: Any, launch: Any, bundle: Any, server: Any, *, run: st
         fields['sm_key_search'] = sm_field({'findings': findings, 'writers_complete': writers_complete}, ok=search_ok)
         if keys and not search_ok:
             problems.append('key-search-incomplete-or-leak')
-        # P3-P5 fields remain absent until their connected implementation lands.
+        # P4-P5 fields remain absent until their connected implementation lands.
         outcome, reasons = sm_verdict(fields, problems=problems, checks=checks, catcher_lines=catcher_lines)
         clean_checks = all(clean_check(summary) for _, summary in checks)
         if (live_refusal is not None and not problems and not boots and runtime is not None
@@ -1783,9 +2245,15 @@ class OwnedStatus:
 class OwnedUpstream:
     """Use the existing fake handlers while owning accepted sockets and every worker."""
 
-    def __init__(self, modules: Any, kind: str, *, resources: list, tag: str = '', digest: str = '') -> None:
+    def __init__(self, modules: Any, kind: str, *, resources: list, tag: str = '', digest: str = '',
+                 script_policy: str | None = None) -> None:
         self.requests, self.traps, self.unknown = [], [], []
         self.script = [{'content': ''}]
+        if script_policy is not None:
+            if kind != 'deepseek' or script_policy != SM_CHAT_POLICY:
+                raise PreflightRefused('fake-script-policy')
+            self.script = json.loads(json.dumps(SM_CHAT_SCRIPT))
+            self.script_entry = lambda index, body: sm_chat_script_entry(self.script, index, body)
         self.script_sha256 = modules.canonical_sha256(self.script)
         self.tag, self.digest, self.dims = tag, digest, modules.DIMS
         self._lock = threading.Lock()
@@ -2191,6 +2659,7 @@ def real_sm_deps(contract: Any, launch: Any, probe: Any, bundle: Any, server: An
     """Prepare production collaborators without starting threads or consuming a run."""
     from types import SimpleNamespace
     modules = probe.probe_modules()  # Before any fake/proxy/gate thread.
+    rest = probe._mod('v3_rest_for_sm', 'arms/_rest.py')  # Also before the first thread.
     env = dict(environ)
 
     def setup(contract: Any, launch: Any, static: dict, run: str, resources: list) -> Any:
@@ -2200,7 +2669,7 @@ def real_sm_deps(contract: Any, launch: Any, probe: Any, bundle: Any, server: An
                           lambda row: isinstance(row, dict) and row.get('complete') is True))
         status_scope.start()
         # Only loopback synthetic upstreams are reachable in A8; no provider key is read.
-        fd = OwnedUpstream(modules.U, 'deepseek', resources=resources)
+        fd = OwnedUpstream(modules.U, 'deepseek', resources=resources, script_policy=SM_CHAT_POLICY)
         fo = OwnedUpstream(modules.U, 'ollama', resources=resources,
                            tag=static['embed']['tag'], digest=static['embed']['digest'])
         native = launch.NativeEgressWitness()
@@ -2263,7 +2732,17 @@ def real_sm_deps(contract: Any, launch: Any, probe: Any, bundle: Any, server: An
             return sm_auth_target(run)
         def version(boot: OwnedBoot) -> dict:
             return sm_field({'observed': False}, ok=False)  # Never substitute package metadata for runtime output.
+        def observe_routes(*, timeout_s: float) -> dict:
+            from types import SimpleNamespace
+            held = SimpleNamespace(header=lambda: dict(proxy.control._auth))
+            return read_sm_routes(contract, launch, run=run, proxy_dir=Path(proxy.run_dir), upstream=fo, chat_upstream=fd,
+                timeout_s=timeout_s, control=lambda **options: sm_request(proxy.ports['control'], 'GET', '/counters',
+                    key=held, timeout_s=options['timeout_s']))
+        held_control = SimpleNamespace(header=lambda: dict(proxy.control._auth))
+        stage = OwnedProxyStage(proxy.ports['control'], held_control, resources)
         return SimpleNamespace(gate=hooks.gate, witnesses=witnesses, scheduler=scheduler,
+            p3_enabled=True, rest=rest, model=modules.RP.PINNED_MODEL, prepare_routes=stage.prepare,
+            observe_routes=observe_routes,
             scheduler_module=modules.SC, guarded=guarded, port=port,
             read_firewall=lambda unit, binary: read_firewall_real(contract, launch, modules, scheduler,
                 run=run, unit=unit, binary=binary, resources=resources),

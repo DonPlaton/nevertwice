@@ -107,7 +107,8 @@ class _ChatHandler(_Handler):
         if path not in CHAT_PATHS or not isinstance(obj, dict):
             self._json(404, {"error": {"message": f"the fake serves {list(CHAT_PATHS)} with a JSON body"}})
             return
-        entry = self.fake.script[min(i, len(self.fake.script) - 1)]
+        selector = getattr(self.fake, "script_entry", None)
+        entry = selector(i, obj) if callable(selector) else self.fake.script[min(i, len(self.fake.script) - 1)]
         usage = {"prompt_tokens": 1000 + i, "completion_tokens": 10 + i, "total_tokens": 1010 + 2 * i}
         msg: dict = {"role": "assistant", "content": entry.get("content", "")}
         if entry.get("tool_calls"):

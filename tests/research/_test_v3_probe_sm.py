@@ -1267,8 +1267,8 @@ def runtime_factory_controls():
             _within=L._within, _link_in_chain=L._link_in_chain,
             watched_set=lambda contract: [], Witnesses=lambda contract, **kwargs: SimpleNamespace(native=kwargs['native']),
             make_unit_dirs=L.make_unit_dirs, spawn_proxy=mock.Mock(side_effect=AssertionError('no actual spawn')))
-        proxy = SimpleNamespace(control=SimpleNamespace(counters=lambda: {}), run_dir=arm / '_proxy/run',
-            ports={'scheduler': 44010, 'arms': {P.ARM: {'write': 44011, 'reader': 44012, 'ollama': 44013}}},
+        proxy = SimpleNamespace(control=SimpleNamespace(counters=lambda: {}, _auth={'Authorization': 'Bearer owned-control'}), run_dir=arm / '_proxy/run',
+            ports={'scheduler': 44010, 'control': 44015, 'arms': {P.ARM: {'write': 44011, 'reader': 44012, 'ollama': 44013}}},
             tokens={'scheduler': 'owned-scheduler-token', P.ARM: 'owned-proxy-token'})
         def config(arms, **kwargs):
             if kwargs['test_upstream']['host'] != '127.0.0.1' or kwargs['test_upstream']['tls'] is not False or kwargs['test_ollama_upstream'][0] != '127.0.0.1':
@@ -1308,7 +1308,8 @@ def runtime_factory_controls():
             SL=load('v3_status_for_factory_test', 'research/v3/status_log.py'), G=SimpleNamespace(GateDriver=Driver),
             IN=SimpleNamespace(IncidentGate=lambda: object()), AB=SimpleNamespace(StopGate=lambda *a: object()),
             IV=SimpleNamespace(check_summary=lambda result: result), AC=SimpleNamespace(load_proxy=lambda path: SimpleNamespace(catcher=[])))
-        probe = SimpleNamespace(probe_modules=lambda: modules, ProbeGate=Gate)
+        probe = SimpleNamespace(probe_modules=lambda: modules, ProbeGate=Gate,
+                                _mod=lambda *args: load('v3_rest_for_factory_fixture', 'research/v3/arms/_rest.py'))
         server = SimpleNamespace(server_env=SS.server_env, free_port=lambda: 44020, tree=lambda pid: [])
         deps = P.real_sm_deps(contract, launch, probe, bundle, server, environ={},
             proxy_python=root / 'never-executed-python.exe', owner_home=root / 'owner-metadata')
@@ -1332,7 +1333,7 @@ def runtime_factory_controls():
         finally:
             results = [accepted(close()) for _, close, accepted in reversed(resources)]
         raw = (root / '_a8/factory-control/STATUS').read_text(encoding='utf-8')
-        return (results == [True] * 5 and events == ['gate-poll', 'fake-close', 'fake-close']
+        return (results == [True] * 6 and events == ['gate-poll', 'fake-close', 'fake-close']
                 and ' ABORT ' in raw and ' BLOCK _a8/p0p2 END ' in raw and ' STAND _a8 END ' in raw
                 and not launch.spawn_proxy.called)
 
@@ -2318,6 +2319,544 @@ check('A8S-STATE-PAGES-1: exhaustive stable memory pages retain every unique row
 check('A8S-STATE-SEARCH-1: memory-mode search ties results to complete known memory and finite scores', state_search_controls)
 check('A8S-STATE-TIME-1: createdAt is an observed timezone-aware document timestamp', state_created_at_controls)
 check('A8S-STATE-SEAL-1: exactly three complete semantic state parts remain independently comparable', state_seal_controls)
+
+ROUTE_PARSER = load('v3_actual_tee_parser_for_sm_routes', 'research/_llm_proxy.py')
+
+
+def route_chat_fixture():
+    names = ['searchMemories', 'readChunks', 'searchDocumentChunks', 'getMemoryDetails', 'linkMemories', 'forgetMemory', 'CreateMemory']
+    return {'path': '/chat/completions', 'body': {'model': 'deepseek-flash', 'max_tokens': 12000,
+        'messages': [{'role': 'user', 'content': 'diagnostic'}],
+        'tools': [{'type': 'function', 'function': {'name': name, 'parameters': {'type': 'object'}}} for name in names]}}
+
+
+def route_llm_fixture(observed=None):
+    body = (observed or route_chat_fixture())['body']
+    raw = json.dumps(body, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode('utf-8')
+    parser = ROUTE_PARSER.TeeParser()
+    parser.feed(json.dumps({'model': 'deepseek-flash', 'choices': [{'message': {'role': 'assistant', 'content': '',
+        'tool_calls': [{'id': 'create', 'type': 'function', 'function': {'name': 'CreateMemory', 'arguments': '{}'}}]}}]}).encode('utf-8'))
+    parsed = parser.result('application/json', 'v1', None)
+    return {**parsed, 'arm': 'supermemory-local', 'unit': 'unit.u1', 'port_role': 'write', 'endpoint': 'v1',
+            'method': 'POST', 'stage': 'write', 'requested_model': 'deepseek-flash', 'response_model': 'deepseek-flash',
+            'status': 200, 'complete': True, 'client_abandoned': False, 'tool_violation': False,
+            'refused': None, 'temperature': None, 'max_tokens': 12000, 'thinking_sent': None,
+            'request_key': hashlib.sha256(raw + b'\0supermemory-local').hexdigest(),
+            'thinking_injected': 0, 'tools_offered': ['searchMemories', 'readChunks', 'searchDocumentChunks',
+                'getMemoryDetails', 'linkMemories', 'forgetMemory', 'CreateMemory'], 'tools_called': ['CreateMemory']}
+
+
+def route_embed_fixture():
+    leg = {'arm': 'supermemory-local', 'unit': 'unit.u1', 'path': '/v1/embeddings', 'stage': 'write',
+           'is_embed': True, 'is_llm': False, 'fallback_local': False, 'client_auth': 'bearer',
+           'status': 200, 'error': None}
+    upstream = {'method': 'POST', 'path': '/v1/embeddings', 'body': {'model': 'bge-m3:latest', 'input': ['diagnostic']},
+                'header_names': ['accept', 'connection', 'content-length', 'content-type', 'host']}
+    return leg, upstream
+
+
+def route_llm_controls():
+    row = route_llm_fixture()
+    observed = [route_chat_fixture()]
+    result = P.sm_llm_route_fields([dict(row, arm='scheduler'), row], observed, run='unit', model='deepseek-flash')
+    if (row['content_empty'] is not False or row['parse_ok'] is not True or row['tools_called'] != ['CreateMemory']
+            or result['calls'] != 1 or result['unit'] != 'unit.u1' or result['runtime_schema_digests_observed'] is not False):
+        return False
+    if not named_api_refusal(lambda: P.sm_llm_route_fields([dict(row, arm='scheduler')], observed, run='unit', model='deepseek-flash'), 'blocked:no-llm-call'):
+        return False
+    for field, value, reason in (
+        ('unit', 'other.u1', 'route-attribution'), ('port_role', 'reader', 'llm-route-record'),
+        ('requested_model', 'another', 'llm-route-record'), ('response_model', 'another', 'llm-route-record'),
+        ('complete', False, 'llm-route-record'), ('client_abandoned', True, 'llm-route-record'),
+        ('parse_ok', False, 'llm-response-unusable'), ('json_ok', False, 'llm-response-unusable'),
+        ('content_empty', True, 'llm-response-unusable'),
+        ('status', True, 'llm-route-record'), ('status', 503, 'llm-route-record'),
+        ('tools_offered', row['tools_offered'][:-1], 'llm-body-tools'),
+        ('tools_offered', row['tools_offered'] + ['CreateMemory'], 'llm-body-tools'),
+        ('tools_offered', row['tools_offered'][:-1] + ['foreign'], 'llm-body-tools'),
+        ('tools_called', ['foreign'], 'llm-tools-baseline'), ('max_tokens', 12001, 'llm-parameters'),
+        ('max_tokens', True, 'llm-parameters'), ('temperature', 0.5, 'llm-parameters'),
+        ('tool_violation', True, 'blocked:tools-refused')):
+        if not named_api_refusal(lambda field=field, value=value: P.sm_llm_route_fields([dict(row, **{field: value})], observed,
+                run='unit', model='deepseek-flash'), reason):
+            return False
+    missing = dict(row)
+    missing.pop('temperature')
+    if not named_api_refusal(lambda: P.sm_llm_route_fields([missing], observed, run='unit', model='deepseek-flash'), 'llm-parameters'):
+        return False
+    for digest in (None, '0' * 64, 'not-a-digest'):
+        if not named_api_refusal(lambda digest=digest: P.sm_llm_route_fields([dict(row, request_key=digest)], observed,
+                run='unit', model='deepseek-flash'), 'llm-body-observation'):
+            return False
+    missing_digest = dict(row)
+    missing_digest.pop('request_key')
+    mismatched = route_chat_fixture()
+    mismatched['body']['messages'][0]['content'] = 'another request'
+    if (not named_api_refusal(lambda: P.sm_llm_route_fields([missing_digest], observed, run='unit', model='deepseek-flash'), 'llm-body-observation')
+            or not named_api_refusal(lambda: P.sm_llm_route_fields([row], [mismatched], run='unit', model='deepseek-flash'), 'llm-body-observation')
+            or not named_api_refusal(lambda: P.sm_llm_route_fields([row], [], run='unit', model='deepseek-flash'), 'llm-body-observation')):
+        return False
+    explicit_null = route_chat_fixture()
+    explicit_null['body']['temperature'] = None
+    if not named_api_refusal(lambda: P.sm_llm_route_fields([route_llm_fixture(explicit_null)], [explicit_null],
+            run='unit', model='deepseek-flash'), 'llm-parameters'):
+        return False
+    if not named_api_refusal(lambda: P.sm_llm_route_fields([dict(row, content_empty=True, tools_called=[])], observed,
+            run='unit', model='deepseek-flash'), 'llm-response-unusable'):
+        return False
+    auxiliary = route_chat_fixture()
+    auxiliary['body'].pop('tools')
+    auxiliary['body']['max_tokens'] = 64
+    aux_row = dict(route_llm_fixture(auxiliary), tools_offered=[], tools_called=[], content_empty=False, max_tokens=64)
+    result = P.sm_llm_route_fields([row, aux_row], observed + [auxiliary], run='unit', model='deepseek-flash')
+    if result['calls'] != 2 or result['memory_agent_candidates'] != 1 or result['parameters'][1]['max_tokens'] != 64:
+        return False
+    return named_api_refusal(lambda: P.sm_llm_route_fields([aux_row], [auxiliary], run='unit', model='deepseek-flash'), 'blocked:no-llm-call')
+
+
+def route_embed_controls():
+    leg, upstream = route_embed_fixture()
+    result = P.sm_embed_route_fields([leg], [upstream], run='unit', embed_model='bge-m3:latest')
+    if result['calls'] != 1 or result['upstream_calls'] != 1 or result['auth_forwarded'] is not False:
+        return False
+    if not named_api_refusal(lambda: P.sm_embed_route_fields([], [upstream], run='unit', embed_model='bge-m3:latest'), 'blocked:no-embed-call'):
+        return False
+    for field, value, reason in (
+        ('unit', 'other.u1', 'route-attribution'), ('is_embed', False, 'embed-route-record'),
+        ('is_llm', True, 'embed-route-record'), ('fallback_local', True, 'embed-route-record'),
+        ('client_auth', 'none', 'embed-route-record'), ('status', 503, 'embed-route-record'),
+        ('error', 'late', 'embed-route-record'), ('path', '/api/generate', 'embed-route-record')):
+        if not named_api_refusal(lambda field=field, value=value: P.sm_embed_route_fields([dict(leg, **{field: value})],
+                [upstream], run='unit', embed_model='bge-m3:latest'), reason):
+            return False
+    for names in (None, ['host', 'content-length', 'authorization'], ['host', 'content-length', 'cookie'],
+                  ['host', 'content-length', 'X-Api-Key'], ['host', 'host', 'content-length'], ['content-length']):
+        if not named_api_refusal(lambda names=names: P.sm_embed_route_fields([leg], [dict(upstream, header_names=names)],
+                run='unit', embed_model='bge-m3:latest'), 'embedding-header-boundary'):
+            return False
+    if not named_api_refusal(lambda: P.sm_embed_route_fields([leg], [dict(upstream, body={'model': 'other'})],
+            run='unit', embed_model='bge-m3:latest'), 'embed-upstream-model'):
+        return False
+    for value in (None, [], '', [''], [1]):
+        if not named_api_refusal(lambda value=value: P.sm_embed_route_fields([leg],
+                [dict(upstream, body={'model': 'bge-m3:latest', 'input': value})],
+                run='unit', embed_model='bge-m3:latest'), 'embed-upstream-input'):
+            return False
+    listing_leg = dict(leg, path='/api/tags', is_embed=False, client_auth='none', stage=None)
+    listing = dict(upstream, path='/api/tags', method='GET', body={})
+    mixed = P.sm_embed_route_fields([listing_leg, leg], [listing, upstream], run='unit', embed_model='bge-m3:latest')
+    if mixed['calls'] != 1 or mixed['listing_calls'] != 1:
+        return False
+    if not named_api_refusal(lambda: P.sm_embed_route_fields([listing_leg], [listing],
+            run='unit', embed_model='bge-m3:latest'), 'blocked:no-embed-call'):
+        return False
+    return named_api_refusal(lambda: P.sm_embed_route_fields([leg], [upstream, upstream],
+        run='unit', embed_model='bge-m3:latest'), 'embed-witness-count')
+
+
+def functional_fixture(run='unit', embed_model='bge-m3:latest'):
+    fixture = SimpleNamespace(key=object(), now=0.0, requests=[], admissions=[], polls=0,
+                              dot_status=400, empty=False, foreign_search=False, schema=sm_operations_schema_fixture())
+    leg, upstream = route_embed_fixture()
+    fixture.witness = {'complete': True, 'problems': [], 'calls': [route_llm_fixture()],
+                       'ollama': [leg], 'upstream_requests': [upstream], 'chat_requests': [route_chat_fixture()]}
+    fixture.witness['calls'][0]['unit'] = leg['unit'] = run + '.u1'
+    upstream['body']['model'] = embed_model
+    fixture.entry = {'id': 'm1', 'memory': 'Rina keeps the cobalt telescope in locker 42.', 'documentIds': ['doc1']}
+    fixture.document = {'id': 'doc1', 'status': 'done', 'createdAt': '2026-10-03T12:00:00.123456789Z'}
+    def request(port, method, path, **kwargs):
+        fixture.requests.append((port, method, path, kwargs))
+        fixture.now += 0.01
+        if path in ('/v3/openapi', '/v4/openapi'):
+            return sm_operation_schema_replies(fixture.schema)[0]
+        if path == '/v4/memories/list' and kwargs['body']['containerTags'] == [run + '.u1']:
+            return {'status': fixture.dot_status, 'json': {'error': 'invalid tag'}}
+        if path == '/v3/documents':
+            return {'status': 200, 'json': {'id': 'doc1', 'status': 'queued'}}
+        if path == '/v3/documents/doc1':
+            fixture.polls += 1
+            return {'status': 200, 'json': dict(fixture.document, status='processing' if fixture.polls == 1 else 'done')}
+        if path == '/v4/memories/list':
+            return {'status': 200, 'json': {'memoryEntries': [] if fixture.empty else [fixture.entry],
+                'pagination': {'currentPage': 1, 'limit': 10, 'totalItems': 0 if fixture.empty else 1, 'totalPages': 0 if fixture.empty else 1}}}
+        if path == '/v4/search':
+            return {'status': 200, 'json': {'results': [{'id': 'foreign' if fixture.foreign_search else 'm1',
+                'memory': fixture.entry['memory'], 'similarity': 0.9}], 'total': 1, 'timing': 1}}
+        raise AssertionError('undeclared request')
+    def admit():
+        fixture.admissions.append(fixture.now)
+        return True
+    def sleep(seconds):
+        fixture.now += seconds
+    fixture.request, fixture.admit, fixture.sleep = request, admit, sleep
+    def invoke(**changes):
+        options = {'key': fixture.key, 'rest': REST_SM, 'request': fixture.request, 'admit': fixture.admit,
+                   'prepare_routes': lambda **kwargs: True,
+                   'observe_routes': lambda **kwargs: fixture.witness, 'model': 'deepseek-flash', 'embed_model': embed_model,
+                   'clock': lambda: fixture.now, 'sleep': fixture.sleep}
+        options.update(changes)
+        return P.run_sm_p3(1234, run, **options)
+    fixture.run = invoke
+    return fixture
+
+
+def functional_sequence_controls():
+    f = functional_fixture()
+    result = f.run()
+    expected = [('GET', '/v3/openapi'), ('GET', '/v4/openapi'), ('POST', '/v4/memories/list'),
+                ('POST', '/v3/documents'), ('GET', '/v3/documents/doc1'), ('GET', '/v3/documents/doc1'),
+                ('POST', '/v4/memories/list'), ('POST', '/v4/search')]
+    if [(method, path) for _, method, path, _ in f.requests] != expected or len(f.admissions) != len(expected) + 1:
+        return False
+    if any(port != 1234 or options.get('key') is not f.key or not 0 < options['timeout_s'] <= 5
+            for port, _, _, options in f.requests):
+        return False
+    if (f.requests[3][3]['body']['containerTag'] != 'unit_u1' or f.requests[-1][3]['body']['containerTags'] != ['unit_u1']
+            or result['processing'] != {'polls': 2, 'status': 'done', 'memories': 1}
+            or result['created_at']['utc'] != '2026-10-03T12:00:00.123456789+00:00'):
+        return False
+    return (set(result['seal']) == {'documents', 'memories', 'search'} and result['search']['found'] is True
+            and result['llm']['calls'] == result['embeddings']['calls'] == 1
+            and result['schema']['value_constraints_verified'] is False and result['runtime_admission'] is False
+            and result['writers_quiescent_proven'] is False and result['atomic_snapshot_proven'] is False)
+
+
+def functional_refusal_controls():
+    f = functional_fixture()
+    del f.schema['paths']['/v3/documents']['post']['requestBody']['content']['application/json']['schema']['properties']['content']
+    if not named_api_refusal(f.run, 'blocked:schema-missing:add_document') or any(path == '/v3/documents' for _, _, path, _ in f.requests):
+        return False
+    f = functional_fixture()
+    f.dot_status = 200
+    if not named_api_refusal(f.run, 'container-tag-control') or any(path == '/v3/documents' for _, _, path, _ in f.requests):
+        return False
+    f = functional_fixture()
+    f.empty = True
+    f.witness['calls'][0]['tool_violation'] = True
+    if not named_api_refusal(f.run, 'blocked:tools-refused') or any(path == '/v4/search' for _, _, path, _ in f.requests):
+        return False
+    f = functional_fixture()
+    f.empty = True
+    if not named_api_refusal(f.run, 'memory-agent-empty'):
+        return False
+    f = functional_fixture()
+    f.foreign_search = True
+    if not named_api_refusal(f.run, 'blocked:search-shape'):
+        return False
+    f = functional_fixture()
+    f.witness['complete'] = False
+    if not named_api_refusal(f.run, 'route-observation-incomplete'):
+        return False
+    f = functional_fixture()
+    f.witness['problems'] = ['partial writer']
+    return named_api_refusal(f.run, 'route-observation-incomplete')
+
+
+def functional_deadline_controls():
+    f = functional_fixture()
+    if not named_api_refusal(lambda: f.run(key=None), 'held-key-required') or f.requests:
+        return False
+    f = functional_fixture()
+    def late_admit():
+        f.now = 1
+        return True
+    if not named_api_refusal(lambda: f.run(admit=late_admit, ceiling_s=0.5), 'state-read-deadline') or f.requests:
+        return False
+    f = functional_fixture()
+    def late_reply(*args, **kwargs):
+        reply = f.request(*args, **kwargs)
+        f.now = 1
+        return reply
+    if not named_api_refusal(lambda: f.run(request=late_reply, ceiling_s=0.5), 'state-read-deadline'):
+        return False
+    f = functional_fixture()
+    def late_observer(**kwargs):
+        f.now = 180
+        return f.witness
+    if not named_api_refusal(lambda: f.run(observe_routes=late_observer), 'state-read-deadline'):
+        return False
+    f = functional_fixture()
+    original_seal = P.sm_state_seal
+    def late_seal(**kwargs):
+        result = original_seal(**kwargs)
+        f.now = 180
+        return result
+    with mock.patch.object(P, 'sm_state_seal', side_effect=late_seal):
+        return named_api_refusal(f.run, 'state-read-deadline')
+
+
+check('A8S-ROUTE-LLM-1: attributed complete calls retain pinned parameters and exact offered tools', route_llm_controls)
+check('A8S-ROUTE-EMBED-1: attributed embeddings pair with positive independently observed stripped upstream headers', route_embed_controls)
+check('A8S-P3-SEQUENCE-1: one keyed diagnostic sequence composes schema polling memory search and routes', functional_sequence_controls)
+check('A8S-P3-REFUSAL-1: schema dot control actual tools refusal empty memory and incomplete observations cannot pass', functional_refusal_controls)
+check('A8S-P3-DEADLINE-1: all sends observations parsing and seals share one finite allowance', functional_deadline_controls)
+
+
+def route_reader_fixture(root):
+    arm = root / '_a8/unit' / 'supermemory-local'
+    proxy_dir = arm / '_proxy/run'
+    proxy_dir.mkdir(parents=True)
+    contract = SimpleNamespace(runs_root=root)
+    leg, entry = route_embed_fixture()
+    (proxy_dir / 'calls.jsonl').write_text(json.dumps(route_llm_fixture()) + '\n', encoding='utf-8')
+    (proxy_dir / 'ollama.jsonl').write_text(json.dumps(leg) + '\n', encoding='utf-8')
+    upstream = SimpleNamespace(_lock=threading.Lock(), closing=False, errors=[], traps=[], unknown=[], requests=[entry])
+    chat = SimpleNamespace(_lock=threading.Lock(), closing=False, errors=[], traps=[], unknown=[], requests=[route_chat_fixture()])
+    fixture = SimpleNamespace(now=0.0, controls=[], count=1, open=0)
+    def control(**kwargs):
+        fixture.controls.append(kwargs['timeout_s'])
+        fixture.now += 0.001
+        return {'status': 200, 'json': {'supermemory-local': {'forward_open': fixture.open, 'records': fixture.count}}}
+    def sleep(seconds):
+        fixture.now += seconds
+    fixture.control = control
+    def run(**options):
+        kwargs = {'run': 'unit', 'proxy_dir': proxy_dir, 'upstream': upstream, 'chat_upstream': chat, 'control': fixture.control,
+                  'clock': lambda: fixture.now, 'sleep': sleep}
+        kwargs.update(options)
+        return P.read_sm_routes(contract, L, **kwargs)
+    fixture.run, fixture.directory, fixture.upstream, fixture.chat, fixture.contract = run, proxy_dir, upstream, chat, contract
+    return fixture
+
+
+def route_reader_shape_controls():
+    with tempfile.TemporaryDirectory(prefix='nvt-sm-route-reader-') as directory:
+        f = route_reader_fixture(Path(directory).resolve())
+        result = f.run()
+        if (result['complete'] is not True or len(result['calls']) != 1 or len(result['ollama']) != 1
+                or len(result['upstream_requests']) != 1 or len(f.controls) != 2
+                or result['writers_quiescent_proven'] is not False):
+            return False
+        bad = SimpleNamespace(_within=L._within, _link_in_chain=lambda base, target: str(target).endswith('calls.jsonl'))
+        with mock.patch.object(Path, 'open', side_effect=AssertionError('invalid path must not open')):
+            if not named_api_refusal(lambda: P.read_sm_routes(f.contract, bad, run='unit', proxy_dir=f.directory,
+                    upstream=f.upstream, chat_upstream=f.chat, control=f.control), 'route-log-path'):
+                return False
+            if not named_api_refusal(lambda: f.run(proxy_dir=f.directory.parent), 'route-log-path'):
+                return False
+        (f.directory / 'calls.jsonl').write_bytes(b'{"arm":"supermemory-local"}')
+        if not named_api_refusal(f.run, 'route-log-incomplete'):
+            return False
+        (f.directory / 'calls.jsonl').write_bytes(b'{}\n')
+        if not named_api_refusal(f.run, 'route-record-count'):
+            return False
+        (f.directory / 'calls.jsonl').write_text(json.dumps(route_llm_fixture()) + '\n', encoding='utf-8')
+        f.upstream.errors.append('incomplete handler')
+        return named_api_refusal(f.run, 'route-upstream-incomplete')
+
+
+def route_reader_deadline_controls():
+    with tempfile.TemporaryDirectory(prefix='nvt-sm-route-drain-') as directory:
+        f = route_reader_fixture(Path(directory).resolve())
+        f.open = 1
+        if not named_api_refusal(lambda: f.run(timeout_s=0.05), 'state-read-deadline'):
+            return False
+        if not f.controls or any(not 0 < value <= 0.05 for value in f.controls):
+            return False
+        f.open, f.now, f.controls = 0, 0.0, []
+        original = f.control
+        def changing(**kwargs):
+            result = original(**kwargs)
+            f.count += 1
+            return result
+        if not named_api_refusal(lambda: f.run(control=changing, timeout_s=0.05), 'state-read-deadline'):
+            return False
+        f.count, f.now, f.controls = 1, 0.0, []
+        def late(**kwargs):
+            result = original(**kwargs)
+            if len(f.controls) == 2:
+                f.now = 0.05
+            return result
+        if not named_api_refusal(lambda: f.run(control=late, timeout_s=0.05), 'state-read-deadline'):
+            return False
+        f.now, f.controls = 0.0, []
+        f.count = True
+        if not named_api_refusal(f.run, 'route-counter-observation'):
+            return False
+        f.count, f.now, f.controls = 1, 0.0, []
+        def decreasing(**kwargs):
+            result = original(**kwargs)
+            f.count = 0
+            return result
+        if not named_api_refusal(lambda: f.run(control=decreasing), 'route-counter-regressed'):
+            return False
+        class Busy:
+            def __init__(self):
+                self.timeouts = []
+            def acquire(self, *, timeout):
+                self.timeouts.append(timeout)
+                return False
+            def release(self):
+                raise AssertionError('an unacquired lock must not be released')
+        busy = Busy()
+        blocked = SimpleNamespace(_lock=busy)
+        if not named_api_refusal(lambda: P.bounded_sm_upstream_snapshot(blocked, P._SmReadDeadline(0.05, lambda: 0)), 'route-upstream-lock'):
+            return False
+        if busy.timeouts != [0.05]:
+            return False
+        f.upstream.requests = [{'body': 'x' * (2 << 20)}]
+        with mock.patch.object(P.json, 'dumps', side_effect=AssertionError('oversize must refuse before serialization')):
+            if not named_api_refusal(lambda: P.bounded_sm_upstream_snapshot(f.upstream, P._SmReadDeadline(1, time.monotonic)), 'route-upstream-ceiling'):
+                return False
+        return f.upstream._lock.acquire(blocking=False) and (f.upstream._lock.release() is None)
+
+
+def connected_p3_controls():
+    with tempfile.TemporaryDirectory(prefix='nvt-sm-p3-controller-') as directory:
+        f = protocol_fixture(Path(directory).resolve())
+        diagnostic = functional_fixture(run='boot-control', embed_model='owned')
+        previous_setup = f.deps.setup
+        def setup(*args):
+            runtime = previous_setup(*args)
+            original_request = runtime.request
+            def request(port, method, path, **options):
+                if path in ('/', '/owned-pinned-auth-control'):
+                    return original_request(port, method, path, **options)
+                return diagnostic.request(port, method, path, **options)
+            runtime.request, runtime.p3_enabled, runtime.rest = request, True, REST_SM
+            runtime.model = 'deepseek-flash'
+            runtime.prepare_routes = lambda **options: True
+            runtime.observe_routes = lambda **options: diagnostic.witness
+            return runtime
+        f.deps.setup = setup
+        result = f.run_probe()
+        fields = result['fields']
+        if (result['phase'] != 'P0-P3' or 'functional' not in result or fields['sm_llm_params']['ok'] is not True
+                or fields['sm_embed_route']['ok'] is not True or fields['sm_leg_auth']['ok'] is not True
+                or fields['sm_schema']['ok'] is not False or fields['sm_schema']['value']['value_constraints_verified'] is not False):
+            return False
+        methods = [(method, path) for _, method, path, _ in diagnostic.requests]
+        keys = [options.get('key') for _, _, _, options in diagnostic.requests]
+        return (methods[0:2] == [('GET', '/v3/openapi'), ('GET', '/v4/openapi')]
+                and len(keys) >= 7 and all(key == SS.HeldKey(b'sm_OWNED_TEST_KEY_123456') for key in keys)
+                and result['outcome'] == 'fail' and result['fields']['sm_key_search']['ok'] is True
+                and result['fields']['sm_stop']['ok'] is True and 'stop' in f.events
+                and f.events[-1] == 'close:fake')
+
+
+check('A8S-ROUTE-READER-1: exact owned bounded logs and immutable upstream snapshots reject links partial lines and missing counts', route_reader_shape_controls)
+check('A8S-ROUTE-READER-TIME-1: idle stable counters and every observer action share one finite allowance', route_reader_deadline_controls)
+check('A8S-P3-CONTROLLER-1: live controller connects P3 through held key and keeps partial schema proof unsuccessful', connected_p3_controls)
+
+
+def owned_stage_controls():
+    import socket
+    proxy_module = load('v3_actual_control_for_sm_stage', 'research/_llm_proxy.py')
+    producer = SimpleNamespace(config=SimpleNamespace(control_token='owned-stage-token'),
+                               stage={'block': None, 'stage': None})
+    listener = socket.socket()
+    listener.bind(('127.0.0.1', 0))
+    listener.listen(4)
+    listener.settimeout(0.05)
+    stop, errors = threading.Event(), []
+    def serve():
+        while not stop.is_set():
+            try:
+                client, _ = listener.accept()
+            except socket.timeout:
+                continue
+            except OSError:
+                if not stop.is_set():
+                    errors.append('accept')
+                break
+            with client:
+                client.settimeout(1)
+                try:
+                    proxy_module.Proxy._control(producer, client)
+                except Exception as exc:
+                    errors.append(type(exc).__name__)
+    worker = threading.Thread(target=serve, name='sm-control-producer', daemon=True)
+    worker.start()
+    resources = []
+    held = SimpleNamespace(header=lambda: {'Authorization': 'Bearer owned-stage-token'})
+    stage = P.OwnedProxyStage(listener.getsockname()[1], held, resources)
+    try:
+        if len(resources) != 1 or stage.prepare(timeout_s=1) is not True:
+            return False
+        if producer.stage != {'block': '_a8/p0p2', 'stage': 'write'}:
+            return False
+        row = resources[0][1]()
+        if not resources[0][2](row) or producer.stage != {'block': None, 'stage': None} or stage.close() is not row:
+            return False
+        if not named_api_refusal(lambda: stage.prepare(timeout_s=1), 'proxy-stage-bounds'):
+            return False
+        sends = []
+        def ambiguous(*args, **kwargs):
+            sends.append(kwargs['body'])
+            if kwargs['body']['stage'] is not None:
+                raise TimeoutError('synthetic late acknowledgment')
+            return {'status': 200, 'json': {'ok': True}}
+        ambiguous_stage = P.OwnedProxyStage(1234, held, [], request=ambiguous)
+        if not refused(lambda: ambiguous_stage.prepare(timeout_s=1), TimeoutError):
+            return False
+        if ambiguous_stage.close()['complete'] is not True or sends[-1] != {'block': None, 'stage': None}:
+            return False
+        failed_reset = P.OwnedProxyStage(1234, held, [], request=lambda *a, **k: {'status': 503, 'json': {}})
+        if failed_reset.prepare(timeout_s=1) is not False or failed_reset.close()['complete'] is not False:
+            return False
+        f = functional_fixture()
+        if not named_api_refusal(lambda: f.run(prepare_routes=lambda **kwargs: False), 'proxy-write-stage') or f.requests:
+            return False
+        f = functional_fixture()
+        def late_prepare(**kwargs):
+            f.now = 180
+            return True
+        if not named_api_refusal(lambda: f.run(prepare_routes=late_prepare), 'state-read-deadline') or f.requests:
+            return False
+        return not errors
+    finally:
+        stage.close()
+        stop.set()
+        listener.close()
+        worker.join(1)
+        if worker.is_alive():
+            raise AssertionError('owned control worker must drain')
+
+
+def declared_chat_policy_controls():
+    upstream = load('v3_actual_upstream_for_sm_policy', 'research/v3/probe_upstream.py')
+    resources = []
+    fake = P.OwnedUpstream(upstream, 'deepseek', resources=resources, script_policy=P.SM_CHAT_POLICY)
+    try:
+        agent = route_chat_fixture()['body']
+        auxiliary = {'model': 'deepseek-flash', 'messages': [{'role': 'user', 'content': 'scheduler'}], 'max_tokens': 64}
+        def request(body):
+            status, reply = P.bounded_proxy_post(fake.port, '/chat/completions', body, 'owned-test', timeout=1)
+            if status != 200:
+                raise AssertionError('declared fake must answer')
+            return reply['choices'][0]['message']
+        if request(auxiliary).get('content') != '{}':
+            return False
+        first = request(agent)
+        calls = first.get('tool_calls', [])
+        if len(calls) != 1 or calls[0]['function']['name'] != 'CreateMemory':
+            return False
+        arguments = json.loads(calls[0]['function']['arguments'])
+        if arguments != {'memory': 'Rina keeps the cobalt telescope in locker 42 at the Seoul observatory.', 'temporalContext': {}}:
+            return False
+        if request(auxiliary).get('content') != '{}' or request(agent) != first:
+            return False
+        completed = copy.deepcopy(agent)
+        completed['messages'] += [{'role': 'assistant', **first},
+            {'role': 'tool', 'tool_call_id': calls[0]['id'], 'content': '{"ok":true}'}]
+        final = request(completed)
+        if final.get('tool_calls') or final['content'] != 'Diagnostic memory recorded.':
+            return False
+        if request(auxiliary).get('content') != '{}':
+            return False
+        reply = P.sm_chat_script_entry(fake.script, 200, agent)
+        reply['tool_calls'][0]['function']['arguments'] = '{}'
+        if P.sm_chat_script_entry(fake.script, 200, agent)['tool_calls'][0]['function']['arguments'] == '{}':
+            return False
+        return len(fake.requests) == 6 and not fake.errors
+    finally:
+        result = fake.close(drain_s=1)
+        if not resources[0][2](result) or result['active_sockets'] or result['live_workers']:
+            raise AssertionError('declared fake must drain')
+
+
+check('A8S-P3-STAGE-1: actual control interface writes and resets stage including uncertain acknowledgment and pre-API refusal', owned_stage_controls)
+check('A8S-P3-SCRIPT-1: actual HTTP handler chooses declared CreateMemory with valid arguments independently of interleaved calls', declared_chat_policy_controls)
 
 failed = sum(not good for _, good in ROWS)
 print(f'v3 sm core: {len(ROWS) - failed} passed, {failed} failed')
