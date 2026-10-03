@@ -1316,24 +1316,28 @@ def runtime_factory_controls():
             return False
         static = {'arm_dir': arm, 'binary': root / 'never-executed-server.exe', 'data_dir': arm / 'data',
                   'embed': {'tag': P.EMBED_TAG, 'digest': P.EMBED_DIGEST}, 'bundle': {'env': env_rec}}
-        with mock.patch.object(P, 'OwnedUpstream', Fake):
-            runtime = deps.setup(contract, launch, static, 'factory-control', resources)
-        declared = runtime.guarded.expected['u1']
-        if (runtime.scheduler.launch is not runtime.guarded or declared['SUPERMEMORY_EMBEDDING_DIMENSIONS'] != '1024'
-                or declared['OPENAI_BASE_URL'] != 'http://127.0.0.1:44011/u/factory-control.u1/v1'
-                or declared['SUPERMEMORY_EMBEDDING_BASE_URL'] != 'http://127.0.0.1:44013/u/factory-control.u1/v1'
-                or runtime.policy_authority({'complete': True}) is not False):
-            return False
-        if not refused(runtime.auth_target, P.PreflightRefused) or runtime.version(None)['ok'] is not False:
-            return False
-        results = [accepted(close()) for _, close, accepted in reversed(resources)]
+        try:
+            with mock.patch.object(P, 'OwnedUpstream', Fake):
+                runtime = deps.setup(contract, launch, static, 'factory-control', resources)
+            declared = runtime.guarded.expected['u1']
+            if (runtime.scheduler.launch is not runtime.guarded or declared['SUPERMEMORY_EMBEDDING_DIMENSIONS'] != '1024'
+                    or declared['OPENAI_BASE_URL'] != 'http://127.0.0.1:44011/u/factory-control.u1/v1'
+                    or declared['SUPERMEMORY_EMBEDDING_BASE_URL'] != 'http://127.0.0.1:44013/u/factory-control.u1/v1'
+                    or runtime.policy_authority({'complete': True}) is not False):
+                return False
+            if (runtime.auth_target() != ('POST', '/v4/memories/list',
+                    {'containerTags': ['factory-control_u1'], 'limit': 1})
+                    or runtime.version(None)['ok'] is not False):
+                return False
+        finally:
+            results = [accepted(close()) for _, close, accepted in reversed(resources)]
         raw = (root / '_a8/factory-control/STATUS').read_text(encoding='utf-8')
         return (results == [True] * 5 and events == ['gate-poll', 'fake-close', 'fake-close']
                 and ' ABORT ' in raw and ' BLOCK _a8/p0p2 END ' in raw and ' STAND _a8 END ' in raw
                 and not launch.spawn_proxy.called)
 
 
-check('A8S-RUNTIME-FACTORY-1: production wiring defers acquisition, uses actual9 env/hl8/embed guard, and refuses unresolved authority/schema', runtime_factory_controls)
+check('A8S-RUNTIME-FACTORY-1: deferred production wiring keeps actual9 env/hl8/embed guard, pinned auth body, and authority refusal', runtime_factory_controls)
 
 def full_projection_controls():
     raw = {'complete': True, 'native': {name: 0 for name in
@@ -1836,6 +1840,44 @@ check('A8S-FAKE-DRAIN-1: partial body connection and every owned HTTP handler dr
 check('A8S-FAKE-PARTIAL-1: bind failure retains server resource before acquisition and safely closes it', fake_partial_bind_controls)
 check('A8S-STATUS-1: actual debug stand/block/run START and terminal ABORT close every STATUS level', status_lifecycle_controls)
 check('A8S-STATUS-FAULT-1: failed abort/write still attempts END, block and stand independently and cannot pass', status_fault_controls)
+
+def api_tag_controls():
+    if P.SM_OPENAPI_PATHS != ('/v3/openapi', '/v4/openapi'):
+        return False
+    for run in ('unit', 'A8-sm-29', 'a' * 97):
+        tag = P.sm_container_tag(run)
+        if tag != run + '_u1' or len(tag) > 100 or '.' in tag:
+            return False
+    for run in (None, True, '', '../unit', 'unit.other', 'unit:other', 'a' * 98, 'a' * 128):
+        if not refused(lambda run=run: P.sm_container_tag(run), P.PreflightRefused):
+            return False
+    with tempfile.TemporaryDirectory(prefix='nvt-sm-api-tag-') as directory:
+        root = Path(directory).resolve()
+        contract = SimpleNamespace(runs_root=root)
+        # Refuse before any input read or live label consumption. No candidate binary is opened.
+        with mock.patch.object(P, 'bundle_record') as bundle_read:
+            if not named_preflight_refusal(lambda: P.preflight_static(contract, L, SimpleNamespace(),
+                    run='a' * 98, d1_run='d1', fake_knobs={}, test_only=False), 'container-tag-limit'):
+                return False
+            return not bundle_read.called and list(root.iterdir()) == []
+
+
+def api_auth_body_controls():
+    connection = mock.Mock(side_effect=AssertionError('pure body constructor must not connect'))
+    with mock.patch.object(P.http.client, 'HTTPConnection', connection):
+        result = P.sm_auth_target('owned_control')
+    if result != ('POST', '/v4/memories/list', {'containerTags': ['owned_control_u1'], 'limit': 1}) or connection.called:
+        return False
+    method, path, body = result
+    raw = json.dumps(body, allow_nan=False).encode('utf-8')
+    if json.loads(raw) != body or type(body['limit']) is not int or body['limit'] != 1:
+        return False
+    body['containerTags'].append('modified-fixture')
+    return P.sm_auth_target('owned_control')[2]['containerTags'] == ['owned_control_u1']
+
+
+check('A8S-API-TAG-1: pinned paths and exact underscore tag limit refuse before input reads or labels', api_tag_controls)
+check('A8S-API-AUTH-BODY-1: pinned memory-list body has required containerTags and isolated numeric limit', api_auth_body_controls)
 
 failed = sum(not good for _, good in ROWS)
 print(f'v3 sm core: {len(ROWS) - failed} passed, {failed} failed')

@@ -570,6 +570,28 @@ class GuardedLaunch:
             self.children.append(child)
         return child
 
+# The immutable f2 service mounts bu8 at /v3 and nu8 at /v4. Both register GET /openapi.
+# E44's POST /list uses g24: nonempty containerTags, optional filters, limit 1..1100.
+# J7 and document AZ/Nv8 reject dots and cap container tags at 100 characters.
+# Source evidence is retained in offline discoveries023/025/026/027/029; no runtime is inferred.
+SM_OPENAPI_PATHS = ('/v3/openapi', '/v4/openapi')
+SM_CONTAINER_TAG = re.compile(r'[a-zA-Z0-9_:-]{1,100}')
+
+
+def sm_container_tag(run: str) -> str:
+    """Construct the declared underscore fallback; never truncate or silently rename it."""
+    if type(run) is not str or LABEL.fullmatch(run) is None:
+        raise PreflightRefused('container-tag-run-label')
+    tag = run + '_u1'
+    if SM_CONTAINER_TAG.fullmatch(tag) is None:
+        raise PreflightRefused('container-tag-limit')
+    return tag
+
+
+def sm_auth_target(run: str) -> tuple[str, str, dict]:
+    """Use the pinned read-only memory-list operation with a schema-valid minimal body."""
+    return 'POST', '/v4/memories/list', {'containerTags': [sm_container_tag(run)], 'limit': 1}
+
 EMBED_TAG = 'nvt3-bge-m3-d1:latest'
 EMBED_DIGEST = '561ce53b3730a15c5b08676cc985d4a0805d95353c6576e5ef982bc5cc3c5a65'
 
@@ -604,6 +626,7 @@ def preflight_static(contract: Any, launch: Any, bundle: Any, *, run: str, d1_ru
     if launch.TOOLS_ALLOWED_BASELINE.get(ARM) != frozenset(TOOLS):
         raise PreflightRefused('tools-baseline')
     arm = owned_arm_dir(contract, launch, run)
+    container_tag = sm_container_tag(run)
     facts = bundle_record(contract, launch)
     if (facts.get('workflow', {}).get('default') != 'direct'
             or facts['workflow'].get('platform') != 'win32'
@@ -617,7 +640,8 @@ def preflight_static(contract: Any, launch: Any, bundle: Any, *, run: str, d1_ru
     embed = embed_record(contract, launch, d1_run=d1_run)
     owner_present = None if owner_home is None else owner_env_exists(owner_home)
     return {'arm_dir': arm, 'binary': Path(facts['pin']['binary']), 'bundle': facts,
-            'embed': embed, 'switches': switches, 'data_dir': arm / 'data', 'owner_env_present': owner_present}
+            'embed': embed, 'switches': switches, 'data_dir': arm / 'data',
+            'container_tag': container_tag, 'owner_env_present': owner_present}
 
 class RetainedJob:
     """Read and terminate only the captured Job handle, even if the PID map changes."""
@@ -1771,7 +1795,7 @@ def real_sm_deps(contract: Any, launch: Any, probe: Any, bundle: Any, server: An
                            override_allow=False)
             return native.declare_listener(boot.pid, boot.port, reason='supermemory-local', firewall=summary)
         def auth_target() -> tuple:
-            raise PreflightRefused('auth-contract-unpinned')  # C6b observed/pinned OpenAPI supplies this.
+            return sm_auth_target(run)
         def version(boot: OwnedBoot) -> dict:
             return sm_field({'observed': False}, ok=False)  # Never substitute package metadata for runtime output.
         return SimpleNamespace(gate=hooks.gate, witnesses=witnesses, scheduler=scheduler,
