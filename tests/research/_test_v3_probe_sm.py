@@ -2076,7 +2076,16 @@ def api_memory_response_controls():
         changed['json']['pagination'][name] = value
         if not named_api_refusal(lambda: P.sm_memory_page(changed, document_id='doc1', page=1), 'memory-pagination'):
             return False
-    for field, value in (('id', ''), ('memory', ' '), ('documentIds', []), ('documentIds', [True])):
+    unlinked = json.loads(json.dumps(reply))
+    unlinked['json']['memoryEntries'][0]['documentIds'] = []
+    if P.sm_memory_page(unlinked, document_id='doc1', page=1)['memory_found'] is not False:
+        return False
+    for text in ('', ' '):
+        blank = json.loads(json.dumps(reply))
+        blank['json']['memoryEntries'][0]['memory'] = text
+        if P.sm_memory_page(blank, document_id='doc1', page=1)['memory_found'] is not False:
+            return False
+    for field, value in (('id', ''), ('memory', None), ('documentIds', None), ('documentIds', [True])):
         changed = json.loads(json.dumps(reply))
         changed['json']['memoryEntries'][0][field] = value
         if not named_api_refusal(lambda: P.sm_memory_page(changed, document_id='doc1', page=1), 'memory-entry'):
@@ -2153,6 +2162,162 @@ check('A8S-API-SCHEMA-1: both observed specs carry every declared field or name 
 check('A8S-API-TARGETS-1: exact versioned targets, whole quoted ids, fresh tags and bounded inputs', api_operation_targets_controls)
 check('A8S-API-MEMORIES-1: only memory entries tied to the created document establish nonempty memory', api_memory_response_controls)
 check('A8S-API-POLL-1: each send has fresh admission and remaining deadline, late done cannot pass or prove memory', api_document_poll_controls)
+
+import re
+
+
+def state_fixture_entry(index, source='doc1'):
+    return {'id': 'm' + str(index), 'memory': 'memory ' + str(index), 'documentIds': [source]}
+
+
+def state_collection_controls():
+    class Clock:
+        now = 0.0
+        def __call__(self): return self.now
+    clock = Clock()
+    requests, admissions = [], []
+    key = object()
+    def request(port, method, path, **kwargs):
+        requests.append((port, method, path, kwargs))
+        clock.now += 0.1
+        page = kwargs['body']['page']
+        entries = [state_fixture_entry(i) for i in (range(10) if page == 1 else range(10, 12))]
+        return {'status': 200, 'json': {'memoryEntries': entries, 'pagination': {
+            'currentPage': page, 'limit': 10, 'totalItems': 12, 'totalPages': 2}}}
+    result = P.collect_sm_memories(1234, 'unit', 'doc1', key=key, request=request,
+        admit=lambda: admissions.append(clock.now) or True, clock=clock)
+    if (result['complete'] is not True or len(result['entries']) != 12 or len(result['selected']) != 12
+            or len(requests) != 2 or len(admissions) != 2 or result['memory_found'] is not True):
+        return False
+    if [(entry['id'], entry['memory']) for entry in result['entries']] != [('m' + str(i), 'memory ' + str(i)) for i in range(12)]:
+        return False
+    if any(method != 'POST' or path != '/v4/memories/list' or kw['key'] is not key
+            or kw['body']['containerTags'] != ['unit_u1'] for _, method, path, kw in requests):
+        return False
+    def inconsistent(*args, **kwargs):
+        reply = request(*args, **kwargs)
+        if kwargs['body']['page'] == 2:
+            reply['json']['pagination']['totalItems'] = 13
+        return reply
+    if not named_api_refusal(lambda: P.collect_sm_memories(1234, 'unit', 'doc1', key=key,
+            request=inconsistent, admit=lambda: True, clock=clock), 'memory-pagination-changed'):
+        return False
+    def duplicate(*args, **kwargs):
+        reply = request(*args, **kwargs)
+        if kwargs['body']['page'] == 2:
+            reply['json']['memoryEntries'][0]['id'] = 'm0'
+        return reply
+    if not named_api_refusal(lambda: P.collect_sm_memories(1234, 'unit', 'doc1', key=key,
+            request=duplicate, admit=lambda: True, clock=clock), 'memory-duplicate-across-pages'):
+        return False
+    def truncated(*args, **kwargs):
+        reply = request(*args, **kwargs)
+        if kwargs['body']['page'] == 2:
+            reply['json']['memoryEntries'].pop()
+        return reply
+    if not named_api_refusal(lambda: P.collect_sm_memories(1234, 'unit', 'doc1', key=key,
+            request=truncated, admit=lambda: True, clock=clock), 'memory-pagination-incomplete'):
+        return False
+    empty = {'status': 200, 'json': {'memoryEntries': [], 'pagination': {'currentPage': 1, 'limit': 10, 'totalItems': 0, 'totalPages': 0}}}
+    result = P.collect_sm_memories(1234, 'unit', 'doc1', key=key, request=lambda *a, **k: empty,
+        admit=lambda: True, clock=clock)
+    if result['complete'] is not True or result['entries'] != [] or result['memory_found'] is not False or result['atomic_snapshot_proven'] is not False:
+        return False
+    clock = Clock()
+    clock.now = 0.0
+    untouched = mock.Mock(side_effect=AssertionError('expired allowance must not send'))
+    def delayed_admission():
+        clock.now = 1.0
+        return True
+    if not named_api_refusal(lambda: P.collect_sm_memories(1234, 'unit', 'doc1', key=key, request=untouched,
+            admit=delayed_admission, ceiling_s=0.5, clock=clock), 'state-read-deadline') or untouched.called:
+        return False
+    clock.now = 0.0
+    def late_reply(*args, **kwargs):
+        clock.now = 1.0
+        return empty
+    if not named_api_refusal(lambda: P.collect_sm_memories(1234, 'unit', 'doc1', key=key, request=late_reply,
+            admit=lambda: True, ceiling_s=0.5, clock=clock), 'state-read-deadline'):
+        return False
+    clock.now = 0.0
+    original_parse = P.sm_memory_page
+    def delayed_parse(*args, **kwargs):
+        result = original_parse(*args, **kwargs)
+        clock.now = 1.0
+        return result
+    with mock.patch.object(P, 'sm_memory_page', side_effect=delayed_parse):
+        if not named_api_refusal(lambda: P.collect_sm_memories(1234, 'unit', 'doc1', key=key, request=lambda *a, **k: empty,
+                admit=lambda: True, ceiling_s=0.5, clock=clock), 'state-read-deadline'):
+            return False
+    return True
+
+
+def state_search_controls():
+    entry = state_fixture_entry(1)
+    reply = {'status': 200, 'json': {'results': [{'id': 'm1', 'memory': 'memory 1', 'similarity': 0.8}], 'total': 1, 'timing': 10}}
+    parsed = P.sm_search_response(reply, memories=[entry])
+    if parsed['found'] is not True or parsed['results'][0]['id'] != 'm1':
+        return False
+    empty = {'status': 200, 'json': {'results': [], 'total': 0, 'timing': 1}}
+    if P.sm_search_response(empty, memories=[entry])['found'] is not False:
+        return False
+    blank_memory = dict(entry, memory='')
+    blank_reply = json.loads(json.dumps(reply))
+    blank_reply['json']['results'][0]['memory'] = ''
+    if P.sm_search_response(blank_reply, memories=[blank_memory])['found'] is not False:
+        return False
+    for field, value in (('id', 'foreign'), ('memory', 'changed'), ('similarity', True), ('similarity', float('nan'))):
+        changed = json.loads(json.dumps(reply))
+        changed['json']['results'][0][field] = value
+        if not named_api_refusal(lambda: P.sm_search_response(changed, memories=[entry]), 'blocked:search-shape'):
+            return False
+    changed = json.loads(json.dumps(reply))
+    changed['json']['results'][0]['chunk'] = changed['json']['results'][0].pop('memory')
+    return named_api_refusal(lambda: P.sm_search_response(changed, memories=[entry]), 'blocked:search-shape')
+
+
+def state_created_at_controls():
+    doc = {'id': 'doc1', 'status': 'done', 'createdAt': '2026-10-03T15:00:00+03:00'}
+    if P.sm_created_at(doc)['utc'] != '2026-10-03T12:00:00+00:00':
+        return False
+    for value in (None, True, 1, '2026-10-03', '2026-10-03T12:00:00', '2026-02-30T12:00:00Z', '2026-10-03T12:00:00+00:60'):
+        if not named_api_refusal(lambda value=value: P.sm_created_at(dict(doc, createdAt=value)), 'document-created-at'):
+            return False
+    if P.sm_created_at(dict(doc, createdAt='2026-10-03T15:00:00.123456789+03:00'))['utc'] != '2026-10-03T12:00:00.123456789+00:00':
+        return False
+    return P.sm_created_at(dict(doc, createdAt='2026-10-03T12:00:00Z'))['source'] == 'get_document.createdAt'
+
+
+def state_seal_controls():
+    documents = [{'id': 'doc1', 'status': 'done', 'createdAt': '2026-10-03T12:00:00Z'}]
+    memories = [state_fixture_entry(1)]
+    search = {'results': [{'id': 'm1', 'memory': 'memory 1', 'similarity': 0.8}], 'total': 1}
+    seal = P.sm_state_seal(documents=documents, memories=memories, search=search)
+    if set(seal) != {'documents', 'memories', 'search'} or not all(re.fullmatch(r'[0-9a-f]{64}', value) for value in seal.values()):
+        return False
+    changed = dict(search, results=[dict(search['results'][0], similarity=0.9)])
+    altered = P.sm_state_seal(documents=documents, memories=memories, search=changed)
+    if altered['search'] == seal['search'] or altered['documents'] != seal['documents'] or altered['memories'] != seal['memories']:
+        return False
+    changed_doc = [dict(documents[0], metadata={'probe_marker': 2})]
+    doc_seal = P.sm_state_seal(documents=changed_doc, memories=memories, search=search)
+    if doc_seal['documents'] == seal['documents'] or any(doc_seal[name] != seal[name] for name in ('memories', 'search')):
+        return False
+    changed_memory = [dict(memories[0], metadata={'probe_marker': 2})]
+    memory_seal = P.sm_state_seal(documents=documents, memories=changed_memory, search=search)
+    if memory_seal['memories'] == seal['memories'] or any(memory_seal[name] != seal[name] for name in ('documents', 'search')):
+        return False
+    if P.sm_state_seal(documents=documents, memories=memories, search=dict(search, timing=123)) != seal:
+        return False
+    if not named_api_refusal(lambda: P.sm_state_seal(documents=documents, memories=[], search=search), 'state-seal-input'):
+        return False
+    return P.sm_state_seal(documents=documents, memories=memories, search=search) == seal
+
+
+check('A8S-STATE-PAGES-1: exhaustive stable memory pages retain every unique row and reject changed totals', state_collection_controls)
+check('A8S-STATE-SEARCH-1: memory-mode search ties results to complete known memory and finite scores', state_search_controls)
+check('A8S-STATE-TIME-1: createdAt is an observed timezone-aware document timestamp', state_created_at_controls)
+check('A8S-STATE-SEAL-1: exactly three complete semantic state parts remain independently comparable', state_seal_controls)
 
 failed = sum(not good for _, good in ROWS)
 print(f'v3 sm core: {len(ROWS) - failed} passed, {failed} failed')

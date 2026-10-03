@@ -846,12 +846,12 @@ def sm_memory_page(reply: Mapping[str, Any], *, document_id: str, page: int) -> 
     identities = set()
     for entry in entries:
         if (not isinstance(entry, dict) or type(entry.get('id')) is not str or not entry['id']
-                or entry['id'] in identities or type(entry.get('memory')) is not str or not entry['memory'].strip()
-                or not isinstance(entry.get('documentIds'), list) or not entry['documentIds']
+                or entry['id'] in identities or type(entry.get('memory')) is not str
+                or not isinstance(entry.get('documentIds'), list)
                 or any(type(value) is not str or not value for value in entry['documentIds'])):
             raise SmApiRefused('memory-entry')
         identities.add(entry['id'])
-        if document_id in entry['documentIds']:
+        if document_id in entry['documentIds'] and entry['memory'].strip():
             selected.append(entry)
     return {'entries': entries, 'selected': selected, 'pagination': pagination,
             'memory_found': bool(selected)}
@@ -895,6 +895,167 @@ def poll_sm_document(port: int, run: str, document_id: str, *, key: Any, request
             raise SmApiRefused('document-processing-status')
         sleep(min(interval_s, remaining()))
     raise SmApiRefused('document-poll-deadline')
+
+class _SmReadDeadline:
+    """One monotonic allowance for a bounded sequence of keyed read operations."""
+
+    def __init__(self, ceiling_s: float, clock: Callable) -> None:
+        if type(ceiling_s) not in {int, float} or not math.isfinite(ceiling_s) or not 0 < ceiling_s <= 300:
+            raise SmApiRefused('state-read-bounds')
+        self.clock = clock
+        self.previous = clock()
+        if type(self.previous) not in {int, float} or not math.isfinite(self.previous):
+            raise SmApiRefused('state-read-clock')
+        self.until = self.previous + ceiling_s
+
+    def remaining(self) -> float:
+        now = self.clock()
+        if type(now) not in {int, float} or not math.isfinite(now) or now < self.previous:
+            raise SmApiRefused('state-read-clock')
+        self.previous = now
+        if now >= self.until:
+            raise SmApiRefused('state-read-deadline')
+        return self.until - now
+
+    def send(self, port: int, target: tuple, *, key: Any, request: Callable, admit: Callable) -> dict:
+        self.remaining()
+        if admit() is not True:
+            raise SmApiRefused('incident-gate')
+        method, path, body = target
+        reply = request(port, method, path, body=body, key=key, timeout_s=min(5.0, self.remaining()))
+        self.remaining()
+        return reply
+
+
+def collect_sm_memories(port: int, run: str, document_id: str, *, key: Any, request: Callable,
+                        admit: Callable, ceiling_s: float = 60.0, max_pages: int = 100,
+                        clock: Callable = time.monotonic) -> dict:
+    """Collect all pages of one stable declared count; never claim an atomic snapshot.
+
+    The 100-page maximum is a declared A8 probe resource ceiling, not a vendor limit
+    or a benchmark configuration. Exceeding it refuses rather than truncating.
+    """
+    port = _port(port)
+    sm_api_target('get_document', run, document_id=document_id)  # Validate before any send.
+    if key is None:
+        raise SmApiRefused('held-key-required')
+    if type(max_pages) is not int or not 1 <= max_pages <= 100:
+        raise SmApiRefused('memory-page-ceiling')
+    deadline = _SmReadDeadline(ceiling_s, clock)
+    entries, selected, pages, identities = [], [], [], set()
+    expected = None
+    for page in range(1, max_pages + 1):
+        target = sm_api_target('list_memories', run, page=page)
+        reply = deadline.send(port, target, key=key, request=request, admit=admit)
+        parsed = sm_memory_page(reply, document_id=document_id, page=page)
+        pagination = parsed['pagination']
+        counts = (pagination['limit'], pagination['totalItems'], pagination['totalPages'])
+        if counts[0] != target[2]['limit']:
+            raise SmApiRefused('memory-pagination-limit')
+        if expected is None:
+            expected = counts
+            if counts[2] > max_pages:
+                raise SmApiRefused('memory-page-ceiling')
+        elif counts != expected:
+            raise SmApiRefused('memory-pagination-changed')
+        for entry in parsed['entries']:
+            if entry['id'] in identities:
+                raise SmApiRefused('memory-duplicate-across-pages')
+            identities.add(entry['id'])
+        entries.extend(parsed['entries'])
+        selected.extend(parsed['selected'])
+        pages.append(dict(pagination))
+        if page >= max(1, expected[2]):
+            if len(entries) != expected[1]:
+                raise SmApiRefused('memory-pagination-incomplete')
+            deadline.remaining()  # Parsing and aggregation consume the same allowance.
+            return {'complete': True, 'pagination_complete': True, 'atomic_snapshot_proven': False,
+                    'entries': entries, 'selected': selected, 'pages': pages, 'memory_found': bool(selected)}
+    raise SmApiRefused('memory-pagination-incomplete')
+
+
+def sm_search_response(reply: Mapping[str, Any], *, memories: Sequence[Mapping[str, Any]]) -> dict:
+    """Validate memory-mode results against the complete collected identity/content map."""
+    if (not isinstance(reply, Mapping) or type(reply.get('status')) is not int or reply['status'] != 200
+            or not isinstance(reply.get('json'), dict) or not isinstance(memories, (tuple, list))):
+        raise SmApiRefused('blocked:search-shape')
+    known = {}
+    for entry in memories:
+        if (not isinstance(entry, Mapping) or type(entry.get('id')) is not str or not entry['id']
+                or type(entry.get('memory')) is not str or entry['id'] in known):
+            raise SmApiRefused('blocked:search-shape')
+        known[entry['id']] = entry['memory']
+    data = reply['json']
+    results, total, timing = data.get('results'), data.get('total'), data.get('timing')
+    if (not isinstance(results, list) or type(total) not in {int, float} or not math.isfinite(total)
+            or total != len(results) or type(timing) not in {int, float} or not math.isfinite(timing) or timing < 0):
+        raise SmApiRefused('blocked:search-shape')
+    identities = set()
+    selected = []
+    for item in results:
+        if (not isinstance(item, dict) or type(item.get('id')) is not str or item['id'] not in known
+                or item['id'] in identities or item.get('memory') != known[item['id']]
+                or type(item.get('similarity')) not in {int, float} or not math.isfinite(item['similarity'])
+                or not 0 <= item['similarity'] <= 1):
+            raise SmApiRefused('blocked:search-shape')
+        identities.add(item['id'])
+        selected.append({'id': item['id'], 'memory': item['memory'], 'similarity': item['similarity']})
+    return {'results': selected, 'total': len(selected), 'found': any(item['memory'].strip() for item in selected)}
+
+
+def sm_created_at(document: Mapping[str, Any]) -> dict:
+    """Keep the observed value and normalize an explicitly zoned ISO timestamp to UTC."""
+    from datetime import datetime, timezone
+    raw = document.get('createdAt') if isinstance(document, Mapping) else None
+    match = re.fullmatch(r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)', raw) if type(raw) is str and len(raw) <= 64 else None
+    if match is None:
+        raise SmApiRefused('document-created-at')
+    try:
+        value = datetime.fromisoformat(raw.replace('Z', '+00:00'))
+        # Zone shifts are whole minutes; preserve the original fractional precision.
+        utc = value.astimezone(timezone.utc).isoformat(timespec='seconds').removesuffix('+00:00') + (match[1] or '') + '+00:00'
+    except (ValueError, OverflowError):
+        raise SmApiRefused('document-created-at') from None
+    if value.tzinfo is None or value.utcoffset() is None:
+        raise SmApiRefused('document-created-at')
+    return {'raw': raw, 'utc': utc, 'source': 'get_document.createdAt'}
+
+
+def sm_state_seal(*, documents: Sequence[Mapping[str, Any]], memories: Sequence[Mapping[str, Any]],
+                  search: Mapping[str, Any]) -> dict[str, str]:
+    """Digest exactly three semantic parts; caller must separately prove writers quiescent."""
+    if (not isinstance(documents, (tuple, list)) or not documents or not isinstance(memories, (tuple, list))
+            or not memories or not isinstance(search, Mapping) or not isinstance(search.get('results'), list)):
+        raise SmApiRefused('state-seal-input')
+    doc_ids, memory_ids = [], []
+    for document in documents:
+        if (not isinstance(document, dict) or type(document.get('id')) is not str or not document['id']
+                or document.get('status') != 'done' or document['id'] in doc_ids):
+            raise SmApiRefused('state-seal-input')
+        sm_created_at(document)
+        doc_ids.append(document['id'])
+    for memory in memories:
+        if (not isinstance(memory, dict) or type(memory.get('id')) is not str or not memory['id']
+                or memory['id'] in memory_ids or type(memory.get('memory')) is not str
+                or not isinstance(memory.get('documentIds'), list)
+                or any(type(value) is not str or not value for value in memory['documentIds'])):
+            raise SmApiRefused('state-seal-input')
+        memory_ids.append(memory['id'])
+    # Revalidate the normalized search part; measured timing is not persistent state.
+    result = sm_search_response({'status': 200, 'json': dict(search, timing=0)}, memories=memories)
+    parts = {'documents': sorted(documents, key=lambda item: item['id']),
+             'memories': sorted(memories, key=lambda item: item['id']),
+             'search': {'results': result['results'], 'total': result['total']}}
+    seal = {}
+    try:
+        for name, value in parts.items():
+            raw = json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=False, allow_nan=False).encode('utf-8')
+            if len(raw) > 8 << 20:
+                raise SmApiRefused('state-seal-size')
+            seal[name] = hashlib.sha256(raw).hexdigest()
+    except (ValueError, TypeError, RecursionError):
+        raise SmApiRefused('state-seal-json') from None
+    return seal
 
 EMBED_TAG = 'nvt3-bge-m3-d1:latest'
 EMBED_DIGEST = '561ce53b3730a15c5b08676cc985d4a0805d95353c6576e5ef982bc5cc3c5a65'
