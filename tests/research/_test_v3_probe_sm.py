@@ -619,6 +619,48 @@ class BootJobs:
         self.live = {81: [701], 99: [999]}
         self.killed = []
         self.broken = False
+        self._handles_lock = threading.RLock()
+        self._job_leases = {handle: SimpleNamespace(handle=handle, closed=False, uncertain=False)
+                            for handle in self.live}
+        self._root_leases = {701: self._job_leases[81]}
+    def capture_root_lease(self, root):
+        with self._handles_lock:
+            lease = self._root_leases.get(root)
+            if lease is None or self.jobs.get(root) != lease.handle or not self.active_lease(lease):
+                raise P.PreflightRefused('declared root Job generation unavailable')
+            return lease
+    def capture_lease(self, handle):
+        lease = self._job_leases.get(handle)
+        if lease is None or not self.active_lease(lease):
+            raise P.PreflightRefused('declared Job generation unavailable')
+        return lease
+    def active_lease(self, lease):
+        with self._handles_lock:
+            return self._job_leases.get(lease.handle) is lease and not lease.closed and not lease.uncertain
+    def members_lease(self, lease):
+        with self._handles_lock:
+            if self.broken or not self.active_lease(lease):
+                raise OSError('declared Job generation query refused')
+            return list(self.live[lease.handle])
+    def terminate_lease(self, lease):
+        with self._handles_lock:
+            if not self.active_lease(lease):
+                return False
+            self.killed.append(lease.handle)
+            self.live[lease.handle] = []
+            return True
+    def drain_lease(self, lease):
+        with self._handles_lock:
+            if not self.active_lease(lease) or self.members_lease(lease):
+                return False
+            lease.closed = True
+            self._job_leases.pop(lease.handle)
+            for root, assigned in list(self._root_leases.items()):
+                if assigned is lease:
+                    del self._root_leases[root]
+                    if self.jobs.get(root) == lease.handle:
+                        del self.jobs[root]
+            return True
     def members(self, pid):
         if self.broken:
             raise OSError('owned fake failure')
@@ -628,6 +670,29 @@ class BootJobs:
         self.killed.append(handle)
         self.live[handle] = []
         return True
+
+
+class DeclaredAcquisitionJobs(BootJobs, L.WinJobs):
+    """Synthetic handles, using the actual acquisition/assignment control flow."""
+    def __init__(self):
+        import ctypes
+        from ctypes import wintypes
+        BootJobs.__init__(self)
+        self.ct, self.wt = ctypes, wintypes
+        self._handles_lock = threading.RLock()
+        self._owned_handles = {}
+        self._job_leases = {}
+        self._root_leases = {}
+        self._capture_local = threading.local()
+        self._handle_generations = {}
+        self._uncertain_closes = {}
+        self._resource_errors = 0
+        self.k32 = SimpleNamespace(CreateJobObjectW=lambda *args: 111,
+            SetInformationJobObject=lambda *args: True,
+            AssignProcessToJobObject=lambda job, handle: True,
+            CloseHandle=lambda handle: True)
+    def _new_job(self):
+        return L.WinJobs._new_job(self)
 
 
 def boot_fixture(root, *, start_failure=False, post_spawn_failure=False):
@@ -1472,13 +1537,10 @@ def resource_writer_controls():
 def created_process_controls():
     import io
     for fault in ('none', 'before-register', 'after-adopt'):
-        class Jobs(BootJobs, L.WinJobs):
-            def _new_job(self):
-                return 111
+        class Jobs(DeclaredAcquisitionJobs):
             def adopt(self, pid, handle=None):
                 return L.WinJobs.adopt(self, pid, handle)
         jobs = Jobs()
-        jobs.k32 = SimpleNamespace(AssignProcessToJobObject=lambda job, handle: True)
         jobs.jobs.clear()
         jobs.live[111] = [701]
         jobs.created_at = lambda handle: 25.0
@@ -1698,9 +1760,7 @@ def proxy_partial_start_controls():
                 stdin=io.BytesIO(), poll=lambda: 0, wait=lambda timeout: 0)
             if fault == 'stdin':
                 process.stdin = SimpleNamespace(write=mock.Mock(side_effect=OSError), close=lambda: None)
-            class Jobs(BootJobs, L.WinJobs):
-                def _new_job(self):
-                    return 111
+            class Jobs(DeclaredAcquisitionJobs):
                 def adopt(self, pid, handle=None):
                     if fault == 'adopt-before':
                         raise OSError('owned adoption failure')
@@ -1710,7 +1770,6 @@ def proxy_partial_start_controls():
                         raise OSError('owned post-adoption and replaced-map failure')
                     return birth
             jobs = Jobs()
-            jobs.k32 = SimpleNamespace(AssignProcessToJobObject=lambda job, handle: True)
             jobs.jobs.clear()
             jobs.live[111] = []
             jobs.identity = lambda pid: 25.0
@@ -3229,6 +3288,8 @@ def p4p5_protocol_fixture(root, *, change=None, fail=None):
             dirs.cwd.mkdir()
             build(dirs)
             owned.job.jobs[702], owned.job.live[82] = 82, [702]
+            owned.job._job_leases[82] = SimpleNamespace(handle=82, closed=False, uncertain=False)
+            owned.job._root_leases[702] = owned.job._job_leases[82]
             owned.guard.children.append(second)
             owned.guard.observed.append({'unit': 'u1-boot2', 'spawn_id': second.spawn_id})
             state['dirs2'] = dirs

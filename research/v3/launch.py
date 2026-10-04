@@ -854,6 +854,95 @@ class Child:
             pass
 
 
+@dataclass
+class _JobLease:
+    """One acquisition generation; a recycled numeric handle is never this lease."""
+    handle: int
+    assigned: bool = False
+    drained: bool = False
+    closed: bool = False
+    uncertain: bool = False
+
+
+_FAILED_SPAWNS: dict[str, "_SpawnOwner"] = {}
+_SPAWN_OWNERS_LOCK = threading.RLock()
+
+
+class _SpawnOwner:
+    """Keep the exact Popen and newly acquired Jobs until handoff or proven cleanup."""
+
+    def __init__(self, key: str, native, jobs, *, suspended: bool):
+        self.key, self.native, self.jobs = key, getattr(native, "ownership_identity", native), jobs
+        self.process = None
+        self.borrowed_handle = None
+        self.leases: list[_JobLease] = []
+        self.failed = False
+        self.suspended = suspended
+        self.resume_attempted = False
+        self._lock = threading.RLock()
+
+    def cleanup(self, deadline: float) -> bool:
+        """Terminate independent resources, then drain within one shared deadline.
+
+        Only exact retained Popen and acquisition leases are used. No PID lookup,
+        child enumeration or replacement handle is a cleanup authority.
+        """
+        with self._lock:
+            proc = self.process
+            if proc is None:
+                return True
+            ok = True
+            for lease in self.leases:
+                try:
+                    if not lease.closed and not self.jobs.terminate_lease(lease):
+                        ok = False
+                except Exception:
+                    ok = False
+            try:
+                if proc.poll() is None:
+                    proc.kill()
+            except Exception:
+                ok = False
+            try:
+                proc.wait(timeout=max(0.0, deadline - time.monotonic()))
+                if proc.poll() is None:
+                    ok = False
+            except Exception:
+                ok = False
+            # A root wait alone cannot prove drainage after an unsuspended launch.
+            tree_proven = self.suspended and not self.resume_attempted
+            if self.leases:
+                tree_proven = True
+                for lease in self.leases:
+                    try:
+                        while not self.jobs.drain_lease(lease):
+                            if time.monotonic() >= deadline:
+                                tree_proven = False
+                                break
+                            time.sleep(min(0.01, max(0.0, deadline - time.monotonic())))
+                    except Exception:
+                        tree_proven = False
+            return ok and tree_proven
+
+
+def _retry_failed_spawns(native, *, timeout: float = 5.0) -> bool:
+    native = getattr(native, "ownership_identity", native)
+    deadline = time.monotonic() + timeout
+    with _SPAWN_OWNERS_LOCK:
+        pending = [(key, owner) for key, owner in _FAILED_SPAWNS.items()
+                   if owner.native is native and owner.failed]
+    complete = True
+    for key, owner in pending:
+        if owner.cleanup(deadline):
+            with _SPAWN_OWNERS_LOCK:
+                if _FAILED_SPAWNS.get(key) is owner:
+                    del _FAILED_SPAWNS[key]
+        else:
+            complete = False
+    return complete
+
+
+
 def spawn(c: Contract, argv: Sequence[str], *, env: Mapping[str, str], cwd: str | os.PathLike,
           record: Mapping[str, str], parent_env: Mapping[str, str], catcher_url: str,
           token_names: Sequence[str] = (), claude_names: Sequence[str] = (),
@@ -997,29 +1086,56 @@ def spawn(c: Contract, argv: Sequence[str], *, env: Mapping[str, str], cwd: str 
     if os.name == "nt":
         popen_kw["creationflags"] = int(popen_kw.get("creationflags") or 0) | subprocess.CREATE_NEW_PROCESS_GROUP \
             | (CREATE_SUSPENDED if jobs is not None else 0)
-    proc = popen([binary.path, *argv[1:]], env=dict(env), cwd=os.fspath(cwd), **popen_kw)
-    if native is not None:
-        handle = getattr(proc, "_handle", None) if jobs is not None else None
-        ok = native.register(proc.pid, handle=int(handle) if handle is not None else None, label=spawn_id)
-        if jobs is not None and handle is not None:
-            if not ok or not jobs.resume(int(handle)):      # W1: never let a child run outside its job
-                try:
-                    proc.kill()
-                except OSError:
-                    pass
-                _append_jsonl(spawns_log(c), {"spawn_id": spawn_id, "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ",
-                              time.gmtime()), "role": record.get("role"), "stand": record.get("stand"),
-                              "arm": record.get("arm"), "refused": True,
-                              "reasons": ["the child could not be put in its job object"],
-                              "witness": {"native": "on", "requirement": requirement}})
+    owner = _SpawnOwner(spawn_id, native, jobs, suspended=os.name == "nt" and jobs is not None)
+    with _SPAWN_OWNERS_LOCK:
+        _FAILED_SPAWNS[spawn_id] = owner
+    try:
+        # Store the exact result before any handle access, registration or resume.
+        owner.process = popen([binary.path, *argv[1:]], env=dict(env), cwd=os.fspath(cwd), **popen_kw)
+        proc = owner.process
+        if native is not None:
+            handle = getattr(proc, "_handle", None) if jobs is not None else None
+            owner.borrowed_handle = int(handle) if handle is not None else None
+            capture = getattr(jobs, "capture_created_jobs", None)
+            scope = capture(owner) if capture is not None else contextlib.nullcontext()
+            with scope:
+                ok = native.register(proc.pid, handle=owner.borrowed_handle, label=spawn_id)
+            if jobs is not None and (owner.borrowed_handle is None or not ok):
                 raise ContractViolation(["the child could not be put in its job object"])
-        if window is not None:
-            window.roots.add(proc.pid)
-    child = Child(spawn_id=spawn_id, process=proc, witness=native)
-    if _norm(cwd) in _CC_UNITS:                    # Q-47-6: the unit's latest session, and how many it has had
-        _CC_UNITS[_norm(cwd)]["uses"] += 1
-        _CC_UNITS[_norm(cwd)]["child"] = child
-    return child
+            if window is not None:
+                window.roots.add(proc.pid)
+        child = Child(spawn_id=spawn_id, process=proc, witness=native)
+        if _norm(cwd) in _CC_UNITS:
+            _CC_UNITS[_norm(cwd)]["uses"] += 1
+            _CC_UNITS[_norm(cwd)]["child"] = child
+        # All fallible bookkeeping precedes execution; interruption still cleans the Job.
+        if jobs is not None:
+            owner.resume_attempted = True
+            if not jobs.resume(owner.borrowed_handle):
+                raise ContractViolation(["the child could not be resumed in its job object"])
+        with _SPAWN_OWNERS_LOCK:
+            del _FAILED_SPAWNS[spawn_id]
+        return child
+    except BaseException:
+        with _SPAWN_OWNERS_LOCK:
+            _FAILED_SPAWNS[spawn_id] = owner
+            owner.failed = True
+        if owner.process is not None and native is not None:
+            # The original refusal remains visible even when cleanup later succeeds.
+            native.result.resource_errors += 1
+        try:
+            _retry_failed_spawns(native)
+        except BaseException:
+            # An interrupted cleanup keeps ownership and cannot mask the original fault.
+            pass
+        try:
+            _append_jsonl(spawns_log(c), {"spawn_id": spawn_id, "refused": True,
+                "reasons": ["created-process launch failed; exact ownership cleanup required"],
+                "cleanup_pending": spawn_id in _FAILED_SPAWNS})
+        except BaseException:
+            pass
+        raise
+
 
 
 # ── witnesses (A2.2): egress, filesystem, canaries, the ancestor check, fetch windows ──
@@ -1101,6 +1217,7 @@ class EgressResult:
     samples: int = 0
     failed_samples: int = 0
     process_errors: int = 0
+    resource_errors: int = 0                           # retained-handle cleanup failures, sticky per check
     rows_seen: int = 0                                  # connections of tracked processes read, loopback included
     unwitnessed_registrations: int = 0                  # W2: a child whose identity could not be read
     loopback_hits: int = 0                              # W7: loopback connections to a listener nobody allowed
@@ -1126,12 +1243,14 @@ class EgressResult:
         """W4: a sample, none failed, coverage >= 0.9 of the ticks the check lasted, and no child unwitnessed.
         An incomplete check never reads as zero hits."""
         return (self.samples > 0 and self.failed_samples == 0 and self.unwitnessed_registrations == 0
+                and self.resource_errors == 0
                 and self.samples >= 0.9 * self.expected_samples)
 
     def as_record(self) -> dict:
         return {"hits": self.hits, "hit_remotes": sorted(self.hit_remotes), "window_hosts": sorted(self.window_hosts),
                 "listen_nonloopback": self.listen_nonloopback, "samples": self.samples,
                 "failed_samples": self.failed_samples, "process_errors": self.process_errors,
+                "resource_errors": self.resource_errors,
                 "rows_seen": self.rows_seen, "unwitnessed_registrations": self.unwitnessed_registrations,
                 "loopback_hits": self.loopback_hits, "undetermined_loopback": self.undetermined_loopback,
                 "ollama_direct_conns": {k: len(v) for k, v in sorted(self.ollama_direct.items())},
@@ -1188,7 +1307,10 @@ class _Ticker:
         self._stop.set()
         if self._thread is not None:
             self._thread.join(timeout=max(5.0, 3 * self.tick_s))
-        self._safe_sample()
+        if self._thread is not None and self._thread.is_alive():
+            self.result.failed_samples += 1
+        else:
+            self._safe_sample()
         r = self.result
         r.tick_s = self.tick_s
         r.elapsed_s = (time.monotonic() - self._t0) if self._t0 is not None else 0.0
@@ -1316,7 +1438,77 @@ class WinJobs:
         k.GetProcessTimes.argtypes = [wintypes.HANDLE] + [ctypes.POINTER(wintypes.FILETIME)] * 4
         k.CloseHandle.argtypes = [wintypes.HANDLE]
         self.ntdll.NtResumeProcess.argtypes = [wintypes.HANDLE]
-        self.jobs: dict[int, int] = {}                  # root pid -> job handle
+        self.jobs: dict[int, int] = {}                  # root pid -> assigned job handle
+        self._handles_lock = threading.RLock()
+        # Acquired handles stay owned through failed closes and assignment transfer.
+        # Borrowed Popen handles never enter this registry.
+        self._owned_handles: dict[int, tuple[str, int | None]] = {}
+        self._resource_errors = 0
+        self._job_leases: dict[int, _JobLease] = {}
+        self._root_leases: dict[int, _JobLease] = {}
+        self._capture_local = threading.local()
+        self._handle_generations: dict[int, object] = {}
+        self._uncertain_closes: dict[object, int] = {}
+
+    def _close_owned(self, handle: int) -> bool:
+        with self._handles_lock:
+            generation = self._handle_generations.get(handle)
+            if handle not in self._owned_handles or generation is None or generation in self._uncertain_closes:
+                self._resource_errors += 1
+                return False
+            lease = self._job_leases.get(handle)
+            # Revoke raw-handle authority BEFORE the API may close and recycle it.
+            self._uncertain_closes[generation] = handle
+            if lease is not None:
+                lease.uncertain = True
+            try:
+                if not self.k32.CloseHandle(handle):
+                    self._uncertain_closes.pop(generation)
+                    if lease is not None:
+                        lease.uncertain = False
+                    self._resource_errors += 1
+                    return False
+                if self._handle_generations.get(handle) is generation:
+                    del self._owned_handles[handle]
+                    del self._handle_generations[handle]
+                    if lease is not None and self._job_leases.get(handle) is lease:
+                        self._job_leases.pop(handle)
+                for root, assigned_lease in list(self._root_leases.items()):
+                    if lease is not None and assigned_lease is lease:
+                        del self._root_leases[root]
+                        if self.jobs.get(root) == handle:
+                            del self.jobs[root]
+                if lease is not None:
+                    lease.closed = True
+                    lease.uncertain = False
+                self._uncertain_closes.pop(generation)
+                return True
+            except BaseException:
+                # Unknown completion is permanent incomplete evidence. No numeric
+                # handle retry can establish that it is still the same acquisition.
+                self._resource_errors += 1
+                return False
+
+    def cleanup_owned(self, *, close_drained: bool = False) -> bool:
+        """One bounded pass: close pending handles; assigned Jobs need explicit owner retirement.
+
+        Query/close refusal keeps that exact owned handle available for the next retry.
+        Independent resources are still attempted. No PID lookup replaces provenance.
+        """
+        with self._handles_lock:
+            complete = not self._uncertain_closes
+            for handle, (kind, root) in list(self._owned_handles.items()):
+                try:
+                    if kind == "job" and root is not None:
+                        if not close_drained or self.members(root):
+                            continue
+                        self._job_leases[handle].drained = True
+                    if not self._close_owned(handle):
+                        complete = False
+                except Exception:
+                    self._resource_errors += 1
+                    complete = False
+            return complete
 
     def _new_job(self) -> int:
         ct, wt = self.ct, self.wt
@@ -1335,17 +1527,34 @@ class WinJobs:
                         ("JobMemoryLimit", ct.c_size_t), ("PeakProcessMemoryUsed", ct.c_size_t),
                         ("PeakJobMemoryUsed", ct.c_size_t)]
 
-        job = self.k32.CreateJobObjectW(None, None)
-        if not job:
-            raise OSError(ct.get_last_error(), "CreateJobObject failed")
-        info = EXT()
-        info.Basic.LimitFlags = self.JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE      # and no breakaway flag of any kind
-        if not self.k32.SetInformationJobObject(job, 9, ct.byref(info), ct.sizeof(info)):
-            raise OSError(ct.get_last_error(), "SetInformationJobObject failed")
-        return job
+        with self._handles_lock:
+            job = self.k32.CreateJobObjectW(None, None)
+            if not job:
+                raise OSError(ct.get_last_error(), "CreateJobObject failed")
+            self._owned_handles[int(job)] = ("job", None)
+            lease = _JobLease(int(job))
+            self._job_leases[int(job)] = lease
+            self._handle_generations[int(job)] = object()
+            owner = getattr(self._capture_local, "owner", None)
+            if owner is not None:
+                owner.leases.append(lease)
+            try:
+                info = EXT()
+                info.Basic.LimitFlags = self.JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE  # no breakaway flags
+                if not self.k32.SetInformationJobObject(job, 9, ct.byref(info), ct.sizeof(info)):
+                    raise OSError(ct.get_last_error(), "SetInformationJobObject failed")
+                return job
+            except BaseException:
+                self._close_owned(int(job))
+                raise
 
     def _open(self, pid: int, access: int) -> int:
-        return self.k32.OpenProcess(access, False, pid) or 0
+        with self._handles_lock:
+            handle = self.k32.OpenProcess(access, False, pid) or 0
+            if handle:
+                self._owned_handles[int(handle)] = ("process", None)
+                self._handle_generations[int(handle)] = object()
+            return handle
 
     def created_at(self, handle: int) -> float | None:
         """The process's creation time, epoch seconds - readable after exit while a handle is open (W2)."""
@@ -1356,38 +1565,120 @@ class WinJobs:
         return (v - 116444736000000000) / 1e7
 
     def identity(self, pid: int) -> float | None:
-        h = self._open(pid, self.PROCESS_QUERY_LIMITED)
-        if not h:
-            return None
-        try:
-            return self.created_at(h)
-        finally:
-            self.k32.CloseHandle(h)
+        with self._handles_lock:
+            h = self._open(pid, self.PROCESS_QUERY_LIMITED)
+            if not h:
+                return None
+            try:
+                return self.created_at(h)
+            finally:
+                self._close_owned(int(h))
 
     def adopt(self, pid: int, handle: int | None = None) -> float | None:
         """Put ``pid`` (by its handle when we hold one) in a job of its own; returns its creation time, or None."""
-        own = handle is None
-        h = self._open(pid, self.PROCESS_SET_QUOTA | self.PROCESS_TERMINATE | self.PROCESS_QUERY_LIMITED) if own else handle
-        if not h:
-            return None
-        try:
-            job = self._new_job()
-            if not self.k32.AssignProcessToJobObject(job, h):
-                self.k32.CloseHandle(job)
+        with self._handles_lock:
+            if pid in self.jobs:
                 return None
-            self.jobs[pid] = job
-            return self.created_at(h)
+            own = handle is None
+            h = self._open(pid, self.PROCESS_SET_QUOTA | self.PROCESS_TERMINATE | self.PROCESS_QUERY_LIMITED) if own else handle
+            if not h:
+                return None
+            job = None
+            try:
+                job = self._new_job()
+                lease = self._job_leases[int(job)]
+                owner = getattr(self._capture_local, "owner", None)
+                if owner is not None and int(h) != owner.borrowed_handle:
+                    raise ContractViolation(["new Job assignment does not name the retained process handle"])
+                if not self.k32.AssignProcessToJobObject(job, h):
+                    self._close_owned(int(job))
+                    return None
+                lease.assigned = True
+                self._owned_handles[int(job)] = ("job", pid)
+                self.jobs[pid] = job
+                self._root_leases[pid] = lease
+                return self.created_at(h)
+            except BaseException:
+                if job is not None and self._owned_handles.get(int(job)) == ("job", None):
+                    self._close_owned(int(job))
+                raise
+            finally:
+                if own:
+                    self._close_owned(int(h))
+
+    @contextlib.contextmanager
+    def capture_created_jobs(self, owner):
+        """Thread-local acquisition capture; concurrent roots never share cleanup authority."""
+        previous = getattr(self._capture_local, "owner", None)
+        self._capture_local.owner = owner
+        try:
+            yield
         finally:
-            if own:
-                self.k32.CloseHandle(h)
+            self._capture_local.owner = previous
+
+    def capture_lease(self, handle: int) -> _JobLease:
+        with self._handles_lock:
+            lease = self._job_leases.get(handle)
+            if lease is None or not self.active_lease(lease):
+                raise WitnessUnavailable("Job acquisition generation is unavailable")
+            return lease
+
+    def capture_root_lease(self, root: int) -> _JobLease:
+        with self._handles_lock:
+            handle = self.jobs.get(root)
+            lease = self._root_leases.get(root)
+            if (lease is None or handle != lease.handle or not self.active_lease(lease)
+                    or self._owned_handles.get(handle) != ("job", root)):
+                raise WitnessUnavailable("Owned root Job acquisition is unavailable")
+            return lease
+
+    def active_lease(self, lease: _JobLease) -> bool:
+        with self._handles_lock:
+            return (not lease.closed and not lease.uncertain
+                    and self._job_leases.get(lease.handle) is lease
+                    and self._handle_generations.get(lease.handle) is not None
+                    and self._handle_generations[lease.handle] not in self._uncertain_closes)
+
+    def members_lease(self, lease: _JobLease) -> list[int]:
+        with self._handles_lock:
+            if not self.active_lease(lease):
+                raise WitnessUnavailable("Job acquisition is retired or uncertain")
+            return self._job_members(lease.handle, lease=lease)
+
+    def terminate_lease(self, lease: _JobLease) -> bool:
+        with self._handles_lock:
+            if lease.uncertain:
+                return False
+            if lease.closed:
+                return not lease.assigned or lease.drained
+            if not self.active_lease(lease):
+                return False
+            return bool(self.k32.TerminateJobObject(lease.handle, 1))
+
+    def drain_lease(self, lease: _JobLease) -> bool:
+        with self._handles_lock:
+            if lease.uncertain:
+                return False
+            if lease.closed:
+                return not lease.assigned or lease.drained
+            if not self.active_lease(lease) or self._job_members(lease.handle, lease=lease):
+                return False
+            lease.drained = True
+            return self._close_owned(lease.handle)
 
     def resume(self, handle: int) -> bool:
         return self.ntdll.NtResumeProcess(handle) == 0
 
     def members(self, root: int) -> list[int]:
-        job = self.jobs.get(root)
-        if not job:
-            return []
+        with self._handles_lock:
+            if root not in self.jobs and root not in self._root_leases:
+                return []
+            lease = self.capture_root_lease(root)
+            return self._job_members(lease.handle, lease=lease)
+
+    def _job_members(self, job: int, *, lease: _JobLease) -> list[int]:
+        if job != lease.handle or not self.active_lease(lease):
+            raise WitnessUnavailable("Job acquisition is missing, retired or uncertain")
         ct, wt = self.ct, self.wt
         n = 4096
 
@@ -1400,8 +1691,12 @@ class WinJobs:
         return [int(lst.ids[i]) for i in range(lst.inlist)]
 
     def terminate(self, root: int) -> bool:
-        job = self.jobs.get(root)
-        return bool(job) and bool(self.k32.TerminateJobObject(job, 1))
+        with self._handles_lock:
+            try:
+                lease = self.capture_root_lease(root)
+            except WitnessUnavailable:
+                return False
+            return bool(self.k32.TerminateJobObject(lease.handle, 1))
 
 
 #: C4: the addresses a declared listener may hold - unspecified only; a listener on one named interface stays a hit
@@ -1449,6 +1744,29 @@ class NativeEgressWitness(_Ticker):
                                    + ("" if self.jobs else LIMIT_NO_JOBS) + LIMIT_LOOPBACK)
         self._lock = threading.Lock()
 
+    @property
+    def ownership_identity(self):
+        """Controller views delegate this capability to the actual witness owner."""
+        return self
+
+    def stop(self):
+        result = super().stop()
+        # Do not close handles concurrently with a ticker that failed to join.
+        if self._thread is not None and self._thread.is_alive():
+            result.resource_errors += 1
+            return result
+        if not _retry_failed_spawns(self):
+            result.resource_errors += 1
+        cleanup = getattr(self.jobs, "cleanup_owned", None)
+        if cleanup is not None:
+            try:
+                if cleanup() is not True:
+                    result.resource_errors += 1
+            except Exception:
+                result.resource_errors += 1
+        result.resource_errors = max(result.resource_errors, getattr(self.jobs, "_resource_errors", 0))
+        return result
+
     def _identity(self, pid: int) -> float | None:
         if self.jobs is not None:
             ct = self.jobs.identity(pid)
@@ -1467,8 +1785,12 @@ class NativeEgressWitness(_Ticker):
                     return True
                 self.result.unwitnessed_registrations += 1
                 return False  # do not overwrite a surviving job or transfer its window to a reused root
-            ct = self.jobs.adopt(pid, handle) if self.jobs is not None else None
-            if ct is None:
+            try:
+                ct = self.jobs.adopt(pid, handle) if self.jobs is not None else None
+            except BaseException:
+                self.result.unwitnessed_registrations += 1
+                raise
+            if ct is None and self.jobs is None:
                 ct = self._identity(pid)
             if ct is None:
                 self.result.unwitnessed_registrations += 1

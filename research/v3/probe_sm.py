@@ -1866,12 +1866,12 @@ class RetainedJob:
 
     def __init__(self, native: Any, pid: int) -> None:
         base = getattr(native, 'jobs', None)
-        handles = getattr(base, 'jobs', None)
-        handle = handles.get(pid) if isinstance(handles, dict) else None
-        if type(pid) is not int or pid <= 0 or type(handle) is not int or handle <= 0:
+        if type(pid) is not int or pid <= 0 or getattr(base, '_handles_lock', None) is None:
             raise PreflightRefused('server-owned-job-unavailable')
-        self.base, self.pid, self.handle = base, pid, handle
-        self.jobs = {pid: handle}
+        with base._handles_lock:
+            lease = base.capture_root_lease(pid)
+            self.base, self.pid, self.handle, self.lease = base, pid, lease.handle, lease
+            self.jobs = {pid: lease.handle}
 
     @classmethod
     def from_handle(cls, base: Any, pid: int, handle: int) -> Any:
@@ -1879,6 +1879,7 @@ class RetainedJob:
             raise PreflightRefused('server-created-job-handle')
         result = cls.__new__(cls)
         result.base, result.pid, result.handle = base, pid, handle
+        result.lease = base.capture_lease(handle)
         result.jobs = {pid: handle}
         return result
 
@@ -1886,17 +1887,24 @@ class RetainedJob:
         return getattr(self.base, name)
 
     def members(self) -> list[int]:
-        rows = type(self.base).members(self, self.pid)
+        rows = self.base.members_lease(self.lease)
         if (not isinstance(rows, list) or len(rows) > 4096
                 or any(type(pid) is not int or pid <= 0 for pid in rows)):
             raise PreflightRefused('server-job-members-shape')
         return rows
 
     def terminate(self) -> bool:
-        return type(self.base).terminate(self, self.pid) is True
+        with self.base._handles_lock:
+            return self.base.active_lease(self.lease) and self.base.terminate_lease(self.lease) is True
+
+    def retire(self) -> bool:
+        """Release only this acquisition after its terminal owner observations."""
+        with self.base._handles_lock:
+            return self.base.drain_lease(self.lease) is True
 
     def same_binding(self) -> bool:
-        return self.base.jobs.get(self.pid) == self.handle
+        with self.base._handles_lock:
+            return self.base.active_lease(self.lease) and self.base.jobs.get(self.pid) == self.handle
 
 
 def _owned_windows_process(process: Any) -> bool:
@@ -2004,7 +2012,18 @@ class OwnedBoot:
                 result['problems'].append('server-pump-not-complete')
         except Exception as exc:
             result['problems'].append('server-pump-drain:' + type(exc).__name__)
-        self.closed = result['root_exited'] and result['members'] == [] and result['pump_drained']
+        ready_to_retire = result['root_exited'] and result['members'] == [] and result['pump_drained']
+        result['job_retired'] = False
+        result['complete'] = False
+        self.stop_result = result  # Publish incomplete evidence before fallible retirement.
+        if ready_to_retire:
+            try:
+                result['job_retired'] = self.job is not None and self.job.retire() is True
+                if not result['job_retired']:
+                    result['problems'].append('server-job-retirement-refused')
+            except Exception as exc:
+                result['problems'].append('server-job-retirement:' + type(exc).__name__)
+        self.closed = ready_to_retire and result['job_retired']
         result['complete'] = self.closed and not result['problems']
         self.stop_result = result  # Retain failures before a phase transition or later retry.
         return result
@@ -2421,6 +2440,11 @@ class CapturingJobs:
         class Api:
             def __getattr__(view, name):
                 return getattr(base.k32, name)
+            def CreateJobObjectW(view, *args):
+                handle = base.k32.CreateJobObjectW(*args)
+                if handle:
+                    owner.created.add(int(handle))
+                return handle
             def AssignProcessToJobObject(view, job, handle):
                 process = retained.child.process
                 if int(job) not in owner.created or int(handle) != int(process._handle):
@@ -2435,9 +2459,7 @@ class CapturingJobs:
         return getattr(self.base, name)
 
     def _new_job(self):
-        handle = self.base._new_job()
-        self.created.add(int(handle))
-        return handle
+        return type(self.base)._new_job(self)
 
     def adopt(self, pid, handle=None):
         return type(self.base).adopt(self, pid, handle)

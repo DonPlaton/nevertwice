@@ -933,6 +933,973 @@ check("the auditor's replay tooling (py310, core_bare310, ci_linux) is in the wa
       and {"polygon_py310", "polygon_core_bare310", "polygon_ci_linux"}
       <= {s.label for s in L.watched_set(L.Contract._machine())})
 
+# Resource ownership controls use a declared injected Win32 API, not foreign PIDs.
+print("\n- partial Win32 acquisition and registration -")
+import ctypes as _ct
+from ctypes import wintypes as _wt
+from unittest import mock as _mock
+from types import SimpleNamespace as _Namespace
+import threading as _threading
+
+class _JobFunction:
+    def __init__(self, call):
+        self.call = call
+    def __call__(self, *args):
+        return self.call(*args)
+
+class _JobApi:
+    def __init__(self):
+        self.next_handle = 1000
+        self.live = {}
+        self.close_calls = []
+        self.close_refused = set()
+        self.config_ok = self.assign_ok = True
+        self.at_config = None
+        self.job_members = {}
+        self.job_flags = []
+        for name, method in [('CreateJobObjectW', self.create), ('OpenProcess', self.open),
+                             ('SetInformationJobObject', self.configure), ('AssignProcessToJobObject', self.assign),
+                             ('CloseHandle', self.close), ('GetProcessTimes', self.times),
+                             ('QueryInformationJobObject', self.query), ('TerminateJobObject', lambda *a: True)]:
+            setattr(self, name, _JobFunction(method))
+    def acquire(self, kind):
+        self.next_handle += 1
+        self.live[self.next_handle] = kind
+        return self.next_handle
+    def create(self, *args):
+        return self.acquire('job')
+    def open(self, *args):
+        return self.acquire('process')
+    def configure(self, handle, kind, info, size):
+        self.job_flags.append(info._obj.Basic.LimitFlags)
+        if self.at_config is not None:
+            self.at_config(handle)
+        return self.config_ok
+    def assign(self, job, process):
+        if self.assign_ok:
+            self.job_members[job] = [42]
+        return self.assign_ok
+    def close(self, handle):
+        self.close_calls.append(handle)
+        if handle in self.close_refused:
+            return False
+        if handle not in self.live:
+            raise AssertionError('must not close an unowned or previously closed handle')
+        del self.live[handle]
+        return True
+    def times(self, handle, created, *args):
+        value = 116444736000000000 + 120000000
+        created._obj.dwLowDateTime, created._obj.dwHighDateTime = value & 0xffffffff, value >> 32
+        return True
+    def query(self, handle, kind, info, size, returned):
+        members = self.job_members.get(handle, [])
+        info._obj.inlist = len(members)
+        for index, pid in enumerate(members):
+            info._obj.ids[index] = pid
+        return True
+
+def _job_fixture():
+    api = _JobApi()
+    nt = _Namespace(NtResumeProcess=_JobFunction(lambda *a: 0))
+    with _mock.patch.object(_ct, 'WinDLL', side_effect=[api, nt], create=True):
+        jobs = L.WinJobs()
+    return jobs, api
+
+def _ownership_row(name, action):
+    try:
+        with _mock.patch.object(_ct, 'get_last_error', return_value=1722, create=True):
+            check(name, action())
+    except Exception as error:
+        check(name, False, type(error).__name__ + ': ' + str(error))
+
+def _configuration_failure_keeps_ownership():
+    jobs, api = _job_fixture()
+    api.config_ok = False
+    observed = []
+    def retained_before_config(handle):
+        observed.append(handle in getattr(jobs, '_owned_handles', {}))
+        api.close_refused.add(handle)
+    api.at_config = retained_before_config
+    try:
+        jobs._new_job()
+        return False
+    except OSError as error:
+        if error.errno != 1722 or observed != [True] or not api.live or set(api.live) != set(jobs._owned_handles):
+            return False
+    api.close_refused.clear()
+    return jobs.cleanup_owned() is True and not api.live and not jobs._owned_handles
+
+_ownership_row('JOB-CONFIG-1: a configured Job is owned before the next API call; failed close retains it for retry', _configuration_failure_keeps_ownership)
+
+def _assignment_failure_keeps_every_handle():
+    jobs, api = _job_fixture()
+    api.assign_ok = False
+    api.at_config = lambda h: api.close_refused.update(api.live)
+    if jobs.adopt(42) is not None or jobs.jobs or len(api.live) != 2 or set(jobs._owned_handles) != set(api.live):
+        return False
+    api.close_refused.clear()
+    return jobs.cleanup_owned() is True and not api.live and not jobs._owned_handles
+
+_ownership_row('JOB-ASSIGN-1: refused assignment retains both owned acquisitions after false CloseHandle results', _assignment_failure_keeps_every_handle)
+
+def _identity_close_is_retained():
+    jobs, api = _job_fixture()
+    old_open = api.OpenProcess.call
+    def refuse_close(*args):
+        handle = old_open(*args)
+        api.close_refused.add(handle)
+        return handle
+    api.OpenProcess.call = refuse_close
+    if jobs.identity(42) != 12.0 or len(api.live) != 1 or set(jobs._owned_handles) != set(api.live):
+        return False
+    api.close_refused.clear()
+    return jobs.cleanup_owned() is True and not api.live
+
+_ownership_row('JOB-PROCESS-1: identity retains an owned process handle until CloseHandle actually succeeds', _identity_close_is_retained)
+
+def _duplicate_assignment_cannot_overwrite():
+    jobs, api = _job_fixture()
+    if jobs.adopt(42, handle=700) != 12.0:
+        return False
+    first, before = jobs.jobs[42], dict(api.live)
+    return jobs.adopt(42, handle=700) is None and jobs.jobs[42] == first and api.live == before \
+        and api.job_flags == [L.WinJobs.JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE]
+
+_ownership_row('JOB-DUP-1: repeated direct adoption refuses before acquiring or replacing the existing Job', _duplicate_assignment_cannot_overwrite)
+
+def _borrowed_and_live_resources_stay_owned():
+    jobs, api = _job_fixture()
+    if jobs.adopt(42, handle=700) != 12.0 or len(api.live) != 1:
+        return False
+    if jobs.cleanup_owned() is not True or 700 in api.close_calls or len(api.live) != 1:
+        return False
+    api.job_members[jobs.jobs[42]] = []
+    if jobs.cleanup_owned(close_drained=True) is not True or api.live or jobs.jobs or jobs._owned_handles:
+        return False
+    before = list(api.close_calls)
+    return jobs.cleanup_owned() is True and api.close_calls == before
+
+_ownership_row('JOB-BORROWED-1: borrowed process handles are never closed; live assigned Jobs persist and drained Jobs close once', _borrowed_and_live_resources_stay_owned)
+
+def _independent_cleanup_keeps_failed_handle():
+    jobs, api = _job_fixture()
+    job = jobs._new_job()
+    process = jobs._open(42, jobs.PROCESS_QUERY_LIMITED)
+    api.close_refused.add(job)
+    if jobs.cleanup_owned() is not False or process in api.live or set(api.live) != {job} \
+            or set(jobs._owned_handles) != {job} or job not in api.close_calls or process not in api.close_calls:
+        return False
+    api.close_refused.clear()
+    return jobs.cleanup_owned() is True and not api.live
+
+_ownership_row('JOB-CLEANUP-1: one failed close cannot suppress independent cleanup or disappear from the retained registry', _independent_cleanup_keeps_failed_handle)
+
+def _failed_job_is_not_an_identity_only_registration():
+    jobs, api = _job_fixture()
+    api.assign_ok = False
+    native = L.NativeEgressWitness(sampler=FakeSampler(), tick_s=60, jobs=jobs)
+    accepted = native.register(42, handle=700, label='failed-job')
+    return accepted is False and native.registered_roots == {} and native.tracked == {} \
+        and native.result.unwitnessed_registrations == 1
+
+_ownership_row('JOB-REGISTER-1: failed Job adoption never falls back to a readable identity while claiming Job coverage', _failed_job_is_not_an_identity_only_registration)
+
+def _failed_resource_cleanup_is_not_a_complete_witness():
+    jobs, api = _job_fixture()
+    process = jobs._open(42, jobs.PROCESS_QUERY_LIMITED)
+    api.close_refused.add(process)
+    native = L.NativeEgressWitness(sampler=FakeSampler(), tick_s=60, jobs=jobs)
+    result = native.stop()
+    if result.complete is not False or result.resource_errors <= 0 or process not in jobs._owned_handles:
+        return False
+    api.close_refused.clear()
+    return jobs.cleanup_owned() is True and result.complete is False
+
+_ownership_row('JOB-RESULT-1: a failed retained-handle cleanup leaves the native result incomplete even if a later retry succeeds', _failed_resource_cleanup_is_not_a_complete_witness)
+
+def _capture_precedes_job_configuration():
+    spec = importlib.util.spec_from_file_location('partial_job_probe203', ROOT / 'research/v3/probe_sm.py')
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    jobs, api = _job_fixture()
+    retained = _Namespace(child=_Namespace(process=_Namespace(pid=42, _handle=700)), job=None)
+    capture = module.CapturingJobs(jobs, retained)
+    api.config_ok = False
+    observed = []
+    def observed_before_config(handle):
+        observed.append(handle in capture.created and handle in getattr(jobs, '_owned_handles', {}))
+        api.close_refused.add(handle)
+    api.at_config = observed_before_config
+    try:
+        capture.adopt(42, handle=700)
+        return False
+    except OSError:
+        pass
+    api.close_refused.clear()
+    return observed == [True] and len(capture.created) == 1 and retained.job is None and jobs.cleanup_owned() is True and not api.live
+
+_ownership_row('JOB-CAPTURE-1: actual Job acquisition reaches the capture owner before configuration can fail', _capture_precedes_job_configuration)
+
+def _native_stop_preserves_retained_job():
+    jobs, api = _job_fixture()
+    jobs.adopt(42, handle=700)
+    handle = jobs.jobs[42]
+    api.job_members[handle] = []
+    native = L.NativeEgressWitness(sampler=FakeSampler(), tick_s=60, jobs=jobs)
+    result = native.stop()
+    if not result.complete or jobs.jobs.get(42) != handle or handle not in jobs._owned_handles or handle not in api.live:
+        return False
+    return jobs.members(42) == [] and jobs.cleanup_owned(close_drained=True) is True and not api.live
+
+_ownership_row('JOB-LIFETIME-1: stopping a witness preserves a captured drained Job until its owner explicitly retires it', _native_stop_preserves_retained_job)
+
+def _stuck_ticker_is_not_sampled_or_cleaned():
+    jobs, api = _job_fixture()
+    handle = jobs._open(42, jobs.PROCESS_QUERY_LIMITED)
+    native = L.NativeEgressWitness(sampler=FakeSampler(), tick_s=60, jobs=jobs)
+    class Stuck:
+        def join(self, timeout):
+            pass
+        def is_alive(self):
+            return True
+    native._thread = Stuck()  # Declared non-drained worker; no real thread is started.
+    def forbidden_final_sample():
+        raise AssertionError('must not enter a sample while the worker is still live')
+    native._safe_sample = forbidden_final_sample
+    result = native.stop()
+    return result.complete is False and result.failed_samples > 0 and result.resource_errors > 0 \
+        and handle in jobs._owned_handles and handle in api.live and not api.close_calls
+
+_ownership_row('JOB-STOP-TICKER-1: a worker that did not join never triggers another blocking sample or concurrent handle cleanup', _stuck_ticker_is_not_sampled_or_cleaned)
+
+def _early_close_failure_remains_incomplete():
+    jobs, api = _job_fixture()
+    old_open = api.OpenProcess.call
+    def refuse_initial_close(*args):
+        handle = old_open(*args)
+        api.close_refused.add(handle)
+        return handle
+    api.OpenProcess.call = refuse_initial_close
+    if jobs.identity(42) != 12.0:
+        return False
+    api.close_refused.clear()
+    native = L.NativeEgressWitness(sampler=FakeSampler(), tick_s=60, jobs=jobs)
+    result = native.stop()
+    return not api.live and not jobs._owned_handles and result.resource_errors > 0 and result.complete is False
+
+_ownership_row('JOB-EARLY-CLOSE-1: a later successful cleanup cannot erase an earlier failed CloseHandle observation', _early_close_failure_remains_incomplete)
+
+def _direct_registration_exception_remains_incomplete():
+    jobs, api = _job_fixture()
+    api.config_ok = False
+    native = L.NativeEgressWitness(sampler=FakeSampler(), tick_s=60, jobs=jobs)
+    try:
+        native.register(42, handle=700, label='exception-job')
+        return False
+    except OSError:
+        pass
+    result = native.stop()
+    return native.registered_roots == {} and result.unwitnessed_registrations == 1 \
+        and result.complete is False and not api.live
+
+_ownership_row('JOB-REGISTER-EXC-1: failed direct adoption stays an unwitnessed registration even after its acquired handles close', _direct_registration_exception_remains_incomplete)
+
+
+# Declared API controls exercise generic launch exceptions, not vendor admission.
+print('\n- exact created-process exception ownership -')
+_spawn208_count = 0
+
+class _SpawnProcess208:
+    pid = 42
+    def __init__(self, *, handle_fault=False):
+        self.handle_fault = handle_fault
+        self.alive = True
+        self.kill_refused = False
+        self.kill_calls = self.wait_calls = 0
+        self.retained_before_handle = False
+    @property
+    def _handle(self):
+        self.retained_before_handle = any(owner.process is self for owner in getattr(L, '_FAILED_SPAWNS', {}).values())
+        if self.handle_fault:
+            raise ValueError('declared handle conversion fault')
+        return 700
+    def poll(self):
+        return None if self.alive else 0
+    def kill(self):
+        self.kill_calls += 1
+        if self.kill_refused:
+            raise OSError('declared exact-root termination refusal')
+        self.alive = False
+    def wait(self, timeout=None):
+        self.wait_calls += 1
+        if self.alive:
+            raise subprocess.TimeoutExpired('declared own process', timeout)
+        return 0
+
+def _spawn208(native, process, *, window=None):
+    global _spawn208_count
+    _spawn208_count += 1
+    unit = L.make_unit_dirs(C2, 's208', 'r', 'a', 'u' + str(_spawn208_count))
+    env = L.build_env(C2, parent_env=os.environ, unit=unit, path_dirs=[], declared={}, catcher_url=CATCHER)
+    return L.spawn(C2, [sys.executable, '-c', 'pass'], env=env, cwd=unit.cwd,
+        record={'role': 't'}, parent_env=os.environ, catcher_url=CATCHER,
+        witnesses=L.Witnesses(C2, native=native, fs=None), popen=lambda *a, **kw: process, window=window)
+
+def _spawn_fixture208():
+    jobs, api = _job_fixture()
+    process = _SpawnProcess208()
+    native = L.NativeEgressWitness(sampler=FakeSampler(), tick_s=60, jobs=jobs)
+    events = []
+    def terminate(handle, code):
+        events.append(('terminate', handle))
+        api.job_members[handle] = []
+        return True
+    api.TerminateJobObject.call = terminate
+    return jobs, api, process, native, events
+
+def _pending208(native):
+    return [owner for owner in getattr(L, '_FAILED_SPAWNS', {}).values() if owner.native is native]
+
+def _before_registration208():
+    jobs, api, proc, native, events = _spawn_fixture208()
+    proc.handle_fault = True
+    try:
+        _spawn208(native, proc)
+        return False
+    except ValueError as error:
+        return ('declared handle' in str(error) and proc.retained_before_handle and not proc.alive
+                and proc.kill_calls == 1 and proc.wait_calls == 1 and not _pending208(native)
+                and native.result.resource_errors > 0 and not native.result.complete and not api.live)
+
+_ownership_row('JOB-SPAWN-PRE-1: exact Popen retained before handle access; original fault survives verified root cleanup', _before_registration208)
+
+def _assigned_failure208():
+    jobs, api, proc, native, events = _spawn_fixture208()
+    jobs.adopt(999, 701)
+    foreign = jobs.jobs[999]
+    api.job_members[foreign] = [999]
+    original_register = native.register
+    assigned = []
+    def fault(pid, **kw):
+        result = original_register(pid, **kw)
+        assigned.append(jobs.jobs[pid])
+        jobs.jobs[pid] = foreign
+        raise LookupError('declared post-adoption fault')
+    native.register = fault
+    try:
+        _spawn208(native, proc)
+        return False
+    except LookupError:
+        return (events == [('terminate', assigned[0])] and assigned[0] not in api.live
+            and foreign in api.live and api.job_members[foreign] == [999]
+            and not proc.alive and not _pending208(native) and not native.result.complete)
+
+_ownership_row('JOB-SPAWN-ASSIGNED-1: adoption exception drains captured Job despite a replaced PID mapping; unrelated Job untouched', _assigned_failure208)
+
+def _post_resume208():
+    jobs, api, proc, native, events = _spawn_fixture208()
+    assigned = []
+    def resume(handle):
+        assigned.append(jobs.jobs[42])
+        api.job_members[assigned[-1]] = [42, 43, 44]
+        raise KeyboardInterrupt('declared after-execution interruption')
+    jobs.resume = resume
+    try:
+        _spawn208(native, proc)
+        return False
+    except KeyboardInterrupt as error:
+        return (str(error) == 'declared after-execution interruption'
+            and events == [('terminate', assigned[0])] and api.job_members[assigned[0]] == []
+            and assigned[0] not in api.live and not proc.alive and not _pending208(native)
+            and not native.result.complete)
+
+_ownership_row('JOB-SPAWN-RESUME-1: interrupted resume terminates and drains the exact Job including descendants before discarding ownership', _post_resume208)
+
+def _cleanup_retry208():
+    jobs, api, proc, native, events = _spawn_fixture208()
+    proc.kill_refused = True
+    refused = True
+    def terminate(handle, code):
+        events.append(('terminate', handle))
+        if refused:
+            return False
+        api.job_members[handle] = []
+        return True
+    api.TerminateJobObject.call = terminate
+    jobs.resume = lambda handle: (_ for _ in ()).throw(RuntimeError('declared resume fault'))
+    clock = [0.0]
+    def now():
+        clock[0] += 0.25
+        return clock[0]
+    with _mock.patch.object(L.time, 'monotonic', side_effect=now), _mock.patch.object(L.time, 'sleep'):
+        try:
+            _spawn208(native, proc)
+            return False
+        except RuntimeError as error:
+            if str(error) != 'declared resume fault':
+                return False
+        pending = _pending208(native)
+        if len(pending) != 1 or pending[0].process is not proc or not pending[0].failed or not api.live:
+            return False
+        # Ongoing acquisition entries cannot be selected by a concurrent stop.
+        pending[0].failed = False
+        before = len(events)
+        if L._retry_failed_spawns(native) is not True or len(events) != before:
+            return False
+        pending[0].failed = True
+        refused, proc.kill_refused = False, False
+        if L._retry_failed_spawns(native) is not True:
+            return False
+        return not _pending208(native) and not api.live and not proc.alive and not native.result.complete
+
+_ownership_row('JOB-SPAWN-RETRY-1: failed cleanup retains exact ownership for bounded retry; acquiring entries excluded and original result sticky', _cleanup_retry208)
+
+def _bookkeeping_before_resume208():
+    jobs, api, proc, native, events = _spawn_fixture208()
+    resumed = []
+    jobs.resume = lambda h: resumed.append(h) or True
+    class Roots:
+        def add(self, pid):
+            raise ArithmeticError('declared window bookkeeping fault')
+    try:
+        _spawn208(native, proc, window=_Namespace(roots=Roots()))
+        return False
+    except ArithmeticError:
+        return not resumed and not proc.alive and not api.live and not _pending208(native)
+
+_ownership_row('JOB-SPAWN-BOOKKEEP-1: fallible window bookkeeping occurs while the retained process is still suspended', _bookkeeping_before_resume208)
+
+def _generation208():
+    jobs, api = _job_fixture()
+    first = jobs._new_job()
+    lease = jobs._job_leases[first]
+    if not jobs.drain_lease(lease):
+        return False
+    api.next_handle = first - 1
+    replacement = jobs._new_job()
+    if replacement != first or jobs._job_leases[first] is lease:
+        return False
+    calls = []
+    api.TerminateJobObject.call = lambda *a: calls.append(a) or True
+    forged = L._JobLease(first)
+    return (jobs.terminate_lease(lease) is True and jobs.drain_lease(lease) is True
+        and jobs.terminate_lease(forged) is False and jobs.drain_lease(forged) is False
+        and not calls and first in api.live and jobs._job_leases[first] is not lease)
+
+_ownership_row('JOB-SPAWN-GENERATION-1: retired or forged leases cannot terminate a recycled numeric Job handle', _generation208)
+
+def _no_job_proof208():
+    native = L.NativeEgressWitness(sampler=FakeSampler(), tick_s=60, jobs=None)
+    proc = _SpawnProcess208()
+    native.register = lambda *a, **kw: (_ for _ in ()).throw(ValueError('declared no-Job registration fault'))
+    try:
+        _spawn208(native, proc)
+        return False
+    except ValueError:
+        pending = _pending208(native)
+        if not (len(pending) == 1 and pending[0].process is proc and not proc.alive and not native.result.complete):
+            return False
+        # Declared injected process has no actual descendants or OS resources.
+        # Remove only this test-owned record after asserting production refusal.
+        with L._SPAWN_OWNERS_LOCK:
+            del L._FAILED_SPAWNS[pending[0].key]
+        return True
+
+_ownership_row('JOB-SPAWN-NO-JOB-1: root wait without suspension or a captured Job refuses whole-tree proof and retains incomplete state', _no_job_proof208)
+
+print('\n- interrupted close and retained acquisition generations -')
+
+def _close_interrupted212():
+    jobs, api = _job_fixture()
+    handle = jobs._new_job()
+    lease = jobs._job_leases[handle]
+    original_close = api.CloseHandle.call
+    def close_then_interrupt(value):
+        original_close(value)
+        raise KeyboardInterrupt('declared after successful CloseHandle')
+    api.CloseHandle.call = close_then_interrupt
+    try:
+        jobs._close_owned(handle)
+    except KeyboardInterrupt:
+        pass
+    api.CloseHandle.call = original_close
+    api.next_handle = handle - 1
+    # A separate declared component acquires the recycled handle. WinJobs does
+    # not receive a new ownership lease; the old ambiguous lease must refuse it.
+    replacement = api.create(None, None)
+    if replacement != handle:
+        return False
+    calls = []
+    api.TerminateJobObject.call = lambda *a: calls.append(a) or True
+    before = list(api.close_calls)
+    if jobs.terminate_lease(lease) is not False or jobs.drain_lease(lease) is not False:
+        return False
+    return (not calls and api.close_calls == before and replacement in api.live
+        and getattr(lease, 'uncertain', False) and jobs._resource_errors > 0
+        and jobs.cleanup_owned() is False)
+
+_ownership_row('JOB-CLOSE-INTERRUPT-1: interrupted successful close revokes old authority before a recycled numeric handle can be used', _close_interrupted212)
+
+def _retained_generation212():
+    spec = importlib.util.spec_from_file_location('probe_sm_generation212', ROOT / 'research/v3/probe_sm.py')
+    probe = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = probe
+    spec.loader.exec_module(probe)
+    jobs, api = _job_fixture()
+    jobs.adopt(42, handle=700)
+    handle = jobs.jobs[42]
+    retained = probe.RetainedJob.from_handle(jobs, 42, handle)
+    api.job_members[handle] = []
+    if jobs.cleanup_owned(close_drained=True) is not True:
+        return False
+    api.next_handle = handle - 1
+    if jobs.adopt(42, handle=701) != 12.0 or jobs.jobs[42] != handle:
+        return False
+    api.job_members[handle] = [42, 99]
+    calls = []
+    api.TerminateJobObject.call = lambda *a: calls.append(a) or True
+    try:
+        retained.members()
+        return False
+    except (probe.PreflightRefused, L.WitnessUnavailable):
+        pass
+    return retained.terminate() is False and retained.same_binding() is False and not calls \
+        and api.job_members[handle] == [42, 99] and handle in api.live
+
+_ownership_row('JOB-RETAINED-GENERATION-1: RetainedJob cannot read, terminate or accept a replacement with the same handle and PID', _retained_generation212)
+
+def _retained_lock213():
+    spec = importlib.util.spec_from_file_location('probe_sm_lock213', ROOT / 'research/v3/probe_sm.py')
+    probe = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = probe
+    spec.loader.exec_module(probe)
+    for operation in ('terminate', 'same_binding'):
+        jobs, api = _job_fixture()
+        jobs.adopt(42, handle=700)
+        handle = jobs.jobs[42]
+        retained = probe.RetainedJob.from_handle(jobs, 42, handle)
+        lease = jobs._job_leases[handle]
+        api.job_members[handle] = []
+        original_active = jobs.active_lease
+        entered, finished = _threading.Event(), _threading.Event()
+        errors, raced, workers = [], [], []
+        def retire():
+            entered.set()
+            try:
+                if not jobs.drain_lease(lease):
+                    raise AssertionError('declared lease retirement failed')
+                api.next_handle = handle - 1
+                jobs.adopt(42, handle=701)
+            except Exception as error:
+                errors.append(type(error).__name__)
+            finally:
+                finished.set()
+        fired = [False]
+        main_thread = _threading.current_thread()
+        def after_check(value):
+            answer = original_active(value)
+            if fired[0] or _threading.current_thread() is not main_thread:
+                return answer
+            fired[0] = True
+            worker = _threading.Thread(target=retire, daemon=True)
+            workers.append(worker)
+            worker.start()
+            if not entered.wait(1):
+                raise AssertionError('owned race worker did not start')
+            raced.append(finished.wait(0.1))
+            return answer
+        jobs.active_lease = after_check
+        try:
+            answer = getattr(retained, operation)()
+        finally:
+            jobs.active_lease = original_active
+            for worker in workers:
+                worker.join(timeout=2)
+        if answer is not True or raced != [False] or errors or not finished.is_set() \
+                or any(worker.is_alive() for worker in workers):
+            return False
+    return True
+
+_ownership_row('JOB-RETAINED-LOCK-1: retained generation check and operation share the retirement lock while another owner retires and reuses the Job', _retained_lock213)
+
+print('\n- actual owned Windows handles and interrupted child tree -')
+import ctypes as _realct211
+import subprocess
+from ctypes import wintypes as _realwt211
+
+class _ActualApi211:
+    """Capture acquisitions for test containment; all handles belong to this test."""
+    def __init__(self, base):
+        self.base = base
+        self.acquired = []
+        self.refuse_close = set()
+        self.refuse_configuration = False
+        base.GetHandleInformation.argtypes = [_realwt211.HANDLE, _realct211.POINTER(_realwt211.DWORD)]
+    def __getattr__(self, name):
+        return getattr(self.base, name)
+    def CreateJobObjectW(self, *args):
+        handle = self.base.CreateJobObjectW(*args)
+        if handle:
+            self.acquired.append(int(handle))
+        return handle
+    def OpenProcess(self, *args):
+        handle = self.base.OpenProcess(*args)
+        if handle:
+            self.acquired.append(int(handle))
+            self.refuse_close.add(int(handle))
+        return handle
+    def SetInformationJobObject(self, handle, *args):
+        if self.refuse_configuration:
+            self.refuse_close.add(int(handle))
+            _realct211.set_last_error(87)
+            return False
+        return self.base.SetInformationJobObject(handle, *args)
+    def CloseHandle(self, handle):
+        return False if int(handle) in self.refuse_close else self.base.CloseHandle(handle)
+    def valid(self, handle):
+        flags = _realwt211.DWORD()
+        return bool(self.base.GetHandleInformation(handle, _realct211.byref(flags)))
+    def members(self, handle):
+        class Rows(_realct211.Structure):
+            _fields_ = [('assigned', _realwt211.DWORD), ('inlist', _realwt211.DWORD),
+                        ('ids', _realct211.c_size_t * 4096)]
+        rows = Rows()
+        if not self.base.QueryInformationJobObject(handle, 3, _realct211.byref(rows), _realct211.sizeof(rows), None):
+            raise OSError('actual own test Job query refused')
+        if rows.inlist > 4096:
+            raise AssertionError('actual own test Job membership exceeds buffer')
+        return [int(rows.ids[index]) for index in range(rows.inlist)]
+    def contain(self):
+        self.refuse_close.clear()
+        for handle in self.acquired:
+            if self.valid(handle):
+                self.base.CloseHandle(handle)
+
+def _actual_check211(name, action):
+    if os.name != 'nt':
+        check(name, False, 'requires Windows; not a substitute passing result')
+        return
+    try:
+        check(name, action())
+    except Exception as error:
+        check(name, False, type(error).__name__ + ': ' + str(error))
+
+def _actual_job_config211():
+    jobs = L.WinJobs()
+    api = _ActualApi211(jobs.k32)
+    jobs.k32 = api
+    api.refuse_configuration = True
+    try:
+        try:
+            jobs._new_job()
+            return False
+        except OSError:
+            pass
+        handle, = api.acquired
+        if not api.valid(handle) or handle not in getattr(jobs, '_owned_handles', {}):
+            return False
+        api.refuse_close.clear()
+        return jobs.cleanup_owned() is True and not api.valid(handle) and not jobs._owned_handles
+    finally:
+        api.contain()
+
+_actual_check211('JOB-PHYSICAL-CONFIG-1: actual newly acquired Job survives false CloseHandle and closes on owned retry', _actual_job_config211)
+
+def _actual_process_identity211():
+    jobs = L.WinJobs()
+    api = _ActualApi211(jobs.k32)
+    jobs.k32 = api
+    try:
+        identity = jobs.identity(os.getpid())  # Own current process; query-only handle.
+        handle, = api.acquired
+        if identity is None or not api.valid(handle) or handle not in getattr(jobs, '_owned_handles', {}):
+            return False
+        api.refuse_close.clear()
+        return jobs.cleanup_owned() is True and not api.valid(handle) and not jobs._owned_handles
+    finally:
+        api.contain()
+
+_actual_check211('JOB-PHYSICAL-PROCESS-1: actual OpenProcess query handle to this test remains owned after false close', _actual_process_identity211)
+
+def _actual_interrupted_tree211():
+    jobs = L.WinJobs()
+    api = _ActualApi211(jobs.k32)
+    jobs.k32 = api
+    native = L.NativeEgressWitness(sampler=FakeSampler(), tick_s=60, jobs=jobs)
+    marker = TMP / 'actual-interrupted211.pid'
+    code = ("import subprocess,sys; p=subprocess.Popen([sys.executable,'-c','import time; time.sleep(20)'],"
+            "creationflags=getattr(subprocess,'DETACHED_PROCESS',0),stdin=subprocess.DEVNULL,"
+            "stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL); open(sys.argv[1],'w').write(str(p.pid))")
+    unit = L.make_unit_dirs(C2, 'physical211', 'r', 'a', 'u')
+    env = L.build_env(C2, parent_env=os.environ, unit=unit, path_dirs=[Path(sys.executable).parent],
+                      declared={}, catcher_url=CATCHER)
+    owned = []
+    observed = []
+    original_resume = jobs.resume
+    def resume(handle):
+        if not original_resume(handle):
+            raise AssertionError('actual own resume failed')
+        deadline = _time.monotonic() + 5
+        while not marker.exists() and _time.monotonic() < deadline:
+            _time.sleep(0.01)
+        if not marker.exists():
+            raise AssertionError('actual descendant was not created')
+        descendant = int(marker.read_text())
+        observed.append(descendant in jobs.members(owned[0].pid))
+        raise RuntimeError('actual own interrupted-resume211')
+    jobs.resume = resume
+    def popen(*args, **kwargs):
+        proc = subprocess.Popen(*args, **kwargs)
+        owned.append(proc)  # Test containment even for the old source regression.
+        return proc
+    try:
+        try:
+            L.spawn(C2, [sys.executable, '-c', code, str(marker)], env=env, cwd=unit.cwd,
+                record={'role': 't'}, parent_env=os.environ, catcher_url=CATCHER,
+                witnesses=L.Witnesses(C2, native=native, fs=None), popen=popen)
+            return False
+        except RuntimeError as error:
+            if str(error) != 'actual own interrupted-resume211':
+                return False
+        return (observed == [True] and len(owned) == 1 and owned[0].poll() is not None
+            and len(api.acquired) == 1 and not api.valid(api.acquired[0])
+            and not jobs.jobs and not native.result.complete
+            and not any(owner.native is native for owner in getattr(L, '_FAILED_SPAWNS', {}).values()))
+    finally:
+        # Only newly captured physical Job handles, never the descendant PID.
+        for handle in api.acquired:
+            if api.valid(handle):
+                api.base.TerminateJobObject(handle, 1)
+                deadline = _time.monotonic() + 5
+                while api.members(handle) and _time.monotonic() < deadline:
+                    _time.sleep(0.01)
+        for proc in owned:
+            if proc.poll() is None:
+                proc.kill()
+            proc.wait(timeout=5)
+        api.contain()
+
+_actual_check211('JOB-PHYSICAL-TREE-1: actual interrupted resumed child and detached descendant drain through the captured Job', _actual_interrupted_tree211)
+
+print('\n- initial capture, interrupted commit and raw termination lock -')
+
+def _capture_root217():
+    spec = importlib.util.spec_from_file_location('probe_sm_capture217', ROOT / 'research/v3/probe_sm.py')
+    probe = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = probe
+    spec.loader.exec_module(probe)
+    jobs, api = _job_fixture()
+    jobs.adopt(42, handle=700)
+    handle = jobs.jobs[42]
+    old_lease = jobs._job_leases[handle]
+    api.job_members[handle] = []
+    entered, finished = _threading.Event(), _threading.Event()
+    errors, raced, workers = [], [], []
+    def retire():
+        entered.set()
+        try:
+            if not jobs.drain_lease(old_lease):
+                raise AssertionError('declared old root did not retire')
+            api.next_handle = handle - 1
+            jobs.adopt(999, handle=701)
+        except Exception as error:
+            errors.append(type(error).__name__)
+        finally:
+            finished.set()
+    class RootLookup(dict):
+        fired = False
+        def get(self, key, default=None):
+            value = super().get(key, default)
+            if key == 42 and not self.fired:
+                self.fired = True
+                worker = _threading.Thread(target=retire, daemon=True)
+                workers.append(worker)
+                worker.start()
+                if not entered.wait(1):
+                    raise AssertionError('declared capture worker did not start')
+                raced.append(finished.wait(0.1))
+            return value
+    jobs.jobs = RootLookup(jobs.jobs)
+    try:
+        retained = probe.RetainedJob(_Namespace(jobs=jobs), 42)
+    finally:
+        for worker in workers:
+            worker.join(timeout=2)
+    return (retained.lease is old_lease and raced == [False] and not errors and finished.is_set()
+        and not any(worker.is_alive() for worker in workers) and retained.terminate() is False
+        and retained.same_binding() is False)
+
+_ownership_row('JOB-RETAINED-CAPTURE-1: root lookup and initial lease capture hold the retirement lock against concurrent handle reuse', _capture_root217)
+
+def _close_commit217():
+    jobs, api = _job_fixture()
+    jobs.adopt(42, handle=700)
+    handle = jobs.jobs[42]
+    old_lease = jobs._job_leases[handle]
+    class InterruptedDeletion(dict):
+        def __delitem__(self, key):
+            super().__delitem__(key)
+            raise KeyboardInterrupt('declared interrupted close metadata deletion')
+    jobs._handle_generations = InterruptedDeletion(jobs._handle_generations)
+    jobs._close_owned(handle)
+    jobs._handle_generations = dict(jobs._handle_generations)
+    api.next_handle = handle - 1
+    jobs.adopt(999, handle=701)
+    if jobs.jobs[999] != handle or jobs._job_leases[handle] is old_lease:
+        return False
+    queries = []
+    original_query = api.QueryInformationJobObject.call
+    api.QueryInformationJobObject.call = lambda *a: queries.append(a[0]) or original_query(*a)
+    try:
+        jobs.members(42)
+        return False
+    except L.WitnessUnavailable:
+        pass
+    return not queries and getattr(old_lease, 'uncertain', False) and jobs._resource_errors > 0
+
+_ownership_row('JOB-CLOSE-COMMIT-1: interrupted close metadata cannot authorize old-root queries against a replacement generation', _close_commit217)
+
+def _raw_termination_lock217():
+    jobs, api = _job_fixture()
+    jobs.adopt(42, handle=700)
+    handle = jobs.jobs[42]
+    lease = jobs._job_leases[handle]
+    api.job_members[handle] = []
+    entered, finished = _threading.Event(), _threading.Event()
+    raced, errors, workers = [], [], []
+    def retire():
+        entered.set()
+        try:
+            if not jobs.drain_lease(lease):
+                raise AssertionError('declared raw termination retirement failed')
+        except Exception as error:
+            errors.append(type(error).__name__)
+        finally:
+            finished.set()
+    def terminate(*args):
+        worker = _threading.Thread(target=retire, daemon=True)
+        workers.append(worker)
+        worker.start()
+        if not entered.wait(1):
+            raise AssertionError('declared raw termination worker did not start')
+        raced.append(finished.wait(0.1))
+        return True
+    api.TerminateJobObject.call = terminate
+    try:
+        result = jobs.terminate(42)
+    finally:
+        for worker in workers:
+            worker.join(timeout=2)
+    return result is True and raced == [False] and not errors and finished.is_set() \
+        and not any(worker.is_alive() for worker in workers)
+
+_ownership_row('JOB-TERMINATE-LOCK-1: raw root termination and Job retirement share the same handle lock', _raw_termination_lock217)
+
+def _native_view_retry220():
+    jobs, api, proc, native, events = _spawn_fixture208()
+    class View:
+        def __getattr__(self, name):
+            return getattr(native, name)
+    view = View()
+    proc.kill_refused = True
+    refused = [True]
+    def terminate(handle, code):
+        if refused[0]:
+            return False
+        api.job_members[handle] = []
+        return True
+    api.TerminateJobObject.call = terminate
+    jobs.resume = lambda handle: (_ for _ in ()).throw(RuntimeError('declared native-view launch fault'))
+    clock = [0.0]
+    def now():
+        clock[0] += 0.25
+        return clock[0]
+    with _mock.patch.object(L.time, 'monotonic', side_effect=now), _mock.patch.object(L.time, 'sleep'):
+        try:
+            _spawn208(view, proc)
+            return False
+        except RuntimeError:
+            pass
+        if not any(owner.process is proc and owner.failed for owner in L._FAILED_SPAWNS.values()):
+            return False
+        refused[0], proc.kill_refused = False, False
+        L._retry_failed_spawns(native)
+        passed = not any(owner.process is proc for owner in L._FAILED_SPAWNS.values()) and not api.live and not proc.alive
+        if not passed:
+            # Only a declared fake: old failure evidence must not pollute other controls.
+            L._retry_failed_spawns(view)
+        return passed and not native.result.complete
+
+_ownership_row('JOB-NATIVE-VIEW-1: failed cleanup registered through a controller NativeView is retried by its underlying witness owner', _native_view_retry220)
+
+def _boot_retirement226():
+    spec = importlib.util.spec_from_file_location('probe_sm_retirement226', ROOT / 'research/v3/probe_sm.py')
+    probe = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = probe
+    spec.loader.exec_module(probe)
+    for fault in ('none', 'close', 'pump'):
+        jobs, api, proc, native, events = _spawn_fixture208()
+        proc.alive = False
+        native.register(42, handle=700, label='owned-boot-retirement')
+        handle = jobs.jobs[42]
+        api.job_members[handle] = []
+        lease = jobs._job_leases[handle]
+        retained = probe.RetainedJob(native, 42)
+        pump = _Namespace(error=None, join=lambda timeout: fault != 'pump')
+        boot = probe.OwnedBoot(_Namespace(process=proc), pump, retained, native=native,
+                              birth_time=12.0, port=43199, dirs=None)
+        if fault == 'close':
+            api.close_refused.add(handle)
+        result = boot.close(None, graceful=False)
+        if fault != 'none':
+            if result['complete'] is not False or boot.closed or not jobs.active_lease(lease) or handle not in api.live:
+                return False
+            if fault == 'pump' and handle in api.close_calls:
+                return False
+            api.close_refused.clear()
+            pump.join = lambda timeout: True
+            result = boot.close(None, graceful=False)
+        if (result['complete'] is not True or not boot.closed or handle in api.live or jobs.jobs
+                or jobs._root_leases or jobs._job_leases or jobs._owned_handles or retained.same_binding()):
+            return False
+        if fault == 'close' and native.stop().complete:
+            return False  # Successful later cleanup cannot erase the earlier false CloseHandle.
+    return True
+
+_ownership_row('JOB-BOOT-RETIRE-1: successful boot close retires its exact Job; false close and pump failure retain authority until retry', _boot_retirement226)
+
+def _boot_retirement_interrupt228():
+    spec = importlib.util.spec_from_file_location('probe_sm_retirement_interrupt228', ROOT / 'research/v3/probe_sm.py')
+    probe = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = probe
+    spec.loader.exec_module(probe)
+    jobs, api, proc, native, events = _spawn_fixture208()
+    proc.alive = False
+    native.register(42, handle=700, label='owned-boot-retirement-interrupt')
+    handle = jobs.jobs[42]
+    api.job_members[handle] = []
+    lease = jobs._job_leases[handle]
+    retained = probe.RetainedJob(native, 42)
+    boot = probe.OwnedBoot(_Namespace(process=proc), _Namespace(error=None, join=lambda timeout: True),
+        retained, native=native, birth_time=12.0, port=43199, dirs=None)
+    original_drain = jobs.drain_lease
+    jobs.drain_lease = lambda value: (_ for _ in ()).throw(KeyboardInterrupt('declared interrupted retirement'))
+    try:
+        boot.close(None, graceful=False)
+        return False
+    except KeyboardInterrupt as error:
+        if str(error) != 'declared interrupted retirement':
+            return False
+    finally:
+        jobs.drain_lease = original_drain
+    if boot.closed or handle not in api.live or not jobs.active_lease(lease) \
+            or not isinstance(boot.stop_result, dict) or boot.stop_result.get('complete') is not False:
+        return False
+    result = boot.close(None, graceful=False)
+    return result['complete'] is True and boot.closed and handle not in api.live and not jobs._owned_handles
+
+_ownership_row('JOB-BOOT-RETIRE-INTERRUPT-1: interrupted retirement cannot publish closed or lose incomplete stop evidence before exact-owner retry', _boot_retirement_interrupt228)
+
 if made:
     try:
         os.rmdir(link) if os.name == "nt" else os.unlink(link)
