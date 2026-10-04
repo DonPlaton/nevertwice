@@ -244,7 +244,8 @@ class _RequestDeadline:
 
 def sm_request(port: int, method: str, path: str, *, key: Any = None, keyed: bool = True,
                foreign_host: bool = False, body: Any = None, timeout_s: float = 5.0,
-               connection_factory: Callable = http.client.HTTPConnection) -> dict:
+               connection_factory: Callable = http.client.HTTPConnection,
+               json_observer: Callable | None = None) -> dict:
     """Always connect to loopback, with no redirect/proxy/ambient credentials."""
     port = _port(port)
     if keyed is not True and keyed is not False or foreign_host is not True and foreign_host is not False:
@@ -257,6 +258,8 @@ def sm_request(port: int, method: str, path: str, *, key: Any = None, keyed: boo
         raise SmRequestRefused('request-route')
     if isinstance(timeout_s, bool) or not isinstance(timeout_s, (int, float)) or not math.isfinite(timeout_s) or timeout_s <= 0:
         raise SmRequestRefused('request-timeout')
+    if json_observer is not None and not callable(json_observer):
+        raise SmRequestRefused('json-observer')
     headers = {'Host': 'example.invalid' if foreign_host else f'127.0.0.1:{port}'}
     if keyed:
         headers.update(key.header())
@@ -272,6 +275,14 @@ def sm_request(port: int, method: str, path: str, *, key: Any = None, keyed: boo
     deadline.start()
     try:
         deadline.check()
+        if json_observer is not None:
+            if payload is not None:
+                sm_parse_api_json(payload, ceiling_s=min(5.0, deadline.until - time.monotonic()))
+                deadline.check()
+            if json_observer('request', method=method, path=path, raw=payload, status=None,
+                    ceiling_s=min(5.0, deadline.until - time.monotonic())) is not True:
+                raise SmRequestRefused('json-observation-incomplete')
+            deadline.check()
         conn.connect()
         deadline.capture_socket()
         deadline.check()
@@ -284,10 +295,17 @@ def sm_request(port: int, method: str, path: str, *, key: Any = None, keyed: boo
         deadline.check()
         if len(raw) > 2 * 1024 * 1024:
             raise SmRequestRefused('response-size')
-        try:
-            data = json.loads(raw)
-        except ValueError:
-            data = None
+        if json_observer is not None:
+            if json_observer('response', method=method, path=path, raw=raw, status=response.status,
+                    ceiling_s=min(5.0, deadline.until - time.monotonic())) is not True:
+                raise SmRequestRefused('json-observation-incomplete')
+            deadline.check()
+            data = sm_api_json_projection(raw, ceiling_s=min(5.0, deadline.until - time.monotonic()))
+        else:
+            try:
+                data = json.loads(raw)
+            except ValueError:
+                data = None
         result = {'status': response.status, 'json': data, 'bytes': len(raw), 'sha256': hashlib.sha256(raw).hexdigest()}
         deadline.check()
         return result
@@ -1271,7 +1289,7 @@ def sm_embed_route_fields(ollama: Any, upstream_requests: Any, *, run: str, embe
 def run_sm_p3(port: int, run: str, *, key: Any, rest: Any, request: Callable,
               admit: Callable, prepare_routes: Callable, observe_routes: Callable, model: str, embed_model: str,
               ceiling_s: float = 180.0, clock: Callable = time.monotonic,
-              sleep: Callable = time.sleep) -> dict:
+              sleep: Callable = time.sleep, value_session: SmApiValueSession | None = None) -> dict:
     """One keyed diagnostic sequence; later quiescence/restart and full admission remain separate."""
     port = _port(port)
     tag = sm_container_tag(run)
@@ -1288,9 +1306,13 @@ def run_sm_p3(port: int, run: str, *, key: Any, rest: Any, request: Callable,
             raise SmApiRefused('keyed-sequence-target')
         def bounded(p, m, path, **options):
             options['timeout_s'] = min(options['timeout_s'], timeout_s)
+            if value_session is not None:
+                return value_session.send(request, p, m, path, **options)
             return request(p, m, path, **options)
         return deadline.send(port, (method, path, body), key=held, request=bounded, admit=admit)
 
+    if value_session is not None and (type(value_session) is not SmApiValueSession or value_session.run != run):
+        raise SmApiRefused('api-operation-session')
     held = key
     deadline.remaining()
     if admit() is not True:
@@ -1335,6 +1357,10 @@ def run_sm_p3(port: int, run: str, *, key: Any, rest: Any, request: Callable,
     embeds = sm_embed_route_fields(witness.get('ollama'), witness.get('upstream_requests'),
                                     run=run, embed_model=embed_model)
     seal = sm_state_seal(documents=[document], memories=collection['entries'], search=search)
+    if value_session is not None:
+        schema = value_session.summary(schema, ceiling_s=min(5.0, deadline.remaining()))
+        if schema['value_constraints_verified'] is not True:
+            raise SmApiRefused('api-operation-incomplete')
     deadline.remaining()  # All final parsing, route checks and hashing share this allowance.
     return {'phase': 'P3', 'document_id': doc_id, 'schema': schema,
             'container_tag': {'dot_status': dot_reply['status'], 'chosen': tag, 'fallback_observed': True},
@@ -1523,7 +1549,8 @@ def sm_p3_fields(measured: Mapping[str, Any]) -> dict:
 
 def read_sm_restart_state(port: int, run: str, document_id: str, *, key: Any,
                           request: Callable, admit: Callable, ceiling_s: float = 60.0,
-                          clock: Callable = time.monotonic) -> dict:
+                          clock: Callable = time.monotonic, rest: Any = None,
+                          value_session: SmApiValueSession | None = None) -> dict:
     """Read one completed diagnostic state under a shared deadline; do not claim atomicity."""
     port = _port(port)
     document_target = sm_api_target('get_document', run, document_id=document_id)
@@ -1531,6 +1558,9 @@ def read_sm_restart_state(port: int, run: str, document_id: str, *, key: Any,
         raise SmApiRefused('held-key-required')
     if not all(callable(value) for value in (request, admit, clock)):
         raise SmApiRefused('restart-collaborator')
+    if value_session is not None and (type(value_session) is not SmApiValueSession or value_session.run != run
+            or not callable(getattr(rest, 'conformance', None))):
+        raise SmApiRefused('api-operation-session')
     deadline = _SmReadDeadline(ceiling_s, clock)
     held = key
 
@@ -1540,9 +1570,16 @@ def read_sm_restart_state(port: int, run: str, document_id: str, *, key: Any,
             raise SmApiRefused('keyed-sequence-target')
         def bounded(p, method, path, **options):
             options['timeout_s'] = min(options['timeout_s'], timeout_s)
+            if value_session is not None:
+                return value_session.send(request, p, method, path, **options)
             return request(p, method, path, **options)
         return deadline.send(port, (method, path, body), key=held, request=bounded, admit=admit)
 
+    schema = None
+    if value_session is not None:
+        replies = [send(port, 'GET', path, key=held) for path in SM_OPENAPI_PATHS]
+        schema = sm_openapi_contract(replies, rest)
+        deadline.remaining()
     method, path, body = document_target
     document = sm_document_response(send(port, method, path, body=body, key=held), document_id=document_id)
     if document['status'] != 'done':
@@ -1560,8 +1597,14 @@ def read_sm_restart_state(port: int, run: str, document_id: str, *, key: Any,
     state = {'documents': [document], 'memories': collection['entries'], 'search': search}
     seal = sm_state_seal(**state)
     deadline.remaining()
-    return {'complete': True, 'document_id': document_id, 'state': state, 'seal': seal,
+    result = {'complete': True, 'document_id': document_id, 'state': state, 'seal': seal,
             'created_at': created_at, 'atomic_snapshot_proven': False, 'writers_quiescent_proven': False}
+    if value_session is not None:
+        result['schema'] = value_session.summary(schema, ceiling_s=min(5.0, deadline.remaining()))
+        if result['schema']['value_constraints_verified'] is not True:
+            raise SmApiRefused('api-operation-incomplete')
+    deadline.remaining()
+    return result
 
 
 def compare_sm_restart_states(first: Mapping[str, Any], second: Mapping[str, Any], *,
@@ -1700,8 +1743,13 @@ def run_sm_p4p5(contract: Any, launch: Any, server: Any, runtime: Any, static: M
         return result
 
     fw4 = firewall('fw-p4')
+    value_session = getattr(runtime, 'value_session', None)
+    value_options = {'value_session': value_session, 'rest': runtime.rest} if value_session is not None else {}
     first = read_sm_restart_state(boot.port, run, document_id, key=key, request=runtime.request,
-                                 admit=admission)
+                                 admit=admission, **value_options)
+    if value_session is not None:
+        fields['sm_schema'] = sm_field(first['schema'], ok=True)
+        observed['schema_before'] = first['schema']['observed']
     admission()
     observed['first_seal'] = first['seal']
     boundary(boot, 'boot1')
@@ -1743,7 +1791,10 @@ def run_sm_p4p5(contract: Any, launch: Any, server: Any, runtime: Any, static: M
     if errors:
         raise PreflightRefused('restart-auth-control')
     second = read_sm_restart_state(boot2.port, run, document_id, key=key, request=runtime.request,
-                                  admit=admission)
+                                  admit=admission, **value_options)
+    if value_session is not None:
+        fields['sm_schema'] = sm_field(second['schema'], ok=True)
+        observed['schema_after'] = second['schema']['observed']
     admission()
     observed['second_seal'] = second['seal']
     comparison = compare_sm_restart_states(first, second)
@@ -2241,7 +2292,8 @@ def run_sm_p0p2(contract: Any, launch: Any, bundle: Any, server: Any, *, run: st
         if getattr(runtime, 'p3_enabled', False) is True and not errors:
             measured = run_sm_p3(boot.port, run, key=key, rest=runtime.rest, request=runtime.request,
                 admit=runtime.gate.admits_new_unit, prepare_routes=runtime.prepare_routes, observe_routes=runtime.observe_routes,
-                model=runtime.model, embed_model=static['embed']['tag'])
+                model=runtime.model, embed_model=static['embed']['tag'],
+                value_session=getattr(runtime, 'value_session', None))
             fields.update(sm_p3_fields(measured))
             record['phase'] = 'P0-P3'
             record['functional'] = {'document_id': measured['document_id'], 'seal': measured['seal'],
@@ -2266,6 +2318,15 @@ def run_sm_p0p2(contract: Any, launch: Any, bundle: Any, server: Any, *, run: st
     except Exception as exc:
         problems.append('protocol-exception:' + type(exc).__name__)
     finally:
+        value_session = getattr(runtime, 'value_session', None)
+        schema = fields.get('sm_schema', {}).get('value')
+        if value_session is not None and isinstance(schema, Mapping) and 'observed' in schema:
+            try:
+                fresh_schema = value_session.summary(schema)
+                fields['sm_schema'] = sm_field(fresh_schema, ok=fresh_schema['value_constraints_verified'] is True)
+            except Exception as exc:
+                fields['sm_schema'] = sm_field({'value_constraints_verified': False, 'runtime_admission': False}, ok=False)
+                problems.append('schema-finalization:' + type(exc).__name__)
         # Preserve banner keys even if a failure occurred before key-form inspection.
         for boot in boots:
             if boot.pump is not None and boot.pump.key is not None and not any(held == boot.pump.key for held in keys):
@@ -3074,7 +3135,7 @@ def real_sm_deps(contract: Any, launch: Any, probe: Any, bundle: Any, server: An
             guarded.declare_restart(restarted_port, occupied_ports=sm_proxy_port_inventory(proxy.ports))
             return restarted_port
         return SimpleNamespace(gate=hooks.gate, witnesses=witnesses, scheduler=scheduler,
-            p3_enabled=True, p4_enabled=True, port_refused=sm_port_refused,
+            p3_enabled=True, p4_enabled=True, port_refused=sm_port_refused, value_session=SmApiValueSession(run),
             rest=rest, model=modules.RP.PINNED_MODEL, prepare_routes=stage.prepare,
             observe_routes=observe_routes,
             scheduler_module=modules.SC, guarded=guarded, port=port, prepare_boot2=prepare_boot2,
@@ -3086,6 +3147,790 @@ def real_sm_deps(contract: Any, launch: Any, probe: Any, bundle: Any, server: An
             version=version, auth_target=auth_target, check_summary=c6_check_summary,
             catcher_lines=lambda: len(modules.AC.load_proxy(Path(proxy.run_dir)).catcher))
     return SimpleNamespace(test_only=False, owner_home=Path(owner_home), setup=setup)
+
+
+def sm_parse_api_json(raw: bytes, *, ceiling_s: float = 1.0,
+                      clock: Callable = time.monotonic) -> dict:
+    """Parse exact bounded UTF8 JSON; late results refuse, decoding is not interruptible."""
+    from decimal import Decimal, InvalidOperation
+    if type(raw) is not bytes or not 0 < len(raw) <= 2 * 1024 * 1024:
+        raise SmApiRefused('api-json-size')
+    if (type(ceiling_s) not in {int, float} or not 0 < ceiling_s <= 5
+            or not math.isfinite(ceiling_s)):
+        raise SmApiRefused('api-json-ceiling')
+    deadline = _SmReadDeadline(ceiling_s, clock)
+    deadline.remaining()
+
+    def number(text: str, *, integral: bool = False):
+        # Prevent large arithmetic allocations later without silently rounding.
+        if len(text) > 1000:
+            raise SmApiRefused('api-json-number-ceiling')
+        value = Decimal(text)
+        if not value.is_finite() or abs(value.as_tuple().exponent) > 10000:
+            raise SmApiRefused('api-json-number-ceiling')
+        return int(text) if integral else value
+
+    def constant(text: str):
+        raise SmApiRefused('api-json-nonfinite')
+
+    def members(pairs):
+        result = {}
+        for name, value in pairs:
+            if name in result:
+                raise SmApiRefused('api-json-duplicate-member')
+            result[name] = value
+        return result
+
+    try:
+        text = raw.decode('utf-8', errors='strict')
+        deadline.remaining()
+        value = json.loads(text, parse_int=lambda text: number(text, integral=True),
+            parse_float=number, parse_constant=constant, object_pairs_hook=members)
+        deadline.remaining()
+    except (ValueError, UnicodeError, RecursionError, InvalidOperation):
+        raise SmApiRefused('api-json-syntax') from None
+
+    remaining = [20000]
+    def visit(node, depth=0):
+        remaining[0] -= 1
+        if remaining[0] < 0 or depth > 32:
+            raise SmApiRefused('api-json-structure-ceiling')
+        if remaining[0] % 128 == 0:
+            deadline.remaining()
+        if type(node) is dict:
+            for name, child in node.items():
+                visit(name, depth + 1)
+                visit(child, depth + 1)
+        elif type(node) is list:
+            for child in node:
+                visit(child, depth + 1)
+        elif type(node) is str:
+            # JSON escape decoding can create a lone surrogate even in valid UTF8 bytes.
+            if any(0xD800 <= ord(char) <= 0xDFFF for char in node):
+                raise SmApiRefused('api-json-unicode')
+        elif node is None or type(node) in {bool, int, Decimal}:
+            pass
+        else:
+            raise SmApiRefused('api-json-type')
+    visit(value)
+    deadline.remaining()
+    digest = hashlib.sha256(raw).hexdigest()
+    deadline.remaining()
+    return {'value': value, 'bytes': len(raw), 'sha256': digest,
+            'exact_numbers': True, 'unique_object_keys': True, 'utf8': True,
+            'schema_values_verified': False, 'runtime_admission': False}
+
+
+def sm_validate_api_value(schema_raw: bytes, value_raw: bytes, *, schema_pointer: str = '',
+                          ceiling_s: float = 2.0, clock: Callable = time.monotonic) -> dict:
+    """Validate exact bytes against a bounded supported 2020-12 schema; no admission.
+
+    Unsupported dialects, reference scopes, assertion keywords and patterns refuse.
+    All branches compile before evaluation. No values or exception details escape.
+    Format remains an annotation; format-assertion vocabulary is not supported.
+    """
+    from decimal import Decimal
+    from fractions import Fraction
+    if (type(ceiling_s) not in {int, float} or not 0 < ceiling_s <= 5
+            or not math.isfinite(ceiling_s)):
+        raise SmApiRefused('api-schema-ceiling')
+    deadline = _SmReadDeadline(ceiling_s, clock)
+    parsed = sm_parse_api_json(schema_raw, ceiling_s=min(5.0, deadline.remaining()), clock=clock)
+    instance = sm_parse_api_json(value_raw, ceiling_s=min(5.0, deadline.remaining()), clock=clock)
+    doc = parsed['value']
+    dialects = {'https://json-schema.org/draft/2020-12/schema',
+                'https://spec.openapis.org/oas/3.1/dialect/base'}
+    if type(doc) is dict and '$schema' in doc and (type(doc['$schema']) is not str or doc['$schema'] not in dialects):
+        raise SmApiRefused('api-schema-dialect')
+    if type(doc) is dict and 'openapi' in doc:
+        dialect = doc.get('jsonSchemaDialect', 'https://spec.openapis.org/oas/3.1/dialect/base')
+        if (type(doc['openapi']) is not str or re.fullmatch(r'3\.1\.[0-9]+', doc['openapi']) is None
+                or type(dialect) is not str or dialect not in dialects):
+            raise SmApiRefused('api-schema-dialect')
+    compiled_nodes = [4096]
+    steps = [100000]
+
+    def tick(counter, reason):
+        counter[0] -= 1
+        if counter[0] < 0:
+            raise SmApiRefused(reason)
+        deadline.remaining()
+
+    def pointer(path):
+        # URI-fragment percent decoding and embedded resource identifiers are unsupported.
+        if type(path) is not str:
+            raise SmApiRefused('api-schema-pointer')
+        if len(path) > 4096 or path.count('/') > 64:
+            raise SmApiRefused('api-schema-pointer-ceiling')
+        if path and not path.startswith('/') or '%' in path:
+            raise SmApiRefused('api-schema-pointer')
+        deadline.remaining()
+        node = doc
+        for token in path[1:].split('/') if path else ():
+            if type(node) is dict and set(node) & {'$id', '$anchor', '$dynamicAnchor', '$dynamicRef', '$vocabulary'}:
+                raise SmApiRefused('api-schema-unsupported-keyword')
+            if type(node) is dict and '$schema' in node and (type(node['$schema']) is not str or node['$schema'] not in dialects):
+                raise SmApiRefused('api-schema-dialect')
+            if re.search(r'~(?:[^01]|$)', token):
+                raise SmApiRefused('api-schema-pointer')
+            token = token.replace('~1', '/').replace('~0', '~')
+            if type(node) is dict and token in node:
+                node = node[token]
+            elif type(node) is list and re.fullmatch(r'0|[1-9][0-9]*', token) and len(token) <= 6 and int(token) < len(node):
+                node = node[int(token)]
+            else:
+                raise SmApiRefused('api-schema-pointer')
+        return node
+
+    def numeric(value):
+        return type(value) in {int, Decimal}
+
+    def fraction(value):
+        if not numeric(value):
+            raise SmApiRefused('api-schema-keyword')
+        return Fraction(value)
+
+    def freeze(value):
+        tick(steps, 'api-schema-evaluation-ceiling')
+        if numeric(value):
+            return ('number', fraction(value))
+        if type(value) is list:
+            return ('array', tuple(freeze(item) for item in value))
+        if type(value) is dict:
+            return ('object', tuple((name, freeze(value[name])) for name in sorted(value)))
+        return (type(value).__name__, value)
+
+    annotations = {'title', 'description', 'default', 'examples', 'example', 'deprecated',
+                   'readOnly', 'writeOnly', 'format'}
+    assertions = {'type', 'enum', 'const', 'minimum', 'maximum', 'exclusiveMinimum', 'exclusiveMaximum',
+                  'multipleOf', 'minLength', 'maxLength', 'pattern', 'minItems', 'maxItems', 'uniqueItems',
+                  'items', 'prefixItems', 'minProperties', 'maxProperties', 'required', 'properties',
+                  'additionalProperties', 'allOf', 'anyOf', 'oneOf', 'not'}
+    types = {'string', 'number', 'integer', 'object', 'array', 'boolean', 'null'}
+    ascii_letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+    patterns = {
+        '^[a-zA-Z0-9_:-]+$': frozenset(ascii_letters + '_:-'),
+        '^[a-zA-Z0-9_-]+$': frozenset(ascii_letters + '_-'),
+        '^[A-Za-z0-9_-]+$': frozenset(ascii_letters + '_-'),
+    }
+
+    def compile_node(node, active=(), depth=0):
+        tick(compiled_nodes, 'api-schema-compilation-ceiling')
+        if depth > 32:
+            raise SmApiRefused('api-schema-compilation-ceiling')
+        if type(node) is bool:
+            def boolean(value):
+                tick(steps, 'api-schema-evaluation-ceiling')
+                return node
+            return boolean
+        if type(node) is not dict:
+            raise SmApiRefused('api-schema-keyword')
+        if set(node) - annotations - assertions - {'$schema', '$ref', '$defs'}:
+            raise SmApiRefused('api-schema-unsupported-keyword')
+        if '$schema' in node and node['$schema'] not in dialects:
+            raise SmApiRefused('api-schema-dialect')
+        for name in ('readOnly', 'writeOnly'):
+            if name in node and node[name] is not False:
+                raise SmApiRefused('api-schema-direction-unsupported')
+        for name in ('title', 'description', 'format'):
+            if name in node and type(node[name]) is not str:
+                raise SmApiRefused('api-schema-keyword')
+        if 'deprecated' in node and type(node['deprecated']) is not bool:
+            raise SmApiRefused('api-schema-keyword')
+        if 'examples' in node and type(node['examples']) is not list:
+            raise SmApiRefused('api-schema-keyword')
+        branch_checks = []
+        if '$ref' in node:
+            ref = node['$ref']
+            if type(ref) is not str or not ref.startswith('#/') or ref in active:
+                raise SmApiRefused('api-schema-reference')
+            branch_checks.append(('allOf', (compile_node(pointer(ref[1:]), active + (ref,), depth + 1),)))
+        if '$defs' in node:
+            if type(node['$defs']) is not dict:
+                raise SmApiRefused('api-schema-keyword')
+            for child in node['$defs'].values():
+                compile_node(child, active, depth + 1)
+        for name in ('allOf', 'anyOf', 'oneOf'):
+            if name in node:
+                if type(node[name]) is not list or not node[name]:
+                    raise SmApiRefused('api-schema-keyword')
+                branch_checks.append((name, tuple(compile_node(child, active, depth + 1) for child in node[name])))
+        negative = compile_node(node['not'], active, depth + 1) if 'not' in node else None
+        declared = node.get('type')
+        if 'type' in node:
+            declared = [declared] if type(declared) is str else declared
+            if (type(declared) is not list or not declared or any(type(item) is not str or item not in types for item in declared)
+                    or len(set(declared)) != len(declared)):
+                raise SmApiRefused('api-schema-keyword')
+            declared = frozenset(declared)
+        enumeration = None
+        if 'enum' in node:
+            if type(node['enum']) is not list or not node['enum']:
+                raise SmApiRefused('api-schema-keyword')
+            enumeration = frozenset(freeze(value) for value in node['enum'])
+        constant = freeze(node['const']) if 'const' in node else None
+        limits = {}
+        for name in ('minimum', 'maximum', 'exclusiveMinimum', 'exclusiveMaximum', 'multipleOf'):
+            if name in node:
+                limits[name] = fraction(node[name])
+                if name == 'multipleOf' and limits[name] <= 0:
+                    raise SmApiRefused('api-schema-keyword')
+        for name in ('minLength', 'maxLength', 'minItems', 'maxItems', 'minProperties', 'maxProperties'):
+            if name in node:
+                value = fraction(node[name])
+                if value < 0 or value.denominator != 1:
+                    raise SmApiRefused('api-schema-keyword')
+                limits[name] = value.numerator
+        pattern = None
+        if 'pattern' in node:
+            if type(node['pattern']) is not str or node['pattern'] not in patterns:
+                raise SmApiRefused('api-schema-pattern-unsupported')
+            pattern = patterns[node['pattern']]
+        required = node.get('required', [])
+        if (type(required) is not list or any(type(name) is not str for name in required)
+                or len(set(required)) != len(required)):
+            raise SmApiRefused('api-schema-keyword')
+        properties = node.get('properties', {})
+        if type(properties) is not dict:
+            raise SmApiRefused('api-schema-keyword')
+        properties = {name: compile_node(child, active, depth + 1) for name, child in properties.items()}
+        additional = compile_node(node.get('additionalProperties', True), active, depth + 1)
+        items = compile_node(node.get('items', True), active, depth + 1)
+        prefix = node.get('prefixItems', [])
+        if type(prefix) is not list or 'prefixItems' in node and not prefix:
+            raise SmApiRefused('api-schema-keyword')
+        prefix = tuple(compile_node(child, active, depth + 1) for child in prefix)
+        unique = node.get('uniqueItems', False)
+        if type(unique) is not bool:
+            raise SmApiRefused('api-schema-keyword')
+
+        def evaluate(value):
+            tick(steps, 'api-schema-evaluation-ceiling')
+            if declared is not None:
+                kind = ('null' if value is None else 'boolean' if type(value) is bool else 'string' if type(value) is str
+                        else 'array' if type(value) is list else 'object' if type(value) is dict else 'number')
+                if kind not in declared and not (kind == 'number' and 'integer' in declared and fraction(value).denominator == 1):
+                    return False
+            if enumeration is not None and freeze(value) not in enumeration or 'const' in node and freeze(value) != constant:
+                return False
+            if numeric(value):
+                number = fraction(value)
+                if ('minimum' in limits and number < limits['minimum'] or 'maximum' in limits and number > limits['maximum']
+                        or 'exclusiveMinimum' in limits and number <= limits['exclusiveMinimum']
+                        or 'exclusiveMaximum' in limits and number >= limits['exclusiveMaximum']
+                        or 'multipleOf' in limits and (number / limits['multipleOf']).denominator != 1):
+                    return False
+            elif type(value) is str:
+                if ('minLength' in limits and len(value) < limits['minLength'] or 'maxLength' in limits and len(value) > limits['maxLength']
+                        or pattern is not None and (not value or any(char not in pattern for char in value))):
+                    return False
+            elif type(value) is list:
+                if ('minItems' in limits and len(value) < limits['minItems'] or 'maxItems' in limits and len(value) > limits['maxItems']
+                        or unique and len({freeze(item) for item in value}) != len(value)):
+                    return False
+                for index, item in enumerate(value):
+                    if not (prefix[index] if index < len(prefix) else items)(item):
+                        return False
+            elif type(value) is dict:
+                if ('minProperties' in limits and len(value) < limits['minProperties']
+                        or 'maxProperties' in limits and len(value) > limits['maxProperties']
+                        or not set(required) <= value.keys()):
+                    return False
+                for name, child in value.items():
+                    if not properties.get(name, additional)(child):
+                        return False
+            for name, branches in branch_checks:
+                matches = sum(branch(value) for branch in branches)
+                if name == 'allOf' and matches != len(branches) or name == 'anyOf' and matches == 0 or name == 'oneOf' and matches != 1:
+                    return False
+            if negative is not None and negative(value):
+                return False
+            return True
+        return evaluate
+
+    try:
+        validator = compile_node(pointer(schema_pointer))
+        deadline.remaining()
+        if validator(instance['value']) is not True:
+            raise SmApiRefused('api-schema-value')
+        deadline.remaining()
+    except (ValueError, TypeError, RecursionError, OverflowError):
+        raise SmApiRefused('api-schema-keyword') from None
+    return {'validated': True, 'schema_raw_sha256': parsed['sha256'], 'schema_pointer': schema_pointer,
+            'value_raw_sha256': instance['sha256'], 'value_bytes': instance['bytes'],
+            'dialect': '2020-12', 'format_assertions': False, 'runtime_admission': False}
+
+
+def sm_api_json_projection(raw: bytes, *, ceiling_s: float = 1.0,
+                           clock: Callable = time.monotonic) -> Any:
+    """Project exact JSON only within consumer precision and compact encoding bounds.
+
+    Integers need at most1000 encoded characters; compact UTF8 JSON needs at most
+    2MiB. Check expansion before int conversion. Nonintegral decimal values must
+    round-trip through the consumer's float JSON representation exactly. No schema
+    conformance or runtime admission is established by projection.
+    """
+    from decimal import Decimal
+    if (type(ceiling_s) not in {int, float} or not 0 < ceiling_s <= 5
+            or not math.isfinite(ceiling_s)):
+        raise SmApiRefused('api-json-projection-ceiling')
+    deadline = _SmReadDeadline(ceiling_s, clock)
+    parsed = sm_parse_api_json(raw, ceiling_s=min(5.0, deadline.remaining()), clock=clock)
+    encoded_bytes = [2 * 1024 * 1024]
+    def debit(count):
+        encoded_bytes[0] -= count
+        if encoded_bytes[0] < 0:
+            raise SmApiRefused('api-json-projection-size')
+        deadline.remaining()
+    def project(value):
+        deadline.remaining()
+        if type(value) is Decimal:
+            if value == value.to_integral_value():
+                digits = value.adjusted() + 1 + int(value.is_signed()) if value else 1
+                if digits > 1000:
+                    raise SmApiRefused('api-json-projection-integer-ceiling')
+                debit(digits)
+                return int(value)
+            projected = float(value)
+            if not math.isfinite(projected) or Decimal(str(projected)) != value:
+                raise SmApiRefused('api-json-projection-loss')
+            debit(len(json.dumps(projected)))
+            return projected
+        if type(value) is list:
+            debit(2 + max(0, len(value) - 1))
+            return [project(child) for child in value]
+        if type(value) is dict:
+            debit(2 + max(0, len(value) - 1))
+            result = {}
+            for name, child in value.items():
+                debit(len(json.dumps(name, ensure_ascii=False).encode('utf-8')) + 1)
+                result[name] = project(child)
+            return result
+        debit(len(json.dumps(value, ensure_ascii=False, allow_nan=False).encode('utf-8')))
+        return value
+    result = project(parsed['value'])
+    deadline.remaining()
+    return result
+
+
+
+def sm_encode_api_json(value: Any, *, sort_keys: bool = False, ceiling_s: float = 1.0,
+                       clock: Callable = time.monotonic) -> bytes:
+    """Encode exact built-in consumer values with bounds before each allocation.
+
+    Repeated aliases count on each visit. Scalar string pieces are at most4096
+    codepoints; all retained pieces together are at most2MiB. No custom encoder,
+    coercion, user hooks or unbounded whole-object serialization is called.
+    """
+    if (type(ceiling_s) not in {int, float} or not 0 < ceiling_s <= 5
+            or not math.isfinite(ceiling_s) or type(sort_keys) is not bool):
+        raise SmApiRefused('api-json-encode-ceiling')
+    deadline = _SmReadDeadline(ceiling_s, clock)
+    remaining, nodes, active, pieces = 2 * 1024 * 1024, 20000, set(), []
+
+    def emit(raw: bytes) -> None:
+        nonlocal remaining
+        if len(raw) > remaining:
+            raise SmApiRefused('api-json-encode-size')
+        remaining -= len(raw)
+        pieces.append(raw)
+        deadline.remaining()
+
+    def string(text: str) -> None:
+        if len(text) > remaining:
+            raise SmApiRefused('api-json-encode-size')
+        emit(b'"')
+        for start in range(0, len(text), 4096):
+            piece = text[start:start + 4096]
+            if any(0xD800 <= ord(char) <= 0xDFFF for char in piece):
+                raise SmApiRefused('api-json-encode-unicode')
+            emit(json.dumps(piece, ensure_ascii=False)[1:-1].encode('utf-8'))
+        emit(b'"')
+
+    def encode(item: Any, depth: int = 0) -> None:
+        nonlocal nodes
+        nodes -= 1
+        if nodes < 0 or depth > 32:
+            raise SmApiRefused('api-json-encode-structure')
+        deadline.remaining()
+        kind = type(item)
+        if kind is str:
+            string(item)
+        elif item is None:
+            emit(b'null')
+        elif kind is bool:
+            emit(b'true' if item else b'false')
+        elif kind is int:
+            if item.bit_length() > 3322:
+                raise SmApiRefused('api-json-encode-number')
+            raw = str(item).encode('ascii')
+            if len(raw) > 1000:
+                raise SmApiRefused('api-json-encode-number')
+            emit(raw)
+        elif kind is float:
+            if not math.isfinite(item):
+                raise SmApiRefused('api-json-encode-number')
+            emit(json.dumps(item, allow_nan=False).encode('ascii'))
+        elif kind in {dict, list}:
+            if id(item) in active or len(item) > nodes:
+                raise SmApiRefused('api-json-encode-structure')
+            active.add(id(item))
+            try:
+                emit(b'{' if kind is dict else b'[')
+                if kind is dict:
+                    if any(type(key) is not str for key in item):
+                        raise SmApiRefused('api-json-encode-type')
+                    keys = sorted(item) if sort_keys else item
+                    deadline.remaining()
+                    for index, key in enumerate(keys):
+                        if index:
+                            emit(b',')
+                        string(key)
+                        emit(b':')
+                        encode(item[key], depth + 1)
+                else:
+                    for index, child in enumerate(item):
+                        if index:
+                            emit(b',')
+                        encode(child, depth + 1)
+                emit(b'}' if kind is dict else b']')
+            finally:
+                active.remove(id(item))
+        else:
+            raise SmApiRefused('api-json-encode-type')
+    encode(value)
+    deadline.remaining()
+    raw = b''.join(pieces)
+    deadline.remaining()
+    return raw
+
+
+class SmApiValueSession:
+    """Bind serial diagnostic operations to the two actual observed schema bodies.
+
+    Private raw bytes remain in memory. Public traces contain only declarations,
+    counts and hashes. The deliberately invalid dot control is recorded separately
+    and never represented as a schema-valid request. Runtime admission stays false.
+    """
+
+    def __init__(self, run: str, *, clock: Callable = time.monotonic) -> None:
+        sm_container_tag(run)
+        self.run, self.clock = run, clock
+        self.documents: dict[str, tuple[bytes, dict]] = {}
+        self.traces: list[dict] = []
+        self.trace_bytes = 0
+        self.pending = None
+        self.faulted = False
+        self.negative_seen = False
+        self.lock = threading.Lock()
+        self.send_lock = threading.Lock()
+        self.negative_body = json.dumps({'containerTags': [run + '.u1'], 'limit': 1},
+            ensure_ascii=False, separators=(',', ':')).encode('utf-8')
+
+    @staticmethod
+    def _child(pointer: str, name: str) -> str:
+        return pointer + '/' + name.replace('~', '~0').replace('/', '~1')
+
+    def _object(self, doc: dict, pointer: str) -> tuple[str, dict]:
+        """Resolve OpenAPI Reference Objects without losing the actual source pointer."""
+        seen = set()
+        while True:
+            if (type(pointer) is not str or not pointer.startswith('/') or len(pointer) > 4096
+                    or pointer.count('/') > 64 or '%' in pointer or re.search(r'~(?:[^01]|$)', pointer)):
+                raise SmApiRefused('api-operation-pointer')
+            node = doc
+            for token in pointer[1:].split('/'):
+                token = token.replace('~1', '/').replace('~0', '~')
+                if type(node) is dict and token in node:
+                    node = node[token]
+                elif type(node) is list and re.fullmatch(r'0|[1-9][0-9]*', token) and len(token) <= 6 and int(token) < len(node):
+                    node = node[int(token)]
+                else:
+                    raise SmApiRefused('api-operation-schema')
+            if type(node) is not dict:
+                raise SmApiRefused('api-operation-schema')
+            if '$ref' not in node:
+                return pointer, node
+            if set(node) - {'$ref', 'summary', 'description'}:
+                raise SmApiRefused('api-operation-reference')
+            ref = node['$ref']
+            if type(ref) is not str or not ref.startswith('#/') or ref in seen or len(seen) >= 32:
+                raise SmApiRefused('api-operation-reference')
+            seen.add(ref)
+            pointer = ref[1:]
+
+    def _operation(self, method: str, path: str) -> tuple[str, str | None]:
+        from urllib.parse import quote, unquote_to_bytes
+        if type(method) is not str or type(path) is not str or len(path) > 4096:
+            raise SmApiRefused('api-operation-route')
+        for name, (verb, declared, _, _) in SM_API_OPERATIONS.items():
+            if name != 'get_document' and (method, path) == (verb, declared):
+                return name, None
+        prefix = '/v3/documents/'
+        if method == 'GET' and path.startswith(prefix):
+            encoded = path[len(prefix):]
+            if not 0 < len(encoded) <= 3060:
+                raise SmApiRefused('api-operation-route')
+            try:
+                value = unquote_to_bytes(encoded).decode('utf-8', errors='strict')
+            except (UnicodeError, ValueError):
+                raise SmApiRefused('api-operation-route') from None
+            if (not 0 < len(value) <= 255 or value in {'.', '..'}
+                    or any(ord(char) < 32 or ord(char) == 127 for char in value)
+                    or quote(value, safe='') != encoded):
+                raise SmApiRefused('api-operation-route')
+            return 'get_document', value
+        raise SmApiRefused('api-operation-route')
+
+    def _proofs(self, name: str, direction: str, raw: bytes | None, identifier: str | None,
+                deadline: Any) -> list[dict]:
+        if set(self.documents) != set(SM_OPENAPI_PATHS):
+            raise SmApiRefused('api-operation-schemas-unobserved')
+        method, path, _, _ = SM_API_OPERATIONS[name]
+        proofs = []
+        for origin in SM_OPENAPI_PATHS:
+            source, doc = self.documents[origin]
+            base = self._child('/paths', path)
+            op_pointer, op = self._object(doc, self._child(base, method.lower()))
+            if direction == 'response':
+                pointer, container = self._object(doc, op_pointer + '/responses/200')
+                pointer += '/content/application~1json/schema'
+                value = raw
+            elif name != 'get_document':
+                if type(raw) is not bytes:
+                    raise SmApiRefused('api-operation-body')
+                pointer, container = self._object(doc, op_pointer + '/requestBody')
+                pointer += '/content/application~1json/schema'
+                value = raw
+            else:
+                if raw is not None or type(identifier) is not str:
+                    raise SmApiRefused('api-operation-body')
+                # Path-level and operation-level parameters cannot ambiguously bind the same id.
+                path_pointer, path_item = self._object(doc, base)
+                matches = []
+                for owner_pointer, owner in ((path_pointer, path_item), (op_pointer, op)):
+                    params = owner.get('parameters', [])
+                    if type(params) is not list or len(params) > 64:
+                        raise SmApiRefused('api-operation-parameters')
+                    for index in range(len(params)):
+                        candidate_pointer, candidate = self._object(doc, owner_pointer + '/parameters/' + str(index))
+                        if candidate.get('in') == 'path' and candidate.get('name') == 'id':
+                            if candidate.get('required') is not True:
+                                raise SmApiRefused('api-operation-parameters')
+                            if (candidate.get('style', 'simple') != 'simple' or 'content' in candidate
+                                    or type(candidate.get('explode', False)) is not bool
+                                    or candidate.get('allowReserved', False) is not False
+                                    or candidate.get('allowEmptyValue', False) is not False):
+                                raise SmApiRefused('api-operation-parameter-semantics')
+                            matches.append(candidate_pointer + '/schema')
+                if len(matches) != 1:
+                    raise SmApiRefused('api-operation-parameters')
+                pointer = matches[0]
+                value = json.dumps(identifier, ensure_ascii=False).encode('utf-8')
+            proof = sm_validate_api_value(source, value, schema_pointer=pointer,
+                ceiling_s=min(5.0, deadline.remaining()), clock=self.clock)
+            proof['origin'] = origin
+            proofs.append(proof)
+            deadline.remaining()
+        return proofs
+
+    def observer(self, direction: str, *, method: str, path: str, raw: bytes | None,
+                 status: int | None, ceiling_s: float) -> bool:
+        acquired = False
+        try:
+            if (type(ceiling_s) not in {int, float} or not 0 < ceiling_s <= 5
+                    or not math.isfinite(ceiling_s)):
+                raise SmApiRefused('api-operation-ceiling')
+            deadline = _SmReadDeadline(ceiling_s, self.clock)
+            acquired = self.lock.acquire(timeout=deadline.remaining())
+            if not acquired:
+                raise SmApiRefused('api-operation-lock')
+            deadline.remaining()
+            if self.faulted or len(self.traces) >= 2048:
+                raise SmApiRefused('api-operation-session')
+            if direction == 'request':
+                if self.pending is not None or status is not None:
+                    raise SmApiRefused('api-operation-order')
+                if path in SM_OPENAPI_PATHS:
+                    if method != 'GET' or raw is not None:
+                        raise SmApiRefused('api-operation-route')
+                    name, identifier, proofs, negative = 'openapi', None, [], False
+                else:
+                    name, identifier = self._operation(method, path)
+                    negative = name == 'list_memories' and raw == self.negative_body
+                    if negative and self.negative_seen:
+                        raise SmApiRefused('api-operation-negative-repeated')
+                    if negative:
+                        if set(self.documents) != set(SM_OPENAPI_PATHS):
+                            raise SmApiRefused('api-operation-schemas-unobserved')
+                        proofs = []  # Intentionally invalid, never counted as a positive value proof.
+                    else:
+                        proofs = self._proofs(name, 'request', raw, identifier, deadline)
+                self.pending = {'method': method, 'path': path, 'name': name, 'identifier': identifier,
+                    'thread': threading.get_ident(), 'proofs': proofs, 'negative': negative,
+                    'request_sha256': hashlib.sha256(raw).hexdigest() if raw is not None else None,
+                    'route_sha256': hashlib.sha256(path.encode('utf-8')).hexdigest()}
+            elif direction == 'response':
+                pending = self.pending
+                if (pending is None or (method, path, threading.get_ident()) != (pending['method'], pending['path'], pending['thread'])
+                        or type(raw) is not bytes or type(status) is not int):
+                    raise SmApiRefused('api-operation-order')
+                if pending['name'] == 'openapi':
+                    if status != 200:
+                        raise SmApiRefused('api-operation-status')
+                    doc = sm_api_json_projection(raw, ceiling_s=min(5.0, deadline.remaining()), clock=self.clock)
+                    if type(doc) is not dict:
+                        raise SmApiRefused('api-operation-schema')
+                    if path in self.documents and raw != self.documents[path][0]:
+                        raise SmApiRefused('api-operation-schema-drift')
+                    self.documents[path] = (raw, doc)
+                    projection = doc
+                    proofs = []
+                elif pending['negative']:
+                    if status != 400:
+                        raise SmApiRefused('api-operation-negative-status')
+                    projection = sm_api_json_projection(raw, ceiling_s=min(5.0, deadline.remaining()), clock=self.clock)
+                    self.negative_seen = True
+                    proofs = []
+                else:
+                    if status != 200:
+                        raise SmApiRefused('api-operation-status')
+                    proofs = self._proofs(pending['name'], 'response', raw, pending['identifier'], deadline)
+                    # Commit a completed pair only after the existing consumers can retain its value.
+                    projection = sm_api_json_projection(raw, ceiling_s=min(5.0, deadline.remaining()), clock=self.clock)
+                deadline.remaining()
+                consumer = json.dumps(projection, sort_keys=True, ensure_ascii=False,
+                    separators=(',', ':'), allow_nan=False).encode('utf-8')
+                deadline.remaining()
+                trace = {'operation': pending['name'], 'method': method, 'status': status,
+                    'consumer_sha256': hashlib.sha256(consumer).hexdigest(),
+                    'route_sha256': pending['route_sha256'], 'request_sha256': pending['request_sha256'],
+                    'response_sha256': hashlib.sha256(raw).hexdigest(), 'response_bytes': len(raw),
+                    'request_proofs': pending['proofs'], 'response_proofs': proofs,
+                    'intentional_negative_control': pending['negative'], 'runtime_admission': False}
+                trace_bytes = len(json.dumps(trace, ensure_ascii=False, separators=(',', ':'),
+                    allow_nan=False).encode('utf-8'))
+                if self.trace_bytes + trace_bytes > 2 * 1024 * 1024:
+                    raise SmApiRefused('api-operation-trace-size')
+                self.traces.append(trace)
+                self.trace_bytes += trace_bytes
+                self.pending = None
+            else:
+                raise SmApiRefused('api-operation-direction')
+            deadline.remaining()
+            return True
+        except Exception:
+            self.faulted = True
+            raise
+        finally:
+            if acquired:
+                self.lock.release()
+
+    def send(self, request: Callable, port: int, method: str, path: str, *,
+             timeout_s: float, **options) -> dict:
+        """Require one fresh observed pair and bind the returned consumer value to it."""
+        acquired, closed = False, False
+        receipts = []
+        owner_thread = threading.get_ident()
+        try:
+            port = _port(port)
+            if (type(timeout_s) not in {int, float} or not 0 < timeout_s <= 5
+                    or not math.isfinite(timeout_s)):
+                raise SmApiRefused('api-operation-ceiling')
+            deadline = _SmReadDeadline(timeout_s, self.clock)
+            acquired = self.send_lock.acquire(timeout=deadline.remaining())
+            if not acquired:
+                raise SmApiRefused('api-operation-send-lock')
+            before = len(self.traces)
+            body = options.get('body')
+            payload = sm_encode_api_json(body, ceiling_s=min(5.0, deadline.remaining()), clock=self.clock) if body is not None else None
+            def observe(direction, **facts):
+                if (closed or threading.get_ident() != owner_thread or len(receipts) >= 2
+                        or direction != ('request' if not receipts else 'response')):
+                    self.faulted = True
+                    raise SmApiRefused('api-operation-observation-lifetime')
+                if (facts.get('method') != method or facts.get('path') != path
+                        or direction == 'request' and facts.get('raw') != payload):
+                    self.faulted = True
+                    raise SmApiRefused('api-operation-request-binding')
+                accepted = self.observer(direction, **facts)
+                if accepted is True:
+                    receipts.append(direction)
+                return accepted
+            if self.pending is not None or self.faulted or 'json_observer' in options:
+                raise SmApiRefused('api-operation-order')
+            reply = request(port, method, path, timeout_s=min(5.0, deadline.remaining()),
+                json_observer=observe, **options)
+            deadline.remaining()
+            if (receipts != ['request', 'response'] or len(self.traces) != before + 1 or self.pending is not None or self.faulted
+                    or not isinstance(reply, Mapping)):
+                raise SmApiRefused('api-operation-unobserved-return')
+            trace = self.traces[-1]
+            if (trace['method'] != method or trace['route_sha256'] != hashlib.sha256(path.encode('utf-8')).hexdigest()
+                    or type(reply.get('status')) is not int or reply['status'] != trace['status']
+                    or reply.get('sha256') != trace['response_sha256']):
+                raise SmApiRefused('api-operation-return-binding')
+            if 'json' not in reply:
+                raise SmApiRefused('api-operation-return-value')
+            raw = sm_encode_api_json(reply['json'], sort_keys=True,
+                ceiling_s=min(5.0, deadline.remaining()), clock=self.clock)
+            if hashlib.sha256(raw).hexdigest() != trace['consumer_sha256']:
+                raise SmApiRefused('api-operation-return-value')
+            deadline.remaining()
+            return reply
+        except Exception:
+            self.faulted = True
+            raise
+        finally:
+            closed = True
+            if acquired:
+                self.send_lock.release()
+
+
+    def summary(self, contract: Mapping[str, Any], *, ceiling_s: float = 1.0) -> dict:
+        """Only completed positive operations count; negative controls are explicit."""
+        from copy import deepcopy
+        if (type(ceiling_s) not in {int, float} or not 0 < ceiling_s <= 5
+                or not math.isfinite(ceiling_s)):
+            raise SmApiRefused('api-operation-ceiling')
+        deadline = _SmReadDeadline(ceiling_s, self.clock)
+        if self.lock.acquire(timeout=deadline.remaining()) is not True:
+            raise SmApiRefused('api-operation-lock')
+        try:
+            rows = contract.get('observed') if isinstance(contract, Mapping) else None
+            contract_ok = (isinstance(contract, Mapping) and contract.get('conformant') is True
+                and type(contract.get('operations')) in {list, tuple}
+                and tuple(contract['operations']) == tuple(SM_API_OPERATIONS)
+                and type(rows) in {list, tuple} and len(rows) == 2)
+            expected = {}
+            if contract_ok:
+                for row in rows:
+                    if (not isinstance(row, Mapping) or type(row.get('path')) is not str
+                            or row['path'] not in SM_OPENAPI_PATHS or row['path'] in expected
+                            or any(type(row.get(name)) is not str or re.fullmatch(r'[0-9a-f]{64}', row[name]) is None
+                                   for name in ('raw_sha256', 'canonical_sha256'))):
+                        contract_ok = False
+                        break
+                    expected[row['path']] = (row['raw_sha256'], row['canonical_sha256'])
+            observed = {}
+            for path, (raw, doc) in self.documents.items():
+                canonical = json.dumps(doc, sort_keys=True, separators=(',', ':'), ensure_ascii=False,
+                    allow_nan=False).encode('utf-8')
+                observed[path] = (hashlib.sha256(raw).hexdigest(), hashlib.sha256(canonical).hexdigest())
+                deadline.remaining()
+            positive = [row for row in self.traces if row['operation'] != 'openapi' and not row['intentional_negative_control']]
+            verified = (contract_ok and self.pending is None and not self.faulted and observed == expected
+                and set(observed) == set(SM_OPENAPI_PATHS) and self.negative_seen
+                and set(row['operation'] for row in positive) == set(SM_API_OPERATIONS)
+                and all(len(row['request_proofs']) == 2 and len(row['response_proofs']) == 2 for row in positive))
+            result = deepcopy(dict(contract if isinstance(contract, Mapping) else {}, value_constraints_verified=bool(verified),
+                value_scope='JSON bodies and id values of the four declared positive operations; excludes headers/cookies, metadata, security and unsupported serialization',
+                negative_scope='one exact source-declared dot control, status400, exact JSON; not schema-valid',
+                operations_completed=len(positive), traces=self.traces, runtime_admission=False))
+            deadline.remaining()
+            return result
+        finally:
+            self.lock.release()
 
 
 def main(argv: Sequence[str] | None = None, *, entry: Callable | None = None) -> int:

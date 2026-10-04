@@ -3494,6 +3494,1233 @@ def p4p5_windows_refusal_caller_controls():
 
 check('A8S-P4P5-PORT-CALLER-1: connected restart gives the actual refusal helper the bounded Windows allowance', p4p5_windows_refusal_caller_controls)
 
+def sm_exact_json_precision_controls():
+    from decimal import Decimal
+    raw = b'{"whole":1,"almost":1.0000000000000001,"tiny":1e-324,"flag":true,"text":"\\u00e9","array":[null,0.1]}'
+    row = P.sm_parse_api_json(raw)
+    value = row['value']
+    return (type(value['whole']) is int and value['almost'] == Decimal('1.0000000000000001')
+        and value['almost'] != value['whole'] and value['tiny'] == Decimal('1e-324') and value['tiny'] != 0
+        and type(value['flag']) is bool and value['text'] == '\u00e9'
+        and value['array'] == [None, Decimal('0.1')] and row['bytes'] == len(raw)
+        and row['sha256'] == hashlib.sha256(raw).hexdigest() and row['exact_numbers'] is True
+        and row['schema_values_verified'] is False and row['runtime_admission'] is False)
+
+
+def sm_exact_json_ambiguity_controls():
+    for raw, reason in ((b'{"id":"a","id":"b"}', 'api-json-duplicate-member'),
+        (b'{"outer":{"name":1,"\\u006eame":2}}', 'api-json-duplicate-member'),
+        (b'NaN', 'api-json-nonfinite'), (b'Infinity', 'api-json-nonfinite'), (b'-Infinity', 'api-json-nonfinite'),
+        (b'{"x":01}', 'api-json-syntax'), (b'"\\ud800"', 'api-json-unicode'), (b'"\xff"', 'api-json-syntax')):
+        if not named_api_refusal(lambda raw=raw: P.sm_parse_api_json(raw), reason):
+            return False
+    return P.sm_parse_api_json(b'{"a":{"id":"x"},"b":{"id":"y"}}')['unique_object_keys'] is True
+
+
+def sm_exact_json_bounds_controls():
+    for raw, reason in (('', 'api-json-size'), (b'', 'api-json-size'),
+        (b' ' * (2 * 1024 * 1024 + 1), 'api-json-size'), (b'1' * 1001, 'api-json-number-ceiling'),
+        (b'1e10001', 'api-json-number-ceiling'), (b'1e-10001', 'api-json-number-ceiling'),
+        (b'[' * 34 + b'0' + b']' * 34, 'api-json-structure-ceiling'),
+        (b'[' + b','.join([b'0'] * 20000) + b']', 'api-json-structure-ceiling')):
+        if not named_api_refusal(lambda raw=raw: P.sm_parse_api_json(raw), reason):
+            return False
+    return (P.sm_parse_api_json(b'[' * 32 + b'0' + b']' * 32)['value'] is not None
+        and P.sm_parse_api_json(b'1e10000')['exact_numbers'] is True)
+
+
+def sm_exact_json_deadline_controls():
+    original = P.json.loads
+    now = [0.0]
+    def delayed(*args, **kwargs):
+        result = original(*args, **kwargs)
+        now[0] = 1.0
+        return result
+    with mock.patch.object(P.json, 'loads', side_effect=delayed):
+        if not named_api_refusal(lambda: P.sm_parse_api_json(b'{}', clock=lambda: now[0]), 'state-read-deadline'):
+            return False
+    for ceiling in (True, 0, 6, float('nan'), 10 ** 1000):
+        if not named_api_refusal(lambda ceiling=ceiling: P.sm_parse_api_json(b'{}', ceiling_s=ceiling), 'api-json-ceiling'):
+            return False
+    return P.sm_parse_api_json(b'{}', ceiling_s=5)['schema_values_verified'] is False
+
+
+check('A8S-JSON-PRECISION-1: actual UTF8 bytes retain exact decimals and cannot upgrade schema admission', sm_exact_json_precision_controls)
+check('A8S-JSON-AMBIGUITY-1: duplicate decoded members nonfinite values malformed JSON and invalid Unicode refuse', sm_exact_json_ambiguity_controls)
+check('A8S-JSON-BOUNDS-1: input bytes and decoded depth node digit exponent ceilings bound accepted values', sm_exact_json_bounds_controls)
+check('A8S-JSON-DEADLINE-1: parsing and validation complete within one deadline and reject invalid ceilings', sm_exact_json_deadline_controls)
+
+
+def sm_exact_json_cli_entry_controls():
+    import ast
+    tree = ast.parse(Path(P.__file__).read_text(encoding='utf-8'))
+    main = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == 'main')
+    main.body = [ast.Return(value=ast.Call(func=ast.Name(id='sm_parse_api_json', ctx=ast.Load()),
+        args=[ast.Constant(value=b'{}')], keywords=[]))]
+    tree = ast.fix_missing_locations(tree)
+    namespace = {'__name__': '__main__', '__file__': P.__file__}
+    try:
+        exec(compile(tree, P.__file__, 'exec'), namespace)
+    except SystemExit as exc:
+        return (isinstance(exc.code, dict) and exc.code['value'] == {}
+                and exc.code['schema_values_verified'] is False and exc.code['runtime_admission'] is False)
+    return False
+
+check('A8S-JSON-CLI-1: the actual module entry can call exact parsing before SystemExit without product actions', sm_exact_json_cli_entry_controls)
+
+def api_value_case(schema, raw, *, valid=True, reason='api-schema-value', pointer=''):
+    schema_raw = json.dumps(schema, ensure_ascii=False, allow_nan=False).encode('utf-8')
+    if not valid:
+        return named_api_refusal(lambda: P.sm_validate_api_value(schema_raw, raw, schema_pointer=pointer), reason)
+    row = P.sm_validate_api_value(schema_raw, raw, schema_pointer=pointer)
+    return (row['validated'] is True and row['runtime_admission'] is False and row['format_assertions'] is False
+            and row['schema_raw_sha256'] == hashlib.sha256(schema_raw).hexdigest()
+            and row['value_raw_sha256'] == hashlib.sha256(raw).hexdigest() and row['value_bytes'] == len(raw))
+
+
+def sm_schema_numeric_controls():
+    cases = [({'type': 'integer'}, b'1.0', True), ({'type': 'integer'}, b'1.0000000000000001', False),
+        ({'type': 'number'}, b'true', False), ({'type': ['integer', 'null']}, b'null', True),
+        ({'minimum': 0, 'maximum': 1}, b'0', True), ({'minimum': 0, 'maximum': 1}, b'1', True), ({'minimum': 0, 'maximum': 1}, b'1.0000000000000001', False),
+        ({'minimum': 0}, b'-1e-324', False), ({'exclusiveMinimum': 0}, b'1e-324', True),
+        ({'exclusiveMinimum': 0}, b'0', False), ({'exclusiveMaximum': 1}, b'1', False),
+        ({'exclusiveMaximum': 1}, b'0.999999999999999999999999999999999999', True),
+        ({'multipleOf': 0.1}, b'0.3', True), ({'multipleOf': 0.1}, b'0.30000000000000000000000000001', False),
+        ({'minimum': 1}, b'"annotation only on numbers"', True)]
+    return all(api_value_case(schema, raw, valid=valid) for schema, raw, valid in cases)
+
+
+def sm_schema_equality_controls():
+    cases = [({'enum': [True]}, b'1', False), ({'const': 1}, b'true', False),
+        ({'const': 1}, b'1.0', True), ({'const': 1}, b'1.0000000000000001', False),
+        ({'const': {'a': [1, False], 'b': None}}, b'{"b":null,"a":[1.0,false]}', True),
+        ({'enum': [[1, True]]}, b'[1.0,true]', True), ({'enum': [[1, True]]}, b'[true,1]', False),
+        ({'uniqueItems': True}, b'[1,1.0]', False), ({'uniqueItems': True}, b'[1,true]', True),
+        ({'uniqueItems': True}, b'[{"a":1,"b":2},{"b":2,"a":1.0}]', False)]
+    return all(api_value_case(schema, raw, valid=valid) for schema, raw, valid in cases)
+
+
+def sm_schema_object_array_controls():
+    schema = {'type': 'object', 'required': ['id', 'rows'], 'additionalProperties': False,
+        'minProperties': 2, 'maxProperties': 2,
+        'properties': {'id': {'type': 'string', 'minLength': 1},
+            'rows': {'type': 'array', 'minItems': 1, 'maxItems': 2, 'items': {'type': 'integer', 'minimum': 0}}}}
+    for raw, valid in [(b'{"id":"a","rows":[0]}', True), (b'{"id":"a","rows":[0,1]}', True),
+        (b'{"id":"","rows":[0]}', False), (b'{"rows":[0]}', False), (b'{"id":"a","rows":[]}', False),
+        (b'{"id":"a","rows":[0,1,2]}', False), (b'{"id":"a","rows":[true]}', False),
+        (b'{"id":"a","rows":[0],"extra":1}', False)]:
+        if not api_value_case(schema, raw, valid=valid):
+            return False
+    cases = [({'prefixItems': [{'type': 'string'}, {'type': 'integer'}], 'items': False}, b'["a",1]', True),
+        ({'prefixItems': [{'type': 'string'}, {'type': 'integer'}], 'items': False}, b'["a",1,2]', False),
+        ({'prefixItems': [{'type': 'string'}, {'type': 'integer'}], 'items': False}, b'[1,"a"]', False),
+        ({'additionalProperties': {'type': 'integer'}}, b'{"a":1,"b":true}', False),
+        ({'required': ['a']}, b'1', True), ({'required': ['a']}, b'{}', False),
+        ({'minProperties': 2}, b'{"a":1}', False), ({'minProperties': 2}, b'{"a":1,"b":2}', True),
+        ({'maxProperties': 2}, b'{"a":1,"b":2,"c":3}', False), ({'type': 'object'}, b'[]', False),
+        ({'type': 'array'}, b'{}', False), ({'type': 'boolean'}, b'1', False),
+        ({'type': 'null'}, b'false', False), ({'type': 'boolean'}, b'true', True)]
+    return all(api_value_case(schema, raw, valid=valid) for schema, raw, valid in cases)
+
+
+def sm_schema_string_controls():
+    cases = [({'minLength': 1, 'maxLength': 1}, '"\U0001f600"'.encode('utf-8'), True),
+        ({'maxLength': 1}, '"e\u0301"'.encode('utf-8'), False),
+        ({'pattern': '^[a-zA-Z0-9_:-]+$'}, b'"run_u1:A-2"', True),
+        ({'pattern': '^[a-zA-Z0-9_:-]+$'}, b'"run.u1"', False),
+        ({'pattern': '^[a-zA-Z0-9_:-]+$'}, b'"run_u1\\n"', False),
+        ({'pattern': '^[a-zA-Z0-9_-]+$'}, b'"run:u1"', False),
+        ({'type': 'string', 'format': 'date-time'}, b'"format remains annotation"', True)]
+    return all(api_value_case(schema, raw, valid=valid) for schema, raw, valid in cases)
+
+
+def sm_schema_composition_controls():
+    cases = [({'allOf': [{'minimum': 1}, {'maximum': 2}]}, b'1', True),
+        ({'allOf': [{'minimum': 1}, {'maximum': 2}]}, b'0', False),
+        ({'anyOf': [{'type': 'string'}, {'type': 'integer'}]}, b'null', False),
+        ({'anyOf': [{'type': 'string'}, {'type': 'integer'}]}, b'1', True),
+        ({'oneOf': [{'type': 'number'}, {'type': 'integer'}]}, b'1', False),
+        ({'oneOf': [{'type': 'number'}, {'type': 'integer'}]}, b'1.1', True),
+        ({'not': {'type': 'integer'}}, b'1', False), ({'not': {'type': 'integer'}}, b'"a"', True),
+        (False, b'0', False), (True, b'0', True),
+        ({'$defs': {'x': {'minimum': 1}}, '$ref': '#/$defs/x', 'maximum': 2}, b'0', False),
+        ({'$defs': {'x': {'minimum': 1}}, '$ref': '#/$defs/x', 'maximum': 2}, b'3', False),
+        ({'$defs': {'x': {'minimum': 1}}, '$ref': '#/$defs/x', 'maximum': 2}, b'2', True)]
+    return all(api_value_case(schema, raw, valid=valid) for schema, raw, valid in cases)
+
+
+def sm_schema_unsupported_controls():
+    cases = [({'anyOf': [True, {'contains': {'type': 'integer'}}]}, 'api-schema-unsupported-keyword'),
+        ({'oneOf': [True, {'unknownAssertion': False}]}, 'api-schema-unsupported-keyword'),
+        ({'$defs': {'unused': {'pattern': '(a+)+$'}}, 'type': 'string'}, 'api-schema-pattern-unsupported'),
+        ({'$id': 'https://example.invalid/schema', 'type': 'integer'}, 'api-schema-unsupported-keyword'),
+        ({'$vocabulary': {'https://json-schema.org/draft/2020-12/vocab/format-assertion': True}}, 'api-schema-unsupported-keyword'),
+        ({'pattern': '(a+)+$'}, 'api-schema-pattern-unsupported'),
+        ({'readOnly': True}, 'api-schema-direction-unsupported'),
+        ({'$schema': 'https://json-schema.org/draft/2019-09/schema'}, 'api-schema-dialect'),
+        ({'$ref': 'https://example.invalid/schema'}, 'api-schema-reference'),
+        ({'$defs': {'x': {'$ref': '#/$defs/x'}}, '$ref': '#/$defs/x'}, 'api-schema-reference')]
+    return all(api_value_case(schema, b'1', valid=False, reason=reason) for schema, reason in cases)
+
+
+def sm_schema_keyword_controls():
+    cases = [{'type': []}, {'type': ['integer', 'integer']}, {'type': 'unknown'}, {'type': True},
+        {'enum': []}, {'multipleOf': 0}, {'minimum': True}, {'exclusiveMinimum': True},
+        {'minLength': -1}, {'maxItems': 1.1}, {'uniqueItems': 1}, {'items': []},
+        {'required': ['a', 'a']}, {'properties': []}, {'prefixItems': []}, {'allOf': []},
+        {'deprecated': 1}, {'format': False}, {'examples': {}}, {'$defs': []}]
+    return all(api_value_case(schema, b'1', valid=False, reason='api-schema-keyword') for schema in cases)
+
+
+def sm_schema_pointer_controls():
+    doc = {'openapi': '3.1.0', 'components': {'schemas': {'a/b~c': {'type': 'integer'}}}}
+    if not api_value_case(doc, b'1', pointer='/components/schemas/a~1b~0c'):
+        return False
+    for path in ('/components/schemas/a~2b', '/components/schemas/a%2Fb', '/missing', 'relative'):
+        if not api_value_case(doc, b'1', valid=False, reason='api-schema-pointer', pointer=path):
+            return False
+    for doc in ({'openapi': '3.0.3', 's': True}, {'openapi': '3.1.0', 'jsonSchemaDialect': [], 's': True},
+        {'$schema': 'https://json-schema.org/draft/2019-09/schema', 's': True}):
+        if not api_value_case(doc, b'1', valid=False, reason='api-schema-dialect', pointer='/s'):
+            return False
+    for path in ('/' * 4097, '/' * 65, '/' + '%' * 4096):
+        if not api_value_case(True, b'1', valid=False, reason='api-schema-pointer-ceiling', pointer=path):
+            return False
+    if not api_value_case({'a' * 4096: True}, b'1', pointer='/' + 'a' * 4096,
+            valid=False, reason='api-schema-pointer-ceiling'):
+        return False
+    if not api_value_case({'a' * 4095: True}, b'1', pointer='/' + 'a' * 4095):
+        return False
+    if not api_value_case({'$ref': '#/' + 'a' * 4096}, b'1', valid=False, reason='api-schema-pointer-ceiling'):
+        return False
+    return api_value_case({'$id': 'https://example.invalid/a', 's': True}, b'1', valid=False,
+        reason='api-schema-unsupported-keyword', pointer='/s')
+
+
+def sm_schema_bounds_controls():
+    # Accepted bounds and the first rejected depth are independent of implementation.
+    for raw in (b'"' + b'a' * (2 * 1024 * 1024 - 2) + b'"',
+        b'[' + b','.join([b'0'] * 19999) + b']', b'1' * 1000,
+        b'[' * 32 + b'0' + b']' * 32):
+        if P.sm_parse_api_json(raw)['exact_numbers'] is not True:
+            return False
+    if not named_api_refusal(lambda: P.sm_parse_api_json(b'[' * 33 + b'0' + b']' * 33), 'api-json-structure-ceiling'):
+        return False
+    if not named_api_refusal(lambda: P.sm_parse_api_json(b'"' + b'a' * (2 * 1024 * 1024 - 1) + b'"'), 'api-json-size'):
+        return False
+    if not api_value_case({'allOf': [True] * 4093}, b'1'):
+        return False
+    if not api_value_case({'allOf': [True] * 4094}, b'1', valid=False, reason='api-schema-compilation-ceiling'):
+        return False
+    schema_raw = json.dumps({'allOf': [{'items': True}] * 6}).encode('utf-8')
+    value_raw = b'[' + b','.join([b'0'] * 19999) + b']'
+    return named_api_refusal(lambda: P.sm_validate_api_value(schema_raw, value_raw, clock=lambda: 0.0),
+        'api-schema-evaluation-ceiling')
+
+
+def sm_schema_deadline_controls():
+    now = [0.0]
+    original = P.sm_parse_api_json
+    def delayed(*args, **options):
+        result = original(*args, **options)
+        now[0] = 2.0
+        return result
+    with mock.patch.object(P, 'sm_parse_api_json', side_effect=delayed):
+        if not named_api_refusal(lambda: P.sm_validate_api_value(b'true', b'1', clock=lambda: now[0]), 'state-read-deadline'):
+            return False
+    for ceiling in (True, 0, 6, float('nan'), 10 ** 1000):
+        if not named_api_refusal(lambda ceiling=ceiling: P.sm_validate_api_value(b'true', b'1', ceiling_s=ceiling), 'api-schema-ceiling'):
+            return False
+    return api_value_case(True, b'1')
+
+
+check('A8S-VALUE-NUMBER-1: exact integer inclusive exclusive and multiple constraints cannot round across boundaries', sm_schema_numeric_controls)
+check('A8S-VALUE-EQUALITY-1: numeric equality is exact while booleans arrays and unordered objects remain distinct', sm_schema_equality_controls)
+check('A8S-VALUE-STRUCTURE-1: required extra properties nested items tuple prefixes and size constraints apply correctly', sm_schema_object_array_controls)
+check('A8S-VALUE-STRING-1: Unicode code points and only reviewed anchored ASCII patterns are evaluated; format is annotation', sm_schema_string_controls)
+check('A8S-VALUE-COMPOSITION-1: every supported composition boolean schema and local reference sibling applies', sm_schema_composition_controls)
+check('A8S-VALUE-UNSUPPORTED-1: unknown assertion dialect direction reference scope pattern or unused branch refuses before use', sm_schema_unsupported_controls)
+check('A8S-VALUE-KEYWORD-1: malformed assertion and annotation shapes never produce a partial pass', sm_schema_keyword_controls)
+check('A8S-VALUE-POINTER-1: exact observed document and escaped local pointer retain dialect and scope semantics', sm_schema_pointer_controls)
+check('A8S-VALUE-BOUNDS-1: exact parser acceptance limits first rejected depth and compiled schema ceiling are controlled', sm_schema_bounds_controls)
+check('A8S-VALUE-DEADLINE-1: schema and instance parsing compilation evaluation share one finite deadline', sm_schema_deadline_controls)
+
+
+def sm_http_observation_fixture(response_raw=b'{"items":[0.1,1.0],"text":"ok"}'):
+    events = []
+    class Connection:
+        def __init__(self, host, port, timeout):
+            events.append(('constructed', host, port))
+            self.sock = None
+        def connect(self):
+            events.append(('connected',))
+        def request(self, method, path, **options):
+            events.append(('sent', method, path, options['body']))
+        def getresponse(self):
+            return SimpleNamespace(status=200, read=lambda bound: response_raw)
+        def close(self):
+            events.append(('closed',))
+    return Connection, events
+
+
+def sm_http_actual_byte_controls():
+    Connection, events = sm_http_observation_fixture()
+    observations = []
+    raw_schema = b'{"type":"object","properties":{"items":{"type":"array","items":{"type":"number"}}}}'
+    def observer(direction, **options):
+        observations.append((direction, dict(options)))
+        if direction == 'request':
+            return options['raw'] == '{"text":"\u041f\u0440\u0438\u0432\u0435\u0442","limit":1}'.encode('utf-8')
+        return P.sm_validate_api_value(raw_schema, options['raw'], ceiling_s=options['ceiling_s'])['validated'] is True
+    result = P.sm_request(43199, 'POST', '/v4/search', keyed=False, body={'text': '\u041f\u0440\u0438\u0432\u0435\u0442', 'limit': 1},
+        connection_factory=Connection, json_observer=observer)
+    if [kind for kind, _ in observations] != ['request', 'response']:
+        return False
+    request_row, response_row = observations[0][1], observations[1][1]
+    sent = next(event for event in events if event[0] == 'sent')
+    return (request_row['raw'] is sent[3] and request_row['status'] is None
+        and response_row['status'] == 200 and response_row['raw'] == b'{"items":[0.1,1.0],"text":"ok"}'
+        and all(row['method'] == 'POST' and row['path'] == '/v4/search' and 0 < row['ceiling_s'] <= 5
+            and set(row) == {'method', 'path', 'raw', 'status', 'ceiling_s'} for _, row in observations)
+        and result['json'] == {'items': [0.1, 1], 'text': 'ok'}
+        and type(result['json']['items'][1]) is int and result['sha256'] == hashlib.sha256(response_row['raw']).hexdigest())
+
+
+def sm_http_pre_send_refusal_controls():
+    for outcome in (False, None, 1):
+        Connection, events = sm_http_observation_fixture()
+        if not refused(lambda: P.sm_request(43199, 'POST', '/v4/search', keyed=False, body={},
+            connection_factory=Connection, json_observer=lambda *args, **options: outcome), P.SmRequestRefused):
+            return False
+        if any(event[0] in {'connected', 'sent'} for event in events) or events[-1] != ('closed',):
+            return False
+    Connection, events = sm_http_observation_fixture()
+    def schema_refusal(*args, **options):
+        raise P.SmApiRefused('api-schema-value')
+    if not named_api_refusal(lambda: P.sm_request(43199, 'POST', '/v4/search', keyed=False, body={},
+            connection_factory=Connection, json_observer=schema_refusal), 'api-schema-value'):
+        return False
+    if any(event[0] in {'connected', 'sent'} for event in events):
+        return False
+    Connection, events = sm_http_observation_fixture()
+    observer = mock.Mock(return_value=True)
+    if not named_api_refusal(lambda: P.sm_request(43199, 'POST', '/', keyed=False,
+            body={'x': float('nan')}, connection_factory=Connection, json_observer=observer), 'api-json-nonfinite'):
+        return False
+    if observer.called or any(event[0] in {'connected', 'sent'} for event in events):
+        return False
+    Connection, events = sm_http_observation_fixture()
+    return (refused(lambda: P.sm_request(43199, 'GET', '/', keyed=False, connection_factory=Connection,
+        json_observer=True), P.SmRequestRefused) and events == [])
+
+
+def sm_http_precision_projection_controls():
+    cases = [(b'{"x":1.0000000000000001}', 'api-json-projection-loss'),
+        (b'{"x":1e-324}', 'api-json-projection-loss'), (b'{"x":1,"x":2}', 'api-json-duplicate-member'),
+        (b'NaN', 'api-json-nonfinite'), (b'"\\ud800"', 'api-json-unicode')]
+    for raw, reason in cases:
+        Connection, events = sm_http_observation_fixture(raw)
+        if not named_api_refusal(lambda: P.sm_request(43199, 'GET', '/', keyed=False,
+                connection_factory=Connection, json_observer=lambda *args, **options: True), reason):
+            return False
+        if events[-1] != ('closed',):
+            return False
+    value = P.sm_api_json_projection(b'{"x":[0.10,1e2,0.0001,-0.0],"b":true}')
+    return (value == {'x': [0.1, 100, 0.0001, 0], 'b': True} and type(value['x'][1]) is int
+        and type(value['b']) is bool)
+
+
+def sm_http_observer_deadline_controls():
+    Connection, events = sm_http_observation_fixture()
+    def late(*args, **options):
+        time.sleep(0.08)
+        return True
+    if not refused(lambda: P.sm_request(43199, 'GET', '/', keyed=False, timeout_s=0.03,
+            connection_factory=Connection, json_observer=late), P.SmRequestRefused):
+        return False
+    return (not any(event[0] in {'connected', 'sent'} for event in events)
+            and not any(thread.name == 'sm-request-deadline' and thread.is_alive() for thread in threading.enumerate()))
+
+
+check('A8S-HTTP-BYTES-1: observer sees exactly transmitted UTF8 bytes received bytes method path and status with no credentials', sm_http_actual_byte_controls)
+check('A8S-HTTP-BEFORE-1: refused incomplete or malformed observers cannot connect or send and owned connection closes', sm_http_pre_send_refusal_controls)
+check('A8S-HTTP-PROJECTION-1: exact decoded values reach existing consumers only without lost decimal digits or JSON ambiguity', sm_http_precision_projection_controls)
+check('A8S-HTTP-DEADLINE-1: an observer returning after the request allowance cannot send and watchdog drains', sm_http_observer_deadline_controls)
+
+def sm_http_projection_expansion_controls():
+    for raw, reason in ((b'1e10000', 'api-json-projection-integer-ceiling'),
+        (b'1e1000', 'api-json-projection-integer-ceiling'), (b'-1e999', 'api-json-projection-integer-ceiling'),
+        (b'[' + b','.join([b'1e999'] * 2096) + b']', 'api-json-projection-size')):
+        if not named_api_refusal(lambda raw=raw: P.sm_api_json_projection(raw), reason):
+            return False
+    positive = P.sm_api_json_projection(b'1e999')
+    negative = P.sm_api_json_projection(b'-1e998')
+    if positive != 10 ** 999 or negative != -(10 ** 998):
+        return False
+    if len(json.dumps(positive).encode('utf-8')) != 1000 or len(json.dumps(negative).encode('utf-8')) != 1000:
+        return False
+    near_bound = P.sm_api_json_projection(b'[' + b','.join([b'1e999'] * 2095) + b']')
+    encoded = json.dumps(near_bound, separators=(',', ':')).encode('utf-8')
+    if len(encoded) != 2097096:
+        return False
+    exact_bound = P.sm_api_json_projection(b'"' + b'a' * (2 * 1024 * 1024 - 2) + b'"')
+    if len(json.dumps(exact_bound, ensure_ascii=False).encode('utf-8')) != 2 * 1024 * 1024:
+        return False
+    Connection, events = sm_http_observation_fixture(b'{"x":1e10000}')
+    return (P.sm_api_json_projection(b'0e10000') == 0
+        and named_api_refusal(lambda: P.sm_request(43199, 'GET', '/', keyed=False,
+            connection_factory=Connection, json_observer=lambda *args, **options: True), 'api-json-projection-integer-ceiling')
+        and events[-1] == ('closed',))
+
+check('A8S-HTTP-PROJECTION-BOUNDS-1: compact exponents refuse before unsupported integer or total JSON expansion; accepted boundaries serialize', sm_http_projection_expansion_controls)
+
+
+def sm_http_response_refusal_controls():
+    for outcome in (False, None, 1, 'schema-exception'):
+        Connection, events = sm_http_observation_fixture()
+        def observer(direction, **options):
+            if direction == 'request':
+                return True
+            if outcome == 'schema-exception':
+                raise P.SmApiRefused('api-schema-value')
+            return outcome
+        def operation():
+            return P.sm_request(43199, 'GET', '/', keyed=False, connection_factory=Connection,
+                json_observer=observer)
+        if outcome == 'schema-exception':
+            if not named_api_refusal(operation, 'api-schema-value'):
+                return False
+        else:
+            try:
+                operation()
+            except P.SmRequestRefused as exc:
+                if str(exc) != 'json-observation-incomplete':
+                    return False
+            else:
+                return False
+        if events[-1] != ('closed',) or sum(event[0] == 'sent' for event in events) != 1:
+            return False
+    return True
+
+
+def sm_http_real_socket_controls():
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+    stop = threading.Event()
+    accepted = threading.Event()
+    partial = None
+    requests, observations, errors = [], [], []
+    held = SS.HeldKey(b'sm_' + b'R' * 30)
+    replies = [b'{"x":0.1}', b'{"x":1.0000000000000001}']
+    class Handler(BaseHTTPRequestHandler):
+        def setup(self):
+            self.request.settimeout(0.25)
+            super().setup()
+            accepted.set()
+        def log_message(self, *args):
+            pass
+        def do_POST(self):
+            self.connection.settimeout(0.25)
+            raw = self.rfile.read(int(self.headers['Content-Length']))
+            requests.append({'path': self.path, 'raw': raw,
+                'own_key': self.headers[SS.KEY_HEADER] == held.header()[SS.KEY_HEADER]})
+            body = replies.pop(0)
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Content-Length', str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+    # Retain before bind; a single bounded worker owns every accepted handler.
+    server = HTTPServer(('127.0.0.1', 0), Handler, bind_and_activate=False)
+    worker = None
+    good = False
+    try:
+        server.server_bind()
+        server.server_activate()
+        server.timeout = 0.05
+        def serve():
+            try:
+                while not stop.is_set():
+                    server.handle_request()
+            except Exception as exc:
+                errors.append(type(exc).__name__)
+        worker = threading.Thread(target=serve, name='sm-observer-owned-http', daemon=True)
+        worker.start()
+        port = server.server_address[1]
+        def observer(direction, **options):
+            observations.append((direction, options['raw']))
+            schema = (b'{"type":"object","required":["q"],"properties":{"q":{"type":"string"}}}'
+                if direction == 'request' else b'{"type":"object","properties":{"x":{"type":"number","maximum":1}}}')
+            if set(options) != {'method', 'path', 'raw', 'status', 'ceiling_s'}:
+                return False
+            return P.sm_validate_api_value(schema, options['raw'], ceiling_s=options['ceiling_s'])['validated'] is True
+        result = P.sm_request(port, 'POST', '/observed', key=held, body={'q': '\u041f\u0440\u0438\u0432\u0435\u0442'},
+            timeout_s=3.0, json_observer=observer)
+        if result['json'] != {'x': 0.1} or len(requests) != 1 or not requests[0]['own_key']:
+            return False
+        first = requests[0]['raw']
+        if first != '{"q":"\u041f\u0440\u0438\u0432\u0435\u0442"}'.encode('utf-8') or observations != [('request', first), ('response', b'{"x":0.1}')]:
+            return False
+        if not named_api_refusal(lambda: P.sm_request(port, 'POST', '/observed', key=held, body={'q': 1},
+                timeout_s=3.0, json_observer=observer), 'api-schema-value') or len(requests) != 1:
+            return False
+        if not named_api_refusal(lambda: P.sm_request(port, 'POST', '/observed', key=held, body={'q': 'second'},
+                timeout_s=3.0, json_observer=observer), 'api-schema-value'):
+            return False
+        accepted.clear()
+        partial = P.socket.create_connection(('127.0.0.1', port), timeout=0.5)
+        partial.sendall(b'POST /observed HTTP/1.1\r\nHost: 127.0.0.1\r\nX-Partial:')
+        if not accepted.wait(0.5):
+            return False
+        good = (len(requests) == 2 and all(row['path'] == '/observed' and row['own_key'] for row in requests)
+            and replies == [] and len(observations) == 5)
+    finally:
+        stop.set()
+        if worker is not None and worker.ident is not None:
+            worker.join(1.0)
+        if worker is not None and worker.is_alive():
+            good = False  # A cleanup retry cannot erase the failed initial drain.
+        server.server_close()
+        if partial is not None:
+            try:
+                partial.shutdown(P.socket.SHUT_RDWR)
+            except OSError:
+                pass
+            partial.close()
+        if worker is not None and worker.is_alive():
+            worker.join(0.5)
+    return good and errors == [] and worker is not None and not worker.is_alive()
+
+check('A8S-HTTP-RESPONSE-1: response False None nonboolean or schema refusal cannot become consumed JSON and the connection closes', sm_http_response_refusal_controls)
+check('A8S-HTTP-REAL-1: owned literal127 socket binds actual UTF8 bytes and own-key headers; invalid request never arrives and invalid response refuses', sm_http_real_socket_controls)
+
+def api_session_fixture(*, docs=None, clock=time.monotonic):
+    # JSON observations have independent leaves; the earlier fixture reuses Python aliases.
+    doc = json.loads(json.dumps(sm_operations_schema_fixture()))
+    for path, item in doc['paths'].items():
+        for verb, op in item.items():
+            if verb not in {'get', 'post'}:
+                continue
+            if 'requestBody' in op:
+                schema = op['requestBody']['content']['application/json']['schema']
+                schema['additionalProperties'] = False
+                for name, leaf in schema['properties'].items():
+                    if name in {'page', 'limit'}:
+                        leaf.update(type='integer', minimum=1, maximum=1100)
+                    if name == 'containerTag':
+                        leaf.update(pattern='^[a-zA-Z0-9_:-]+$', minLength=1, maxLength=100)
+                    if name == 'containerTags':
+                        leaf.update(minItems=1)
+                        leaf['items'].update(pattern='^[a-zA-Z0-9_:-]+$', minLength=1, maxLength=100)
+            if path == '/v3/documents/{id}':
+                op['parameters'][0]['schema'].update(pattern='^[A-Za-z0-9_-]+$', minLength=1, maxLength=10)
+            if path == '/v4/search':
+                leaf = op['responses']['200']['content']['application/json']['schema']['properties']['results']['items']['properties']['similarity']
+                leaf.update(minimum=0, maximum=1)
+    docs = [doc, copy.deepcopy(doc)] if docs is None else docs
+    session = P.SmApiValueSession('unit', clock=clock)
+    raw_docs = [json.dumps(value, sort_keys=True, ensure_ascii=False, separators=(',', ':')).encode('utf-8') for value in docs]
+    replies = [{'status': 200, 'json': value, 'sha256': hashlib.sha256(raw).hexdigest()} for value, raw in zip(docs, raw_docs)]
+    def observe(direction, method, path, raw=None, status=None, **options):
+        return session.observer(direction, method=method, path=path, raw=raw, status=status,
+            ceiling_s=options.get('ceiling_s', 1.0))
+    def pair(method, path, request, response, status=200):
+        return observe('request', method, path, request) is True and observe('response', method, path, response, status) is True
+    def schemas():
+        return all(pair('GET', path, None, raw) for path, raw in zip(P.SM_OPENAPI_PATHS, raw_docs))
+    return SimpleNamespace(session=session, docs=docs, raw_docs=raw_docs, replies=replies,
+        observe=observe, pair=pair, schemas=schemas)
+
+
+def api_session_complete(f):
+    if not f.schemas() or not f.pair('POST', '/v4/memories/list', b'{"containerTags":["unit.u1"],"limit":1}', b'{"error":"invalid tag"}', 400):
+        return False
+    for method, path, request, response in (
+        ('POST', '/v3/documents', b'{"content":"owned diagnostic","containerTag":"unit_u1"}', b'{"id":"doc1","status":"queued"}'),
+        ('GET', '/v3/documents/doc1', None, b'{"id":"doc1","status":"done","createdAt":"2026-10-04T12:00:00Z","memories":[]}'),
+        ('POST', '/v4/memories/list', b'{"containerTags":["unit_u1"],"limit":10,"page":1}', b'{"memoryEntries":[],"pagination":{"currentPage":1,"limit":10,"totalItems":0,"totalPages":0}}'),
+        ('POST', '/v4/search', b'{"q":"owned diagnostic","containerTags":["unit_u1"],"limit":1}', b'{"results":[{"id":"m1","memory":"owned diagnostic","similarity":0.1}],"total":1,"timing":1}'),
+    ):
+        if not f.pair(method, path, request, response):
+            return False
+    return True
+
+
+def api_session_positive_controls():
+    f = api_session_fixture()
+    if not api_session_complete(f):
+        return False
+    contract = P.sm_openapi_contract(f.replies, REST_SM)
+    result = f.session.summary(contract)
+    if (result['value_constraints_verified'] is not True or result['runtime_admission'] is not False
+            or result['operations_completed'] != 4 or len(result['traces']) != 7):
+        return False
+    negative = result['traces'][2]
+    if (negative['intentional_negative_control'] is not True or negative['status'] != 400
+            or negative['request_proofs'] != [] or negative['response_proofs'] != []):
+        return False
+    for trace in result['traces'][3:]:
+        if trace['runtime_admission'] is not False or trace['intentional_negative_control'] is not False:
+            return False
+        for direction in ('request', 'response'):
+            proofs = trace[direction + '_proofs']
+            if len(proofs) != 2 or {p['origin'] for p in proofs} != {'/v3/openapi', '/v4/openapi'}:
+                return False
+            for proof, raw_schema in zip(proofs, f.raw_docs):
+                if (proof['validated'] is not True or proof['runtime_admission'] is not False
+                        or proof['schema_raw_sha256'] != hashlib.sha256(raw_schema).hexdigest()):
+                    return False
+                if trace['operation'] == 'get_document' and direction == 'request':
+                    expected = hashlib.sha256(b'"doc1"').hexdigest()
+                    pointer = '/paths/~1v3~1documents~1{id}/get/parameters/0/schema'
+                else:
+                    expected = trace[direction + '_sha256']
+                    declared = {'add_document': '~1v3~1documents', 'get_document': '~1v3~1documents~1{id}',
+                        'list_memories': '~1v4~1memories~1list', 'search': '~1v4~1search'}[trace['operation']]
+                    suffix = '/requestBody' if direction == 'request' else '/responses/200'
+                    pointer = '/paths/' + declared + '/' + trace['method'].lower() + suffix + '/content/application~1json/schema'
+                if proof['value_raw_sha256'] != expected or proof['schema_pointer'] != pointer:
+                    return False
+    result['traces'][3]['request_proofs'].clear()
+    contract['observed'][0]['raw_sha256'] = '0' * 64
+    fresh = f.session.summary(P.sm_openapi_contract(f.replies, REST_SM))
+    return fresh['value_constraints_verified'] is True and len(fresh['traces'][3]['request_proofs']) == 2 and 'owned diagnostic' not in json.dumps(fresh)
+
+
+def api_session_request_controls():
+    cases = (
+        ('POST', '/v4/memories/list', b'{"containerTags":["unit_u1"],"limit":0}', 'api-schema-value'),
+        ('POST', '/v3/documents', b'{"content":1,"containerTag":"unit_u1"}', 'api-schema-value'),
+        ('POST', '/v4/search', b'{"q":"q","containerTags":["unit_u1"],"limit":1,"extra":1}', 'api-schema-value'),
+        ('GET', '/v3/documents/doc.1', None, 'api-schema-value'),
+        ('GET', '/v3/documents/%64oc1', None, 'api-operation-route'),
+        ('GET', '/v3/documents/..', None, 'api-operation-route'),
+        ('GET', '/v3/documents/doc1', b'{}', 'api-operation-body'),
+        ('POST', '/v3/documents/doc1', b'{}', 'api-operation-route'),
+    )
+    for method, path, raw, reason in cases:
+        f = api_session_fixture()
+        if not f.schemas() or not named_api_refusal(lambda: f.observe('request', method, path, raw), reason):
+            return False
+        if f.session.summary(P.sm_openapi_contract(f.replies, REST_SM))['value_constraints_verified'] is not False:
+            return False
+    f = api_session_fixture()
+    f.docs[1]['paths']['/v3/documents']['post']['requestBody']['content']['application/json']['schema']['properties']['content']['maxLength'] = 2
+    f = api_session_fixture(docs=f.docs)
+    return f.schemas() and named_api_refusal(lambda: f.observe('request', 'POST', '/v3/documents', b'{"content":"long","containerTag":"unit_u1"}'), 'api-schema-value')
+
+
+def api_session_response_controls():
+    for method, path, status, raw, reason in (
+        ('POST', '/v4/search', 200, b'{"results":[{"similarity":1.0000000000000001}],"total":1,"timing":1}', 'api-schema-value'),
+        ('POST', '/v4/search', 201, b'{}', 'api-operation-status'),
+        ('POST', '/v4/memories/list', 200, b'{}', 'api-operation-order'),
+        ('GET', '/v4/search', 200, b'{}', 'api-operation-order'),
+        ('POST', '/v4/search', True, b'{}', 'api-operation-order'),
+    ):
+        f = api_session_fixture()
+        if not f.schemas() or f.observe('request', 'POST', '/v4/search', b'{"q":"q","limit":1}') is not True:
+            return False
+        if not named_api_refusal(lambda: f.observe('response', method, path, raw, status), reason):
+            return False
+        if not f.session.faulted or len(f.session.traces) != 2:
+            return False
+    f = api_session_fixture()
+    if not f.schemas() or f.observe('request', 'POST', '/v3/documents', b'{"content":"q"}') is not True:
+        return False
+    replies = []
+    worker = threading.Thread(target=lambda: replies.append(named_api_refusal(lambda: f.observe('response', 'POST', '/v3/documents', b'{}', 200), 'api-operation-order')))
+    worker.start()
+    worker.join(1.0)
+    return not worker.is_alive() and replies == [True]
+
+
+def api_session_reference_drift_controls():
+    f = api_session_fixture()
+    for doc in f.docs:
+        op = doc['paths']['/v3/documents']['post']
+        doc['components'] = {'requestBodies': {'Owned/Body': op['requestBody']}, 'responses': {'Owned~Response': op['responses']['200']}}
+        op['requestBody'] = {'$ref': '#/components/requestBodies/Owned~1Body'}
+        op['responses']['200'] = {'$ref': '#/components/responses/Owned~0Response'}
+    f = api_session_fixture(docs=f.docs)
+    if not f.schemas() or not f.pair('POST', '/v3/documents', b'{"content":"q"}', b'{"id":"doc1","status":"queued"}'):
+        return False
+    row = f.session.traces[-1]
+    if (row['request_proofs'][0]['schema_pointer'] != '/components/requestBodies/Owned~1Body/content/application~1json/schema'
+            or row['response_proofs'][0]['schema_pointer'] != '/components/responses/Owned~0Response/content/application~1json/schema'):
+        return False
+    f.observe('request', 'GET', '/v3/openapi')
+    if not named_api_refusal(lambda: f.observe('response', 'GET', '/v3/openapi', f.raw_docs[0] + b' ', 200), 'api-operation-schema-drift'):
+        return False
+    for ref in ('https://example.invalid/schema', '#/paths/~1v3~1documents/post/requestBody'):
+        f = api_session_fixture()
+        f.docs[0]['paths']['/v3/documents']['post']['requestBody'] = {'$ref': ref}
+        f = api_session_fixture(docs=f.docs)
+        if not f.schemas() or not named_api_refusal(lambda: f.observe('request', 'POST', '/v3/documents', b'{"content":"q"}'), 'api-operation-reference'):
+            return False
+    return True
+
+
+def api_session_order_negative_controls():
+    f = api_session_fixture()
+    if not named_api_refusal(lambda: f.observe('request', 'POST', '/v3/documents', b'{"content":"q"}'), 'api-operation-schemas-unobserved'):
+        return False
+    f = api_session_fixture()
+    if not f.schemas() or f.observe('request', 'POST', '/v3/documents', b'{"content":"q"}') is not True:
+        return False
+    if f.session.summary(P.sm_openapi_contract(f.replies, REST_SM))['value_constraints_verified'] is not False:
+        return False
+    if not named_api_refusal(lambda: f.observe('request', 'POST', '/v3/documents', b'{"content":"q"}'), 'api-operation-order'):
+        return False
+    for status, raw in ((200, b'{}'), (400, b'{"x":1,"x":2}')):
+        f = api_session_fixture()
+        if not f.schemas() or f.observe('request', 'POST', '/v4/memories/list', f.session.negative_body) is not True:
+            return False
+        reason = 'api-operation-negative-status' if status == 200 else 'api-json-duplicate-member'
+        if not named_api_refusal(lambda: f.observe('response', 'POST', '/v4/memories/list', raw, status), reason):
+            return False
+    f = api_session_fixture()
+    if not api_session_complete(f):
+        return False
+    if not named_api_refusal(lambda: f.observe('request', 'POST', '/v4/memories/list', f.session.negative_body), 'api-operation-negative-repeated'):
+        return False
+    return f.session.summary(P.sm_openapi_contract(f.replies, REST_SM))['value_constraints_verified'] is False
+
+
+def api_session_bounds_controls():
+    for ceiling in (0, -1, True, float('inf'), float('nan'), 10**1000):
+        f = api_session_fixture()
+        if not named_api_refusal(lambda: f.observe('request', 'GET', '/v3/openapi', ceiling_s=ceiling), 'api-operation-ceiling'):
+            return False
+    f = api_session_fixture()
+    f.session.lock.acquire()
+    try:
+        if not named_api_refusal(lambda: f.observe('request', 'GET', '/v3/openapi', ceiling_s=0.01), 'api-operation-lock'):
+            return False
+    finally:
+        f.session.lock.release()
+    f = api_session_fixture()
+    f.session.traces = [{}] * 2048
+    if not named_api_refusal(lambda: f.observe('request', 'GET', '/v3/openapi'), 'api-operation-session'):
+        return False
+    f = api_session_fixture()
+    f.observe('request', 'GET', '/v3/openapi')
+    f.session.trace_bytes = 2 * 1024 * 1024
+    if not named_api_refusal(lambda: f.observe('response', 'GET', '/v3/openapi', f.raw_docs[0], 200), 'api-operation-trace-size'):
+        return False
+    ticks = iter((0.0, 0.0, 1.0))
+    f = api_session_fixture(clock=lambda: next(ticks))
+    return named_api_refusal(lambda: f.observe('request', 'GET', '/v3/openapi'), 'state-read-deadline')
+
+
+check('A8S-API-SESSION-POSITIVE-1: completed exact pairs bind both raw schemas and actual body/path values; public proof is isolated and runtime remains false', api_session_positive_controls)
+check('A8S-API-SESSION-REQUEST-1: actual outgoing bodies and canonical path ids obey each observed schema before use', api_session_request_controls)
+check('A8S-API-SESSION-RESPONSE-1: incoming exact values, method/path/status and thread must match the pending request', api_session_response_controls)
+check('A8S-API-SESSION-REFERENCE-1: local escaped reference targets preserve source pointers; remote/cyclic containers and byte drift refuse', api_session_reference_drift_controls)
+check('A8S-API-SESSION-ORDER-1: unobserved, incomplete, overlapping or repeated negative calls cannot yield a positive summary', api_session_order_negative_controls)
+check('A8S-API-SESSION-BOUNDS-1: finite ceilings, shared deadline, lock, trace count and serialized trace bytes are bounded', api_session_bounds_controls)
+
+def api_session_observed_request(f, session):
+    """Synthetic transport honors exact observation; real sockets are covered separately."""
+    def request(port, method, path, **options):
+        observer = options.pop('json_observer')
+        body = options.get('body')
+        raw = json.dumps(body, ensure_ascii=False, separators=(',', ':')).encode('utf-8') if body is not None else None
+        observer('request', method=method, path=path, raw=raw, status=None, ceiling_s=min(1.0, options['timeout_s']))
+        reply = f.request(port, method, path, **options)
+        # Fixture schemas serialize in the independent contract's declared order.
+        response = json.dumps(reply['json'], sort_keys=True, allow_nan=False).encode('utf-8')
+        observer('response', method=method, path=path, raw=response, status=reply['status'], ceiling_s=min(1.0, options['timeout_s']))
+        return dict(reply, sha256=hashlib.sha256(response).hexdigest())
+    return request
+
+
+def api_session_send_binding_controls():
+    f = api_session_fixture()
+    if not api_session_complete(f):
+        return False
+    request = lambda *a, **k: {'status': 200, 'json': {}, 'sha256': '0' * 64}
+    if not named_api_refusal(lambda: f.session.send(request, 1234, 'GET', '/v3/openapi', timeout_s=1.0), 'api-operation-unobserved-return'):
+        return False
+    for fault, reason in (('hash', 'api-operation-return-binding'), ('status', 'api-operation-return-binding'),
+                          ('value', 'api-operation-return-value')):
+        f = api_session_fixture()
+        def observed_request(port, method, path, **options):
+            raw = f.raw_docs[0]
+            observer = options['json_observer']
+            observer('request', method=method, path=path, raw=None, status=None, ceiling_s=1.0)
+            observer('response', method=method, path=path, raw=raw, status=200, ceiling_s=1.0)
+            reply = {'status': 200, 'json': f.docs[0], 'sha256': hashlib.sha256(raw).hexdigest()}
+            if fault == 'hash':
+                reply['sha256'] = '0' * 64
+            elif fault == 'status':
+                reply['status'] = 201
+            else:
+                reply['json'] = dict(reply['json'], extra='different consumed value')
+            return reply
+        if not named_api_refusal(lambda: f.session.send(observed_request, 1234, 'GET', '/v3/openapi', timeout_s=1.0), reason):
+            return False
+        if not f.session.faulted:
+            return False
+    return True
+
+
+def api_session_p3_p4_controls():
+    f = functional_fixture()
+    session = P.SmApiValueSession('unit', clock=lambda: f.now)
+    observed_request = api_session_observed_request(f, session)
+    p3 = f.run(request=observed_request, value_session=session)
+    if p3['schema']['value_constraints_verified'] is not True or p3['runtime_admission'] is not False:
+        return False
+    if len(p3['schema']['traces']) != len(f.requests) or len(f.admissions) != len(f.requests) + 1:
+        return False
+    for port in (1234, 1235):
+        start = len(f.requests)
+        state = P.read_sm_restart_state(port, 'unit', 'doc1', key=f.key, request=observed_request,
+            admit=f.admit, rest=REST_SM, value_session=session, clock=lambda: f.now)
+        if (state['complete'] is not True or state['schema']['value_constraints_verified'] is not True
+                or state['atomic_snapshot_proven'] is not False or state['writers_quiescent_proven'] is not False):
+            return False
+        calls = f.requests[start:]
+        if [(m, p) for _, m, p, _ in calls] != [('GET', '/v3/openapi'), ('GET', '/v4/openapi'),
+                ('GET', '/v3/documents/doc1'), ('POST', '/v4/memories/list'), ('POST', '/v4/search')]:
+            return False
+        if any(p != port for p, _, _, _ in calls):
+            return False
+    if len(session.traces) != len(f.requests) or len(f.admissions) != len(f.requests) + 1:
+        return False
+    stale = p3['schema']
+    f.schema = dict(f.schema, info={'title': 'changed after restart'})
+    if not named_api_refusal(lambda: P.read_sm_restart_state(1235, 'unit', 'doc1', key=f.key,
+            request=observed_request, admit=f.admit, rest=REST_SM, value_session=session, clock=lambda: f.now), 'api-operation-schema-drift'):
+        return False
+    return session.summary(stale)['value_constraints_verified'] is False
+
+
+check('A8S-API-RETURN-1: stale traces, wrong response hashes/statuses or different consumed values cannot certify a returned request', api_session_send_binding_controls)
+check('A8S-API-P3-P4-1: P3 and both restart snapshots observe every actual value and freshly reobserve both pinned schemas under their shared admission/deadline', api_session_p3_p4_controls)
+
+def api_session_contract_binding_controls():
+    f = api_session_fixture()
+    if not api_session_complete(f):
+        return False
+    original = P.sm_openapi_contract(f.replies, REST_SM)
+    for fault in ('canonical', 'conformant', 'duplicate', 'missing', 'operations'):
+        contract = copy.deepcopy(original)
+        if fault == 'canonical':
+            contract['observed'][0]['canonical_sha256'] = '0' * 64
+        elif fault == 'conformant':
+            contract['conformant'] = 1
+        elif fault == 'duplicate':
+            contract['observed'].append(copy.deepcopy(contract['observed'][0]))
+        elif fault == 'missing':
+            del contract['observed'][1]['canonical_sha256']
+        else:
+            contract['operations'] = ('add_document',)
+        if f.session.summary(contract)['value_constraints_verified'] is not False:
+            return False
+    changed = copy.deepcopy(f.docs[0])
+    changed['info'] = {'title': 'Different projected document under the actual raw hash'}
+    misleading = [dict(reply, json=changed) for reply in f.replies]
+    unrelated = P.sm_openapi_contract(misleading, REST_SM)
+    return f.session.summary(unrelated)['value_constraints_verified'] is False and f.session.summary(original)['value_constraints_verified'] is True
+
+
+def api_session_parameter_semantics_controls():
+    for options in ({'style': 'matrix'}, {'style': 'label'}, {'content': {'application/json': {'schema': {'type': 'string'}}}},
+                    {'explode': 1}, {'allowReserved': True}, {'allowEmptyValue': True}):
+        f = api_session_fixture()
+        f.docs[0]['paths']['/v3/documents/{id}']['get']['parameters'][0].update(options)
+        f = api_session_fixture(docs=f.docs)
+        if not f.schemas() or not named_api_refusal(lambda: f.observe('request', 'GET', '/v3/documents/doc1'), 'api-operation-parameter-semantics'):
+            return False
+    f = api_session_fixture()
+    for doc in f.docs:
+        doc['paths']['/v3/documents/{id}']['get']['parameters'][0].update(style='simple', explode=True)
+    f = api_session_fixture(docs=f.docs)
+    if not f.schemas() or not f.pair('GET', '/v3/documents/doc1', None, b'{"id":"doc1","status":"done"}'):
+        return False
+    # Full existing255-codepoint input contract: 3-byte BMP and4-byte scalar URL expansion.
+    for identifier in (chr(0x4E00) * 171, chr(0x1F642) * 255):
+        _, path, body = P.sm_api_target('get_document', 'unit', document_id=identifier)
+        if f.session._operation('GET', path) != ('get_document', identifier) or body is not None:
+            return False
+    return True
+
+
+def api_session_entry_fault_controls():
+    for fault in ('ceiling', 'clock', 'lock'):
+        f = api_session_fixture()
+        if not api_session_complete(f):
+            return False
+        contract = P.sm_openapi_contract(f.replies, REST_SM)
+        if f.session.summary(contract)['value_constraints_verified'] is not True:
+            return False
+        options, reason = {}, 'api-operation-ceiling'
+        if fault == 'ceiling':
+            options['ceiling_s'] = 0
+        elif fault == 'clock':
+            f.session.clock = lambda: float('nan')
+            reason = 'state-read-clock'
+        else:
+            f.session.lock.acquire()
+            options['ceiling_s'] = 0.01
+            reason = 'api-operation-lock'
+        try:
+            if not named_api_refusal(lambda: f.observe('request', 'GET', '/v3/openapi', **options), reason):
+                return False
+        finally:
+            if fault == 'lock':
+                f.session.lock.release()
+            f.session.clock = time.monotonic
+        if f.session.summary(contract)['value_constraints_verified'] is not False or not f.session.faulted:
+            return False
+    return True
+
+
+check('A8S-API-CONTRACT-BINDING-1: raw and canonical observations must identify the same two documents and literal complete contract', api_session_contract_binding_controls)
+check('A8S-API-PARAMETER-SEMANTICS-1: unsupported path serialization refuses; simple primitive ids preserve the existing255-codepoint route ceiling', api_session_parameter_semantics_controls)
+check('A8S-API-ENTRY-FAULT-1: an observation refused at ceiling clock or lock entry invalidates a formerly successful session', api_session_entry_fault_controls)
+
+def api_session_concurrent_send_controls():
+    f = api_session_fixture()
+    entered, other_done = threading.Event(), threading.Event()
+    shared, outcomes, errors = {}, [], []
+    def caller_a(port, method, path, **options):
+        entered.set()
+        if not other_done.wait(0.5):
+            raise AssertionError('owned competing send did not finish')
+        return shared.get('reply', {'status': 200, 'json': {}, 'sha256': '0' * 64})
+    def caller_b(port, method, path, **options):
+        raw = f.raw_docs[0]
+        observer = options['json_observer']
+        observer('request', method=method, path=path, raw=None, status=None, ceiling_s=0.1)
+        observer('response', method=method, path=path, raw=raw, status=200, ceiling_s=0.1)
+        reply = {'status': 200, 'json': f.docs[0], 'sha256': hashlib.sha256(raw).hexdigest()}
+        shared['reply'] = reply
+        return reply
+    def invoke(name, caller, ceiling):
+        try:
+            f.session.send(caller, 1234, 'GET', '/v3/openapi', timeout_s=ceiling)
+            outcomes.append((name, 'PASS'))
+        except P.SmApiRefused as exc:
+            outcomes.append((name, str(exc)))
+        except Exception as exc:
+            errors.append(type(exc).__name__)
+        finally:
+            if name == 'B':
+                other_done.set()
+    a = threading.Thread(target=invoke, args=('A', caller_a, 1.0))
+    b = threading.Thread(target=invoke, args=('B', caller_b, 0.05))
+    a.start()
+    try:
+        if not entered.wait(0.5):
+            return False
+        b.start()
+        b.join(1.0)
+    finally:
+        other_done.set()
+        a.join(1.0)
+        if b.ident is not None:
+            b.join(1.0)
+    return (not a.is_alive() and not b.is_alive() and errors == [] and len(outcomes) == 2
+        and all(result != 'PASS' for _, result in outcomes) and ('B', 'api-operation-send-lock') in outcomes)
+
+
+def api_session_outbound_binding_controls():
+    f = api_session_fixture()
+    for doc in f.docs:
+        doc['paths']['/v4/memories/list']['post']['requestBody']['content']['application/json']['schema']['properties']['limit']['maximum'] = 1
+    f = api_session_fixture(docs=f.docs)
+    if not f.schemas():
+        return False
+    transmitted = []
+    def request(port, method, path, **options):
+        observer = options['json_observer']
+        observer('request', method=method, path=path, raw=b'{"containerTags":["unit_u1"],"limit":1}', status=None, ceiling_s=1.0)
+        transmitted.append(options['body'])
+        raw = b'{}'
+        observer('response', method=method, path=path, raw=raw, status=200, ceiling_s=1.0)
+        return {'status': 200, 'json': {}, 'sha256': hashlib.sha256(raw).hexdigest()}
+    return (named_api_refusal(lambda: f.session.send(request, 1234, 'POST', '/v4/memories/list', timeout_s=1.0,
+        body={'containerTags': ['unit_u1'], 'limit': 10}), 'api-operation-request-binding') and transmitted == [])
+
+
+def api_session_return_allocation_controls():
+    for count, reason in ((20000, 'api-json-encode-structure'), (1000, 'api-json-encode-size')):
+        f = api_session_fixture()
+        alias = ['x' * (2 * 1024 * 1024 - 4)] * count
+        original = P.json.dumps
+        def guarded_dumps(value, *args, **options):
+            if value is alias:
+                raise AssertionError('unbounded whole-object allocation attempted')
+            return original(value, *args, **options)
+        def request(port, method, path, **options):
+            raw = f.raw_docs[0]
+            options['json_observer']('request', method=method, path=path, raw=None, status=None, ceiling_s=1.0)
+            options['json_observer']('response', method=method, path=path, raw=raw, status=200, ceiling_s=1.0)
+            return {'status': 200, 'json': alias, 'sha256': hashlib.sha256(raw).hexdigest()}
+        with mock.patch.object(P.json, 'dumps', side_effect=guarded_dumps):
+            if not named_api_refusal(lambda: f.session.send(request, 1234, 'GET', '/v3/openapi', timeout_s=1.0), reason):
+                return False
+    return True
+
+
+def api_json_encoding_bounds_controls():
+    values = ({'b': [0.1, True, None, '\n"\\' + chr(0x4E00)], 'a': 10**999}, ['x' * 4095 + '\n' + chr(0x1F642)], -10**998)
+    for value in values:
+        for ordered in (False, True):
+            expected = json.dumps(value, sort_keys=ordered, ensure_ascii=False, allow_nan=False, separators=(',', ':')).encode('utf-8')
+            if P.sm_encode_api_json(value, sort_keys=ordered) != expected:
+                return False
+    accepted = 'x' * (2 * 1024 * 1024 - 2)
+    if len(P.sm_encode_api_json(accepted)) != 2 * 1024 * 1024:
+        return False
+    for value, reason in ((accepted + 'x', 'api-json-encode-size'), (10**1000, 'api-json-encode-number'),
+                         (float('nan'), 'api-json-encode-number'), ({1: 'x'}, 'api-json-encode-type'),
+                         ('\ud800', 'api-json-encode-unicode'), (['x'] * 20000, 'api-json-encode-structure')):
+        if not named_api_refusal(lambda: P.sm_encode_api_json(value), reason):
+            return False
+    cycle = []
+    cycle.append(cycle)
+    if not named_api_refusal(lambda: P.sm_encode_api_json(cycle), 'api-json-encode-structure'):
+        return False
+    ticks = iter((0.0, 0.0, 1.0))
+    return named_api_refusal(lambda: P.sm_encode_api_json('x', clock=lambda: next(ticks)), 'state-read-deadline')
+
+
+check('A8S-API-SEND-OWNERSHIP-1: a waiting caller cannot borrow another thread complete pair as its own request', api_session_concurrent_send_controls)
+check('A8S-API-OUTBOUND-BINDING-1: observed request bytes must equal this invocation body before a collaborator can send', api_session_outbound_binding_controls)
+check('A8S-API-RETURN-ALLOCATION-1: aliased huge consumer objects refuse before unbounded whole-object JSON allocation', api_session_return_allocation_controls)
+check('A8S-API-ENCODING-BOUNDS-1: exact compact built-in encoding respects bytes nodes cycles numbers Unicode and one deadline', api_json_encoding_bounds_controls)
+
+def api_session_p3_p4_real_http_controls():
+    """Exercise complete value wiring over owned sockets; not child durability or C6."""
+    from http.server import HTTPServer, BaseHTTPRequestHandler
+    f = functional_fixture()
+    f.key = SS.HeldKey(b'sm_' + b'V' * 30)
+    f.schema = json.loads(json.dumps(f.schema))
+    f.schema['paths']['/v4/search']['post']['responses']['200']['content']['application/json']['schema']['properties']['results']['items']['properties']['similarity'].update(maximum=1)
+    session = P.SmApiValueSession('unit')
+    owners, accepted, errors = [], [], []
+    poison = [False]
+    good = False
+    def start():
+        stop = threading.Event()
+        class Handler(BaseHTTPRequestHandler):
+            def setup(self):
+                self.request.settimeout(0.25)
+                super().setup()
+            def log_message(self, *args):
+                pass
+            def respond(self):
+                try:
+                    own_key = self.headers.get(SS.KEY_HEADER) == f.key.header()[SS.KEY_HEADER]
+                    if not own_key:
+                        raise AssertionError('own fixture key not received')
+                    body = None
+                    if self.command == 'POST':
+                        count = int(self.headers['Content-Length'])
+                        if not 0 < count <= 2 * 1024 * 1024:
+                            raise AssertionError('unexpected own body size')
+                        raw = self.rfile.read(count)
+                        body = json.loads(raw)
+                    accepted.append((self.server.server_address[1], self.command, self.path, own_key))
+                    reply = f.request(self.server.server_address[1], self.command, self.path, body=body, key=f.key)
+                    raw = json.dumps(reply['json'], sort_keys=True, ensure_ascii=False, allow_nan=False).encode('utf-8')
+                    if poison[0] and self.path == '/v4/search':
+                        if raw.count(b'"similarity": 0.9') != 1:
+                            raise AssertionError('exact owned response witness missing')
+                        raw = raw.replace(b'"similarity": 0.9', b'"similarity": 1.0000000000000001')
+                    self.send_response(reply['status'])
+                    self.send_header('Content-Type', 'application/json')
+                    self.send_header('Content-Length', str(len(raw)))
+                    self.end_headers()
+                    self.wfile.write(raw)
+                except Exception as exc:
+                    errors.append(type(exc).__name__)
+                    self.close_connection = True
+            do_GET = respond
+            do_POST = respond
+        server = HTTPServer(('127.0.0.1', 0), Handler, bind_and_activate=False)
+        owner = SimpleNamespace(server=server, stop=stop, worker=None, initially_drained=False)
+        owners.append(owner)  # Retain the object before acquisition can fail.
+        server.server_bind()
+        server.server_activate()
+        server.timeout = 0.05
+        def serve():
+            try:
+                while not stop.is_set():
+                    server.handle_request()
+            except Exception as exc:
+                errors.append(type(exc).__name__)
+        owner.worker = threading.Thread(target=serve, name='owned-sm-value-http', daemon=True)
+        owner.worker.start()
+        return owner, server.server_address[1]
+    def close(owner):
+        owner.stop.set()
+        if owner.worker is not None and owner.worker.ident is not None:
+            owner.worker.join(1.0)
+            owner.initially_drained = not owner.worker.is_alive()
+        owner.server.server_close()
+        if owner.worker is not None and owner.worker.is_alive():
+            owner.worker.join(0.5)
+        return owner.initially_drained
+    try:
+        owner1, port1 = start()
+        p3 = P.run_sm_p3(port1, 'unit', key=f.key, rest=REST_SM, request=P.sm_request, admit=f.admit,
+            prepare_routes=lambda **k: True, observe_routes=lambda **k: f.witness, model='deepseek-flash',
+            embed_model='bge-m3:latest', ceiling_s=15.0, sleep=lambda seconds: time.sleep(min(seconds, 0.001)), value_session=session)
+        first = P.read_sm_restart_state(port1, 'unit', 'doc1', key=f.key, request=P.sm_request,
+            admit=f.admit, rest=REST_SM, value_session=session, ceiling_s=10.0)
+        if not close(owner1):
+            return False
+        # An OS may legitimately reuse a just-closed ephemeral port; retry own allocations only.
+        for _ in range(3):
+            owner2, port2 = start()
+            if port2 != port1:
+                break
+            if not close(owner2):
+                return False
+        else:
+            return False
+        second = P.read_sm_restart_state(port2, 'unit', 'doc1', key=f.key, request=P.sm_request,
+            admit=f.admit, rest=REST_SM, value_session=session, ceiling_s=10.0)
+        if (p3['schema']['value_constraints_verified'] is not True or len(p3['schema']['traces']) != 8
+                or first['schema']['value_constraints_verified'] is not True or len(first['schema']['traces']) != 13
+                or second['schema']['value_constraints_verified'] is not True or len(second['schema']['traces']) != 18
+                or first['seal'] != second['seal'] or p3['runtime_admission'] is not False):
+            return False
+        poison[0] = True
+        if not named_api_refusal(lambda: P.read_sm_restart_state(port2, 'unit', 'doc1', key=f.key,
+                request=P.sm_request, admit=f.admit, rest=REST_SM, value_session=session, ceiling_s=10.0), 'api-schema-value'):
+            return False
+        final = session.summary(second['schema'])
+        text = json.dumps(final, sort_keys=True)
+        good = (len(accepted) == 23 and len(session.traces) == 22 and final['value_constraints_verified'] is False
+            and all(own for _, _, _, own in accepted) and f.key.header()[SS.KEY_HEADER] not in text
+            and 'Rina keeps' not in text and errors == [])
+    finally:
+        for owner in owners:
+            if not owner.initially_drained and not close(owner):
+                good = False
+    return good and all(owner.initially_drained and not owner.worker.is_alive() for owner in owners)
+
+
+check('A8S-API-P3-P4-HTTP-1: full P3 and two fresh-schema snapshot reads use owned keyed literal127 sockets; exact invalid inbound value refuses and all workers drain', api_session_p3_p4_real_http_controls)
+
+def api_session_controller_case(*, drift=False):
+    with tempfile.TemporaryDirectory(prefix='nvt-sm-schema-controller-') as directory:
+        fixture = p4p5_protocol_fixture(Path(directory).resolve())
+        previous = fixture.f.deps.setup
+        captured = {}
+        def setup(*args):
+            runtime = previous(*args)
+            session = P.SmApiValueSession('boot-control')
+            captured['session'] = session
+            original = runtime.request
+            def request(port, method, path, **options):
+                observer = options.pop('json_observer', None)
+                if observer is None:
+                    return original(port, method, path, **options)
+                body = options.get('body')
+                raw = json.dumps(body, ensure_ascii=False, separators=(',', ':')).encode('utf-8') if body is not None else None
+                observer('request', method=method, path=path, raw=raw, status=None, ceiling_s=min(1.0, options['timeout_s']))
+                reply = original(port, method, path, **options)
+                response = json.dumps(reply['json'], sort_keys=True, allow_nan=False).encode('utf-8')
+                if drift and port == 43200 and path == '/v4/openapi':
+                    response += b' '
+                observer('response', method=method, path=path, raw=response, status=reply['status'], ceiling_s=min(1.0, options['timeout_s']))
+                return dict(reply, sha256=hashlib.sha256(response).hexdigest())
+            runtime.request, runtime.value_session = request, session
+            return runtime
+        fixture.f.deps.setup = setup
+        result = fixture.f.run_probe()
+        fields, session = result['fields'], captured['session']
+        stops = fields['sm_stop']['value']
+        if (fixture.state['spawned'] != ['u1', 'u1-boot2'] or len(stops) != 2
+                or any(row['complete'] is not True or row['how'] != 'ctrl_break' for row in stops)
+                or fields['sm_key_search']['ok'] is not True or result['outcome'] != 'fail'):
+            return False
+        if drift:
+            return (result['functional_refusal'] == 'api-operation-schema-drift' and session.faulted
+                and fields['sm_schema']['ok'] is False and fields['sm_schema']['value']['value_constraints_verified'] is False
+                and result['restart']['complete'] is False and fixture.state['firewalls'] == ['fw-p0', 'fw-p4'])
+        schema = fields['sm_schema']['value']
+        return (result['restart']['complete'] is True and fields['sm_schema']['ok'] is True
+            and schema['value_constraints_verified'] is True and schema['runtime_admission'] is False
+            and len(schema['traces']) == len(session.traces) == 18
+            and result['restart']['schema_before'] == result['restart']['schema_after'] == schema['observed']
+            and fields['sm_durability']['ok'] is True and fixture.state['firewalls'] == ['fw-p0', 'fw-p4', 'fw-p5'])
+
+
+check('A8S-API-CONTROLLER-VALUES-1: connected P0-P5 controller propagates actual session through both snapshots while full admission stays refused', lambda: api_session_controller_case())
+check('A8S-API-CONTROLLER-DRIFT-1: boot2 schema drift refreshes a former schema pass to fail and still gracefully drains both retained boots', lambda: api_session_controller_case(drift=True))
+
+def api_session_local_receipts_controls():
+    f = api_session_fixture()
+    def foreign(port, method, path, **options):
+        raw = f.raw_docs[0]
+        # The caller ignores its passed observer and uses the public session directly.
+        f.session.observer('request', method=method, path=path, raw=None, status=None, ceiling_s=1.0)
+        f.session.observer('response', method=method, path=path, raw=raw, status=200, ceiling_s=1.0)
+        return {'status': 200, 'json': f.docs[0], 'sha256': hashlib.sha256(raw).hexdigest()}
+    if not named_api_refusal(lambda: f.session.send(foreign, 1234, 'GET', '/v3/openapi', timeout_s=1.0), 'api-operation-unobserved-return'):
+        return False
+    f = api_session_fixture()
+    saved = []
+    def proper(port, method, path, **options):
+        raw, observer = f.raw_docs[0], options['json_observer']
+        saved.append(observer)
+        observer('request', method=method, path=path, raw=None, status=None, ceiling_s=1.0)
+        observer('response', method=method, path=path, raw=raw, status=200, ceiling_s=1.0)
+        return {'status': 200, 'json': f.docs[0], 'sha256': hashlib.sha256(raw).hexdigest()}
+    f.session.send(proper, 1234, 'GET', '/v3/openapi', timeout_s=1.0)
+    return (named_api_refusal(lambda: saved[0]('request', method='GET', path='/v3/openapi', raw=None,
+        status=None, ceiling_s=1.0), 'api-operation-observation-lifetime') and f.session.faulted)
+
+
+def api_json_encoding_structure_boundaries_controls():
+    accepted = 'leaf'
+    for _ in range(32):
+        accepted = [accepted]
+    if P.sm_encode_api_json(accepted) != json.dumps(accepted, separators=(',', ':')).encode():
+        return False
+    if not named_api_refusal(lambda: P.sm_encode_api_json([accepted]), 'api-json-encode-structure'):
+        return False
+    nodes = [None] * 19999
+    if P.sm_encode_api_json(nodes) != json.dumps(nodes, separators=(',', ':')).encode():
+        return False
+    if not named_api_refusal(lambda: P.sm_encode_api_json(nodes + [None]), 'api-json-encode-structure'):
+        return False
+    return True
+
+
+check('A8S-API-LOCAL-RECEIPTS-1: a send requires its own successful callback pair; direct foreign traces and retained callbacks cannot certify it', api_session_local_receipts_controls)
+check('A8S-API-ENCODING-STRUCTURE-1: exact depth32 and20000-node values encode; the next depth or repeated node refuses', api_json_encoding_structure_boundaries_controls)
+
+def api_session_callback_baseexit_controls():
+    for exception in (KeyboardInterrupt, SystemExit):
+        f = api_session_fixture()
+        callbacks = []
+        def aborted(port, method, path, **options):
+            callbacks.append(options['json_observer'])
+            raise exception('owned fixture interruption')
+        try:
+            f.session.send(aborted, 1234, 'GET', '/v3/openapi', timeout_s=1.0)
+            return False
+        except exception:
+            pass
+        if not named_api_refusal(lambda: callbacks[0]('request', method='GET', path='/v3/openapi',
+                raw=None, status=None, ceiling_s=1.0), 'api-operation-observation-lifetime'):
+            return False
+        if not f.session.faulted or f.session.pending is not None or not f.session.send_lock.acquire(blocking=False):
+            return False
+        f.session.send_lock.release()
+    return True
+
+
+check('A8S-API-CALLBACK-BASEEXIT-1: interrupted calls propagate KeyboardInterrupt/SystemExit and close their retained callback before any future observation', api_session_callback_baseexit_controls)
+
 failed = sum(not good for _, good in ROWS)
 print(f'v3 sm core: {len(ROWS) - failed} passed, {failed} failed')
 sys.exit(1 if failed else 0)
