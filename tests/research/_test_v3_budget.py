@@ -4,7 +4,7 @@ ledger, the prices by window, the reservation before forwarding, the settlement,
 
 * prices: run_v3.py's DEEPSEEK_FLASH_PRICE and DEEPSEEK_FLASH_LIMITS read as literals (max_output 393216); two
   assignments or another currency refuse by name;
-* windows: UTC weekdays [01, 04) and [06, 10) are peak; a request that touches a peak hour anywhere in [t0, t1] is
+* windows: verified UTC weekdays excluding Chinese public holidays [01, 04) and [06, 10) are peak; a request that touches a peak hour anywhere in [t0, t1] is
   priced at the peak (BUD-a);
 * the worst price: bytes as peak cache misses plus max_tokens at the peak output price; no max_tokens is the model's
   maximum, a larger one is reserved as asked;
@@ -82,8 +82,8 @@ def ts(y: int, mo: int, d: int, h: int, mi: int = 0, s: int = 0) -> float:
     return dt.datetime(y, mo, d, h, mi, s, tzinfo=UTC).timestamp()
 
 
-THU = (2026, 10, 1)                     # a Thursday
-SAT, SUN, FRI, MON = (2026, 10, 3), (2026, 10, 4), (2026, 10, 2), (2026, 10, 5)
+THU = (2026, 10, 8)                     # an ordinary Thursday after the National Day holiday
+SAT, SUN, FRI, MON = (2026, 10, 10), (2026, 10, 11), (2026, 10, 9), (2026, 10, 12)
 NOON = ts(*THU, 12)                     # off peak
 
 
@@ -1310,6 +1310,202 @@ try:
 
     row("BUD-COUNTER-TYPES-1: plain and deceptive integer subclasses cannot enter pricing or evade numeric evidence guards", integer_subtypes_cannot_bypass_accounting_guards)
 
+
+    # Fixed provider prices and official holiday dates are independent expected data.
+    print("\n- shared models and holiday calendar -")
+
+    def pro_literal_selection():
+        pro, bound = B.load_prices(model="deepseek-v4-pro")
+        flash, flash_bound = B.load_prices(model="deepseek-flash")
+        duplicate = TMP / "duplicate_pro.py"
+        duplicate.write_text(src + "\nDEEPSEEK_PRO_PRICE = {}\n", encoding="utf-8")
+        missing = TMP / "missing_pro.py"
+        missing.write_text(src.replace('DEEPSEEK_PRO_LIMITS =', 'UNUSED_PRO_LIMITS ='), encoding="utf-8")
+        cross_named = TMP / "cross_named_pro.py"
+        cross_named.write_text(src.replace('"model": "deepseek-v4-pro",', '"model": "deepseek-flash",'), encoding="utf-8")
+        malformed = TMP / "mismatch_pro.py"
+        malformed.write_text(src.replace('"model": "deepseek-v4-pro",', '"model": "other",', 1), encoding="utf-8")
+        return (pro["model"] == bound["model"] == "deepseek-v4-pro"
+            and pro["model_version"] == "DeepSeek-V4-Pro-0813" and bound["max_output"] == 393216
+            and pro["input_cache_hit"] == {"off_peak": 0.022, "peak": 0.044}
+            and pro["input_cache_miss"] == {"off_peak": 0.66, "peak": 1.32}
+            and pro["output"] == {"off_peak": 1.98, "peak": 3.96}
+            and B.price_sha(flash) == B.price_sha(PRICE) and flash_bound == LIMITS
+            and all(stopped(lambda model=model: B.load_prices(model=model))[0] == "price-unknown"
+                    for model in ("deepseek-pro", "claude-opus", "other", None, ["deepseek-v4-pro"]))
+            and all(stopped(lambda path=path: B.load_prices(path, model="deepseek-v4-pro"))[0] == "price-unknown"
+                    for path in (duplicate, missing, malformed, cross_named)))
+
+    row("BUD-PRO-PRICE-1: exactly Flash/Pro literals and matching output bounds load; aliases, duplicate/missing/cross-model data refuse", pro_literal_selection)
+
+    def pro_tariff_reservation_and_settlement():
+        pair = B.load_prices(model="deepseek-v4-pro")
+        use = {"prompt_cache_hit_tokens": 20, "prompt_cache_miss_tokens": 30, "prompt_tokens": 50,
+               "completion_tokens": 40, "completion_tokens_details": {"reasoning_tokens": 10}}
+        for hour, expected, win in [(12, Decimal("0.00009944"), "off_peak"), (2, Decimal("0.00019888"), "peak")]:
+            p = fresh()
+            ledger = B.Ledger(p, prices=pair, clock=Clock(ts(2026, 10, 8, hour)))
+            held = ledger.reserve(arm="a", role="judge", run="campaign/one", unit="u1", body=body(2000))
+            rec = ledger.settle(held, status=200, done=True, usage=use)
+            if held.worst != Decimal("0.00924") or Decimal(rec["usd"]) != expected \
+                    or rec["window"] != win or rec["reasoning_tokens"] != 10 or rec["basis"] != "usage" \
+                    or ledger.total() != expected or ledger.run_total("campaign/one") != (expected, 1, 0):
+                return False
+        return True
+
+    row("BUD-PRO-MONEY-1: Pro reserves $0.00924 and settles independently calculated off/peak usage including reasoning exactly once", pro_tariff_reservation_and_settlement)
+
+    def both_tariffs_share_one_scope_and_halt():
+        p = fresh()
+        pair = B.load_prices(model="deepseek-v4-pro")
+        flash, pro = B.Ledger(p, clock=Clock()), B.Ledger(p, prices=pair, clock=Clock())
+        start = threading.Barrier(2)
+        results, errors = [], []
+        def reserve(ledger, role):
+            try:
+                start.wait(timeout=5)
+                results.append(ledger.reserve(arm="a", role=role, run="campaign/shared", unit=role,
+                    body=body(2000), ceiling_usd=Decimal("0.013")))
+            except Exception as error:
+                errors.append(type(error).__name__)
+        threads = [threading.Thread(target=reserve, args=(flash, "write")), threading.Thread(target=reserve, args=(pro, "judge"))]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join(8)
+        if any(thread.is_alive() for thread in threads) or errors or len(results) != 2 \
+                or flash.total() != Decimal("0.01194") or pro.total() != Decimal("0.01194"):
+            return False
+        why = stopped(lambda: flash.reserve(arm="a", role="read", run="campaign/shared", unit="next",
+            body=body(2000), ceiling_usd=Decimal("0.013")))[0]
+        for tariff in (None, pair):
+            restarted = B.Ledger(p, prices=tariff, clock=Clock())
+            if restarted.run_total("campaign/shared") != (Decimal("0.01194"), 2, 2) \
+                    or stopped(lambda: restarted.reserve(arm="a", role="scheduler", run="campaign/shared", unit="retry",
+                        body=body(1), ceiling_usd=Decimal("0.013")))[0] != "run-ceiling":
+                return False
+        return why == "run-ceiling"
+
+    row("BUD-SHARED-SCOPE-1: simultaneous Flash/Pro reservations share $0.01194, one $0.013 cap and a durable all-role halt", both_tariffs_share_one_scope_and_halt)
+
+    def both_tariffs_share_global_stop():
+        pair = B.load_prices(model="deepseek-v4-pro")
+        p = fresh()
+        spent(p, "previous", "18.99")
+        pro = B.Ledger(p, prices=pair, clock=Clock())
+        pro.reserve(arm="a", role="judge", run="campaign/one", unit="u1", body=body(2000))
+        flash = B.Ledger(p, clock=Clock())
+        why = stopped(lambda: flash.reserve(arm="a", role="write", run="campaign/two", unit="u2", body=body(2000)))[0]
+        if why != "total" or flash.total() != Decimal("18.99924"):
+            return False
+        for tariff in (None, pair):
+            restarted = B.Ledger(p, prices=tariff, clock=Clock())
+            if stopped(lambda: restarted.reserve(arm="b", role="read", run="new/run", unit=None, body=body(0)))[0] != "total":
+                return False
+        return True
+
+    row("BUD-SHARED-GLOBAL-1: previous spend plus Pro reservations stops Flash at $19 and remains stopped across either tariff restart", both_tariffs_share_global_stop)
+
+    def wrong_model_tariff_cannot_release_original_reserve():
+        pair = B.load_prices(model="deepseek-v4-pro")
+        p = fresh()
+        pro = B.Ledger(p, prices=pair, clock=Clock())
+        held = pro.reserve(arm="a", role="judge", run="campaign/one", unit="u1", body=body(2000))
+        flash = B.Ledger(p, clock=Clock())
+        before = p.read_bytes()
+        why = stopped(lambda: flash.settle(held, status=200, done=True, out_bytes=0))[0]
+        if why != "price-changed" or p.read_bytes() != before or flash.total() != Decimal("0.00924"):
+            return False
+        rec = pro.settle(held, status=200, done=True, usage=None, outcome="model-mismatch")
+        return (rec["price_sha"] == pro.price_sha and Decimal(rec["worst_usd"]) == Decimal("0.00924")
+            and "usd" not in rec and stopped(B.Ledger(p, clock=Clock()).total)[0] == "accounting-unverified"
+            and stopped(B.Ledger(p, prices=pair, clock=Clock()).total)[0] == "accounting-unverified")
+
+    row("BUD-SHARED-PROVENANCE-1: the other model cannot price or release a reservation and both readers retain unresolved cost", wrong_model_tariff_cannot_release_original_reserve)
+
+    def official_holidays_and_compensatory_weekends():
+        intervals = [((1, 1), (1, 3)), ((2, 15), (2, 23)), ((4, 4), (4, 6)), ((5, 1), (5, 5)),
+                     ((6, 19), (6, 21)), ((9, 25), (9, 27)), ((10, 1), (10, 7))]
+        count = 0
+        for (month, first), (_, last) in intervals:
+            for day in range(first, last + 1):
+                count += 1
+                for hour in (1, 2, 6, 7, 9):
+                    point = ts(2026, month, day, hour)
+                    if B.window(point, point + 1) != "off_peak":
+                        return False
+        for month, day in [(1, 4), (2, 14), (2, 28), (5, 9), (9, 20), (10, 10)]:
+            if B.window(ts(2026, month, day, 1), ts(2026, month, day, 9)) != "off_peak":
+                return False
+        for month, day in [(1, 5), (2, 24), (4, 7), (5, 6), (6, 22), (9, 28), (10, 8)]:
+            if B.window(ts(2026, month, day, 2), ts(2026, month, day, 2)) != "peak":
+                return False
+        for tariff in (None, B.load_prices(model="deepseek-v4-pro")):
+            p = fresh()
+            clock = Clock(ts(2026, 10, 5, 2))
+            ledger = B.Ledger(p, prices=tariff, clock=clock)
+            held = ledger.reserve(arm="a", role="read", run="campaign/holiday", unit=None, body=body(2000))
+            rec = ledger.settle(held, status=200, done=True, usage={"prompt_cache_hit_tokens": 20,
+                "prompt_cache_miss_tokens": 30, "prompt_tokens": 50, "completion_tokens": 40})
+            expected = Decimal("0.00002856") if tariff is None else Decimal("0.00009944")
+            if rec["window"] != "off_peak" or Decimal(rec["usd"]) != expected:
+                return False
+        return count == 33
+
+    row("BUD-HOLIDAY-1: all 33 official 2026 holiday dates and compensatory weekends are off-peak; ordinary successors and both-model money remain correct", official_holidays_and_compensatory_weekends)
+
+    def holiday_intervals_preserve_peak_touch_semantics():
+        cases = [(ts(2026, 10, 1, 0), ts(2026, 10, 7, 23, 59, 59), "off_peak"),
+                 (ts(2026, 10, 7, 2), ts(2026, 10, 8, 0, 59, 59), "off_peak"),
+                 (ts(2026, 10, 7, 2), ts(2026, 10, 8, 1), "peak"),
+                 (ts(2026, 9, 30, 9), ts(2026, 10, 7, 23), "peak"),
+                 (ts(2026, 12, 31, 12), ts(2026, 12, 31, 23, 59, 59), "off_peak")]
+        return all(B.window(start, end) == expected for start, end, expected in cases)
+
+    row("BUD-HOLIDAY-SPAN-1: holiday spans are off-peak until they touch a verified ordinary peak, including the year boundary", holiday_intervals_preserve_peak_touch_semantics)
+
+    def unverified_calendar_retains_reservation_and_halts():
+        for start, end in [(ts(2025, 10, 8, 2), ts(2025, 10, 8, 2)),
+                           (ts(2027, 1, 4, 2), ts(2027, 1, 4, 2)),
+                           (ts(2026, 12, 31, 2), ts(2027, 1, 1, 0))]:
+            if stopped(lambda: B.window(start, end))[0] != "price-window-unverified":
+                return False
+            for tariff in (None, B.load_prices(model="deepseek-v4-pro")):
+                p = fresh()
+                clock = Clock(start)
+                ledger = B.Ledger(p, prices=tariff, clock=clock)
+                held = ledger.reserve(arm="a", role="read", run="campaign/unknown", unit="u1", body=body(2000))
+                clock.t = end
+                rec = ledger.settle(held, status=200, done=True, usage={"prompt_cache_hit_tokens": 0,
+                    "prompt_cache_miss_tokens": 1, "prompt_tokens": 1, "completion_tokens": 1})
+                restarted = B.Ledger(p, prices=tariff, clock=clock)
+                if rec["kind"] != "accounting-unverified" or rec["reason"] != "price-window-unverified" \
+                        or rec["price_sha"] != ledger.price_sha or Decimal(rec["worst_usd"]) != held.worst \
+                        or "usd" in rec or "raw_estimate_usd" in rec or restarted.broken() is not None \
+                        or held.id not in restarted._open or stopped(restarted.total)[0] != "accounting-unverified" \
+                        or stopped(lambda: restarted.reserve(arm="other", role="write", run="different", unit=None, body=body(1)))[0] != "accounting-anomaly":
+                    return False
+        return stopped(lambda: B.window(1e100, 1e100))[0] == "price-window-unverified"
+
+    row("BUD-CALENDAR-UNKNOWN-1: missing calendar years never fabricate prices; settlement persists unresolved cost, reserve and restart halt", unverified_calendar_retains_reservation_and_halts)
+
+    def direct_reasoning_helper_uses_plain_integers():
+        class Counter(int):
+            pass
+        class DeceptiveCounter(int):
+            def __le__(self, other):
+                return True
+            def __ge__(self, other):
+                return True
+        use = {"prompt_cache_hit_tokens": 20, "prompt_cache_miss_tokens": 30, "prompt_tokens": 50, "completion_tokens": 40}
+        for count in (Counter(10), DeceptiveCounter(1000000), True, 10.0, None):
+            candidate = dict(use, completion_tokens_details={"reasoning_tokens": count})
+            if B.usage_usd(candidate, "off_peak", PRICE) != (Decimal("0.00002856"), None):
+                return False
+        return B.usage_usd(dict(use, completion_tokens_details={"reasoning_tokens": 10}), "off_peak", PRICE) \
+            == (Decimal("0.00002856"), 10)
+
+    row("BUD-REASON-TYPE-1: a direct pricing caller cannot record integer subclasses or deceptive reasoning counters; plain reasoning is not added twice", direct_reasoning_helper_uses_plain_integers)
 
 finally:
     shutil.rmtree(TMP, ignore_errors=True)

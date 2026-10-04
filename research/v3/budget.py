@@ -40,6 +40,21 @@ LEDGER = Path(r"D:\Coding\_nevertwice_polygon\runs\v3\_budget\deepseek_ledger.js
 LIMIT_USD = Decimal("20.00")
 STOP_USD = Decimal("19.00")
 PEAK_HOURS_UTC = ((1, 4), (6, 10))
+# Provider peak windows exclude Chinese public holidays. Weekend workdays remain off-peak.
+# Official 2026 notice, published 2025-11-04; do not extrapolate an unverified year.
+HOLIDAY_CALENDAR_YEAR = 2026
+HOLIDAY_CALENDAR_URL = "https://www.gov.cn/zhengce/zhengceku/202511/content_7047091.htm"
+_HOLIDAYS = frozenset(_dt.date.fromisoformat(day) for day in (
+    "2026-01-01", "2026-01-02", "2026-01-03",
+    "2026-02-15", "2026-02-16", "2026-02-17", "2026-02-18", "2026-02-19",
+    "2026-02-20", "2026-02-21", "2026-02-22", "2026-02-23",
+    "2026-04-04", "2026-04-05", "2026-04-06",
+    "2026-05-01", "2026-05-02", "2026-05-03", "2026-05-04", "2026-05-05",
+    "2026-06-19", "2026-06-20", "2026-06-21",
+    "2026-09-25", "2026-09-26", "2026-09-27",
+    "2026-10-01", "2026-10-02", "2026-10-03", "2026-10-04", "2026-10-05", "2026-10-06", "2026-10-07"))
+_MODEL_LITERALS = {"deepseek-flash": ("DEEPSEEK_FLASH_PRICE", "DEEPSEEK_FLASH_LIMITS"),
+    "deepseek-v4-pro": ("DEEPSEEK_PRO_PRICE", "DEEPSEEK_PRO_LIMITS")}
 RECONCILE_LOW = Decimal("0.9")
 RECONCILE_HIGH = Decimal("1.1")
 RECONCILE_FROM_USD = Decimal("0.20")
@@ -115,8 +130,9 @@ def _validate_prices(price: Any, limits: Any) -> tuple[dict, dict]:
     try:
         if not isinstance(price, Mapping) or not isinstance(limits, Mapping):
             raise ValueError("price and limits must be objects")
-        if price.get("currency") != "USD" or price.get("model") != "deepseek-flash" or limits.get("model") != price["model"]:
-            raise ValueError("USD deepseek-flash price and matching limits required")
+        if (price.get("currency") != "USD" or type(price.get("model")) is not str
+                or price["model"] not in _MODEL_LITERALS or limits.get("model") != price["model"]):
+            raise ValueError("USD supported model price and matching limits required")
         _count(price["per_tokens"], positive=True)
         _count(limits["max_output"], positive=True)
         _usage_count(price["per_tokens"])
@@ -141,8 +157,14 @@ def _validate_prices(price: Any, limits: Any) -> tuple[dict, dict]:
         raise BudgetStop("price-unknown", str(e)) from None
 
 
-def load_prices(path: Path = RUN_V3) -> tuple[dict, dict]:
-    return _validate_prices(_literal(path, "DEEPSEEK_FLASH_PRICE"), _literal(path, "DEEPSEEK_FLASH_LIMITS"))
+def load_prices(path: Path = RUN_V3, *, model: str = "deepseek-flash") -> tuple[dict, dict]:
+    if type(model) is not str or model not in _MODEL_LITERALS:
+        raise BudgetStop("price-unknown", "unsupported exact model")
+    price_name, limits_name = _MODEL_LITERALS[model]
+    price, limits = _validate_prices(_literal(path, price_name), _literal(path, limits_name))
+    if price["model"] != model:
+        raise BudgetStop("price-unknown", "literal does not match the selected model")
+    return price, limits
 
 
 def price_sha(price: Mapping) -> str:
@@ -157,10 +179,15 @@ def window(t0: float, t1: float) -> str:
     if not all(isinstance(t, (float, int)) and not isinstance(t, bool) and math.isfinite(t) for t in (t0, t1)) or t1 < t0:
         raise ValueError("invalid request interval")
     utc = _dt.timezone.utc
-    day = _dt.datetime.fromtimestamp(t0, utc).date()
-    last = _dt.datetime.fromtimestamp(t1, utc).date()
+    try:
+        day = _dt.datetime.fromtimestamp(t0, utc).date()
+        last = _dt.datetime.fromtimestamp(t1, utc).date()
+    except (ValueError, OverflowError, OSError):
+        raise BudgetStop("price-window-unverified", "timestamp outside the verified calendar") from None
+    if day.year != HOLIDAY_CALENDAR_YEAR or last.year != HOLIDAY_CALENDAR_YEAR:
+        raise BudgetStop("price-window-unverified", "holiday calendar year not verified")
     while day <= last:
-        if day.weekday() < 5:
+        if day.weekday() < 5 and day not in _HOLIDAYS:
             for a, b in PEAK_HOURS_UTC:
                 start = _dt.datetime(day.year, day.month, day.day, a, tzinfo=utc).timestamp()
                 end = _dt.datetime(day.year, day.month, day.day, b, tzinfo=utc).timestamp()
@@ -213,7 +240,7 @@ def usage_usd(usage: Any, win: str, price: Mapping) -> tuple[Decimal, int | None
         return None
     details = usage.get("completion_tokens_details")
     reasoning = details.get("reasoning_tokens") if isinstance(details, Mapping) else None
-    if not isinstance(reasoning, int) or isinstance(reasoning, bool) or not 0 <= reasoning <= completion:
+    if type(reasoning) is not int or not 0 <= reasoning <= completion:
         reasoning = None
     usd = hit * _rate(price, "input_cache_hit", win) + miss * _rate(price, "input_cache_miss", win) + completion * _rate(price, "output", win)
     return usd, reasoning
@@ -227,7 +254,7 @@ SETTLEMENT_OUTCOMES = frozenset({"complete", "incomplete", "abandoned", "no-resp
     "parse-limit", "parse-error", "model-mismatch", "usage-conflict", "usage-shape", "usage-bound"})
 ACCOUNTING_ANOMALIES = frozenset({"model-mismatch", "usage-conflict", "usage-shape", "usage-bound"})
 UNVERIFIED_ACCOUNTING_REASONS = frozenset({"model-mismatch", "usage-count-unverified",
-    "usage-conflict", "usage-shape", "usage-bound"})
+    "usage-conflict", "usage-shape", "usage-bound", "price-window-unverified"})
 # Signed 64-bit counters are the supported accounting evidence range, not a provider limit.
 MAX_USAGE_COUNT = (1 << 63) - 1
 
@@ -600,7 +627,17 @@ class Ledger:
             if stored.price_sha != self.price_sha:
                 raise BudgetStop("price-changed", "reservation retains its original price")
             t1 = max(self.clock(), stored.t0)
-            win = window(stored.t0, t1)
+            try:
+                win = window(stored.t0, t1)
+            except BudgetStop as exc:
+                if exc.why != "price-window-unverified":
+                    raise
+                rec = {"kind": "accounting-unverified", "id": res.id, "t1": _iso(t1),
+                       "status": status, "outcome": outcome, "usage": None, "basis": "unverified",
+                       "reason": exc.why, "price_sha": stored.price_sha,
+                       "worst_usd": _usd(stored.worst), "anomaly": True}
+                self._append(rec)
+                return rec
             rec = {"kind": "settle", "id": res.id, "t1": _iso(t1), "status": status, "window": win,
                    "usage": projected, "reasoning_tokens": None, "price_sha": self.price_sha, "outcome": outcome}
             if usage_error:

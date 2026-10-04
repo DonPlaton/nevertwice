@@ -303,7 +303,7 @@ def preflight(c: Any, L: Any, arms: Mapping[str, ArmRun], *, stand_id: str, conf
 # ── the smoke's forecast (Q-A6-2, R-S4-COST): an upper bound, not pilot medians ────────────────────────────────
 
 #: deepseek-flash's list prices - external DATA, read on 2026-09-28 from the URL (USD per 1M tokens; peak hours are
-#: 01:00-04:00 and 06:00-10:00 UTC on weekdays, off-peak rates are half). The bound prices every input token as a
+#: 01:00-04:00 and 06:00-10:00 UTC on weekdays excluding Chinese public holidays; off-peak rates are half). The bound prices every input token as a
 #: peak cache miss and every output token at the peak rate.
 DEEPSEEK_FLASH_PRICE = {
     "url": "https://api-docs.deepseek.com/quick_start/pricing", "read": "2026-09-28", "currency": "USD",
@@ -316,6 +316,17 @@ DEEPSEEK_FLASH_PRICE = {
 DEEPSEEK_FLASH_LIMITS = {
     "url": "https://api-docs.deepseek.com/quick_start/pricing", "read": "2026-10-01", "model": "deepseek-flash",
     "model_version": "DeepSeek-V4.1-Flash", "max_output": 393_216}
+
+#: Pro prices and output maximum read 2026-10-04 from the same official pricing page.
+#: Peak hours are UTC weekdays excluding Chinese public holidays; weekend workdays stay off-peak.
+DEEPSEEK_PRO_PRICE = {
+    "url": "https://api-docs.deepseek.com/quick_start/pricing", "read": "2026-10-04", "currency": "USD",
+    "per_tokens": 1_000_000, "model": "deepseek-v4-pro", "model_version": "DeepSeek-V4-Pro-0813",
+    "input_cache_hit": {"off_peak": 0.022, "peak": 0.044}, "input_cache_miss": {"off_peak": 0.66, "peak": 1.32},
+    "output": {"off_peak": 1.98, "peak": 3.96}}
+DEEPSEEK_PRO_LIMITS = {
+    "url": "https://api-docs.deepseek.com/quick_start/pricing", "read": "2026-10-04", "model": "deepseek-v4-pro",
+    "model_version": "DeepSeek-V4-Pro-0813", "max_output": 393_216}
 
 #: The writer's bound per arm, read from the product's code (never measured). nevertwice under runner_nevertwice
 #: (CLOUD=deepseek, CLOUD_FALLBACK=0, EXTRACT_RETRY=0): one capture_session per session op makes one extraction
