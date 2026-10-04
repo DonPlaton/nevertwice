@@ -78,7 +78,7 @@ def _money(value: Any) -> Decimal:
 
 
 def _count(value: Any, *, positive: bool = False) -> int:
-    if not isinstance(value, int) or isinstance(value, bool) or value < (1 if positive else 0):
+    if type(value) is not int or value < (1 if positive else 0):
         raise ValueError("invalid nonnegative integer")
     return value
 
@@ -119,6 +119,8 @@ def _validate_prices(price: Any, limits: Any) -> tuple[dict, dict]:
             raise ValueError("USD deepseek-flash price and matching limits required")
         _count(price["per_tokens"], positive=True)
         _count(limits["max_output"], positive=True)
+        _usage_count(price["per_tokens"])
+        _usage_count(limits["max_output"])
         for key in ("input_cache_hit", "input_cache_miss", "output"):
             rates = price[key]
             off, peak = _money(rates["off_peak"]), _money(rates["peak"])
@@ -127,6 +129,11 @@ def _validate_prices(price: Any, limits: Any) -> tuple[dict, dict]:
         for win in ("off_peak", "peak"):
             if _money(price["input_cache_miss"][win]) < _money(price["input_cache_hit"][win]):
                 raise ValueError("cache miss must bound cache hit")
+        # Validate both one-token resolution and the largest supported accounting sum.
+        # A finite rate alone does not ensure division/multiplication fits the ledger.
+        for win in ("off_peak", "peak"):
+            rates = [_money(_usd(_money(_rate(price, key, win)))) for key in ("input_cache_hit", "input_cache_miss", "output")]
+            _money(_usd(_money(MAX_USAGE_COUNT * sum(rates, Decimal(0)))))
         copied = copy.deepcopy((_plain(price), _plain(limits)))
         json.dumps(copied, allow_nan=False)
         return copied
@@ -167,9 +174,19 @@ class _Pairs(list):
     """JSON object pairs retained without silently collapsing duplicate bounds."""
 
 
+def _request_integer(raw: str) -> int:
+    # Refuse before Python's integer parse cap can turn an oversized bound into model-max.
+    if len(raw.lstrip("-")) > 19:
+        raise BudgetStop("request-bound-unverified")
+    value = int(raw)
+    if abs(value) > MAX_USAGE_COUNT:
+        raise BudgetStop("request-bound-unverified")
+    return value
+
+
 def request_max_tokens(body: bytes, limits: Mapping) -> tuple[int, str]:
     try:
-        req = json.loads(body, object_pairs_hook=_Pairs)
+        req = json.loads(body, object_pairs_hook=_Pairs, parse_int=_request_integer)
     except ValueError:
         req = None
     values = [v for k, v in req if k in ("max_tokens", "max_completion_tokens")] if isinstance(req, _Pairs) else []
@@ -204,6 +221,50 @@ def usage_usd(usage: Any, win: str, price: Mapping) -> tuple[Decimal, int | None
 
 def bytes_usd(in_bytes: int, out_bytes: int, win: str, price: Mapping) -> Decimal:
     return _count(in_bytes) * _rate(price, "input_cache_miss", win) + _count(out_bytes) * _rate(price, "output", win)
+
+
+SETTLEMENT_OUTCOMES = frozenset({"complete", "incomplete", "abandoned", "no-response", "io-error",
+    "parse-limit", "parse-error", "model-mismatch", "usage-conflict", "usage-shape", "usage-bound"})
+ACCOUNTING_ANOMALIES = frozenset({"model-mismatch", "usage-conflict", "usage-shape", "usage-bound"})
+UNVERIFIED_ACCOUNTING_REASONS = frozenset({"model-mismatch", "usage-count-unverified",
+    "usage-conflict", "usage-shape", "usage-bound"})
+# Signed 64-bit counters are the supported accounting evidence range, not a provider limit.
+MAX_USAGE_COUNT = (1 << 63) - 1
+
+
+def _usage_count(value: Any) -> int:
+    count = _count(value)
+    if count > MAX_USAGE_COUNT:
+        raise OverflowError("unsupported usage counter")
+    return count
+
+
+def project_usage(usage: Any) -> tuple[dict | None, str | None]:
+    """A closed numeric projection; arbitrary provider fields never become evidence."""
+    if usage is None:
+        return None, None
+    if not isinstance(usage, Mapping):
+        return None, "usage-shape"
+    try:
+        values = {key: _usage_count(usage.get(key)) for key in ("prompt_cache_hit_tokens", "prompt_cache_miss_tokens",
+            "completion_tokens", "prompt_tokens")}
+        if values["prompt_cache_hit_tokens"] + values["prompt_cache_miss_tokens"] != values["prompt_tokens"]:
+            return None, "usage-shape"
+        details = usage.get("completion_tokens_details")
+        if details is not None:
+            if not isinstance(details, Mapping):
+                return None, "usage-shape"
+            reasoning = details.get("reasoning_tokens")
+            if reasoning is not None:
+                reasoning = _usage_count(reasoning)
+                if reasoning > values["completion_tokens"]:
+                    return None, "usage-shape"
+                values["completion_tokens_details"] = {"reasoning_tokens": reasoning}
+        return values, None
+    except OverflowError:
+        return None, "usage-count-unverified"
+    except (ValueError, TypeError, KeyError):
+        return None, "usage-shape"
 
 
 def _launch():
@@ -269,6 +330,10 @@ class Ledger:
         self._run_calls: dict[str, int] = {}
         self._broken: str | None = None
         self._anomaly = False
+        self._halt_global: str | None = None
+        self._halt_runs: dict[str, str] = {}
+        self._cost_unverified: set[str] = set()
+        self._run_caps: dict[str, Decimal | None] = {}
 
     def _catch_up(self) -> None:
         if self._broken:
@@ -321,26 +386,52 @@ class Ledger:
                 rid, run = rec["id"], rec["run"]
                 if not isinstance(rid, str) or not rid or rid in self._ids or not isinstance(run, str):
                     return "record"
+                cap_raw = rec.get("run_ceiling_usd")
+                cap = _money(cap_raw) if cap_raw is not None else None
+                if run in self._run_caps and cap != self._run_caps[run]:
+                    return "record"
                 t0 = _dt.datetime.fromisoformat(rec["t0"])
                 if t0.tzinfo is None or not isinstance(rec["price_sha"], str) or len(rec["price_sha"]) != 64:
                     return "record"
                 stored = _Stored(_money(rec["worst_usd"]), run, t0.timestamp(), _count(rec["in_bytes"]),
                                  _count(rec["max_tokens"]), rec["price_sha"])
+                self._run_caps.setdefault(run, cap)
                 self._open[rid] = stored
                 self._ids.add(rid)
                 self._run_calls[run] = self._run_calls.get(run, 0) + 1
             elif kind == "settle":
                 stored = self._open.get(rec["id"])
-                if stored is None:
+                if stored is None or rec["id"] in self._cost_unverified:
                     return "record"
                 usd = _money(rec["usd"])
                 del self._open[rec["id"]]  # fully validate money before releasing a reservation
                 self._settled += usd
                 self._run_settled[stored.run] = self._run_settled.get(stored.run, Decimal(0)) + usd
                 self._anomaly = self._anomaly or rec.get("anomaly") is True
+            elif kind == "accounting-unverified":
+                rid = rec["id"]
+                stored = self._open.get(rid)
+                if stored is None or rid in self._cost_unverified:
+                    return "record"
+                if rec.get("reason") not in UNVERIFIED_ACCOUNTING_REASONS or rec.get("basis") != "unverified":
+                    return "record"
+                if rec.get("price_sha") != stored.price_sha or _money(rec["worst_usd"]) != stored.worst:
+                    return "record"
+                self._cost_unverified.add(rid)
+                self._anomaly = True
+            elif kind == "admission-stop":
+                if rec.get("why") != "request-bound-unverified":
+                    return "record"
+                self._halt_global = self._halt_global or "request-bound-unverified"
             elif kind == "stop":
                 _money(rec["total_usd"])
                 _money(rec["worst_usd"])
+                if rec.get("why") == "total":
+                    self._halt_global = self._halt_global or "total"
+                elif rec.get("why") == "run-ceiling" and isinstance(rec.get("run"), str):
+                    self._halt_runs.setdefault(rec["run"], "run-ceiling")
+                else:
+                    return "record"
             else:
                 return "record"
         except (KeyError, TypeError, ValueError, ArithmeticError, OverflowError):
@@ -385,10 +476,15 @@ class Ledger:
     def _total(self) -> Decimal:
         return self._settled + sum((r.worst for r in self._open.values()), Decimal(0))
 
+    def _require_verified_cost(self) -> None:
+        if self._cost_unverified:
+            raise BudgetStop("accounting-unverified", "provider cost evidence remains unresolved")
+
     def total(self) -> Decimal:
         with self._tlock, self._locked():
             self._catch_up()
             self._require_sound()
+            self._require_verified_cost()
             return self._total()
 
     def _run_total(self, run: str) -> Decimal:
@@ -398,6 +494,7 @@ class Ledger:
         with self._tlock, self._locked():
             self._catch_up()
             self._require_sound()
+            self._require_verified_cost()
             return self._run_total(run), self._run_calls.get(run, 0), sum(r.run == run for r in self._open.values())
 
     def broken(self) -> str | None:
@@ -413,13 +510,31 @@ class Ledger:
             raise BudgetStop("run-ceiling-invalid", str(e)) from None
         if not isinstance(body, bytes):
             raise BudgetStop("body-not-bytes", "reserve the exact bytes forwarded by the proxy")
-        max_tokens, source = request_max_tokens(body, self.limits)
-        worst = worst_usd(len(body), max_tokens, self.price)
+        bound_error = None
+        try:
+            max_tokens, source = request_max_tokens(body, self.limits)
+            worst = worst_usd(len(body), max_tokens, self.price)
+        except BudgetStop as exc:
+            if exc.why != "request-bound-unverified":
+                raise
+            bound_error = exc.why
         with self._tlock, self._locked():
             self._catch_up()
             self._require_sound()
+            if self._halt_global:
+                raise BudgetStop(self._halt_global, "the shared ledger has a durable admission halt")
+            if run in self._halt_runs:
+                raise BudgetStop(self._halt_runs[run], "this trusted run has a durable admission halt")
             if self._anomaly:
-                raise BudgetStop("usage-bound", "provider usage exceeded the persisted request bound")
+                raise BudgetStop("accounting-anomaly", "provider accounting requires review")
+            if bound_error:
+                # No request was admitted, so existing cost totals remain authoritative.
+                # The refusal is global and durable without serializing the unsafe body/count.
+                self._append({"kind": "admission-stop", "why": bound_error, "t": _iso(self.clock()),
+                              "arm": arm, "role": role, "run": run, "unit": unit})
+                raise BudgetStop(bound_error)
+            if run in self._run_caps and ceiling != self._run_caps[run]:
+                raise BudgetStop("run-ceiling-changed", "the trusted run's first reservation pinned its ceiling")
             t0, total = self.clock(), self._total()
             why = "total" if total + worst >= STOP_USD else (
                 "run-ceiling" if ceiling is not None and self._run_total(run) + worst >= ceiling else None)
@@ -430,17 +545,29 @@ class Ledger:
             rid = uuid.uuid4().hex
             self._append({"kind": "reserve", "id": rid, "t0": _iso(t0), "arm": arm, "role": role, "run": run,
                           "unit": unit, "in_bytes": len(body), "max_tokens": max_tokens, "max_tokens_source": source,
-                          "worst_usd": _usd(worst), "price_sha": self.price_sha})
+                          "worst_usd": _usd(worst), "price_sha": self.price_sha,
+                          "run_ceiling_usd": _usd(ceiling) if ceiling is not None else None})
             return Reservation(rid, t0, run, len(body), worst)
 
     def settle(self, res: Reservation, *, status: int | None, usage: Any = None, done: bool = False,
-               out_bytes: int | None = None) -> dict:
+               out_bytes: int | None = None, outcome: str | None = None) -> dict:
+        # Only typed status/outcome data may reach ordinary or forensic records.
+        if status is not None and (type(status) is not int or not 100 <= status <= 599):
+            raise BudgetStop("settlement-status-invalid")
+        if type(done) is not bool:
+            raise BudgetStop("settlement-completion-invalid")
+        outcome = ("complete" if done else "incomplete") if outcome is None else outcome
+        if not isinstance(outcome, str) or outcome not in SETTLEMENT_OUTCOMES:
+            raise BudgetStop("settlement-outcome-invalid")
+        if outcome == "complete" and not done:
+            raise BudgetStop("settlement-completion-invalid")
+        projected, usage_error = project_usage(usage)
         with self._tlock, self._locked():
             self._catch_up()
             if self._broken:
-                # Forensic evidence only. No release or authoritative total on a broken ledger.
+                # Forensic evidence cannot release the still-authoritative reserve.
                 rec = {"kind": "settle-unverified", "id": res.id, "status": status, "ledger_error": self._broken,
-                       "basis": "unverified", "t1": _iso(self.clock())}
+                       "basis": "unverified", "outcome": outcome, "t1": _iso(self.clock())}
                 line = json.dumps(dict(rec, prev=hashlib.sha256(self._last).hexdigest() if self._last else ZERO_SHA)).encode("ascii")
                 with open(self.path, "ab") as f:
                     f.write(line + NL)
@@ -450,33 +577,60 @@ class Ledger:
             stored = self._open.get(res.id)
             if stored is None:
                 raise BudgetStop("reservation-unknown", "unknown or already settled ID")
+            if res.id in self._cost_unverified:
+                raise BudgetStop("settlement-unverified", "this ID retains unresolved accounting evidence")
+            accounting_reason = outcome if outcome in ACCOUNTING_ANOMALIES else usage_error
+            if accounting_reason is None and projected is not None and (
+                    projected["prompt_tokens"] > stored.in_bytes or projected["completion_tokens"] > stored.max_tokens):
+                accounting_reason = "usage-bound"
+            output_count_unverified = (usage is None and done and isinstance(out_bytes, int)
+                and not isinstance(out_bytes, bool) and (type(out_bytes) is not int or out_bytes > MAX_USAGE_COUNT))
+            unverified = "model-mismatch" if outcome == "model-mismatch" else (
+                "usage-count-unverified" if usage_error == "usage-count-unverified" or output_count_unverified else (
+                    accounting_reason if stored.price_sha != self.price_sha else None))
+            if unverified:
+                # Neither a changed local tariff nor unpriceable counters may erase the observation.
+                # Bind provenance to the persisted reservation without applying the current tariff.
+                rec = {"kind": "accounting-unverified", "id": res.id, "t1": _iso(max(self.clock(), stored.t0)),
+                       "status": status, "outcome": outcome, "usage": None, "basis": "unverified",
+                       "reason": unverified, "price_sha": stored.price_sha,
+                       "worst_usd": _usd(stored.worst), "anomaly": True}
+                self._append(rec)
+                return rec
             if stored.price_sha != self.price_sha:
                 raise BudgetStop("price-changed", "reservation retains its original price")
             t1 = max(self.clock(), stored.t0)
             win = window(stored.t0, t1)
-            raw_usage, unsafe_usage = None, False
-            if isinstance(usage, Mapping):
-                try:
-                    raw_usage = _plain(usage)
-                    json.dumps(raw_usage, sort_keys=True, allow_nan=False)
-                except (TypeError, ValueError, RecursionError):
-                    raw_usage, unsafe_usage = None, True
             rec = {"kind": "settle", "id": res.id, "t1": _iso(t1), "status": status, "window": win,
-                   "usage": raw_usage, "reasoning_tokens": None,
-                   "price_sha": self.price_sha}
-            if unsafe_usage:
-                rec["usage_error"] = "not-json"
-            priced = usage_usd(usage, win, self.price) if usage is not None and not unsafe_usage else None
-            if priced is not None and (usage["prompt_tokens"] > stored.in_bytes or usage["completion_tokens"] > stored.max_tokens):
-                rec.update(basis="worst", usd=_usd(stored.worst), reason="usage-bound", anomaly=True,
-                           raw_estimate_usd=_usd(priced[0]))
+                   "usage": projected, "reasoning_tokens": None, "price_sha": self.price_sha, "outcome": outcome}
+            if usage_error:
+                rec["usage_error"] = usage_error
+            priced = usage_usd(projected, win, self.price) if projected is not None else None
+            reason = None
+            if outcome in ACCOUNTING_ANOMALIES:
+                reason = outcome
+            elif usage_error:
+                reason = "usage-shape"
+            elif priced is not None and (projected["prompt_tokens"] > stored.in_bytes or projected["completion_tokens"] > stored.max_tokens):
+                reason = "usage-bound"
+            elif outcome != "complete" or not done:
+                reason = outcome
+            if reason:
+                amount = max(stored.worst, priced[0]) if priced is not None else stored.worst
+                rec.update(basis="conservative", usd=_usd(amount), reason=reason)
+                if amount == stored.worst:
+                    rec["basis"] = "worst"
+                if reason in ACCOUNTING_ANOMALIES:
+                    rec["anomaly"] = True
+                if priced is not None:
+                    rec["raw_estimate_usd"] = _usd(priced[0])
             elif priced is not None:
                 rec.update(basis="usage", usd=_usd(priced[0]), reasoning_tokens=priced[1])
-            elif usage is None and done is True and isinstance(out_bytes, int) and not isinstance(out_bytes, bool) and out_bytes >= 0:
+            elif usage is None and done and type(out_bytes) is int and out_bytes >= 0:
                 estimate = bytes_usd(stored.in_bytes, out_bytes, win, self.price)
                 rec.update(basis="bytes", usd=_usd(min(stored.worst, estimate)), raw_estimate_usd=_usd(estimate))
             else:
-                rec.update(basis="worst", usd=_usd(stored.worst), reason="usage-shape" if usage is not None else "no-usage")
+                rec.update(basis="worst", usd=_usd(stored.worst), reason="no-usage")
             self._append(rec)
             return rec
 

@@ -122,10 +122,11 @@ def forge(path: Path, recs: list[dict]) -> None:
         json.dumps({"bytes": len(raw), "sha256": hashlib.sha256(raw).hexdigest()}), encoding="ascii")
 
 
-def spent(path: Path, run: str, usd: str, rid: str = "r0") -> None:
+def spent(path: Path, run: str, usd: str, rid: str = "r0", *, ceiling_usd: Decimal | None = None) -> None:
     forge(path, [{"kind": "reserve", "id": rid, "t0": B._iso(NOON), "arm": "a", "role": "write", "run": run, "unit": None,
                   "in_bytes": 1, "max_tokens": 1, "max_tokens_source": "request", "worst_usd": usd,
-                  "price_sha": B.price_sha(B.load_prices()[0])},
+                  "price_sha": B.price_sha(B.load_prices()[0]),
+                  "run_ceiling_usd": str(ceiling_usd) if ceiling_usd is not None else None},
                  {"kind": "settle", "id": rid, "t1": B._iso(NOON), "status": 200, "window": "off_peak", "usage": None,
                   "reasoning_tokens": None, "basis": "usage", "usd": usd, "price_sha": B.price_sha(B.load_prices()[0])}])
 
@@ -239,18 +240,18 @@ try:
     L = B.Ledger(led, clock=clk)
     settle_use = dict(use, prompt_cache_hit_tokens=100, prompt_cache_miss_tokens=200, prompt_tokens=300,
                       completion_tokens=300, completion_tokens_details={"reasoning_tokens": 50})
-    s_use = L.settle(L.reserve(arm="a", role="write", run="s1", unit=None, body=body(2000)), status=200, usage=settle_use)
-    s_bytes = L.settle(L.reserve(arm="a", role="write", run="s1", unit=None, body=body(2000)), status=200,
-                       done=True, out_bytes=100)
-    s_torn = L.settle(L.reserve(arm="a", role="write", run="s1", unit=None, body=body(2000)), status=200,
-                      done=False, out_bytes=100)
-    s_shape = L.settle(L.reserve(arm="a", role="write", run="s1", unit=None, body=body(2000)), status=200,
-                       usage=dict(use, prompt_tokens=1))
-    s_none = L.settle(L.reserve(arm="a", role="write", run="s1", unit=None, body=body(2000)), status=None)
+    # Reserve all six requests before the shape anomaly halts new admission.
+    ordinary = [L.reserve(arm="a", role="write", run="s1", unit=None, body=body(2000)) for _ in range(5)]
     clk.t = ts(*THU, 0, 59, 30)
     rp = L.reserve(arm="a", role="write", run="s1", unit=None, body=body(2000))
+    clk.t = NOON
+    s_use = L.settle(ordinary[0], status=200, done=True, usage=settle_use)
+    s_bytes = L.settle(ordinary[1], status=200, done=True, out_bytes=100)
+    s_torn = L.settle(ordinary[2], status=200, done=False, out_bytes=100)
+    s_shape = L.settle(ordinary[3], status=200, done=True, usage=dict(use, prompt_tokens=1))
+    s_none = L.settle(ordinary[4], status=None)
     clk.t = ts(*THU, 1, 0, 30)
-    s_peak = L.settle(rp, status=200, usage=settle_use)
+    s_peak = L.settle(rp, status=200, done=True, usage=settle_use)
     tot, calls, open_ = L.run_total("s1")
     want = [("usage", "0.0002103", "off_peak"), ("bytes", "0.00021", "off_peak"), ("worst", "0.0027", "off_peak"),
             ("worst", "0.0027", "off_peak"), ("worst", "0.0027", "off_peak"), ("usage", "0.0004206", "peak")]
@@ -260,8 +261,8 @@ try:
           "broken stream, a usage in another shape or no answer at the worst; a request from 00:59:30 to 01:00:30 at "
           "the peak",
           all(h[0] == w[0] and Decimal(h[1]) == Decimal(w[1]) and h[2] == w[2] for h, w in zip(have, want))
-          and s_use["reasoning_tokens"] == 50 and s_torn["reason"] == "no-usage"
-          and s_shape["reason"] == "usage-shape" and s_none["reason"] == "no-usage"
+          and s_use["reasoning_tokens"] == 50 and s_torn["reason"] == "incomplete"
+          and s_shape["reason"] == "usage-shape" and s_none["reason"] == "incomplete"
           and tot == sum(Decimal(w[1]) for w in want) and calls == 6 and open_ == 0,
           f"{have} total {tot} calls {calls} open {open_}")
 
@@ -283,15 +284,22 @@ try:
           and ok.worst == Decimal("0.0027") and L2.total() == Decimal("18.9999"),
           f"{why} {msg} {stop} {L2.total()}")
     led = fresh()
-    spent(led, "p1", "1.4973")
+    spent(led, "p1", "1.4973", ceiling_usd=Decimal("1.5"))
     L = B.Ledger(led, clock=Clock())
     ceil = Decimal("1.5")
     w1 = stopped(lambda: L.reserve(arm="a", role="write", run="p1", unit="u", body=body(2000), ceiling_usd=ceil))
     w2 = stopped(lambda: L.reserve(arm="a", role="write", run="p2", unit="u", body=body(2000), ceiling_usd=ceil))
     w3 = stopped(lambda: L.reserve(arm="a", role="write", run="p1", unit="u", body=body(2000)))
-    check("BUD-RES-2: a run's ceiling (the cost probe's $1.5) counts that run only - p1 at 1.4973 + 0.0027 is refused "
-          "by name, p2 is reserved, and p1 without a ceiling is reserved",
-          w1[0] == "run-ceiling" and w2[0] is None and w3[0] is None, f"{w1} {w2} {w3}")
+    restarted = B.Ledger(led, clock=Clock())
+    w4 = stopped(lambda: restarted.reserve(arm="other", role="read", run="p1", unit="other",
+                                          body=body(2000), ceiling_usd=ceil))
+    check("BUD-RES-2: a run's pinned $1.5 ceiling counts only that run; p1 at 1.4973 + 0.0027 refuses, p2 reserves; "
+          "dropping p1's cap or restarting cannot reopen admission",
+          w1[0] == "run-ceiling" and w2[0] is None and w3[0] == "run-ceiling" and w4[0] == "run-ceiling"
+          and restarted.run_total("p1") == (Decimal("1.4973"), 1, 0)
+          and restarted.run_total("p2") == (Decimal("0.0027"), 1, 1)
+          and sum(row["kind"] == "stop" for row in lines(led)) == 1,
+          f"{w1} {w2} {w3} {w4}")
 
     led = fresh()
     A = B.Ledger(led, clock=Clock())
@@ -346,7 +354,9 @@ try:
           f"(the check and the append are one step under the file's lock)",
           sum(counts) == n and len(counts) == 8 and reader.broken() is None
           and reader.run_total("t") == (n * W, n, n) and sum(r["kind"] == "reserve" for r in recs) == n
-          and sum(r["kind"] == "stop" for r in recs) == 8,
+          and sum(r["kind"] == "stop" for r in recs) == 1
+          and stopped(lambda: B.Ledger(led, clock=Clock()).reserve(arm="a", role="write", run="t",
+              unit=None, body=body()))[0] == "total",
           f"{counts} {reader.broken()} {reader.run_total('t')}")
 
     print("\n- the ledger's integrity -")
@@ -577,9 +587,9 @@ try:
         p = fresh()
         l = B.Ledger(p, clock=Clock())
         r = reserve_on(l)
-        rec = l.settle(r, status=200, usage=use)
-        return rec.get("anomaly") is True and rec.get("reason") == "usage-bound" and Decimal(rec["usd"]) == r.worst \
-            and stopped(lambda: reserve_on(B.Ledger(p, clock=Clock())))[0] == "usage-bound"
+        rec = l.settle(r, status=200, done=True, usage=use)
+        return rec.get("anomaly") is True and rec.get("reason") == "usage-bound" and Decimal(rec["usd"]) >= max(r.worst, B.usage_usd(use, "off_peak", PRICE)[0]) \
+            and stopped(lambda: reserve_on(B.Ledger(p, clock=Clock())))[0] == "accounting-anomaly"
 
     row("BUD-USAGE-BOUND-1: usage outside request bounds records the anomaly and stops further admission", usage_bound)
 
@@ -748,19 +758,35 @@ try:
     row("BUD-PROC-1: two independent processes share the reservation limit and a valid ledger", process_reserve)
 
     def unsafe_usage():
-        cases = [dict(settle_use, completion_tokens=value) for value in (float("nan"), float("inf"), Decimal("NaN"))]
-        cases += [dict(settle_use, extra={"unsafe": value}) for value in (float("nan"), Decimal(1), object())]
-        for usage in cases:
-            l = B.Ledger(fresh(), clock=Clock())
-            r = reserve_on(l)
-            rec = l.settle(r, status=200, usage=usage)
-            if rec["basis"] != "worst" or Decimal(rec["usd"]) != r.worst or rec.get("usage_error") != "not-json":
-                return False
-            if l.run_total("r1") != (r.worst, 1, 0):
+        sentinel = "BUD_USAGE_SENTINEL_OWNED_DO_NOT_PERSIST"
+        known_bad = [dict(settle_use, completion_tokens=number)
+                     for number in (float("nan"), float("inf"), Decimal("NaN"), True, -1)]
+        unknown_extra = [dict(settle_use, extra={"text": sentinel, "unsafe": item})
+                         for item in (float("nan"), Decimal(1), object())]
+        unknown_extra.append(dict(settle_use, completion_tokens_details={"reasoning_tokens": 50, "text": sentinel}))
+        for usage, malformed in [(item, True) for item in known_bad] + [(item, False) for item in unknown_extra]:
+            path = fresh()
+            ledger = B.Ledger(path, clock=Clock())
+            held = reserve_on(ledger)
+            rec = ledger.settle(held, status=200, done=True, usage=usage)
+            if malformed:
+                if (rec["basis"] != "worst" or Decimal(rec["usd"]) != held.worst
+                        or rec.get("usage_error") != "usage-shape" or rec.get("reason") != "usage-shape"
+                        or rec.get("anomaly") is not True or ledger.run_total("r1") != (held.worst, 1, 0)):
+                    return False
+                if stopped(lambda: reserve_on(B.Ledger(path, clock=Clock())))[0] != "accounting-anomaly":
+                    return False
+            else:
+                expected, reasoning = B.usage_usd(settle_use, "off_peak", PRICE)
+                if (rec["basis"] != "usage" or Decimal(rec["usd"]) != expected or rec["usage"] != settle_use
+                        or rec["reasoning_tokens"] != reasoning or ledger.run_total("r1") != (expected, 1, 0)):
+                    return False
+                reserve_on(B.Ledger(path, clock=Clock()))
+            if any(sentinel.encode() in file.read_bytes() for file in path.parent.iterdir() if file.is_file()):
                 return False
         return True
 
-    row("BUD-USAGE-NUM-1: unsafe raw usage persists an explicit worst settlement instead of raising serialization errors", unsafe_usage)
+    row("BUD-USAGE-NUM-1: invalid known numeric usage retains worst and halts; arbitrary extras are discarded without losing valid usage", unsafe_usage)
 
     def body_bytes():
         p = fresh()
@@ -788,6 +814,502 @@ try:
         return stopped(l.total)[0] == "ledger-broken" and stopped(lambda: l.run_total("r1"))[0] == "ledger-broken"
 
     row("BUD-LEDGER-ATOMIC-1: malformed settlement cannot expose a partial authoritative total", atomic_malformed)
+
+# Deferred controls to insert into _test_v3_budget.py's existing owned-temp scope.
+# NOT applied or executed. Existing names B, Clock, body, fresh, stopped, spent,
+# row, Decimal are supplied by that suite. Landing follows C6b, before BUD2.
+
+    def ceiling_is_pinned_before_any_halt():
+        for first_cap in (None, Decimal("0.01")):
+            p = fresh()
+            ledger = B.Ledger(p, clock=Clock())
+            held = ledger.reserve(arm="a", role="write", run="probe/r1", unit="u1", body=body(1), ceiling_usd=first_cap)
+            ledger.settle(held, status=200, done=True, usage={"prompt_cache_hit_tokens": 0,
+                "prompt_cache_miss_tokens": 0, "prompt_tokens": 0, "completion_tokens": 0})
+            retries = []
+            alternatives = (Decimal("0.01"),) if first_cap is None else (None, Decimal("0.02"), Decimal("0.005"))
+            for instance in (ledger, B.Ledger(p, clock=Clock())):
+                for cap in alternatives:
+                    retries.append(stopped(lambda: instance.reserve(arm="a", role="read", run="probe/r1",
+                        unit="FORGED_DIFFERENT_UNIT", body=body(1), ceiling_usd=cap))[0])
+            if retries != ["run-ceiling-changed"] * (len(alternatives) * 2):
+                return False
+            same = B.Ledger(p, clock=Clock()).reserve(arm="a", role="read", run="probe/r1", unit=None,
+                body=body(1), ceiling_usd=first_cap)
+            other = B.Ledger(p, clock=Clock()).reserve(arm="a", role="write", run="another-stand/r1", unit=None,
+                body=body(1), ceiling_usd=Decimal("0.02"))
+            if same.id == held.id or other.id in {held.id, same.id}:
+                return False
+        return True
+
+    row("BUD-CAP-1: the first reservation pins optional ceiling across settlement/restart/role/unit changes, before any halt", ceiling_is_pinned_before_any_halt)
+
+    def changed_cap_chained_record_refuses_replay():
+        p = fresh()
+        ledger = B.Ledger(p, clock=Clock())
+        held = ledger.reserve(arm="a", role="write", run="probe/r1", unit=None, body=body(1), ceiling_usd=Decimal("0.01"))
+        import uuid
+        forge(p, [{"kind": "reserve", "id": uuid.uuid4().hex, "t0": B._iso(NOON), "arm": "a", "role": "read",
+                   "run": "probe/r1", "unit": "u2", "in_bytes": 1000, "max_tokens": 1, "max_tokens_source": "max_tokens",
+                   "worst_usd": str(held.worst), "price_sha": B.price_sha(PRICE), "run_ceiling_usd": "0.02"}])
+        restarted = B.Ledger(p, clock=Clock())
+        return "ledger-record" in (restarted.broken() or "") and held.id in restarted._open \
+            and stopped(restarted.total)[0] == "ledger-broken"
+
+    row("BUD-CAP-REPLAY-1: replay rejects a later validly chained reserve changing the pinned cap", changed_cap_chained_record_refuses_replay)
+
+    def halt_run_survives_restart():
+        p = fresh()
+        ledger = B.Ledger(p, clock=Clock())
+        ceiling = Decimal("0.002")
+        held = ledger.reserve(arm="a", role="write", run="probe/r1", unit="u1", body=body(1000), ceiling_usd=ceiling)
+        first = stopped(lambda: ledger.reserve(arm="a", role="read", run="probe/r1", unit="u2", body=body(2000), ceiling_usd=ceiling))[0]
+        ledger.settle(held, status=200, done=True, usage={"prompt_cache_hit_tokens": 0, "prompt_cache_miss_tokens": 0,
+            "prompt_tokens": 0, "completion_tokens": 0})
+        retries = []
+        for instance in (ledger, B.Ledger(p, clock=Clock())):
+            for retry_ceiling in (None, ceiling, Decimal("2")):
+                retries.append(stopped(lambda: instance.reserve(arm="a", role="write", run="probe/r1", unit=None,
+                    body=body(1), ceiling_usd=retry_ceiling))[0])
+        other = stopped(lambda: B.Ledger(p, clock=Clock()).reserve(arm="a", role="write", run="other-probe/r1", unit=None,
+            body=body(1), ceiling_usd=Decimal("1.5")))[0]
+        return first == "run-ceiling" and retries == ["run-ceiling"] * 6 and other is None
+
+    row("BUD-HALT-RUN-1: stopped run stays stopped after settlement/restart/omitted-or-raised ceiling; another stand scope is independent", halt_run_survives_restart)
+
+    def halt_total_survives_discount():
+        p = fresh()
+        spent(p, "historical", "18.5")
+        ledger = B.Ledger(p, clock=Clock())
+        held = ledger.reserve(arm="a", role="write", run="probe/r1", unit="u1", body=body(300000))
+        first = stopped(lambda: ledger.reserve(arm="a", role="write", run="probe/r2", unit="u2", body=body()))[0]
+        ledger.settle(held, status=200, done=True, usage={"prompt_cache_hit_tokens": 0, "prompt_cache_miss_tokens": 0,
+            "prompt_tokens": 0, "completion_tokens": 0})
+        retries = [stopped(lambda: instance.reserve(arm="a", role="read", run="another-stand/r1", unit=None,
+            body=body(1)))[0] for instance in (ledger, B.Ledger(p, clock=Clock()))]
+        return first == "total" and ledger.total() == Decimal("18.5") and retries == ["total", "total"]
+
+    row("BUD-HALT-TOTAL-1: first global refusal remains durable even after outstanding reserves settle below the limit", halt_total_survives_discount)
+
+    def provisional_usage_retains_worst():
+        p = fresh()
+        ledger = B.Ledger(p, clock=Clock())
+        held = ledger.reserve(arm="a", role="write", run="probe/r1", unit=None, body=body(2000))
+        usage = {"prompt_cache_hit_tokens": 0, "prompt_cache_miss_tokens": 10,
+            "prompt_tokens": 10, "completion_tokens": 1}
+        rec = ledger.settle(held, status=200, usage=usage, done=False)
+        return rec["basis"] == "worst" and Decimal(rec["usd"]) == held.worst and rec["reason"] == "incomplete" \
+            and ledger.run_total("probe/r1") == (held.worst, 1, 0)
+
+    row("BUD-PROVISIONAL-1: valid early usage followed by truncation cannot discount the persisted reserve", provisional_usage_retains_worst)
+
+    def force_worst_outcomes_override_done_and_usage():
+        usage = {"prompt_cache_hit_tokens": 0, "prompt_cache_miss_tokens": 10, "prompt_tokens": 10, "completion_tokens": 1}
+        for outcome in ("incomplete", "abandoned", "no-response", "io-error", "parse-limit", "parse-error"):
+            p = fresh()
+            ledger = B.Ledger(p, clock=Clock())
+            held = ledger.reserve(arm="a", role="write", run="probe/r1", unit=None, body=body(2000))
+            rec = ledger.settle(held, status=200, done=True, usage=usage, outcome=outcome)
+            if rec["basis"] != "worst" or Decimal(rec["usd"]) != held.worst or rec["reason"] != outcome \
+                    or B.Ledger(p, clock=Clock()).run_total("probe/r1") != (held.worst, 1, 0):
+                return False
+        return True
+
+    row("BUD-OUTCOME-WORST-1: every accepted incomplete/error outcome overrides DONE plus cheap valid usage", force_worst_outcomes_override_done_and_usage)
+
+    def usage_has_closed_numeric_projection():
+        sentinel = "CREDENTIAL_SENTINEL_OWNED_DO_NOT_PERSIST"
+        for malformed in (False, True):
+            p = fresh()
+            ledger = B.Ledger(p, clock=Clock())
+            held = ledger.reserve(arm="a", role="write", run="probe/r1", unit=None, body=body(2000))
+            usage = {"prompt_cache_hit_tokens": 0, "prompt_cache_miss_tokens": 10,
+                "prompt_tokens": 10, "completion_tokens": sentinel if malformed else 1,
+                "completion_tokens_details": {"reasoning_tokens": 0, "extra": sentinel},
+                "extra": {"nested": sentinel}, "credentials": sentinel}
+            rec = ledger.settle(held, status=200, done=True, usage=usage)
+            if any(sentinel.encode() in f.read_bytes() for f in p.parent.iterdir() if f.is_file()):
+                return False
+            if malformed:
+                if rec["basis"] != "worst" or Decimal(rec["usd"]) != held.worst or rec.get("usage_error") != "usage-shape":
+                    return False
+            else:
+                expected = {"prompt_cache_hit_tokens": 0, "prompt_cache_miss_tokens": 10, "prompt_tokens": 10,
+                    "completion_tokens": 1, "completion_tokens_details": {"reasoning_tokens": 0}}
+                if rec["basis"] != "usage" or rec["usage"] != expected:
+                    return False
+        return True
+
+    row("BUD-PRIVACY-1: valid and malformed usage retain only closed numeric fields; nested/text sentinels reach no durable file", usage_has_closed_numeric_projection)
+
+    def accounting_anomaly_is_typed_and_durable():
+        p = fresh()
+        ledger = B.Ledger(p, clock=Clock())
+        held = ledger.reserve(arm="a", role="write", run="probe/r1", unit=None, body=body(2000))
+        usage = {"prompt_cache_hit_tokens": 0, "prompt_cache_miss_tokens": 10, "prompt_tokens": 10, "completion_tokens": 1}
+        rec = ledger.settle(held, status=200, done=True, usage=usage, outcome="model-mismatch")
+        restarted = B.Ledger(p, clock=Clock())
+        retry = stopped(lambda: restarted.reserve(arm="a", role="write", run="different/r1", unit=None,
+            body=body(1)))[0]
+        totals = [stopped(instance.total)[0] for instance in (ledger, restarted)]
+        run_totals = [stopped(lambda: instance.run_total("probe/r1"))[0] for instance in (ledger, restarted)]
+        duplicate = stopped(lambda: restarted.settle(held, status=200, done=True, usage=usage))[0]
+        return rec["kind"] == "accounting-unverified" and rec["basis"] == "unverified" and "usd" not in rec \
+            and Decimal(rec["worst_usd"]) == held.worst and "raw_estimate_usd" not in rec \
+            and rec["reason"] == "model-mismatch" and rec["anomaly"] is True and retry == "accounting-anomaly" \
+            and totals == ["accounting-unverified"] * 2 and run_totals == ["accounting-unverified"] * 2 \
+            and duplicate == "settlement-unverified" and held.id in restarted._open
+
+    row("BUD-ANOMALY-1: model mismatch retains the reserve, halts admission and refuses authoritative cost across restart", accounting_anomaly_is_typed_and_durable)
+
+    def unresolved_cost_cannot_release_from_later_chained_settle():
+        p = fresh()
+        ledger = B.Ledger(p, clock=Clock())
+        held = ledger.reserve(arm="a", role="write", run="probe/r1", unit=None, body=body(1))
+        ledger.settle(held, status=200, done=True, outcome="model-mismatch")
+        forge(p, [{"kind": "settle", "id": held.id, "t1": B._iso(NOON), "status": 200, "window": "off_peak",
+                   "usage": None, "reasoning_tokens": None, "basis": "worst", "usd": str(held.worst),
+                   "price_sha": B.price_sha(PRICE)}])
+        restarted = B.Ledger(p, clock=Clock())
+        return "ledger-record" in (restarted.broken() or "") and held.id in restarted._open \
+            and stopped(restarted.total)[0] == "ledger-broken"
+
+    row("BUD-UNVERIFIED-REPLAY-1: replay refuses a later chained settlement releasing an unresolved model reservation", unresolved_cost_cannot_release_from_later_chained_settle)
+
+    def shape_and_conflict_anomalies_globally_halt():
+        good_usage = {"prompt_cache_hit_tokens": 0, "prompt_cache_miss_tokens": 10, "prompt_tokens": 10, "completion_tokens": 1}
+        cases = [(dict(usage={"completion_tokens": "OWNED_SHAPE_SENTINEL"}), "usage-shape"),
+                 (dict(usage=good_usage, outcome="usage-shape"), "usage-shape"),
+                 (dict(usage=good_usage, outcome="usage-conflict"), "usage-conflict")]
+        for options, reason in cases:
+            p = fresh()
+            ledger = B.Ledger(p, clock=Clock())
+            held = ledger.reserve(arm="a", role="write", run="probe/r1", unit=None, body=body(2000))
+            rec = ledger.settle(held, status=200, done=True, **options)
+            restarted = B.Ledger(p, clock=Clock())
+            why = stopped(lambda: restarted.reserve(arm="a", role="write", run="unrelated/r1", unit=None, body=body(1)))[0]
+            if rec["reason"] != reason or rec["basis"] != "worst" or Decimal(rec["usd"]) != held.worst \
+                    or rec["anomaly"] is not True or why != "accounting-anomaly":
+                return False
+        return True
+
+    row("BUD-ANOMALY-TYPES-1: malformed or typed shape/conflict accounting halts unrelated admission across restart", shape_and_conflict_anomalies_globally_halt)
+
+    def known_tariff_anomaly_cannot_understate_usage():
+        p = fresh()
+        ledger = B.Ledger(p, clock=Clock())
+        held = ledger.reserve(arm="a", role="write", run="probe/r1", unit=None, body=body(1))
+        usage = {"prompt_cache_hit_tokens": 0, "prompt_cache_miss_tokens": 10, "prompt_tokens": 10, "completion_tokens": 2000}
+        rec = ledger.settle(held, status=200, done=True, usage=usage)
+        expected = Decimal("0.0012015")  # 10 * 0.15/1M + 2000 * 0.60/1M, independent of production helper.
+        restarted = B.Ledger(p, clock=Clock())
+        retry = stopped(lambda: restarted.reserve(arm="a", role="read", run="other/r1", unit=None, body=body(1)))[0]
+        return held.worst == Decimal("0.0003012") and rec["basis"] == "conservative" and Decimal(rec["usd"]) == expected \
+            and Decimal(rec["raw_estimate_usd"]) == expected and rec["reason"] == "usage-bound" and rec["anomaly"] is True \
+            and rec["price_sha"] == B.price_sha(PRICE) and restarted.total() == expected and retry == "accounting-anomaly"
+
+    row("BUD-ANOMALY-COST-1: known-tariff bound anomaly records at least the reported priced usage, even above the reserve", known_tariff_anomaly_cannot_understate_usage)
+
+    def explicit_bound_without_valid_usage_still_halts():
+        for usage in (None, {"completion_tokens": "OWNED_MALFORMED_USAGE_SENTINEL"}):
+            p = fresh()
+            ledger = B.Ledger(p, clock=Clock())
+            held = ledger.reserve(arm="a", role="write", run="probe/r1", unit=None, body=body(1))
+            rec = ledger.settle(held, status=200, done=True, usage=usage, outcome="usage-bound")
+            restarted = B.Ledger(p, clock=Clock())
+            retry = stopped(lambda: restarted.reserve(arm="a", role="write", run="other/r1", unit=None, body=body(1)))[0]
+            if rec["basis"] != "worst" or Decimal(rec["usd"]) != held.worst or rec["reason"] != "usage-bound" \
+                    or rec["anomaly"] is not True or "raw_estimate_usd" in rec or restarted.total() != held.worst \
+                    or retry != "accounting-anomaly":
+                return False
+            if any(b"OWNED_MALFORMED_USAGE_SENTINEL" in f.read_bytes() for f in p.parent.iterdir() if f.is_file()):
+                return False
+        return True
+
+    row("BUD-ANOMALY-NONE-1: explicit usage-bound with absent/malformed usage settles conservatively without crashing and durably halts", explicit_bound_without_valid_usage_still_halts)
+
+    def status_cannot_persist_arbitrary_text():
+        sentinel = "STATUS_SENTINEL_OWNED_DO_NOT_PERSIST"
+        for value in (sentinel, {"nested": sentinel}, True, 99, 600):
+            p = fresh()
+            ledger = B.Ledger(p, clock=Clock())
+            held = ledger.reserve(arm="a", role="write", run="probe/r1", unit=None, body=body(2000))
+            before = p.read_bytes()
+            why = stopped(lambda: ledger.settle(held, status=value))[0]
+            if why != "settlement-status-invalid" or p.read_bytes() != before or ledger.run_total("probe/r1") != (held.worst, 1, 1):
+                return False
+            if any(sentinel.encode() in f.read_bytes() for f in p.parent.iterdir() if f.is_file()):
+                return False
+        return True
+
+    row("BUD-STATUS-1: invalid or textual status refuses before writing and cannot release a reservation", status_cannot_persist_arbitrary_text)
+
+    def completion_and_outcome_are_closed_types():
+        sentinel = "OUTCOME_SENTINEL_OWNED_DO_NOT_PERSIST"
+        cases = [(dict(outcome=sentinel), "settlement-outcome-invalid"),
+                 (dict(outcome={"text": sentinel}), "settlement-outcome-invalid"),
+                 (dict(done=sentinel), "settlement-completion-invalid"),
+                 (dict(done=1), "settlement-completion-invalid"),
+                 (dict(done=False, outcome="complete"), "settlement-completion-invalid")]
+        for options, expected in cases:
+            p = fresh()
+            ledger = B.Ledger(p, clock=Clock())
+            held = ledger.reserve(arm="a", role="write", run="probe/r1", unit=None, body=body(1))
+            before = p.read_bytes()
+            why = stopped(lambda: ledger.settle(held, status=200, **options))[0]
+            if why != expected or p.read_bytes() != before or ledger.run_total("probe/r1") != (held.worst, 1, 1):
+                return False
+            if any(sentinel.encode() in f.read_bytes() for f in p.parent.iterdir() if f.is_file()):
+                return False
+        return True
+
+    row("BUD-OUTCOME-TYPES-1: unknown outcomes, invalid completion flags and complete-without-DONE refuse before persistence", completion_and_outcome_are_closed_types)
+
+    def invalid_forensic_status_cannot_write_or_release():
+        sentinel = "FORENSIC_STATUS_SENTINEL_OWNED_DO_NOT_PERSIST"
+        for value in (sentinel, {"text": sentinel}, True, 99, 600):
+            p = fresh()
+            ledger = B.Ledger(p, clock=Clock())
+            held = ledger.reserve(arm="a", role="write", run="probe/r1", unit=None, body=body(1))
+            with p.open("ab") as stream:
+                stream.write(b"owned-torn-row")
+            if ledger.broken() is None:
+                return False
+            before = p.read_bytes()
+            why = stopped(lambda: ledger.settle(held, status=value))[0]
+            if why != "settlement-status-invalid" or p.read_bytes() != before or held.id not in ledger._open:
+                return False
+            if any(sentinel.encode() in f.read_bytes() for f in p.parent.iterdir() if f.is_file()):
+                return False
+        return True
+
+    row("BUD-FORENSIC-STATUS-1: broken-ledger status validation refuses text and invalid numbers before forensic append", invalid_forensic_status_cannot_write_or_release)
+
+    def mismatch_survives_a_changed_tariff():
+        p = fresh()
+        ledger = B.Ledger(p, clock=Clock())
+        held = ledger.reserve(arm="a", role="write", run="probe/r1", unit=None, body=body(1))
+        changed = copy.deepcopy(PRICE)
+        changed["output"]["peak"] *= 2
+        other = B.Ledger(p, prices=(changed, copy.deepcopy(LIMITS)), clock=Clock())
+        if other.price_sha == ledger.price_sha:
+            return False
+        rec = other.settle(held, status=200, done=True, usage=None, outcome="model-mismatch")
+        if rec["kind"] != "accounting-unverified" or rec["basis"] != "unverified" \
+                or rec["reason"] != "model-mismatch" or rec["price_sha"] != ledger.price_sha \
+                or Decimal(rec["worst_usd"]) != held.worst or "usd" in rec:
+            return False
+        after = p.read_bytes()
+        for prices in ((PRICE, LIMITS), (changed, LIMITS)):
+            restarted = B.Ledger(p, prices=prices, clock=Clock())
+            if restarted.broken() is not None or held.id not in restarted._open \
+                    or stopped(restarted.total)[0] != "accounting-unverified" \
+                    or stopped(lambda: restarted.run_total("unrelated/r2"))[0] != "accounting-unverified" \
+                    or stopped(lambda: restarted.reserve(arm="other", role="read", run="unrelated/r2", unit="u2", body=body(1)))[0] != "accounting-anomaly" \
+                    or stopped(lambda: restarted.settle(held, status=200, done=True, out_bytes=0))[0] != "settlement-unverified" \
+                    or p.read_bytes() != after:
+                return False
+        return len(lines(p)) == 2
+
+    row("BUD-MISMATCH-PRICE-1: absent-usage model mismatch is durable before tariff comparison and blocks both tariff readers", mismatch_survives_a_changed_tariff)
+
+    def oversized_usage_has_durable_unverified_cost():
+        limit = (1 << 63) - 1  # Supported evidence bound, independent of the production constant.
+        accepted = {"prompt_cache_hit_tokens": limit, "prompt_cache_miss_tokens": 0,
+                    "prompt_tokens": limit, "completion_tokens": limit,
+                    "completion_tokens_details": {"reasoning_tokens": limit}}
+        if B.project_usage(accepted) != (accepted, None):
+            return False
+        huge = 10 ** 1500  # Valid JSON integer, below Python's parsing digit bound.
+        examples = [
+            {"prompt_cache_hit_tokens": 0, "prompt_cache_miss_tokens": 10, "prompt_tokens": 10, "completion_tokens": huge},
+            {"prompt_cache_hit_tokens": huge, "prompt_cache_miss_tokens": 0, "prompt_tokens": huge, "completion_tokens": 0},
+            {"prompt_cache_hit_tokens": 0, "prompt_cache_miss_tokens": huge, "prompt_tokens": huge, "completion_tokens": 0},
+            {"prompt_cache_hit_tokens": 0, "prompt_cache_miss_tokens": 0, "prompt_tokens": huge, "completion_tokens": 0},
+            {"prompt_cache_hit_tokens": 0, "prompt_cache_miss_tokens": 0, "prompt_tokens": 0, "completion_tokens": 1,
+             "completion_tokens_details": {"reasoning_tokens": huge}},
+            dict(accepted, completion_tokens=limit + 1),
+        ]
+        for usage in examples:
+            p = fresh()
+            ledger = B.Ledger(p, clock=Clock())
+            held = ledger.reserve(arm="a", role="write", run="probe/r1", unit=None, body=body(1))
+            rec = ledger.settle(held, status=200, done=True, usage=json.loads(json.dumps(usage)))
+            if rec["kind"] != "accounting-unverified" or rec["basis"] != "unverified" \
+                    or rec["reason"] != "usage-count-unverified" or rec["usage"] is not None \
+                    or rec["price_sha"] != ledger.price_sha or Decimal(rec["worst_usd"]) != held.worst \
+                    or "usd" in rec or "raw_estimate_usd" in rec:
+                return False
+            restarted = B.Ledger(p, clock=Clock())
+            if restarted.broken() is not None or held.id not in restarted._open \
+                    or stopped(restarted.total)[0] != "accounting-unverified" \
+                    or stopped(lambda: restarted.run_total("unrelated/r2"))[0] != "accounting-unverified" \
+                    or stopped(lambda: restarted.reserve(arm="other", role="read", run="unrelated/r2", unit="u2", body=body(1)))[0] != "accounting-anomaly":
+                return False
+            after = p.read_bytes()
+            if stopped(lambda: restarted.settle(held, status=200, done=True, out_bytes=0))[0] != "settlement-unverified" \
+                    or p.read_bytes() != after or len(lines(p)) != 2 or str(huge).encode() in after:
+                return False
+            forge(p, [{"kind": "settle", "id": held.id, "usd": "0"}])
+            if stopped(B.Ledger(p, clock=Clock()).total)[0] != "ledger-broken":
+                return False
+        return True
+
+    row("BUD-USAGE-RANGE-1: numeric bound is inclusive; oversized parsed counts retain reserve and halt across restart without pricing/serialization", oversized_usage_has_durable_unverified_cost)
+
+
+    def every_accounting_anomaly_survives_a_changed_tariff():
+        valid = {"prompt_cache_hit_tokens": 0, "prompt_cache_miss_tokens": 10, "prompt_tokens": 10, "completion_tokens": 0}
+        cases = [(outcome, None, outcome) for outcome in ("usage-conflict", "usage-shape", "usage-bound")]
+        cases += [("complete", {"completion_tokens": "OWNED_INVALID_USAGE_TEXT"}, "usage-shape"),
+                  ("complete", dict(valid, completion_tokens=2), "usage-bound"),
+                  ("complete", dict(valid, prompt_tokens=2000, prompt_cache_miss_tokens=2000), "usage-bound")]
+        for outcome, usage, reason in cases:
+            p = fresh()
+            ledger = B.Ledger(p, clock=Clock())
+            held = ledger.reserve(arm="a", role="write", run="probe/r1", unit=None, body=body(1))
+            changed = copy.deepcopy(PRICE)
+            changed["output"]["peak"] *= 2
+            rec = B.Ledger(p, prices=(changed, LIMITS), clock=Clock()).settle(
+                held, status=200, done=True, usage=usage, outcome=outcome)
+            if rec["kind"] != "accounting-unverified" or rec["basis"] != "unverified" \
+                    or rec["reason"] != reason or rec["price_sha"] != ledger.price_sha \
+                    or Decimal(rec["worst_usd"]) != held.worst or rec["usage"] is not None \
+                    or "usd" in rec or b"OWNED_INVALID_USAGE_TEXT" in p.read_bytes():
+                return False
+            after = p.read_bytes()
+            for prices in ((PRICE, LIMITS), (changed, LIMITS)):
+                restarted = B.Ledger(p, prices=prices, clock=Clock())
+                if restarted.broken() is not None or held.id not in restarted._open \
+                        or stopped(restarted.total)[0] != "accounting-unverified" \
+                        or stopped(lambda: restarted.run_total("unrelated/r2"))[0] != "accounting-unverified" \
+                        or stopped(lambda: restarted.reserve(arm="other", role="read", run="unrelated/r2", unit="u2", body=body(1)))[0] != "accounting-anomaly" \
+                        or stopped(lambda: restarted.settle(held, status=200, done=True, out_bytes=0))[0] != "settlement-unverified" \
+                        or p.read_bytes() != after:
+                    return False
+            forge(p, [{"kind": "settle", "id": held.id, "usd": "0"}])
+            if stopped(B.Ledger(p, clock=Clock()).total)[0] != "ledger-broken":
+                return False
+        return True
+
+    row("BUD-ANOMALY-PRICE-1: every explicit or inferred accounting anomaly halts both readers before changed-tariff pricing", every_accounting_anomaly_survives_a_changed_tariff)
+
+
+    def oversized_request_bounds_have_a_durable_admission_stop():
+        for request in (body(1 << 63, length=0), body(10 ** 1500, length=0),
+                        b'{"model":"deepseek-flash","max_tokens":1' + b'0' * 5000 + b'}'):
+            p = fresh()
+            ledger = B.Ledger(p, clock=Clock())
+            why = stopped(lambda: ledger.reserve(arm="a", role="write", run="probe/r1", unit=None, body=request))[0]
+            if why != "request-bound-unverified":
+                return False
+            recs = lines(p)
+            if len(recs) != 1 or recs[0]["kind"] != "admission-stop" \
+                    or recs[0]["why"] != "request-bound-unverified" or "worst_usd" in recs[0] \
+                    or len(p.read_bytes()) > 1000:
+                return False
+            restarted = B.Ledger(p, clock=Clock())
+            if restarted.broken() is not None or restarted.total() != Decimal(0) \
+                    or stopped(lambda: restarted.reserve(arm="other", role="read", run="unrelated/r2", unit=None, body=body(1)))[0] != "request-bound-unverified":
+                return False
+        limit = (1 << 63) - 1
+        return B.request_max_tokens(body(limit, length=0), LIMITS) == (limit, "request")
+
+    row("BUD-REQUEST-RANGE-1: oversized parsed and parse-limit JSON request integers persist a typed global admission stop without formatting an unknown worst", oversized_request_bounds_have_a_durable_admission_stop)
+
+    def tariffs_and_divisors_fit_the_accounting_evidence_range():
+        bads = []
+        high = copy.deepcopy(PRICE)
+        for field in ("input_cache_hit", "input_cache_miss"):
+            high[field] = {"off_peak": 0, "peak": 0}
+        high["output"] = {"off_peak": "1e1000", "peak": "1e1000"}
+        bads.append((high, LIMITS))
+        tiny = copy.deepcopy(PRICE)
+        tiny["output"]["off_peak"] = "1e-1000"
+        bads.append((tiny, LIMITS))
+        huge_divisor = copy.deepcopy(PRICE)
+        huge_divisor["per_tokens"] = 10 ** 1500
+        bads.append((huge_divisor, LIMITS))
+        bads.append((PRICE, dict(LIMITS, max_output=10 ** 1500)))
+        bads.append((PRICE, dict(LIMITS, max_output=1 << 63)))
+        zero = copy.deepcopy(PRICE)
+        for field in ("input_cache_hit", "input_cache_miss", "output"):
+            zero[field] = {"off_peak": 0, "peak": 0}
+        zero["per_tokens"] = 1 << 63
+        bads.append((zero, LIMITS))
+        if any(stopped(lambda pair=pair: B.Ledger(fresh(), prices=pair, clock=Clock()))[0] != "price-unknown" for pair in bads):
+            return False
+        positive = B.Ledger(fresh(), prices=(PRICE, dict(LIMITS, max_output=(1 << 63) - 1)), clock=Clock())
+        return positive.price_sha == B.price_sha(PRICE) and positive.broken() is None
+
+    row("BUD-TARIFF-RANGE-1: reject tariffs whose unit or largest supported accounting amount is unrepresentable, plus oversized divisors/limits", tariffs_and_divisors_fit_the_accounting_evidence_range)
+
+    def oversized_output_bytes_have_durable_unverified_cost():
+        for count in (10 ** 1000010, (1 << 63)):
+            p = fresh()
+            ledger = B.Ledger(p, clock=Clock())
+            held = ledger.reserve(arm="a", role="write", run="probe/r1", unit=None, body=body(1))
+            rec = ledger.settle(held, status=200, done=True, usage=None, out_bytes=count)
+            if rec["kind"] != "accounting-unverified" or rec["reason"] != "usage-count-unverified" \
+                    or rec["basis"] != "unverified" or rec["price_sha"] != ledger.price_sha \
+                    or Decimal(rec["worst_usd"]) != held.worst or "usd" in rec or "raw_estimate_usd" in rec \
+                    or len(p.read_bytes()) > 2000:
+                return False
+            restarted = B.Ledger(p, clock=Clock())
+            if restarted.broken() is not None or held.id not in restarted._open \
+                    or stopped(restarted.total)[0] != "accounting-unverified" \
+                    or stopped(lambda: restarted.reserve(arm="other", role="read", run="unrelated/r2", unit=None, body=body(1)))[0] != "accounting-anomaly":
+                return False
+        p = fresh()
+        ledger = B.Ledger(p, clock=Clock())
+        held = ledger.reserve(arm="a", role="write", run="probe/r1", unit=None, body=body(1))
+        rec = ledger.settle(held, status=200, done=True, out_bytes=(1 << 63) - 1)
+        return rec["basis"] == "bytes" and Decimal(rec["usd"]) == held.worst \
+            and Decimal(rec["raw_estimate_usd"]) == Decimal("5534023222112.8656342")
+
+    row("BUD-OUTPUT-RANGE-1: output byte evidence is bounded before Decimal arithmetic; overflow halts durably and the inclusive boundary remains conservative", oversized_output_bytes_have_durable_unverified_cost)
+
+
+    def integer_subtypes_cannot_bypass_accounting_guards():
+        class Counter(int):
+            pass
+
+        class DeceptiveCounter(int):
+            def __gt__(self, other):
+                return False
+
+            def __lt__(self, other):
+                return False
+
+        for count in (Counter(10 ** 1000010), Counter(1), DeceptiveCounter(10 ** 1500)):
+            p = fresh()
+            ledger = B.Ledger(p, clock=Clock())
+            held = ledger.reserve(arm="a", role="write", run="probe/r1", unit=None, body=body(1))
+            rec = ledger.settle(held, status=200, done=True, out_bytes=count)
+            restarted = B.Ledger(p, clock=Clock())
+            if rec["kind"] != "accounting-unverified" or rec["reason"] != "usage-count-unverified" \
+                    or Decimal(rec["worst_usd"]) != held.worst or "usd" in rec or "raw_estimate_usd" in rec \
+                    or restarted.broken() is not None or held.id not in restarted._open \
+                    or stopped(restarted.total)[0] != "accounting-unverified" \
+                    or stopped(lambda: restarted.reserve(arm="other", role="read", run="unrelated/r2", unit=None, body=body(1)))[0] != "accounting-anomaly" \
+                    or len(p.read_bytes()) > 2000:
+                return False
+        ordinary = {"prompt_cache_hit_tokens": 0, "prompt_cache_miss_tokens": 1, "prompt_tokens": 1, "completion_tokens": 1}
+        for subtype in (Counter, DeceptiveCounter):
+            for key in ordinary:
+                if B.project_usage(dict(ordinary, **{key: subtype(1)})) != (None, "usage-shape"):
+                    return False
+            nested = dict(ordinary, completion_tokens_details={"reasoning_tokens": subtype(1)})
+            if B.project_usage(nested) != (None, "usage-shape"):
+                return False
+            price = copy.deepcopy(PRICE)
+            price["per_tokens"] = subtype(1000000)
+            if stopped(lambda: B.Ledger(fresh(), prices=(price, LIMITS), clock=Clock()))[0] != "price-unknown":
+                return False
+        return True
+
+    row("BUD-COUNTER-TYPES-1: plain and deceptive integer subclasses cannot enter pricing or evade numeric evidence guards", integer_subtypes_cannot_bypass_accounting_guards)
+
 
 finally:
     shutil.rmtree(TMP, ignore_errors=True)
