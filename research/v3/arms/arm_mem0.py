@@ -491,11 +491,21 @@ class Handler:
         self.writes["empty"] += not results
         return {"op_id": item["item_id"], **given, "results": len(results), "t0": t0, "t1": time.time()}
 
+    def _close_store(self) -> None:
+        for obj in (getattr(getattr(self.mem, "vector_store", None), "client", None), getattr(self.mem, "db", None)):
+            close = getattr(obj, "close", None)
+            if callable(close):
+                try:
+                    close()
+                except Exception:  # noqa: BLE001
+                    pass
+
     def end_write(self) -> dict:
         self._stage("write", "end_write")
         t0 = time.time()
         got = self.mem.get_all(filters={"user_id": self.unit})
         memories = got.get("results", []) if isinstance(got, dict) else (got or [])
+        self._close_store()
         seal = B.write_seal(self.spec["unit_dir"], self.store, arm=self.arm, run=self.spec["run"], unit=self.unit)
         out = {"footprint": {"retrievable": len(memories), "chars": sum(len(m.get("memory") or "") for m in memories)},
                "seal": seal, "t0": t0, "t1": time.time()}
@@ -572,4 +582,15 @@ if __name__ == "__main__":
         sys.stderr.write("usage: arm_mem0.py <spec.json>\n")
         sys.exit(2)
     ENV_AT_START = dict(os.environ)
-    sys.exit(B.main_with(lambda: build(sys.argv[1], ENV_AT_START)))
+    _h = [None]
+
+    def _make_handler():
+        _h[0] = build(sys.argv[1], ENV_AT_START)
+        return _h[0]
+
+    try:
+        _rc = B.main_with(_make_handler)
+    finally:
+        if isinstance(_h[0], Handler):
+            _h[0]._close_store()
+    sys.exit(_rc)

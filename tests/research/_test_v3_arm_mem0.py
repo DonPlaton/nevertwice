@@ -517,6 +517,8 @@ try:
     src = ADAPTER.read_text(encoding="utf-8")
     check("the counter is installed before the pacer, so it sits inside it (Q-46-4)",
           0 < src.index("HC.install(") < src.index("P.install("))
+    check("end_write closes the Qdrant client and SQLite db before write_seal reads the store on Windows",
+          0 < src.index("self._close_store()") < src.index("B.write_seal("))
     victim = next(f for f in sorted((U3 / "store").rglob("*")) if f.is_file())
     victim.write_bytes(victim.read_bytes() + b" ")
     msg = hello_error("x6", spec_for("x6", "mem0-store", "read", U3))
