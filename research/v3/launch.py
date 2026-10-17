@@ -1086,7 +1086,7 @@ def spawn(c: Contract, argv: Sequence[str], *, env: Mapping[str, str], cwd: str 
     if os.name == "nt":
         popen_kw["creationflags"] = int(popen_kw.get("creationflags") or 0) | subprocess.CREATE_NEW_PROCESS_GROUP \
             | (CREATE_SUSPENDED if jobs is not None else 0)
-    owner = _SpawnOwner(spawn_id, native, jobs, suspended=os.name == "nt" and jobs is not None)
+    owner = _SpawnOwner(spawn_id, native, jobs, suspended=jobs is not None)
     with _SPAWN_OWNERS_LOCK:
         _FAILED_SPAWNS[spawn_id] = owner
     try:
