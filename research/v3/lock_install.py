@@ -104,11 +104,12 @@ VENVS = {"mem0_v3": {"base": "py-base-312",
                      "specs": ["mem0ai[nlp]==2.2.0", "ollama==0.6.3", "fastembed==0.8.1"],
                      "imports": ["mem0", "spacy", "ollama", "fastembed"],
                      "dists": ["mem0ai", "spacy", "ollama", "fastembed"]},
-         "graphiti_v3": {"base": "py-base-312", "specs": ["graphiti-core[falkordb]==0.30.2"],
-                         "imports": ["graphiti_core", "falkordb", "graphiti_core.driver.falkordb_driver"],
-                         "dists": ["graphiti-core", "falkordb"]},
-         "langmem_v3": {"base": "py-base-312", "specs": ["langmem==0.0.30"], "imports": ["langmem", "langgraph"],
-                        "dists": ["langmem", "langgraph"]},
+         "graphiti_v3": {"base": "py-base-312", "specs": ["graphiti-core[falkordb]==0.30.2", "httpx==0.28.1"],
+                         "imports": ["graphiti_core", "falkordb", "graphiti_core.driver.falkordb_driver", "httpx"],
+                         "dists": ["graphiti-core", "falkordb", "httpx"]},
+         "langmem_v3": {"base": "py-base-312", "specs": ["langmem==0.0.30", "langchain-ollama==1.1.0"],
+                        "imports": ["langmem", "langgraph", "langchain_ollama"],
+                        "dists": ["langmem", "langgraph", "langchain-ollama"]},
          "cognee_v3": {"base": "py-base-312", "specs": ["cognee==1.6.1"], "imports": ["cognee"], "dists": ["cognee"]},
          # A4 (T33, the auditor's Q-SCR-1..5): the scorer's own venv - no arm; the eleven versions window a8-pypi-d p1
          # read, every further package the lock's to resolve and record by its wheel's sha256
@@ -134,14 +135,19 @@ PREREG_22 = {"mem0_v3": {"row": ("| mem0 | product | mem0ai, latest stable at fr
                          "pins": [("mem0ai", ["nlp"], "2.2.0"), ("ollama", [], "0.6.3"), ("fastembed", [], "0.8.1")],
                          "base": "py-base-312"},
              "graphiti_v3": {"row": "| zep-graphiti | product | graphiti-core, latest stable at freeze (0.30.2 read "
-                                    "2026-09-26); with `[falkordb]` (T31); FalkorDB image by digest | 3.12, fresh venv "
-                                    "graphiti_v3 | vendor-recommended:https://github.com/getzep/graphiti | to install, to "
-                                    "adapt |",
+                                    "2026-09-26); with `[falkordb]` (T31) and httpx==0.28.1 (T37); FalkorDB image by digest | "
+                                    "3.12, fresh venv graphiti_v3 | vendor-recommended:https://github.com/getzep/graphiti | "
+                                    "to install, to adapt |",
                              "source": _AMENDMENTS, "dist": "graphiti-core", "extras": ["falkordb"], "version": "0.30.2",
+                             "pins": [("graphiti-core", ["falkordb"], "0.30.2"), ("httpx", [], "0.28.1")],
                              "base": "py-base-312"},
-             "langmem_v3": {"row": "| langmem | product | langmem, latest stable (0.0.30); langgraph pinned | 3.12, fresh "
-                                   "venv langmem_v3 |",
-                            "source": _REV1, "dist": "langmem", "extras": [], "version": "0.0.30", "base": "py-base-312"},
+             "langmem_v3": {"row": "| langmem | product | langmem, latest stable (0.0.30); with langchain-ollama==1.1.0 (T37); "
+                                   "langgraph pinned | 3.12, fresh venv langmem_v3 | "
+                                   "vendor-recommended:https://langchain-ai.github.io/langmem/guides/delayed_processing/ | "
+                                   "to install, to adapt |",
+                            "source": _AMENDMENTS, "dist": "langmem", "extras": [], "version": "0.0.30",
+                            "pins": [("langmem", [], "0.0.30"), ("langchain-ollama", [], "1.1.0")],
+                            "base": "py-base-312"},
              "cognee_v3": {"row": "| cognee | product | cognee, latest stable (1.6.1) | 3.12, fresh venv cognee_v3 |",
                            "source": _REV1, "dist": "cognee", "extras": [], "version": "1.6.1", "base": "py-base-312"},
              # A4's paragraph (the amendments file, 2.2): a venv of eleven pins, each (dist, extras, version)

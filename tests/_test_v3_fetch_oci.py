@@ -352,8 +352,8 @@ for label, hosts in (("a subset", [REG, AUTH]), ("a superset", [REG, AUTH, CDN, 
     o, r, cw = run(f"hosts_{label[2:5]}", job={**JOB, "hosts": hosts})
     check(f"C4A-4: a job whose hosts are {label} of its registry, token service and CDN hosts is refused by name, nothing sent",
           o.get("ok") is False and "not exactly its registry" in (o.get("error") or "") and r.calls == [], str(o.get("error")))
-for name in ("Letta/Letta", "../x", "letta"):
-    o, r, cw = run(f"repo_{abs(hash(name)) % 1000}", job={**JOB, "repo": name})
+for idx, name in enumerate(("Letta/Letta", "../x", "letta")):
+    o, r, cw = run(f"repo_{idx}", job={**JOB, "repo": name})
     check(f"C4A-4: the repository name {name!r} is refused by name, nothing sent",
           o.get("ok") is False and "is not a repository name" in (o.get("error") or "") and r.calls == [], str(o.get("error")))
 check("release_tags: the largest ^v?X.Y.Z$ by the numbers, with every tag that names it; none is None",

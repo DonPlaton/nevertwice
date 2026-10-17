@@ -208,3 +208,21 @@ declared line of the report beside its K and V numbers - never discovered afterw
 - **§13, trap closure, the new line:**
 
 | T36 supermemory-local reports and calls out | §2.6 | SUPERMEMORY_DISABLE_TELEMETRY=1, SUPERMEMORY_NO_UPDATE_CHECK=1, SUPERMEMORY_NO_OPEN=1 in the fixed list for every child; the values the binary's own comparisons accept |
+
+## A8 - T37: graphiti_v3 and langmem_v3 carry what their selected paths import - httpx and langchain-ollama
+
+- **Trap:** T37 graphiti_v3 without httpx and langmem_v3 without langchain-ollama.
+- **Date:** 2026-10-18.
+- **Ruling:** M31 of the downloads a8-pypi-graphiti_v3 d1 and a8-pypi-langmem_v3 d1 (same pattern as A5/T34 for mem0_v3).
+- **Reason:** graphiti-core[falkordb]==0.30.2 imports `httpx` at module level in `graphiti_core/llm_client/client.py:23`, while
+  `openai` 2.x depends on `httpx2` and no longer pulls `httpx`; without `httpx==0.28.1` `graphiti_core` fails to import.
+  `langmem==0.0.30` does not pull `langchain-ollama`, which `arm_langmem.py:130` imports for the shared Ollama embedder
+  (`OllamaEmbeddings`) and for `langmem-store`'s Ollama LLM (`ChatOllama`); without `langchain-ollama==1.1.0` neither arm starts.
+- **§2.2, the zep-graphiti and langmem rows become:**
+
+| zep-graphiti | product | graphiti-core, latest stable at freeze (0.30.2 read 2026-09-26); with `[falkordb]` (T31) and httpx==0.28.1 (T37); FalkorDB image by digest | 3.12, fresh venv graphiti_v3 | vendor-recommended:https://github.com/getzep/graphiti | to install, to adapt |
+| langmem | product | langmem, latest stable (0.0.30); with langchain-ollama==1.1.0 (T37); langgraph pinned | 3.12, fresh venv langmem_v3 | vendor-recommended:https://langchain-ai.github.io/langmem/guides/delayed_processing/ | to install, to adapt |
+
+- **§13, trap closure, the new line:**
+
+| T37 graphiti_v3 without httpx and langmem_v3 without langchain-ollama | §2.2 | graphiti_v3 += httpx==0.28.1; langmem_v3 += langchain-ollama==1.1.0; M31 verified before install |

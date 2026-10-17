@@ -123,6 +123,15 @@ def imports_of(src: bytes, fname: str) -> tuple[list, list]:
                 else:
                     unresolved.append({"line": node.lineno, "why": f"{name} with a non-literal argument"})
         lazy = lazy or isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda))
+        if isinstance(node, ast.If) and (
+            (isinstance(node.test, ast.Name) and node.test.id == "TYPE_CHECKING")
+            or (isinstance(node.test, ast.Attribute) and node.test.attr == "TYPE_CHECKING")
+        ):
+            for part in node.body:
+                walk(part, True, True)
+            for part in node.orelse:
+                walk(part, lazy, optional)
+            return
         if isinstance(node, ast.Try) or type(node).__name__ == "TryStar":
             for part in node.body:
                 walk(part, lazy, optional or _catches_import(node.handlers))
@@ -293,33 +302,52 @@ def run_m31(*, venv_name: str, run: str, runs_root: Path, stdlib, stdlib_source:
                                 "is fixed through a gate)")
             else:
                 entries.setdefault(mod, f"{arm}: config {mod}")
-    queue, seen = list(entries), set()
+    reach = {m: (False, False) for m in entries}
+    queue, seen, seen_mods = list(entries), set(), set()
     while queue:
         dotted = queue.pop(0)
-        if dotted in seen:
+        mod_lazy, mod_opt = reach[dotted]
+        if (dotted, mod_lazy, mod_opt) in seen:
             continue
-        seen.add(dotted)
+        seen.add((dotted, mod_lazy, mod_opt))
+        first_visit = dotted not in seen_mods
+        seen_mods.add(dotted)
         parts = dotted.split(".")
-        queue += [".".join(parts[:i]) for i in range(1, len(parts)) if ".".join(parts[:i]) not in seen]
+        for i in range(1, len(parts)):
+             anc = ".".join(parts[:i])
+             prev = reach.get(anc, (True, True))
+             nxt = (prev[0] and mod_lazy, prev[1] and mod_opt)
+             if anc not in reach or nxt != prev:
+                 reach[anc] = nxt
+                 queue.append(anc)
         got = wh.source(dotted)
         if got is None:
             continue
         path, data, is_pkg = got
         sites, unres = imports_of(data, path)
-        unresolved += [{"where": f"{path}:{u['line']}", "why": u["why"]} for u in unres]
-        closure_unres += [{"where": f"{path}:{u['line']}", "why": u["why"]} for u in unres]
+        if first_visit:
+            unresolved += [{"where": f"{path}:{u['line']}", "why": u["why"]} for u in unres]
+            closure_unres += [{"where": f"{path}:{u['line']}", "why": u["why"]} for u in unres]
         entry = dotted in entries
         for s in sites:
+            eff_lazy = mod_lazy or s["lazy"]
+            eff_opt = mod_opt or s["optional"]
             target = _target(s, dotted, is_pkg)
             top = target.split(".")[0]
             if top in products:
-                queue += [t for t in [target] + [f"{target}.{n}" for n in s["names"]] if wh.is_module(t) and t not in seen]
+                for t in [target] + [f"{target}.{n}" for n in s["names"]]:
+                    if wh.is_module(t):
+                        prev = reach.get(t, (True, True))
+                        nxt = (prev[0] and eff_lazy, prev[1] and eff_opt)
+                        if t not in reach or nxt != prev:
+                            reach[t] = nxt
+                            queue.append(t)
                 continue
             if not top or top in stdlib or top == "__future__":
                 continue
             part3.append({"module_of": dotted, "entry": entries.get(dotted), "name": top, "module": target,
-                          "where": f"{path}:{s['line']}", "lazy": s["lazy"], "optional": s["optional"],
-                          "blocking": entry or not (s["lazy"] or s["optional"]),
+                          "where": f"{path}:{s['line']}", "lazy": eff_lazy, "optional": eff_opt,
+                          "blocking": entry or not (eff_lazy or eff_opt),
                           "provided_by": sorted(wh.provides.get(top, ()))})
     # R-M31-UNRES: the closure's unresolved imports against what the arms declare explains them
     explained: dict = {}
@@ -347,7 +375,7 @@ def run_m31(*, venv_name: str, run: str, runs_root: Path, stdlib, stdlib_source:
               "factories": {a: factories[a] for a in arms if a in factories}, "entries": entries,
               "parts": {"1": part1, "2": {s["name"]: s["provided_by"] for s in sorted(sites, key=lambda x: x["name"])},
                         "3": part3},
-              "closure": sorted(seen), "unresolved": unresolved,
+              "closure": sorted(seen_mods), "unresolved": unresolved,
               "explained": {w: k for w, k in sorted(explained.items()) if w in found}, "unprovided": unprovided,
               "lazy_unprovided": lazy_unprovided, "problems": problems,
               "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}

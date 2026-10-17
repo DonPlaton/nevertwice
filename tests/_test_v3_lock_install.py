@@ -339,25 +339,26 @@ check("... and each quoted row is its named source's own §2.2 line, word for wo
       all(LI.PREREG_22[v].get("source") in _SRC and _SRC[LI.PREREG_22[v]["source"]].count(LI.PREREG_22[v]["row"]) == 1
           and all(f"with `[{x}]`" in LI.PREREG_22[v]["row"] for x in LI.PREREG_22[v].get("extras", [])) for v in LI.PREREG_22),
       str([(v.get("source"), v["row"][:60]) for v in LI.PREREG_22.values()]))
-check("C5e (Q-C5e-1 = O-a, Q-C5e-2 = O-a): graphiti_v3 = graphiti-core[falkordb] 0.30.2 (T31: its FalkorDB driver's "
-      "client, imported with the driver), langmem_v3 = langmem 0.0.30 with langgraph pinned by the lock and checked, "
-      "cognee_v3 = cognee 1.6.1 - each on py-base-312",
+check("C5e (Q-C5e-1 = O-a, Q-C5e-2 = O-a, T37): graphiti_v3 = graphiti-core[falkordb] 0.30.2 (T31: its FalkorDB driver's "
+      "client, imported with the driver) with httpx 0.28.1 (T37), langmem_v3 = langmem 0.0.30 with langchain-ollama 1.1.0 "
+      "(T37) and langgraph pinned by the lock and checked, cognee_v3 = cognee 1.6.1 - each on py-base-312",
       {v: LI.VENVS.get(v) for v in ("graphiti_v3", "langmem_v3", "cognee_v3")} == {
-          "graphiti_v3": {"base": "py-base-312", "specs": ["graphiti-core[falkordb]==0.30.2"],
-                          "imports": ["graphiti_core", "falkordb", "graphiti_core.driver.falkordb_driver"],
-                          "dists": ["graphiti-core", "falkordb"]},
-          "langmem_v3": {"base": "py-base-312", "specs": ["langmem==0.0.30"], "imports": ["langmem", "langgraph"],
-                         "dists": ["langmem", "langgraph"]},
+          "graphiti_v3": {"base": "py-base-312", "specs": ["graphiti-core[falkordb]==0.30.2", "httpx==0.28.1"],
+                          "imports": ["graphiti_core", "falkordb", "graphiti_core.driver.falkordb_driver", "httpx"],
+                          "dists": ["graphiti-core", "falkordb", "httpx"]},
+          "langmem_v3": {"base": "py-base-312", "specs": ["langmem==0.0.30", "langchain-ollama==1.1.0"],
+                         "imports": ["langmem", "langgraph", "langchain_ollama"],
+                         "dists": ["langmem", "langgraph", "langchain-ollama"]},
           "cognee_v3": {"base": "py-base-312", "specs": ["cognee==1.6.1"], "imports": ["cognee"], "dists": ["cognee"]}},
       str({v: LI.VENVS.get(v) for v in ("graphiti_v3", "langmem_v3", "cognee_v3")})[:400])
 _rev1_g = next((ln for ln in _SRC[REV1].splitlines() if ln.startswith("| zep-graphiti | product |")), "")
-_ins = "with `[falkordb]` (T31); "
+_ins = "with `[falkordb]` (T31) and httpx==0.28.1 (T37); "
 _amd_g = (LI.PREREG_22.get("graphiti_v3") or {}).get("row", "")
 check("Q-C5e-3: graphiti's quote is the amendments file's row, and that row is revision 1's plus exactly the inserted "
       "text - nothing else of the row drifts in by the amendment; revision 1 still holds its own row, unchanged",
       LI.PREREG_22.get("graphiti_v3", {}).get("source") == AMD and _amd_g.count(_ins) == 1
       and _amd_g.replace(_ins, "", 1) == _rev1_g and _SRC[REV1].count(_rev1_g) == 1 and _ins not in _SRC[REV1]
-      and all(LI.PREREG_22[v]["source"] == REV1 for v in LI.PREREG_22 if v not in ("graphiti_v3", "scorer_v3", "mem0_v3")),
+      and all(LI.PREREG_22[v]["source"] == REV1 for v in LI.PREREG_22 if v not in ("graphiti_v3", "langmem_v3", "scorer_v3", "mem0_v3")),
       _amd_g[:200])
 check("T34-1 (A5): mem0_v3's PREREG_22 row is A5's section 2.2 line in the amendments file, once - mem0ai[nlp]==2.2.0, "
       "ollama==0.6.3 and fastembed==0.8.1 as its three pins",

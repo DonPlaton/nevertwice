@@ -189,18 +189,18 @@
   },
   "a8-pypi-graphiti_v3": {
    "hosts": ["pypi.org", "files.pythonhosted.org"],
-   "install": "A8 C5e (the auditor's Q-C5e-1/2 O-a): lock_install as for mem0_v3 - graphiti-core[falkordb] as its row reads it, with T31's extra (PREREG-V3-AMENDMENTS.md A1)",
+   "install": "A8 C5e (the auditor's Q-C5e-1/2 O-a): lock_install as for mem0_v3 - graphiti-core[falkordb] as its row reads it, with T31's extra and T37's httpx (PREREG-V3-AMENDMENTS.md A1, A8)",
    "venv": "graphiti_v3",
    "base": "py-base-312",
-   "specs": ["graphiti-core[falkordb]==0.30.2"],
+   "specs": ["graphiti-core[falkordb]==0.30.2", "httpx==0.28.1"],
    "max_redirects": 0
   },
   "a8-pypi-langmem_v3": {
    "hosts": ["pypi.org", "files.pythonhosted.org"],
-   "install": "A8 C5e (the auditor's Q-C5e-1 O-a): lock_install as for mem0_v3 - langmem as its row reads it; langgraph pinned by the lock",
+   "install": "A8 C5e (the auditor's Q-C5e-1 O-a): lock_install as for mem0_v3 - langmem as its row reads it, with T37's langchain-ollama; langgraph pinned by the lock",
    "venv": "langmem_v3",
    "base": "py-base-312",
-   "specs": ["langmem==0.0.30"],
+   "specs": ["langmem==0.0.30", "langchain-ollama==1.1.0"],
    "max_redirects": 0
   },
   "a8-pypi-cognee_v3": {
