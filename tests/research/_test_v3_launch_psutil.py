@@ -179,18 +179,36 @@ try:
     nat = L.NativeEgressWitness(sampler=sampler)
     nat.allow_listener(os.getpid(), "the test's own server")
     W = L.Witnesses(C, native=nat, fs=None)
-    grand = (f"import socket, time; time.sleep(1.2); s = socket.create_connection(('127.0.0.1', {PORT})); "
-             "time.sleep(2.5); s.close()")
+    w1_inter_gone = TMP / "w1_inter_gone"
+    w1_connected = TMP / "w1_connected"
+    w1_done = TMP / "w1_done"
+    grand = (f"import pathlib, socket, time; p_gone = pathlib.Path({str(w1_inter_gone)!r}); "
+             f"p_conn = pathlib.Path({str(w1_connected)!r}); p_done = pathlib.Path({str(w1_done)!r}); "
+             "t0 = time.monotonic()\n"
+             "while not p_gone.exists() and time.monotonic() - t0 < 30: time.sleep(0.02)\n"
+             f"s = socket.create_connection(('127.0.0.1', {PORT})); p_conn.write_bytes(b'1')\n"
+             "while not p_done.exists() and time.monotonic() - t0 < 30: time.sleep(0.05)\n"
+             "s.close()")
     inter = (f"import subprocess, sys; subprocess.Popen([sys.executable, '-c', {grand!r}], "
              "creationflags=getattr(subprocess, 'DETACHED_PROCESS', 0), stdin=subprocess.DEVNULL, "
              "stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)")
-    outer = f"import subprocess, sys, time; subprocess.run([sys.executable, '-c', {inter!r}]); time.sleep(4.5)"
+    outer = (f"import pathlib, subprocess, sys, time; subprocess.run([sys.executable, '-c', {inter!r}]); "
+             f"pathlib.Path({str(w1_inter_gone)!r}).write_bytes(b'1'); "
+             f"p_done = pathlib.Path({str(w1_done)!r}); t0 = time.monotonic()\n"
+             "while not p_done.exists() and time.monotonic() - t0 < 30: time.sleep(0.05)")
     unit = L.make_unit_dirs(C, "s", "r", "a", "u-orphan")
     env = L.build_env(C, parent_env=os.environ, unit=unit, path_dirs=[Path(sys.executable).parent], declared={},
                       catcher_url="http://127.0.0.1:47003")
     W.begin_check("chk-orphan")
     kid = L.spawn(C, [sys.executable, "-c", outer], env=env, cwd=unit.cwd, record={"role": "test"},
                   parent_env=os.environ, catcher_url="http://127.0.0.1:47003", witnesses=W)
+    try:
+        wait_until(w1_connected.exists, timeout=20.0)
+        time.sleep(max(2.5, ROW_WINDOW))
+        if os.name == "nt":
+            wait_until(lambda: nat.result.rows_seen > 0 and nat.result.samples >= 3, timeout=15.0)
+    finally:
+        w1_done.write_bytes(b"1")
     kid.process.wait(timeout=60)
     rec = W.end_check("chk-orphan")
     n = rec["native"]

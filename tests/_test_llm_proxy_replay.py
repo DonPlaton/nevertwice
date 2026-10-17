@@ -157,6 +157,67 @@ EXPECTED = {
 }
 
 
+def expected_request_keys(arm: str) -> dict[str, str]:
+    """Independently implement the pinned canonical-body, NUL, arm key contract."""
+    return {call["name"]: hashlib.sha256(
+        json.dumps(json.loads(CAP.body_bytes(call)), sort_keys=True, separators=(",", ":"),
+                   ensure_ascii=False).encode("utf-8") + b"\0" + arm.encode("utf-8")
+    ).hexdigest() for call in CAP.CALLS}
+
+
+def records_by_call(records: list, arm: str) -> tuple[dict[str, dict], list[str]]:
+    """Require one unique record per expected request; append order carries no identity."""
+    expected = expected_request_keys(arm)
+    names_by_key = {key: name for name, key in expected.items()}
+    errors = []
+    found = {}
+    seen = set()
+    if len(names_by_key) != len(expected):
+        errors.append("fixture request-key collision")
+    if len(records) != len(expected):
+        errors.append("record-count")
+    for record in records:
+        if not isinstance(record, dict):
+            errors.append("record-not-object")
+            continue
+        key = record.get("request_key")
+        if not isinstance(key, str) or key not in names_by_key:
+            errors.append("unknown-request-key")
+            continue
+        if key in seen:
+            errors.append("duplicate-request-key")
+            continue
+        seen.add(key)
+        if record.get("arm") != arm:
+            errors.append("wrong-arm")
+            continue
+        found[names_by_key[key]] = record
+    if set(found) != set(expected):
+        errors.append("missing-request-key")
+    return found, errors
+
+
+print("\n- append order cannot identify a request -")
+_keys = expected_request_keys("cap")
+_rows = [{"request_key": _keys[c["name"]], "arm": "cap", "fixture_name": c["name"]} for c in CAP.CALLS]
+_mapped, _errors = records_by_call(list(reversed(_rows)), "cap")
+check("REPLAY-ORDER: reversing every record preserves all seven request identities",
+      not _errors and set(_mapped) == set(_keys)
+      and all(_mapped[n].get("fixture_name") == n for n in _keys), str(_errors))
+for _tag, _bad, _reason in (
+    ("duplicate", _rows + [_rows[0]], "duplicate-request-key"),
+    ("missing", _rows[:-1], "missing-request-key"),
+    ("unknown", [{**_rows[0], "request_key": "not-a-request-key"}] + _rows[1:], "unknown-request-key"),
+    ("wrong-arm", [{**_rows[0], "arm": "notool"}] + _rows[1:], "wrong-arm"),
+    ("not-object", [None] + _rows[1:], "record-not-object"),
+):
+    _mapped, _errors = records_by_call(_bad, "cap")
+    check(f"REPLAY-ORDER-{_tag}: invalid record sets are explicitly refused", _reason in _errors, str(_errors))
+check("REPLAY-KEY: the proxy uses the independent canonical-body plus arm contract",
+      all(P.request_key(json.loads(CAP.body_bytes(c)), arm) == expected_request_keys(arm)[c["name"]]
+          for arm in ("cap", "notool") for c in CAP.CALLS))
+
+
 print("\n- a recording arm replays the seven captures -")
 px, up, got, recs, flags = run("cap", T_CAP, ("get_weather",))
 check("the client receives every fixture byte for byte",
@@ -167,19 +228,27 @@ heads = [r.split(b"\r\n\r\n", 1)[0] for r in up.requests]
 check("the upstream receives the seven fixed bodies in order, with the key and never the arm's token",
       bodies == [CAP.body_bytes(c) for c in CAP.CALLS] and all(KEY in h and T_CAP.encode() not in h for h in heads))
 check("one record per call", len(recs) == 7, str(len(recs)))
+by_name, key_errors = records_by_call(recs, "cap")
+check("REPLAY-CAP: unique complete request-key set, no unknown record", not key_errors, str(key_errors))
+_reordered, _reorder_errors = records_by_call(list(reversed(recs)), "cap")
+check("REPLAY-CAP-ORDER: real records still identify the same calls when reversed",
+      not _reorder_errors and _reordered == by_name, str(_reorder_errors))
 ctr = px.counters["cap"]
 check("nothing abandoned, injected, refused or mismatched",
       ctr.client_abandoned == 0 and ctr.thinking_injected == 0 and ctr.model_mismatch == 0 and ctr.upstream_errors == 0
       and ctr.refused_auth == 0 and ctr.tool_violation == 0, str(vars(ctr)))
-for call, rec in zip(CAP.CALLS, recs):
+for call in CAP.CALLS:
+    rec = by_name.get(call["name"], {})
     usage, finish, tools, json_ok = EXPECTED[call["name"]]
     check(f"{call['name']}: the record is the fixture's (200, complete, model, usage, finish, tools, JSON)",
-          rec["status"] == 200 and rec["complete"] is True and rec["response_model"] == "deepseek-flash"
-          and rec["usage"] == usage and rec["finish_reason"] == finish
-          and rec["tools_called"] == tools and rec["json_ok"] == json_ok and rec["parse_ok"] is True
-          and rec["client_abandoned"] is False and rec["thinking_injected"] == 0,
+          {"status", "complete", "response_model", "usage", "finish_reason", "tools_called",
+           "json_ok", "parse_ok", "client_abandoned", "thinking_injected"} <= rec.keys()
+          and rec.get("status") == 200 and rec.get("complete") is True and rec.get("response_model") == "deepseek-flash"
+          and rec.get("usage") == usage and rec.get("finish_reason") == finish
+          and rec.get("tools_called") == tools and rec.get("json_ok") == json_ok and rec.get("parse_ok") is True
+          and rec.get("client_abandoned") is False and rec.get("thinking_injected") == 0,
           str({k: rec.get(k) for k in ("status", "complete", "response_model", "usage", "finish_reason", "tools_called")}))
-thinking = {c["name"]: r["thinking"] for c, r in zip(CAP.CALLS, recs)}
+thinking = {c["name"]: by_name.get(c["name"], {}).get("thinking") for c in CAP.CALLS}
 check("§2.2.1 on real responses: the three /v1 thinking-off calls are not thinking calls, thinking-on is",
       thinking == {**{n: False for n in ("v1_json_object", "v1_sse_usage", "v1_tool_call", "v1_tool_call_sse")},
                    "v1_sse_thinking_on": True, "anthropic_messages": True, "anthropic_messages_sse": True}, str(thinking))
@@ -192,7 +261,12 @@ check("an allowed get_weather is no tool violation", not any(r.get("tool_violati
 
 print("\n- the tool check on real tool calls -")
 px2, up2, got2, recs2, flags2 = run("notool", T_NOTOOL, ())
-viol = [c["name"] for c, r in zip(CAP.CALLS, recs2) if r.get("tool_violation")]
+by_name2, key_errors2 = records_by_call(recs2, "notool")
+check("REPLAY-NOTOOL: unique complete request-key set, no unknown record", not key_errors2, str(key_errors2))
+_reordered2, _reorder_errors2 = records_by_call(list(reversed(recs2)), "notool")
+check("REPLAY-NOTOOL-ORDER: real refused records retain their identities when reversed",
+      not _reorder_errors2 and _reordered2 == by_name2, str(_reorder_errors2))
+viol = [c["name"] for c in CAP.CALLS if by_name2.get(c["name"], {}).get("tool_violation")]
 check("on an arm that allows no tool, both tool-call requests are tool_violation, nothing else",
       viol == ["v1_tool_call", "v1_tool_call_sse"] and px2.counters["notool"].tool_violation == 2, str(viol))
 check("... refused locally (AQ7): a 4xx to the client, zero upstream bytes - the upstream saw only the other five",

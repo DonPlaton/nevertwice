@@ -77,23 +77,31 @@ except I.Unavailable as e:
 
 print("\n- RR1/RR2: a foreign burner, pid 0 -")
 # The "stand" is its own process; the burner is this test's child, so it is NOT in the stand's tree.
-stand = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(15)"], stdin=subprocess.DEVNULL,
+stand = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(20)"], stdin=subprocess.DEVNULL,
                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-burner = subprocess.Popen([sys.executable, "-c", "import time\nt = time.time()\nwhile time.time() - t < 12: pass"],
+burner = subprocess.Popen([sys.executable, "-c", "import time\nt = time.time()\nwhile time.time() - t < 18: pass"],
                           stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 try:
     time.sleep(0.5)
     sp = psutil.Process(stand.pid)
+    bp = psutil.Process(burner.pid)
     probe = I.IdleProbe(gpu=gpu if gpu is not None else False, host=host, ollama=NoOllama(),
                         allowlist=I.Allowlist(root=(sp.pid, sp.create_time())), commit="c" * 40)
+    bt0, wt0 = bp.cpu_times(), time.monotonic()
     w = probe.window("pre", 6, 1)
+    bt1, wt1 = bp.cpu_times(), time.monotonic()
+    witness_pct = 100.0 * ((bt1.user + bt1.system) - (bt0.user + bt0.system)) / max(0.001, wt1 - wt0)
 finally:
     for pr in (burner, stand):
         pr.kill()
         pr.wait()
 row = next((r for r in w["foreign_all"] if r["pid"] == burner.pid), None)
-check("RR1 a CPU-burning process outside the stand's tree is foreign at >= 50 % of a core", row is not None
-      and (row["cpu_pct_of_core_mean"] or 0) >= 50, str(row))
+got_pct = (row["cpu_pct_of_core_mean"] or 0.0) if row is not None else 0.0
+if witness_pct < 50.0:
+    print(f"       runner starved: psutil cpu_times witness={witness_pct:.1f} %, probe={got_pct:.1f} %")
+check("RR1 a CPU-burning process outside the stand's tree is foreign at >= 50 % of a core (or agrees with the psutil witness when the runner is starved)",
+      row is not None and (got_pct >= 50.0 if witness_pct >= 50.0 else got_pct > 0 and abs(got_pct - witness_pct) <= 15.0),
+      f"row={row}, witness={witness_pct:.1f}")
 check("RR1b ... while the stand itself is allowed through its tree (its root matched across psutil and the probe's table)",
       any(r["pid"] == stand.pid for r in w["allowed"]), str([r["pid"] for r in w["allowed"]]))
 if os.name == "nt":
@@ -120,8 +128,10 @@ check("RR4 the CPU total from deltas agrees with psutil's over the same 2 s, wit
 print("\n- RR5: a real during window -")
 probe5 = I.IdleProbe(gpu=gpu if gpu is not None else False, host=host, ollama=NoOllama(),
                      allowlist=I.Allowlist(root=(me.pid, me.create_time())), commit="c" * 40)
-with probe5.during(interval=0.5) as d:
-    time.sleep(3.2)
+with probe5.during(interval=0.35) as d:
+    deadline = time.monotonic() + 15.0
+    while d.win["samples"] < 10 and time.monotonic() < deadline:
+        time.sleep(0.01)
 check("RR5 a real during window reaches >= 0.9 coverage", d.result["samples"] >= 0.9 * d.result["expected_samples"]
       and d.result["expected_samples"] >= 5, str((d.result["samples"], d.result["expected_samples"])))
 
