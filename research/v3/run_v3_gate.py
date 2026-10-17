@@ -110,6 +110,8 @@ class GateDriver:
         self.send_probe, self.id_prefix, self.clock, self.poll_s = send_probe, id_prefix, clock, poll_s
         self.models = models
         self.offset = 0
+        self.flags_path = self.calls_path.parent / "flags.jsonl"
+        self.flags_offset = 0
         self.halted: str | None = None
         self.problems: list[str] = []
         self.incidents: list[dict] = []
@@ -203,12 +205,37 @@ class GateDriver:
             return None
         return rec
 
+    def _flag_lines(self) -> list[tuple[bytes, int]]:
+        try:
+            with open(self.flags_path, "rb") as f:
+                f.seek(self.flags_offset)
+                data = f.read()
+        except FileNotFoundError:
+            return []
+        end = data.rfind(b"\n")
+        if end < 0:
+            return []
+        out, pos = [], self.flags_offset
+        for raw in data[:end].split(b"\n"):
+            pos += len(raw) + 1
+            out.append((raw, pos))
+        return out
+
     def poll(self) -> None:
         I = _incidents()
         with self._lock:
             if self._model_event is not None:            # Q-12-8: a point event ends at the next poll
                 self._end(self._model_event)
                 self._model_event = None
+            for raw, pos in self._flag_lines():
+                if raw.strip():
+                    try:
+                        frec = json.loads(raw.decode("utf-8"))
+                    except (UnicodeDecodeError, ValueError):
+                        frec = None
+                    if isinstance(frec, dict) and frec.get("kind") == "budget_stop" and self.halted in (None, "harness-error"):
+                        self.halted = "budget-stop"
+                self.flags_offset = pos
             for raw, pos in self._lines():
                 rec = self._parse(raw, pos)
                 if rec is not None:
@@ -239,6 +266,9 @@ class GateDriver:
         if halt is not None and self.halted in (None, "harness-error"):
             self._start([arm], halt)                      # B-HALT-SCHED: the scheduler's own port halts too (its
             self.halted = halt                            # probe, canary, model probe) - checked before its skip
+        if (rec.get("refused") == "budget-stop" or rec.get("budget_stop")) and self.halted in (None, "harness-error"):
+            self.halted = "budget-stop"
+            return
         if arm == I.PROBE_ARM:
             return
         t = _epoch(rec)
@@ -258,6 +288,10 @@ class GateDriver:
         """B-HALT-SCHED: a 401, 402 or 403 answered to the scheduler's own probe or canary halts at once (§4.5) - while
         an incident holds every unit, those are the only calls, and read as a failed canary a 402 kept the incident
         open for good with no halt said. The call's record in calls.jsonl then finds the gate halted."""
+        if call.get("refused") == "budget-stop" or call.get("budget_stop"):
+            if self.halted in (None, "harness-error"):
+                self.halted = "budget-stop"
+            return True
         halt = _incidents().halt_kind(call.get("status"))
         if halt is None:
             return False

@@ -303,6 +303,7 @@ def cloud_counters(calls: list, *, arm: str, run: str, stand: str, cloud_bypass:
         "background_writes": background_writes,
         "stop_refused": sum(sum(v.values()) for v in stopped.values()),
         "stop_refused_by_unit": dict(sorted(stopped.items())),
+        "budget_stop": sum(1 for c in mine if c.get("refused") == "budget-stop" or c.get("budget_stop")),
         "tool_violation": sum(1 for c in mine if c.get("tool_violation")),
         "models_seen": sorted(models),
         "transport_recovered": sum(1 for _k, _v, e in eps if e == "recovered"),

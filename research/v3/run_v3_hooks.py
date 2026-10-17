@@ -62,6 +62,10 @@ def _incidents():
     return _load("v3_incidents_for_hooks", HERE / "incidents.py")
 
 
+def _budget():
+    return _load("v3_budget_for_hooks", HERE / "budget.py")
+
+
 def _http(port: int, method: str, path: str, token: str, body: Any = None) -> tuple[int | None, Any]:
     """One loopback request with the scheduler's bearer token: (status, parsed JSON or raw text), or (None, error)."""
     conn = http.client.HTTPConnection(LOOPBACK, int(port), timeout=HTTP_TIMEOUT_S)
@@ -99,11 +103,13 @@ class Hooks:
         self.changelog, self.gate, self.clock = changelog, gate, clock
         self.sched = self.sp = None
         self._head0: str | None = None                       # B-HEAD-MOVE: the stand's first tree check's HEAD
+        self.last_balance: str | None = None                 # BUD3: the balance read at preflight, for postflight reconciliation
 
     def bind(self, sched: Any, sp: Any) -> None:
         """The scheduler and the stand plan these hooks serve (the scheduler takes the hooks at construction)."""
         self.sched, self.sp = sched, sp
         self._head0 = None
+        self.last_balance = None
 
     def _need_bound(self) -> None:
         if self.sched is None or self.sp is None:
@@ -178,13 +184,17 @@ class Hooks:
             raise HookError("the proxy has no scheduler port or token (the balance is asked there)")
         status, body = _http(port, "GET", BALANCE_PATH, token)
         balance = None
+        balance_str = None
         if status == 200 and isinstance(body, dict):
             for info in body.get("balance_infos") or []:
                 if isinstance(info, dict) and info.get("currency") == self.currency:
                     try:
                         balance = float(info.get("total_balance"))
+                        balance_str = str(info.get("total_balance"))
                     except (TypeError, ValueError):
                         balance = None
+                        balance_str = None
+        self.last_balance = balance_str
         ok = None if balance is None or self.projected_cost is None \
             else _incidents().balance_ok(balance, self.projected_cost)
         read = "ok" if balance is not None else \
@@ -208,6 +218,48 @@ class Hooks:
             raise HookError(f"{stand}: balance {balance} {self.currency} is below 2x the projected {self.projected_cost} "
                             f"- the stand waits for the owner (§4.5)")
         return rec
+
+    # ── the balance postflight and reconciliation (R-BUDGET-20, BUD3) ──────────────────────────────────────────
+    def postflight(self, stand: str, *, ledger_usd: Any, sleep: Callable[[float], None] | None = None,
+                   every_s: float | None = None, max_s: float | None = None) -> dict:
+        """Read the post-run balance until two equal reads (budget.stable_balance) and reconcile with ledger_usd."""
+        self._need_bound()
+        B = _budget()
+        port, token = self.proxy.ports.get("scheduler"), self.proxy.tokens.get("scheduler")
+        if not isinstance(port, int) or not token:
+            raise HookError("the proxy has no scheduler port or token (the balance is asked there)")
+        if self.last_balance is None:
+            raise HookError(f"{stand}: no preflight balance was recorded before the run (BUD3)")
+
+        def read_once():
+            st, b = _http(port, "GET", BALANCE_PATH, token)
+            if st in (401, 402, 403):
+                raise HookError(f"{stand}: the balance endpoint answered {st} after the run (§4.5)")
+            if st != 200 or not isinstance(b, dict):
+                raise B.BalanceRefused(f"status {st}")
+            return B.parse_balance(json.dumps(b).encode("utf-8"))
+
+        kw: dict = {}
+        if sleep is not None:
+            kw["sleep"] = sleep
+        if every_s is not None:
+            kw["every_s"] = every_s
+        if max_s is not None:
+            kw["max_s"] = max_s
+        try:
+            after, reads = B.stable_balance(read_once, **kw)
+            rec = B.reconcile(ledger_usd, self.last_balance, after)
+        except B.BalanceRefused as e:
+            rec = {"stand": stand, "phase": "postflight", "verdict": f"refused:{e}",
+                   "utc": (self.clock() if self.clock else self.sched.clock.utc()).isoformat()}
+            self.sched.launch._append_jsonl(self.sched.c.runs_root / "_launch" / "balance.jsonl", rec)
+            raise HookError(f"{stand}: balance postflight refused: {e}") from None
+        out = {"stand": stand, "phase": "postflight", "reads": reads, **rec,
+               "utc": (self.clock() if self.clock else self.sched.clock.utc()).isoformat()}
+        self.sched.launch._append_jsonl(self.sched.c.runs_root / "_launch" / "balance.jsonl", out)
+        if rec["verdict"].startswith("stop:"):
+            raise HookError(f"{stand}: balance reconciliation halted ({rec['verdict']}): {rec}")
+        return out
 
     # ── the barrier read (Q11, D7) ─────────────────────────────────────────────────────────────────────────────
     def barrier_read(self, stand: str, block: str) -> dict:

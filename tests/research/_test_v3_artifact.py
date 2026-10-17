@@ -564,6 +564,10 @@ check("STOP-ART-3: a cloud row with only refusals still names stop_refused as P0
       "P0b: stop_refused > 0" in flags(lambda r: r["cloud_transport"].update(calls=0, stop_refused=1)))
 check("STOP-ART-2: the honest row with zero stop refusals remains valid",
       A.p0_flags(clean, CTX, "mem0") == [], str(A.p0_flags(clean, CTX, "mem0")))
+check("BUD3-ART-1: budget_stop is required in CLOUD_ZERO and invalidates the cloud row by name",
+      "budget_stop" in A.CLOUD_ZERO and refused(lambda: A.cloud_transport(
+          {k: v for k, v in CLOUD.items() if k != "budget_stop"}), "budget_stop")
+      and "P0b: budget_stop > 0" in flags(lambda r: r["cloud_transport"].__setitem__("budget_stop", 1)))
 
 check("P0c: a run whose own failures dropped 2 of 20 units (10 %)",
       has(flags(lambda r: r["runs"][0].__setitem__("units_dropped_own", 2)), "c"))

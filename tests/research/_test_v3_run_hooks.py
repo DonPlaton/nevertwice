@@ -340,6 +340,17 @@ try:
     check("HK-preflight-record: every answer is in balance.jsonl, chained (11 asks, the refused ones too - the 401 and "
           "403 halts included)",
           len(lines) == 11 and L.verify_chain(bj), f"{len(lines)} {L.verify_chain(bj) if bj.exists() else 'none'}")
+    h_post, _, _, _ = world(sfile="STATUS6p", projected=1.0)
+    fake.routes = {"/user/balance": bal(10.0)}
+    h_post.preflight("SH")
+    seq_bal = [bal(9.60), bal(9.50), bal(9.50)]
+    fake.routes = {"/user/balance": (200, {"is_available": True, "balance_infos": [{"currency": "USD", "total_balance": "9.50"}]})}
+    post_rec, post_err = attempt(lambda: h_post.postflight("SH", ledger_usd="0.50", sleep=lambda _s: None, every_s=0.01, max_s=1.0))
+    fake.routes = {"/user/balance": bal(8.00)}
+    _, post_bad = attempt(lambda: h_post.postflight("SH", ledger_usd="0.50", sleep=lambda _s: None, every_s=0.01, max_s=1.0))
+    check("BUD3-POSTFLIGHT: postflight stabilizes balance, reconciles within [0.9, 1.1], and halts on stop:balance-over",
+          post_err is None and post_rec.get("verdict") == "ok" and isinstance(post_bad, HK.HookError)
+          and "stop:balance-over" in str(post_bad), f"{post_err!r} {post_rec} {post_bad!r}")
 
     print("\n- the barrier read, and the scored stand refused on a dirty tree -")
     h, s, sp, st = world(sfile="STATUS8")

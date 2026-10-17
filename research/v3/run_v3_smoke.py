@@ -37,7 +37,7 @@ from typing import Any, Iterable, Mapping
 HERE = Path(__file__).resolve().parent
 SMOKE_FIELDS = ("calls", "failures", "items", "tokens", "seconds", "yield", "coverage")
 FAILURE_FIELDS = ("transport_lost", "failed_outcomes", "upstream_errors", "unit_aborts", "reader_format_failures",
-                  "background_writes", "stop_refused", "stop_refused_by_unit")
+                  "background_writes", "stop_refused", "stop_refused_by_unit", "budget_stop")
 NO_WRITER = "n/a: no writer LLM"
 RESULTS_DIR = HERE / "results"
 SCORE_WORDS = re.compile(r"score|verdict|gold|twin|judge|label|accura|correct|exact_match|(^|_)(em|f1)($|_)", re.I)
@@ -189,7 +189,8 @@ def summarize(result: Mapping[str, Any], log: Any, *, stand: str, key_question: 
                             "reader_format_failures": sum(1 for r in reads if (r.get("answer") or {}).get("format_failure")),
                             "background_writes": bw["count"], "stop_refused": cc["stop_refused"],
                             "stop_refused_by_unit": [{"unit": u, **counts} for u, counts
-                                                     in cc["stop_refused_by_unit"].items()]},
+                                                     in cc["stop_refused_by_unit"].items()],
+                            "budget_stop": cc["budget_stop"]},
                "items": sum(items.values()), "tokens": cc["tokens"],
                "seconds": round(sum(rec.active_s for rec in w.values())
                                 + sum(float((q.get(u) or {}).get("active_s") or 0.0) for u in w), 3),

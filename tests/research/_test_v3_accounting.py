@@ -988,6 +988,12 @@ try:
         check(f"STOP-ACC-3-{label}: the real accounting output reaches artifact.P0b; zero stays valid",
               built.get("stop_refused") == expected and
               (("P0b: stop_refused > 0" in verdict) == bool(expected)), str(verdict))
+    bud_c = AC.cloud_counters([call("ok-bud"), call("bud-1", refused="budget-stop", status=503)], arm="mem0", run="r1",
+                              stand="S1", cloud_bypass=0, background_writes=0)
+    bud_b = A.cloud_transport(bud_c)
+    bud_v = A.p0b({"arm_decl": {"llm_transport": "cloud:deepseek"}, "cloud_transport": bud_b}, A.P0Context(), "mem0")
+    check("BUD3-ACC-1: budget-stop refusals are counted in cloud_counters and invalidate the row in artifact.P0b",
+          bud_b.get("budget_stop") == 1 and "P0b: budget_stop > 0" in bud_v, str(bud_v))
 except Exception as e:  # noqa: BLE001 - a broken seam fails each new row by name
     check("STOP-ACC-1/2/3: the producer-consumer seam runs", False, repr(e))
 

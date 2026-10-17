@@ -67,8 +67,9 @@ KEYS = {
     "INCIDENT-START": ("arms", "kind"), "INCIDENT-END": ("arms", "kind"), "SET-ASIDE": (),
 }
 OPTIONAL = {("END", "aborted"), ("UNIT-ABORT", "rc"), ("UNIT-ABORT", "signal"), ("STAND-END", "halt")}
-#: Q2 (O-b2): what STAND END halt= may name - the provider's stops (§4.5) and our gate going blind (R-GATE-P).
-HALT_KINDS = ("401", "402", "403", "harness-error")
+#: Q2 (O-b2): what STAND END halt= may name - the provider's stops (§4.5), our gate going blind (R-GATE-P), and
+#: the stage-D budget stop (R-BUDGET-20, BUD3).
+HALT_KINDS = ("401", "402", "403", "harness-error", "budget-stop")
 PROVIDER_HALTS = ("401", "402", "403")
 
 

@@ -85,7 +85,8 @@ def build_config(arms: Mapping[str, Mapping[str, Any]], *, run_dir: str | os.Pat
                  via_port: int | None = None, catcher: str = HARNESS_CATCHER, j3: bool = False,
                  test_upstream: Mapping[str, Any] | None = None,
                  embed_tokenizer: Mapping[str, str] | None = None,
-                 test_ollama_upstream: Sequence[Any] | None = None) -> dict:
+                 test_ollama_upstream: Sequence[Any] | None = None,
+                 budget: Mapping[str, Any] | None = None) -> dict:
     """The proxy's config file (see the module docstring). ``arms``: name -> its arm_decl's llm, llm_transport and
     embeds_via_ollama (required), and options - reader (bool: the arm reads, so it gets a reader port),
     thinking_route (documented or fallback)."""
@@ -140,6 +141,10 @@ def build_config(arms: Mapping[str, Mapping[str, Any]], *, run_dir: str | os.Pat
         if host != LOOPBACK or isinstance(port, bool) or not isinstance(port, int) or not 1 <= port <= 65535:
             raise ProxyPlanError("a test Ollama upstream is 127.0.0.1 and a port (Q-DRV-4)")
         cfg.setdefault("ollama", {})["upstream"] = [LOOPBACK, int(port)]   # accepted only with a test key (X2)
+    if budget is not None:
+        if not isinstance(budget, Mapping) or not isinstance(budget.get("run"), str) or not budget["run"].strip():
+            raise ProxyPlanError("budget needs a non-empty run scope (BUD2/BUD3)")
+        cfg["budget"] = dict(budget)
     return cfg
 
 

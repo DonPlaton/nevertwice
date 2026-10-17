@@ -1249,6 +1249,54 @@ check("SD-6 (B-STOP-DRAIN-2, the census): every call that writes a record sits w
       e_now is None and c_now == [] and e_stray is None and c_stray == ["a writer in _serve_until_stopped, outside the map"],
       str(e_now or c_now) + f" stray={e_stray or c_stray}")
 
+print("\n- BUD2: reserve before send and settle on every exit path in raw and recording modes -")
+_bud_ledger = TMP / "bud2_ledger" / "deepseek_ledger.jsonl"
+_bud_up = Upstream()
+_bud_arms = [P.ArmConfig(arm="mem0", mode="record", thinking_route="fallback", token=T_ARM,
+                         pinned_model="deepseek-flash", reader_model="deepseek-flash"),
+             P.ArmConfig(arm="mem0-raw", mode="raw", thinking_route="fallback", token=T_RAW,
+                         pinned_model="deepseek-flash"),
+             P.ArmConfig(arm="j3", mode="record", token=T_J3, pinned_model="deepseek-v4-pro"),
+             P.ArmConfig(arm="scheduler", mode="record", token=T_SCHED, pinned_model="deepseek-flash")]
+_bud_cfg = P.ProxyConfig(arms=_bud_arms, run_dir=TMP / "bud2_run", thinking_branch="b",
+                         upstream_host="127.0.0.1", upstream_port=_bud_up.port, upstream_tls=False,
+                         control_token="ctl-token",
+                         budget={"run": "bud2-r1", "ledger": str(_bud_ledger), "ceiling_usd": "0.010"})
+_bud_px = P.Proxy(_bud_cfg, P.read_key(KEYFILE), log=lambda m: None)
+_bud_ports = _bud_px.start()
+_b1 = call(_bud_ports["arms"]["mem0"]["write"], "/u/r1.u1/v1/chat/completions",
+           {"model": "deepseek-flash", "max_tokens": 100, "messages": [{"role": "user", "content": "hi"}]}, token=T_ARM)
+_b2 = call(_bud_ports["arms"]["mem0-raw"]["write"], "/u/r1.u1/v1/sse",
+           {"model": "deepseek-flash", "max_tokens": 100, "messages": [{"role": "user", "content": "hi"}]}, token=T_RAW)
+_b3 = call(_bud_ports["scheduler"], "/user/balance", None, token=T_SCHED, method="GET")
+_bud_recs = [json.loads(x) for x in _bud_ledger.read_bytes().splitlines() if x]
+check("BUD2-1: record and raw requests reserve exact post-fallback bytes and settle usage; nonbillable /user/balance "
+      "does not touch the ledger",
+      _b1.startswith(b"HTTP/1.1 200") and _b2.startswith(b"HTTP/1.1 200") and _b3.startswith(b"HTTP/1.1 200")
+      and [r["kind"] for r in _bud_recs] == ["reserve", "settle", "reserve", "settle"]
+      and all(r.get("basis") == "usage" for r in _bud_recs if r["kind"] == "settle")
+      and _bud_recs[0]["in_bytes"] > len(json.dumps({"model": "deepseek-flash", "max_tokens": 100,
+                                                     "messages": [{"role": "user", "content": "hi"}]}).encode()),
+      str(_bud_recs))
+_b_stop1 = call(_bud_ports["arms"]["mem0"]["write"], "/u/r1.u2/v1/chat/completions",
+                {"model": "deepseek-flash", "max_tokens": 20000, "messages": [{"role": "user", "content": "big"}]},
+                token=T_ARM)
+_b_stop2 = call(_bud_ports["arms"]["mem0-raw"]["write"], "/u/r1.u2/v1/chat/completions",
+                {"model": "deepseek-flash", "max_tokens": 10, "messages": [{"role": "user", "content": "retry"}]},
+                token=T_RAW)
+_bud_px.stop()
+_bud_up.close()
+_bud_recs2 = [json.loads(x) for x in _bud_ledger.read_bytes().splitlines() if x]
+check("BUD2-2: exceeding the run ceiling returns 503 budget-stop with zero upstream bytes, flags budget_stop, and "
+      "durably halts subsequent retries in both modes",
+      _b_stop1.startswith(b"HTTP/1.1 503") and b"budget-stop: run-ceiling" in _b_stop1
+      and _b_stop2.startswith(b"HTTP/1.1 503") and b"budget-stop: run-ceiling" in _b_stop2
+      and len(_bud_up.requests) == 3
+      and _bud_px.counters["mem0"].budget_stop == 1 and _bud_px.counters["mem0-raw"].budget_stop == 1
+      and _bud_px.flags.get("budget_stop") == 2
+      and any(r.get("kind") == "stop" and r.get("why") == "run-ceiling" for r in _bud_recs2),
+      f"{_b_stop1[:40]!r} {_b_stop2[:40]!r} reqs={len(_bud_up.requests)} flags={_bud_px.flags}")
+
 shutil.rmtree(TMP, ignore_errors=True)
 print(f"\nproxy recording: {PASSED} passed, {FAILED} failed")
 sys.exit(1 if FAILED else 0)

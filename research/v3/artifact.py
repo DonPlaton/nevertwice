@@ -68,7 +68,7 @@ BLOCK_VOCAB = {
 #: rev1 P0(b)'s zero-tolerance counts, and background_writes - the auditor's R9 ruling (a rev2 erratum to the P0(b)
 #: list): a product's write-port call after its adapter's end_write, outside every question operation of the unit.
 CLOUD_ZERO = ("failed_outcomes", "fallback_local", "model_mismatch", "thinking_calls", "cloud_bypass", "tool_violation",
-              "background_writes", "stop_refused")
+              "background_writes", "stop_refused", "budget_stop")
 CLOUD_ALSO = ("transport_recovered", "transport_lost", "upstream_errors", "client_abandoned", "product_retries",
               "thinking_injected", "fingerprints_seen", "straddled_units", "empty_content", "json_invalid", "capped",
               "reasoning_tokens", "tokens", "incident_units")

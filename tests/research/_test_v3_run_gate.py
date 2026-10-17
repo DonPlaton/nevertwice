@@ -457,6 +457,17 @@ try:
     check("Q2: halt_kind() reads the halt without raising - None before it, 403 after (the scheduler's normal STAND END "
           "asks it when no unit is left to ask admits_new_unit)", hk0 is None and w.d.halt_kind() == "403",
           f"{hk0} {w.d.halt_kind()}")
+    w_bud = World("q2bud")
+    w_bud.write(rec("a1", T0, status=503, refused="budget-stop", budget_stop="run-ceiling"))
+    w_bud.poll()
+    w_bud_flag = World("q2budflag")
+    with open(w_bud_flag.calls.parent / "flags.jsonl", "wb") as ff:
+        ff.write((json.dumps({"arm": "a1", "kind": "budget_stop", "utc": iso(T0)}) + "\n").encode("utf-8"))
+    w_bud_flag.poll()
+    check("BUD3-GATE: a budget-stop in calls.jsonl or flags.jsonl (raw mode) halts the gate as 'budget-stop' immediately",
+          w_bud.d.halt_kind() == "budget-stop" and admits(w_bud.d) == "halted:budget-stop"
+          and w_bud_flag.d.halt_kind() == "budget-stop" and admits(w_bud_flag.d) == "halted:budget-stop",
+          f"{w_bud.d.halt_kind()} {w_bud_flag.d.halt_kind()}")
 finally:
     shutil.rmtree(TMP, ignore_errors=True)
 

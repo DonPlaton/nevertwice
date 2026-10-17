@@ -97,8 +97,24 @@ OWN_HOP_CAP = 20_000
 _UNIT = re.compile(r"/u/([A-Za-z0-9._-]{1,128})(/.*)$")
 #: The only keys a proxy config file may carry; anything else (a CONNECT target, say) is refused at load.
 CONFIG_KEYS = frozenset({"arms", "run_dir", "thinking_branch", "upstream", "scan_roots", "via", "j3",
-                         "scheduler", "ollama"})
+                         "scheduler", "ollama", "budget"})
 MAX_CONNECT_REPLY = 8 * 1024
+_BUDGET_MOD = None
+_BUDGET_LOCK = threading.RLock()
+
+
+def _budget_mod():
+    """Load research/v3/budget.py once under a lock without mutating sys.modules."""
+    global _BUDGET_MOD
+    with _BUDGET_LOCK:
+        if _BUDGET_MOD is None:
+            import importlib.util  # noqa: PLC0415
+            bpath = Path(__file__).resolve().parent / "v3" / "budget.py"
+            spec = importlib.util.spec_from_file_location("v3_budget_for_proxy", bpath)
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            _BUDGET_MOD = mod
+        return _BUDGET_MOD
 #: The keys of a catcher-only (`catch`) config: the fetch windows of A3/A8 need the catcher and nothing else.
 CATCH_CONFIG_KEYS = frozenset({"run_dir", "via", "catchers"})
 #: A window host: a lower-case DNS name with at least one dot - never an IP literal, a port, a scheme or a wildcard.
@@ -190,6 +206,7 @@ class ProxyConfig:
     ollama_mode: str = "pace"               # pace | observe (the pacer's own VALID_MODES)
     ollama_upstream: tuple = ("127.0.0.1", 11434)
     embed_tokenizer: tuple | None = None    # TB7 (Q-A7-7): (path, sha256) of the pinned bge-m3 tokenizer.json
+    budget: dict | None = None              # R-BUDGET-20 (BUD2): {run, ledger, ceiling_usd?}
 
     def __post_init__(self):
         if self.upstream_tls and (self.upstream_host != UPSTREAM_HOST or self.upstream_port != UPSTREAM_PORT):
@@ -205,6 +222,19 @@ class ProxyConfig:
             raise ValueError("thinking_branch must be unset, a or b")
         if tuple(self.ollama_upstream)[0] != "127.0.0.1":
             raise ValueError("the Ollama leg goes only to the local server on 127.0.0.1")
+        if self.budget is not None:
+            if not isinstance(self.budget, dict) or not (set(self.budget) <= {"run", "ledger", "ceiling_usd"}):
+                raise ValueError("budget must be {run, ledger, ceiling_usd?}")
+            run_id = self.budget.get("run")
+            ledger_p = self.budget.get("ledger")
+            if not isinstance(run_id, str) or not run_id.strip():
+                raise ValueError("budget.run must be a non-empty string")
+            if not isinstance(ledger_p, (str, os.PathLike)) or not str(ledger_p).strip():
+                raise ValueError("budget.ledger must be a path")
+            B = _budget_mod()
+            if self.budget.get("ceiling_usd") is not None:
+                B._money(self.budget["ceiling_usd"])
+            self.budget = {"run": run_id, "ledger": str(ledger_p), "ceiling_usd": self.budget.get("ceiling_usd")}
 
     @classmethod
     def load(cls, path: str | os.PathLike, secrets: dict, *, test_upstream_ok: bool = False) -> "ProxyConfig":
@@ -256,6 +286,23 @@ class ProxyConfig:
             if raw.get(role):
                 arms.append(ArmConfig(arm=role, mode="record", token=tokens.get(role, ""),
                                       pinned_model=raw[role].get("pinned_model", "")))
+        bcfg = raw.get("budget")
+        if not test_upstream_ok:
+            B = _budget_mod()
+            if bcfg is not None and not isinstance(bcfg, dict):
+                raise ValueError("budget must be an object")
+            bcfg = dict(bcfg or {})
+            if bcfg.get("ledger") is not None:
+                lp = bcfg["ledger"]
+                if not (_under(lp, B.LEDGER) and _under(os.path.realpath(lp), os.path.realpath(B.LEDGER))):
+                    raise ValueError("with the real key, budget.ledger must be the canonical polygon ledger")
+            bcfg["ledger"] = str(B.LEDGER)
+            rdir = Path(raw["run_dir"])
+            bcfg.setdefault("run", f"{rdir.parent.parent.name}/{rdir.name}" if rdir.parent.parent.name else rdir.name)
+        elif bcfg is not None:
+            if not isinstance(bcfg, dict):
+                raise ValueError("budget must be an object")
+            bcfg = dict(bcfg)
         up = up or {}
         return cls(arms=arms, run_dir=Path(raw["run_dir"]), thinking_branch=raw.get("thinking_branch", "unset"),
                    upstream_host=up.get("host", UPSTREAM_HOST), upstream_port=int(up.get("port", UPSTREAM_PORT)),
@@ -264,7 +311,8 @@ class ProxyConfig:
                    via_port=via["port"] if via is not None else None,
                    ollama_mode=oll.get("mode", "pace"),
                    ollama_upstream=tuple(oll.get("upstream") or ("127.0.0.1", 11434)),
-                   embed_tokenizer=(et["path"], et["sha256"]) if et is not None else None)
+                   embed_tokenizer=(et["path"], et["sha256"]) if et is not None else None,
+                   budget=bcfg)
 
 
 def load_catch_config(path: str | os.PathLike, secrets: dict) -> ProxyConfig:
@@ -308,6 +356,7 @@ class Counters:
     ancestor_canary_hits: int = 0
     owner_marker_hits: int = 0
     thinking_calls: int = 0
+    budget_stop: int = 0
     records: int = 0
     catcher_hosts: list = field(default_factory=list)
     catcher_open: int = 0                   # F-P2-6: catcher connections whose log line is not written yet
@@ -778,6 +827,177 @@ class TeeParser:
                     facts["tools_called"].append(n)
             if ch.get("finish_reason"):
                 facts["finish_reason"] = ch["finish_reason"]
+
+    def budget_facts(self, content_type: str, pinned_model: str, *, framer_done: bool, abandoned: bool,
+                     protocol_error: bool, status: int | None) -> dict:
+        """BUD2: conservative accounting observation for Ledger.settle across raw and recording modes."""
+        if abandoned:
+            return {"usage": None, "done": False, "out_bytes": None, "outcome": "abandoned"}
+        if protocol_error or status is None:
+            return {"usage": None, "done": False, "out_bytes": None, "outcome": "io-error"}
+        if self.over:
+            return {"usage": None, "done": False, "out_bytes": None, "outcome": "parse-limit"}
+        if not framer_done or not (200 <= status < 300):
+            return {"usage": None, "done": False, "out_bytes": None, "outcome": "incomplete"}
+        try:
+            text = self.buf.decode("utf-8")
+        except UnicodeDecodeError:
+            return {"usage": None, "done": False, "out_bytes": None, "outcome": "parse-error"}
+        B = _budget_mod()
+        if "event-stream" in (content_type or "").lower():
+            done_marker = False
+            anth_stop = False
+            anth_seen = False
+            anth_in = anth_hit = anth_out = None
+            models_seen: set[str] = set()
+            raw_usage = None
+            usage_proj = None
+            usage_conflict = False
+            usage_bad = False
+            out_bytes = 0
+            for line in text.splitlines():
+                if not line.startswith("data:"):
+                    continue
+                payload = line[5:].strip()
+                if not payload:
+                    continue
+                if done_marker:
+                    return {"usage": None, "done": False, "out_bytes": None, "outcome": "parse-error"}
+                if payload == "[DONE]":
+                    done_marker = True
+                    continue
+                try:
+                    e = json.loads(payload)
+                except ValueError:
+                    return {"usage": None, "done": False, "out_bytes": None, "outcome": "parse-error"}
+                if not isinstance(e, dict):
+                    return {"usage": None, "done": False, "out_bytes": None, "outcome": "parse-error"}
+                typ = e.get("type")
+                if typ:
+                    anth_seen = True
+                    if typ == "message_start":
+                        m = e.get("message")
+                        if not isinstance(m, dict):
+                            usage_bad = True
+                            continue
+                        if isinstance(m.get("model"), str) and m["model"]:
+                            models_seen.add(m["model"])
+                        u = m.get("usage")
+                        if u is not None:
+                            if not isinstance(u, dict):
+                                usage_bad = True
+                            else:
+                                inp = u.get("input_tokens")
+                                hit = u.get("cache_read_input_tokens", 0)
+                                if type(inp) is not int or type(hit) is not int or inp < 0 or hit < 0 or hit > inp:
+                                    usage_bad = True
+                                elif anth_in is not None and (anth_in != inp or anth_hit != hit):
+                                    usage_conflict = True
+                                else:
+                                    anth_in, anth_hit = inp, hit
+                    elif typ == "content_block_delta":
+                        d = e.get("delta")
+                        if isinstance(d, dict):
+                            for k in ("text", "thinking", "partial_json"):
+                                if isinstance(d.get(k), str):
+                                    out_bytes += len(d[k].encode("utf-8"))
+                    elif typ == "message_delta":
+                        u = e.get("usage")
+                        if u is not None:
+                            if not isinstance(u, dict):
+                                usage_bad = True
+                            else:
+                                out_tok = u.get("output_tokens")
+                                if type(out_tok) is not int or out_tok < 0:
+                                    usage_bad = True
+                                elif anth_out is not None and anth_out != out_tok:
+                                    usage_conflict = True
+                                else:
+                                    anth_out = out_tok
+                                if "input_tokens" in u and u["input_tokens"] is not None:
+                                    inp = u["input_tokens"]
+                                    hit = u.get("cache_read_input_tokens", anth_hit or 0)
+                                    if type(inp) is not int or type(hit) is not int or inp < 0 or hit < 0 or hit > inp:
+                                        usage_bad = True
+                                    elif anth_in is not None and (anth_in != inp or anth_hit != hit):
+                                        usage_conflict = True
+                                    else:
+                                        anth_in, anth_hit = inp, hit
+                    elif typ == "message_stop":
+                        anth_stop = True
+                    continue
+                if "model" in e and e["model"] is not None:
+                    if not isinstance(e["model"], str) or not e["model"]:
+                        return {"usage": raw_usage, "done": False, "out_bytes": out_bytes, "outcome": "model-mismatch"}
+                    models_seen.add(e["model"])
+                for ch in e.get("choices") or []:
+                    if not isinstance(ch, dict):
+                        continue
+                    d = ch.get("delta")
+                    if isinstance(d, dict):
+                        for k in ("content", "reasoning_content"):
+                            if isinstance(d.get(k), str):
+                                out_bytes += len(d[k].encode("utf-8"))
+                        for tc in d.get("tool_calls") or []:
+                            if isinstance(tc, dict) and isinstance(tc.get("function"), dict):
+                                args_s = tc["function"].get("arguments")
+                                if isinstance(args_s, str):
+                                    out_bytes += len(args_s.encode("utf-8"))
+                if "usage" in e and e["usage"] is not None:
+                    proj, uerr = B.project_usage(e["usage"])
+                    if uerr is not None:
+                        usage_bad = True
+                        raw_usage = e["usage"]
+                    elif usage_proj is not None and usage_proj != proj:
+                        usage_conflict = True
+                    else:
+                        raw_usage = e["usage"]
+                        usage_proj = proj
+            if anth_seen and anth_in is not None and anth_out is not None and not usage_bad:
+                raw_usage = {"prompt_tokens": anth_in, "completion_tokens": anth_out,
+                             "prompt_cache_hit_tokens": anth_hit or 0,
+                             "prompt_cache_miss_tokens": anth_in - (anth_hit or 0)}
+            if pinned_model and (not models_seen or models_seen != {pinned_model}):
+                return {"usage": raw_usage, "done": False, "out_bytes": out_bytes, "outcome": "model-mismatch"}
+            if usage_conflict:
+                return {"usage": raw_usage, "done": False, "out_bytes": out_bytes, "outcome": "usage-conflict"}
+            if usage_bad:
+                return {"usage": raw_usage if raw_usage is not None else "invalid", "done": False,
+                        "out_bytes": out_bytes, "outcome": "usage-shape"}
+            stream_done = anth_stop if anth_seen else done_marker
+            if not stream_done:
+                return {"usage": raw_usage, "done": False, "out_bytes": out_bytes, "outcome": "incomplete"}
+            return {"usage": raw_usage, "done": True, "out_bytes": out_bytes, "outcome": "complete"}
+        body_s = text.strip()
+        if not body_s:
+            return {"usage": None, "done": False, "out_bytes": None, "outcome": "parse-error"}
+        try:
+            d = json.loads(body_s)
+        except ValueError:
+            return {"usage": None, "done": False, "out_bytes": None, "outcome": "parse-error"}
+        if not isinstance(d, dict):
+            return {"usage": None, "done": False, "out_bytes": None, "outcome": "parse-error"}
+        if pinned_model and d.get("model") != pinned_model:
+            return {"usage": None, "done": False, "out_bytes": None, "outcome": "model-mismatch"}
+        if d.get("type") == "message":
+            u = d.get("usage")
+            if not isinstance(u, dict):
+                return {"usage": "invalid", "done": False, "out_bytes": None, "outcome": "usage-shape"}
+            inp = u.get("input_tokens")
+            out_tok = u.get("output_tokens")
+            hit = u.get("cache_read_input_tokens", 0)
+            if type(inp) is not int or type(out_tok) is not int or type(hit) is not int or inp < 0 or out_tok < 0 or hit < 0 or hit > inp:
+                return {"usage": "invalid", "done": False, "out_bytes": None, "outcome": "usage-shape"}
+            return {"usage": {"prompt_tokens": inp, "completion_tokens": out_tok,
+                              "prompt_cache_hit_tokens": hit, "prompt_cache_miss_tokens": inp - hit},
+                    "done": True, "out_bytes": None, "outcome": "complete"}
+        u = d.get("usage")
+        if u is None:
+            return {"usage": None, "done": False, "out_bytes": None, "outcome": "incomplete"}
+        proj, uerr = B.project_usage(u)
+        if uerr is not None:
+            return {"usage": u, "done": False, "out_bytes": None, "outcome": "usage-shape"}
+        return {"usage": u, "done": True, "out_bytes": None, "outcome": "complete"}
 
 
 
@@ -1258,6 +1478,16 @@ class Proxy:
         self.scan_refused = 0
         self._lock = threading.Lock()
         self.flags = self._load_flags()
+        self._ledgers: dict | None = None
+        self._budget_run: str | None = None
+        self._budget_ceiling = None
+        if config.budget is not None:
+            B = _budget_mod()
+            lpath = Path(config.budget["ledger"])
+            self._ledgers = {m: B.Ledger(lpath, prices=B.load_prices(model=m))
+                             for m in ("deepseek-flash", "deepseek-v4-pro")}
+            self._budget_run = str(config.budget["run"])
+            self._budget_ceiling = config.budget.get("ceiling_usd")
         count = cap = None
         if config.embed_tokenizer is not None and any(a.ollama_leg for a in config.arms):
             count, cap = self._embed_tokenizer(config)
@@ -1571,54 +1801,131 @@ class Proxy:
                     return
                 body, injected = self._fallback(arm, method, path, headers, body)
                 ctr.thinking_injected += injected
-                out = self._outgoing_head(method, path, headers, len(body))
-                connect_s = 0.0
-                if up is None:
+                billable = not (path == "/user/balance"
+                                or (method.upper() == "GET" and path.startswith(("/models", "/v1/models"))))
+                ledger = None
+                reservation = None
+                pinned_model = arm.reader_model if role == "reader" else arm.pinned_model
+                if self._ledgers is not None and billable:
+                    B = _budget_mod()
                     try:
-                        c0 = time.perf_counter()
-                        up = self._upstream()
-                        connect_s = time.perf_counter() - c0     # Q-AB-2: the network's, not the proxy's
-                        ctr.upstream_connections += 1
+                        pairs = json.loads(body, object_pairs_hook=B._Pairs) if body else None
+                    except ValueError:
+                        pairs = None
+                    models_req = [v for k, v in pairs if k == "model"] if isinstance(pairs, B._Pairs) else []
+                    req_model = models_req[0] if len(models_req) == 1 and isinstance(models_req[0], str) else None
+                    if not isinstance(pairs, B._Pairs) or len(models_req) != 1 or req_model is None:
+                        ctr.refused_unparsable += 1
+                        if rec is not None:
+                            rec.update(refused="unparsable", t1=_iso(time.time()), thinking_injected=injected)
+                            self._write_call(rec)
+                        _refuse(cs, 400, "Bad Request", b"refused: unparsable")
+                        return
+                    target_model = pinned_model or req_model
+                    if req_model != target_model or target_model not in self._ledgers:
+                        ctr.model_mismatch += 1
+                        self._flag(arm.arm, "model_mismatch", rec.get("request_key") if rec else None)
+                        if rec is not None:
+                            rec.update(refused="model_mismatch", t1=_iso(time.time()), thinking_injected=injected)
+                            self._write_call(rec)
+                        _refuse(cs, 400, "Bad Request", b"refused: model_mismatch")
+                        return
+                    ledger = self._ledgers[target_model]
+                    try:
+                        reservation = ledger.reserve(arm=arm.arm, role=role, run=self._budget_run, unit=unit,
+                                                     body=body, ceiling_usd=self._budget_ceiling)
+                    except B.BudgetStop as exc:
+                        ctr.budget_stop += 1
+                        self._flag(arm.arm, "budget_stop", rec.get("request_key") if rec else None)
+                        if rec is not None:
+                            rec.update(refused="budget-stop", budget_stop=exc.why, status=503,
+                                       t1=_iso(time.time()), thinking_injected=injected)
+                            self._write_call(rec)
+                        _refuse(cs, 503, "Service Unavailable",
+                                f"budget-stop: {exc.why}".encode("ascii", "replace"))
+                        return
+                settled_done = False
+                try:
+                    out = self._outgoing_head(method, path, headers, len(body))
+                    connect_s = 0.0
+                    if up is None:
+                        try:
+                            c0 = time.perf_counter()
+                            up = self._upstream()
+                            connect_s = time.perf_counter() - c0     # Q-AB-2: the network's, not the proxy's
+                            ctr.upstream_connections += 1
+                        except OSError as e:
+                            ctr.upstream_errors += 1
+                            if isinstance(e, ConnectRefused):
+                                ctr.connect_refused += 1
+                            self.log(f"upstream connect failed: {type(e).__name__}")
+                            if ledger is not None and reservation is not None:
+                                srec = ledger.settle(reservation, status=None, usage=None, done=False,
+                                                     outcome="no-response")
+                                settled_done = True
+                                if rec is not None:
+                                    rec.update(budget_id=reservation.id, budget_usd=srec.get("usd"),
+                                               budget_basis=srec.get("basis"))
+                            if rec is not None:                  # the record first: its t1 is the failure's, not the drain's
+                                rec.update(upstream_error=type(e).__name__, t1=_iso(time.time()),
+                                           thinking_injected=injected)
+                                self._write_call(rec)
+                            _refuse(cs, 502, "Bad Gateway", b"upstream unreachable")          # body read: to EOF
+                            return
+                    try:
+                        up.sendall(out + body)
                     except OSError as e:
                         ctr.upstream_errors += 1
-                        if isinstance(e, ConnectRefused):
-                            ctr.connect_refused += 1
-                        self.log(f"upstream connect failed: {type(e).__name__}")
-                        if rec is not None:                  # the record first: its t1 is the failure's, not the drain's
-                            rec.update(upstream_error=type(e).__name__, t1=_iso(time.time()), thinking_injected=injected)
+                        self.log(f"upstream send failed: {type(e).__name__}")
+                        if ledger is not None and reservation is not None:
+                            srec = ledger.settle(reservation, status=None, usage=None, done=False, outcome="io-error")
+                            settled_done = True
+                            if rec is not None:
+                                rec.update(budget_id=reservation.id, budget_usd=srec.get("usd"),
+                                           budget_basis=srec.get("basis"))
+                        if rec is not None:                  # B-SEND: a key lost here must reach transport_lost
+                            rec.update(upstream_error=type(e).__name__, t1=_iso(time.time()),
+                                       thinking_injected=injected)
                             self._write_call(rec)
-                        _refuse(cs, 502, "Bad Gateway", b"upstream unreachable")          # body read: to EOF
+                        _refuse(cs, 502, "Bad Gateway", b"upstream send failed")              # body read: to EOF
                         return
-                try:
-                    up.sendall(out + body)
-                except OSError as e:
-                    ctr.upstream_errors += 1
-                    self.log(f"upstream send failed: {type(e).__name__}")
-                    if rec is not None:                  # B-SEND: a key lost here must reach transport_lost
-                        rec.update(upstream_error=type(e).__name__, t1=_iso(time.time()), thinking_injected=injected)
-                        self._write_call(rec)
-                    _refuse(cs, 502, "Bad Gateway", b"upstream send failed")              # body read: to EOF
-                    return
-                hop_in = time.perf_counter() - t_read - connect_s
-                ctr.bytes_up += len(out) + len(body)
-                tee = TeeParser() if rec is not None else None
-                keep, framer, ttfb, abandoned, hop_out = self._pipe_response(cs, up, method, ctr, tee)
-                if hop_out is not None:
-                    self._own_hop(ctr, (hop_in + hop_out) * 1000)
-                if framer.status:
-                    with self._lock:                     # D-AB-8: the same in every mode
-                        k = str(framer.status)
-                        ctr.upstream_statuses[k] = ctr.upstream_statuses.get(k, 0) + 1
-                if rec is not None:
-                    self._finish_call(arm, rec, framer, tee, t0, ttfb, abandoned, injected, path)
-                    if (role == "write" and rec.get("stage") == "write" and rec.get("endpoint") in ("v1", "anthropic")
-                            and rec.get("status") == 200 and rec.get("complete") and not rec.get("client_abandoned")):
+                    hop_in = time.perf_counter() - t_read - connect_s
+                    ctr.bytes_up += len(out) + len(body)
+                    tee = TeeParser() if (rec is not None or reservation is not None) else None
+                    keep, framer, ttfb, abandoned, hop_out = self._pipe_response(cs, up, method, ctr, tee)
+                    if hop_out is not None:
+                        self._own_hop(ctr, (hop_in + hop_out) * 1000)
+                    if framer.status:
+                        with self._lock:                     # D-AB-8: the same in every mode
+                            k = str(framer.status)
+                            ctr.upstream_statuses[k] = ctr.upstream_statuses.get(k, 0) + 1
+                    if ledger is not None and reservation is not None and tee is not None:
+                        ctype = _hget(framer.headers, "content-type") or ""
+                        st_code = framer.status if (framer.status and not framer.protocol_error) else None
+                        bf = tee.budget_facts(ctype, pinned_model, framer_done=framer.done, abandoned=abandoned,
+                                              protocol_error=framer.protocol_error, status=st_code)
+                        srec = ledger.settle(reservation, status=st_code, usage=bf["usage"], done=bf["done"],
+                                             out_bytes=bf["out_bytes"], outcome=bf["outcome"])
+                        settled_done = True
+                        if rec is not None:
+                            rec.update(budget_id=reservation.id, budget_usd=srec.get("usd"),
+                                       budget_basis=srec.get("basis"))
+                    if rec is not None:
+                        self._finish_call(arm, rec, framer, tee, t0, ttfb, abandoned, injected, path)
+                        if (role == "write" and rec.get("stage") == "write" and rec.get("endpoint") in ("v1", "anthropic")
+                                and rec.get("status") == 200 and rec.get("complete") and not rec.get("client_abandoned")):
+                            try:
+                                capture_body(self.config.run_dir, arm=arm.arm, unit=unit, t0=t0,   # Q-A5-1, C-1
+                                             request_key=rec.get("request_key"), via="write", body=body, status=200,
+                                             scan=self.scan_body)
+                            except CaptureRefused as e:
+                                self._flag(arm.arm, e.kind, rec.get("request_key"))
+                finally:
+                    if ledger is not None and reservation is not None and not settled_done:
                         try:
-                            capture_body(self.config.run_dir, arm=arm.arm, unit=unit, t0=t0,   # Q-A5-1, C-1
-                                         request_key=rec.get("request_key"), via="write", body=body, status=200,
-                                         scan=self.scan_body)
-                        except CaptureRefused as e:
-                            self._flag(arm.arm, e.kind, rec.get("request_key"))
+                            ledger.settle(reservation, status=None, usage=None, done=False, outcome="io-error")
+                        except Exception as exc:  # noqa: BLE001
+                            self.log(f"budget emergency settle failed: {type(exc).__name__}")
                 inflight = self._end_forward(arm.arm)    # B-STOP-DRAIN-2: every record of this request is written
                 version = rest.rsplit(" ", 1)[-1].upper()
                 conn = (_hget(headers, "connection") or "").lower()
