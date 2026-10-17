@@ -185,15 +185,30 @@ class Hooks:
         status, body = _http(port, "GET", BALANCE_PATH, token)
         balance = None
         balance_str = None
+        wallet_cny = None
         if status == 200 and isinstance(body, dict):
+            by_cur: dict[str, str] = {}
             for info in body.get("balance_infos") or []:
-                if isinstance(info, dict) and info.get("currency") == self.currency:
-                    try:
-                        balance = float(info.get("total_balance"))
-                        balance_str = str(info.get("total_balance"))
-                    except (TypeError, ValueError):
-                        balance = None
-                        balance_str = None
+                if isinstance(info, dict) and isinstance(info.get("currency"), str):
+                    by_cur[info["currency"]] = str(info.get("total_balance"))
+            if self.currency in by_cur:
+                try:
+                    balance = float(by_cur[self.currency])
+                    balance_str = by_cur[self.currency]
+                except (TypeError, ValueError):
+                    balance = None
+                    balance_str = None
+            if self.currency == "USD" and balance == 0.0 and "CNY" in by_cur:
+                try:
+                    cny_val = float(by_cur["CNY"])
+                    if cny_val > 0.0:
+                        from decimal import Decimal  # noqa: PLC0415
+                        wallet_cny = by_cur["CNY"]
+                        usd_eq = Decimal(by_cur["CNY"]) * Decimal("0.15")
+                        balance = float(usd_eq)
+                        balance_str = format(usd_eq, "f")
+                except (TypeError, ValueError, Exception):  # noqa: BLE001
+                    pass
         self.last_balance = balance_str
         ok = None if balance is None or self.projected_cost is None \
             else _incidents().balance_ok(balance, self.projected_cost)
@@ -202,6 +217,8 @@ class Hooks:
                                                                                f" without a {self.currency} balance")
         rec = {"stand": stand, "status": status, "currency": self.currency, "balance": balance, "balance_read": read,
                "projected_cost": self.projected_cost, "balance_ok": ok,
+               **({"wallet_currency": "CNY", "wallet_balance_cny": wallet_cny, "usd_per_cny_tariff": 0.15}
+                  if wallet_cny is not None else {}),
                "utc": (self.clock() if self.clock else self.sched.clock.utc()).isoformat()}
         self.sched.launch._append_jsonl(self.sched.c.runs_root / "_launch" / "balance.jsonl", rec)
         if status == 402:
@@ -237,6 +254,14 @@ class Hooks:
                 raise HookError(f"{stand}: the balance endpoint answered {st} after the run (§4.5)")
             if st != 200 or not isinstance(b, dict):
                 raise B.BalanceRefused(f"status {st}")
+            infos = b.get("balance_infos") if isinstance(b, dict) else None
+            if isinstance(infos, list):
+                by_cur = {i.get("currency"): i.get("total_balance") for i in infos if isinstance(i, dict)}
+                if by_cur.get("USD") in ("0", "0.0", "0.00") and "CNY" in by_cur:
+                    from decimal import Decimal  # noqa: PLC0415
+                    cny_d = B._balance_money(by_cur["CNY"])
+                    if cny_d > 0:
+                        return cny_d * Decimal("0.15")
             return B.parse_balance(json.dumps(b).encode("utf-8"))
 
         kw: dict = {}
