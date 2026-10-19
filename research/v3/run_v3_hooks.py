@@ -198,15 +198,16 @@ class Hooks:
                 except (TypeError, ValueError):
                     balance = None
                     balance_str = None
-            if self.currency == "USD" and balance == 0.0 and "CNY" in by_cur:
+            if self.currency == "USD" and "USD" in by_cur and "CNY" in by_cur:
                 try:
-                    cny_val = float(by_cur["CNY"])
-                    if cny_val > 0.0:
-                        from decimal import Decimal  # noqa: PLC0415
+                    from decimal import Decimal  # noqa: PLC0415
+                    usd_d = Decimal(by_cur["USD"])
+                    cny_d = Decimal(by_cur["CNY"])
+                    if cny_d > 0:
                         wallet_cny = by_cur["CNY"]
-                        usd_eq = Decimal(by_cur["CNY"]) * Decimal("0.15")
-                        balance = float(usd_eq)
-                        balance_str = format(usd_eq, "f")
+                    total_d = usd_d + cny_d * Decimal("0.15")
+                    balance = float(total_d)
+                    balance_str = format(total_d, "f")
                 except (TypeError, ValueError, Exception):  # noqa: BLE001
                     pass
         self.last_balance = balance_str
@@ -257,11 +258,12 @@ class Hooks:
             infos = b.get("balance_infos") if isinstance(b, dict) else None
             if isinstance(infos, list):
                 by_cur = {i.get("currency"): i.get("total_balance") for i in infos if isinstance(i, dict)}
-                if by_cur.get("USD") in ("0", "0.0", "0.00") and "CNY" in by_cur:
+                if "USD" in by_cur and "CNY" in by_cur:
                     from decimal import Decimal  # noqa: PLC0415
                     cny_d = B._balance_money(by_cur["CNY"])
+                    usd_d = B._balance_money(by_cur["USD"])
                     if cny_d > 0:
-                        return cny_d * Decimal("0.15")
+                        return usd_d + cny_d * Decimal("0.15")
             return B.parse_balance(json.dumps(b).encode("utf-8"))
 
         kw: dict = {}

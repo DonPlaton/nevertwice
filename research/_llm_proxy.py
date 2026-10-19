@@ -889,12 +889,13 @@ class TeeParser:
                             else:
                                 inp = u.get("input_tokens")
                                 hit = u.get("cache_read_input_tokens", 0)
-                                if type(inp) is not int or type(hit) is not int or inp < 0 or hit < 0 or hit > inp:
+                                cre = u.get("cache_creation_input_tokens", 0)
+                                if type(inp) is not int or type(hit) is not int or type(cre) is not int or inp < 0 or hit < 0 or cre < 0:
                                     usage_bad = True
-                                elif anth_in is not None and (anth_in != inp or anth_hit != hit):
+                                elif anth_in is not None and (anth_in != inp + cre or anth_hit != hit):
                                     usage_conflict = True
                                 else:
-                                    anth_in, anth_hit = inp, hit
+                                    anth_in, anth_hit = inp + cre, hit
                     elif typ == "content_block_delta":
                         d = e.get("delta")
                         if isinstance(d, dict):
@@ -917,12 +918,13 @@ class TeeParser:
                                 if "input_tokens" in u and u["input_tokens"] is not None:
                                     inp = u["input_tokens"]
                                     hit = u.get("cache_read_input_tokens", anth_hit or 0)
-                                    if type(inp) is not int or type(hit) is not int or inp < 0 or hit < 0 or hit > inp:
+                                    cre = u.get("cache_creation_input_tokens", 0)
+                                    if type(inp) is not int or type(hit) is not int or type(cre) is not int or inp < 0 or hit < 0 or cre < 0:
                                         usage_bad = True
-                                    elif anth_in is not None and (anth_in != inp or anth_hit != hit):
+                                    elif anth_in is not None and (anth_in != inp + cre or anth_hit != hit):
                                         usage_conflict = True
                                     else:
-                                        anth_in, anth_hit = inp, hit
+                                        anth_in, anth_hit = inp + cre, hit
                     elif typ == "message_stop":
                         anth_stop = True
                     continue
@@ -954,9 +956,10 @@ class TeeParser:
                         raw_usage = e["usage"]
                         usage_proj = proj
             if anth_seen and anth_in is not None and anth_out is not None and not usage_bad:
-                raw_usage = {"prompt_tokens": anth_in, "completion_tokens": anth_out,
-                             "prompt_cache_hit_tokens": anth_hit or 0,
-                             "prompt_cache_miss_tokens": anth_in - (anth_hit or 0)}
+                hit_v = anth_hit or 0
+                raw_usage = {"prompt_tokens": anth_in + hit_v, "completion_tokens": anth_out,
+                             "prompt_cache_hit_tokens": hit_v,
+                             "prompt_cache_miss_tokens": anth_in}
             if pinned_model and (not models_seen or models_seen != {pinned_model}):
                 return {"usage": raw_usage, "done": False, "out_bytes": out_bytes, "outcome": "model-mismatch"}
             if usage_conflict:
@@ -986,10 +989,11 @@ class TeeParser:
             inp = u.get("input_tokens")
             out_tok = u.get("output_tokens")
             hit = u.get("cache_read_input_tokens", 0)
-            if type(inp) is not int or type(out_tok) is not int or type(hit) is not int or inp < 0 or out_tok < 0 or hit < 0 or hit > inp:
+            cre = u.get("cache_creation_input_tokens", 0)
+            if type(inp) is not int or type(out_tok) is not int or type(hit) is not int or type(cre) is not int or inp < 0 or out_tok < 0 or hit < 0 or cre < 0:
                 return {"usage": "invalid", "done": False, "out_bytes": None, "outcome": "usage-shape"}
-            return {"usage": {"prompt_tokens": inp, "completion_tokens": out_tok,
-                              "prompt_cache_hit_tokens": hit, "prompt_cache_miss_tokens": inp - hit},
+            return {"usage": {"prompt_tokens": inp + cre + hit, "completion_tokens": out_tok,
+                              "prompt_cache_hit_tokens": hit, "prompt_cache_miss_tokens": inp + cre},
                     "done": True, "out_bytes": None, "outcome": "complete"}
         u = d.get("usage")
         if u is None:

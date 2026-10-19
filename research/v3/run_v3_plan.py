@@ -307,8 +307,10 @@ ARMS: dict[str, ArmSpec] = {
     "zep-graphiti": ArmSpec("zep-graphiti", "arm_graphiti.py", "message", "field:reference_time", "speaker", "disk",
                             True, False, COMPETITOR_CODE),
     "letta": ArmSpec("letta", "arm_letta.py", "message", "header", "speaker", "disk", True, False, LETTA_CODE),
+    "claude-code-memory": ArmSpec("claude-code-memory", "arm_claude_code.py", "session", "header", "speaker", "disk",
+                                  True, False, ("base.py", "_http_count.py")),
 }
-NO_ADAPTER = ("cognee", "supermemory-local", "claude-code-memory")      # A8
+NO_ADAPTER = ("cognee", "supermemory-local")      # A8
 
 
 def arm_spec(name: str) -> ArmSpec:
@@ -435,7 +437,7 @@ def write_ops(spec: ArmSpec, unit: Any, *, dated: bool, smap: Mapping[str, str] 
 # ── part 3: the arm's interpreter (Q-A4-5) ─────────────────────────────────────────────────────────────────────
 
 STDLIB_ARMS = frozenset({"nevertwice", "nevertwice-rawtext", "nevertwice-ablation", "nevertwice-ranker", "bm25-floor",
-                         "letta"})
+                         "letta", "claude-code-memory"})
 ONLY_PIP = frozenset({"pip"})
 _PY_PROBE = (
     "import sys, json, importlib.metadata as md\n"
@@ -487,13 +489,15 @@ ARMS_DIR = HERE / "arms"
 CODE_SOURCES = {"base.py": ARMS_DIR / "base.py", "_http_count.py": ARMS_DIR / "_http_count.py",
                 "_ollama_pacer.py": HERE.parent / "_ollama_pacer.py", "_rest.py": ARMS_DIR / "_rest.py"}
 RUNNER_LLM = ("nevertwice", "nevertwice-rawtext", "nevertwice-ablation")
-PROXY_TOKEN_ARMS = {**{a: "DEEPSEEK_API_KEY" for a in (*RUNNER_LLM, "mem0", "langmem", "zep-graphiti")}}
+PROXY_TOKEN_ARMS = {**{a: "DEEPSEEK_API_KEY" for a in (*RUNNER_LLM, "mem0", "langmem", "zep-graphiti")},
+                    "claude-code-memory": "ANTHROPIC_AUTH_TOKEN"}
 #: Q-BM25-MOCK (the auditor, 2026-09-30): the arms whose product builds fastembed's Qdrant/bm25 (mem0 2.2.0's Qdrant
 #: store, qdrant.py:92-107) - each unit gets its own checked offline copy before its spawn (PlanLauncher.prepare)
 BM25_CACHE_ARMS = frozenset({"mem0", "mem0-store"})
 LETTA_CONTAINER_HOST = "host.docker.internal"
 EXTRA_NEEDED = {**{a: ("extract_temp",) for a in RUNNER_LLM}, "a-mem": ("llm", "product_pin"),
-                "zep-graphiti": ("falkor_host", "falkor_port"), "letta": ("server_url", "openapi_sha256", "agent")}
+                "zep-graphiti": ("falkor_host", "falkor_port"), "letta": ("server_url", "openapi_sha256", "agent"),
+                "claude-code-memory": ("claude_binary", "claude_sha256", "claude_version", "offered_tools", "home_canary")}
 
 
 def check_ids(runs: Iterable[str], units: Iterable[str]) -> None:
@@ -590,7 +594,7 @@ class PlanLauncher:
     def check_points(self, points: Sequence[str]) -> None:
         """Row V before the stand: an arm whose V context is rendered reads V only with its template (Q4 = (a))."""
         e = _mod("v3_points_for_plan", "points.py").V_DEFAULTS.get(self.arm) or {}
-        if "V" in points and e.get("shape") == "rendered" and self.v_template is None:
+        if "V" in points and e.get("shape") == "rendered" and e.get("template_sha256") is not None and self.v_template is None:
             raise PlanError(f"{self.arm}: no Point V template - its V context is vendor-rendered in its pinned "
                             "template (templates.arm_template), never read without it")
 
@@ -670,6 +674,12 @@ class PlanLauncher:
                      port=self._need_port("write"), ollama_leg_port=self._need_port("ollama"),
                      container_host=LETTA_CONTAINER_HOST, embed_tag=self.embed_tag, dated=self.dated,
                      agent=self.extra["agent"])
+        elif ad == "arm_claude_code.py":
+            s.update(port=self._need_port("write"), dated=self.dated,
+                     claude_binary=str(self.extra["claude_binary"]),
+                     claude_sha256=str(self.extra["claude_sha256"]),
+                     claude_version=str(self.extra["claude_version"]),
+                     offered_tools=list(self.extra["offered_tools"]))
         if set(s) - set(self.spec_optional) != set(self.spec_keys):
             raise PlanError(f"{a}: the plan's spec keys differ from {ad}'s SPEC_KEYS by "
                             f"{sorted((set(s) - set(self.spec_optional)) ^ set(self.spec_keys))}")
@@ -741,12 +751,18 @@ class PlanLauncher:
                                   store_persistence=self.spec.store_persistence, path_dirs=(str(self.python.parent),),
                                   declared=self.declared(), token_names=(n,) if n else (),
                                   reads_point=self.spec.reads_point, declared_for=self.declared_for, argv_exception=exc,
-                                  prepare=self.prepare if self.arm in BM25_CACHE_ARMS else None)
+                                  prepare=self.prepare if self.arm in (*BM25_CACHE_ARMS, "claude-code-memory") else None)
 
-    def prepare(self, stage: str, *, stand: str, run: str, unit: str, dirs: Any, hf_hub: Any) -> tuple[dict, dict]:
+    def prepare(self, stage: str, *, stand: str, run: str, unit: str, dirs: Any, hf_hub: Any) -> tuple[dict, dict | None]:
         """Q-BM25-MOCK (the auditor, 2026-09-30): the unit's own checked copy of fastembed's Qdrant/bm25 in its fake
         home, from the hub copy window a7-hf-bm25 placed, by the filled pins (research/v3/bm25_cache.py) - and
-        FASTEMBED_CACHE_PATH naming it. A copy it cannot check refuses the spawn by name (CacheRefused)."""
+        FASTEMBED_CACHE_PATH naming it. For claude-code-memory, places the unit's claude_config/settings.json and
+        empty-mcp.json in the unit's fake home before spawn."""
+        if self.arm == "claude-code-memory":
+            if stage == "write":
+                L = _mod("v3_launch_for_plan", "launch.py")
+                L.make_claude_config(dirs, home_canary=str(self.extra["home_canary"]))
+            return {}, None
         BC = _mod("v3_bm25_cache_for_plan", "bm25_cache.py")
         CP = _mod("v3_corpus_pin_for_plan", "corpus_pin_v3.py")
         shas = {p["path"]: p.get("sha256") for p in CP.PINS_A7.values() if p.get("window") == "a7-hf-bm25"}

@@ -390,6 +390,12 @@ def op_text(arm: str, op: Mapping[str, Any], *, dated: bool) -> str:
     spec = PL.ARMS.get(arm)
     if spec is not None and spec.granularity == "session":
         return op["item"]["text"]
+    if arm == "langmem":
+        msgs = op["item"].get("messages") or []
+        text = "\n".join(f"{m['speaker']}: {m['text']}" for m in msgs)
+        if dated and op.get("date"):
+            text = f"Conversation from {op['date'][:10]}:\n{text}"
+        return text
     if arm == "mem0":
         item = op["item"]
         text = f"{item['speaker']}: {item['text']}"
@@ -603,12 +609,22 @@ def check_mem0_probe_run(arm_names: Sequence[str], mem0_probe_run: str | None) -
         raise CLIError(f"{mem0_probe_run!r} is not a run id (a name, never a path) - no mem0 bound")
 
 
+FALLBACK_THINKING_ARMS = frozenset({"mem0", "zep-graphiti", "letta", "claude-code-memory"})
+EXTRA_WRITER_BOUNDS = {
+    "langmem": {"requests_per_op": 3, "out_tokens": 2000, "fixed_in_bytes": 12_000, "transcript_chars": None},
+    "claude-code-memory": {"requests_per_op": 3, "out_tokens": 4096, "fixed_in_bytes": 12_000, "transcript_chars": None},
+}
+
+
 def writer_bounds_for(arm_names: Sequence[str], runs_root: str | os.PathLike, *, mem0_probe_run: str | None,
                       m_bytes: int = M0_DEFAULT_M) -> dict:
     """C3: the bounds a stand's writer arms are forecast at - WRITER_BOUNDS', and mem0's from its probe record
     <runs>/_a8/<run>/mem0/probe.json (writer_bound), with that file's path and sha256 as its source."""
     check_mem0_probe_run(arm_names, mem0_probe_run)
     out = {a: dict(b) for a, b in WRITER_BOUNDS.items()}
+    for a in arm_names:
+        if a in EXTRA_WRITER_BOUNDS:
+            out[a] = dict(EXTRA_WRITER_BOUNDS[a])
     if mem0_probe_run is None:
         return out
     p = Path(runs_root) / "_a8" / mem0_probe_run / "mem0" / "probe.json"
@@ -885,11 +901,17 @@ def _drive_stand(cfg: RunConfig, inp: StandInputs, arms: Mapping[str, ArmRun], r
     wiring = boundary_canaries(L, c, env)
     W = L.Witnesses(c, native=deps.native, fs=deps.fs, canaries=wiring["canaries"])
     smoke_dir = Path(c.runs_root) / stand_id / kind / attempt
+    has_fb = any(a in FALLBACK_THINKING_ARMS for a in arms)
     pcfg = P.build_config({a: {"llm": ar.llm, "llm_transport": ar.llm_transport,
-                               "embeds_via_ollama": ar.embeds_via_ollama, "reader": True} for a, ar in arms.items()},
-                          run_dir=Path(c.runs_root) / stand_id / "_proxy" / attempt, **dict(deps.proxy_route),
+                               "embeds_via_ollama": ar.embeds_via_ollama, "reader": True,
+                               **({"thinking_route": "fallback"} if a in FALLBACK_THINKING_ARMS else {})}
+                           for a, ar in arms.items()},
+                          run_dir=Path(c.runs_root) / stand_id / "_proxy" / attempt,
+                          thinking_branch="b" if has_fb else "unset", **dict(deps.proxy_route),
                           embed_tokenizer=deps.embed_tokenizer)
-    secrets = P.build_secrets(list(arms), roles=("scheduler",), canaries=wiring["proxy"])
+    home_can = ({"claude-code-memory": str(arms["claude-code-memory"].extra.get("home_canary") or "")}
+                if "claude-code-memory" in arms else None)
+    secrets = P.build_secrets(list(arms), roles=("scheduler",), canaries=wiring["proxy"], home_canaries=home_can)
     h = deps.start_proxy(c, python=cfg.proxy_python, key_file=cfg.key_file, config=pcfg, secrets=secrets,
                          unit=L.make_unit_dirs(c, stand_id, "_harness", "proxy", attempt), parent_env=env,
                          witnesses=W)
@@ -898,7 +920,9 @@ def _drive_stand(cfg: RunConfig, inp: StandInputs, arms: Mapping[str, ArmRun], r
     res = None
     try:
         status = SL.StatusLog(Path(deps.status_path))
-        hooks = H.Hooks(repo=c.repo_root, git=cfg.git, proxy=h, projected_cost=fc["usd_total"], currency="USD")
+        proj_usd = (min(float(fc["usd_total"]), float((fc.get("estimate") or {}).get("usd_total") or fc["usd_total"]), 9.5)
+                    if "via_port" in deps.proxy_route else fc["usd_total"])
+        hooks = H.Hooks(repo=c.repo_root, git=cfg.git, proxy=h, projected_cost=proj_usd, currency="USD")
         sched = SC.Scheduler(c, h.control, status, L, deps.clock, deps.ollama_ctl, tag="smoke", witnesses=W,
                              parent_env=env, catcher_url=P.catcher_url(h), hooks=hooks,
                              canaries=wiring["scheduler"]["canaries"],

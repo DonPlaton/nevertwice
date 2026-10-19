@@ -251,6 +251,13 @@
    "docs_record_sha256": "492f92b77098b80eeca7494bb3550a3988aa596873850ca1d1f269bae6a9fcd8",
    "cdn_hosts": ["objects.githubusercontent.com", "release-assets.githubusercontent.com"],
    "max_redirects": 1
+  },
+  "a8-npm-claude_code_v3": {
+   "hosts": ["registry.npmjs.org"],
+   "install": "A9 (owner decision 2026-10-20, Q7 O-b): the native Windows binary package @anthropic-ai/claude-code-win32-x64 2.1.304 from registry.npmjs.org, verified against npm's sha512 SRI integrity and sha256 422c20c6b5df262c53ca92e694278d8b4804be860313a9253673822e1d1d4152 (package/claude.exe sha256 019e5174d5d954585edb1a946fe280e44a973050b4897034adf0e16306f85fdd), extracted into <polygon>/claude_code_v3/package with tarfile filter='data' and no lifecycle scripts",
+   "package": "@anthropic-ai/claude-code-win32-x64",
+   "version": "2.1.304",
+   "max_redirects": 0
   }
  },
  "disk": {"volume": "D:", "floor_gb": 100, "multiple_of_window_total": 3, "stop_single_file_gb": 10}

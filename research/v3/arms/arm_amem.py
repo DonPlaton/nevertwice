@@ -167,7 +167,14 @@ def bind(spec: Mapping[str, Any], env: Mapping[str, str]) -> tuple[dict, dict]:
         if not _tag_present(json.loads(r.read() or b"{}"), spec["embed_tag"]):
             raise Refused(f"the embed tag {spec['embed_tag']!r} is not in Ollama")
     import agentic_memory  # noqa: PLC0415 - the venv's product (Q-46-1: never this file)
-    rec["product"] = {"name": "agentic_memory", "version": getattr(agentic_memory, "__version__", None),
+    ver = getattr(agentic_memory, "__version__", None)
+    if not ver:
+        for _mp in Path(agentic_memory.__file__).resolve().parent.parent.glob("agentic_memory-*.dist-info/METADATA"):
+            _mm = re.search(r"^Version:\s*(\S+)", _mp.read_text(encoding="utf-8", errors="replace"), re.M)
+            if _mm:
+                ver = _mm.group(1)
+                break
+    rec["product"] = {"name": "agentic_memory", "version": ver,
                       "file": str(Path(agentic_memory.__file__).resolve())}
     if HERE in Path(agentic_memory.__file__).resolve().parents:
         raise Refused("import agentic_memory found a module in the arm's directory, not the venv's package")

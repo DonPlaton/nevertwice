@@ -129,7 +129,14 @@ def bind(spec: Mapping[str, Any], env: Mapping[str, str]) -> tuple[dict, dict]:
     import langmem  # noqa: PLC0415 - the venv's product (Q-46-1: never this file)
     from langchain_ollama import OllamaEmbeddings  # noqa: PLC0415
     from langgraph.store.memory import InMemoryStore  # noqa: PLC0415
-    rec["product"] = {"name": "langmem", "version": getattr(langmem, "__version__", None),
+    ver = getattr(langmem, "__version__", None)
+    if not ver:
+        for _mp in Path(langmem.__file__).resolve().parent.parent.glob("langmem-*.dist-info/METADATA"):
+            _mm = re.search(r"^Version:\s*(\S+)", _mp.read_text(encoding="utf-8", errors="replace"), re.M)
+            if _mm:
+                ver = _mm.group(1)
+                break
+    rec["product"] = {"name": "langmem", "version": ver,
                       "file": str(Path(langmem.__file__).resolve())}
     if HERE in Path(langmem.__file__).resolve().parents:
         raise Refused("import langmem found a module in the arm's directory, not the venv's package")

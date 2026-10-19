@@ -226,3 +226,36 @@ declared line of the report beside its K and V numbers - never discovered afterw
 - **§13, trap closure, the new line:**
 
 | T37 graphiti_v3 without httpx and langmem_v3 without langchain-ollama | §2.2 | graphiti_v3 += httpx==0.28.1; langmem_v3 += langchain-ollama==1.1.0; M31 verified before install |
+
+## A9 - T38: claude-code-memory pinned to @anthropic-ai/claude-code-win32-x64 2.1.304 over the DeepSeek /anthropic proxy route
+
+- **Trap:** T38 claude-code-memory binary, memory path override and tool-search beta.
+- **Date:** 2026-10-20.
+- **Ruling:** owner decision Q7 = (b) (2026-10-20) and A8 probe `runs/v3/_a8/cc_p2/claude-code-memory/probe.json`.
+- **Reason:** `@anthropic-ai/claude-code` 2.1.304 ships its Windows binary in `@anthropic-ai/claude-code-win32-x64@2.1.304`
+  (tarball `sha256: 422c20c6b5df262c53ca92e694278d8b4804be860313a9253673822e1d1d4152`, `package/claude.exe`
+  `sha256: 019e5174d5d954585edb1a946fe280e44a973050b4897034adf0e16306f85fdd`). In `claude.exe` 2.1.304, the user-settings
+  `autoMemoryDirectory` key is gated behind an online GrowthBook flag (`tengu_linked_cake`), whereas the environment variable
+  `CLAUDE_COWORK_MEMORY_PATH_OVERRIDE` deterministically binds the auto-memory directory offline; and setting
+  `CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS=1` disables the `DeferredToolPlaceholder` beta stub so the request offers only the
+  allowed file tools (`Edit`, `Read`, `Write`). Routing `ANTHROPIC_BASE_URL` to the arm's proxy port
+  (`/u/<run>.<unit>/anthropic`) with `MAX_THINKING_TOKENS=0` and the proxy's branch (b) fallback (`{"thinking": {"type": "disabled"}}`)
+  runs `claude-code-memory` on the shared `deepseek-flash` writer model with `R-CC-WIT` (`x-nvt3-home-canary`) and `L3`
+  verified.
+- **§2.2, the claude-code-memory row becomes:**
+
+| claude-code-memory | product | `@anthropic-ai/claude-code-win32-x64==2.1.304` (`claude.exe` `sha256: 019e5174d5...`) | polygon `claude_code_v3`, driven by `arm_claude_code.py` on `arms314` | https://code.claude.com/docs/en/memory | installed, adapted (`cc_p2` pass) |
+
+- **§13, trap closure, the new line:**
+
+| T38 claude-code-memory binary and offline memory path | §2.2, §2.6.6 | `@anthropic-ai/claude-code-win32-x64==2.1.304` in `claude_code_v3`; `CLAUDE_COWORK_MEMORY_PATH_OVERRIDE=<unit>/store`, `CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS=1`, `MAX_THINKING_TOKENS=0`; `cc_p2` probe and `L3` passed |
+
+## A10 - J1 judge model on cloud deepseek-flash via the recording proxy
+
+- **Date:** 2026-10-20.
+- **Ruling:** owner decision Q8 (2026-10-20): use cloud `deepseek-flash` (`deepseek-v4-1-flash-1017` via `api.deepseek.com`
+  through the recording proxy, temperature 0, thinking disabled) for judge `J1` instead of the removed local Ollama tag
+  `qwen3.6:27b`, keeping full proxy auditability and exact token/cost accounting.
+- **§8.3, the J1 judge model:** `J1` runs on `deepseek-flash` via the recording proxy (`temperature: 0`,
+  `thinking: {"type": "disabled"}`), with the same strict/lenient parsers and one identical re-ask rule (`Q-49-6`,
+  `reader_judge.cloud_judge_request`).

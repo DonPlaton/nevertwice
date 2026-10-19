@@ -347,15 +347,19 @@ try:
                     conservation_root=TMP / "conservation")
     ALL = sorted(PL.ARMS)
     PY = TMP / "poly" / "arms314" / "Scripts" / "python.exe"
-    LLM_ARMS = (*PL.RUNNER_LLM, "mem0", "langmem", "a-mem", "zep-graphiti", "letta")
+    LLM_ARMS = (*PL.RUNNER_LLM, "mem0", "langmem", "a-mem", "zep-graphiti", "letta", "claude-code-memory")
     ports = {"arms": {a: {"reader": 42000 + i, **({"write": 41000 + i} if a in LLM_ARMS else {}),
-                          **({"ollama": 43000 + i} if a != "bm25-floor" else {})} for i, a in enumerate(ALL)}}
-    sec = RP.build_secrets(ALL)
+                          **({"ollama": 43000 + i} if a not in ("bm25-floor", "claude-code-memory") else {})}
+                      for i, a in enumerate(ALL)}}
+    sec = RP.build_secrets(ALL, home_canaries={"claude-code-memory": "c" * 32})
     PX = SimpleNamespace(ports=ports, tokens=sec["tokens"])
     EXTRA = {**{a: {"extract_temp": 0.0} for a in PL.RUNNER_LLM}, "a-mem": {"llm": "deepseek",
              "product_pin": {"commit": "c" * 40, "blobs": {}}}, "zep-graphiti": {"falkor_host": "127.0.0.1",
              "falkor_port": 6380}, "letta": {"server_url": "http://127.0.0.1:8283", "openapi_sha256": "0" * 64,
-             "agent": {"agent_type": "memgpt_agent"}}}
+             "agent": {"agent_type": "memgpt_agent"}}, "claude-code-memory": {
+             "claude_binary": str(TMP / "poly" / "claude_code_v3" / "package" / "claude.exe"),
+             "claude_sha256": "0" * 64, "claude_version": "2.1.304",
+             "offered_tools": ["Bash", "Edit", "Read", "Write"], "home_canary": "c" * 32}}
     UB = {"u1": "b01", "u2": "b01", "u3": "b02"}
     stager = PL.CodeStager(CT.runs_root)
 
@@ -395,7 +399,7 @@ try:
           str(bad_keys))
     routes, bad_route = {}, {}
     for i, a in enumerate(ALL):
-        if a in ("bm25-floor", "letta"):                       # no Ollama at all / the server's own leg port (B-A3)
+        if a in ("bm25-floor", "letta", "claude-code-memory"): # no Ollama at all / the server's own leg port (B-A3)
             continue
         want = f"http://127.0.0.1:{43000 + i}/u/r1.u2"
         try:
@@ -413,7 +417,7 @@ try:
             bad_route[a] = f"{type(e).__name__}: {e}"
     check("R-EMBED-PATH: every Ollama arm of the roster reaches Ollama through its own proxy leg with the unit's "
           "/u/<run>.<unit> - the adapters' spec ollama_url, the runner's ollama_port and its engine's OLLAMA_EMBED_URL "
-          "- never the direct 11434", len(routes) == len(ALL) - 2 and not bad_route
+          "- never the direct 11434", len(routes) == len(ALL) - 3 and not bad_route
           and not any("11434" in str(v) for v in routes.values()), str(bad_route or routes)[:400])
     no_leg = SimpleNamespace(ports={"arms": {"mem0": {"reader": 1, "write": 2}}}, tokens=sec["tokens"])
     try:
@@ -452,7 +456,7 @@ try:
     w = ports["arms"]["a-mem"]["write"]
     want_url["a-mem"] = [(env_of("a-mem", r, u).get("OPENAI_BASE_URL"), f"http://127.0.0.1:{w}/u/{r}.{u}/v1")
                          for r, u in (("r1", "u1"), ("r2", "u3"))]
-    for a in ("mem0", "langmem", "zep-graphiti", "letta"):
+    for a in ("mem0", "langmem", "zep-graphiti", "letta", "claude-code-memory"):
         want_url[a] = []
         for r, u in (("r1", "u1"), ("r2", "u3")):
             s_ = spec_of(a, r, u)
@@ -482,10 +486,11 @@ try:
           str(probs))
     tok = {a: PLS[a].declared() for a in ALL}
     check("PLL (3): the proxy token goes under the one name the adapter checks - DeepSeek's for ours, mem0, langmem and "
-          "zep; OpenAI's for a-mem; none for letta (its server's) or the arms without an LLM",
+          "zep; OpenAI's for a-mem; Anthropic's for claude-code-memory; none for letta (its server's) or the arms without an LLM",
           {a: sorted(v) for a, v in tok.items() if v} == {**{a: ["DEEPSEEK_API_KEY"] for a in (*PL.RUNNER_LLM, "mem0",
                                                                                              "langmem", "zep-graphiti")},
-                                                          "a-mem": ["OPENAI_API_KEY"]}
+                                                          "a-mem": ["OPENAI_API_KEY"],
+                                                          "claude-code-memory": ["ANTHROPIC_AUTH_TOKEN"]}
           and all(v_ == sec["tokens"][a] for a, d_ in tok.items() for v_ in d_.values()), str({a: sorted(v) for a, v in tok.items()}))
     argvs = {a: PLS[a].argv_for(Path(dirs(a, "r1", "u1").home) / "spec.write.json", stage="write", stand="S4",
                                 run="r1", unit="u1") for a in ALL}

@@ -129,6 +129,17 @@ def judge_request(model: str, prompt: str, cap: int, *, fmt: str | None = None) 
     return req
 
 
+def cloud_judge_request(model: str, prompt: str, cap: int, *, fmt: str | None = None) -> dict:
+    """Q8 (owner decision 2026-10-20): J1 on cloud deepseek-flash via the recording proxy (temperature 0, thinking off)."""
+    if not (isinstance(cap, int) and cap > 0):
+        raise ReaderJudgeError(f"a judge's output cap is a positive int, not {cap!r}")
+    req: dict[str, Any] = {"model": model, "messages": [{"role": "user", "content": prompt}],
+                           "temperature": 0, "max_tokens": cap, "thinking": {"type": "disabled"}}
+    if fmt == "json":
+        req["response_format"] = {"type": "json_object"}
+    return req
+
+
 @dataclass
 class Verdict:
     value: Any                   # the strict parse, or None when invalid
@@ -141,13 +152,19 @@ class Verdict:
 
 def _judge_once(resp: Mapping[str, Any], parse: Callable[[str], Any]) -> tuple[Any, str, str | None, bool]:
     msg = resp.get("message") if isinstance(resp, Mapping) else None
+    done_reason = resp.get("done_reason") if isinstance(resp, Mapping) else None
+    if not isinstance(msg, Mapping) and isinstance(resp, Mapping):
+        choices = resp.get("choices")
+        if isinstance(choices, list) and choices and isinstance(choices[0], Mapping):
+            msg = choices[0].get("message")
+            done_reason = choices[0].get("finish_reason")
     if not isinstance(msg, Mapping):
         return None, "", "no message in the judge's answer", False
     content = msg.get("content") or ""
-    thinking = bool(msg.get("thinking"))          # think:false - the model's thinking field must stay empty
+    thinking = bool(msg.get("thinking") or msg.get("reasoning_content"))
     if thinking:
         return None, content, "thinking output", True
-    if resp.get("done_reason") == "length":
+    if done_reason == "length":
         return None, content, "cut at its cap", False
     value = parse(content)
     if value is None:
@@ -156,9 +173,10 @@ def _judge_once(resp: Mapping[str, Any], parse: Callable[[str], Any]) -> tuple[A
 
 
 def judge(prompt: str, cap: int, parse: Callable[[str], Any], post: Callable[[dict], Mapping[str, Any]], *,
-          model: str, fmt: str | None = None, lenient: Callable[[str], Any] | None = None) -> Verdict:
+          model: str, fmt: str | None = None, lenient: Callable[[str], Any] | None = None,
+          cloud: bool = False) -> Verdict:
     """A verdict with its one identical re-ask (Q-49-6)."""
-    req = judge_request(model, prompt, cap, fmt=fmt)
+    req = (cloud_judge_request if cloud else judge_request)(model, prompt, cap, fmt=fmt)
     value, raw, why, thinking = _judge_once(post(req), parse)
     reasked = False
     if why is not None:
