@@ -611,6 +611,8 @@ def check_mem0_probe_run(arm_names: Sequence[str], mem0_probe_run: str | None) -
 
 FALLBACK_THINKING_ARMS = frozenset({"mem0", "zep-graphiti", "letta", "claude-code-memory"})
 EXTRA_WRITER_BOUNDS = {
+    "nevertwice-ablation": dict(WRITER_BOUNDS["nevertwice"]),
+    "nevertwice-rawtext": dict(WRITER_BOUNDS["nevertwice"]),
     "langmem": {"requests_per_op": 3, "out_tokens": 2000, "fixed_in_bytes": 12_000, "transcript_chars": None},
     "claude-code-memory": {"requests_per_op": 3, "out_tokens": 4096, "fixed_in_bytes": 12_000, "transcript_chars": None},
 }
