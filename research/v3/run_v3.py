@@ -902,12 +902,17 @@ def _drive_stand(cfg: RunConfig, inp: StandInputs, arms: Mapping[str, ArmRun], r
     W = L.Witnesses(c, native=deps.native, fs=deps.fs, canaries=wiring["canaries"])
     smoke_dir = Path(c.runs_root) / stand_id / kind / attempt
     has_fb = any(a in FALLBACK_THINKING_ARMS for a in arms)
+    p_route = dict(deps.proxy_route)
+    if "via_port" in p_route and "budget" not in p_route:
+        B_mod = load("budget.py", smoke=True)
+        p_route["budget"] = {"run": f"{stand_id}.{attempt}", "ledger": str(B_mod.LEDGER),
+                             "ceiling_usd": env.get("NVT3_RUN_CEILING_USD", "15.00")}
     pcfg = P.build_config({a: {"llm": ar.llm, "llm_transport": ar.llm_transport,
                                "embeds_via_ollama": ar.embeds_via_ollama, "reader": True,
                                **({"thinking_route": "fallback"} if a in FALLBACK_THINKING_ARMS else {})}
                            for a, ar in arms.items()},
                           run_dir=Path(c.runs_root) / stand_id / "_proxy" / attempt,
-                          thinking_branch="b" if has_fb else "unset", **dict(deps.proxy_route),
+                          thinking_branch="b" if has_fb else "unset", **p_route,
                           embed_tokenizer=deps.embed_tokenizer)
     home_can = ({"claude-code-memory": str(arms["claude-code-memory"].extra.get("home_canary") or "")}
                 if "claude-code-memory" in arms else None)
