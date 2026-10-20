@@ -1786,7 +1786,7 @@ class NativeEgressWitness(_Ticker):
                 if current is not None and self._same(current, self.registered_roots[pid]):
                     return True
                 drained = False
-                if self.jobs is not None and not any(pid in w.roots for w in self.windows.values()):
+                if self.jobs is not None and not any(pid in (getattr(w, "roots", w) or ()) for w in self.windows.values()):
                     try:
                         if not self.jobs.members(pid):
                             if hasattr(self.jobs, "cleanup_owned"):
