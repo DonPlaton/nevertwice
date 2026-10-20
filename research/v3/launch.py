@@ -2174,7 +2174,7 @@ def watched_set(c: Contract) -> list[WatchSpec]:
                                                          ".claude/settings.local.json"),
                        exclude_names=("__pycache__",))]
     for i, p in enumerate((h / ".claude" / "settings.json", h / ".claude" / "CLAUDE.md", h / ".claude" / "rules",
-                           h / ".claude" / "hooks", h / ".claude" / "scripts", h / ".codex" / "config.toml",
+                           h / ".claude" / "hooks", h / ".claude" / "scripts",
                            h / ".mem0", h / ".gitconfig", h / ".npmrc", h / ".config" / "git")):
         specs.append(WatchSpec(f"owner_config_{i}", p, mode="path"))
     for name in c.polygon_idle:
