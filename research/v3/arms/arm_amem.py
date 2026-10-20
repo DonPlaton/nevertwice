@@ -199,22 +199,51 @@ def bind(spec: Mapping[str, Any], env: Mapping[str, str]) -> tuple[dict, dict]:
     MS.SentenceTransformer = NoSentenceTransformer
     ms = MS.AgenticMemorySystem(model_name=spec["embed_tag"], llm_backend="openai" if spec["llm"] == "deepseek"
                                 else "ollama", llm_model=spec["llm_model"])
+    last_refused: list[Refused] = []
+    if hasattr(getattr(ms, "llm_controller", None), "llm") and hasattr(ms.llm_controller.llm, "get_completion"):
+        _orig_get_comp = ms.llm_controller.llm.get_completion
+
+        def _checked_get_completion(*a, **k):
+            try:
+                return _orig_get_comp(*a, **k)
+            except Exception as e:  # noqa: BLE001
+                text = str(e)
+                if "json_schema" in text or "response_format" in text:
+                    ref = Refused(
+                        f"blocked:structured-output - the writer's json_schema request was refused: {text[:200]}")
+                    last_refused.append(ref)
+                    raise ref from None
+                raise
+
+        ms.llm_controller.llm.get_completion = _checked_get_completion
     if not isinstance(ms.retriever.embedding_function, OllamaEmbeddingFunction):
         raise Refused("A-mem's retriever does not embed with the v3 tag")
     rec["evo_threshold"] = getattr(ms, "evo_threshold", None)
     rec["env_names"] = sorted(env)
     rec["python"] = sys.version.split()[0]
-    return {"ms": ms, "ef_built": ef_built, "ef_class": OllamaEmbeddingFunction, "pacer": P}, rec
+    return {"ms": ms, "ef_built": ef_built, "ef_class": OllamaEmbeddingFunction, "pacer": P,
+            "last_refused": last_refused}, rec
 
 
 class Handler:
     def __init__(self, spec: Mapping[str, Any], ns: Mapping[str, Any], rec: Mapping[str, Any]) -> None:
         self.spec, self.rec = spec, rec
         self.ms, self.ef_built, self.ef_class, self.pacer = ns["ms"], ns["ef_built"], ns["ef_class"], ns["pacer"]
+        self.last_refused: list[Refused] = ns.get("last_refused") or []
         self.unit = spec["unit"]
         self.phase = "write"
         self.times = {"write": [None, None], "read": [None, None]}
         self.counts = {"notes": 0, "reads": 0, "items_returned": 0}
+        self.state_before: dict | None = None
+
+    def _state_digest(self) -> dict:
+        mems = getattr(self.ms, "memories", {}) or {}
+        canon = json.dumps(sorted((str(k), getattr(v, "content", ""), getattr(v, "context", ""),
+                                   list(getattr(v, "keywords", ()) or ()), list(getattr(v, "tags", ()) or ()),
+                                   list(getattr(v, "links", ()) or ()))
+                                  for k, v in mems.items()),
+                           ensure_ascii=False, sort_keys=True, separators=(",", ":"), default=str)
+        return {"kind": "memory", "sha256": B.text_sha256(canon), "counts": {"notes": len(mems)}}
 
     def _mark(self, phase: str, t0: float, t1: float) -> None:
         span = self.times[phase]
@@ -248,6 +277,8 @@ class Handler:
                 raise Refused(f"blocked:structured-output - the writer's json_schema request was refused: {text[:200]}") \
                     from None
             raise
+        if self.last_refused:
+            raise self.last_refused[0]
         t1 = time.time()
         self._mark("write", t0, t1)
         self.counts["notes"] += 1
@@ -260,6 +291,7 @@ class Handler:
             raise RuntimeError("end_write twice")
         t0 = time.time()
         self.phase = "read"
+        self.state_before = self._state_digest()
         return {"footprint": {"retrievable": len(self.ms.memories)}, "store_persistence": "memory",
                 "embedding_functions_built": list(self.ef_built), "ef_ok": self._ef_ok(), "t0": t0, "t1": time.time()}
 
@@ -286,10 +318,13 @@ class Handler:
         snap = HC.snapshot()
         transport: dict = {}
         self.pacer.attach(transport)
+        st = ({"before": self.state_before, "after": self._state_digest()}
+              if self.phase == "read" and self.state_before is not None else None)
         return {"http": snap, "llm_calls": HC.total(snap, "proxy:") + HC.total(snap, "ollama:generate"),
                 **self.counts, "embedding_functions_built": len(self.ef_built), "ef_ok": self._ef_ok(),
                 "stage_times": {k: list(v) for k, v in self.times.items()},
-                "ollama_transport": transport.get("ollama_transport")}
+                "ollama_transport": transport.get("ollama_transport"),
+                **({"store_state": st} if st is not None else {})}
 
 
 class RefusedHandler:
