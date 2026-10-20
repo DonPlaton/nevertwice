@@ -1881,6 +1881,8 @@ class NativeEgressWitness(_Ticker):
                 return "ok"
             if lp in self.allowed and self._same(ct_of.get(lp, -1.0), self.allowed[lp][0]):
                 return "ok"
+            if lp in getattr(self, "_allowed_tree", ()) and self._same(ct_of.get(lp, -1.0), self._allowed_tree[lp]):
+                return "ok"
         return "undetermined" if None in owners else "hit"
 
     def kill_tree(self, root: int) -> bool:
@@ -1915,6 +1917,17 @@ class NativeEgressWitness(_Ticker):
                             self.tracked[pid] = ct
                             self.root_of[pid] = self.root_of.get(ppid, ppid)
                             grew = True
+                allowed_tree = {p: t for p, (t, _r) in self.allowed.items()
+                                if p in ct_of and self._same(ct_of[p], t)}
+                grew_a = True
+                while grew_a:                            # Windows venv launcher stubs spawn a child base python.exe
+                    grew_a = False
+                    for pid, ppid, ct in procs:
+                        if (pid not in allowed_tree and ppid in allowed_tree and ct >= allowed_tree[ppid]
+                                and ppid in ct_of and self._same(ct_of[ppid], allowed_tree[ppid])):
+                            allowed_tree[pid] = ct
+                            grew_a = True
+                self._allowed_tree = allowed_tree
                 alive = {pid for pid, _pp, ct in procs if pid in self.tracked and self._same(self.tracked[pid], ct)}
                 rows, errors = self.sampler.connections(alive)
                 get_listeners = getattr(self.sampler, "listeners", None)

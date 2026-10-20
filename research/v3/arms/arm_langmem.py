@@ -179,6 +179,14 @@ class Handler:
         self.item_shas: dict[int, str] = {}
         self.times = {"write": [None, None], "read": [None, None]}
         self.counts = {"writes": 0, "reads": 0, "items_returned": 0}
+        self.state_before: dict | None = None
+
+    def _state_digest(self, stored=None) -> dict:
+        rows = self.store.search(self.ns, limit=10 ** 6) if stored is None else stored
+        canon = json.dumps(sorted(((str(getattr(h, "key", "")), getattr(h, "value", None)) for h in rows),
+                                  key=lambda kv: kv[0]),
+                           ensure_ascii=False, sort_keys=True, separators=(",", ":"), default=str)
+        return {"kind": "memory", "sha256": B.text_sha256(canon), "counts": {"items": len(rows)}}
 
     def _mark(self, phase: str, t0: float, t1: float) -> None:
         span = self.times[phase]
@@ -227,6 +235,7 @@ class Handler:
         t0 = time.time()
         self.phase = "read"
         stored = self.store.search(self.ns, limit=10 ** 6)
+        self.state_before = self._state_digest(stored)
         out = {"footprint": {"retrievable": len(stored)}, "store_persistence": "memory", "t0": t0, "t1": time.time()}
         if self.arm == "langmem-store":
             out["items_sha256"] = B.items_digest(self.item_shas)
@@ -255,9 +264,12 @@ class Handler:
         snap = HC.snapshot()
         transport: dict = {}
         self.pacer.attach(transport)
+        st = ({"before": self.state_before, "after": self._state_digest()}
+              if self.phase == "read" and self.state_before is not None else None)
         return {"http": snap, "llm_calls": HC.total(snap, "proxy:chat") + HC.total(snap, "ollama:generate"),
                 **self.counts, "stage_times": {k: list(v) for k, v in self.times.items()},
-                "ollama_transport": transport.get("ollama_transport")}
+                "ollama_transport": transport.get("ollama_transport"),
+                **({"store_state": st} if st is not None else {})}
 
 
 class RefusedHandler:

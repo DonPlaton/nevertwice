@@ -174,7 +174,15 @@ def m34_table(res: Mapping[str, Any], *, plans: Mapping[str, Any], tree_manifest
         persistence = getattr(getattr(plans.get(arm), "spec", None), "store_persistence", None)
         reads = len(_rows(q))
         if persistence == "memory":
-            cell: Any = "unmeasured: a memory arm's store lives in its process - A8 (deferred)"
+            st = ((q or {}).get("counters") or {}).get("store_state")
+            b_st = st.get("before") if isinstance(st, Mapping) else None
+            a_st = st.get("after") if isinstance(st, Mapping) else None
+            if (isinstance(b_st, Mapping) and isinstance(a_st, Mapping)
+                    and isinstance(b_st.get("sha256"), str) and isinstance(a_st.get("sha256"), str)):
+                cell: Any = {"kind": "memory", "reads": reads, "before": b_st["sha256"], "after": a_st["sha256"],
+                             "changed": a_st["sha256"] != b_st["sha256"], "counts": a_st.get("counts")}
+            else:
+                cell = "unmeasured: a memory arm's store lives in its process - A8 (deferred)"
         elif not isinstance(seal, Mapping):
             cell = "unmeasured: no write seal (the write stage did not seal its store)"
         elif seal.get("kind") == "state":
