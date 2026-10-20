@@ -1785,8 +1785,23 @@ class NativeEgressWitness(_Ticker):
                 current = self._identity(pid)
                 if current is not None and self._same(current, self.registered_roots[pid]):
                     return True
-                self.result.unwitnessed_registrations += 1
-                return False  # do not overwrite a surviving job or transfer its window to a reused root
+                drained = False
+                if self.jobs is not None and not any(pid in w.roots for w in self.windows.values()):
+                    try:
+                        if not self.jobs.members(pid):
+                            if hasattr(self.jobs, "cleanup_owned"):
+                                self.jobs.cleanup_owned(close_drained=True)
+                            else:
+                                self.jobs.jobs.pop(pid, None)
+                            drained = pid not in getattr(self.jobs, "jobs", {})
+                    except Exception:  # noqa: BLE001
+                        drained = False
+                if not drained:
+                    self.result.unwitnessed_registrations += 1
+                    return False  # do not overwrite a surviving job or transfer its window to a reused root
+                self.registered_roots.pop(pid, None)
+                self.tracked.pop(pid, None)
+                self.root_of.pop(pid, None)
             try:
                 ct = self.jobs.adopt(pid, handle) if self.jobs is not None else None
             except BaseException:
