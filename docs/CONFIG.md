@@ -191,6 +191,23 @@ After setting `NEVERTWICE_EMBED_QUANT`, rebuild the index once the same way.
 | `NEVERTWICE_ENV_FILE` | n/a | Custom `.env` location (otherwise package/repo-root only). |
 | `NEVERTWICE_DOTENV` | unset | `explicit` reads only `NEVERTWICE_ENV_FILE` and none of the fixed `.env` / `.secrets.env` files beside the package or at the clone root. A sandbox (`sandbox_guard.isolate()`) sets it, so a test never picks up a model pin or a key kept in those fixed files. |
 
+## Memory domain (A6: personal/biographical memory)
+
+Two modes. `code` is the coding-agent prompt every existing store was built with, unchanged.
+`all` appends a compact rubric to the extraction prompt (personal, biographical, conversational
+and technical facts are all relevant, and belong in `decisions`/`patterns` with their speaker,
+exact numbers and dates), resolves relative dates against the session's own day, stamps every
+note with `[Date: YYYY-MM-DD]`, and indexes dated speaker turns as a second, model-free recall
+tier. Read-side additions: a superseded or absorbed note carries one `[Prior <date>: <value>]`
+line, and `api.recall()` leaves `telemetry.json` alone in a store marked read-only.
+
+| Variable | Default | Notes |
+|---|---|---|
+| `NEVERTWICE_EXTRACT_MODE` | `auto` | `code` / `all` / `auto`. `auto` reads the transcript: code markers (`def `, `import `, `.py`, `git `, a fenced block, the hook's `Working directory:` header) mean `code`. A transcript the hook reads from disk always carries that header, so a personal store must set `all` explicitly; ingested text (`api.capture_session`, `ingest.py`) is classified on its own body. |
+| `NEVERTWICE_EPISODIC_INDEX` | `1` | In `all` mode, index the session's dated speaker turns as episodic entries beside the extracted notes (one `update_embeddings` batch, no model call). `0` disables the second tier. Assistant turns are never indexed as user facts. |
+| `NEVERTWICE_TELEMETRY_READONLY` | unset | `1` makes `api.recall()` a pure read: `telemetry.json` and `telemetry.json.bak` are not written. `0` overrides the `NEVERTWICE_SANDBOX` fallback below (a sandbox's store is disposable; `sandbox_guard.isolate()` sets it). |
+| `NEVERTWICE_SANDBOX` | unset | `1` marks a sandboxed/sealed store; with no explicit `NEVERTWICE_TELEMETRY_READONLY`, a read records nothing. `sandbox_guard.isolate()` sets it. |
+
 ## Claude Code hook wiring (`install.py` / `nevertwice-hosts`)
 
 Not for tuning what Nevertwice remembers - for pointing `install.py` and the `claude-code`

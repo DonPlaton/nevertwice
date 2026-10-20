@@ -54,9 +54,21 @@ _ABSORB_CARRY_FIELDS = ("status", "resolved_by", "resolves", "relations", "salie
 EXPLICIT_RETIRE = os.environ.get("NEVERTWICE_EXPLICIT_RETIRE", "write").strip().lower()
 
 
+#: Metadata a description carries BESIDE its statement: A6.2's `[Date: YYYY-MM-DD]` anchor and
+#: A6.3's `[Prior <date>: <value>]` history line. Both are appended to a description by the write
+#: path, and both have to be invisible to the same-fact comparison: a re-statement whose only
+#: difference is the day it was recorded IS the same statement (K8), and the prior-value line is
+#: a record OF the change rather than part of what the note now claims. Without this, the first
+#: A6.3 supersede would make the NEXT re-statement of the same fact look "unproven" and mint a
+#: contested sibling where the pre-A6 store retired the old note.
+_STATEMENT_META_RE = _lazy_re(r"\s*\[(?:Prior [^\]]*|Date: \d{4}-\d{2}-\d{2})\]")
+
+
 def _norm_statement(desc: str) -> str:
-    """A description without its `[facts]` block, whitespace folded, lower-cased - the statement."""
-    return _norm_ws(re.sub(r"\s*\[facts\].*$", "", desc or "", flags=re.DOTALL))
+    """A description without its metadata - the `[facts]` block, the A6.2 date anchor and the
+    A6.3 prior-value line - whitespace folded, lower-cased: the statement itself."""
+    return _norm_ws(_STATEMENT_META_RE.sub(
+        "", re.sub(r"\s*\[facts\].*$", "", desc or "", flags=re.DOTALL)))
 
 
 def _same_replacement(old_path: Path, title: str, desc: str,
@@ -1072,6 +1084,51 @@ def write_typed_note(folder: str, item, project: str, date: str,
             _frag = (_frag or "").strip()
             if _frag and _frag not in desc and _frag not in prevention:
                 absorbed_prev.append(_frag[:400])
+
+    # A6.3: prior-value history. The value this write REPLACES is read HERE - while the absorb
+    # target still holds the old text and before the retirement moves the old note into
+    # Superseded/ - and carried in the new note's own description as one bounded line, so a
+    # reader sees both "Completed 5 painting projects" and "[Prior 2023-07-10: Completed 4
+    # painting projects]" without a second model call. That is the requirement's
+    # knowledge-update case (4 projects -> 5), and it has to be answerable from the store alone:
+    # no LLM is reachable on the recall path, and on the write path a re-extraction of the same
+    # session may not have one either.
+    #
+    # Both mechanisms the write path already has are covered: `absorb_into` (a same-day or
+    # same-session refresh, rewritten in place) and `to_retire` (an older same-slug note or an
+    # explicit supersede, moved to Superseded/ and dropped from the cache). A quarantined note
+    # (W7) is kept out of recall, so it gets no history: provenance it does not serve is noise.
+    if not quarantine_reason:
+        _prior_lines: list[str] = []
+        for _old_path in (([absorb_into] if absorb_into is not None else [])
+                          + [o for o in to_retire if o.stem != write_stem]):
+            try:
+                _old_text = _old_path.read_text(encoding="utf-8", errors="replace")
+            except OSError:
+                continue                      # unreadable old note: the write still proceeds
+            _old_fm, _ = _read_frontmatter(_old_text)
+            _, _old_desc, _ = _parse_note_body(_old_text.split("\n"))
+            #: The old note's description is a STATEMENT as far as the history is concerned: its
+            #: `[facts]` block and any `[Date: ...]`/`[Prior ...]` tag are provenance metadata,
+            #: not the replaced value, and carrying them into the line would re-state a literal
+            #: list and, on a chain, the history of the history. One value per write - the one
+            #: this note actually supersedes.
+            _old_desc = re.sub(r"\s*\[facts\].*$", "", _old_desc or "", flags=re.DOTALL)
+            _old_desc = _STATEMENT_META_RE.sub("", _old_desc).strip()
+            if not _old_desc or _old_desc in desc:
+                continue                      # nothing replaced, or the same statement restated
+            _old_day = (_old_fm.get("date")
+                        or (parse_typed_stem(_old_path.stem) or {}).get("date") or date)
+            _prior_lines.append(
+                f"[Prior {_old_day}: {_cut_word_boundary(_old_desc, 140)}]")
+        if _prior_lines:
+            desc = "\n".join(([desc.rstrip()] if desc.strip() else []) + _prior_lines)
+            #: The CALLERS embed `item["description"]` after this returns (`process_session`,
+            #: `api.remember_lessons_aligned`), so the cache and the .md have to agree on this
+            #: text here - a cache entry without the line is the split-brain this write path has
+            #: been fixed for twice (review 2026-08), one field over.
+            if isinstance(item, dict):
+                item["description"] = desc
 
     body = [fm_block(fm), "", f"# {icon} {title}".strip(), ""]
     if desc:

@@ -760,6 +760,10 @@ ALLOWLIST: dict[str, str] = {
     "NEVERTWICE_XRERANK": "a boolean flag string (turn the cross-encoder reranker on/off)",
     "NEVERTWICE_XRERANK_MAXLEN": "an integer token-length cap, not a path",
     "NEVERTWICE_DOTENV": "a mode switch ('explicit' = read only NEVERTWICE_ENV_FILE), not a path; sandbox_guard.isolate() sets it",
+    "NEVERTWICE_EXTRACT_MODE": "a mode-selector string (code/all/auto), not a path",
+    "NEVERTWICE_EPISODIC_INDEX": "a boolean flag string (index dated speaker turns as a second recall tier)",
+    "NEVERTWICE_TELEMETRY_READONLY": "a boolean flag string (a read must not mutate the store; sandbox_guard sets 0)",
+    "NEVERTWICE_SANDBOX": "a boolean flag string (sandbox_guard.isolate marks a sandboxed/sealed store)",
     # -- real Windows system directories used only as text-classification REFERENCE
     # constants (_engine_text.py's _SYS_DIRS, to exclude them from "is this a project"
     # matching) - never opened or listed; pinning them to a fake path would break the
@@ -902,7 +906,10 @@ def test_walled_covers_or_allowlists_every_env_name_in_the_package() -> None:
                        "NEVERTWICE_DOTENV",
                        # PREREG-V3 TB3(a) (2026-09-27): the cloud-fallback switch (_engine_store.py, a
                        # direct literal read)
-                       "NEVERTWICE_CLOUD_FALLBACK"}
+                       "NEVERTWICE_CLOUD_FALLBACK",
+                       # A6 (2026-10-21): the modular memory upgrade's four non-path switches
+                       "NEVERTWICE_EXTRACT_MODE", "NEVERTWICE_EPISODIC_INDEX",
+                       "NEVERTWICE_TELEMETRY_READONLY", "NEVERTWICE_SANDBOX"}
     expected_total = 168 - len(expected_lost) + len(expected_gained)
     check(f"this scanner finds {len(all_names)} names - every difference from the auditor's "
           f"168 named above: {len(expected_gained)} gained, {len(expected_lost)} lost "

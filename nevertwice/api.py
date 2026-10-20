@@ -88,14 +88,34 @@ def recall(query: str, project: str | None = None, k: int = 5,
     # `search_latency` had no caller, so its percentiles were computed over an empty sample for
     # every store (T1 review 2026-09-19). Timed around the ranking itself, after the empty-query
     # guard, so the sample is of searches that actually searched.
+    #
+    # A6.4/M34: a READ against a read-only store must leave the store byte-for-byte unchanged,
+    # and `record_search` writes telemetry.json (and its .bak) on every call.
+    # NEVERTWICE_TELEMETRY_READONLY is the explicit switch ("1" = a read must not mutate).
+    # NEVERTWICE_SANDBOX is the fallback: a store that declares itself sandboxed/sealed and says
+    # nothing about telemetry is read-only too. The explicit switch wins over that fallback in
+    # BOTH directions, which is what lets the test harness - whose sandbox is a disposable temp
+    # directory - record a read and observe it (`sandbox_guard.isolate()` sets it to "0"), while
+    # a store that inherits only the sandbox flag stays untouched. Checked BEFORE the write is
+    # attempted, not inside it: the recorder is deliberately best-effort, so a failure there
+    # would be swallowed and the mutation would already have happened.
+    _readonly = os.environ.get("NEVERTWICE_TELEMETRY_READONLY")
+    if _readonly is None:
+        _readonly = "1" if os.environ.get("NEVERTWICE_SANDBOX") == "1" else "0"
+    _sealed = False
     try:
+        _sealed = (Path(m.VAULT).parent / "store.seal.json").is_file()
+    except Exception:  # noqa: BLE001
+        _sealed = False
+    if _readonly != "1" and not _sealed:
         try:
-            from . import telemetry as _tel
-        except ImportError:                  # B7: the flat shape (api.py:45 imports the same way)
-            import telemetry as _tel  # noqa: PLC0415
-        _tel.record_search((time.perf_counter() - started) * 1000.0)
-    except Exception:           # noqa: BLE001 - a search never fails on bookkeeping
-        pass
+            try:
+                from . import telemetry as _tel
+            except ImportError:              # B7: the flat shape (api.py:45 imports the same way)
+                import telemetry as _tel  # noqa: PLC0415
+            _tel.record_search((time.perf_counter() - started) * 1000.0)
+        except Exception:       # noqa: BLE001 - a search never fails on bookkeeping
+            pass
     return results
 
 

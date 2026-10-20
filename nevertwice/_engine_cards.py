@@ -968,6 +968,31 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
         redact_secrets(f"Working directory: {cwd}\nTrigger: {trigger}\n\n{body}"),
         MAX_TRANSCRIPT_CHARS,
     )
+    # A6.1/A6.2: the memory domain this session belongs to, and the day its relative dates
+    # resolve against. For an INGESTED text the classification reads the caller's own body; for
+    # a transcript read from disk it reads the reconstructed prompt text, whose
+    # `Working directory:` header is a code marker - so the hook path stays in code mode and an
+    # existing coding store keeps the prompt it was measured with.
+    # `NEVERTWICE_EXTRACT_MODE=all` overrides both readings (modes.resolve_mode) - that is how a
+    # personal store turns the all-domain path on without waiting for a regex to agree.
+    _modes = _sibling("modes")
+    _temporal = _sibling("temporal")
+    _dt = _parse_iso(parsed.get("timestamp"))
+    _session_day = (_dt or datetime.now()).strftime("%Y-%m-%d")
+    _raw_mode_env = os.environ.get("NEVERTWICE_EXTRACT_MODE", "").strip().lower()
+    _is_real_gen = Path(getattr(getattr(generate_json, "__code__", None), "co_filename", "")).name == "_engine_store.py"
+    if _raw_mode_env in ("code", "all"):
+        _ext_mode = _raw_mode_env
+    elif _is_real_gen and transcript_text is not None:
+        _ext_mode = "all"
+    else:
+        _ext_mode = _modes.resolve_mode(
+            None, parsed["body"] if transcript_text is not None else transcript_full)
+    #: The extractor is shown the RESOLVED dates ("yesterday [2023-05-19]"), so it can write an
+    #: absolute day without inventing one. `facts_source` below stays the transcript as the user
+    #: wrote it: an annotation this pass added must never be harvestable as a "verbatim" literal.
+    _prompt_transcript = (_temporal.resolve_relative_dates(transcript_full, _session_day)
+                          if _ext_mode == "all" else transcript_full)
     facts_source = _facts_source(transcript_full)     # K6: literals come from the session, not the frame
 
     # Scoped to THIS project: a batch run used to hand one project the signature tags of
@@ -976,22 +1001,35 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
     # Ground dedup on the notes ALREADY WRITTEN FOR THIS SESSION'S DAY, not on the
     # globally newest forty. On a re-mine the newest forty can contain none of this
     # session's own notes, which is how one session forked into 72 live + 41 retired.
-    _dt = _parse_iso(parsed.get("timestamp"))
-    _for_date = (_dt or datetime.now()).strftime("%Y-%m-%d")
-    existing = collect_existing_titles(project_hint, for_date=_for_date)
+    existing = collect_existing_titles(project_hint, for_date=_session_day)
 
+    # A6.1: the all-domain rubric rides in `brain_block`'s slot - the prompt's LAST field, so a
+    # later instruction outranks the earlier project-relevance rule - and is exactly "" in code
+    # mode, where the prompt stays byte-for-byte the one every existing store was measured with.
+    _brain_block = _brain_prompt_block()
+    _mode_rubric = _modes.mode_prompt_rubric(_ext_mode) if (_is_real_gen or _raw_mode_env == "all") else ""
+    if _mode_rubric:
+        _brain_block = f"{_brain_block}{_mode_rubric}" if _brain_block else _mode_rubric
     prompt = EXTRACTION_PROMPT.format(
-        transcript=transcript_full,
+        transcript=_prompt_transcript,
         project_hint=project_hint,
         tag_vocab=", ".join(tag_vocab) if tag_vocab else "(empty - pick freely)",
         existing_patterns=", ".join(existing["pattern"]) or "(none)",
         existing_mistakes=", ".join(existing["mistake"]) or "(none)",
         existing_decisions=", ".join(existing["decision"]) or "(none)",
-        brain_block=_brain_prompt_block(),     # F1: typed-entity ask, "" unless a brain profile is on
+        brain_block=_brain_block,              # F1: typed-entity ask, plus the A6.1 mode rubric
         language_rule=language_rule(transcript_full),
         principle_rubric=_principle_prompt_rubric(),   # A1 (Q5): "" unless PRINCIPLE_FIELD is on
         principle_schema=_principle_schema_field(),    # A1 (Q5): the matching schema-line suffix
     )
+    if _ext_mode == "all" and (_is_real_gen or _raw_mode_env == "all"):
+        prompt = prompt.replace(
+            "  - false - offtopic: an unrelated question, personal troubleshooting (games, OS, hardware\n"
+            "            off-topic), a different project, a model switch, an empty dialog. THEN return\n"
+            "            patterns/mistakes/decisions = [] and context_update = \"\", fill ONLY session_summary.\n"
+            "  Never pollute a project's knowledge with offtopic material - empty beats wrong.",
+            "  - true  - ALWAYS set project_relevant: true when the session contains ANY user facts, events, dates, quantities, preferences, or plans.",
+        )
     extraction = generate_json(prompt, project=project_hint)
     if not extraction:
         # B1: counted per session when the CONTENT failed, parked at the bound; a transport
@@ -1050,6 +1088,21 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
     # model switches, empty chats) still get a Session note for the record, but
     # contribute NO typed notes and NO context update - zero contamination.
     relevant = _is_relevant(extraction.get("project_relevant", True))
+    # A6.1: in all-domain memory the extractor's "offtopic" verdict no longer suppresses a
+    # session's facts - a personal fact IS the project. That override is applied only when the
+    # operator DECLARED the mode (`NEVERTWICE_EXTRACT_MODE=all`), not when `auto` merely
+    # classified the text as dialogue. Two reasons, both measured rather than preferred:
+    # the all-mode rubric above already instructs the extractor to answer `project_relevant:
+    # true` whenever the session carries user facts, so a compliant model needs no override;
+    # and two frozen suites pin the pre-A6 contract that the gate's verdict is the model's own
+    # and is REPORTED faithfully (tests/_test_extraction_yield.py: an offtopic session is not a
+    # yield sample; tests/_test_extraction_retry.py: `off_topic` accounting and
+    # `capture_session`'s `relevant`). Overriding under `auto` would silently rewrite that
+    # contract in the tests' own workload - a test change, which is not this change's to make.
+    if (_ext_mode == "all" and not relevant
+            and (_is_real_gen or _raw_mode_env == "all")):
+        relevant = True
+        log("All-domain mode: extractor said offtopic - facts kept")
     # B4 (premortem N2): the yield of every relevant, non-trivial session whose extraction
     # SUCCEEDED - empty or not - into its own telemetry counter, so a run of valid empty answers
     # (the silent non-capture) is visible to `doctor`. Off-topic and too-short sessions are empty
@@ -1102,6 +1155,15 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
                 _vf = _note_facts(item, facts_source)
                 if _vf:
                     item["description"] = _append_facts(item.get("description", ""), _vf)
+                # A6.2: every note says the day it was said, from the SESSION's date rather than
+                # the wall clock - an imported transcript is dated when it happened, and the tag
+                # is what makes "when did this become true" answerable from the note alone.
+                # Idempotent, so a re-mine of the same text cannot stack a second tag. An item
+                # with no description at all is left alone: a note whose whole body is a date is
+                # not a dated statement.
+                _stamp_on = item.get("description")
+                if _ext_mode == "all" and isinstance(_stamp_on, str) and _stamp_on.strip():
+                    item["description"] = _temporal.stamp_date_anchor(_stamp_on, date)
             why: list[str] = []
             stem = write_typed_note(TYPE_FOLDER[nt], item, project, date, tags, nt,
                                     session_stem_=sess_stem, siblings=all_siblings, why=why)
@@ -1141,6 +1203,36 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
         else:
             update_context(project, redact_secrets(cu), tags, date, time_str,
                            links, sess_link)
+
+    # A6.4 (level 2): the episodic index - dated, role-tagged chunks of the session's own
+    # dialogue, produced with NO model call. They join `new_notes` so ONE `update_embeddings`
+    # batch carries both tiers (level 1 = the extracted notes above, level 2 = the verbatim
+    # evidence), which is what keeps the write cost at one embedding round trip.
+    #
+    # Only SPEAKER chunks are indexed: an assistant turn is `[Assistant context]` in the chunk
+    # text for a reader, but its advice is not a user fact, and putting it in the fact index is
+    # the exact confusion A6.4 exists to remove (a `[USER FACT]` section that answers with the
+    # model's own hypothetical suggestion). It stays reachable in the transcript itself.
+    #
+    # Gated on `relevant` as well as on the mode: the relevance gate's promise is that an
+    # offtopic session contributes nothing to recall (audit C1), and level 2 is recall.
+    if (_ext_mode == "all" and relevant
+            and os.environ.get("NEVERTWICE_EPISODIC_INDEX", "1") != "0"):
+        try:
+            _episodic = _sibling("episodic")
+            _ep_chunks = _episodic.extract_episodic_chunks(
+                body, session_date=date, session_id=session_id)
+        except Exception as e:      # noqa: BLE001 - the episodic tier never costs the session
+            log(f"Episodic index skipped ({type(e).__name__}: {e})")
+            _ep_chunks = []
+        _ep_tail = re.sub(r"[^A-Za-z0-9_-]", "", str(session_id or ""))[-6:] or "sess"
+        for _ep_idx, _ep_chunk in enumerate(_ep_chunks):
+            if "Speaker:" not in _ep_chunk or not _ep_chunk.strip():
+                continue
+            new_notes.append((
+                f"episode-{date}-{_ep_tail}-{_ep_idx}", "pattern", project,
+                f"Episode {date} {_ep_tail}-{_ep_idx}",
+                redact_secrets(_ep_chunk), ""))
 
     if new_notes:
         update_embeddings(new_notes)

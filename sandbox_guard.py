@@ -386,6 +386,13 @@ def isolate(prefix: str = "nevertwice-sandbox-") -> Path:
     # real window): a sandboxed process - and every child it starts, which inherits this - never gets the machine's
     # contract, so never the real polygon or the network hop (launch.Contract.default refuses by name).
     os.environ["NEVERTWICE_SANDBOX"] = "1"
+    #: ...and the store this process now owns is a THROWAWAY one, so the read path may record its
+    #: telemetry here (A6.4/M34's other half): `api.recall` treats the sandbox flag as "sealed"
+    #: unless this explicit switch says otherwise, and a suite has to be able to observe a
+    #: recording read (`tests/_test_llm_output_cap.py`) as well as an immutable one. The explicit
+    #: switch wins in both directions, so a process that only inherits NEVERTWICE_SANDBOX - a
+    #: sealed store, or a child the harness never touched - still gets the immutable behaviour.
+    os.environ["NEVERTWICE_TELEMETRY_READONLY"] = "0"
     atexit.register(_cleanup)
     verify()
     return _STORE
