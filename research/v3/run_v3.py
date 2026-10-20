@@ -388,7 +388,7 @@ def op_text(arm: str, op: Mapping[str, Any], *, dated: bool) -> str:
     F-C6-1). Any other arm has no declared writer op text: refused, never priced by a guess."""
     PL = load("run_v3_plan.py", smoke=True)
     spec = PL.ARMS.get(arm)
-    if spec is not None and spec.granularity == "session":
+    if spec is not None and spec.granularity in ("session", "turn"):
         return op["item"]["text"]
     if arm == "langmem":
         msgs = op["item"].get("messages") or []
@@ -615,6 +615,7 @@ EXTRA_WRITER_BOUNDS = {
     "nevertwice-rawtext": dict(WRITER_BOUNDS["nevertwice"]),
     "langmem": {"requests_per_op": 3, "out_tokens": 2000, "fixed_in_bytes": 12_000, "transcript_chars": None},
     "claude-code-memory": {"requests_per_op": 3, "out_tokens": 4096, "fixed_in_bytes": 12_000, "transcript_chars": None},
+    "a-mem": {"requests_per_op": 3, "out_tokens": 2000, "fixed_in_bytes": 12_000, "transcript_chars": None},
 }
 
 
