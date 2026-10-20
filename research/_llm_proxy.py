@@ -1746,7 +1746,7 @@ class Proxy:
                     _refuse(cs, 401, "Unauthorized", b"proxy token missing or wrong",
                             headers=headers, buffered=len(buf))
                     return
-                if arm.home_canary and _hget(headers, HOME_CANARY_HEADER) != arm.home_canary:
+                if arm.home_canary and role == "write" and _hget(headers, HOME_CANARY_HEADER) != arm.home_canary:
                     ctr.refused_home_canary += 1                 # R-CC-WIT: the binary did not read the fake home
                     self._flag(arm.arm, "home_canary_missing", None)
                     _refuse(cs, 403, "Forbidden", b"fake home not read: the home canary is missing or wrong",
