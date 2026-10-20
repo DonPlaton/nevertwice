@@ -992,10 +992,12 @@ def spawn(c: Contract, argv: Sequence[str], *, env: Mapping[str, str], cwd: str 
     # caller label switches this off - runs only fully locked down.
     pinned_cc = c.claude_code_binary
     node_form = len(argv) > 1 and _in_claude_package(str(argv[1]))
-    is_claude = (record.get("arm") == "claude-code-memory" or record.get("role") == "claude-code"
+    is_py_adapter = len(argv) >= 3 and str(argv[1]) == "-B" and str(argv[2]).endswith("arm_claude_code.py")
+    is_claude = (not is_py_adapter and (
+                 record.get("arm") == "claude-code-memory" or record.get("role") == "claude-code"
                  or Path(str(argv[0])).name.lower() in ("claude", "claude.exe", "claude.cmd")
                  or any(_in_claude_package(str(a)) for a in argv)                          # D6: node + cli.js
-                 or (pinned_cc is not None and any(_norm(str(a)) == _norm(pinned_cc) for a in argv)))
+                 or (pinned_cc is not None and any(_norm(str(a)) == _norm(pinned_cc) for a in argv))))
     claude_rec = None
     cfg_register = None
     if cc_mode is not None:
