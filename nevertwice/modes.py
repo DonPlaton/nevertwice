@@ -62,8 +62,9 @@ ALL_MODE_RUBRIC = (
     "(and recurring habits, routines, preferences, or multi-item lists into \"patterns\").\n"
     "- In every description, include the speaker/subject name, exact numbers/quantities, "
     "and exact dates, and copy key literals into \"facts\".\n"
-    "- When a user updates a count or state (e.g. completed projects, hours, locations), "
-    "record the state update and set \"supersedes\" to the earlier note's title.\n"
+    "- Epistemic modality: tag confirmed user/speaker facts with [Confirmed fact], and tag "
+    "assistant explanations, estimates, or hypothetical options with [Hypothetical / Assistant suggestion] so both are recallable without confusion.\n"
+    "- When a user updates a count or state, set \"supersedes\" to the earlier note's title.\n"
 )
 
 

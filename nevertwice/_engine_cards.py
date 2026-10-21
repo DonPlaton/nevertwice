@@ -1001,7 +1001,15 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
     # Ground dedup on the notes ALREADY WRITTEN FOR THIS SESSION'S DAY, not on the
     # globally newest forty. On a re-mine the newest forty can contain none of this
     # session's own notes, which is how one session forked into 72 live + 41 retired.
-    existing = collect_existing_titles(project_hint, for_date=_session_day)
+    #
+    # A6.5: in all-domain memory the notes that must ground dedup are the WHOLE project's
+    # live titles, not this day's - a personal store repeats a fact on a later call
+    # ("I now work as a logistics coordinator") and the extractor has to see the earlier
+    # note to update or supersede it instead of filing a second copy. The extra scan is
+    # over an already-cached per-project index, and the coding path keeps the day window.
+    _all_domain = _ext_mode == "all" and (_is_real_gen or _raw_mode_env == "all")
+    existing = collect_existing_titles(
+        project_hint, for_date=None if _all_domain else _session_day)
 
     # A6.1: the all-domain rubric rides in `brain_block`'s slot - the prompt's LAST field, so a
     # later instruction outranks the earlier project-relevance rule - and is exactly "" in code
@@ -1209,10 +1217,17 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
     # batch carries both tiers (level 1 = the extracted notes above, level 2 = the verbatim
     # evidence), which is what keeps the write cost at one embedding round trip.
     #
-    # Only SPEAKER chunks are indexed: an assistant turn is `[Assistant context]` in the chunk
-    # text for a reader, but its advice is not a user fact, and putting it in the fact index is
-    # the exact confusion A6.4 exists to remove (a `[USER FACT]` section that answers with the
-    # model's own hypothetical suggestion). It stays reachable in the transcript itself.
+    # A6.5: BOTH role kinds are indexed, with the distinction carried by CONFIDENCE rather
+    # than by dropping the assistant. Speaker turns keep the 0.9 that confirmed user facts
+    # rank with; an `[Assistant context]` chunk is indexed at 0.65 and its text says
+    # "hypothetical/suggestion, not a confirmed user fact", so the ranking puts the user's
+    # own words first and the reader is never told the model's advice was the speaker's.
+    # Dropping assistant chunks entirely lost the explanation behind an answer, and the
+    # question/answer pairs an episodic tier exists to keep.
+    #
+    # The source text is the RESOLVED transcript (`yesterday [2023-05-19]`), the same
+    # annotation the extractor is shown: an episode read months later can then answer "when"
+    # from its own text without re-deriving it against a day nobody recorded.
     #
     # Gated on `relevant` as well as on the mode: the relevance gate's promise is that an
     # offtopic session contributes nothing to recall (audit C1), and level 2 is recall.
@@ -1220,19 +1235,30 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
             and os.environ.get("NEVERTWICE_EPISODIC_INDEX", "1") != "0"):
         try:
             _episodic = _sibling("episodic")
+            _ep_source = _temporal.resolve_relative_dates(body, date)
             _ep_chunks = _episodic.extract_episodic_chunks(
-                body, session_date=date, session_id=session_id)
+                _ep_source, session_date=date, session_id=session_id)
         except Exception as e:      # noqa: BLE001 - the episodic tier never costs the session
             log(f"Episodic index skipped ({type(e).__name__}: {e})")
             _ep_chunks = []
         _ep_tail = re.sub(r"[^A-Za-z0-9_-]", "", str(session_id or ""))[-6:] or "sess"
         for _ep_idx, _ep_chunk in enumerate(_ep_chunks):
-            if "Speaker:" not in _ep_chunk or not _ep_chunk.strip():
+            if not _ep_chunk.strip():
                 continue
-            new_notes.append((
-                f"episode-{date}-{_ep_tail}-{_ep_idx}", "pattern", project,
-                f"Episode {date} {_ep_tail}-{_ep_idx}",
-                redact_secrets(_ep_chunk), ""))
+            if "Speaker:" in _ep_chunk:
+                new_notes.append((
+                    f"episode-{date}-{_ep_tail}-{_ep_idx}", "pattern", project,
+                    f"Episode {date} {_ep_tail}-{_ep_idx}",
+                    redact_secrets(_ep_chunk), "", 0.9))
+            elif "[Assistant context]" in _ep_chunk:
+                _assistant_desc = redact_secrets(_ep_chunk.replace(
+                    "[Assistant context]",
+                    "[Assistant context \u2014 hypothetical/suggestion, "
+                    "not a confirmed user fact]"))
+                new_notes.append((
+                    f"episode-{date}-{_ep_tail}-{_ep_idx}", "pattern", project,
+                    f"Episode {date} {_ep_tail}-{_ep_idx}",
+                    _assistant_desc, "", 0.65))
 
     if new_notes:
         update_embeddings(new_notes)

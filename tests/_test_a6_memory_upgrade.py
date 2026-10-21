@@ -2,7 +2,7 @@
 """A6 - the modular memory upgrade: mode selection, temporal anchoring, prior-value
 history, and role-aware episodic chunks that a read-only store may not mutate.
 
-This file is the acceptance contract for four requirements, written from the requirement
+This file is the acceptance contract for five requirements, written from the requirement
 text and the existing public surfaces (`write_typed_note`, `update_embeddings`,
 `api.recall`, `api.format_note`) - not from an implementation. It is expected to be RED
 before the A6 modules land: `nevertwice/modes.py`, `nevertwice/temporal.py` and
@@ -45,12 +45,32 @@ Requirement -> section map (every check's name starts with its A6 id):
           A positive control without either flag proves the read path does write when allowed,
           so the immutability checks can actually fail.
 
+  A6.5  calendar phrases, epistemic tags, and question carryover.
+        - temporal.resolve_relative_dates keeps the phrase and appends the resolved value:
+          "last Saturday" on 2023-05-25 -> "[2023-05-20]", "next month" -> "[June 2023]",
+          "last month" on 2023-01-10 -> "[December 2022]", "4 years ago" -> "[2019]",
+          "last year" -> "[2022]"; every one is unchanged by a second pass;
+        - modes.mode_prompt_rubric("all") names `[Confirmed fact]` and
+          `[Hypothetical / Assistant suggestion]` so confirmed and hypothetical content stay
+          distinguishable;
+        - episodic.extract_episodic_chunks prefixes the next speaker's answer with
+          `(re: <last question>)`, and the prefix survives the answer beginning a new
+          600-character chunk.
+        A6.5 is written from the requirement text and the public format only: it does not
+        reproduce the resolver's calendar arithmetic or the chunker's packing rule. Its
+        baseline is expected to pass where the named behaviour is already present; a red
+        means the behaviour or this oracle is wrong, and is reported rather than papered over.
+
 Not asserted here (verification gaps are listed in the report, not papered over): the
 "sealed store mode" spelling the requirement mentions has no documented marker in this
 repository; mode_env values other than "code"/"all"/"auto"; relative-date phrases beyond
-the four named; and where `session_id` surfaces in a chunk. The M34 checks run in a child
-process with the flag already in its environment, so a call-time and an import-time
-reading of the flag both satisfy them.
+the nine named here (four day offsets in A6.2, five calendar phrases in A6.5), and weekday
+arithmetic beyond the single "last Saturday" case; question carryover longer than one turn
+or longer than the chunker's bounded prefix; an answer that is itself a question; and where
+`session_id` surfaces in a chunk. The M34 checks run in a child process with the flag
+already in its environment, so a call-time and an import-time reading of the flag both
+satisfy them. A6.5 exercises `episodic.extract_episodic_chunks` directly and does not cover
+how `_engine_cards.py` indexes the two role kinds into the store.
 
 Hermetic and offline: the store is a fresh temp dir moved with `m._rebase_vault`, the
 embedder is stubbed to text-only, and the M34 children inherit explicit store paths.
@@ -90,6 +110,33 @@ def check(name, cond, detail=""):
         F += 1
         print(f"  [FAIL] {name}{('  ' + detail) if detail else ''}")
 
+
+#: A6.5's exact calendar resolutions, each with the check name that reports it. The oracle is
+#: the requirement's (phrase, anchor, expected) triple, not a re-implementation of the
+#: resolver: the phrase is kept and the answer is appended in brackets, so a reader sees what
+#: was said and what it meant. Defined once so the planned inventory and the executed checks
+#: cannot drift.
+A65_TEMPORAL_CASES = (
+    ("A6.5.1 'last Saturday' on 2023-05-25 resolves to 2023-05-20",
+     "last Saturday", "2023-05-25", "last Saturday [2023-05-20]"),
+    ("A6.5.2 'next month' on 2023-05-25 resolves to June 2023",
+     "next month", "2023-05-25", "next month [June 2023]"),
+    ("A6.5.3 'last month' on 2023-01-10 crosses into December 2022",
+     "last month", "2023-01-10", "last month [December 2022]"),
+    ("A6.5.4 '4 years ago' on 2023-05-25 resolves to 2019",
+     "4 years ago", "2023-05-25", "4 years ago [2019]"),
+    ("A6.5.5 'last year' on 2023-05-25 resolves to 2022",
+     "last year", "2023-05-25", "last year [2022]"),
+)
+A65_IDEMPOTENT = "A6.5.6 resolving each of those five phrases twice changes nothing"
+A65_RUBRIC_CONFIRMED = "A6.5.7 mode_prompt_rubric('all') contains [Confirmed fact]"
+A65_RUBRIC_HYPOTHETICAL = (
+    "A6.5.8 mode_prompt_rubric('all') contains [Hypothetical / Assistant suggestion]")
+A65_REPLY_CONTEXT = "A6.5.9 the chunk holding Caroline's answer carries the question it answers"
+A65_REPLY_CONTEXT_SPLIT = "A6.5.10 the carryover survives the answer starting a new chunk"
+A65_CHECKS = ([case[0] for case in A65_TEMPORAL_CASES]
+              + [A65_IDEMPOTENT, A65_RUBRIC_CONFIRMED, A65_RUBRIC_HYPOTHETICAL,
+                 A65_REPLY_CONTEXT, A65_REPLY_CONTEXT_SPLIT])
 
 #: One entry per executed check, so a section that dies halfway (or a planned check that
 #: was silently deleted) shows up as a failure instead of a shorter green run.
@@ -173,6 +220,7 @@ PLANNED = {
         "A6.4.16 NEVERTWICE_SANDBOX=1: telemetry.json.bak is unchanged",
         "A6.4.17 control (no read-only flag): the read records, so the checks can fail",
     ],
+    "A6.5": A65_CHECKS,
 }
 
 
@@ -577,6 +625,75 @@ def _a64_episodic(episodic):
           list(again) == chunks, "two calls differ")
 
 
+# ── A6.5 - calendar phrases, epistemic tags, question carryover ────────────────────
+#: The requirement's exact exchange. Turn 1 ends with a question; turn 2 is the next
+#: speaker's answer, so the chunk that holds the answer must also hold what it answers.
+A65_EXCHANGE = ("Melanie: We are going camping. Any fun plans for the summer?\n"
+                "Caroline: Researching adoption agencies.")
+A65_ANSWER = "(re: Any fun plans for the summer?) Researching adoption agencies."
+#: The same exchange with a long first turn: the answer cannot share the question's chunk,
+#: which is the split the carryover exists for. "I am planning the trip. " is 24 chars, so
+#: 21 of them plus the question keep Melanie's tagged turn under the 600-character ceiling
+#: and force Caroline's tagged answer into a second chunk.
+A65_SPLIT_EXCHANGE = ("Melanie: " + "I am planning the trip. " * 21
+                      + "Any fun plans for the summer?\n"
+                      + "Caroline: Researching adoption agencies.")
+
+
+def _a65_reply_chunks(episodic, transcript):
+    """`(all chunks, chunks holding Caroline's answer)` for one A6.5 exchange."""
+    raw = episodic.extract_episodic_chunks(transcript, session_date="2023-05-25",
+                                           session_id="a65")
+    chunks = [c for c in raw if isinstance(c, str)] if isinstance(raw, (list, tuple)) else []
+    return chunks, [c for c in chunks if "Researching adoption agencies." in c]
+
+
+def _a65(modes, temporal, episodic):
+    print("# A6.5 - calendar phrases, epistemic tags, question carryover")
+
+    if temporal is None:
+        _fail_checks(PLANNED["A6.5"][:6], "temporal.py not importable")
+    else:
+        for name, phrase, anchor, expected in A65_TEMPORAL_CASES:
+            got = temporal.resolve_relative_dates(phrase, anchor)
+            check(name, got == expected, repr(got))
+
+        #: Idempotence is independent of the first-pass assertions above: a resolver that
+        #: returns its input unchanged is stable but still fails A6.5.1-A6.5.5, so one
+        #: defect cannot hide behind the other.
+        second_pass = []
+        for _name, phrase, anchor, _expected in A65_TEMPORAL_CASES:
+            once = temporal.resolve_relative_dates(phrase, anchor)
+            twice = temporal.resolve_relative_dates(once, anchor)
+            if twice != once:
+                second_pass.append(f"{phrase!r}: {once!r} -> {twice!r}")
+        check(A65_IDEMPOTENT, not second_pass, "; ".join(second_pass))
+
+    if modes is None:
+        _fail_checks([A65_RUBRIC_CONFIRMED, A65_RUBRIC_HYPOTHETICAL],
+                     "modes.py not importable")
+    else:
+        rubric = modes.mode_prompt_rubric("all")
+        rubric = rubric if isinstance(rubric, str) else ""
+        check(A65_RUBRIC_CONFIRMED, "[Confirmed fact]" in rubric, rubric[:200])
+        check(A65_RUBRIC_HYPOTHETICAL,
+              "[Hypothetical / Assistant suggestion]" in rubric, rubric[:200])
+
+    if episodic is None:
+        _fail_checks([A65_REPLY_CONTEXT, A65_REPLY_CONTEXT_SPLIT],
+                     "episodic.py not importable")
+    else:
+        chunks, carriers = _a65_reply_chunks(episodic, A65_EXCHANGE)
+        check(A65_REPLY_CONTEXT,
+              bool(carriers) and all(A65_ANSWER in c for c in carriers), repr(chunks))
+
+        chunks, carriers = _a65_reply_chunks(episodic, A65_SPLIT_EXCHANGE)
+        check(A65_REPLY_CONTEXT_SPLIT,
+              bool(carriers) and all(A65_ANSWER in c for c in carriers)
+              and all("Speaker: Melanie" not in c for c in carriers),
+              f"{len(chunks)} chunk(s): {[c[:80] for c in chunks]}")
+
+
 # ── A6.4 / M34 - a read must not mutate the telemetry store ────────────────────────
 RECALL_CHILD = r"""
 import sys
@@ -715,6 +832,10 @@ with tempfile.TemporaryDirectory(prefix="a6vault_") as td:
         _fail_checks(PLANNED["A6.4"], f"episodic.py not importable ({episodic_err})")
     else:
         _run_section("A6.4", _a64_episodic, episodic_mod)
+
+    #: A6.5 spans all three modules, so it takes the already-loaded handles and reports the
+    #: missing one per check instead of hiding the rest behind a single import error.
+    _run_section("A6.5", _a65, modes_mod, temporal_mod, episodic_mod)
 
     #: M34 is a property of the READ path, not of the episodic module, so it runs whether
     #: or not `episodic.py` has landed - otherwise the missing module would hide the one

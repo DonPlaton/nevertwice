@@ -23,6 +23,15 @@ of twenty short statements does not become twenty index entries; a long turn is 
 then word boundaries, and the role tag is repeated on every piece so a piece is never orphaned
 from who said it.
 
+A6.5 adds question-context carryover: when a turn CONTAINS a question and the next turn is a
+speaker's answer, the answer's body is prefixed with `(re: <last question>)` before it is chunked,
+so an answer split into the next chunk still says what it was answering:
+
+    [Date: 2023-05-25 | Speaker: Caroline] (re: Any fun plans for the summer?) Researching ...
+
+The prefix is bounded (`_REPLY_CONTEXT_MAX`) and only travels one turn, so a question cannot
+attach itself to an unrelated later statement.
+
 Standard library only (`re`): imported through `_sibling("episodic")`, and the chunker runs
 inline on the session's write path, where an import of the store or the embedder would be a cost
 paid on every capture.
@@ -59,6 +68,36 @@ _DATE_IN_TRANSCRIPT_RE = re.compile(r"Conversation from (\d{4}-\d{2}-\d{2})")
 #: `system` belongs here rather than in the speaker arm: a system prompt is context, and
 #: presenting it as the user's own words is the exact confusion this module exists to prevent.
 _CONTEXT_ROLES = frozenset(("assistant", "system"))
+
+#: A6.5 - how much of a question travels with the answer that follows it. A chunk can end
+#: between a question and its answer (600 characters is a paragraph, and a dialogue crosses it),
+#: and "Researching adoption agencies" read alone is a fragment whose subject was lost. The last
+#: question of the immediately preceding turn is prepended as `(re: <question>)`, bounded so a
+#: long question cannot crowd out the answer it is attached to.
+_REPLY_CONTEXT_MAX = 90
+
+#: Sentence terminators the question extractor walks back from the final `?`. A newline ends a
+#: sentence too: a turn body is multi-line, and the last question of one line must not swallow
+#: the line before it.
+_SENTENCE_BREAKS = ".!?\n"
+
+
+def _last_question(body: str) -> str:
+    """The last question sentence in `body`, trimmed to `_REPLY_CONTEXT_MAX`, or "".
+
+    Walks back from the final `?` to the previous sentence terminator, so a body that both
+    explains and asks contributes only the question. Deterministic: string search only.
+    """
+    idx = (body or "").rfind("?")
+    if idx < 0:
+        return ""
+    start = 0
+    for i in range(idx - 1, -1, -1):
+        if body[i] in _SENTENCE_BREAKS:
+            start = i + 1
+            break
+    return body[start:idx + 1].strip()[:_REPLY_CONTEXT_MAX].strip()
+
 
 
 def _turns(transcript: str) -> list[tuple[str, str]]:
@@ -154,8 +193,17 @@ def extract_episodic_chunks(transcript: str, session_date: str = "", session_id:
 
     chunks: list[str] = []
     buf, buf_kind = "", ""
+    prev_q = ""
     for role, body in _turns(text):
         kind = "context" if role.strip().lower() in _CONTEXT_ROLES else "speaker"
+        #: A6.5: a speaker's answer carries the question it answers. The question is read from
+        #: the turn's ORIGINAL text, before the carryover prefix is added, so a re-issued
+        #: context cannot chain itself forward; and only a SPEAKER turn is prefixed, because a
+        #: question attached to the assistant's own advice would look like the user's words.
+        asked = _last_question(body)
+        if kind == "speaker" and prev_q and prev_q.lower() not in body.lower():
+            body = f"(re: {prev_q}) {body}"
+        prev_q = asked
         prefix = (f"[Date: {day}] [Assistant context] " if kind == "context"
                   else f"[Date: {day} | Speaker: {role}] ")
         #: Every piece repeats the role tag: a piece must never be separable from who said it,
