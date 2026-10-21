@@ -21,7 +21,8 @@ Format of one chunk::
 Consecutive turns of the same role are packed into one chunk up to `MAX_CHUNK_CHARS` so a session
 of twenty short statements does not become twenty index entries; a long turn is split at sentence
 then word boundaries, and the role tag is repeated on every piece so a piece is never orphaned
-from who said it.
+from who said it. A6.6 keeps the SPEAKER run open across an assistant reply (the reply has its own
+buffer) and caps assistant chunks at two per session, so one verbose model cannot flood the index.
 
 A6.5 adds question-context carryover: when a turn CONTAINS a question and the next turn is a
 speaker's answer, the answer's body is prefixed with `(re: <last question>)` before it is chunked,
@@ -67,7 +68,20 @@ _DATE_IN_TRANSCRIPT_RE = re.compile(r"Conversation from (\d{4}-\d{2}-\d{2})")
 #: Roles whose words are the assistant's own reasoning or advice, not a fact about the speaker.
 #: `system` belongs here rather than in the speaker arm: a system prompt is context, and
 #: presenting it as the user's own words is the exact confusion this module exists to prevent.
-_CONTEXT_ROLES = frozenset(("assistant", "system"))
+_USER_ROLES = frozenset(("user",))
+_ASSISTANT_ROLES = frozenset(("assistant",))
+_SKIP_ROLES = frozenset(("system",))
+_CONTEXT_ROLES = _ASSISTANT_ROLES | _SKIP_ROLES
+
+#: Markdown labels that sit inside an assistant turn (`Cons: ...`, `Cost: ...`) and match the
+#: capitalised named-speaker arm of `_TURN_RE`. They are not speakers: in a `user:`/`assistant:`
+#: dialogue the turn parser must keep them in the current turn's body, or the label's line
+#: becomes a separate "speaker" whose words are the model's own list item.
+_NON_SPEAKER_LABELS = frozenset({
+    "pros", "cons", "note", "notes", "cost", "price", "summary", "example", "tip", "tips",
+    "warning", "step", "option", "options", "result", "conclusion", "source", "status",
+    "time", "date", "location", "http", "https", "pros and cons",
+})
 
 #: A6.5 - how much of a question travels with the answer that follows it. A chunk can end
 #: between a question and its answer (600 characters is a paragraph, and a dialogue crosses it),
@@ -99,32 +113,48 @@ def _last_question(body: str) -> str:
     return body[start:idx + 1].strip()[:_REPLY_CONTEXT_MAX].strip()
 
 
-
 def _turns(transcript: str) -> list[tuple[str, str]]:
     """`[(role, body)]` in transcript order.
 
     A line that starts a new `<role>:` opens a turn; anything else is a continuation of the
-    current one (a multi-line turn is one statement). Prose with no role prefix at all - a raw
-    dialogue blob, or an ingested document - is read as the USER's own words: the alternative is
-    silently dropping it, and this tier exists so nothing is dropped.
+    current one (a multi-line turn is one statement). A6.6: inside a `user:`/`assistant:` dialogue
+    a capitalised `Cons: ...` is a label, not a speaker, and stays in the current turn's body.
+    Prose with no role prefix at all - a raw dialogue blob, or an ingested document - is read as
+    the USER's own words: the alternative is silently dropping it, and this tier exists so nothing
+    is dropped.
     """
     turns: list[tuple[str, str]] = []
     role, buf = "", []
+    lines = (transcript or "").splitlines()
+    #: A6.6: a `user:`/`assistant:` transcript is a dialogue with a KNOWN role vocabulary.
+    #: In that shape a capitalised line (`Cons: ...`) is a markdown label or prose inside
+    #: the current turn, not a named speaker; in a named-speaker transcript (`Caroline: ...`)
+    #: it still is one. `has_ua` decides which reading applies.
+    _ua_roles = _USER_ROLES | _ASSISTANT_ROLES
+    has_ua = any((m := _TURN_RE.match(ln.strip())) is not None
+                 and m.group(1).strip().lower() in _ua_roles for ln in lines)
 
     def flush() -> None:
         body = "\n".join(buf).strip()
         if role and body:
             turns.append((role, body))
 
-    for raw in (transcript or "").splitlines():
+    for raw in lines:
         line = raw.strip()
         if _HEADER_RE.match(line):
             continue
         mo = _TURN_RE.match(line)
         if mo:
-            flush()
-            role, buf = mo.group(1), [mo.group(2)]
-            continue
+            cand_role = mo.group(1).strip()
+            cand_low = cand_role.lower()
+            if cand_low not in _NON_SPEAKER_LABELS and (
+                    not has_ua
+                    or cand_low in (_USER_ROLES | _ASSISTANT_ROLES | _SKIP_ROLES)):
+                flush()
+                role, buf = cand_role, [mo.group(2)]
+                continue
+            # Not a header after all: a label (`Cons:`) or a named speaker inside a
+            # `user:`/`assistant:` dialogue. Fall through so the line stays in this turn.
         if not line:
             continue
         if not role:
@@ -192,7 +222,14 @@ def extract_episodic_chunks(transcript: str, session_date: str = "", session_id:
         day = mo.group(1) if mo else "unknown"
 
     chunks: list[str] = []
-    buf, buf_kind = "", ""
+    # Two independent buffers. A speaker and an assistant turn can never share a chunk, but
+    # an assistant reply must not force the SPEAKER buffer to flush either - otherwise every
+    # short `user:` turn in a user/assistant session is split off around each reply, and one
+    # session becomes a dozen one-line chunks. Speaker chunks therefore pack across the
+    # whole session. Assistant chunks are capped at two per session: the first replies carry
+    # the gist, and a verbose model must not flood the index with near-duplicate chunks.
+    bufs: dict[str, str] = {"speaker": "", "context": ""}
+    outs: dict[str, list[str]] = {"speaker": [], "context": []}
     prev_q = ""
     for role, body in _turns(text):
         kind = "context" if role.strip().lower() in _CONTEXT_ROLES else "speaker"
@@ -212,13 +249,18 @@ def extract_episodic_chunks(transcript: str, session_date: str = "", session_id:
         if room < 1:                 # a limit shorter than the tag cannot hold a tagged chunk
             continue
         for piece in _split_body(body, room):
+            if kind == "context" and len(outs["context"]) >= 2:
+                break                # the per-session assistant cap is already met
             item = prefix + piece
-            if buf and kind == buf_kind and len(buf) + 1 + len(item) <= limit:
-                buf = f"{buf}\n{item}"
+            if bufs[kind] and len(bufs[kind]) + 1 + len(item) <= limit:
+                bufs[kind] = f"{bufs[kind]}\n{item}"
                 continue
-            if buf:
-                chunks.append(buf)
-            buf, buf_kind = item, kind
-    if buf:
-        chunks.append(buf)
+            if bufs[kind]:
+                outs[kind].append(bufs[kind])
+            bufs[kind] = item
+    if bufs["speaker"]:
+        outs["speaker"].append(bufs["speaker"])
+    if bufs["context"] and len(outs["context"]) < 2:
+        outs["context"].append(bufs["context"])
+    chunks = outs["speaker"] + outs["context"]
     return [c for c in chunks if c.strip()]

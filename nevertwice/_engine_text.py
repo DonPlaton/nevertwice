@@ -1369,7 +1369,7 @@ def collect_existing_titles(project: str, for_date: str | None = None
     """Existing typed-note title-slugs for `project` (grounds LLM dedup).
 
     `for_date` puts the notes ALREADY WRITTEN FOR THAT DAY at the front of the window.
-    Without it the window is the globally newest 40 in chronological glob order, which
+    Without it the window is the globally newest 40 in chronological order, which
     is exactly wrong when a session is re-mined: a project with 227 live patterns, 127 of
     them newer than the session's own date, gave a window containing ZERO notes from that
     date - so the extractor was told to avoid duplicates while being shown none of the
@@ -1381,10 +1381,21 @@ def collect_existing_titles(project: str, for_date: str | None = None
             d = VAULT / TYPE_FOLDER[ntype]
             if not d.exists():
                 continue
-            for p in d.glob("*.md"):
+            # A6.6: an age-archived note is still a note the extractor must not duplicate,
+            # and the all-domain dedup window (`for_date=None`) otherwise cannot see it at
+            # all. Both globs feed the ONE cache this function builds for every caller, so
+            # the archive is included whichever branch asks first; Archive/ is scanned
+            # BEFORE the live folder so live notes win a same-date tie in the tail window.
+            _arch = d / "Archive"
+            _files = list(_arch.glob("*.md")) if _arch.is_dir() else []
+            _files.extend(d.glob("*.md"))
+            for p in _files:
                 parsed = parse_typed_stem(p.stem)
                 if parsed and parsed["project"] == project and parsed["ntype"] == ntype:
                     out[ntype].append((p.stem[:10], parsed["slug"]))
+            # glob order is not a promise (and the two globs above are not one sequence);
+            # the callers below read the tail as "the newest", so make that true.
+            out[ntype].sort(key=lambda row: row[0])
         _TITLE_SLUGS[project] = out
 
     picked: dict[str, tuple[str, ...]] = {}

@@ -131,10 +131,18 @@ def _low_confidence(sims_desc) -> bool:
 
 def _note_age_days(stem: str) -> float:
     parsed = parse_typed_stem(stem)
-    if not parsed:
+    # A6.6: an episode stem (`episode-YYYY-MM-DD-<session>-<n>`) is not a typed stem, so
+    # `parse_typed_stem` returns None and every episode used to read as brand new (age 0)
+    # while a Level-1 note from the SAME day was aged. Read the date out of the stem shape
+    # instead of pretending the note has none.
+    date_s = parsed.get("date") if parsed else (
+        stem[8:18] if isinstance(stem, str) and stem.startswith("episode-") and len(stem) >= 18
+        else None
+    )
+    if not date_s:
         return 0.0
     try:
-        return max(0.0, (datetime.now() - datetime.strptime(parsed["date"], "%Y-%m-%d")).days)
+        return max(0.0, (datetime.now() - datetime.strptime(date_s, "%Y-%m-%d")).days)
     except (ValueError, KeyError):
         return 0.0
 
@@ -213,7 +221,16 @@ def _morph(tokens: list) -> list:
 
 
 def _tokens(s: str) -> set:
-    return set(_token_list(s))
+    out = set(_token_list(s))
+    # A6.6: status and origin questions are answered by a note that says "single",
+    # "married", "born in Portugal" - words the question itself never contains. Add those
+    # vocabulary items only when the query's own tokens ask for the relation/origin, so a
+    # normal query's lexical profile is unchanged.
+    if "statu" in out and ("relationship" in out or "marit" in out):
+        out |= {"singl", "marri", "breakup", "spous", "partner"}
+    if "move" in out and any(w in (s or "").lower() for w in ("where", "from")):
+        out |= {"countri", "hometown"}
+    return out
 
 
 _PATH_REF_RE = _lazy_re(r"`([^`\n]+?\.[A-Za-z0-9]{1,8})`")
@@ -586,6 +603,32 @@ def retrieve_relevant(project: str, query: str, k: int,
             scores[s] += recur_boost * math.log(max(1, n)) * amb
             scores[s] *= _salience_mult(s, rec_of.get(s) or {})
     ranked = sorted(scores, key=lambda s: (-scores[s], s))
+    # A6.6: 1-hop rare-term bridge expansion. A note sharing a RARE term with the query's
+    # top two hits is often the missing middle of a chain (A -> bridge -> B); the fused
+    # score alone buries it under a family of near-duplicates. The df band (2-5) is what
+    # makes a term evidence of a real connection rather than a common word, and only the
+    # tail after the head is re-ordered, so confident matches keep their rank.
+    if k >= 10 and len(ranked) > 6 and len(cands) >= 10:
+        _doc_toks = {s: set(_token_list(f"{r.get('title', '')} {r.get('desc', '')}"))
+                     for s, r in cands}
+        _df: dict[str, int] = {}
+        for _toks in _doc_toks.values():
+            for _w in _toks:
+                _df[_w] = _df.get(_w, 0) + 1
+        _bridge_toks = {w for s0 in ranked[:2] for w in _doc_toks.get(s0, ())
+                        if w not in qtok and not w.isdigit() and len(w) >= 4
+                        and 2 <= _df.get(w, 0) <= 5}
+        if _bridge_toks:
+            _rank_pos = {s: i for i, s in enumerate(ranked)}
+            _b_scored = sorted(
+                ((sum((1.2 if not s.startswith("episode-") else 1.0) / _df[w]
+                      for w in (_doc_toks.get(s, set()) & _bridge_toks)),
+                  -_rank_pos[s], s)
+                 for s in ranked[6:] if (_doc_toks.get(s, set()) & _bridge_toks)),
+                reverse=True)
+            _b_top = [s for _, _, s in _b_scored[:3]]
+            _b_set = set(_b_top)
+            ranked = ranked[:6] + _b_top + [s for s in ranked[6:] if s not in _b_set]
     if RETRIEVAL_DIVERGENCE > 0 and len(ranked) > 1:     # 2B: diverse/serendipitous recall
         window = ranked[:max(k * 4, k)]                  # MMR the head; tail keeps its order
         ranked = _load_rankers().mmr_rerank(window, scores, rec_of, RETRIEVAL_DIVERGENCE) + ranked[len(window):]
@@ -600,7 +643,38 @@ def retrieve_relevant(project: str, query: str, k: int,
     _live_ranked = [s for s in ranked if _live_note_exists(s, (rec_of.get(s) or {}).get("ntype", ""))]
     _paired = pair_siblings([_hit(s, rec_of[s]) for s in _live_ranked])
     _earlier_of = {h["stem"]: h["earlier"] for h in _paired if h.get("earlier")}
-    top = [h["stem"] for h in _paired][:k]
+    # A6.6: per-session episode diversity for a SMALL k. Episodes are consecutive chunks of
+    # one session, so at k<=5 a single verbose session could take the whole card - and the
+    # fourth and fifth chunk say less than the first two. Take one episode per session in
+    # rank order first (non-episode notes always pass), then fill any remaining slots from
+    # the skipped episodes in rank order. The k>=10 path keeps the plain cut: a wider card
+    # wants the session's own follow-ups more than it wants breadth.
+    if k <= 5:
+        def _ep_sess_key(stem: str) -> str | None:
+            if isinstance(stem, str) and stem.startswith("episode-") and "-" in stem[19:]:
+                return stem[:stem.rfind("-")]      # episode-YYYY-MM-DD-<sess_tail>
+            return None
+
+        _primary: list[str] = []
+        _overflow: list[str] = []
+        _seen_sess: set[str] = set()
+        for _h in _paired:
+            _s = _h["stem"]
+            _sess = _ep_sess_key(_s)
+            if _sess is not None and _sess in _seen_sess:
+                _overflow.append(_s)
+                continue
+            if _sess is not None:
+                _seen_sess.add(_sess)
+            if len(_primary) < k:
+                _primary.append(_s)
+            else:
+                _overflow.append(_s)
+        if len(_primary) < k:
+            _primary.extend(_overflow[:k - len(_primary)])
+        top = _primary[:k]
+    else:
+        top = [h["stem"] for h in _paired][:k]
     # graph multi-hop expansion (M-6): pull in notes linked from the top hits so
     # a chain A→B→C is reachable; bounded and same-project (linked stems in cache).
     hops = GRAPH_HOPS if expand_hops is None else expand_hops

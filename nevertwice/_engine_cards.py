@@ -1217,13 +1217,14 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
     # batch carries both tiers (level 1 = the extracted notes above, level 2 = the verbatim
     # evidence), which is what keeps the write cost at one embedding round trip.
     #
-    # A6.5: BOTH role kinds are indexed, with the distinction carried by CONFIDENCE rather
-    # than by dropping the assistant. Speaker turns keep the 0.9 that confirmed user facts
-    # rank with; an `[Assistant context]` chunk is indexed at 0.65 and its text says
-    # "hypothetical/suggestion, not a confirmed user fact", so the ranking puts the user's
-    # own words first and the reader is never told the model's advice was the speaker's.
-    # Dropping assistant chunks entirely lost the explanation behind an answer, and the
-    # question/answer pairs an episodic tier exists to keep.
+    # A6.5/A6.6: BOTH role kinds are indexed, with the distinction carried by CONFIDENCE
+    # rather than by dropping the assistant. Speaker turns keep the 0.9 that confirmed user
+    # facts rank with; an `[Assistant context]` chunk is indexed at 0.55 and its text says
+    # "hypothetical/suggestion ONLY, NOT a confirmed user fact", so the ranking puts the
+    # user's own words first and a reader asked to answer a fact finds the assistant's advice
+    # explicitly marked unanswerable rather than as the speaker's. Dropping assistant chunks
+    # entirely lost the explanation behind an answer, and the question/answer pairs an
+    # episodic tier exists to keep.
     #
     # The source text is the RESOLVED transcript (`yesterday [2023-05-19]`), the same
     # annotation the extractor is shown: an episode read months later can then answer "when"
@@ -1253,12 +1254,13 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
             elif "[Assistant context]" in _ep_chunk:
                 _assistant_desc = redact_secrets(_ep_chunk.replace(
                     "[Assistant context]",
-                    "[Assistant context \u2014 hypothetical/suggestion, "
-                    "not a confirmed user fact]"))
+                    "[Assistant context \u2014 hypothetical/suggestion ONLY, NOT a confirmed "
+                    "user fact; use ONLY if asked about assistant suggestions/hypotheticals, "
+                    "otherwise treat as unprovided/unanswerable]"))
                 new_notes.append((
                     f"episode-{date}-{_ep_tail}-{_ep_idx}", "pattern", project,
                     f"Episode {date} {_ep_tail}-{_ep_idx}",
-                    _assistant_desc, "", 0.65))
+                    _assistant_desc, "", 0.55))
 
     if new_notes:
         update_embeddings(new_notes)

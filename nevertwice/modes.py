@@ -56,14 +56,14 @@ CODE_MARKERS_RE = re.compile(
 #: new ones, because a schema change would fork the writer and every reader with it.
 ALL_MODE_RUBRIC = (
     "\nMODE: ALL-DOMAIN MEMORY (personal, biographical, conversational & technical):\n"
-    "- Always set \"project_relevant\": true if the session contains ANY user facts, "
-    "biographical details, events, dates, quantities, numbers, preferences, plans, or state updates.\n"
+    "- Always set \"project_relevant\": true if the session contains ANY user facts, biographical "
+    "details, events, dates, quantities, numbers, preferences, plans, or state updates.\n"
     "- Map durable facts, events, dates, quantities, and state updates into \"decisions\" "
-    "(and recurring habits, routines, preferences, or multi-item lists into \"patterns\").\n"
-    "- In every description, include the speaker/subject name, exact numbers/quantities, "
-    "and exact dates, and copy key literals into \"facts\".\n"
-    "- Epistemic modality: tag confirmed user/speaker facts with [Confirmed fact], and tag "
-    "assistant explanations, estimates, or hypothetical options with [Hypothetical / Assistant suggestion] so both are recallable without confusion.\n"
+    "(habits, routines, preferences, multi-item lists into \"patterns\").\n"
+    "- Descriptions: speaker/subject, exact numbers/quantities, exact dates, explicit relationship "
+    "status (e.g. single, married) or origin/home country when mentioned or implied; copy key literals into \"facts\".\n"
+    "- Epistemic modality: tag confirmed user/speaker facts [Confirmed fact]; tag assistant "
+    "explanations, estimates, or hypothetical options [Hypothetical / Assistant suggestion] so both stay recallable.\n"
     "- When a user updates a count or state, set \"supersedes\" to the earlier note's title.\n"
 )
 
