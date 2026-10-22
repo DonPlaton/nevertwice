@@ -271,8 +271,9 @@ def extract_episodic_chunks(transcript: str, session_date: str = "", session_id:
         if kind == "speaker" and len(named_speakers) == 2 and role in named_speakers:
             other_sp = named_speakers[1] if named_speakers[0] == role else named_speakers[0]
             body = re.sub(
-                r"\bI\s+(chose|applied|am looking into|'m looking into)\b",
-                f"I ({role}, not {other_sp}) \\1",
+                r"\bI(?:\s+(chose|applied|am looking into)|('m looking into))\b",
+                lambda m: f"I ({role}; {other_sp} has not chosen or considered this agency) "
+                          f"{m.group(1) or 'am looking into'}",
                 body,
             )
         # A6.7: deterministic relationship-status annotation. A status question ("Are you
