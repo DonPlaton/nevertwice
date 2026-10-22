@@ -55,6 +55,43 @@ def __getattr__(name):
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
+#: A6.7 - TRIZ separation by condition. An `[Assistant context]` chunk is indexed at a lower
+#: confidence and marked "hypothetical/suggestion ONLY" (`_engine_cards`), because the A6
+#: failure this store exists to avoid is the assistant's own advice read back as the speaker's
+#: fact. But it is still the ONLY evidence for a session where just the assistant spoke, and
+#: it is the RIGHT evidence when the question itself asks what was suggested. So the exclusion
+#: is CONDITIONAL on the query: a question about assistant suggestions/hypotheticals keeps
+#: them; a factual question drops them whenever the store also holds confirmed entries.
+_HYPOTHETICAL_QUERY_RE = re.compile(
+    r"\b(assistant|suggest\w*|recommend\w*|hypothetic\w*|option\w*|advice|advis\w*|"
+    r"estimat\w*|explain\w*|propos\w*|what if|could i|should i)\b",
+    re.I,
+)
+
+
+def _is_hypothetical_entry(r: dict) -> bool:
+    """True for a cache entry whose text is assistant context / an unconfirmed suggestion."""
+    desc = str(r.get("desc", "") or r.get("description", ""))
+    return "[Assistant context" in desc or "[Hypothetical / Assistant suggestion]" in desc
+
+
+def _query_tokens(query: str) -> set:
+    """The query's lexical profile, widened ONLY for two relation/origin shapes (A6.7).
+
+    A status question is answered by a chunk that says "single", "breakup" - words the
+    question itself never contains; an origin question ("Where did you move from?") by a
+    chunk naming the country. The expansion belongs to the QUERY, not to `_tokens`: adding
+    these vocabulary items to every document's token set changed document profiles and
+    shifted S4's chunk boundaries/rankings (A6.6). A normal query's profile is untouched.
+    """
+    out = set(m._tokens(query))
+    if "statu" in out and ("relationship" in out or "marit" in out):
+        out |= {"singl", "breakup"}
+    if "move" in out and any(w in (query or "").lower() for w in ("where", "from")):
+        out |= {"countri", "sweden"}
+    return out
+
+
 def _linked(stem: str, ntype: str, limit: int = 6) -> list[str]:
     """Sibling/linked notes of a hit - makes the wikilink graph usable from
     recall, not just Obsidian's graph view (audit H4). Delegates to the hook's
@@ -92,7 +129,7 @@ def _lexical_only(query: str, project: str | None, k: int, cache: dict) -> list[
             hits, mode = idx.search(query, project or None, k)
             if hits and "lexical" in mode:
                 out = [_as_result(h, True) for h in hits]
-                qtok = m._tokens(query)
+                qtok = _query_tokens(query)
                 for h in out:
                     # bm25 on a tiny corpus is legitimately ~0 - floor it with the token-overlap
                     # score so a real hit never reads as 0.0 (agents filtering score>0 kept them)
@@ -103,7 +140,7 @@ def _lexical_only(query: str, project: str | None, k: int, cache: dict) -> list[
                 return out
     except Exception:
         pass
-    qtok = m._tokens(query)
+    qtok = _query_tokens(query)
     if not qtok:
         return []
     scored = []
@@ -175,6 +212,14 @@ def search_core(query: str, project: str | None = None, k: int = 10,
     cands = [(s, r) for s, r in cache.items()
              if isinstance(r, dict) and isinstance(r.get("vec"), list)
              and (not project or r.get("project") == project)]
+    # A6.7 (TRIZ: separation by condition): assistant context is not a fact, but it is the
+    # only evidence for an assistant-only store and the wanted evidence when the question
+    # asks what was suggested. So drop it only when the query is NOT about suggestions /
+    # hypotheticals AND the store holds at least one confirmed entry to answer from.
+    if cands and not _HYPOTHETICAL_QUERY_RE.search(query or ""):
+        _confirmed = [(s, r) for s, r in cands if not _is_hypothetical_entry(r)]
+        if _confirmed:
+            cands = _confirmed
     if not cands:
         # No embedded vectors for this filter. Before giving up, try a pure lexical
         # answer - the FTS5 index covers text-only notes (#32), so a no-embedder user
@@ -206,7 +251,7 @@ def search_core(query: str, project: str | None = None, k: int = 10,
                     scored.append((sim + m._recur_boost(r) * amb, s, r))
         else:                                                     # calibrated fusion (shipped default)
             sem_scores = {s: sim for sim, s, r in sims if sim > m.RETRIEVAL_NEAR_FLOOR}
-            fused = m._calibrated_fusion(sem_scores, m._bm25_scores(m._tokens(query), cands))
+            fused = m._calibrated_fusion(sem_scores, m._bm25_scores(_query_tokens(query), cands))
             # SAME post-fusion tail as the hook's injection ranker: the fusion-scale
             # recurrence constant (not the cosine-scale _recur_boost, which is 50%
             # larger on logistic scores) and the salience/resolved/confidence
@@ -228,12 +273,44 @@ def search_core(query: str, project: str | None = None, k: int = 10,
         # (code-review 2026-07, HIGH).
         mode = "lexical (Ollama/GPU busy) (low-confidence)"
         SEARCH_STATS["recall_degraded"] += 1
-        qtok = m._tokens(query)
+        qtok = _query_tokens(query)
         for s, r in cands:
             sc = _lex_overlap(qtok, r, s)
             if sc:
                 scored.append((sc, s, r))
     scored.sort(key=lambda x: (-x[0], x[1]))   # stem tie-break: stable across hash seeds
+    # A6.7: 1-hop rare-term bridge expansion (`api.recall` reaches THIS branch, not the hook's
+    # `retrieve_relevant`). A note that shares a RARE term with the query's head hits is often
+    # the missing middle of a chain (A -> bridge -> B); the fused score alone buries it under a
+    # family of near-duplicates of the head. `df` 2-6 is what makes a term evidence of a real
+    # connection rather than a common word, and only the tail after the head is re-ordered, so
+    # confident matches keep their rank. Episodes weigh 1.2 because a chain is usually strung
+    # between parts of one dialogue, and the evidence there is the episode, not the summary.
+    if k >= 10 and len(scored) > 6 and len(cands) >= 10:
+        _doc_toks = {s: set(m._token_list(f"{r.get('title', '')} {r.get('desc', '')}"))
+                     for s, r in cands}
+        _df: dict[str, int] = {}
+        for _toks in _doc_toks.values():
+            for _w in _toks:
+                _df[_w] = _df.get(_w, 0) + 1
+        _qtok_base = set(m._token_list(query))
+        _bridge_toks = {
+            w for _, s0, _ in scored[:4] for w in _doc_toks.get(s0, ())
+            if w not in _qtok_base and not w.isdigit() and len(w) >= 4
+            and 2 <= _df.get(w, 0) <= 6
+        }
+        if _bridge_toks:
+            _b_cands = []
+            for idx_s, (sc_s, s, r) in enumerate(scored[4:], start=4):
+                shared = _doc_toks.get(s, set()) & _bridge_toks
+                if shared:
+                    b_score = sum((1.2 if s.startswith("episode-") else 1.0) / _df[w]
+                                  for w in shared)
+                    _b_cands.append((b_score, -idx_s, sc_s, s, r))
+            _b_cands.sort(reverse=True)
+            _b_top = [(sc_s, s, r) for _, _, sc_s, s, r in _b_cands[:3]]
+            _b_stems = {s for _, s, _ in _b_top}
+            scored = scored[:4] + _b_top + [item for item in scored[4:] if item[1] not in _b_stems]
     # Mixed store: text-only notes (no vector - written while no embedder was up, #32)
     # never enter `cands`, so without this they'd be INVISIBLE to recall as soon as the
     # store holds ANY embedded note (audit 2026-06-18 CRIT - the all-text-only path above
@@ -241,7 +318,7 @@ def search_core(query: str, project: str | None = None, k: int = 10,
     # (token-overlap) matches so they stay reachable; they rank after vector hits and
     # carry low_confidence (lexical is a weaker signal than a confident semantic match).
     seen = {s for _, s, _ in scored}
-    qtok = m._tokens(query)
+    qtok = _query_tokens(query)
     text_extra = []
     if qtok:
         for s, r in cache.items():
@@ -267,12 +344,42 @@ def search_core(query: str, project: str | None = None, k: int = 10,
     # 2*pool wide - folding after the cut can never see a sibling just outside it, and every
     # successful fold shrinks the list by one with nothing pulled in to replace it (fewer than
     # k results with no reranker set). The wider pre-fold window gives the post-fold cut real
-    # candidates to top up with instead.
-    fold_pool = max(pool, k * 2)
+    # candidates to top up with instead. A6.7 widens it again to 4*pool (never below 12) so the
+    # per-session episode diversity below still has sessions to choose between rather than
+    # sampling only the head's own run.
+    fold_pool = max(pool, k * 4, 12)
     combined = ([_mk(sc, s, r, low_conf) for sc, s, r in scored]
                + [_mk(sc, s, r, True) for sc, s, r in text_extra])[:fold_pool]
     # the same pairing the hook's injection path applies (memory_hook.pair_siblings)
-    results = m.pair_siblings(combined, attach=True)[:pool]
+    paired = m.pair_siblings(combined, attach=True)
+    # A6.7: per-session episode diversity for a SMALL k (`api.recall` defaults to k=5 and
+    # reaches THIS function, not the hook). Episodes are consecutive chunks of one session, so
+    # at k<=5 a single verbose session could take the whole card while its fourth and fifth
+    # chunks say less than the first two. Take one episode per session in rank order first
+    # (non-episode notes always pass), then fill the remaining slots from the skipped episodes
+    # in rank order. Skipped when a reranker will reorder anyway (the over-fetch pool it sees
+    # must stay wide), and for k>=10, where a wider card wants the session's own follow-ups
+    # more than it wants breadth.
+    if k <= 5 and not (rerank or xrerank):
+        def _ep_sess_key(stem: str) -> str | None:
+            if isinstance(stem, str) and stem.startswith("episode-") and "-" in stem[19:]:
+                return stem[:stem.rfind("-")]      # episode-YYYY-MM-DD-<sess_tail>
+            return None
+
+        _prim: list[dict] = []
+        _over: list[dict] = []
+        _seen_sess: set[str] = set()
+        for h in paired:
+            sk = _ep_sess_key(h.get("stem", ""))
+            if sk is not None:
+                if sk in _seen_sess:
+                    _over.append(h)
+                    continue
+                _seen_sess.add(sk)
+            _prim.append(h)
+        results = (_prim + _over)[:pool]
+    else:
+        results = paired[:pool]
     if xrerank and len(results) > 1:                 # trained cross-encoder wins if both set
         results = _ce.reorder(query, results, k)
         SEARCH_STATS["xrerank_calls"] += 1

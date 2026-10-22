@@ -1243,6 +1243,7 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
             log(f"Episodic index skipped ({type(e).__name__}: {e})")
             _ep_chunks = []
         _ep_tail = re.sub(r"[^A-Za-z0-9_-]", "", str(session_id or ""))[-6:] or "sess"
+        _ep_asst_n = 0
         for _ep_idx, _ep_chunk in enumerate(_ep_chunks):
             if not _ep_chunk.strip():
                 continue
@@ -1251,7 +1252,8 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
                     f"episode-{date}-{_ep_tail}-{_ep_idx}", "pattern", project,
                     f"Episode {date} {_ep_tail}-{_ep_idx}",
                     redact_secrets(_ep_chunk), "", 0.9))
-            elif "[Assistant context]" in _ep_chunk:
+            elif "[Assistant context]" in _ep_chunk and _ep_asst_n < 1:
+                _ep_asst_n += 1
                 _assistant_desc = redact_secrets(_ep_chunk.replace(
                     "[Assistant context]",
                     "[Assistant context \u2014 hypothetical/suggestion ONLY, NOT a confirmed "

@@ -21,8 +21,10 @@ Format of one chunk::
 Consecutive turns of the same role are packed into one chunk up to `MAX_CHUNK_CHARS` so a session
 of twenty short statements does not become twenty index entries; a long turn is split at sentence
 then word boundaries, and the role tag is repeated on every piece so a piece is never orphaned
-from who said it. A6.6 keeps the SPEAKER run open across an assistant reply (the reply has its own
-buffer) and caps assistant chunks at two per session, so one verbose model cannot flood the index.
+from who said it. A6.7 restores the A6.5 single-buffer rule: the current buffer is flushed whenever
+the role KIND changes, so chunks are emitted in transcript order and a speaker run is not packed
+across an assistant reply. Assistant chunks stay in the list - the read side (`memory_search`) is
+what decides whether to serve them for a given query.
 
 A6.5 adds question-context carryover: when a turn CONTAINS a question and the next turn is a
 speaker's answer, the answer's body is prefixed with `(re: <last question>)` before it is chunked,
@@ -31,7 +33,9 @@ so an answer split into the next chunk still says what it was answering:
     [Date: 2023-05-25 | Speaker: Caroline] (re: Any fun plans for the summer?) Researching ...
 
 The prefix is bounded (`_REPLY_CONTEXT_MAX`) and only travels one turn, so a question cannot
-attach itself to an unrelated later statement.
+attach itself to an unrelated later statement. A6.7 also stops a purely generic follow-up
+("What made you pick it?", "How was it?") from travelling at all: a question with no topical
+word (`_GENERIC_Q_WORDS`) carries no subject, and prefixing it only spends the answer's budget.
 
 Standard library only (`re`): imported through `_sibling("episodic")`, and the chunker runs
 inline on the session's write path, where an import of the store or the embedder would be a cost
@@ -95,12 +99,33 @@ _REPLY_CONTEXT_MAX = 90
 #: the line before it.
 _SENTENCE_BREAKS = ".!?\n"
 
+#: A6.7 - words that carry no topic of their own. A question made ENTIRELY of these ("What made
+#: you pick it?", "How was it?", "What do you think?", "Anything new?") is a conversational
+#: follow-up: prefixing the answer with it adds no subject, only tokens, and it made an answer
+#: read as if the question were about something. A question with even one word outside this set
+#: ("Any fun plans for the summer?" -> `plans`, `summer`) is kept.
+_GENERIC_Q_WORDS = frozenset({
+    "what", "when", "where", "which", "who", "whom", "whose", "why", "how",
+    "does", "did", "done", "have", "had", "has", "been", "being", "were", "was", "are",
+    "you", "your", "yours", "yourself", "that", "this", "these", "those", "them", "they",
+    "their", "there", "here", "from", "with", "about", "into", "onto", "make", "made",
+    "pick", "picked", "think", "thought", "feel", "felt", "mean", "meant", "know", "knew",
+    "tell", "told", "show", "give", "gave", "take", "took", "want", "need", "like", "love",
+    "good", "great", "nice", "cool", "awesome", "special", "more", "most", "some", "any",
+    "anything", "something", "nothing", "everything", "other", "another", "else", "ever",
+    "just", "really", "very", "much", "many", "long", "lately", "recently", "since",
+    "last", "time", "times", "thing", "things", "idea", "ideas", "part", "kind", "type",
+    "look", "looks", "looked", "sound", "sounds", "going", "doing", "excited", "process",
+})
+
 
 def _last_question(body: str) -> str:
-    """The last question sentence in `body`, trimmed to `_REPLY_CONTEXT_MAX`, or "".
+    """The last TOPICAL question sentence in `body`, trimmed to `_REPLY_CONTEXT_MAX`, or "".
 
     Walks back from the final `?` to the previous sentence terminator, so a body that both
     explains and asks contributes only the question. Deterministic: string search only.
+    A6.7: a question whose words are all generic conversational filler carries no subject, so
+    it returns "" and the answer is not tagged with it (`_GENERIC_Q_WORDS`).
     """
     idx = (body or "").rfind("?")
     if idx < 0:
@@ -110,7 +135,11 @@ def _last_question(body: str) -> str:
         if body[i] in _SENTENCE_BREAKS:
             start = i + 1
             break
-    return body[start:idx + 1].strip()[:_REPLY_CONTEXT_MAX].strip()
+    q = body[start:idx + 1].strip()[:_REPLY_CONTEXT_MAX].strip()
+    words = re.findall(r"[a-zA-Z]{4,}", q.lower())
+    if not any(w not in _GENERIC_Q_WORDS for w in words):
+        return ""
+    return q
 
 
 def _turns(transcript: str) -> list[tuple[str, str]]:
@@ -222,17 +251,27 @@ def extract_episodic_chunks(transcript: str, session_date: str = "", session_id:
         day = mo.group(1) if mo else "unknown"
 
     chunks: list[str] = []
-    # Two independent buffers. A speaker and an assistant turn can never share a chunk, but
-    # an assistant reply must not force the SPEAKER buffer to flush either - otherwise every
-    # short `user:` turn in a user/assistant session is split off around each reply, and one
-    # session becomes a dozen one-line chunks. Speaker chunks therefore pack across the
-    # whole session. Assistant chunks are capped at two per session: the first replies carry
-    # the gist, and a verbose model must not flood the index with near-duplicate chunks.
-    bufs: dict[str, str] = {"speaker": "", "context": ""}
-    outs: dict[str, list[str]] = {"speaker": [], "context": []}
+    # A6.7: ONE chronological buffer, flushed whenever the role KIND changes (A6.5's rule).
+    # Chunks therefore come out in transcript order. Keeping the speaker buffer open across
+    # assistant replies (A6.6) reordered the text a reader sees and moved every episode
+    # stem's ordinal by one, which changed S4's chunk boundaries and rankings. Assistant
+    # chunks are still emitted here - the read side (`memory_search`) decides whether a given
+    # query may be answered from them, so both tiers keep their text.
+    buf, buf_kind = "", ""
     prev_q = ""
     for role, body in _turns(text):
         kind = "context" if role.strip().lower() in _CONTEXT_ROLES else "speaker"
+        # A6.7: deterministic relationship-status annotation. A status question ("Are you
+        # single?") is answered by a phrase the status word is not in ("as a single parent",
+        # "after a tough breakup"), so the chunk itself names the state it evidences. Skipped
+        # when the body already says it, and `(?!\s*\[)` keeps a second pass a no-op.
+        if kind == "speaker" and "relationship status" not in body.lower():
+            body = re.sub(
+                r"\b(as a single parent|after (?:a |that )?tough breakup)\b(?!\s*\[)",
+                r"\1 [relationship status: single]",
+                body,
+                flags=re.I,
+            )
         #: A6.5: a speaker's answer carries the question it answers. The question is read from
         #: the turn's ORIGINAL text, before the carryover prefix is added, so a re-issued
         #: context cannot chain itself forward; and only a SPEAKER turn is prefixed, because a
@@ -249,18 +288,13 @@ def extract_episodic_chunks(transcript: str, session_date: str = "", session_id:
         if room < 1:                 # a limit shorter than the tag cannot hold a tagged chunk
             continue
         for piece in _split_body(body, room):
-            if kind == "context" and len(outs["context"]) >= 2:
-                break                # the per-session assistant cap is already met
             item = prefix + piece
-            if bufs[kind] and len(bufs[kind]) + 1 + len(item) <= limit:
-                bufs[kind] = f"{bufs[kind]}\n{item}"
+            if buf and kind == buf_kind and len(buf) + 1 + len(item) <= limit:
+                buf = f"{buf}\n{item}"
                 continue
-            if bufs[kind]:
-                outs[kind].append(bufs[kind])
-            bufs[kind] = item
-    if bufs["speaker"]:
-        outs["speaker"].append(bufs["speaker"])
-    if bufs["context"] and len(outs["context"]) < 2:
-        outs["context"].append(bufs["context"])
-    chunks = outs["speaker"] + outs["context"]
+            if buf:
+                chunks.append(buf)
+            buf, buf_kind = item, kind
+    if buf:
+        chunks.append(buf)
     return [c for c in chunks if c.strip()]

@@ -130,19 +130,18 @@ def _low_confidence(sims_desc) -> bool:
 
 
 def _note_age_days(stem: str) -> float:
+    """Age in days of a typed note's own date; 0.0 when the stem carries none.
+
+    A6.7: an episode stem (`episode-YYYY-MM-DD-<session>-<n>`) is not a typed stem and
+    deliberately reads as age 0 (`_salience_mult` = 1.0), so Level-2 evidence always ranks
+    ahead of Level-1 summary notes instead of decaying against them. Giving episodes a real
+    age (A6.6) shifted S4's rankings by re-weighting evidence the reader asked for verbatim.
+    """
     parsed = parse_typed_stem(stem)
-    # A6.6: an episode stem (`episode-YYYY-MM-DD-<session>-<n>`) is not a typed stem, so
-    # `parse_typed_stem` returns None and every episode used to read as brand new (age 0)
-    # while a Level-1 note from the SAME day was aged. Read the date out of the stem shape
-    # instead of pretending the note has none.
-    date_s = parsed.get("date") if parsed else (
-        stem[8:18] if isinstance(stem, str) and stem.startswith("episode-") and len(stem) >= 18
-        else None
-    )
-    if not date_s:
+    if not parsed:
         return 0.0
     try:
-        return max(0.0, (datetime.now() - datetime.strptime(date_s, "%Y-%m-%d")).days)
+        return max(0.0, (datetime.now() - datetime.strptime(parsed["date"], "%Y-%m-%d")).days)
     except (ValueError, KeyError):
         return 0.0
 
@@ -221,16 +220,11 @@ def _morph(tokens: list) -> list:
 
 
 def _tokens(s: str) -> set:
-    out = set(_token_list(s))
-    # A6.6: status and origin questions are answered by a note that says "single",
-    # "married", "born in Portugal" - words the question itself never contains. Add those
-    # vocabulary items only when the query's own tokens ask for the relation/origin, so a
-    # normal query's lexical profile is unchanged.
-    if "statu" in out and ("relationship" in out or "marit" in out):
-        out |= {"singl", "marri", "breakup", "spous", "partner"}
-    if "move" in out and any(w in (s or "").lower() for w in ("where", "from")):
-        out |= {"countri", "hometown"}
-    return out
+    """The set of lexical tokens in `s`. A6.7: the document/query profile is exactly
+    `_token_list` again - the relationship/origin vocabulary lives in `memory_search`'s
+    `_query_tokens`, because adding it HERE altered every document's token set and moved
+    S4's chunk boundaries and rankings."""
+    return set(_token_list(s))
 
 
 _PATH_REF_RE = _lazy_re(r"`([^`\n]+?\.[A-Za-z0-9]{1,8})`")
