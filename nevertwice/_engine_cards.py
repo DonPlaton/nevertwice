@@ -1237,6 +1237,12 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
         try:
             _episodic = _sibling("episodic")
             _ep_source = _temporal.resolve_relative_dates(body, date)
+            _ep_source = re.sub(
+                r"\blast\s+(?:saturday|sunday)\s+\[(\d{4}-\d{2}-\d{2})\]",
+                f"on \\1 (the weekend before {date})",
+                _ep_source,
+                flags=re.I,
+            )
             _ep_chunks = _episodic.extract_episodic_chunks(
                 _ep_source, session_date=date, session_id=session_id)
         except Exception as e:      # noqa: BLE001 - the episodic tier never costs the session

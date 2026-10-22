@@ -136,6 +136,8 @@ def _last_question(body: str) -> str:
             start = i + 1
             break
     q = body[start:idx + 1].strip()[:_REPLY_CONTEXT_MAX].strip()
+    if q.lower().startswith(("wanna ", "want to ", "we could ", "or wanna ")):
+        return ""
     words = re.findall(r"[a-zA-Z]{4,}", q.lower())
     if not any(w not in _GENERIC_Q_WORDS for w in words):
         return ""
