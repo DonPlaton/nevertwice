@@ -54,6 +54,7 @@ _WEEKDAY_RE = re.compile(
     r"\b(last|next)\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b"
     + _NOT_ANNOTATED, re.I)
 _MONTH_RE = re.compile(r"\b(last|next)\s+month\b" + _NOT_ANNOTATED, re.I)
+_WEEK_RE = re.compile(r"\b(last|next)\s+week\b" + _NOT_ANNOTATED, re.I)
 _YEAR_RE = re.compile(r"\b(last|next)\s+year\b" + _NOT_ANNOTATED, re.I)
 _YEARS_AGO_RE = re.compile(r"\b(\d+)\s+(year|years)\s+ago\b" + _NOT_ANNOTATED, re.I)
 
@@ -128,6 +129,11 @@ def resolve_relative_dates(text: str, anchor_date: str | None) -> str:
         return f"{m.group(0)} [{MONTH_NAMES[m_num - 1]} {yr}]"
 
     out = _MONTH_RE.sub(_month, out)
+    out = _WEEK_RE.sub(
+        lambda m: (f"{m.group(0)} [the week before {base.isoformat()}]"
+                   if m.group(1).lower() == "last"
+                   else f"{m.group(0)} [the week after {base.isoformat()}]"),
+        out)
     return _YEAR_RE.sub(
         lambda m: f"{m.group(0)} "
                   f"[{base.year - 1 if m.group(1).lower() == 'last' else base.year + 1}]",

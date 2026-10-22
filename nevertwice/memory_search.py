@@ -279,6 +279,13 @@ def search_core(query: str, project: str | None = None, k: int = 10,
             if sc:
                 scored.append((sc, s, r))
     scored.sort(key=lambda x: (-x[0], x[1]))   # stem tie-break: stable across hash seeds
+    if k >= 10 and len(scored) > 6:
+        _dec_top = [item for item in scored[6:]
+                    if not str(item[1]).startswith("episode-")
+                    and isinstance(item[2], dict) and item[2].get("ntype") == "decision"][:2]
+        if _dec_top:
+            _dec_stems = {item[1] for item in _dec_top}
+            scored = scored[:6] + _dec_top + [item for item in scored[6:] if item[1] not in _dec_stems]
     # Mixed store: text-only notes (no vector - written while no embedder was up, #32)
     # never enter `cands`, so without this they'd be INVISIBLE to recall as soon as the
     # store holds ANY embedded note (audit 2026-06-18 CRIT - the all-text-only path above
