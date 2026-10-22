@@ -259,8 +259,20 @@ def extract_episodic_chunks(transcript: str, session_date: str = "", session_id:
     # query may be answered from them, so both tiers keep their text.
     buf, buf_kind = "", ""
     prev_q = ""
-    for role, body in _turns(text):
+    all_turns = _turns(text)
+    named_speakers = []
+    for _r, _ in all_turns:
+        if _r.strip().lower() not in (_USER_ROLES | _ASSISTANT_ROLES | _SKIP_ROLES) and _r not in named_speakers:
+            named_speakers.append(_r)
+    for role, body in all_turns:
         kind = "context" if role.strip().lower() in _CONTEXT_ROLES else "speaker"
+        if kind == "speaker" and len(named_speakers) == 2 and role in named_speakers:
+            other_sp = named_speakers[1] if named_speakers[0] == role else named_speakers[0]
+            body = re.sub(
+                r"\bI\s+(chose|applied|am looking into|'m looking into)\b",
+                f"I ({role}, not {other_sp}) \\1",
+                body,
+            )
         # A6.7: deterministic relationship-status annotation. A status question ("Are you
         # single?") is answered by a phrase the status word is not in ("as a single parent",
         # "after a tough breakup"), so the chunk itself names the state it evidences. Skipped
