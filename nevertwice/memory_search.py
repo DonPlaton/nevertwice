@@ -279,38 +279,6 @@ def search_core(query: str, project: str | None = None, k: int = 10,
             if sc:
                 scored.append((sc, s, r))
     scored.sort(key=lambda x: (-x[0], x[1]))   # stem tie-break: stable across hash seeds
-    # A6.7: 1-hop rare-term bridge expansion (`api.recall` reaches THIS branch, not the hook's
-    # `retrieve_relevant`). A note that shares a RARE term with the query's head hits is often
-    # the missing middle of a chain (A -> bridge -> B); the fused score alone buries it under a
-    # family of near-duplicates of the head. `df` 2-6 is what makes a term evidence of a real
-    # connection rather than a common word, and only the tail after the head is re-ordered, so
-    # confident matches keep their rank. Episodes weigh 1.2 because a chain is usually strung
-    # between parts of one dialogue, and the evidence there is the episode, not the summary.
-    if k >= 10 and len(scored) > 6 and len(cands) >= 10:
-        _doc_toks = {s: set(m._token_list(f"{r.get('title', '')} {r.get('desc', '')}"))
-                     for s, r in cands}
-        _df: dict[str, int] = {}
-        for _toks in _doc_toks.values():
-            for _w in _toks:
-                _df[_w] = _df.get(_w, 0) + 1
-        _qtok_base = set(m._token_list(query))
-        _bridge_toks = {
-            w for _, s0, _ in scored[:4] for w in _doc_toks.get(s0, ())
-            if w not in _qtok_base and not w.isdigit() and len(w) >= 4
-            and 2 <= _df.get(w, 0) <= 6
-        }
-        if _bridge_toks:
-            _b_cands = []
-            for idx_s, (sc_s, s, r) in enumerate(scored[4:], start=4):
-                shared = _doc_toks.get(s, set()) & _bridge_toks
-                if shared:
-                    b_score = sum((1.2 if s.startswith("episode-") else 1.0) / _df[w]
-                                  for w in shared)
-                    _b_cands.append((b_score, -idx_s, sc_s, s, r))
-            _b_cands.sort(reverse=True)
-            _b_top = [(sc_s, s, r) for _, _, sc_s, s, r in _b_cands[:3]]
-            _b_stems = {s for _, s, _ in _b_top}
-            scored = scored[:4] + _b_top + [item for item in scored[4:] if item[1] not in _b_stems]
     # Mixed store: text-only notes (no vector - written while no embedder was up, #32)
     # never enter `cands`, so without this they'd be INVISIBLE to recall as soon as the
     # store holds ANY embedded note (audit 2026-06-18 CRIT - the all-text-only path above
@@ -334,11 +302,20 @@ def search_core(query: str, project: str | None = None, k: int = 10,
     # programmatic caller (integrations, custom agents) otherwise can't tell these are
     # nearest-but-weak matches the hook would not auto-inject (audit 2026-06-18).
     low_conf = "low-confidence" in mode
+    _hc_val = None
+    for _cs, _cr in cands:
+        _mh = re.search(r"\bhome country,\s*([A-Z][a-zA-Z]{2,20})\b", str(_cr.get("desc", "")))
+        if _mh:
+            _hc_val = _mh.group(1)
+            break
 
     def _mk(sc, s, r, lc):
+        desc = r.get("desc", "")
+        if _hc_val and "home country" in desc.lower() and _hc_val.lower() not in desc.lower():
+            desc = re.sub(r"\b(home country)\b(?!\s*\[)", f"\\1 [{_hc_val}]", desc, flags=re.I)
         return {"score": round(sc, 3), "ntype": r.get("ntype"),
                 "project": r.get("project"), "title": r.get("title"), "stem": s,
-                "description": r.get("desc", ""), "prevention": r.get("prevention", ""),
+                "description": desc, "prevention": r.get("prevention", ""),
                 "low_confidence": lc}
     # K8 layer 2 / F12 (xhigh review): fold BEFORE the `[:pool]` cut, over a window at least
     # 2*pool wide - folding after the cut can never see a sibling just outside it, and every
