@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520" width="960" height="520" role="img" aria-labelledby="vttl vdsc" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+<title id="vttl">Nevertwice v3.0 scoreboard: accuracy against four memory systems on LongMemEval and LoCoMo, and the three measured reasons attention-native memory wins</title>
+<desc id="vdsc">Two panels. Left: benchmark accuracy on S1 LongMemEval and S4 LoCoMo, five systems in five rows, each row carrying one bar per suite. Nevertwice v3.0 (allmode A6.7) scores S1 100 percent on point B, key and value, and S4 100.0 percent, 25 of 25 questions at F1 53.0. Mem0 2.2.0 scores S1 60 percent on B and 40 on K, and S4 84.0 percent, 21 of 25 at F1 49.8. LangMem 0.0.30 scores S1 40 percent on B and 20 on K, and S4 80.0 percent, 20 of 25 at F1 23.5. Graphify 0.9.93 scores S1 20 percent on B and 20 on K, and S4 76.0 percent with expand against 44.0 percent with query. Claude Code Memory 2.1.304 scores S1 40 percent on B and 40 on V, and S4 28.0 percent, 7 of 25 at F1 9.2. Right: three measured reasons. 66.5 times fewer writer tokens and 10 times fewer calls, 56.0 thousand prompt tokens and 44 calls against Mem0's 3,725.9 thousand tokens and 444 calls, and 9.6 times faster on S1 at 117 seconds against 1,126 seconds per unit. Zero-token idle guards and a modality gate. And nevertwice-embed v2, a LoRA rank-4 Matryoshka model trained in 49 seconds, whose 256-dimensional vectors beat stock bge-m3 at 1024 dimensions.</desc>
+<rect width="960" height="520" fill="#FFFFFF"/>
+<text x="36" y="40" font-size="22" font-weight="700" fill="#1A1A1A">Nevertwice v3.0 — Attention-Native Memory vs. Competing Systems</text>
+<text x="36" y="62" font-size="12" fill="#555555">Campaign v3 (Stage D + A6.7): identical reader &amp; judge (deepseek-flash, temp=0), identical bge-m3 embedder, 7,000-token cap</text>
+<rect x="24" y="82" width="540" height="396" rx="12" fill="#F5F7F9"/>
+<text x="44" y="105" font-size="12" font-weight="700" letter-spacing="1.2" fill="#1A1A1A">BENCHMARK ACCURACY (S1 LONGMEMEVAL &amp; S4 LOCOMO)</text>
+<rect x="580" y="82" width="356" height="396" rx="12" fill="#F5F7F9"/>
+<text x="596" y="105" font-size="12" font-weight="700" letter-spacing="1.2" fill="#1A1A1A">WHY ATTENTION-NATIVE WINS</text>
+<rect x="40" y="118" width="508" height="66" rx="8" fill="#FFFFFF"/>
+<text x="52" y="137" font-size="11" font-weight="600" fill="#1A1A1A">Nevertwice v3.0 (allmode A6.7)</text>
+<rect x="470" y="124" width="66" height="16" rx="8" fill="#FFFFFF" stroke="#0072B2" stroke-width="1.2"/>
+<text x="503" y="135" font-size="9" text-anchor="middle" fill="#0072B2">dual-tier</text>
+<text x="52" y="157" font-size="9" fill="#555555">S1 (Point B / K / V)</text>
+<text x="52" y="175" font-size="9" fill="#555555">S4 LoCoMo (25 Qs, Cat 1-5)</text>
+<rect x="190" y="149" width="150" height="8" rx="4" fill="#E6EAEE"/>
+<rect x="190" y="149" width="150" height="8" rx="4" fill="#0072B2"/>
+<rect x="190" y="167" width="150" height="8" rx="4" fill="#E6EAEE"/>
+<rect x="190" y="167" width="150" height="8" rx="4" fill="#009E73"/>
+<text x="348" y="157" font-size="9" fill="#1A1A1A">S1: 100% (B) · 100% (K) · 100% (V)</text>
+<text x="348" y="175" font-size="9" fill="#1A1A1A">S4: 100.0% (25/25, F1 53.0%)</text>
+<rect x="40" y="190" width="508" height="66" rx="8" fill="#FFFFFF"/>
+<text x="52" y="209" font-size="11" font-weight="600" fill="#1A1A1A">Mem0 (mem0ai 2.2.0)</text>
+<rect x="470" y="196" width="66" height="16" rx="8" fill="#FFFFFF" stroke="#555555" stroke-width="1.2"/>
+<text x="503" y="207" font-size="9" text-anchor="middle" fill="#555555">extract</text>
+<text x="52" y="229" font-size="9" fill="#555555">S1 (Point B / K / V)</text>
+<text x="52" y="247" font-size="9" fill="#555555">S4 LoCoMo (25 Qs, Cat 1-5)</text>
+<rect x="190" y="221" width="150" height="8" rx="4" fill="#E6EAEE"/>
+<rect x="190" y="221" width="90" height="8" rx="4" fill="#0072B2"/>
+<rect x="190" y="239" width="150" height="8" rx="4" fill="#E6EAEE"/>
+<rect x="190" y="239" width="126" height="8" rx="4" fill="#009E73"/>
+<text x="348" y="229" font-size="9" fill="#1A1A1A">S1: 60% (B) · 40% (K)</text>
+<text x="348" y="247" font-size="9" fill="#1A1A1A">S4: 84.0% (21/25, F1 49.8%)</text>
+<rect x="40" y="262" width="508" height="66" rx="8" fill="#FFFFFF"/>
+<text x="52" y="281" font-size="11" font-weight="600" fill="#1A1A1A">LangMem (0.0.30)</text>
+<rect x="470" y="268" width="66" height="16" rx="8" fill="#FFFFFF" stroke="#555555" stroke-width="1.2"/>
+<text x="503" y="279" font-size="9" text-anchor="middle" fill="#555555">episodic</text>
+<text x="52" y="301" font-size="9" fill="#555555">S1 (Point B / K / V)</text>
+<text x="52" y="319" font-size="9" fill="#555555">S4 LoCoMo (25 Qs, Cat 1-5)</text>
+<rect x="190" y="293" width="150" height="8" rx="4" fill="#E6EAEE"/>
+<rect x="190" y="293" width="60" height="8" rx="4" fill="#0072B2"/>
+<rect x="190" y="311" width="150" height="8" rx="4" fill="#E6EAEE"/>
+<rect x="190" y="311" width="120" height="8" rx="4" fill="#009E73"/>
+<text x="348" y="301" font-size="9" fill="#1A1A1A">S1: 40% (B) · 20% (K)</text>
+<text x="348" y="319" font-size="9" fill="#1A1A1A">S4: 80.0% (20/25, F1 23.5%)</text>
+<rect x="40" y="334" width="508" height="66" rx="8" fill="#FFFFFF"/>
+<text x="52" y="353" font-size="11" font-weight="600" fill="#1A1A1A">Graphify (0.9.93 expand / query)</text>
+<rect x="470" y="340" width="66" height="16" rx="8" fill="#FFFFFF" stroke="#555555" stroke-width="1.2"/>
+<text x="503" y="351" font-size="9" text-anchor="middle" fill="#555555">graph</text>
+<text x="52" y="373" font-size="9" fill="#555555">S1 (Point B / K / V)</text>
+<text x="52" y="391" font-size="9" fill="#555555">S4 LoCoMo (25 Qs, Cat 1-5)</text>
+<rect x="190" y="365" width="150" height="8" rx="4" fill="#E6EAEE"/>
+<rect x="190" y="365" width="30" height="8" rx="4" fill="#0072B2"/>
+<rect x="190" y="383" width="150" height="8" rx="4" fill="#E6EAEE"/>
+<rect x="190" y="383" width="114" height="8" rx="4" fill="#009E73"/>
+<text x="348" y="373" font-size="9" fill="#1A1A1A">S1: 20% (B) · 20% (K)</text>
+<text x="348" y="391" font-size="9" fill="#1A1A1A">S4: 76.0% expand / 44.0% query</text>
+<rect x="40" y="406" width="508" height="66" rx="8" fill="#FFFFFF"/>
+<text x="52" y="425" font-size="11" font-weight="600" fill="#1A1A1A">Claude Code Memory (2.1.304)</text>
+<rect x="470" y="412" width="66" height="16" rx="8" fill="#FFFFFF" stroke="#555555" stroke-width="1.2"/>
+<text x="503" y="423" font-size="9" text-anchor="middle" fill="#555555">files</text>
+<text x="52" y="445" font-size="9" fill="#555555">S1 (Point B / K / V)</text>
+<text x="52" y="463" font-size="9" fill="#555555">S4 LoCoMo (25 Qs, Cat 1-5)</text>
+<rect x="190" y="437" width="150" height="8" rx="4" fill="#E6EAEE"/>
+<rect x="190" y="437" width="60" height="8" rx="4" fill="#0072B2"/>
+<rect x="190" y="455" width="150" height="8" rx="4" fill="#E6EAEE"/>
+<rect x="190" y="455" width="42" height="8" rx="4" fill="#009E73"/>
+<text x="348" y="445" font-size="9" fill="#1A1A1A">S1: 40% (B) · 40% (V)</text>
+<text x="348" y="463" font-size="9" fill="#1A1A1A">S4: 28.0% (7/25, F1 9.2%)</text>
+<rect x="596" y="120" width="324" height="108" rx="8" fill="#FFFFFF"/>
+<rect x="596" y="120" width="6" height="108" rx="3" fill="#E69F00"/>
+<text x="612" y="146" font-size="12" font-weight="600" fill="#1A1A1A">66.5x Fewer Writer Tokens · 10x Fewer Calls</text>
+<text x="612" y="168" font-size="10" fill="#555555">S4 ingest uses 56.0K prompt tokens (44 total LLM</text>
+<text x="612" y="184" font-size="10" fill="#555555">calls) vs. Mem0's 3,725.9K tokens (444 calls).</text>
+<text x="612" y="200" font-size="10" fill="#555555">9.6x faster on S1 (117s vs. 1,126s/unit).</text>
+<rect x="596" y="236" width="324" height="108" rx="8" fill="#FFFFFF"/>
+<rect x="596" y="236" width="6" height="108" rx="3" fill="#CC79A7"/>
+<text x="612" y="262" font-size="12" font-weight="600" fill="#1A1A1A">0-Token Idle Guards &amp; Modality Gate</text>
+<text x="612" y="284" font-size="10" fill="#555555">Guards stay in a local JSON ledger at 0 context tokens</text>
+<text x="612" y="300" font-size="10" fill="#555555">until a repeat is flagged. [Confirmed fact] vs</text>
+<text x="612" y="316" font-size="10" fill="#555555">[Hypothetical] separated by query intent.</text>
+<rect x="596" y="352" width="324" height="108" rx="8" fill="#FFFFFF"/>
+<rect x="596" y="352" width="6" height="108" rx="3" fill="#0072B2"/>
+<text x="612" y="378" font-size="12" font-weight="600" fill="#1A1A1A">nevertwice-embed v2 (LoRA r=4 + Matryoshka)</text>
+<text x="612" y="400" font-size="10" fill="#555555">Trained in 49s on RTX 5090: 1024d sit R@1 0.551 -&gt;</text>
+<text x="612" y="416" font-size="10" fill="#555555">0.588 (MRR 0.693); 256d (1 KB/vec, 4x smaller) beats</text>
+<text x="612" y="432" font-size="10" fill="#555555">stock bge-m3 at 1024d.</text>
+<text x="36" y="502" font-size="11" fill="#555555">Generated by tools/make_diagrams.py · Source: research/v3/REPORT-V3-STAGE-D-RU.md &amp; research/embed_universal/heldout/v2_3axis_eval.json</text>
+</svg>

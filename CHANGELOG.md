@@ -936,6 +936,46 @@ review of 2026-09-05, eleven more, listed first.
   64× capacity increase each failed their pre-declared thresholds and were deleted. `bge-m3`
   remains the default.
 
+## [3.0.0] - 2026-10-26
+
+The attention-native release. The engine used to distil one domain well: software work on the
+current project. Campaign v3 measured what that cost outside it, and A6.7 rebuilt the write and
+read paths around how a transformer uses context, then re-ran both stands. Results:
+`research/v3/REPORT-V3-STAGE-D-RU.md`.
+
+### Added
+
+- **Extraction modes (`nevertwice/modes.py`).** `NEVERTWICE_EXTRACT_MODE` accepts `code`, `all`
+  and `auto` (default). `code` keeps the original prompt unchanged; `all` appends an all-domain
+  rubric so personal, biographical, conversational and technical facts are relevant; `auto` reads
+  the transcript for code markers (`def `, `import ` and similar) and picks one for the session, so
+  a coding install does not pay for the personal path.
+- **Relative calendar resolution (`nevertwice/temporal.py`).** `resolve_relative_dates` keeps the
+  phrase and appends the resolved value: "last Saturday" on 2023-05-25 becomes
+  `[2023-05-20]`, "next month" becomes `[June 2023]`, and a second pass changes nothing.
+  `stamp_date_anchor` binds a description to its session date.
+- **Level 2 episodic index (`nevertwice/episodic.py`).** Every transcript becomes dated,
+  role-tagged verbatim chunks (`[Date: YYYY-MM-DD | Speaker: ...]`, `[Assistant context]`), with
+  question carryover (`(re: <last question>)`) and two-speaker action disambiguation that marks a
+  first-person action with the speaker it belongs to. Indexing costs no LLM call.
+- **Value history on absorb and supersede (`nevertwice/_engine_write.py`).** A replacement note
+  carries `[Prior YYYY-MM-DD: <old value>]` beside the current value, in both the supersede path
+  and the same-session absorb path, so a reader sees the change without a second model call.
+- **Read-only telemetry (M34, `nevertwice/api.py`).** `NEVERTWICE_TELEMETRY_READONLY=1` (implied by
+  `NEVERTWICE_SANDBOX=1`) makes `api.recall()` leave `telemetry.json` and its backup
+  byte-for-byte unchanged; unset, the read path still writes counters as before.
+- **Read-side filtering (`nevertwice/memory_search.py`).** Assistant-only hypothetical context is
+  dropped unless the query asks for suggestions or the store holds no confirmed entry. At `k<=5`
+  episodes are spaced one per session before a second chunk from any session is used.
+  Cross-session coreference resolution is carried by the chunk text: a follow-up answer keeps its
+  `(re: <question>)` prefix, so it is ranked against the question it answers.
+- **`nevertwice-embed v2`.** A `LoRA r=4` adapter over `bge-m3` with Matryoshka widths
+  `[1024, 512, 256]`, trained in 48.7 seconds on one RTX 5090. At 256 dimensions it holds
+  `0.9975` Recall@5 on titles and `0.7731` Recall@5 on situations. Raw run:
+  `research/embed_universal/heldout/v2_3axis_eval.json`.
+- **`docs/v3-scoreboard.svg`.** The campaign scoreboard, drawn from the Stage D report and embedded
+  in the README and `docs/COMPARISON.md`.
+
 ## [2.4.0] - 2026-08-26
 
 The release that followed the 2026-08-24 external audit. Two thirds of it is machinery

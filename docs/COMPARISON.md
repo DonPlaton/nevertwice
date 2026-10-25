@@ -4,6 +4,34 @@ How Nevertwice compares to current long-term-memory systems for agents, and what
 borrow from each. Vendor benchmark numbers are self-published and mutually disputed;
 the load-bearing sources here are the cited papers and docs.
 
+## Campaign v3 head-to-head (2026-10-26, hash-pinned corpora)
+
+Five systems on two stands: LongMemEval at three retrieval budgets, and LoCoMo over a stratified
+question set. One frozen reader and judge, one embedder, one injection cap.
+[Full report](../research/v3/REPORT-V3-STAGE-D-RU.md).
+
+<!-- comparison:v3-stage-d -->
+<img src="v3-scoreboard.svg" alt="Campaign v3 scoreboard comparing Nevertwice v3.0 against Mem0 2.2.0, LangMem 0.0.30, Graphify 0.9.93, and Claude Code Memory 2.1.304 on LongMemEval S1 and LoCoMo S4, plus token economy and nevertwice-embed v2 results." width="880">
+
+| System | S1 Point B | S1 Point K | S1 Point V | S4 LoCoMo | S4 token F1 | S4 calls | S4 write tokens |
+|---|---|---:|---:|---:|---:|---:|---:|
+| **Nevertwice v3.0 (allmode A6.7)** | **100%** (5/5) | **100%** (5/5) | **100%** (5/5) | **100%** (25/25) | **53.0%** | **44** | **56,016** |
+| Mem0 2.2.0 | 60% (3/5) | 40% (2/5) | 60% (3/5) | 84% (21/25) | 49.8% | 444 | 3,725,884 |
+| LangMem 0.0.30 | 40% (2/5) | 20% (1/5) | 20% (1/5) | 80% (20/25) | 23.5% | 44 | 93,067 |
+| Graphify 0.9.93 (query / expand) | 20% / 20% | 20% / 0% | 20% / 0% | 44% / 76% | 22.7% / 33.2% | 26 | 19,025 |
+| Claude Code Memory 2.1.304 | 40% (2/5) | n/a | 40% (2/5) | 28% (7/25) | 9.2% | 54 | 71,552 |
+
+The write-cost column is why the writer design matters: Nevertwice makes one extraction call per
+session, while Mem0's extraction runs on every message, so on `S4` the two spend 44 calls and 56,016
+prompt tokens against 444 calls and 3,725,884 tokens. `nevertwice-embed v2` is measured on the
+held-out bilingual set rather than on these stands: a `LoRA r=4` adapter over `bge-m3` with
+Matryoshka widths `[1024, 512, 256]`, trained in about a minute on one RTX 5090
+([v2_3axis_eval.json](../research/embed_universal/heldout/v2_3axis_eval.json)).
+<!-- /comparison:v3-stage-d -->
+
+Comparisons on this page are scoped to the five systems measured in Campaign v3. Everything from
+the July stand further down is withdrawn, and the banner before the first generated table says why.
+
 <!-- comparison:snapshot-note -->
 > **Snapshot.** Repository activity below was fetched from the GitHub API on **2026-08-24**. Capability rows are what each vendor documents, surveyed **2026-06**. The measured rows come from the head-to-head run in `research/head_to_head.json`, recorded **2026-07-05** - The date is when research/head_to_head.json was committed. The run itself recorded no timestamp, so this is the latest date the result can be attributed to, not the exact run date. Regenerate with `python tools/comparison_snapshot.py --fetch --write`.
 >
@@ -215,7 +243,7 @@ Kept here for context on *why* each feature exists.
 9. **Single-machine, single-user:** auto-memory isn't synced across machines or merged across concurrent agents (git is available but not operationalized).
 10. **No standardized public benchmark numbers.**
 
-## Improvement backlog: **DONE (all 15 implemented 2026-06-15)**
+## Improvement backlog: **DONE (every item implemented 2026-06-15)**
 
 Every item below is implemented and tested (188 checks green).
 Effort tags kept for reference. ✅ = shipped.

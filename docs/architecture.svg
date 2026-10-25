@@ -1,8 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 590" width="960" height="590" role="img" aria-labelledby="ttl dsc" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
-<title id="ttl">Nevertwice architecture: a write-time lane and a read-time lane, with the stages that cost no context tokens and the one point where memory acts</title>
-<desc id="dsc">Two lanes. Write time, left to right: your session in any agent; capture through a hook, an MCP call, the watch daemon or ingest; distil into mistakes, patterns and decisions; store as Markdown under git that you own. Read time, left to right: the same store; retrieve by semantic and lexical search behind a calibrated abstention gate; decide against a token budget, which may abstain; act. Act is the intervention point, where a guard fires, anticipation warns, or a counterfactual is answered. Capture, decide and act cost no context tokens until something fires. Every stage except act stays on your machine by default; act is what reaches the agent.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 620" width="960" height="620" role="img" aria-labelledby="ttl dsc" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+<title id="ttl">Nevertwice v3.0 architecture: a write-time lane and a read-time lane, with a dual-tier store, the stages that cost no context tokens, and the one point where memory acts</title>
+<desc id="dsc">Two lanes. Write time, left to right: your session in any agent; capture through a hook, an MCP call, the watch daemon or ingest; distil into a dual-tier store, Tier 1 facts that stay resident and Tier 2 episodes retrieved on demand; store as Markdown plus git history that you own, the previous version of every note kept beside the current one. Read time, left to right: the same store; retrieve by z-score fusion of semantic and lexical search behind a temporal anchor; decide against a token budget with a modality gate and a ranker, abstaining rather than guessing; act. Act is the intervention point, where a guard fires, anticipation warns, or a counterfactual is answered. Capture, decide and act cost no context tokens until something fires. Every stage except act stays on your machine by default; act is what reaches the agent. The foot of the diagram names the v3.0 upgrade: dual-tier write time and an attention-native decide stage.</desc>
 <defs><marker id="tip" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#B0B0B0"/></marker></defs>
-<rect width="960" height="590" fill="#FFFFFF"/>
+<rect width="960" height="620" fill="#FFFFFF"/>
 <text x="36" y="42" font-size="22" font-weight="700" fill="#1A1A1A">How Nevertwice works</text>
 <text x="36" y="64" font-size="13" fill="#555555">Two pipelines, not one loop - which is why remembering does not tax every turn.</text>
 <rect x="16" y="102" width="928" height="160" rx="14" fill="#F5F7F9"/>
@@ -30,7 +30,7 @@
 <rect x="476" y="148" width="228" height="86" rx="10" fill="#FFFFFF" stroke="#0072B2" stroke-width="2"/>
 <rect x="476" y="148" width="6" height="86" rx="3" fill="#0072B2"/>
 <text x="496" y="180" font-size="17" font-weight="600" fill="#1A1A1A">distil</text>
-<text x="496" y="202" font-size="12" fill="#555555">mistakes · patterns · decisions</text>
+<text x="496" y="202" font-size="12" fill="#555555">Tier 1 facts + Tier 2 episodes</text>
 <rect x="496" y="211" width="44" height="16" rx="8" fill="#FFFFFF" stroke="#B0B0B0" stroke-width="1"/>
 <rect x="502" y="215.5" width="7" height="7" rx="1.5" fill="none" stroke="#1A1A1A" stroke-width="1.4"/>
 <text x="514" y="223" font-size="10" fill="#1A1A1A">local</text>
@@ -38,7 +38,7 @@
 <rect x="696" y="148" width="228" height="86" rx="10" fill="#FFFFFF" stroke="#009E73" stroke-width="2"/>
 <rect x="696" y="148" width="6" height="86" rx="3" fill="#009E73"/>
 <text x="716" y="180" font-size="17" font-weight="600" fill="#1A1A1A">store</text>
-<text x="716" y="202" font-size="12" fill="#555555">Markdown + git, yours</text>
+<text x="716" y="202" font-size="12" fill="#555555">Markdown + git · [Prior] history</text>
 <rect x="716" y="211" width="44" height="16" rx="8" fill="#FFFFFF" stroke="#B0B0B0" stroke-width="1"/>
 <rect x="722" y="215.5" width="7" height="7" rx="1.5" fill="none" stroke="#1A1A1A" stroke-width="1.4"/>
 <text x="734" y="223" font-size="10" fill="#1A1A1A">local</text>
@@ -56,7 +56,7 @@
 <rect x="256" y="370" width="228" height="86" rx="10" fill="#FFFFFF" stroke="#0072B2" stroke-width="2"/>
 <rect x="256" y="370" width="6" height="86" rx="3" fill="#0072B2"/>
 <text x="276" y="402" font-size="17" font-weight="600" fill="#1A1A1A">retrieve</text>
-<text x="276" y="424" font-size="12" fill="#555555">semantic + lexical, calibrated</text>
+<text x="276" y="424" font-size="12" fill="#555555">Z-score fusion · temporal anchor</text>
 <rect x="276" y="433" width="44" height="16" rx="8" fill="#FFFFFF" stroke="#B0B0B0" stroke-width="1"/>
 <rect x="282" y="437.5" width="7" height="7" rx="1.5" fill="none" stroke="#1A1A1A" stroke-width="1.4"/>
 <text x="294" y="445" font-size="10" fill="#1A1A1A">local</text>
@@ -64,7 +64,7 @@
 <rect x="476" y="370" width="228" height="86" rx="10" fill="#FFFFFF" stroke="#E69F00" stroke-width="2"/>
 <rect x="476" y="370" width="6" height="86" rx="3" fill="#E69F00"/>
 <text x="496" y="402" font-size="17" font-weight="600" fill="#1A1A1A">decide</text>
-<text x="496" y="424" font-size="12" fill="#555555">budget · abstain · rank</text>
+<text x="496" y="424" font-size="12" fill="#555555">budget · modality gate · rank</text>
 <rect x="496" y="433" width="62" height="16" rx="8" fill="#FFFFFF" stroke="#B0B0B0" stroke-width="1"/>
 <circle cx="505" cy="441" r="3.5" fill="none" stroke="#1A1A1A" stroke-width="1.4"/>
 <text x="514" y="445" font-size="10" fill="#1A1A1A">0 tokens</text>
@@ -79,10 +79,14 @@
 <rect x="716" y="433" width="62" height="16" rx="8" fill="#FFFFFF" stroke="#B0B0B0" stroke-width="1"/>
 <circle cx="725" cy="441" r="3.5" fill="none" stroke="#1A1A1A" stroke-width="1.4"/>
 <text x="734" y="445" font-size="10" fill="#1A1A1A">0 tokens</text>
-<path d="M 810 462 L 810 498" stroke="#CC79A7" stroke-width="2" stroke-dasharray="4 3" fill="none"/>
-<rect x="640" y="498" width="300" height="30" rx="15" fill="#FFFFFF" stroke="#CC79A7" stroke-width="2"/>
-<text x="790" y="518" font-size="13" font-weight="600" text-anchor="middle" fill="#1A1A1A">the intervention point - memory acts here</text>
-<text x="36" y="512" font-size="12" fill="#555555">A stage marked 0 tokens adds nothing to the prompt until it fires.</text>
-<text x="36" y="530" font-size="12" fill="#555555">A stage marked local never leaves the machine on a default install.</text>
-<text x="36" y="562" font-size="11" fill="#555555">Generated by tools/make_diagrams.py - edit the description there, not this file.</text>
+<path d="M 810 462 L 810 496" stroke="#CC79A7" stroke-width="2" stroke-dasharray="4 3" fill="none"/>
+<rect x="16" y="496" width="928" height="54" rx="14" fill="#F5F7F9"/>
+<rect x="16" y="496" width="6" height="54" rx="3" fill="#CC79A7"/>
+<text x="36" y="520" font-size="13" font-weight="700" letter-spacing="1.2" fill="#1A1A1A">v3.0 ATTENTION-NATIVE DUAL-TIER</text>
+<text x="316" y="520" font-size="12" fill="#555555">  Tier 1 facts stay resident; Tier 2 episodes are retrieved on demand.</text>
+<text x="36" y="538" font-size="12" fill="#555555">act stays the intervention point - the only stage that reaches the agent.</text>
+<text x="944" y="538" font-size="12" text-anchor="end" fill="#555555">every other stage stays local</text>
+<text x="36" y="570" font-size="12" fill="#555555">A stage marked 0 tokens adds nothing to the prompt until it fires.</text>
+<text x="36" y="586" font-size="12" fill="#555555">A stage marked local never leaves the machine on a default install.</text>
+<text x="36" y="606" font-size="11" fill="#555555">Generated by tools/make_diagrams.py - edit the description there, not this file.</text>
 </svg>

@@ -27,6 +27,21 @@ of 2026-09-11.
 `python tools/check_freshness.py --list-stale` lists every number that is still withdrawn and the
 gate that blocks re-measuring it.
 
+## Campaign v3 & nevertwice-embed v2 (2026-10-26)
+
+```text
+Stand / Axis                         Nevertwice v3 (A6.7)    Mem0 v2        LangMem v0     Graphify v0_9_93   Claude Code v2
+-----------------------------------  ----------------------  -------------  -------------  -----------------  --------------
+S1 LongMemEval (Point B / K / V)     5/5 · 5/5 · 5/5         3/5 · 2/5 · B  2/5 · 1/5 · K  1/5 · 0/5 · 0/5    2/5 · n/a · 2/5
+S4 LoCoMo (25 Qs, Categories 1-5)    25/25 (F1 53.0%)        21/25 (49.8%)  20/25 (23.5%)  19/25 (expand)      7/25 (9.2%)
+S4 Write Cost (LLM calls / tokens)   19+25 / 56,016 tok      419+25 / 3.73M 19+25 / 93,067 1+25 / 19,025      29+25 / 71,552
+nevertwice-embed v2 (LoRA r=4)       1024d sit R@1 0.5880 (MRR 0.6930) · 256d sit R@1 0.5556 (title R@1 0.9730, twin R@0fp 690/690)
+```
+
+Per-category rows and the competing arms are in
+[`research/v3/REPORT-V3-STAGE-D-RU.md`](../research/v3/REPORT-V3-STAGE-D-RU.md) and
+[`research/embed_universal/heldout/v2_3axis_eval.json`](../research/embed_universal/heldout/v2_3axis_eval.json).
+
 ## Speed: what the hot paths cost
 
 A memory that hooks every tool call has to be fast on modest hardware, so the costs are

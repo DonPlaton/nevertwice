@@ -4,12 +4,16 @@
 
 # Nevertwice
 
-### Proactive, local-first memory for AI coding agents - it acts before your agent repeats a mistake.
+### Attention-native memory for AI coding agents, built around how transformers actually read context.
 
-*Other memory tools recall text and pad every prompt with it. Nevertwice stays silent until it has
-something worth saying, then fires a one-line warning at the moment your agent is about to repeat a
-mistake it already made - and costs nothing until it does. The store is plain Markdown in a git
-repo you own.*
+*Language models lose accuracy when every prompt is padded with noisy chunks, undated snippets or
+retracted values. Nevertwice v3 stays silent at 0 context tokens until a guard fires. Behind the
+guard sits a two-tier store: Tier 1 holds distilled facts with `[Prior YYYY-MM-DD: ...]` value
+history, Tier 2 holds dated, role-tagged verbatim episodes. Calibrated Z-score fusion ranks both,
+and an epistemic modality gate separates a `[Confirmed fact]` from a `[Hypothetical / Assistant
+suggestion]`. Modes switch automatically: `NEVERTWICE_EXTRACT_MODE=auto` picks `code` for software
+engineering and `all` for personal, biographical and research sessions. The store is plain Markdown
+in a git repo you own.*
 
 **No database. No server. No account. No telemetry. Zero pip dependencies.**
 
@@ -68,38 +72,29 @@ work on every agent ([INTEGRATIONS.md](docs/INTEGRATIONS.md)).
 
 ## The evidence
 
-Small samples, run by one person - the point is that the harness is in the repo, the raw results
-are committed, and [every number here resolves to one](research/evidence_manifest.json).
+Small samples, run by one person: the harness is in the repo, the raw results are committed, and
+[every number here resolves to one](research/evidence_manifest.json).
 
-**Most of that corpus was withdrawn in 2026-08, and saying so is the point.** Every claim had been
-stamped with the commit that last touched its *artifact file* - a directory move - rather than the
-commit whose code produced the number. Once each claim was made to name the source files its
-command imports, most of them turned out to describe the engine as it stood at the first release, several review rounds after
-the ranker beneath them had been rewritten. Re-measuring them needs a third-party dataset this repo
-does not ship, the owner's private store, or a paid API, so they are withdrawn rather than
-reprinted. `python tools/check_freshness.py --list-stale` names every one and the gate that blocks
-it, and CI now fails when a published number outlives the code that made it. How long a claim lives, and why engine claims die first: [CLAIM_HALFLIFE.md](research/CLAIM_HALFLIFE.md).
+<img src="docs/v3-scoreboard.svg" alt="Campaign v3 scoreboard comparing Nevertwice v3 against Mem0, LangMem, Graphify, and Claude Code Memory on LongMemEval S1 and LoCoMo S4, plus token economy and nevertwice-embed v2 results." width="880">
 
-What the second campaign measured on 2026-09-25, and where each row stands now:
+**Campaign v3 (Stage D + A6, 2026-10-26).** Five systems, one frozen reader and judge
+(`deepseek-flash`), one `bge-m3` embedder, hash-pinned corpora. [Full report](research/v3/REPORT-V3-STAGE-D-RU.md) · [Embed v2 eval](research/embed_universal/heldout/v2_3axis_eval.json).
 
-| claim | result | evidence |
-|---|---|---|
-| external retrieval, one pool and one embedder for everyone | withdrawn on 2026-09-25, a day after the second campaign measured it: the stage-D bug fixes moved the engine code under it, so the figure no longer describes the code in this repository, and campaign v3 re-measures it on its own anchor. The page it links to keeps the method and the figures withdrawn in 2026-08, and why | [EXTERNAL_RETRIEVAL.md](research/EXTERNAL_RETRIEVAL.md) |
-| handing back a fact that has since been **retracted** | withdrawn on 2026-09-25 for the same reason. The study page keeps the method and the design it measures: nothing is retired unless a rule proves the replacement or the sleep-time judge rules on it, and an unproven pair is served whole, newest first | [SUPERSESSION.md](research/SUPERSESSION.md) |
-| acting vs *always-injecting* the same lesson | withdrawn on 2026-09-26: stage D changed the simulation's writer (it now stamps the commit and time on its artifact), so the token ratio is re-derived in campaign v3 - a deterministic CPU re-run, not a model call. A simulation over a fixed task family, not a live agent run; the study page keeps the method | [ACTIVE_MEMORY.md](research/ACTIVE_MEMORY.md) |
-| memory-poisoning acceptance attacks | withdrawn on 2026-09-25 for the same reason; the study page, withdrawn with it, keeps the four attack families and the method | [POISONING.md](research/POISONING.md) |
-| what being there costs | PreToolUse fell by well over a third once the hook stopped recompiling the engine on every call, and costs zero context tokens until a guard fires; the millisecond figure is withdrawn until it is timed on an idle machine - a timing is published only from such a run, and the campaign ran with models loaded | [BENCHMARKS.md](docs/BENCHMARKS.md) |
+```text
+System                            S1 LongMemEval (B / K / V)   S4 LoCoMo (J1 / F1)      S4 Write Cost
+--------------------------------  ---------------------------  -----------------------  ----------------------------
+Nevertwice v3 (allmode A6.7)      5/5  ·  5/5  ·  5/5          25/25 (F1 53.0%)         19+25 calls  /    56,016 tok
+Mem0 (mem0ai v2)                  3/5  ·  2/5  ·  3/5          21/25 (F1 49.8%)         419+25 calls / 3,725,884 tok
+LangMem (langmem v0)              2/5  ·  1/5  ·  1/5          20/25 (F1 23.5%)         19+25 calls  /    93,067 tok
+Graphify (v0_9_93 expand/query)   1/5  ·  0/5  ·  0/5          19/25 / 11/25            1+25 calls   /    19,025 tok
+Claude Code Memory (v2_1_304)     2/5  ·  n/a  ·  2/5           7/25 (F1  9.2%)         29+25 calls  /    71,552 tok
+```
 
-The second campaign measured every row on one frozen commit, under a validity rule fixed before the first
-number: a run whose model calls failed or went past the call counter does not count. The bug fixes of
-stage D then moved the engine under most of them, and a number measured on the old code says nothing
-about the new one, so those rows are withdrawn until campaign v3 re-measures them on its own anchor;
-`python tools/check_freshness.py --list-stale` names each withdrawn claim and why. Earlier, a 2026-09
-review found our semantic arm embedded only the first two thousand characters of each session while the
-competitors embedded the whole one, an error against us.
-
-The 2026-07 run of that retrieval stand stays withdrawn - its corpus could not be identified -
-and the re-run above is a separate claim family on a named one:
+**Audit history.** The 2026-07 head-to-head was **Withdrawn 2026-08**: its corpus could not be
+identified after the fact. The second campaign's acting row was withdrawn on 2026-09-26: stage D changed the simulation's writer, so the token ratio no longer describes this code; the rest of that campaign's rows went the day before, for the same reason. Each withdrawn claim
+names its commit, its blocking gate and its restore command in `research/evidence_manifest.json`;
+[CLAIM_HALFLIFE.md](research/CLAIM_HALFLIFE.md) explains how long a claim lives and why engine
+claims die first.
 
 <!-- claims:head-to-head -->
 > **Withdrawn 2026-08.** historical: the unpinned head_to_head stand's first-generation rows, recorded by a bare command with no --save that writes nothing; the same arms on the pinned corpus are the live h2h_pinned.* claims (D-O2, campaign v2 at fe6ddff)
@@ -157,7 +152,7 @@ With no backend at all, extraction pauses loudly (sessions are kept and retried,
 recall runs on lexical search until an embedder shows up. The five-minute walkthrough is in
 [QUICKSTART.md](QUICKSTART.md); every environment variable is in [CONFIG.md](docs/CONFIG.md).
 
-Contributing: `pip install -e ".[dev]"`, then `python -m pytest -q`. Three hundred sixty-one hermetic suites -
+Contributing: `pip install -e ".[dev]"`, then `python -m pytest -q`. Three hundred sixty-three hermetic suites -
 LLMs, embedders, the optional reranker, network and GPU execution are disabled or mocked, and a lint
 fails the build if a script reaches a memory store without declaring which store it means. CI runs
 them on Linux, Windows and macOS across four Python versions. One is a golden store - same sessions
