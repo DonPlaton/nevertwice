@@ -161,8 +161,8 @@ for kept in (b"Date: Sat, 26 Sep 2026 09:00:00 GMT", b"Content-Type: application
              b"Cache-Control: no-cache", b"Content-Encoding: identity", b"Transfer-Encoding: identity",
              b"Content-Length: " + str(len(BODY)).encode()):
     check(f"kept verbatim: {kept.split(b':')[0].decode()}", kept in red)
-for secret in (b"COOKIEVALUE", b"REQ-ID-42", b"8c1f-AMS", b"999", b"ORG-7"):
-    check(f"replaced: {secret.decode()}", secret not in red[:red.index(b"\r\n\r\n")])
+for header_value in (b"COOKIEVALUE", b"REQ-ID-42", b"8c1f-AMS", b"999", b"ORG-7"):
+    check(f"replaced: {header_value.decode()}", header_value not in red[:red.index(b"\r\n\r\n")])
 check("the name and its whitespace stay, the value is x", b"x-request-id:  xxxxxxxxx\r\n" in red
       and b"Set-Cookie: " + b"x" * len(b"__cf_bm=COOKIEVALUE; path=/; HttpOnly") + b"\r\n" in red)
 check("the redacted names are listed once each, lower-cased",

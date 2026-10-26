@@ -289,7 +289,11 @@ print("\n- and the inventory is pinned, so new pins cannot arrive unnoticed -")
 #: the manifest's windows.a8-sm-tag.commit (the commit supermemory's tag server-v0.0.8 names), foreign (its entry names
 #: the repo). Diffed with this file's own walk() against the manifest before it: none lost (196 artifacts, 308 -> 309
 #: kinds over 394 values).
-check("the number of pinned artifacts has not moved", len(artifacts) == 196, str(len(artifacts)))
+#: 2026-10-26, embed v2 3-axis (2f431d3): +1 artifact, no kind - research/embed_universal/heldout/
+#: v2_3axis_eval.json, the nevertwice-embed v2 3-axis LoRA r=4 + Matryoshka evaluation artifact (its keys
+#: are metrics and per-axis rows, none pin-named). Diffed with this file's own walk() against e47a0d6:
+#: none lost (196 -> 197 artifacts; 309 kinds over 394 values, both unchanged).
+check("the number of pinned artifacts has not moved", len(artifacts) == 197, str(len(artifacts)))
 check("and the number of pin KINDS has not moved", len(kinds) == 309,
       f"{len(kinds)} kinds over {len(pins)} values")
 

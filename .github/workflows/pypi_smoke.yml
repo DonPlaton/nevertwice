@@ -1,6 +1,7 @@
 # First-touch smoke against the REAL distribution channel: install the given version
 # from PyPI on all three OSes and run the storefront loop with no model anywhere.
-# Manual trigger only - run it right after `twine upload`, before any promotion post.
+# Manual trigger only - run it right after the pypi job of release.yml succeeds, before any
+# promotion post.
 # Exists because a green suite once shipped a broken first touch (2.1.0): the built
 # wheel and the uploaded artifact are not the same test.
 name: pypi-smoke

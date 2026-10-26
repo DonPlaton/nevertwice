@@ -117,6 +117,9 @@ def build(stand: str, got: Sequence[Sequence], *, SS: Any, facts: Any, s1_ids: S
     """The stand's rule over the child's ids: {"lists": {file name: list_record}, "extra": {...}} - or SubsampleRefused
     / ValueError naming what stopped it. Nothing is written here."""
     spec = SS.LIST_STANDS[stand]
+    # S5's smoke block is the only branch that fills `extra`; the default keeps the return at the
+    # bottom readable to a reader (and to py/uninitialized-local-variable) as "no extra".
+    extra: dict = {}
     if stand == "S3":
         return {"lists": {}, "extra": SS.s3_coverage(s1_ids, got[0])}
     if stand == "S9":

@@ -1,4 +1,4 @@
-# nevertwice-embed universal v1 — plan and protocol
+# nevertwice-embed universal v1 and v2: plan and protocol
 
 <!-- withdrawn-banner -->
 > **Withdrawn: figures on this page must not be quoted.** They were retracted and remain
@@ -61,6 +61,7 @@ remaining domain-general.
     gen_corpus.py   chunk + LLM-write lessons          -> data/lessons.jsonl
     gen_pairs.py    twins/supersedes + heldout test    -> data/train_pairs.jsonl, data/test_synth.jsonl
     train.py        LoRA r=16 on bge-m3 (proven recipe)-> models/universal_v1/
+    train_v2.py     LoRA r=4, 3 axes, Matryoshka 1024/512/256 -> models/universal_v2{,_merged}/
     evaluate.py     3-model comparison on all axes     -> results.json + this README's results section
 
 `data/` and `models/` are gitignored (big, and the real-vault eval material is private);
@@ -99,6 +100,26 @@ are too easy) - only the real vault discriminates, which is why it is the criter
 (2) title-query R@1 trails r1 (0.890 vs 0.933) - r1 memorized vault phrasing;
 (3) single seed, single base model.
 
+## v2: LoRA r=4, Matryoshka, three axes (2026-10-25)
+
+<!-- comparison:v3-summary -->
+The withdrawal banner above covers the v1 rows: their headline was measured on the owner's
+private vault and cannot be reproduced by anyone else. This section is a later run, and it
+names its own artifact.
+
+`train_v2.py` trained one adapter on three axes at once (title, situation, and a
+conversational bridge of synthetic question-to-evidence pairs), with Matryoshka widths
+`1024/512/256` and `1,777,664` trainable parameters. The winner of its four candidates is
+`v2_r4_3axis_full`: `48.71 s` on one RTX 5090, `11.09 GB` peak VRAM, merge parity cosine
+`1.0`. At 256 dimensions it holds `0.9975` Recall@5 on titles and `0.7731` Recall@5 on
+situations, which is the v1 checkpoint's 256-wide recall in the same run; the conversational
+bridge reads `0.9` Recall@1 at `n=10`, and the twin gate reads AUC `1.0` at `n=690`, the same
+saturation the v1 caveat above records. Every figure, and all four candidates side by side,
+is in [`heldout/v2_3axis_eval.json`](heldout/v2_3axis_eval.json). The figures are not
+registered as claims in the evidence manifest yet; the artifact is the record, and the
+held-out set it runs on is frozen in `heldout/external_heldout_v1.json`.
+<!-- /comparison:v3-summary -->
+
 ## Shipped artifacts (this machine)
 
 - `models/universal_v1/` - LoRA adapter (a few MB, the retrainable artifact)
@@ -125,8 +146,9 @@ noise now ~0.16). The twin classifier retrained in the new space composes to
 
 ## Remaining owner steps
 
-1. `huggingface-cli login` then `python hf_publish.py` → publishes the model card, merged
-   checkpoint, LoRA adapter and f16 GGUF to `<you>/nevertwice-embed` (users then
-   `ollama pull hf.co/<you>/nevertwice-embed`).
+1. `huggingface-cli login` then `python hf_publish.py` publishes the model card, the merged
+   checkpoint, the LoRA adapter and the f16 GGUF to `<you>/nevertwice-embed` (users then
+   `ollama pull hf.co/<you>/nevertwice-embed`). It publishes v2 by default once
+   `models/universal_v2_merged/` exists, and `--v1` publishes the older release.
 2. Product default flip (repo-wide): `NEVERTWICE_EMBED_MODEL=nevertwice-embed` default +
    ship the new-space classifier weights + threshold defaults in one release.

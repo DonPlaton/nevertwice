@@ -221,7 +221,12 @@ def record_search(ms: float) -> None:
         value = round(float(ms), 2)
     except (TypeError, ValueError):
         return
-    if value != value or value in (float("inf"), float("-inf")) or value < 0:
+    # One chained range test, not `value != value or value in (inf, -inf) or value < 0`: a NaN
+    # sample fails `0 <= value` and +inf fails `value < inf`, so non-finite and negative
+    # measurements are dropped without a self-comparison that reads like a typo
+    # (py/comparison-of-identical-expressions). `math` is not imported here on purpose: this
+    # module's import set is an allowlist a reader checks in one sitting (tests/_test_telemetry.py).
+    if not 0 <= value < float("inf"):
         return
     data = load()
     bucket = data["search_latency"]

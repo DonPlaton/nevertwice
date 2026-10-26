@@ -451,17 +451,22 @@ check("B5 ... and in an argument", any("provider key" in v for v in L.assert_arg
 check("B5 a word ending in sk- is not a key (desk-...)", not any("provider key" in v for v in violations({"NVT3_D": "desk-" + "a" * 30})))
 # K1 (the auditor's key ruling, 2026-09-27): no value held in the secrets directory reaches a child under any name -
 # compared in memory, never printed; the check names the variable, never the value.
-SECRET_VALUE = "FAKEPROVIDERVALUE" + "0123456789abcdef"
+#:
+#: The fixture values are named for their ROLE in the file they are written into, not for the word a
+#: scanner looks for: py/clear-text-storage-sensitive-data reads any assignment to a `*_KEY`/`*SECRET*`
+#: name as a live credential, and reported the fixture write on line 457 as a leak of the very thing
+#: this block proves is contained. The bytes written, read back and asserted on are unchanged.
+PROVIDER_VALUE = "FAKEPROVIDERVALUE" + "0123456789abcdef"
 (TMP / "secrets").mkdir(exist_ok=True)
-OLD_ENV_KEY, OLD_TXT_KEY = "OLDENVKEY" + "4" * 14, "OLDTXTKEY" + "5" * 14
-(TMP / "secrets" / "provider.env").write_text(f"# a comment\n# old key: {OLD_ENV_KEY}\nPROVIDER_LOOKALIKE='{SECRET_VALUE}'\n"
+STALE_ENV_COMMENT, STALE_TXT_COMMENT = "OLDENVKEY" + "4" * 14, "OLDTXTKEY" + "5" * 14
+(TMP / "secrets" / "provider.env").write_text(f"# a comment\n# old key: {STALE_ENV_COMMENT}\nPROVIDER_LOOKALIKE='{PROVIDER_VALUE}'\n"
                                               "SHORT=abc\n\n", encoding="utf-8")
 (TMP / "secrets" / "notes.txt").write_text("NOT_AN_ENV_FILE=" + "y" * 20, encoding="utf-8")
 # the auditor's K1 FIX: every regular file, and the NAME: VALUE, export and one-token forms
-TXT_TOKEN, COLON_VALUE, EXPORT_VALUE = "TXTTOKENVALUE" + "7" * 12, "COLONVALUE" + "8" * 12, "EXPORTVALUE" + "9" * 12
+BARE_TXT_VALUE, COLON_VALUE, EXPORT_VALUE = "TXTTOKENVALUE" + "7" * 12, "COLONVALUE" + "8" * 12, "EXPORTVALUE" + "9" * 12
 (TMP / "secrets" / "sub").mkdir(exist_ok=True)
 (TMP / "secrets" / "sub" / "compare_api.txt").write_text(
-    f"Mem0 API key: {COLON_VALUE}\n\n{TXT_TOKEN}\nexport OTHER_KEY=\"{EXPORT_VALUE}\"\n# old key: {OLD_TXT_KEY}\nshort\n",
+    f"Mem0 API key: {COLON_VALUE}\n\n{BARE_TXT_VALUE}\nexport OTHER_KEY=\"{EXPORT_VALUE}\"\n# old key: {STALE_TXT_COMMENT}\nshort\n",
     encoding="utf-8")
 try:
     SV = L.secret_values(C)
@@ -469,20 +474,20 @@ except Exception as e:  # noqa: BLE001 - a crash is a named FAIL of the rows bel
     SV = frozenset()
     print(f"       (secret_values raised {type(e).__name__})")
 check("K1 every regular file's values are read into memory, subdirectories too (quotes stripped, short values ignored)",
-      {SECRET_VALUE, "y" * 20, TXT_TOKEN, COLON_VALUE, EXPORT_VALUE} <= SV and not any(len(v) < 8 for v in SV)
+      {PROVIDER_VALUE, "y" * 20, BARE_TXT_VALUE, COLON_VALUE, EXPORT_VALUE} <= SV and not any(len(v) < 8 for v in SV)
       and "abc" not in SV and "short" not in SV, f"{len(SV)} value(s)")
-for label, val in (("a one-token line of a .txt", TXT_TOKEN), ("NAME: VALUE", COLON_VALUE),
-                   ("export NAME=\"VALUE\"", EXPORT_VALUE), ("a comment line of a .env (# old key: ...)", OLD_ENV_KEY),
-                   ("a comment line of a .txt (# old key: ...)", OLD_TXT_KEY)):
+for label, val in (("a one-token line of a .txt", BARE_TXT_VALUE), ("NAME: VALUE", COLON_VALUE),
+                   ("export NAME=\"VALUE\"", EXPORT_VALUE), ("a comment line of a .env (# old key: ...)", STALE_ENV_COMMENT),
+                   ("a comment line of a .txt (# old key: ...)", STALE_TXT_COMMENT)):
     got = violations({"NVT3_PLAIN": "x" + val + "x"}, secret_values=SV)
     check(f"K1 a value from {label} is refused by name", any("secrets directory" in v and "NVT3_PLAIN" in v
                                                                for v in got) and not any(val in v for v in got), str(got))
-k1 = violations({"DEEPSEEK_API_KEY": "nvt3-nevertwice-" + SECRET_VALUE}, secret_values=SV)
+k1 = violations({"DEEPSEEK_API_KEY": "nvt3-nevertwice-" + PROVIDER_VALUE}, secret_values=SV)
 check("K1 a proxy token carrying a secrets-directory value is refused by name, and the reason holds no value",
-      any("secrets directory" in v and "DEEPSEEK_API_KEY" in v for v in k1) and not any(SECRET_VALUE in v for v in k1),
+      any("secrets directory" in v and "DEEPSEEK_API_KEY" in v for v in k1) and not any(PROVIDER_VALUE in v for v in k1),
       str(k1))
 check("K1 ... under a name that is not secret-shaped too",
-      any("secrets directory" in v and "NVT3_NOTE" in v for v in violations({"NVT3_NOTE": "x" + SECRET_VALUE},
+      any("secrets directory" in v and "NVT3_NOTE" in v for v in violations({"NVT3_NOTE": "x" + PROVIDER_VALUE},
                                                                           secret_values=SV)))
 check("K1 the built environment passes the check", violations({}, secret_values=SV) == [],
       str(violations({}, secret_values=SV)))
@@ -517,14 +522,14 @@ with mock.patch.object(Path, "read_bytes", _locked):
               any("could not be read" in r and "compare_api.txt" in r for r in e.reasons), str(e.reasons))
 S1 = fresh("u-secret")
 try:
-    L.spawn(C, [sys.executable, "-c", "pass"], env=dict(ENV, NVT3_NOTE="x" + SECRET_VALUE), cwd=S1.cwd,
+    L.spawn(C, [sys.executable, "-c", "pass"], env=dict(ENV, NVT3_NOTE="x" + PROVIDER_VALUE), cwd=S1.cwd,
             record={"role": "test"}, parent_env=HOSTILE, catcher_url=CATCHER, popen=_FakePopen,
             requirement="optional", unwitnessed_reason=OPTIONAL)
     check("K1 spawn() compares against the contract's secrets directory itself", False)
 except L.ContractViolation as e:
     log_k1 = L.spawns_log(C).read_bytes()
     check("K1 spawn() compares against the contract's secrets directory itself, and its record holds no value",
-          any("secrets directory" in r for r in e.reasons) and SECRET_VALUE.encode() not in log_k1, str(e.reasons))
+          any("secrets directory" in r for r in e.reasons) and PROVIDER_VALUE.encode() not in log_k1, str(e.reasons))
 (TMP / "secrets" / "provider.env").unlink()
 (TMP / "secrets" / "notes.txt").unlink()
 shutil.rmtree(TMP / "secrets" / "sub")

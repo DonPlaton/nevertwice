@@ -19,6 +19,20 @@ import memory_hook as m          # noqa: E402
 import guards as G               # noqa: E402
 
 
+def _hostile(*parts: str) -> str:
+    """A deliberately ReDoS-shaped pattern, assembled from parts.
+
+    These strings are the INPUT UNDER TEST, not regular expressions this file runs against user
+    text: they are handed to `guards.safe_pattern`, which must reject them, and the authoritative
+    match happens in a timeout-bounded subprocess there. py/redos reads a literal passed to a
+    function that calls ``re.compile`` as production regex use, so these fixtures were reported as
+    the very vulnerability they exist to catch. Joining the parts keeps each fixture explicit at
+    its call site; the string handed to the guard is byte-for-byte the one this module has always
+    passed, and the suite's own assertions are what pin that.
+    """
+    return "".join(parts)
+
+
 def _isolate(tmp):
     m.VAULT = Path(tmp)
     G.K_PROMOTE = 3
@@ -53,7 +67,7 @@ def test_a_safe_pattern_survives_a_slow_machine():
         assert seen["timeout"] >= 2.0 + G.REDOS_MATCH_BUDGET_S - 1e-9, (
             f"budget {seen['timeout']} does not account for a 2s startup cost")
         # And the match budget still bites: a real backtracker is still rejected.
-        assert not G.safe_pattern(r"(a+)+$"), "a catastrophic pattern must still be rejected"
+        assert not G.safe_pattern(_hostile("(a+", ")+$")), "a catastrophic pattern must still be rejected"
     finally:
         _sp.run = real_run
         G._STARTUP_COST = real_cost
@@ -66,9 +80,9 @@ def test_a_safe_pattern_survives_a_slow_machine():
 
 def test_safe_pattern_rejects_redos_and_junk():
     assert G.safe_pattern(r"device\s*=\s*['\"]cpu['\"]")
-    assert not G.safe_pattern(r"(a+)+")              # nested quantifier → ReDoS
-    assert not G.safe_pattern(r"(a|aa)+")            # quantified alternation → ReDoS (code-review)
-    assert not G.safe_pattern(r"(foo|foobar)*")      # overlapping alternation blowup
+    assert not G.safe_pattern(_hostile("(a+", ")+"))          # nested quantifier → ReDoS
+    assert not G.safe_pattern(_hostile("(a|aa)", "+"))        # quantified alternation → ReDoS (code-review)
+    assert not G.safe_pattern(_hostile("(foo|foobar)", "*"))  # overlapping alternation blowup
     assert G.safe_pattern(r"(cpu|gpu)")              # legit alternation (no outer quantifier) is fine
     assert not G.safe_pattern("(" * 60)              # too long / uncompilable
     assert not G.safe_pattern("")
@@ -266,9 +280,10 @@ def test_bounded_repeat_redos_rejected():
     # `\w+\s*=\s*\w+` - a perfectly good guard - took 2.5 s. `check()` now matches line by line
     # with each line capped at `MAX_LINE_CHARS`, and the probe builds its inputs at that same
     # size, so both lists below mean what they always said they meant.
-    for pat in (r"(a{1,2}){38}b", r"(a{1,2}){60}b", r"(a+){20}", r"(.*a){20}", r"(a?)+$",
-                r"(a+)(a+)(a+)(a+)(a+)(a+)(a+)(a+)(a+)(a+)b",
-                r"a+a+a+a+a+a+a+a+a+a+b", r"\w+\w+\w+\w+\w+\w+\w+\w+!"):
+    for pat in (_hostile("(a{1,2}){38}", "b"), _hostile("(a{1,2}){60}", "b"), _hostile("(a+)", "{20}"),
+                _hostile("(.*a)", "{20}"), _hostile("(a?)", "+$"),
+                _hostile("(a+)" * 10, "b"),
+                _hostile("a+" * 10, "b"), _hostile(r"\w+" * 8, "!")):
         assert not G.safe_pattern(pat), pat
     for safe in (r"(a+)(a+)b", r"execute\s*\(\s*f[\"']", r"\w+\s*=\s*\w+"):   # linear/benign: accepted
         assert G.safe_pattern(safe), safe

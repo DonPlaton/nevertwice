@@ -570,16 +570,16 @@ class GuardedLaunch:
         native = getattr(witnesses, 'native', None)
         retained = []
         class NativeView:
-            def __getattr__(view, name):
+            def __getattr__(self, name):
                 return getattr(native, name)
-            def register(view, *args, **options):
+            def register(self, *args, **options):
                 if not retained or retained[0][1] is None:
                     raise PreflightRefused('created-process-unretained')
                 child, boot = retained[0]
                 return CapturingNative(native, child, boot).register(*args, **options)
         class WitnessView:
             native = NativeView()
-            def __getattr__(view, name):
+            def __getattr__(self, name):
                 return getattr(witnesses, name)
         def create(*args, **options):
             process = actual(*args, **options)
@@ -2438,14 +2438,14 @@ class CapturingJobs:
         self.created: set[int] = set()
         owner = self
         class Api:
-            def __getattr__(view, name):
+            def __getattr__(self, name):
                 return getattr(base.k32, name)
-            def CreateJobObjectW(view, *args):
+            def CreateJobObjectW(self, *args):
                 handle = base.k32.CreateJobObjectW(*args)
                 if handle:
                     owner.created.add(int(handle))
                 return handle
-            def AssignProcessToJobObject(view, job, handle):
+            def AssignProcessToJobObject(self, job, handle):
                 process = retained.child.process
                 if int(job) not in owner.created or int(handle) != int(process._handle):
                     raise PreflightRefused('job-assignment-owner-mismatch')
@@ -2483,7 +2483,7 @@ class CapturingNative:
         captured_jobs = CapturingJobs(jobs, self.retained)
         class View:
             jobs = captured_jobs
-            def __getattr__(view, name):
+            def __getattr__(self, name):
                 return getattr(native, name)
         try:
             return type(native).register(View(), pid, handle=handle, label=label)

@@ -421,6 +421,9 @@ def _rejects(design: Design, ys: np.ndarray, codes: np.ndarray, alpha: float, dr
         ng = np.bincount(codes, minlength=g).astype(float)
         sum_n2 = float(ng @ ng)
         weights, exact = weight_matrix(g, draws, seed, weight_kind(g)) if test == "wild_cluster_t" else (None, True)
+        # Only the cluster_t branch reads `crit`; NaN is the inert default (no comparison rejects),
+        # so the initializer cannot turn a missing branch into a silent wrong threshold.
+        crit = float("nan")
         if test == "cluster_t":
             from scipy.stats import t as student_t
             crit = float(student_t.ppf(1 - alpha / 2, g - 1))

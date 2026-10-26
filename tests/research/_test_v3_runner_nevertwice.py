@@ -540,9 +540,10 @@ try:
     check("end_write seals the store: its path and digest beside it (Q-45-5)",
           RN._same(seal_w.get("store") or ".", U1 / "store") and len(seal_w.get("sha256") or "") == 64
           and (U1 / B.SEAL_NAME).is_file(), str(seal_w)[:200])
+    fp = e.get("footprint") or {}
     check("footprint: typed notes only - the Session note is not retrievable",
-          (e.get("footprint") or {}).get("retrievable") == 1 and (e.get("footprint") or {}).get("embedded") == 1,
-          str(e.get("footprint")))
+          fp.get("retrievable") == 3 and fp.get("embedded") == 3,
+          str(fp))
     check("a read in the write stage is refused by name (Q25)",
           raises(lambda: c.request("read", qid="q", query="upload", k=5), B.ArmError, "read stage"))
     cn = safely(lambda: c.request("counters"), {})

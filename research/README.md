@@ -53,6 +53,18 @@ that surface shrink but never grow.
 | Head-to-head vs market leaders (same stand, local Ollama) | [`head_to_head.py`](head_to_head.py) → [`head_to_head.json`](head_to_head.json) | controlled recall@k vs Mem0 et al. See [`docs/COMPARISON.md`](../docs/COMPARISON.md) |
 | Memory-poisoning guard (injection / exfiltration / destruction) | [`POISONING.md`](POISONING.md) | 0 false-positives on a 328-note vault |
 
+## Campaign v3: the memory measured outside software work
+
+<!-- comparison:v3-summary -->
+**2026-10-20, the polygonal stand.** Campaign v3 ran the preregistered stands under one
+protocol: `S1` (LongMemEval, five memory abilities) and `S4` (LoCoMo `conv-26`). The
+attention-native arm (A6.7, all-domain memory) answered `5/5` on `S1` and `25/25` on `S4`
+under judge `J1`, and the pre-A6 coding arm answered `1/5` on `S1`, which is the negative
+control the rebuild was measured against. Stage D spent `$4.76` of DeepSeek API budget across
+the whole campaign. Full report, in Russian, with the per-arm tables and the disqualifications:
+[`v3/REPORT-V3-STAGE-D-RU.md`](v3/REPORT-V3-STAGE-D-RU.md).
+<!-- /comparison:v3-summary -->
+
 ## The rest
 
 Mechanism studies (each a write-up + a runnable `.py` + a `.json`/`.png` result):

@@ -474,6 +474,19 @@ def render(p: dict) -> str:
     return "\n".join(L)
 
 
+def _scrubbed(text: str) -> str:
+    """Terminal output with any fixture secret replaced by "<redacted>".
+
+    The payload carries format LABELS and rates, never a fixture's value, and `render` prints
+    numbers only. The scrub sits at the print boundary regardless: this evaluation's whole
+    subject is secrets reaching a log, so the one place that writes to a log must not rely on
+    the payload's shape staying what it is today (`py/clear-text-logging-sensitive-data`).
+    """
+    for _label, _sample, value in SECRET_FIXTURES:
+        text = text.replace(value, "<redacted>")
+    return text
+
+
 def main(argv: list | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -482,9 +495,9 @@ def main(argv: list | None = None) -> int:
     args = ap.parse_args(argv)
     payload = build(save=args.save)
     if args.json:
-        print(json.dumps(payload, ensure_ascii=False, indent=1))
+        print(_scrubbed(json.dumps(payload, ensure_ascii=False, indent=1)))
     else:
-        print(render(payload))
+        print(_scrubbed(render(payload)))
         if args.save:
             print(f"  saved -> {OUT}")
     return 0

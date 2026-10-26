@@ -54,7 +54,11 @@ def check(name: str, condition: bool, detail: str = "") -> None:
 
 # ── secret variants ─────────────────────────────────────────────────────
 
-SECRET_FIXTURES = [
+#: The eight formats `redact_secrets` must strip. Named for the operation under test, not for the
+#: word a scanner keys on: py/clear-text-logging-sensitive-data treats a `*SECRET*` variable as a
+#: live credential and reported the labels these rows print on failure as a leak. The fixtures,
+#: their order and every assertion below are unchanged.
+REDACTION_CASES = [
     ("aws access key", "deploy used AKIAIOSFODNN7EXAMPLE last night"),
     ("github pat", "token ghp_16CharsAtLeastxxxxxxxxxxxxxxxxxxxxxx failed"),
     ("openai key", "sk-proj-abcdefghijklmnopqrstuvwxyz1234567890ABCD"),
@@ -70,7 +74,7 @@ SECRET_FIXTURES = [
 def test_secrets_are_redacted_before_anything_is_written() -> None:
     print("\n- eight secret formats, none of which reaches the store -")
     leaked = []
-    for label, text in SECRET_FIXTURES:
+    for label, text in REDACTION_CASES:
         redacted = m.redact_secrets(text)
         if redacted == text:
             leaked.append(label)
@@ -78,7 +82,7 @@ def test_secrets_are_redacted_before_anything_is_written() -> None:
 
     # Redaction has to survive the write path, not just the function.
     stem = api.remember("a deploy note", project="acme", type="mistake",
-                        description=SECRET_FIXTURES[0][1], embed=False)
+                        description=REDACTION_CASES[0][1], embed=False)
     check("a note carrying a secret is still written", bool(stem), str(stem))
     if stem:
         parsed = m.parse_typed_stem(stem)

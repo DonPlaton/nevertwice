@@ -538,6 +538,10 @@ class Ledger:
         if not isinstance(body, bytes):
             raise BudgetStop("body-not-bytes", "reserve the exact bytes forwarded by the proxy")
         bound_error = None
+        # The `request-bound-unverified` branch below refuses before any of these is read, but a
+        # static reader cannot see that ordering: inert defaults give py/uninitialized-local-variable
+        # nothing to flag, and the refusal path cannot leak a stale name either.
+        max_tokens, source, worst = 0, "", Decimal(0)
         try:
             max_tokens, source = request_max_tokens(body, self.limits)
             worst = worst_usd(len(body), max_tokens, self.price)

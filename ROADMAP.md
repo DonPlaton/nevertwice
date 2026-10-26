@@ -9,9 +9,10 @@ shipped feature reappears as an open promise.
 
 ## Blocked on the maintainer
 
-- **PyPI release of 2.4.0.** PyPI still serves 2.2.1, so `pip install nevertwice` does not
-  get what the README documents. It will skip 2.3.0 entirely: that version was tagged here on
-  2026-08-18, never published, and its code has been superseded a hundred commits over.
+- **PyPI release of 3.0.0.** PyPI still serves 2.2.1, so `pip install nevertwice` does not
+  get what the README documents. 3.0.0 is the release version: the tree on this branch, tagged,
+  with the attention-native write and read paths. It skips the two tags in between: neither
+  reached PyPI, and both have been superseded.
   **Today:** the version is bumped and the whole release path is built and rehearsed -
   `release.yml` builds once, installs the artifact into a clean environment on three operating
   systems, checks every console entry point, emits an SBOM and checksums, and attests

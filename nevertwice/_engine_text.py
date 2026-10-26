@@ -1017,7 +1017,11 @@ def _load_twin_calibration() -> tuple:
     sd = (0.133751, 0.145667, 0.364025, 0.250373, 0.086981)
     present, vals, why = _twin_file_verdict(_twin_file_path())
     if vals is not None:
-        space, w, b, mu, sd, from_file = (*vals, True)
+        # Explicit indices, not `(*vals, True)`: CodeQL's tuple-length check cannot see through
+        # the starred unpack, so the assignment read as a mismatch (alert #1169). The tuple is
+        # (space, w, b, mu, sd) by _twin_file_verdict's contract.
+        space, w, b, mu, sd = vals[0], vals[1], vals[2], vals[3], vals[4]
+        from_file = True
     elif present:
         # _EARLY_WARNINGS, not log(): this runs at IMPORT, and log() mkdirs the store -
         # a read-only consumer (install.py --print) must not materialize a vault as a

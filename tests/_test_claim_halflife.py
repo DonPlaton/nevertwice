@@ -124,13 +124,40 @@ def _survival_without_censoring(records: dict, days: int) -> tuple[int, int]:
     return survivors, observed
 
 
+#: K18 (2026-10-19): the register's newest claim was born 2026-09-19, and `head` - the newest commit
+#: that touched the register - is now more than 30 days past it. Every real record is therefore 30
+#: days old, and the two rows below lost their premise: censored and uncensored counts coincide over
+#: that population, which makes the mutation proof vacuous, and the setup row went red as the register
+#: aged rather than on a defect in `survival`. That is the same calendar-bomb shape as K4/K17 above,
+#: this time in the FIXTURE rather than in the assertion.
+#:
+#: The block therefore runs over the real records PLUS one synthetic five-day-old live claim, added
+#: only when the register holds no claim younger than the horizon (a register still younger than 30
+#: days keeps its own young records and no probe). The synthetic claim cannot be an observation at
+#: 30 days, so the independent reference over `records_30` equals the one over `records`; what it
+#: restores is the case the mutation needs - a record on which censoring and no-censoring disagree.
+#: It lives in `records_30` alone: the real invariant above and every family row below still read
+#: the register itself, never the probe.
+records_30 = dict(records)
+if not any(head - r["born"] < horizon30 for r in records.values()):
+    records_30["_synth.young_30d_probe"] = {"family": "probe", "born": head - dt.timedelta(days=5),
+                                            "died": None}
+    print("       (no real claim is younger than 30 days: one synthetic five-day-old live claim is "
+          "added to the censoring probe, so the mutation below still has a case to bite)")
+expected_n30_probe = sum(1 for r in records_30.values() if head - r["born"] >= horizon30)
+_s30_probe, n30_probe = H.survival(records_30, head, 30)
+check("censoring holds over the probe population: the 30-day observed count is the records born at "
+     "or before head-30d, the five-day-old claim excluded from it",
+     n30_probe == expected_n30_probe, f"n30={n30_probe} expected={expected_n30_probe}")
 check("setup: at least one record is younger than 30 days (otherwise the mutation below "
      "cannot bite - censored and uncensored counts would coincide by accident)",
-     expected_n30 < len(records), f"expected_n30={expected_n30} of {len(records)} records")
-_, n30_uncensored = _survival_without_censoring(records, 30)
+     expected_n30_probe < len(records_30),
+     f"expected_n30={expected_n30_probe} of {len(records_30)} records")
+_, n30_uncensored = _survival_without_censoring(records_30, 30)
 check("mutation: WITHOUT censoring, the 30-day observed count no longer matches the "
      "independent reference (would FAIL the invariant check above, by name)",
-     n30_uncensored != expected_n30, f"n30_uncensored={n30_uncensored} expected={expected_n30}")
+     n30_uncensored != expected_n30_probe,
+     f"n30_uncensored={n30_uncensored} expected={expected_n30_probe}")
 
 print("\n- censoring is real: a claim too young to ask is not counted as a survivor -")
 young = {"probe.too.young": {"family": "probe", "born": head - dt.timedelta(hours=2), "died": None}}

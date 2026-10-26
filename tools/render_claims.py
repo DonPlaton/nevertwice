@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import re
 import sys
 from pathlib import Path
@@ -743,7 +744,7 @@ def render_supersession_pairs(c: Claims, fam: str = "supersession") -> str:
         da, db = f"{fam}.{x}_vs_{y}.discordant.{a}", f"{fam}.{x}_vs_{y}.discordant.{b}"
         disc = (f"{_count(c.value(da))} - {_count(c.value(db))}" if c.has(da) and c.has(db) else "-")
         pv = c.value(pid)                                  # raises Withdrawn if it is
-        rows.append([label, disc, "nan" if pv != pv else str(c.get(pid)["printed"][0])])
+        rows.append([label, disc, "nan" if _isnan(pv) else str(c.get(pid)["printed"][0])])
     if not rows:
         return _not_yet(fam, "python research/supersession_bench.py --pool ...")
     return _table(["pair", "discordant (first - second)", "p, McNemar exact"], rows)
@@ -1080,10 +1081,17 @@ def withdrawal_notice(c: Claims, claim_id: str, reason: str) -> str:
             f"`{c.get(claim_id)['command']}` is what re-measures this one.")
 
 
+def _isnan(v) -> bool:
+    """A NaN cell. `math.isnan` rather than `v != v`: the same test, and one a reader (and a
+    static checker) can tell apart from a typo. Claims hold ints as well as floats, so the
+    type guard keeps `isnan` from raising on an integer count."""
+    return isinstance(v, float) and math.isnan(v)
+
+
 def _count(v) -> str:
     """An integer cell that survives a withdrawn value: NaN prints as `nan`, which a partial
     render turns into "withdrawn" (see `render_partial`)."""
-    return "nan" if v != v else str(int(v))
+    return "nan" if _isnan(v) else str(int(v))
 
 
 class _PartialClaims(Claims):
@@ -1099,6 +1107,10 @@ class _PartialClaims(Claims):
     """
 
     def __init__(self, base: Claims):
+        # The base constructor builds `manifest` and `_by_id`; copying `__dict__` alone looked
+        # equivalent but skipped it, which is what `py/missing-call-to-init` reports (and what
+        # would break the day Claims grows an initializer that is not a plain assignment).
+        super().__init__(base.manifest)
         self.__dict__.update(base.__dict__)
         self.gone: dict[str, str] = {}
         self.live = 0
